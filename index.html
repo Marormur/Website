@@ -21,24 +21,16 @@
 <body class="bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
     <div class="max-w-4xl mx-auto">
         <header
-            class="flex items-center p-8 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-lg shadow-lg">
+            class="flex items-center gap-4 px-4 py-2 bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow">
             <img src="./img/profil.jpg" alt="Profilbild von Marvin"
-                class="w-32 h-32 object-cover rounded-full border-4 border-white shadow-lg mr-4">
+                class="w-10 h-10 object-cover rounded-full border-2 border-white">
+            <nav class="flex space-x-4">
+                <a data-tab="start" class="tab-button cursor-pointer py-2 px-4">Start</a>
+                <a data-tab="about" class="tab-button cursor-pointer py-2 px-4">Über mich</a>
+                <a data-tab="projects" class="tab-button cursor-pointer py-2 px-4">🛠️ Projekte</a>
+                <a data-tab="contact" class="tab-button cursor-pointer py-2 px-4">Kontakt</a>
+            </nav>
         </header>
-
-        <div class="tabs">
-            <ul class="flex justify-center space-x-4 border-b">
-                <li data-tab="start"
-                    class="tab-button cursor-pointer py-2 px-4 text-indigo-700 font-bold border-b-2 border-indigo-700">
-                    Start</li>
-                <li data-tab="about" class="tab-button cursor-pointer py-2 px-4 text-gray-500 hover:text-indigo-700">
-                    Über mich</li>
-                <li data-tab="projects" class="tab-button cursor-pointer py-2 px-4 text-gray-500 hover:text-indigo-700">
-                    🛠️ Projekte</li>
-                <li data-tab="contact" class="tab-button cursor-pointer py-2 px-4 text-gray-500 hover:text-indigo-700">
-                    Kontakt</li>
-            </ul>
-        </div>
         <div id="tab-content" class="p-4">
             <div id="start" class="tab-content">
                 <div class="grid grid-cols-2 gap-4">
