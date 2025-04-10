@@ -1,0 +1,18 @@
+body {
+    font-family: system-ui, sans-serif;
+    background: #f9f9f9;
+    color: #222;
+    max-width: 800px;
+    margin: auto;
+    padding: 2rem;
+}
+
+h1 {
+    color: #0077ff;
+}
+
+section {
+    margin-top: 2rem;
+    border-top: 1px solid #ddd;
+    padding-top: 1rem;
+}
