@@ -24,22 +24,71 @@
             class="flex items-center p-8 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-lg shadow-lg">
             <img src="./img/profil.jpg" alt="Profilbild von Marvin"
                 class="w-32 h-32 object-cover rounded-full border-4 border-white shadow-lg mr-4">
-            <div>
-                <h1 class="text-4xl font-bold">Marvins Portfolio</h1>
-                <p class="text-lg mt-2">👨‍💻 .NET-Entwickler & Technik-Fan</p>
-            </div>
         </header>
 
-        <section>
-            <h2 class="text-2xl font-bold mt-8 mb-4 text-indigo-700">Über mich</h2>
-            <p>Ich bin Marvin und bastle gerne an Software, Computern und coolen Projekten!</p>
-        </section>
+        <div class="tabs">
+            <ul class="flex justify-center space-x-4 border-b">
+                <li data-tab="start"
+                    class="tab-button cursor-pointer py-2 px-4 text-indigo-700 font-bold border-b-2 border-indigo-700">
+                    Start</li>
+                <li data-tab="about" class="tab-button cursor-pointer py-2 px-4 text-gray-500 hover:text-indigo-700">
+                    Über mich</li>
+                <li data-tab="projects" class="tab-button cursor-pointer py-2 px-4 text-gray-500 hover:text-indigo-700">
+                    🛠️ Projekte</li>
+                <li data-tab="contact" class="tab-button cursor-pointer py-2 px-4 text-gray-500 hover:text-indigo-700">
+                    Kontakt</li>
+            </ul>
+        </div>
+        <div id="tab-content" class="p-4">
+            <div id="start" class="tab-content">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex flex-col items-center cursor-pointer" onclick="showTab('about')">
+                        <span class="text-5xl">👤</span>
+                        <span class="mt-2 text-lg font-semibold">Über mich</span>
+                    </div>
+                    <div class="flex flex-col items-center cursor-pointer" onclick="showTab('projects')">
+                        <span class="text-5xl">🛠️</span>
+                        <span class="mt-2 text-lg font-semibold">Projekte</span>
+                    </div>
+                    <div class="flex flex-col items-center cursor-pointer" onclick="showTab('contact')">
+                        <span class="text-5xl">📞</span>
+                        <span class="mt-2 text-lg font-semibold">Kontakt</span>
+                    </div>
+                </div>
+            </div>
+            <div id="about" class="tab-content hidden">
+                <p>Ich bin Marvin und bastle gerne an Software, Computern und coolen Projekten!</p>
+            </div>
+            <div id="projects" class="tab-content hidden">
+                <ul id="repo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"></ul>
+            </div>
+            <div id="contact" class="tab-content hidden">
+                <p>Du findest mich auch auf <a href="https://www.linkedin.com/in/marvin-temmen-788537216"
+                        target="_blank">LinkedIn</a>.</p>
+            </div>
+        </div>
+        <script>
+            function showTab(tabName) {
+                const targetButton = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
+                if (targetButton) {
+                    targetButton.click();
+                }
+            }
 
-        <section id="projekte">
-            <h2 class="text-2xl font-bold mt-8 mb-4 text-indigo-700">🛠️ Meine GitHub-Projekte</h2>
-            <ul id="repo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"></ul>
-        </section>
-
+            document.addEventListener("DOMContentLoaded", function () {
+                const tabButtons = document.querySelectorAll(".tab-button");
+                const tabContents = document.querySelectorAll(".tab-content");
+                tabButtons.forEach(button => {
+                    button.addEventListener("click", function () {
+                        tabButtons.forEach(btn => btn.classList.remove("text-indigo-700", "font-bold", "border-b-2", "border-indigo-700"));
+                        tabContents.forEach(tab => tab.classList.add("hidden"));
+                        this.classList.add("text-indigo-700", "font-bold", "border-b-2", "border-indigo-700");
+                        const tabId = this.getAttribute("data-tab");
+                        document.getElementById(tabId).classList.remove("hidden");
+                    });
+                });
+            });
+        </script>
         <script>
             const username = "Marormur"; // z.B. "marvin-dev"
             fetch(`https://api.github.com/users/${username}/repos`)
@@ -63,11 +112,6 @@
                     console.error("Fehler beim Laden der Repos:", err);
                 });
         </script>
-        <section>
-            <h2 class="text-2xl font-bold mt-8 mb-4 text-indigo-700">Kontakt</h2>
-            <p>Du findest mich auch auf <a href="https://www.linkedin.com/in/marvin-temmen-788537216"
-                    target="_blank">LinkedIn</a>.</p>
-        </section>
     </div>
 </body>
 
