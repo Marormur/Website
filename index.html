@@ -19,18 +19,26 @@
 </head>
 
 <body class="bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
-    <div class="max-w-4xl mx-auto">
-        <header
-            class="flex items-center gap-4 px-4 py-2 bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow">
+    <header class="flex items-center gap-4 px-4 py-2 bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow">
+        <div class="relative" id="profile-container">
             <img src="./img/profil.jpg" alt="Profilbild von Marvin"
-                class="w-10 h-10 object-cover rounded-full border-2 border-white">
-            <nav class="flex space-x-4">
-                <a data-tab="start" class="tab-button cursor-pointer py-2 px-4">Start</a>
-                <a data-tab="about" class="tab-button cursor-pointer py-2 px-4">Über mich</a>
-                <a data-tab="projects" class="tab-button cursor-pointer py-2 px-4">🛠️ Projekte</a>
-                <a data-tab="contact" class="tab-button cursor-pointer py-2 px-4">Kontakt</a>
-            </nav>
-        </header>
+                class="w-10 h-10 object-cover rounded-full border-2 border-white cursor-pointer">
+            <div id="profile-dropdown"
+                class="hidden absolute left-0 mt-2 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg">
+                <a href="https://www.linkedin.com/in/marvin-temmen-788537216" target="_blank"
+                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">LinkedIn</a>
+                <a href="https://github.com/Marormur" target="_blank"
+                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">GitHub</a>
+            </div>
+        </div>
+        <nav class="flex space-x-4">
+            <a data-tab="start" class="tab-button cursor-pointer py-2 px-4">Start</a>
+            <a data-tab="about" class="tab-button cursor-pointer py-2 px-4">Über mich</a>
+            <a data-tab="projects" class="tab-button cursor-pointer py-2 px-4">Projekte</a>
+            <a data-tab="contact" class="tab-button cursor-pointer py-2 px-4">Kontakt</a>
+        </nav>
+    </header>
+    <div class="max-w-4xl mx-auto">
         <div id="tab-content" class="p-4">
             <div id="start" class="tab-content">
                 <div class="grid grid-cols-2 gap-4">
@@ -103,6 +111,20 @@
                 .catch(err => {
                     console.error("Fehler beim Laden der Repos:", err);
                 });
+        </script>
+        <script>
+            document.getElementById('profile-container').addEventListener('click', function (event) {
+                const dropdown = document.getElementById('profile-dropdown');
+                dropdown.classList.toggle('hidden');
+                event.stopPropagation();
+            });
+
+            document.addEventListener('click', function (event) {
+                const dropdown = document.getElementById('profile-dropdown');
+                if (!document.getElementById('profile-container').contains(event.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
         </script>
     </div>
 </body>
