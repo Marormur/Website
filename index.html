@@ -36,6 +36,23 @@
                 <a href="https://github.com/Marormur" rel="noopener" target="_blank"
                     class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">GitHub</a>
                 <script>
+                    document.getElementById('profile-container').addEventListener('click', function (event) {
+                        // Das Programm-Dropdown schließen
+                        document.getElementById('program-dropdown').classList.add('hidden');
+
+                        // Jetzt das Profil-Dropdown umschalten
+                        const profileDropdown = document.getElementById('profile-dropdown');
+                        profileDropdown.classList.toggle('hidden');
+
+                        event.stopPropagation();
+                    });
+                    document.addEventListener('click', function (event) {
+                        const dropdown = document.getElementById('profile-dropdown');
+                        if (!document.getElementById('profile-container').contains(event.target)) {
+                            dropdown.classList.add('hidden');
+                        }
+                    });
+
                     document.getElementById('dropdown-about').addEventListener('click', function (event) {
                         event.preventDefault();
                         event.stopPropagation();
@@ -45,28 +62,52 @@
                         // Set program label to "Über mich"
                         document.getElementById("program-label").innerText = "Über mich";
                     });
+
                 </script>
             </div>
         </div>
         <!-- Menüpunkte -->
-        <nav class="flex space-x-4 items-center">
-            <span id="program-label" class="py-2 px-4">Start</span>
-            <a data-tab="contact" class="tab-button cursor-pointer py-2 px-4">Kontakt</a>
+        <nav class="flex space-x-4 items-center relative">
+            <span id="program-label" class="py-2 px-4 cursor-pointer">Sucher</span>
+            <div id="program-dropdown"
+                class="hidden absolute top-full left-0 mt-1 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg">
+                <a href="#" id="dropdown-sucher" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
+                    Sucher</a>
+                <script>
+                    // Klick auf das Programmlabel toggelt das Dropdown
+                    document.getElementById("program-label").addEventListener("click", function (event) {
+                        // Das Profil-Dropdown schließen
+                        document.getElementById("profile-dropdown").classList.add("hidden");
+
+                        // Jetzt das Programm-Dropdown umschalten
+                        const programDropdown = document.getElementById("program-dropdown");
+                        programDropdown.classList.toggle("hidden");
+
+                        event.stopPropagation();
+                    });
+
+                    // Klick außerhalb schließt das Dropdown
+                    document.addEventListener("click", function (event) {
+                        if (!document.getElementById("program-label").contains(event.target)) {
+                            document.getElementById("program-dropdown").classList.add("hidden");
+                        }
+                    });
+                </script>
+            </div>
         </nav>
     </header>
     <div class="max-w-4xl mx-auto">
         <div id="tab-content" class="p-4">
             <div id="start" class="tab-content">
-                <div id="desktop-icons"
-                    class="fixed right-0 top-1/2 transform -translate-y-1/2 flex flex-col gap-4 p-4">
+                <div id="desktop-icons" class="fixed right-0 top-10 mt-4 flex flex-col gap-4 p-4">
                     <div class="flex flex-col items-center cursor-pointer" onclick="showTab('projects')">
                         <span class="text-5xl">📁</span>
                         <span class="mt-2 text-lg font-semibold">Projekte</span>
                     </div>
-                    <div class="flex flex-col items-center cursor-pointer" onclick="showTab('contact')">
+                    <!-- <div class="flex flex-col items-center cursor-pointer" onclick="showTab('contact')">
                         <span class="text-5xl">📞</span>
                         <span class="mt-2 text-lg font-semibold">Kontakt</span>
-                    </div>
+                    </div> -->
                 </div>
             </div>
             <div id="about" class="tab-content hidden">
@@ -122,46 +163,70 @@
 
             });
         </script>
+        <!-- Github Repos laden-->
         <script>
             const username = "Marormur";
-            fetch(`https://api.github.com/users/${username}/repos`)
-                .then(res => res.json())
-                .then(repos => {
-                    const list = document.getElementById("repo-list");
+            const cacheKey = `githubRepos_${username}`;
+            const cacheTimestampKey = `githubReposTimestamp_${username}`;
+            const cacheDuration = 1000 * 60 * 60; // 1 Stunde in Millisekunden
+
+            // Funktion zur Darstellung der Repos aus den Daten:
+            function loadRepos(repos) {
+                const list = document.getElementById("repo-list");
+                // Leere die Liste vor dem Auffüllen
+                list.innerHTML = "";
+                if (Array.isArray(repos)) {
                     repos.forEach(repo => {
                         const item = document.createElement("li");
                         item.innerHTML = `
-                      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition">
-                        <h3 class="text-xl font-semibold mb-2">
-                          <a href="${repo.html_url}" target="_blank" class="text-blue-600 hover:underline">${repo.name}</a>
-                        </h3>
-                        <p>${repo.description || "Keine Beschreibung"}</p>
-                      </div>
-                    `;
+                  <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition">
+                    <h3 class="text-xl font-semibold mb-2">
+                      <a href="${repo.html_url}" target="_blank" class="text-blue-600 hover:underline">${repo.name}</a>
+                    </h3>
+                    <p>${repo.description || "Keine Beschreibung"}</p>
+                  </div>
+                `;
                         list.appendChild(item);
                     });
-                })
-                .catch(err => {
-                    console.error('Fehler beim Laden der Repos:', err);
-                });
-        </script>
-        <script>
-            document.getElementById('profile-container').addEventListener('click', function (event) {
-                const dropdown = document.getElementById('profile-dropdown');
-                dropdown.classList.toggle('hidden');
-                event.stopPropagation();
-            });
-
-            document.addEventListener('click', function (event) {
-                const dropdown = document.getElementById('profile-dropdown');
-                if (!document.getElementById('profile-container').contains(event.target)) {
-                    dropdown.classList.add('hidden');
+                } else {
+                    console.error("Unerwartetes API-Response-Format:", repos);
                 }
+            }
+
+            // Funktion, um Repos aus der API zu holen und zu cachen:
+            function fetchRepos() {
+                fetch(`https://api.github.com/users/${username}/repos`)
+                    .then(res => res.json())
+                    .then(repos => {
+                        // Speichere die Daten und den Zeitstempel in localStorage.
+                        localStorage.setItem(cacheKey, JSON.stringify(repos));
+                        localStorage.setItem(cacheTimestampKey, Date.now().toString());
+                        loadRepos(repos);
+                    })
+                    .catch(err => {
+                        console.error("Fehler beim Laden der Repos:", err);
+                    });
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                const cachedRepos = localStorage.getItem(cacheKey);
+                const cachedTimestamp = localStorage.getItem(cacheTimestampKey);
+                if (cachedRepos && cachedTimestamp) {
+                    const age = Date.now() - parseInt(cachedTimestamp, 10);
+                    if (age < cacheDuration) {
+                        // Nutze den Cache, wenn er nicht älter als eine Stunde ist.
+                        const repos = JSON.parse(cachedRepos);
+                        loadRepos(repos);
+                        return;
+                    }
+                }
+                // Andernfalls neu laden.
+                fetchRepos();
             });
         </script>
     </div>
     <!-- Projekte -->
-    <div id="projects-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div id="projects-modal" class="fixed inset-0 flex items-center justify-center hidden">
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-4xl">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg">
                 <div class="flex space-x-2">
@@ -180,7 +245,7 @@
         </div>
     </div>
     <!-- Über mich -->
-    <div id="about-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div id="about-modal" class="fixed inset-0 flex items-center justify-center hidden">
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-4xl">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg">
                 <div class="flex space-x-2">
@@ -193,25 +258,49 @@
                 </div>
                 <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300">Über mich</h2>
             </div>
-            <div class="p-4">
-                <p>Ich bin Marvin und bastle gerne an Software, Computern und coolen Projekten!</p>
+            <!-- Mittelteil mit Bild, Titel, Infos -->
+            <div class="flex flex-col items-center text-gray-700 dark:text-gray-200 mt-8">
+                <!-- Titelbild -->
+                <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-4 ">
+
+                <!-- Überschrift -->
+                <h2 class="text-xl font-semibold">Marvin Temmen</h2>
+                <p class="text-sm">März 1999</p>
+
+                <!-- Auflistung zentraler Infos -->
+                <div class="mt-4 space-y-1 text-sm">
+                    <p><strong>Name:</strong> Marvin T.</p>
+                    <p><strong>Wohnort:</strong> Deutschland</p>
+                    <!-- <p><strong>Hobbys:</strong> Computer, Schach, u.v.m.</p> -->
+                    <p><strong>Beruf:</strong> .NET-Entwickler</p>
+                </div>
+
+                <!-- Mehr-Infos-Button -->
+                <button class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                    Mehr Infos …
+                </button>
+
+                <!-- Fußzeile -->
+                <div
+                    class="mt-6 text-xs text-center text-gray-500 dark:text-gray-400 border-t border-gray-300 dark:border-gray-700 pt-2">
+                    © 2025 Marvin T. — Alle Rechte vorbehalten.
+                </div>
             </div>
         </div>
-    </div>
-    <!-- Update der Close-Buttons für die Modale -->
-    <script>
-        // Projects modal close: setzt zusätzlich das Programmlabel auf "Start"
-        document.getElementById("close-projects-modal").addEventListener("click", function () {
-            document.getElementById("projects-modal").classList.add("hidden");
-            document.getElementById("program-label").innerText = "Start";
-        });
+        <!-- Update der Close-Buttons für die Modale -->
+        <script>
+            // Projects modal close: setzt zusätzlich das Programmlabel auf "Sucher"
+            document.getElementById("close-projects-modal").addEventListener("click", function () {
+                document.getElementById("projects-modal").classList.add("hidden");
+                document.getElementById("program-label").innerText = "Sucher";
+            });
 
-        // About modal close: setzt ebenfalls das Programmlabel auf "Start"
-        document.getElementById('close-about-modal').addEventListener('click', function () {
-            document.getElementById('about-modal').classList.add('hidden');
-            document.getElementById("program-label").innerText = "Start";
-        });
-    </script>
+            // About modal close: setzt ebenfalls das Programmlabel auf "Sucher"
+            document.getElementById('close-about-modal').addEventListener('click', function () {
+                document.getElementById('about-modal').classList.add('hidden');
+                document.getElementById("program-label").innerText = "Sucher";
+            });
+        </script>
 </body>
 
 </html>
