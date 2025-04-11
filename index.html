@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Meine coole Seite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Marvin</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -19,19 +20,20 @@
 </head>
 
 <body class="m-0 bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <!-- Header -->
     <header
         class="w-full flex items-center gap-4 px-4 py-2 bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow">
+        <!-- Profilicon -->
         <div class="relative" id="profile-container">
             <img src="./img/profil.jpg" alt="Profilbild von Marvin"
                 class="w-10 h-10 object-cover rounded-full border-2 border-white cursor-pointer">
             <div id="profile-dropdown"
                 class="hidden absolute left-0 mt-2 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg">
-
                 <a href="#" id="dropdown-about" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
                     mich</a>
-                <a href="https://www.linkedin.com/in/marvin-temmen-788537216" target="_blank"
+                <a href="https://www.linkedin.com/in/marvin-temmen-788537216" rel="noopener" target="_blank"
                     class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">LinkedIn</a>
-                <a href="https://github.com/Marormur" target="_blank"
+                <a href="https://github.com/Marormur" rel="noopener" target="_blank"
                     class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">GitHub</a>
                 <script>
                     document.getElementById('dropdown-about').addEventListener('click', function (event) {
@@ -40,22 +42,25 @@
                         // Hide the profile dropdown and open the About modal.
                         document.getElementById('profile-dropdown').classList.add('hidden');
                         document.getElementById('about-modal').classList.remove('hidden');
+                        // Set program label to "Über mich"
+                        document.getElementById("program-label").innerText = "Über mich";
                     });
-
                 </script>
             </div>
         </div>
-        <nav class="flex space-x-4">
-            <a data-tab="start" class="tab-button cursor-pointer py-2 px-4">Start</a>
+        <!-- Menüpunkte -->
+        <nav class="flex space-x-4 items-center">
+            <span id="program-label" class="py-2 px-4">Start</span>
             <a data-tab="contact" class="tab-button cursor-pointer py-2 px-4">Kontakt</a>
         </nav>
     </header>
     <div class="max-w-4xl mx-auto">
         <div id="tab-content" class="p-4">
             <div id="start" class="tab-content">
-                <div class="grid grid-cols-2 gap-4">
+                <div id="desktop-icons"
+                    class="fixed right-0 top-1/2 transform -translate-y-1/2 flex flex-col gap-4 p-4">
                     <div class="flex flex-col items-center cursor-pointer" onclick="showTab('projects')">
-                        <span class="text-5xl">🛠️</span>
+                        <span class="text-5xl">📁</span>
                         <span class="mt-2 text-lg font-semibold">Projekte</span>
                     </div>
                     <div class="flex flex-col items-center cursor-pointer" onclick="showTab('contact')">
@@ -67,23 +72,8 @@
             <div id="about" class="tab-content hidden">
                 <p>Ich bin Marvin und bastle gerne an Software, Computern und coolen Projekten!</p>
             </div>
-            <!-- <div id="projects" class="tab-content hidden">
-                <div class="border border-gray-300 rounded-lg shadow-lg">
-                    <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg">
-                        <div class="flex space-x-2">
-                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                            <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                        </div>
-                        <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300">Finder</h2>
-                    </div>
-                    <div class="p-4">
-                        <ul id="repo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></ul>
-                    </div>
-                </div>
-            </div> -->
             <div id="contact" class="tab-content hidden">
-                <p>Du findest mich auch auf <a href="https://www.linkedin.com/in/marvin-temmen-788537216"
+                <p>Du findest mich auch auf <a href="https://www.linkedin.com/in/marvin-temmen-788537216" rel="noopener"
                         target="_blank">LinkedIn</a>.</p>
             </div>
         </div>
@@ -91,14 +81,22 @@
             function showTab(tabName) {
                 if (tabName === "projects") {
                     document.getElementById("projects-modal").classList.remove("hidden");
+                    // Update program label to "Finder" when projects modal opens.
+                    document.getElementById("program-label").innerText = "Sucher";
                     return;
                 }
                 const targetButton = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
                 if (targetButton) {
                     targetButton.click();
+                    // Für andere Tabs (hier: falls "about" über eine normale Navigation geöffnet wird), 
+                    // könnte man das Label ebenfalls anpassen:
+                    if (tabName === "about") {
+                        document.getElementById("program-label").innerText = "Über mich";
+                    } else {
+                        document.getElementById("program-label").innerText = "Start";
+                    }
                 }
             }
-
             document.addEventListener("DOMContentLoaded", function () {
                 const tabButtons = document.querySelectorAll(".tab-button");
                 const tabContents = document.querySelectorAll(".tab-content");
@@ -121,10 +119,7 @@
                     });
                 });
 
-                // Close modal when clicking the close button.
-                document.getElementById("close-projects-modal").addEventListener("click", function () {
-                    document.getElementById("projects-modal").classList.add("hidden");
-                });
+
             });
         </script>
         <script>
@@ -165,29 +160,31 @@
             });
         </script>
     </div>
+    <!-- Projekte -->
     <div id="projects-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-4xl">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg">
                 <div class="flex space-x-2">
-                    <button id="close-projects-modal"
+                    <button title="Schließen" id="close-projects-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300">Finder</h2>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300">Projekte</h2>
             </div>
             <div class="p-4">
                 <ul id="repo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></ul>
             </div>
         </div>
     </div>
+    <!-- Über mich -->
     <div id="about-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-4xl">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg">
                 <div class="flex space-x-2">
-                    <button id="close-about-modal"
+                    <button title="Schließen" id="close-about-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
@@ -201,10 +198,18 @@
             </div>
         </div>
     </div>
+    <!-- Update der Close-Buttons für die Modale -->
     <script>
+        // Projects modal close: setzt zusätzlich das Programmlabel auf "Start"
+        document.getElementById("close-projects-modal").addEventListener("click", function () {
+            document.getElementById("projects-modal").classList.add("hidden");
+            document.getElementById("program-label").innerText = "Start";
+        });
 
+        // About modal close: setzt ebenfalls das Programmlabel auf "Start"
         document.getElementById('close-about-modal').addEventListener('click', function () {
             document.getElementById('about-modal').classList.add('hidden');
+            document.getElementById("program-label").innerText = "Start";
         });
     </script>
 </body>
