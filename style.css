@@ -1,11 +1,7 @@
 body {
     font-family: system-ui, sans-serif;
-    background-color: #fafafa;
-    background-image: repeating-linear-gradient(45deg,
-            #90c9fe,
-            #a3bdff 10px,
-            #aac0ff 10px,
-            #9cc2f9 20px);
+    background: url("./img/wallpaper.png") no-repeat center center fixed;
+    background-size: cover;
     color: #222;
     margin: auto;
 }
