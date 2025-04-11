@@ -226,8 +226,10 @@
         </script>
     </div>
     <!-- Projekte -->
-    <div id="projects-modal" class="fixed inset-0 flex items-center justify-center hidden">
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-4xl">
+    <div id="projects-modal" class="fixed inset-0 flex items-center justify-center hidden"
+        style="pointer-events: none;">
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-4xl"
+            style="pointer-events: auto;">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg">
                 <div class="flex space-x-2">
                     <button title="Schließen" id="close-projects-modal"
@@ -243,10 +245,19 @@
                 <ul id="repo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></ul>
             </div>
         </div>
+        <script>
+            // Projects modal close: setzt zusätzlich das Programmlabel auf "Sucher"
+            document.getElementById("close-projects-modal").addEventListener("click", function () {
+                document.getElementById("projects-modal").classList.add("hidden");
+                document.getElementById("program-label").innerText = "Sucher";
+            });
+
+        </script>
     </div>
     <!-- Über mich -->
-    <div id="about-modal" class="fixed inset-0 flex items-center justify-center hidden">
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-4xl">
+    <div id="about-modal" class="fixed inset-0 flex items-center justify-center hidden" style="pointer-events: none;">
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-auto max-w-xl"
+            style="pointer-events: auto;">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg">
                 <div class="flex space-x-2">
                     <button title="Schließen" id="close-about-modal"
@@ -289,18 +300,43 @@
         </div>
         <!-- Update der Close-Buttons für die Modale -->
         <script>
-            // Projects modal close: setzt zusätzlich das Programmlabel auf "Sucher"
-            document.getElementById("close-projects-modal").addEventListener("click", function () {
-                document.getElementById("projects-modal").classList.add("hidden");
-                document.getElementById("program-label").innerText = "Sucher";
-            });
-
             // About modal close: setzt ebenfalls das Programmlabel auf "Sucher"
             document.getElementById('close-about-modal').addEventListener('click', function () {
                 document.getElementById('about-modal').classList.add('hidden');
                 document.getElementById("program-label").innerText = "Sucher";
             });
         </script>
+    </div>
+    <script>
+        // Wir starten mit einer hohen z-Index-Zahl.
+        let topZIndex = 1000;
+
+        // Diese Funktion erhöht den z-Index des angegebenen Modals und bringt es in den Vordergrund.
+        function bringToFront(modalId) {
+            topZIndex++;
+            document.getElementById(modalId).style.zIndex = topZIndex;
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Füge einen Klick-Listener zum inneren Container (Dialog) des Projekte-Modals hinzu.
+            const projectsDialog = document.querySelector("#projects-modal > div");
+            if (projectsDialog) {
+                projectsDialog.addEventListener("click", function (e) {
+                    bringToFront("projects-modal");
+                    document.getElementById("program-label").innerText = "Sucher";
+                });
+            }
+
+            // Füge einen Klick-Listener zum inneren Container (Dialog) des Über-mich-Modals hinzu.
+            const aboutDialog = document.querySelector("#about-modal > div");
+            if (aboutDialog) {
+                aboutDialog.addEventListener("click", function (e) {
+                    bringToFront("about-modal");
+                    document.getElementById("program-label").innerText = "Über mich";
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>
