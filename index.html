@@ -22,7 +22,7 @@
 <body class="m-0 bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
     <!-- Header -->
     <header
-        class="w-full flex items-center gap-4 px-4 py-2 bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow">
+        class="w-full flex items-center gap-4 px-4 py-2 bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-gray-800 dark:to-gray-900 bg-opacity-70 dark:bg-opacity-80 text-white shadow">
         <!-- Profilicon -->
         <div class="relative" id="profile-container">
             <img src="./img/profil.jpg" alt="Profilbild von Marvin"
@@ -31,6 +31,8 @@
                 class="hidden absolute left-0 mt-2 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg">
                 <a href="#" id="dropdown-about" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
                     Marvin</a>
+                <a href="#" id="dropdown-settings"
+                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Systemeinstellungen</a>
                 <a href="https://www.linkedin.com/in/marvin-temmen-788537216" rel="noopener" target="_blank"
                     class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">LinkedIn</a>
             </div>
@@ -206,7 +208,7 @@
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300">Einstellungen</h2>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300">Systemeinstellungen</h2>
             </div>
 
             <!-- Inhalt - zweispaltiges Layout -->
@@ -218,7 +220,7 @@
                         onclick="showSettingsSection('general')">
                         Allgemein
                     </div>
-                    <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    <!-- <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                         onclick="showSettingsSection('about')">
                         Über Marvin
                     </div>
@@ -229,15 +231,13 @@
                     <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                         onclick="showSettingsSection('battery')">
                         Akku
-                    </div>
+                    </div> -->
                 </div>
 
                 <!-- Rechte Hauptansicht -->
                 <div class="flex-1 p-6 overflow-auto text-gray-800 dark:text-gray-200">
                     <!-- Sektion: Allgemein -->
                     <div id="settings-general" class="">
-                        <h3 class="text-xl font-semibold mb-2 dark:text-gray-100">Allgemein</h3>
-                        <p>Hier könntest du z. B. grundlegende Einstellungen zu deinem "Fake-OS" unterbringen.</p>
                         <div class="flex flex-col items-center text-gray-700 dark:text-gray-200 mt-8">
                             <!-- Titelbild -->
                             <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-4 ">
@@ -246,7 +246,14 @@
                             <h2 class="text-xl font-semibold">Marvin Temmen</h2>
                             <p class="text-sm">März 1999</p>
 
-
+                            <div class="bg-white dark:bg-gray-700 rounded-lg p-4 grid grid-cols-2 gap-y-2 gap-x-4">
+                                <div class="text-gray-600 dark:text-gray-300">Wohnort</div>
+                                <div class="text-gray-800 dark:text-gray-100">Deutschland</div>
+                                <div class="text-gray-600 dark:text-gray-300">Geburtstag</div>
+                                <div class="text-gray-800 dark:text-gray-100">März 1999</div>
+                                <div class="text-gray-600 dark:text-gray-300">Beruf</div>
+                                <div class="text-gray-800 dark:text-gray-100">Softwareentwickler</div>
+                            </div>
 
                             <!-- Fußzeile -->
                             <div
@@ -259,7 +266,6 @@
                     <!-- Sektion: Über Marvin -->
                     <div id="settings-about" class="hidden">
                         <h3 class="text-xl font-semibold mb-2 dark:text-gray-100">Über Marvin</h3>
-                        <p>Hier kannst du einige "System"-Infos zu deinem MacBook-Stil angeben, z. B.:</p>
                         <ul class="list-disc list-inside mt-2">
                             <li><strong>Name:</strong> Marvin T.</li>
                             <li><strong>Chip:</strong> Apple M3 Pro</li>
@@ -309,7 +315,7 @@
             if (aboutDialog) {
                 aboutDialog.addEventListener("click", function (e) {
                     bringToFront("about-modal");
-                    updateProgramLabel("Über Marvin");
+                    updateProgramLabel("Sucher");
                 });
             }
 
@@ -317,31 +323,33 @@
             if (settingsDialog) {
                 settingsDialog.addEventListener("click", function (e) {
                     bringToFront("settings-modal");
-                    updateProgramLabel("Einstellungen");
+                    updateProgramLabel("Systemeinstellungen");
                 });
             }
         });
     </script>
     <!-- Dock -->
     <div id="dock"
-        class="fixed bottom-0 left-0 right-0 flex justify-center bg-white bg-opacity-20 backdrop-blur-md text-white p-4 z-[2000]">
+        class="fixed bottom-0 left-0 right-0 flex justify-center bg-white bg-opacity-20 dark:bg-gray-900 dark:bg-opacity-30 backdrop-blur-md text-white p-4 z-[2000]">
         <div class="group relative flex flex-col items-center cursor-pointer mx-2" onclick="showTab('projects')">
             <span
                 class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50">
                 Sucher
             </span>
             <img src="./img/sucher.png" alt="Sucher Icon" class="w-10 h-10">
+            <span id="projects-indicator"
+                class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
         </div>
         <div class="group relative flex flex-col items-center cursor-pointer mx-2" onclick="showTab('settings')">
             <span
                 class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50">
-                Einstellungen
+                Systemeinstellungen
             </span>
             <img src="./img/settings.png" alt="Settings Icon" class="w-10 h-10">
+            <span id="settings-indicator"
+                class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
         </div>
-    </div>
-
-    <!-- Aktualisiere den zentralen Event-Handler -->
+    </div> <!-- Aktualisiere den zentralen Event-Handler -->
     <script>
         function initEventHandlers() {
             // Elemente definieren
@@ -353,6 +361,7 @@
             const closeProjectsButton = document.getElementById("close-projects-modal");
             const closeAboutButton = document.getElementById("close-about-modal");
             const closeSettingsButton = document.getElementById("close-settings-modal");
+            const settingsButton = document.getElementById("dropdown-settings");
 
             // Profil-Dropdown: Klick auf Profilcontainer schaltet es um und schließt das Programm-Dropdown.
             profileContainer.addEventListener('click', function (event) {
@@ -397,9 +406,24 @@
                 dropdownAbout.addEventListener('click', function (event) {
                     event.preventDefault();
                     event.stopPropagation();
-                    if (profileDropdown) profileDropdown.classList.add('hidden');
-                    document.getElementById('about-modal').classList.remove('hidden');
-                    updateActiveProgramLabel();
+                    if (profileDropdown) {
+                        profileDropdown.classList.add('hidden');
+                        document.getElementById('about-modal').classList.remove('hidden');
+                        updateActiveProgramLabel();
+                    }
+                });
+            }
+
+            // Dropdown "Einstellungen" im Profil-Dropdown:
+            if (settingsButton) {
+                settingsButton.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (profileDropdown) {
+                        profileDropdown.classList.add('hidden');
+                        showTab("settings");
+                        updateActiveProgramLabel();
+                    }
                 });
             }
 
@@ -444,7 +468,7 @@
             // Falls beide offen sind, könnte man hier über den z‑Index entscheiden oder eine Priorität festlegen.
             // Wir nehmen hier an, dass "Über mich" Priorität hat.
             if (aboutOpen) {
-                updateProgramLabel("Über mich");
+                updateProgramLabel("Sucher");
             } else if (projectsOpen) {
                 updateProgramLabel("Sucher");
             } else {
@@ -482,6 +506,7 @@
                     el.classList.remove("hidden");
                 }
             });
+            updateDockIndicators();
             console.log("Restored open modals:", openModals);
         }
 
@@ -559,7 +584,29 @@
             makeDraggable("settings-modal");
         });
 
-        // Beispiel: Wenn du in showTab ein Modal öffnest, rufst du saveOpenModals auf:
+        function updateDockIndicators() {
+            // Für "Projekte"
+            const projectsModal = document.getElementById("projects-modal");
+            const projectsIndicator = document.getElementById("projects-indicator");
+            if (projectsModal && projectsIndicator) {
+                if (!projectsModal.classList.contains("hidden")) {
+                    projectsIndicator.classList.remove("hidden");
+                } else {
+                    projectsIndicator.classList.add("hidden");
+                }
+            }
+            // Für "Einstellungen"
+            const settingsModal = document.getElementById("settings-modal");
+            const settingsIndicator = document.getElementById("settings-indicator");
+            if (settingsModal && settingsIndicator) {
+                if (!settingsModal.classList.contains("hidden")) {
+                    settingsIndicator.classList.remove("hidden");
+                } else {
+                    settingsIndicator.classList.add("hidden");
+                }
+            }
+        }
+
         function showTab(tabName) {
             switch (tabName) {
                 case "projects":
@@ -582,9 +629,9 @@
                     return;
             }
             saveOpenModals();
+            updateDockIndicators();
         }
 
-        // Aktualisiere Close-Button-Eventhandler, sodass nach dem Schließen der Zustand gespeichert wird:
         document.addEventListener("DOMContentLoaded", function () {
             const closeProjectsButton = document.getElementById("close-projects-modal");
             if (closeProjectsButton) {
@@ -592,14 +639,7 @@
                     document.getElementById("projects-modal").classList.add("hidden");
                     updateActiveProgramLabel();
                     saveOpenModals();
-                });
-            }
-            const closeAboutButton = document.getElementById("close-about-modal");
-            if (closeAboutButton) {
-                closeAboutButton.addEventListener("click", function () {
-                    document.getElementById("about-modal").classList.add("hidden");
-                    updateActiveProgramLabel();
-                    saveOpenModals();
+                    updateDockIndicators();
                 });
             }
             const closeSettingsButton = document.getElementById("close-settings-modal");
@@ -608,13 +648,19 @@
                     document.getElementById("settings-modal").classList.add("hidden");
                     updateActiveProgramLabel();
                     saveOpenModals();
+                    updateDockIndicators();
                 });
             }
-
-            // Stelle sicher, dass beim Laden die offenen Fenster wiederhergestellt werden
-            restoreOpenModals();
-        });
-    </script>
+            const closeAboutButton = document.getElementById("close-about-modal");
+            if (closeAboutButton) {
+                closeAboutButton.addEventListener("click", function () {
+                    document.getElementById("about-modal").classList.add("hidden");
+                    updateActiveProgramLabel();
+                    saveOpenModals();
+                    updateDockIndicators();
+                });
+            }
+        });    </script>
 </body>
 
 </html>
