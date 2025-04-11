@@ -33,37 +33,6 @@
                     mich</a>
                 <a href="https://www.linkedin.com/in/marvin-temmen-788537216" rel="noopener" target="_blank"
                     class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">LinkedIn</a>
-                <a href="https://github.com/Marormur" rel="noopener" target="_blank"
-                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">GitHub</a>
-                <script>
-                    document.getElementById('profile-container').addEventListener('click', function (event) {
-                        // Das Programm-Dropdown schließen
-                        document.getElementById('program-dropdown').classList.add('hidden');
-
-                        // Jetzt das Profil-Dropdown umschalten
-                        const profileDropdown = document.getElementById('profile-dropdown');
-                        profileDropdown.classList.toggle('hidden');
-
-                        event.stopPropagation();
-                    });
-                    document.addEventListener('click', function (event) {
-                        const dropdown = document.getElementById('profile-dropdown');
-                        if (!document.getElementById('profile-container').contains(event.target)) {
-                            dropdown.classList.add('hidden');
-                        }
-                    });
-
-                    document.getElementById('dropdown-about').addEventListener('click', function (event) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        // Hide the profile dropdown and open the About modal.
-                        document.getElementById('profile-dropdown').classList.add('hidden');
-                        document.getElementById('about-modal').classList.remove('hidden');
-                        // Set program label to "Über mich"
-                        document.getElementById("program-label").innerText = "Über mich";
-                    });
-
-                </script>
             </div>
         </div>
         <!-- Menüpunkte -->
@@ -71,34 +40,19 @@
             <span id="program-label" class="py-2 px-4 cursor-pointer">Sucher</span>
             <div id="program-dropdown"
                 class="hidden absolute top-full left-0 mt-1 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg">
-                <a href="#" id="dropdown-sucher" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
+                <a href="#" id="about-program" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
                     Sucher</a>
-                <script>
-                    // Klick auf das Programmlabel toggelt das Dropdown
-                    document.getElementById("program-label").addEventListener("click", function (event) {
-                        // Das Profil-Dropdown schließen
-                        document.getElementById("profile-dropdown").classList.add("hidden");
 
-                        // Jetzt das Programm-Dropdown umschalten
-                        const programDropdown = document.getElementById("program-dropdown");
-                        programDropdown.classList.toggle("hidden");
-
-                        event.stopPropagation();
-                    });
-
-                    // Klick außerhalb schließt das Dropdown
-                    document.addEventListener("click", function (event) {
-                        if (!document.getElementById("program-label").contains(event.target)) {
-                            document.getElementById("program-dropdown").classList.add("hidden");
-                        }
-                    });
-                </script>
+                <!-- <a href="#" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Finder</a>
+                <a href="#" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Einstellungen</a>
+                <a href="#" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Abmelden</a> -->
             </div>
         </nav>
     </header>
     <div class="max-w-4xl mx-auto">
         <div id="tab-content" class="p-4">
             <div id="start" class="tab-content">
+                <!-- Desktop Items -->
                 <div id="desktop-icons" class="fixed right-0 top-10 mt-4 flex flex-col gap-4 p-4">
                     <div class="flex flex-col items-center cursor-pointer" onclick="showTab('projects')">
                         <span class="text-5xl">📁</span>
@@ -110,127 +64,12 @@
                     </div> -->
                 </div>
             </div>
-            <div id="about" class="tab-content hidden">
-                <p>Ich bin Marvin und bastle gerne an Software, Computern und coolen Projekten!</p>
-            </div>
-            <div id="contact" class="tab-content hidden">
-                <p>Du findest mich auch auf <a href="https://www.linkedin.com/in/marvin-temmen-788537216" rel="noopener"
-                        target="_blank">LinkedIn</a>.</p>
-            </div>
         </div>
-        <script>
-            function showTab(tabName) {
-                if (tabName === "projects") {
-                    document.getElementById("projects-modal").classList.remove("hidden");
-                    // Update program label to "Finder" when projects modal opens.
-                    document.getElementById("program-label").innerText = "Sucher";
-                    return;
-                }
-                const targetButton = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
-                if (targetButton) {
-                    targetButton.click();
-                    // Für andere Tabs (hier: falls "about" über eine normale Navigation geöffnet wird), 
-                    // könnte man das Label ebenfalls anpassen:
-                    if (tabName === "about") {
-                        document.getElementById("program-label").innerText = "Über mich";
-                    } else {
-                        document.getElementById("program-label").innerText = "Start";
-                    }
-                }
-            }
-            document.addEventListener("DOMContentLoaded", function () {
-                const tabButtons = document.querySelectorAll(".tab-button");
-                const tabContents = document.querySelectorAll(".tab-content");
-                tabButtons.forEach(button => {
-                    button.addEventListener("click", function () {
-                        const tabId = this.getAttribute("data-tab");
-                        // If the Projects tab is clicked, open the modal and return early.
-                        if (tabId === "projects") {
-                            document.getElementById("projects-modal").classList.remove("hidden");
-                            // Optionally, update the styling of the Projects tab if needed.
-                            tabButtons.forEach(btn => btn.classList.remove("text-indigo-700", "font-bold", "border-b-2", "border-indigo-700"));
-                            this.classList.add("text-indigo-700", "font-bold", "border-b-2", "border-indigo-700");
-                            return;
-                        }
-                        // Otherwise, handle tab switching normally.
-                        tabButtons.forEach(btn => btn.classList.remove("text-indigo-700", "font-bold", "border-b-2", "border-indigo-700"));
-                        tabContents.forEach(tab => tab.classList.add("hidden"));
-                        this.classList.add("text-indigo-700", "font-bold", "border-b-2", "border-indigo-700");
-                        document.getElementById(tabId).classList.remove("hidden");
-                    });
-                });
-
-
-            });
-        </script>
-        <!-- Github Repos laden-->
-        <script>
-            const username = "Marormur";
-            const cacheKey = `githubRepos_${username}`;
-            const cacheTimestampKey = `githubReposTimestamp_${username}`;
-            const cacheDuration = 1000 * 60 * 60; // 1 Stunde in Millisekunden
-
-            // Funktion zur Darstellung der Repos aus den Daten:
-            function loadRepos(repos) {
-                const list = document.getElementById("repo-list");
-                // Leere die Liste vor dem Auffüllen
-                list.innerHTML = "";
-                if (Array.isArray(repos)) {
-                    repos.forEach(repo => {
-                        const item = document.createElement("li");
-                        item.innerHTML = `
-                  <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition">
-                    <h3 class="text-xl font-semibold mb-2">
-                      <a href="${repo.html_url}" target="_blank" class="text-blue-600 hover:underline">${repo.name}</a>
-                    </h3>
-                    <p>${repo.description || "Keine Beschreibung"}</p>
-                  </div>
-                `;
-                        list.appendChild(item);
-                    });
-                } else {
-                    console.error("Unerwartetes API-Response-Format:", repos);
-                }
-            }
-
-            // Funktion, um Repos aus der API zu holen und zu cachen:
-            function fetchRepos() {
-                fetch(`https://api.github.com/users/${username}/repos`)
-                    .then(res => res.json())
-                    .then(repos => {
-                        // Speichere die Daten und den Zeitstempel in localStorage.
-                        localStorage.setItem(cacheKey, JSON.stringify(repos));
-                        localStorage.setItem(cacheTimestampKey, Date.now().toString());
-                        loadRepos(repos);
-                    })
-                    .catch(err => {
-                        console.error("Fehler beim Laden der Repos:", err);
-                    });
-            }
-
-            document.addEventListener("DOMContentLoaded", function () {
-                const cachedRepos = localStorage.getItem(cacheKey);
-                const cachedTimestamp = localStorage.getItem(cacheTimestampKey);
-                if (cachedRepos && cachedTimestamp) {
-                    const age = Date.now() - parseInt(cachedTimestamp, 10);
-                    if (age < cacheDuration) {
-                        // Nutze den Cache, wenn er nicht älter als eine Stunde ist.
-                        const repos = JSON.parse(cachedRepos);
-                        loadRepos(repos);
-                        return;
-                    }
-                }
-                // Andernfalls neu laden.
-                fetchRepos();
-            });
-        </script>
     </div>
     <!-- Projekte -->
-    <div id="projects-modal" class="fixed inset-0 flex items-center justify-center hidden"
-        style="pointer-events: none;">
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-4xl"
-            style="pointer-events: auto;">
-            <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg">
+    <div id="projects-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-xl autopointer">
+            <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" id="close-projects-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
@@ -243,22 +82,76 @@
             </div>
             <div class="p-4">
                 <ul id="repo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></ul>
+                <!-- Github Repos laden-->
+                <script>
+                    const username = "Marormur";
+                    const cacheKey = `githubRepos_${username}`;
+                    const cacheTimestampKey = `githubReposTimestamp_${username}`;
+                    const cacheDuration = 1000 * 60 * 60; // 1 Stunde in Millisekunden
+
+                    // Funktion zur Darstellung der Repos aus den Daten:
+                    function loadRepos(repos) {
+                        const list = document.getElementById("repo-list");
+                        // Leere die Liste vor dem Auffüllen
+                        list.innerHTML = "";
+                        if (Array.isArray(repos)) {
+                            repos.forEach(repo => {
+                                const item = document.createElement("li");
+                                item.innerHTML = `
+                                          <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition">
+                                            <h3 class="text-xl font-semibold mb-2">
+                                              <a href="${repo.html_url}" target="_blank" class="text-blue-600 hover:underline">${repo.name}</a>
+                                            </h3>
+                                            <p>${repo.description || "Keine Beschreibung"}</p>
+                                          </div>
+                                        `;
+                                list.appendChild(item);
+                            });
+                        } else {
+                            console.error("Unerwartetes API-Response-Format:", repos);
+                        }
+                    }
+
+                    // Funktion, um Repos aus der API zu holen und zu cachen:
+                    function fetchRepos() {
+                        fetch(`https://api.github.com/users/${username}/repos`)
+                            .then(res => res.json())
+                            .then(repos => {
+                                // Speichere die Daten und den Zeitstempel in localStorage.
+                                localStorage.setItem(cacheKey, JSON.stringify(repos));
+                                localStorage.setItem(cacheTimestampKey, Date.now().toString());
+                                loadRepos(repos);
+                            })
+                            .catch(err => {
+                                console.error("Fehler beim Laden der Repos:", err);
+                            });
+                    }
+
+                    document.addEventListener("DOMContentLoaded", function () {
+                        const cachedRepos = localStorage.getItem(cacheKey);
+                        const cachedTimestamp = localStorage.getItem(cacheTimestampKey);
+                        if (cachedRepos && cachedTimestamp) {
+                            const age = Date.now() - parseInt(cachedTimestamp, 10);
+                            if (age < cacheDuration) {
+                                // Nutze den Cache, wenn er nicht älter als eine Stunde ist.
+                                const repos = JSON.parse(cachedRepos);
+                                loadRepos(repos);
+                                return;
+                            }
+                        }
+                        // Andernfalls neu laden.
+                        fetchRepos();
+                    });
+                </script>
+
             </div>
         </div>
-        <script>
-            // Projects modal close: setzt zusätzlich das Programmlabel auf "Sucher"
-            document.getElementById("close-projects-modal").addEventListener("click", function () {
-                document.getElementById("projects-modal").classList.add("hidden");
-                document.getElementById("program-label").innerText = "Sucher";
-            });
 
-        </script>
     </div>
     <!-- Über mich -->
-    <div id="about-modal" class="fixed inset-0 flex items-center justify-center hidden" style="pointer-events: none;">
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-auto max-w-xl"
-            style="pointer-events: auto;">
-            <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg">
+    <div id="about-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-auto max-w-xl autopointer">
+            <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" id="close-about-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
@@ -298,15 +191,45 @@
                 </div>
             </div>
         </div>
-        <!-- Update der Close-Buttons für die Modale -->
-        <script>
-            // About modal close: setzt ebenfalls das Programmlabel auf "Sucher"
-            document.getElementById('close-about-modal').addEventListener('click', function () {
-                document.getElementById('about-modal').classList.add('hidden');
-                document.getElementById("program-label").innerText = "Sucher";
-            });
-        </script>
     </div>
+    <!-- Drag & Drop Script -->
+    <script>
+        function makeDraggable(modalId) {
+            const modal = document.getElementById(modalId);
+            const header = modal.querySelector('.draggable-header');
+            if (!header) return;
+
+            header.style.cursor = 'move';
+            let offsetX = 0, offsetY = 0;
+
+            header.addEventListener('mousedown', function (e) {
+                // Berechne die Differenz zwischen Mausposition und Elementposition.
+                offsetX = e.clientX - modal.getBoundingClientRect().left;
+                offsetY = e.clientY - modal.getBoundingClientRect().top;
+                // Stelle die Positionierung auf absolut, damit das Element frei bewegbar ist.
+                modal.style.position = 'absolute';
+
+                function mouseMoveHandler(e) {
+                    modal.style.left = (e.clientX - offsetX) + 'px';
+                    modal.style.top = (e.clientY - offsetY) + 'px';
+                }
+
+                function mouseUpHandler(e) {
+                    document.removeEventListener('mousemove', mouseMoveHandler);
+                    document.removeEventListener('mouseup', mouseUpHandler);
+                }
+
+                document.addEventListener('mousemove', mouseMoveHandler);
+                document.addEventListener('mouseup', mouseUpHandler);
+                e.preventDefault();
+            });
+        }
+        document.addEventListener("DOMContentLoaded", function () {
+            makeDraggable("projects-modal");
+            makeDraggable("about-modal");
+        });
+    </script>
+    <!-- Fenster wechseln -->
     <script>
         // Wir starten mit einer hohen z-Index-Zahl.
         let topZIndex = 1000;
@@ -323,7 +246,7 @@
             if (projectsDialog) {
                 projectsDialog.addEventListener("click", function (e) {
                     bringToFront("projects-modal");
-                    document.getElementById("program-label").innerText = "Sucher";
+                    updateProgramLabel("Sucher");
                 });
             }
 
@@ -332,10 +255,123 @@
             if (aboutDialog) {
                 aboutDialog.addEventListener("click", function (e) {
                     bringToFront("about-modal");
-                    document.getElementById("program-label").innerText = "Über mich";
+                    updateProgramLabel("Über mich");
                 });
             }
         });
+    </script>
+    <!-- Dock -->
+    <div id="dock"
+        class="fixed bottom-0 left-0 right-0 flex justify-center bg-white bg-opacity-20 backdrop-blur-md text-white p-4">
+        <div class="flex flex-col items-center cursor-pointer mx-2" onclick="showTab('projects')">
+            <img src="./img/sucher.png" alt="Sucher Icon" class="w-10 h-10">
+        </div>
+    </div>
+    <!-- Neuer zentraler Handler für den Program-Menütext einfügen -->
+    <script>
+        // Neue Funktion zum zentralen Aktualisieren des Program-Menütexts.
+        function updateProgramLabel(newLabel) {
+            const programLabel = document.getElementById("program-label");
+            if (programLabel) {
+                programLabel.innerText = newLabel;
+            }
+        }
+    </script>
+
+    <!-- Aktualisiere die showTab-Funktion -->
+    <script>
+        function showTab(tabName) {
+            if (tabName === "projects") {
+                document.getElementById("projects-modal").classList.remove("hidden");
+                // Update program label via Handler.
+                updateProgramLabel("Sucher");
+                return;
+            }
+            const targetButton = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
+            if (targetButton) {
+                targetButton.click();
+                // Für andere Tabs, passe das Label an:
+                if (tabName === "about") {
+                    updateProgramLabel("Über mich");
+                } else {
+                    updateProgramLabel("Start");
+                }
+            }
+        }
+    </script>
+
+    <!-- Aktualisiere den zentralen Event-Handler -->
+    <script>
+        function initEventHandlers() {
+            // Elemente definieren
+            const profileContainer = document.getElementById('profile-container');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            const programDropdown = document.getElementById('program-dropdown');
+            const programLabel = document.getElementById('program-label');
+            const dropdownAbout = document.getElementById('dropdown-about');
+            const closeProjectsButton = document.getElementById("close-projects-modal");
+            const closeAboutButton = document.getElementById("close-about-modal");
+
+            // Profil-Dropdown: Klick auf Profilcontainer schaltet es um und schließt das Programm-Dropdown.
+            profileContainer.addEventListener('click', function (event) {
+                // Schließe Programmdropdown
+                if (programDropdown) {
+                    programDropdown.classList.add('hidden');
+                }
+                // Toggle Profil-Dropdown
+                if (profileDropdown) {
+                    profileDropdown.classList.toggle('hidden');
+                }
+                event.stopPropagation();
+            });
+
+            // Programmlabel: Klick schaltet das Programm-Dropdown um und schließt das Profil-Dropdown.
+            programLabel.addEventListener('click', function (event) {
+                // Schließe Profil-Dropdown
+                if (profileDropdown) {
+                    profileDropdown.classList.add('hidden');
+                }
+                // Toggle Programmdropdown
+                if (programDropdown) {
+                    programDropdown.classList.toggle('hidden');
+                }
+                event.stopPropagation();
+            });
+
+            // Klick außerhalb schließt beide Dropdowns.
+            document.addEventListener('click', function (event) {
+                if (profileDropdown) profileDropdown.classList.add('hidden');
+                if (programDropdown) programDropdown.classList.add('hidden');
+            });
+
+            // Dropdown "Über mich" im Profil-Dropdown:
+            if (dropdownAbout) {
+                dropdownAbout.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (profileDropdown) profileDropdown.classList.add('hidden');
+                    document.getElementById('about-modal').classList.remove('hidden');
+                    updateProgramLabel("Über mich");
+                });
+            }
+
+            // Modal-Schließen: Projekte
+            if (closeProjectsButton) {
+                closeProjectsButton.addEventListener("click", function () {
+                    document.getElementById("projects-modal").classList.add("hidden");
+                    updateProgramLabel("Sucher");
+                });
+            }
+            // Modal-Schließen: Über mich
+            if (closeAboutButton) {
+                closeAboutButton.addEventListener("click", function () {
+                    document.getElementById("about-modal").classList.add("hidden");
+                    updateProgramLabel("Sucher");
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initEventHandlers);
     </script>
 </body>
 
