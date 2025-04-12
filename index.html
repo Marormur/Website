@@ -7,19 +7,17 @@
     <title>Marvin</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Unser zentrales Script -->
+    <script src="app.js"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'media',
-        };
-    </script>
-    <script>
+        tailwind.config = { darkMode: 'media' };
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
         }
     </script>
 </head>
 
-<body class="m-0 bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
+<body class="m-0 text-gray-900 dark:text-gray-100 transition-colors duration-300">
     <!-- Header -->
     <header
         class="w-full flex items-center gap-4 px-4 py-2 bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-gray-800 dark:to-gray-900 bg-opacity-70 dark:bg-opacity-80 text-white shadow">
@@ -28,7 +26,7 @@
             <img src="./img/profil.jpg" alt="Profilbild von Marvin"
                 class="w-10 h-10 object-cover rounded-full border-2 border-white cursor-pointer">
             <div id="profile-dropdown"
-                class="hidden absolute left-0 mt-2 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg">
+                class="hidden absolute left-0 mt-2 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg z-[10000]">
                 <a href="#" id="dropdown-about" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
                     Marvin</a>
                 <a href="#" id="dropdown-settings"
@@ -41,34 +39,20 @@
         <nav class="flex space-x-4 items-center relative">
             <span id="program-label" class="py-2 px-4 cursor-pointer">Sucher</span>
             <div id="program-dropdown"
-                class="hidden absolute top-full left-0 mt-1 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg">
+                class="hidden absolute top-full left-0 mt-1 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg z-[10000]">
                 <a href="#" id="about-program" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
                     Sucher</a>
-
-                <!-- <a href="#" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Finder</a>
-                <a href="#" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Einstellungen</a>
-                <a href="#" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Abmelden</a> -->
             </div>
         </nav>
     </header>
-    <div class="max-w-4xl mx-auto">
-        <div id="tab-content" class="p-4">
-            <div id="start" class="tab-content">
-                <!-- Desktop Items -->
-                <div id="desktop-icons" class="fixed right-0 top-10 mt-4 flex flex-col gap-4 p-4">
-                    <div class="flex flex-col items-center cursor-pointer" onclick="showTab('projects')">
-                        <span class="text-5xl">📁</span>
-                        <span class="mt-2 text-lg font-semibold">Projekte</span>
-                    </div>
-                    <!-- <div class="flex flex-col items-center cursor-pointer" onclick="showTab('contact')">
-                        <span class="text-5xl">📞</span>
-                        <span class="mt-2 text-lg font-semibold">Kontakt</span>
-                    </div> -->
-                </div>
-            </div>
+    <!-- Desktop Items -->
+    <div id="desktop-icons" class="fixed right-0 top-10 mt-4 flex flex-col gap-4 p-4">
+        <div class="flex flex-col items-center cursor-pointer" onclick="showTab('projects')">
+            <span class="text-5xl">📁</span>
+            <span class="mt-2 text-lg font-semibold">Projekte</span>
         </div>
     </div>
-    <!-- Projekte -->
+    <!-- Projekte Modal -->
     <div id="projects-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-xl autopointer">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
@@ -84,73 +68,10 @@
             </div>
             <div class="p-4">
                 <ul id="repo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></ul>
-                <!-- Github Repos laden-->
-                <script>
-                    const username = "Marormur";
-                    const cacheKey = `githubRepos_${username}`;
-                    const cacheTimestampKey = `githubReposTimestamp_${username}`;
-                    const cacheDuration = 1000 * 60 * 60; // 1 Stunde in Millisekunden
-
-                    // Funktion zur Darstellung der Repos aus den Daten:
-                    function loadRepos(repos) {
-                        const list = document.getElementById("repo-list");
-                        // Leere die Liste vor dem Auffüllen
-                        list.innerHTML = "";
-                        if (Array.isArray(repos)) {
-                            repos.forEach(repo => {
-                                const item = document.createElement("li");
-                                item.innerHTML = `
-                                          <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition">
-                                            <h3 class="text-xl font-semibold mb-2">
-                                              <a href="${repo.html_url}" target="_blank" class="text-blue-600 hover:underline">${repo.name}</a>
-                                            </h3>
-                                            <p>${repo.description || "Keine Beschreibung"}</p>
-                                          </div>
-                                        `;
-                                list.appendChild(item);
-                            });
-                        } else {
-                            console.error("Unerwartetes API-Response-Format:", repos);
-                        }
-                    }
-
-                    // Funktion, um Repos aus der API zu holen und zu cachen:
-                    function fetchRepos() {
-                        fetch(`https://api.github.com/users/${username}/repos`)
-                            .then(res => res.json())
-                            .then(repos => {
-                                // Speichere die Daten und den Zeitstempel in localStorage.
-                                localStorage.setItem(cacheKey, JSON.stringify(repos));
-                                localStorage.setItem(cacheTimestampKey, Date.now().toString());
-                                loadRepos(repos);
-                            })
-                            .catch(err => {
-                                console.error("Fehler beim Laden der Repos:", err);
-                            });
-                    }
-
-                    document.addEventListener("DOMContentLoaded", function () {
-                        const cachedRepos = localStorage.getItem(cacheKey);
-                        const cachedTimestamp = localStorage.getItem(cacheTimestampKey);
-                        if (cachedRepos && cachedTimestamp) {
-                            const age = Date.now() - parseInt(cachedTimestamp, 10);
-                            if (age < cacheDuration) {
-                                // Nutze den Cache, wenn er nicht älter als eine Stunde ist.
-                                const repos = JSON.parse(cachedRepos);
-                                loadRepos(repos);
-                                return;
-                            }
-                        }
-                        // Andernfalls neu laden.
-                        fetchRepos();
-                    });
-                </script>
-
             </div>
         </div>
-
     </div>
-    <!-- Über mich -->
+    <!-- Über mich Modal -->
     <div id="about-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-auto max-w-xl autopointer">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
@@ -164,29 +85,18 @@
                 </div>
                 <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300">Über Marvin</h2>
             </div>
-            <!-- Mittelteil mit Bild, Titel, Infos -->
             <div class="flex flex-col items-center text-gray-700 dark:text-gray-200 mt-8">
-                <!-- Titelbild -->
-                <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-4 ">
-
-                <!-- Überschrift -->
+                <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-4">
                 <h2 class="text-xl font-semibold">Marvin Temmen</h2>
                 <p class="text-sm">März 1999</p>
-
-                <!-- Auflistung zentraler Infos -->
                 <div class="mt-4 space-y-1 text-sm">
-                    <p><strong>Name:</strong> Marvin T.</p>
                     <p><strong>Wohnort:</strong> Deutschland</p>
-                    <!-- <p><strong>Hobbys:</strong> Computer, Schach, u.v.m.</p> -->
                     <p><strong>Beruf:</strong> .NET-Entwickler</p>
                 </div>
-
-                <!-- Mehr-Infos-Button -->
-                <button class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                <button class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                    onclick="showTab('settings')">
                     Mehr Infos …
                 </button>
-
-                <!-- Fußzeile -->
                 <div
                     class="mt-6 text-xs text-center text-gray-500 dark:text-gray-400 border-t border-gray-300 dark:border-gray-700 pt-2">
                     © 2025 Marvin T. — Alle Rechte vorbehalten.
@@ -194,12 +104,11 @@
             </div>
         </div>
     </div>
-    <!-- Einstellungen (settings-modal) -->
+    <!-- Einstellungen Modal -->
     <div id="settings-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
         <div
-            class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-3xl autopointer draggable-header relative">
-            <!-- Header (macOS-Knöpfe) -->
-            <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700">
+            class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-3xl autopointer  relative">
+            <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" id="close-settings-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
@@ -210,42 +119,23 @@
                 </div>
                 <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300">Systemeinstellungen</h2>
             </div>
-
-            <!-- Inhalt - zweispaltiges Layout -->
             <div class="flex h-[500px]">
                 <!-- Linke Seitenleiste -->
                 <div class="w-48 bg-gray-100 dark:bg-gray-700 p-4 space-y-1">
-                    <!-- Jeder Menüpunkt führt zu einem anderen Bereich rechts -->
                     <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                         onclick="showSettingsSection('general')">
                         Allgemein
                     </div>
-                    <!-- <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-                        onclick="showSettingsSection('about')">
-                        Über Marvin
-                    </div>
-                    <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-                        onclick="showSettingsSection('network')">
-                        Netzwerk
-                    </div>
-                    <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-                        onclick="showSettingsSection('battery')">
-                        Akku
-                    </div> -->
+                    <!-- Weitere Menüpunkte können hier ergänzt werden -->
                 </div>
-
                 <!-- Rechte Hauptansicht -->
                 <div class="flex-1 p-6 overflow-auto text-gray-800 dark:text-gray-200">
                     <!-- Sektion: Allgemein -->
                     <div id="settings-general" class="">
                         <div class="flex flex-col items-center text-gray-700 dark:text-gray-200 mt-8">
-                            <!-- Titelbild -->
-                            <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-4 ">
-
-                            <!-- Überschrift -->
+                            <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-4">
                             <h2 class="text-xl font-semibold">Marvin Temmen</h2>
                             <p class="text-sm">März 1999</p>
-
                             <div class="bg-white dark:bg-gray-700 rounded-lg p-4 grid grid-cols-2 gap-y-2 gap-x-4">
                                 <div class="text-gray-600 dark:text-gray-300">Wohnort</div>
                                 <div class="text-gray-800 dark:text-gray-100">Deutschland</div>
@@ -254,80 +144,17 @@
                                 <div class="text-gray-600 dark:text-gray-300">Beruf</div>
                                 <div class="text-gray-800 dark:text-gray-100">Softwareentwickler</div>
                             </div>
-
-                            <!-- Fußzeile -->
                             <div
                                 class="mt-6 text-xs text-center text-gray-500 dark:text-gray-400 border-t border-gray-300 dark:border-gray-700 pt-2">
                                 © 2025 Marvin T. — Alle Rechte vorbehalten.
                             </div>
                         </div>
                     </div>
-
-                    <!-- Sektion: Über Marvin -->
-                    <div id="settings-about" class="hidden">
-                        <h3 class="text-xl font-semibold mb-2 dark:text-gray-100">Über Marvin</h3>
-                        <ul class="list-disc list-inside mt-2">
-                            <li><strong>Name:</strong> Marvin T.</li>
-                            <li><strong>Chip:</strong> Apple M3 Pro</li>
-                            <li><strong>Speicher:</strong> 18 GB</li>
-                            <li><strong>macOS:</strong> Sequoia 15.4</li>
-                        </ul>
-                    </div>
-
-                    <!-- Sektion: Netzwerk -->
-                    <div id="settings-network" class="hidden">
-                        <h3 class="text-xl font-semibold mb-2 dark:text-gray-100">Netzwerk</h3>
-                        <p>Infos zum Netzwerk, Wi-Fi, Ethernet etc.</p>
-                    </div>
-
-                    <!-- Sektion: Akku -->
-                    <div id="settings-battery" class="hidden">
-                        <h3 class="text-xl font-semibold mb-2 dark:text-gray-100">Akku</h3>
-                        <p>Hier kannst du Batterie-Infos anzeigen, z. B. Ladezustand oder Ladezyklen.</p>
-                    </div>
+                    <!-- Weitere Sektionen (Über Marvin, Netzwerk, Akku) können hier ergänzt werden -->
                 </div>
             </div>
         </div>
     </div>
-    <!-- Fenster wechseln -->
-    <script>
-        // Wir starten mit einer hohen z-Index-Zahl.
-        let topZIndex = 1000;
-
-        // Diese Funktion erhöht den z-Index des angegebenen Modals und bringt es in den Vordergrund.
-        function bringToFront(modalId) {
-            topZIndex++;
-            document.getElementById(modalId).style.zIndex = topZIndex;
-        }
-
-        document.addEventListener("DOMContentLoaded", function () {
-            // Füge einen Klick-Listener zum inneren Container (Dialog) des Projekte-Modals hinzu.
-            const projectsDialog = document.querySelector("#projects-modal > div");
-            if (projectsDialog) {
-                projectsDialog.addEventListener("click", function (e) {
-                    bringToFront("projects-modal");
-                    updateProgramLabel("Sucher");
-                });
-            }
-
-            // Füge einen Klick-Listener zum inneren Container (Dialog) des Über-mich-Modals hinzu.
-            const aboutDialog = document.querySelector("#about-modal > div");
-            if (aboutDialog) {
-                aboutDialog.addEventListener("click", function (e) {
-                    bringToFront("about-modal");
-                    updateProgramLabel("Sucher");
-                });
-            }
-
-            const settingsDialog = document.querySelector("#settings-modal > div");
-            if (settingsDialog) {
-                settingsDialog.addEventListener("click", function (e) {
-                    bringToFront("settings-modal");
-                    updateProgramLabel("Systemeinstellungen");
-                });
-            }
-        });
-    </script>
     <!-- Dock -->
     <div id="dock"
         class="fixed bottom-0 left-0 right-0 flex justify-center bg-white bg-opacity-20 dark:bg-gray-900 dark:bg-opacity-30 backdrop-blur-md text-white p-4 z-[2000]">
@@ -349,262 +176,12 @@
             <span id="settings-indicator"
                 class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
         </div>
-    </div> <!-- Aktualisiere den zentralen Event-Handler -->
+    </div>
     <script>
-        function initEventHandlers() {
-            // Elemente definieren
-            const profileContainer = document.getElementById('profile-container');
-            const profileDropdown = document.getElementById('profile-dropdown');
-            const programDropdown = document.getElementById('program-dropdown');
-            const programLabel = document.getElementById('program-label');
-            const dropdownAbout = document.getElementById('dropdown-about');
-            const closeProjectsButton = document.getElementById("close-projects-modal");
-            const closeAboutButton = document.getElementById("close-about-modal");
-            const closeSettingsButton = document.getElementById("close-settings-modal");
-            const settingsButton = document.getElementById("dropdown-settings");
-
-            // Profil-Dropdown: Klick auf Profilcontainer schaltet es um und schließt das Programm-Dropdown.
-            profileContainer.addEventListener('click', function (event) {
-                // Schließe Programmdropdown
-                if (programDropdown) {
-                    programDropdown.classList.add('hidden');
-                }
-                // Toggle Profil-Dropdown
-                if (profileDropdown) {
-                    profileDropdown.classList.toggle('hidden');
-                }
-                event.stopPropagation();
-            });
-
-            // Programmlabel: Klick schaltet das Programm-Dropdown um und schließt das Profil-Dropdown.
-            programLabel.addEventListener('click', function (event) {
-                event.stopImmediatePropagation();
-                event.stopPropagation();
-                console.log("Program label clicked");
-                // Schließe Profil-Dropdown
-                if (profileDropdown) {
-                    profileDropdown.classList.add('hidden');
-                }
-                // Toggle Programmdropdown
-                if (programDropdown) {
-                    if (programDropdown.classList.contains('hidden')) {
-                        programDropdown.classList.remove('hidden');
-                    } else {
-                        programDropdown.classList.add('hidden');
-                    }
-                }
-            });
-
-            // Klick außerhalb schließt beide Dropdowns.
-            document.addEventListener('click', function (event) {
-                if (profileDropdown) profileDropdown.classList.add('hidden');
-                if (programDropdown) programDropdown.classList.add('hidden');
-            });
-
-            // Dropdown "Über mich" im Profil-Dropdown:
-            if (dropdownAbout) {
-                dropdownAbout.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (profileDropdown) {
-                        profileDropdown.classList.add('hidden');
-                        document.getElementById('about-modal').classList.remove('hidden');
-                        updateActiveProgramLabel();
-                    }
-                });
-            }
-
-            // Dropdown "Einstellungen" im Profil-Dropdown:
-            if (settingsButton) {
-                settingsButton.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (profileDropdown) {
-                        profileDropdown.classList.add('hidden');
-                        showTab("settings");
-                        updateActiveProgramLabel();
-                    }
-                });
-            }
-
-            // Modal-Schließen: Projekte
-            if (closeProjectsButton) {
-                closeProjectsButton.addEventListener("click", function () {
-                    document.getElementById("projects-modal").classList.add("hidden");
-                    updateActiveProgramLabel();
-                });
-            }
-            // Modal-Schließen: Über mich
-            if (closeAboutButton) {
-                closeAboutButton.addEventListener("click", function () {
-                    document.getElementById("about-modal").classList.add("hidden");
-                    updateActiveProgramLabel();
-                });
-            }
-            // Modal-Schließen: Einstellungen
-            if (closeSettingsButton) {
-                closeSettingsButton.addEventListener("click", function () {
-                    document.getElementById("settings-modal").classList.add("hidden");
-                    updateActiveProgramLabel();
-                });
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', initEventHandlers);
-
-        function updateProgramLabel(newLabel) {
-            const programLabel = document.getElementById("program-label");
-            if (programLabel) {
-                programLabel.innerText = newLabel;
-            }
-        }
-
-        function updateActiveProgramLabel() {
-            const projectsModal = document.getElementById("projects-modal");
-            const aboutModal = document.getElementById("about-modal");
-            const projectsOpen = !projectsModal.classList.contains("hidden");
-            const aboutOpen = !aboutModal.classList.contains("hidden");
-
-            // Falls beide offen sind, könnte man hier über den z‑Index entscheiden oder eine Priorität festlegen.
-            // Wir nehmen hier an, dass "Über mich" Priorität hat.
-            if (aboutOpen) {
-                updateProgramLabel("Sucher");
-            } else if (projectsOpen) {
-                updateProgramLabel("Sucher");
-            } else {
-                updateProgramLabel("Sucher");
-            }
-        }
-
         function showSettingsSection(section) {
             const allSections = ["settings-general", "settings-about", "settings-network", "settings-battery"];
-            allSections.forEach(id => {
-                document.getElementById(id).classList.add("hidden");
-            });
+            allSections.forEach(id => { document.getElementById(id).classList.add("hidden"); });
             document.getElementById(`settings-${section}`).classList.remove("hidden");
-        }
-
-        // Legt fest, welche Modale verwaltet werden sollen.
-        const modalIds = ["projects-modal", "about-modal", "settings-modal"];
-
-        // Speichert den Zustand der offenen Modale in localStorage.
-        function saveOpenModals() {
-            const openModals = modalIds.filter(id => {
-                const el = document.getElementById(id);
-                return el && !el.classList.contains("hidden");
-            });
-            localStorage.setItem("openModals", JSON.stringify(openModals));
-            console.log("Open modals saved:", openModals);
-        }
-
-        // Stellt beim Laden offene Modale wieder her.
-        function restoreOpenModals() {
-            const openModals = JSON.parse(localStorage.getItem("openModals") || "[]");
-            openModals.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.classList.remove("hidden");
-                }
-            });
-            updateDockIndicators();
-            console.log("Restored open modals:", openModals);
-        }
-
-        // Speichert die Position der Modale (left und top) im localStorage.
-        function saveWindowPositions() {
-            const positions = {};
-            modalIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    positions[id] = {
-                        left: el.style.left || "",
-                        top: el.style.top || ""
-                    };
-                }
-            });
-            localStorage.setItem("modalPositions", JSON.stringify(positions));
-            console.log("Fensterpositionen gespeichert:", positions);
-        }
-
-        // Stellt beim Laden die Position der Modale wieder her.
-        function restoreWindowPositions() {
-            const positions = JSON.parse(localStorage.getItem("modalPositions") || "{}");
-            Object.keys(positions).forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.style.left = positions[id].left;
-                    el.style.top = positions[id].top;
-                }
-            });
-            console.log("Fensterpositionen wiederhergestellt:", positions);
-        }
-
-        document.addEventListener("DOMContentLoaded", function () {
-            restoreOpenModals(); // Vorhandene offene Fenster wiederherstellen
-            restoreWindowPositions(); // Fensterpositionen wiederherstellen
-        });
-
-        // In deinem Drag & Drop-Skript: Nach Beendigung des Drag-Vorgangs speichern wir die neue Position.
-        function makeDraggable(modalId) {
-            const modal = document.getElementById(modalId);
-            const header = modal.querySelector('.draggable-header');
-            if (!header) return;
-
-            header.style.cursor = 'move';
-            let offsetX = 0, offsetY = 0;
-
-            header.addEventListener('mousedown', function (e) {
-                offsetX = e.clientX - modal.getBoundingClientRect().left;
-                offsetY = e.clientY - modal.getBoundingClientRect().top;
-                modal.style.position = 'absolute';
-
-                function mouseMoveHandler(e) {
-                    window.requestAnimationFrame(() => {
-                        modal.style.left = (e.clientX - offsetX) + 'px';
-                        modal.style.top = (e.clientY - offsetY) + 'px';
-                    });
-                }
-
-                function mouseUpHandler(e) {
-                    document.removeEventListener('mousemove', mouseMoveHandler);
-                    document.removeEventListener('mouseup', mouseUpHandler);
-                    // Speichere die neuen Positionen, sobald der Drag beendet ist.
-                    saveWindowPositions();
-                }
-
-                document.addEventListener('mousemove', mouseMoveHandler);
-                document.addEventListener('mouseup', mouseUpHandler);
-                e.preventDefault();
-            });
-        }
-
-        document.addEventListener("DOMContentLoaded", function () {
-            makeDraggable("projects-modal");
-            makeDraggable("about-modal");
-            makeDraggable("settings-modal");
-        });
-
-        function updateDockIndicators() {
-            // Für "Projekte"
-            const projectsModal = document.getElementById("projects-modal");
-            const projectsIndicator = document.getElementById("projects-indicator");
-            if (projectsModal && projectsIndicator) {
-                if (!projectsModal.classList.contains("hidden")) {
-                    projectsIndicator.classList.remove("hidden");
-                } else {
-                    projectsIndicator.classList.add("hidden");
-                }
-            }
-            // Für "Einstellungen"
-            const settingsModal = document.getElementById("settings-modal");
-            const settingsIndicator = document.getElementById("settings-indicator");
-            if (settingsModal && settingsIndicator) {
-                if (!settingsModal.classList.contains("hidden")) {
-                    settingsIndicator.classList.remove("hidden");
-                } else {
-                    settingsIndicator.classList.add("hidden");
-                }
-            }
         }
 
         function showTab(tabName) {
@@ -612,23 +189,21 @@
                 case "projects":
                     document.getElementById("projects-modal").classList.remove("hidden");
                     bringToFront("projects-modal");
-                    updateActiveProgramLabel();
                     break;
                 case "settings":
                     document.getElementById("settings-modal").classList.remove("hidden");
                     bringToFront("settings-modal");
-                    updateActiveProgramLabel();
                     break;
                 case "about":
                     document.getElementById("about-modal").classList.remove("hidden");
                     bringToFront("about-modal");
-                    updateActiveProgramLabel();
                     break;
                 default:
                     console.error("Unbekannter Tab:", tabName);
                     return;
             }
             saveOpenModals();
+            updateProgramLabelByTopModal();
             updateDockIndicators();
         }
 
@@ -637,30 +212,31 @@
             if (closeProjectsButton) {
                 closeProjectsButton.addEventListener("click", function () {
                     document.getElementById("projects-modal").classList.add("hidden");
-                    updateActiveProgramLabel();
                     saveOpenModals();
                     updateDockIndicators();
+                    updateProgramLabelByTopModal();
                 });
             }
             const closeSettingsButton = document.getElementById("close-settings-modal");
             if (closeSettingsButton) {
                 closeSettingsButton.addEventListener("click", function () {
                     document.getElementById("settings-modal").classList.add("hidden");
-                    updateActiveProgramLabel();
                     saveOpenModals();
                     updateDockIndicators();
+                    updateProgramLabelByTopModal();
                 });
             }
             const closeAboutButton = document.getElementById("close-about-modal");
             if (closeAboutButton) {
                 closeAboutButton.addEventListener("click", function () {
                     document.getElementById("about-modal").classList.add("hidden");
-                    updateActiveProgramLabel();
                     saveOpenModals();
                     updateDockIndicators();
+                    updateProgramLabelByTopModal();
                 });
             }
-        });    </script>
+        });
+    </script>
 </body>
 
 </html>

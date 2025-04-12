@@ -1,9 +1,19 @@
+:root {
+    --primary-bg: #fafafa;
+    --primary-text: #222;
+}
+
+.dark {
+    --primary-bg: #1a202c;
+    --primary-text: #e2e8f0;
+}
+
 body {
     font-family: system-ui, sans-serif;
-    background: url("./img/wallpaper.png") no-repeat center center fixed;
-    background-size: cover;
-    color: #222;
-    margin: auto;
+    background: url("./img/wallpaper.png") no-repeat center center fixed !important;
+    background-size: cover !important;
+    margin: 0;
+    min-height: 100vh;
 }
 
 h1 {
@@ -19,7 +29,6 @@ section {
 .modal {
     pointer-events: none;
 }
-
 
 .autopointer {
     pointer-events: auto;
