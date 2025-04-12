@@ -9,22 +9,16 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Unser zentrales Script -->
     <script src="app.js"></script>
-    <script>
-        tailwind.config = { darkMode: 'media' };
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-    </script>
 </head>
 
 <body class="m-0 text-gray-900 dark:text-gray-100 transition-colors duration-300">
     <!-- Header -->
     <header
-        class="w-full flex items-center gap-4 px-4 py-2 bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-gray-800 dark:to-gray-900 bg-opacity-70 dark:bg-opacity-80 text-white shadow">
+        class="w-full flex items-center gap-4 px-4 py-2 bg-white bg-opacity-70 dark:bg-gray-900 dark:bg-opacity-30 backdrop-blur-md text-white shadow z-[2000]">
         <!-- Profilicon -->
         <div class="relative" id="profile-container">
             <img src="./img/profil.jpg" alt="Profilbild von Marvin"
-                class="w-10 h-10 object-cover rounded-full border-2 border-white cursor-pointer">
+                class="w-10 h-10 object-cover rounded-full border-2 border-white cursor-pointer no-select">
             <div id="profile-dropdown"
                 class="hidden absolute left-0 mt-2 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg z-[10000]">
                 <a href="#" id="dropdown-about" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
@@ -37,13 +31,16 @@
         </div>
         <!-- Menüpunkte -->
         <nav class="flex space-x-4 items-center relative">
-            <span id="program-label" class="py-2 px-4 cursor-pointer">Sucher</span>
+            <span id="program-label"
+                class="py-2 px-4 cursor-pointer no-select text-gray-900 dark:text-gray-100">Sucher</span>
             <div id="program-dropdown"
                 class="hidden absolute top-full left-0 mt-1 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg z-[10000]">
                 <a href="#" id="about-program" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
                     Sucher</a>
             </div>
         </nav>
+        <!-- Uhrzeitelement -->
+        <div id="clock" class="ml-auto no-select text-sm text-gray-900 dark:text-gray-100"></div>
     </header>
     <!-- Desktop Items -->
     <div id="desktop-icons" class="fixed right-0 top-10 mt-4 flex flex-col gap-4 p-4">
@@ -64,7 +61,7 @@
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300">Projekte</h2>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Projekte</h2>
             </div>
             <div class="p-4">
                 <ul id="repo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></ul>
@@ -83,7 +80,7 @@
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300">Über Marvin</h2>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Über Marvin</h2>
             </div>
             <div class="flex flex-col items-center text-gray-700 dark:text-gray-200 mt-8">
                 <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-4">
@@ -117,12 +114,12 @@
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300">Systemeinstellungen</h2>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Systemeinstellungen</h2>
             </div>
             <div class="flex h-[500px]">
                 <!-- Linke Seitenleiste -->
                 <div class="w-48 bg-gray-100 dark:bg-gray-700 p-4 space-y-1">
-                    <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
                         onclick="showSettingsSection('general')">
                         Allgemein
                     </div>
@@ -180,62 +177,42 @@
     <script>
         function showSettingsSection(section) {
             const allSections = ["settings-general", "settings-about", "settings-network", "settings-battery"];
-            allSections.forEach(id => { document.getElementById(id).classList.add("hidden"); });
-            document.getElementById(`settings-${section}`).classList.remove("hidden");
+            allSections.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.classList.add("hidden");
+                }
+            });
+            const target = document.getElementById(`settings-${section}`);
+            if (target) {
+                target.classList.remove("hidden");
+            }
         }
 
         function showTab(tabName) {
-            switch (tabName) {
-                case "projects":
-                    document.getElementById("projects-modal").classList.remove("hidden");
-                    bringToFront("projects-modal");
-                    break;
-                case "settings":
-                    document.getElementById("settings-modal").classList.remove("hidden");
-                    bringToFront("settings-modal");
-                    break;
-                case "about":
-                    document.getElementById("about-modal").classList.remove("hidden");
-                    bringToFront("about-modal");
-                    break;
-                default:
-                    console.error("Unbekannter Tab:", tabName);
-                    return;
-            }
+            window.dialogs[tabName + "-modal"].open();
             saveOpenModals();
             updateProgramLabelByTopModal();
             updateDockIndicators();
         }
 
-        document.addEventListener("DOMContentLoaded", function () {
-            const closeProjectsButton = document.getElementById("close-projects-modal");
-            if (closeProjectsButton) {
-                closeProjectsButton.addEventListener("click", function () {
-                    document.getElementById("projects-modal").classList.add("hidden");
-                    saveOpenModals();
-                    updateDockIndicators();
-                    updateProgramLabelByTopModal();
-                });
+        // Funktion zum Aktualisieren der Uhrzeit im Format HH:MM (optional HH:MM:SS)
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            // Hier kannst du auch Sekunden einfügen, falls gewünscht:
+            // const seconds = now.getSeconds().toString().padStart(2, '0');
+            const timeString = `${hours}:${minutes}`; // oder `${hours}:${minutes}:${seconds}`;
+            const clockEl = document.getElementById("clock");
+            if (clockEl) {
+                clockEl.innerText = timeString;
             }
-            const closeSettingsButton = document.getElementById("close-settings-modal");
-            if (closeSettingsButton) {
-                closeSettingsButton.addEventListener("click", function () {
-                    document.getElementById("settings-modal").classList.add("hidden");
-                    saveOpenModals();
-                    updateDockIndicators();
-                    updateProgramLabelByTopModal();
-                });
-            }
-            const closeAboutButton = document.getElementById("close-about-modal");
-            if (closeAboutButton) {
-                closeAboutButton.addEventListener("click", function () {
-                    document.getElementById("about-modal").classList.add("hidden");
-                    saveOpenModals();
-                    updateDockIndicators();
-                    updateProgramLabelByTopModal();
-                });
-            }
-        });
+        }
+
+        // Initialisierung und regelmäßiges Aktualisieren (jede Sekunde)
+        updateClock();
+        setInterval(updateClock, 1000);
     </script>
 </body>
 
