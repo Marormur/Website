@@ -1,13 +1,11 @@
-// app.js
 tailwind.config = { darkMode: 'media' };
 if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
     document.documentElement.classList.add('dark');
 }
+const modalIds = ["projects-modal", "about-modal", "settings-modal", "text-modal"];
 
 let topZIndex = 1000;
 
-// Falls noch nicht vorhanden, kannst du dies auch in den DOMContentLoaded-Handler einfügen, um 
-// sicherzustellen, dass alle Modale den Klick-Listener erhalten:
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function (e) {
@@ -24,13 +22,16 @@ document.addEventListener('DOMContentLoaded', function () {
     restoreOpenModals();
     restoreWindowPositions();
     loadGithubRepos();
-    makeResizable("projects-modal");
 
     window.dialogs = {};
     window.dialogs["projects-modal"] = new Dialog("projects-modal");
+    // window.dialogs["projects-modal"].loadIframe("./projekte.html");
     window.dialogs["about-modal"] = new Dialog("about-modal");
     window.dialogs["settings-modal"] = new Dialog("settings-modal");
+    window.dialogs["text-modal"] = new Dialog("text-modal");
+    // window.dialogs["text-modal"].loadIframe("./text.html");
 });
+
 function bringDialogToFront(dialogId) {
     if (window.dialogs[dialogId]) {
         window.dialogs[dialogId].bringToFront();
@@ -49,7 +50,6 @@ function updateProgramLabel(newLabel) {
 
 // Funktion, um das aktuell oberste Modal zu ermitteln und den Program-Namen anzupassen
 function getTopModal() {
-    const modalIds = ["projects-modal", "about-modal", "settings-modal"];
     let topModal = null;
     let highestZ = 0;
     modalIds.forEach(id => {
@@ -75,6 +75,9 @@ function updateProgramLabelByTopModal() {
             case "settings-modal":
                 updateProgramLabel("Systemeinstellungen");
                 break;
+            case "text-modal":
+                updateProgramLabel("Texteditor");
+                break;
             default:
                 updateProgramLabel("Sucher");
         }
@@ -91,9 +94,6 @@ function initEventHandlers() {
     const programLabel = document.getElementById('program-label');
     const dropdownAbout = document.getElementById('dropdown-about');
     const settingsButton = document.getElementById('dropdown-settings');
-    const closeProjectsButton = document.getElementById("close-projects-modal");
-    const closeAboutButton = document.getElementById("close-about-modal");
-    const closeSettingsButton = document.getElementById("close-settings-modal");
 
     profileContainer.addEventListener('click', function (event) {
         if (programDropdown) { programDropdown.classList.add('hidden'); }
@@ -137,31 +137,34 @@ function initEventHandlers() {
         });
     }
 
-    if (closeProjectsButton) {
-        closeProjectsButton.addEventListener("click", function () {
-            window.dialogs["projects-modal"].close();
-            updateProgramLabelByTopModal();
-            saveOpenModals();
-        });
-    }
-    if (closeAboutButton) {
-        closeAboutButton.addEventListener("click", function () {
-            window.dialogs["about-modal"].close();
-            updateProgramLabelByTopModal();
-            saveOpenModals();
-        });
-    }
-    if (closeSettingsButton) {
-        closeSettingsButton.addEventListener("click", function () {
-            window.dialogs["settings-modal"].close();
-            updateProgramLabelByTopModal();
-            saveOpenModals();
-        });
-    }
+
+
+    // Vereinheitlichte Registrierung der Close-Button Event Listener:
+    const closeMapping = {
+        "close-projects-modal": "projects-modal",
+        "close-about-modal": "about-modal",
+        "close-settings-modal": "settings-modal",
+        "close-text-modal": "text-modal" // Falls du einen Texteditor-Schließbutton hast
+    };
+    Object.entries(closeMapping).forEach(([btnId, modalId]) => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.addEventListener("click", function () {
+                if (window.dialogs[modalId]) {
+                    window.dialogs[modalId].close();
+                } else {
+                    const modal = document.getElementById(modalId);
+                    if (modal) modal.classList.add("hidden");
+                }
+                updateProgramLabelByTopModal();
+                saveOpenModals();
+                updateDockIndicators();
+            });
+        }
+    });
 }
 
 // Zustandsspeicherung: Offene Fenster speichern
-const modalIds = ["projects-modal", "about-modal", "settings-modal"];
 function saveOpenModals() {
     const openModals = modalIds.filter(id => {
         const el = document.getElementById(id);
@@ -198,47 +201,6 @@ function restoreWindowPositions() {
             el.style.left = positions[id].left;
             el.style.top = positions[id].top;
         }
-    });
-}
-
-function makeResizable(modalId) {
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
-    // Erstelle einen Resizer, der im rechten unteren Eck positioniert wird
-    const resizer = document.createElement('div');
-    resizer.style.width = "16px";
-    resizer.style.height = "16px";
-    resizer.style.position = "absolute";
-    resizer.style.right = "0";
-    resizer.style.bottom = "0";
-    resizer.style.cursor = "se-resize";
-    // Hintergrundfarbe für den Resizer; im Dark Mode könntest du diesen Wert anpassen
-    resizer.style.background = "rgba(0, 0, 0, 0.2)";
-    modal.appendChild(resizer);
-
-    resizer.addEventListener('mousedown', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        let startX = e.clientX;
-        let startY = e.clientY;
-        let startWidth = parseInt(window.getComputedStyle(modal).width, 10);
-        let startHeight = parseInt(window.getComputedStyle(modal).height, 10);
-
-        function onMouseMove(e) {
-            window.requestAnimationFrame(() => {
-                let newWidth = startWidth + e.clientX - startX;
-                let newHeight = startHeight + e.clientY - startY;
-                modal.style.width = newWidth + "px";
-                modal.style.height = newHeight + "px";
-            });
-        }
-        function onMouseUp(e) {
-            document.removeEventListener("mousemove", onMouseMove);
-            document.removeEventListener("mouseup", onMouseUp);
-            saveWindowPositions(); // Speichert die neue Größe im localStorage
-        }
-        document.addEventListener("mousemove", onMouseMove);
-        document.addEventListener("mouseup", onMouseUp);
     });
 }
 
@@ -290,26 +252,26 @@ function loadGithubRepos() {
 }
 
 function updateDockIndicators() {
-    const projectsModal = document.getElementById("projects-modal");
-    const projectsIndicator = document.getElementById("projects-indicator");
-    if (projectsModal && projectsIndicator) {
-        if (!projectsModal.classList.contains("hidden")) {
-            projectsIndicator.classList.remove("hidden");
-        } else {
-            projectsIndicator.classList.add("hidden");
-        }
-    }
-    const settingsModal = document.getElementById("settings-modal");
-    const settingsIndicator = document.getElementById("settings-indicator");
-    if (settingsModal && settingsIndicator) {
-        if (!settingsModal.classList.contains("hidden")) {
-            settingsIndicator.classList.remove("hidden");
-        } else {
-            settingsIndicator.classList.add("hidden");
-        }
-    }
-}
+    // Definiere hier, welche Modale mit welchen Indikatoren verbunden werden sollen.
+    // Passe die Einträge an, falls du neue Dialoge (und entsprechende Indicator-Elemente) hinzufügen möchtest.
+    const indicatorMappings = [
+        { modalId: "projects-modal", indicatorId: "projects-indicator" },
+        { modalId: "settings-modal", indicatorId: "settings-indicator" },
+        { modalId: "text-modal", indicatorId: "text-indicator" }
+    ];
 
+    indicatorMappings.forEach(mapping => {
+        const modal = document.getElementById(mapping.modalId);
+        const indicator = document.getElementById(mapping.indicatorId);
+        if (modal && indicator) {
+            if (!modal.classList.contains("hidden")) {
+                indicator.classList.remove("hidden");
+            } else {
+                indicator.classList.add("hidden");
+            }
+        }
+    });
+}
 class Dialog {
     constructor(modalId) {
         this.modal = document.getElementById(modalId);
@@ -323,20 +285,26 @@ class Dialog {
         // Initialisiert Drag & Drop und Resizing
         this.makeDraggable();
         this.makeResizable();
+        restoreWindowPositions();
     }
 
     open() {
         this.modal.classList.remove("hidden");
         this.bringToFront();
+        saveOpenModals();
+        updateDockIndicators();
     }
 
     close() {
         this.modal.classList.add("hidden");
+        updateProgramLabelByTopModal();
+        updateProgramLabelByTopModal();
+        updateDockIndicators();
+
     }
 
     bringToFront() {
         // Liste aller relevanten Modal-IDs – passe die Liste an, falls du weitere Dialoge hast.
-        const modalIds = ["projects-modal", "about-modal", "settings-modal"];
         modalIds.forEach(id => {
             const modal = document.getElementById(id);
             if (modal) {
@@ -356,64 +324,146 @@ class Dialog {
         header.addEventListener('mousedown', (e) => {
             offsetX = e.clientX - this.modal.getBoundingClientRect().left;
             offsetY = e.clientY - this.modal.getBoundingClientRect().top;
-            // Stelle sicher, dass das Modal per absolute Positionierung frei bewegbar ist.
+
+            // Stelle sicher, dass das Modal absolut positioniert ist
             if (getComputedStyle(this.modal).position !== 'absolute') {
                 this.modal.style.position = 'absolute';
             }
+
+            // Transparentes Overlay erstellen
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.zIndex = '9999';
+            overlay.style.cursor = 'move';
+            overlay.style.backgroundColor = 'transparent';
+            document.body.appendChild(overlay);
+
             const mouseMoveHandler = (e) => {
                 window.requestAnimationFrame(() => {
                     this.modal.style.left = (e.clientX - offsetX) + 'px';
                     this.modal.style.top = (e.clientY - offsetY) + 'px';
                 });
             };
+
             const mouseUpHandler = (e) => {
+                // Overlay entfernen, sobald der Mausknopf losgelassen wurde
+                overlay.remove();
+                overlay.removeEventListener('mousemove', mouseMoveHandler);
+                overlay.removeEventListener('mouseup', mouseUpHandler);
                 document.removeEventListener('mousemove', mouseMoveHandler);
-                document.removeEventListener('mouseup', mouseUpHandler);
-                // Optionale Speicherung: this.saveState(); wenn du Zustände persistieren möchtest.
+                saveWindowPositions();
             };
-            document.addEventListener('mousemove', mouseMoveHandler);
-            document.addEventListener('mouseup', mouseUpHandler);
+
+            // Eventlistener dem Overlay hinzufügen (statt direkt auf document)
+            overlay.addEventListener('mousemove', mouseMoveHandler);
+            overlay.addEventListener('mouseup', mouseUpHandler);
+
+            // Verhindere das Standardverhalten
             e.preventDefault();
         });
     }
 
     makeResizable() {
-        // Erstellt einen Resizer im rechten unteren Eck, falls nicht bereits vorhanden.
-        if (this.modal.querySelector('.resizer')) return;  // nur einmal hinzufügen
+        // Verwende als Ziel-Element das innere Dialog-Element, falls vorhanden, sonst das Modal selbst.
+        const target = this.modal.querySelector('.autopointer') || this.modal;
+
+        // Falls bereits ein Resizer im Ziel-Element existiert, beenden
+        if (target.querySelector('.resizer')) return;
+
+        // Sicherstellen, dass das Ziel-Element positioniert ist:
+        const computedPosition = window.getComputedStyle(target).position;
+        if (!computedPosition || computedPosition === 'static') {
+            target.style.position = 'relative';
+        }
+
+        // Setze Overflow auf visible, damit der Resizer nicht abgeschnitten wird.
+        target.style.overflow = "visible";
+
+        // Erstelle den Resizer.
         const resizer = document.createElement('div');
         resizer.classList.add('resizer');
-        resizer.style.width = "32px";
-        resizer.style.height = "32px";
+        resizer.style.width = "20px";
+        resizer.style.height = "20px";
         resizer.style.position = "absolute";
         resizer.style.right = "0";
         resizer.style.bottom = "0";
         resizer.style.cursor = "se-resize";
-        resizer.style.background = "rgba(0, 0, 0, 0.2)";
-        this.modal.appendChild(resizer);
+        resizer.style.backgroundColor = "rgba(122, 122, 122, 0.5)";
+        resizer.style.zIndex = "9999"; // Damit der Resizer immer sichtbar ist.
+
+        target.appendChild(resizer);
 
         resizer.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
             const startX = e.clientX;
             const startY = e.clientY;
-            const startWidth = parseInt(window.getComputedStyle(this.modal).width, 10);
-            const startHeight = parseInt(window.getComputedStyle(this.modal).height, 10);
+            const computedStyle = window.getComputedStyle(target);
+            const startWidth = parseInt(computedStyle.width, 10);
+            const startHeight = parseInt(computedStyle.height, 10);
+
+            // Transparentes Overlay erstellen, um alle Mouse-Events abzufangen
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.zIndex = '9999';
+            overlay.style.cursor = 'se-resize';
+            overlay.style.backgroundColor = 'transparent';
+            document.body.appendChild(overlay);
+
             const mouseMoveHandler = (e) => {
                 window.requestAnimationFrame(() => {
-                    let newWidth = startWidth + e.clientX - startX;
-                    let newHeight = startHeight + e.clientY - startY;
-                    this.modal.style.width = newWidth + "px";
-                    this.modal.style.height = newHeight + "px";
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    const newWidth = startWidth + dx;
+                    const newHeight = startHeight + dy;
+                    target.style.width = newWidth + "px";
+                    target.style.height = newHeight + "px";
                 });
             };
+
             const mouseUpHandler = (e) => {
+                // Overlay entfernen und Event-Listener bereinigen
+                overlay.remove();
+                overlay.removeEventListener('mousemove', mouseMoveHandler);
+                overlay.removeEventListener('mouseup', mouseUpHandler);
                 document.removeEventListener("mousemove", mouseMoveHandler);
                 document.removeEventListener("mouseup", mouseUpHandler);
-                // Optional: this.saveState(); wenn du die neue Größe persistieren möchtest.
+                saveWindowPositions();
+                // Optional: Hier den neuen Zustand speichern
             };
-            document.addEventListener("mousemove", mouseMoveHandler);
-            document.addEventListener("mouseup", mouseUpHandler);
+
+            overlay.addEventListener("mousemove", mouseMoveHandler);
+            overlay.addEventListener("mouseup", mouseUpHandler);
         });
+    }
+
+    loadIframe(url) {
+        // Versuche, einen vorhandenen dialog-content-Bereich zu finden
+        let contentArea = this.modal.querySelector('.dialog-content');
+        if (!contentArea) {
+            contentArea = document.createElement('div');
+            contentArea.classList.add('dialog-content');
+            contentArea.style.width = "100%";
+            contentArea.style.height = "100%";
+            this.modal.appendChild(contentArea);
+        }
+        // Lösche alte Inhalte
+        contentArea.innerHTML = "";
+        // Erstelle das iframe
+        const iframe = document.createElement("iframe");
+        iframe.src = url;
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+        contentArea.appendChild(iframe);
     }
 
     // Optional: Methode zum Speichern des aktuellen Zustands des Fensters
