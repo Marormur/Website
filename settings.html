@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einstellungen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            font-family: sans-serif;
+            background: #fafafa;
+        }
+
+        .toolbar {
+            flex: 0 0 auto;
+            padding: 20px;
+            margin-bottom: 10px;
+        }
+
+        .toolbar button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            font-size: 0.9em;
+        }
+
+        #editor {
+            flex: 1 1 auto;
+            width: 100%;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            background: #fff;
+        }
+    </style>
+</head>
+
+<body class="flex">
+    <div class="flex dialog-content" name="settings-window" onclick="onClick()">
+        <!-- Linke Seitenleiste -->
+        <div class="w-48 bg-gray-100 dark:bg-gray-700 p-4 space-y-1">
+            <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
+                onclick="showSettingsSection('general')">
+                Allgemein
+            </div>
+            <!-- Weitere Menüpunkte können hier ergänzt werden -->
+        </div>
+        <!-- Rechte Hauptansicht -->
+        <div class="flex-1 p-6 overflow-auto text-gray-800 dark:text-gray-200">
+            <!-- Sektion: Allgemein -->
+            <div id="settings-general" class="">
+                <div class="flex flex-col items-center text-gray-700 dark:text-gray-200 mt-8">
+                    <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-4">
+                    <h2 class="text-xl font-semibold">Marvin Temmen</h2>
+                    <p class="text-sm">März 1999</p>
+                    <!-- Ersetze den entsprechenden Container in index.html -->
+                    <div class="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 grid grid-cols-2 gap-y-2 gap-x-20">
+                        <div class="text-gray-600 dark:text-gray-300">Wohnort</div>
+                        <div class="text-gray-800 dark:text-gray-100">Deutschland</div>
+                        <div class="text-gray-600 dark:text-gray-300">Beruf</div>
+                        <div class="text-gray-800 dark:text-gray-100">Softwareentwickler</div>
+                        <div class="text-gray-600 dark:text-gray-300">Arbeitgeber</div>
+                        <div class="text-gray-800 dark:text-gray-100">WinWorker</div>
+                    </div>
+                    <div
+                        class="mt-6 text-xs text-center text-gray-500 dark:text-gray-400 border-t border-gray-300 dark:border-gray-700 pt-2">
+                        © 2025 Marvin T. — Alle Rechte vorbehalten.
+                    </div>
+                </div>
+            </div>
+            <!-- Weitere Sektionen (Über Marvin, Netzwerk, Akku) können hier ergänzt werden -->
+        </div>
+    </div>
+
+
+    <script>
+        const dialog = window.parent.loaded(window.frameElement);
+
+        function onClick() {
+            dialog.refocus();
+        }
+    </script>
+
+</body>
+
+</html>

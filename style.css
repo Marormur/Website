@@ -46,7 +46,7 @@ section {
 }
 
 
-.autopointer .dialog-content {
+.dialog-content {
     overflow: auto;
     /* nur der Inhalt bekommt Scrollbars wenn er zu groß wird */
     width: 100%;

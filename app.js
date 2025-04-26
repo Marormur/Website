@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // window.dialogs["projects-modal"].loadIframe("./projekte.html");
     window.dialogs["about-modal"] = new Dialog("about-modal");
     window.dialogs["settings-modal"] = new Dialog("settings-modal");
+    window.dialogs["settings-modal"].loadIframe("./settings.html");
     window.dialogs["text-modal"] = new Dialog("text-modal");
     // window.dialogs["text-modal"].loadIframe("./text.html");
 });
@@ -144,12 +145,14 @@ function initEventHandlers() {
         "close-projects-modal": "projects-modal",
         "close-about-modal": "about-modal",
         "close-settings-modal": "settings-modal",
-        "close-text-modal": "text-modal" // Falls du einen Texteditor-Schließbutton hast
+        "close-text-modal": "text-modal"
     };
     Object.entries(closeMapping).forEach(([btnId, modalId]) => {
         const btn = document.getElementById(btnId);
         if (btn) {
-            btn.addEventListener("click", function () {
+            btn.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
                 if (window.dialogs[modalId]) {
                     window.dialogs[modalId].close();
                 } else {
@@ -189,10 +192,18 @@ function saveWindowPositions() {
     const positions = {};
     modalIds.forEach(id => {
         const el = document.getElementById(id);
-        if (el) { positions[id] = { left: el.style.left || "", top: el.style.top || "" }; }
+        if (el) {
+            positions[id] = {
+                left: el.style.left || "",
+                top: el.style.top || "",
+                width: el.style.width || "",
+                height: el.style.height || ""
+            };
+        }
     });
     localStorage.setItem("modalPositions", JSON.stringify(positions));
 }
+
 function restoreWindowPositions() {
     const positions = JSON.parse(localStorage.getItem("modalPositions") || "{}");
     Object.keys(positions).forEach(id => {
@@ -200,6 +211,8 @@ function restoreWindowPositions() {
         if (el) {
             el.style.left = positions[id].left;
             el.style.top = positions[id].top;
+            el.style.width = positions[id].width;
+            el.style.height = positions[id].height;
         }
     });
 }
@@ -251,6 +264,20 @@ function loadGithubRepos() {
         });
 }
 
+function loaded(node) {
+    var dialog = new Dialog(recursiveParentSearch(node));
+    return dialog;
+}
+
+function recursiveParentSearch(node) {
+    if (node.classList != undefined && node.classList.contains("modal")) {
+        return node.id.toString();
+    }
+    else if (node.parentNode == null)
+        return null
+    else return recursiveParentSearch(node.parentNode);
+}
+
 function updateDockIndicators() {
     // Definiere hier, welche Modale mit welchen Indikatoren verbunden werden sollen.
     // Passe die Einträge an, falls du neue Dialoge (und entsprechende Indicator-Elemente) hinzufügen möchtest.
@@ -272,6 +299,36 @@ function updateDockIndicators() {
         }
     });
 }
+function showSettingsSection(section) {
+    const allSections = ["settings-general", "settings-about", "settings-network", "settings-battery"];
+    allSections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add("hidden");
+        }
+    });
+    const target = document.getElementById(`settings-${section}`);
+    if (target) {
+        target.classList.remove("hidden");
+    }
+}
+
+function recursiveChildSearch(children) {
+    console.log(children);
+    for (var child in children) {
+        console.log(child)
+        if (child.contains('dialog-content'))
+            return child;
+
+        temp = this.recursiveChildSearch(child.children);
+
+        if (temp.innerHTML.contains('dialog-content'))
+            return temp;
+    }
+
+    return null;
+}
+
 class Dialog {
     constructor(modalId) {
         this.modal = document.getElementById(modalId);
@@ -307,12 +364,20 @@ class Dialog {
         // Liste aller relevanten Modal-IDs – passe die Liste an, falls du weitere Dialoge hast.
         modalIds.forEach(id => {
             const modal = document.getElementById(id);
-            if (modal) {
-                modal.style.zIndex = 1000; // Basiswert für alle Fenster
+            if (modal && !modal.classList.contains("hidden")) {
+                modal.style.zIndex = 1000;
             }
         });
         // Setze dem aktuellen Fenster einen höheren z-Index, damit es oben liegt.
-        this.modal.style.zIndex = 1010;
+        this.modal.style.zIndex = 1100;
+    }
+
+    refocus() {
+        console.log("Test");
+        this.bringToFront();
+        saveOpenModals();
+        updateProgramLabelByTopModal();
+        // Hier kannst du deinen Testcode einfügen
     }
 
     makeDraggable() {
@@ -322,6 +387,9 @@ class Dialog {
         header.style.cursor = 'move';
         let offsetX = 0, offsetY = 0;
         header.addEventListener('mousedown', (e) => {
+            this.refocus();
+            // Wenn der Klick auf einen Schließen-Button innerhalb der Kopfzeile erfolgt, ignoriere den Drag-Vorgang
+            if (e.target.closest('button[title="Schließen"]')) return;
             offsetX = e.clientX - this.modal.getBoundingClientRect().left;
             offsetY = e.clientY - this.modal.getBoundingClientRect().top;
 
@@ -463,9 +531,35 @@ class Dialog {
         iframe.style.width = "100%";
         iframe.style.height = "100%";
         iframe.style.border = "none";
-        contentArea.appendChild(iframe);
-    }
+        iframe.setAttribute("allow", "fullscreen");
 
+        contentArea.appendChild(iframe);
+
+        // Sobald das iframe geladen ist, wird in dessen Dokument ein mousedown-Eventlistener registriert,
+        // der das Modal in den Vordergrund bringt.
+        iframe.addEventListener("load", () => {
+            setTimeout(500);
+            console.log(iframe.children);
+            iframe.parentNode.parentNode.setAttribute("click", "test()");
+            console.log(iframe.parentNode.parentNode.outerHTML);
+
+            console.log(iframe.innerHTML);
+            if (iframe.innerHTML == "") {
+                //iframe.src = iframe.src;
+                return;
+
+            }
+            try {
+                console.log(iframe.src);
+
+                iframe.addEventListener("mousedown", (e) => {
+                    this.refocus();
+                });
+            } catch (err) {
+                console.error("Could not attach mousedown event in iframe:", err);
+            }
+        });
+    }
     // Optional: Methode zum Speichern des aktuellen Zustands des Fensters
     saveState() {
         return {
