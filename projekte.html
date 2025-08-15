@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meine GitHub Projekte</title>
     <script src="https://cdn.tailwindcss.com"></script>
-
     <style>
         body {
             font-family: sans-serif;
@@ -69,26 +68,27 @@
         <!-- Hier werden die Repositories eingefügt -->
     </div>
     <script>
-        const username = "Marormur"; // Ändere dies ggf. in deinen GitHub-Namen
+        const username = "Marormur";
         function loadRepos() {
             fetch(`https://api.github.com/users/${username}/repos`)
                 .then(response => response.json())
                 .then(repos => {
                     const grid = document.getElementById('repo-grid');
-                    grid.innerHTML = ""; // Falls zuvor etwas da war
+                    grid.innerHTML = "";
                     repos.forEach(repo => {
                         const card = document.createElement('div');
                         card.className = "repo-card";
                         card.innerHTML = `
-              <h3><a href="${repo.html_url}" target="_blank">${repo.name}</a></h3>
-              <p>${repo.description ? repo.description : "Keine Beschreibung verfügbar."}</p>
-            `;
+                            <h3><a href="${repo.html_url}" target="_blank">${repo.name}</a></h3>
+                            <p>${repo.description ? repo.description : "Keine Beschreibung verfügbar."}</p>
+                        `;
                         grid.appendChild(card);
                     });
                 })
                 .catch(err => {
                     console.error("Fehler beim Laden der Repos:", err);
-                    document.getElementById('repo-grid').innerHTML = "<p>Repos konnten nicht geladen werden. Bitte versuchen Sie es später erneut.</p>";
+                    document.getElementById('repo-grid').innerHTML =
+                        "<p>Repos konnten nicht geladen werden. Bitte versuchen Sie es später erneut.</p>";
                 });
         }
         loadRepos();

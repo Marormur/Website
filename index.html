@@ -5,9 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Marvin</title>
+    <!-- Tailwind via CDN for quick styling -->
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Unser zentrales Script -->
+    <!-- Unsere zentrale Logik für Fenster und Dock -->
     <script src="app.js"></script>
 </head>
 
@@ -17,6 +18,7 @@
         class="w-full flex items-center gap-4 px-4 py-2 bg-white bg-opacity-70 dark:bg-gray-900 dark:bg-opacity-30 backdrop-blur-md text-white shadow z-[2000]">
         <!-- Profilicon -->
         <div class="relative" id="profile-container">
+            <!-- Verwende einen Platzhalter, wenn das Profilbild fehlt -->
             <img src="./img/profil.jpg" alt="Profilbild von Marvin"
                 class="w-10 h-10 object-cover rounded-full border-2 border-white cursor-pointer no-select">
             <div id="profile-dropdown"
@@ -51,7 +53,9 @@
     </div>
     <!-- Projekte Modal -->
     <div id="projects-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-xl autopointer">
+        <!-- Projekte nutzen nun einen flexiblen Container, der sich an der Fenstergröße orientiert. -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col"
+            style="width: 70vw; max-width: 900px; height: 60vh; max-height: 85vh;">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" id="close-projects-modal"
@@ -63,10 +67,10 @@
                 </div>
                 <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Projekte</h2>
             </div>
-            <div class="p-4">
+            <div class="p-4 overflow-auto flex-1">
+                <!-- Liste der Repositories wird dynamisch gefüllt. Die Scrollbar erscheint,
+                     wenn die Liste höher als der verfügbare Raum ist. -->
                 <ul id="repo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></ul>
-                <!-- <iframe src="projekte.html" title="Projekte" class="w-full h-96 flex dialog-content"></iframe> -->
-
             </div>
         </div>
     </div>
@@ -105,7 +109,15 @@
     </div>
     <!-- Einstellungen Modal -->
     <div id="settings-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full autopointer">
+        <!--
+          Die Einstellungen werden in einem adaptiven Dialog angezeigt. Statt einer festen
+          IFrame‑Höhe verwenden wir einen flexiblen Container, dessen Größe sich am
+          verfügbaren Viewport orientiert. Über das Resize‑Handle kann der Benutzer die
+          Fenstergröße nach Wunsch anpassen. Dialog.loadIframe fügt den IFrame-Inhalt
+          dynamisch in die .dialog-content ein.
+        -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col"
+            style="width: 80vw; max-width: 900px; height: 70vh; max-height: 90vh;">
             <!-- Header -->
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
@@ -119,11 +131,21 @@
                 <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Systemeinstellungen</h2>
             </div>
             <!-- Content -->
-            <iframe src="settings.html" title="Systemeinstellungen" class="w-full h-96 flex dialog-content"></iframe>
+            <!-- Der eigentliche IFrame wird zur Laufzeit über Dialog.loadIframe erzeugt. Dieses
+                 Platzhalter‑Element füllt den verbleibenden Raum zwischen Header und
+                 Fußzeile und sorgt dafür, dass die Größe des Fensters flexibel bleibt. -->
+            <div class="dialog-content flex-1"></div>
         </div>
     </div>
+    <!-- Texteditor Modal -->
     <div id="text-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer">
+        <!--
+          Der Texteditordialog verwendet nun ebenfalls einen flexiblen Container. Durch eine
+          prozentuale Breite/Höhe wächst und schrumpft das Fenster je nach Bildschirmgröße.
+          Der Inhalt wird dynamisch über Dialog.loadIframe geladen.
+        -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col"
+            style="width: 70vw; max-width: 800px; height: 60vh; max-height: 85vh;">
             <!-- Header -->
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
@@ -137,9 +159,7 @@
                 <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Texteditor</h2>
             </div>
             <!-- Content -->
-            <iframe src="text.html" title="Texteditor" class="w-full flex dialog-content"></iframe>
-            <!-- <div class="p-4 flex dialog-content no-select ">
-            </div> -->
+            <div class="dialog-content flex-1"></div>
         </div>
     </div>
 
@@ -178,26 +198,23 @@
         </div>
     </div>
     <script>
-
+        // Uhrzeit aktualisieren (HH:MM)
         function showTab(tabName) {
-            window.dialogs[tabName + "-modal"].open();
+            // Öffnet das gewünschte Fenster über das globale Dialog-Objekt
+            if (window.dialogs && window.dialogs[tabName + '-modal']) {
+                window.dialogs[tabName + '-modal'].open();
+            }
         }
-
-        // Funktion zum Aktualisieren der Uhrzeit im Format HH:MM (optional HH:MM:SS)
         function updateClock() {
             const now = new Date();
             const hours = now.getHours().toString().padStart(2, '0');
             const minutes = now.getMinutes().toString().padStart(2, '0');
-            // Hier kannst du auch Sekunden einfügen, falls gewünscht:
-            // const seconds = now.getSeconds().toString().padStart(2, '0');
-            const timeString = `${hours}:${minutes}`; // oder `${hours}:${minutes}:${seconds}`;
-            const clockEl = document.getElementById("clock");
+            const timeString = `${hours}:${minutes}`;
+            const clockEl = document.getElementById('clock');
             if (clockEl) {
                 clockEl.innerText = timeString;
             }
         }
-
-        // Initialisierung und regelmäßiges Aktualisieren (jede Sekunde)
         updateClock();
         setInterval(updateClock, 1000);
     </script>

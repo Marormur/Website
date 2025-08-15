@@ -1,66 +1,34 @@
-:root {
-    --primary-bg: #fafafa;
-    --primary-text: #222;
-}
-
-.dark {
-    --primary-bg: #1a202c;
-    --primary-text: #e2e8f0;
-}
-
-html {
-    height: 100%;
-    overflow: hidden;
-}
-
+/*
+ * Zusätzliche CSS-Regeln für die Desktop‑Simulation.
+ * Tailwind liefert den Großteil des Layouts; hier können zusätzliche Anpassungen
+ * vorgenommen werden oder fehlende Assets neutralisiert werden.
+ */
 body {
     font-family: system-ui, sans-serif;
     background: url("./img/wallpaper.png") no-repeat center center fixed !important;
     background-size: cover !important;
     margin: 0;
-    min-height: 100vh;
+    padding: 0;
+    font-family: sans-serif;
+}
+
+/* Stelle sicher, dass iframes und Modale sauber gestylt sind */
+.modal iframe {
+    width: 100%;
     height: 100%;
-    overflow: hidden;
+    border: none;
 }
 
-h1 {
-    color: #0077ff;
-}
-
-section {
-    margin-top: 2rem;
-    border-top: 1px solid #ddd;
-    padding-top: 1rem;
-}
-
+/*
+ * Modal containers cover den gesamten Bildschirm (inset-0). Ohne Eingriff fangen sie alle Klicks
+ * ab und verhindern, dass man ein dahinterliegendes Fenster mit der Maus erreicht. Durch
+ * pointer-events:none auf dem Container und pointer-events:auto auf dem eigentlichen
+ * Fensterelement (autopointer) werden Klicks korrekt an hinterliegende Fenster weitergereicht.
+ */
 .modal {
     pointer-events: none;
 }
 
-.autopointer {
+.modal .autopointer {
     pointer-events: auto;
-    position: relative;
-    /* wird z.B. in der makeResizable() nochmals gesetzt */
-    overflow: hidden;
-    /* wir verstecken alles außerhalb des Fensters */
-}
-
-
-.dialog-content {
-    overflow: auto;
-    /* nur der Inhalt bekommt Scrollbars wenn er zu groß wird */
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-}
-
-.no-select {
-    -webkit-user-select: none;
-    /* Safari */
-    -moz-user-select: none;
-    /* Firefox */
-    -ms-user-select: none;
-    /* Internet Explorer/Edge */
-    user-select: none;
-    /* Standard */
 }

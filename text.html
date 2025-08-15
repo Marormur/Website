@@ -4,70 +4,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-
     <title>Texteditor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        html,
-        body {
+        html, body {
             height: 100%;
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             display: flex;
             flex-direction: column;
             font-family: sans-serif;
             background: #fafafa;
         }
-
-        .toolbar {
+        #toolbar {
             flex: 0 0 auto;
-            padding: 20px;
-            margin-bottom: 10px;
+            background: #f5f5f5;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
         }
-
-        .toolbar button {
-            margin-right: 5px;
-            padding: 5px 10px;
-            font-size: 0.9em;
+        #toolbar button {
+            margin-right: 4px;
+            padding: 4px 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
         }
-
+        #toolbar button:hover {
+            background: #eee;
+        }
         #editor {
             flex: 1 1 auto;
-            width: 100%;
-            border: 1px solid #ccc;
             padding: 10px;
             overflow-y: auto;
             background: #fff;
+            outline: none;
         }
     </style>
 </head>
 
-<body class="flex">
-
-    <div class="toolbar">
-        <button type="button" onclick="document.execCommand('bold')">Fett</button>
-        <button type="button" onclick="document.execCommand('italic')">Kursiv</button>
-        <button type="button" onclick="document.execCommand('underline')">Unterstrichen</button>
-        <button type="button" onclick="saveText()">Speichern</button>
+<body class="dialog-content" onclick="onClick()">
+    <div id="toolbar">
+        <!-- Basic formatting -->
+        <button onclick="execCmd('bold')" title="Fett"><strong>B</strong></button>
+        <button onclick="execCmd('italic')" title="Kursiv"><em>I</em></button>
+        <button onclick="execCmd('underline')" title="Unterstrichen"><u>U</u></button>
+        <button onclick="execCmd('strikeThrough')" title="Durchgestrichen"><s>S</s></button>
+        <!-- Lists -->
+        <button onclick="execCmd('insertUnorderedList')" title="Ungeordnete Liste">&bull; Liste</button>
+        <button onclick="execCmd('insertOrderedList')" title="Geordnete Liste">1. Liste</button>
+        <!-- Undo/Redo -->
+        <button onclick="execCmd('undo')" title="Rückgängig">Undo</button>
+        <button onclick="execCmd('redo')" title="Wiederholen">Redo</button>
+        <!-- File operations -->
+        <button onclick="clearEditor()" title="Neues Dokument">Neu</button>
+        <button onclick="openFile()" title="Datei öffnen">Öffnen</button>
+        <button onclick="saveFile()" title="Speichern">Speichern</button>
+        <!-- Hidden file input for opening files -->
+        <input type="file" id="file-input" accept=".txt,.html" style="display:none">
     </div>
-
-    <div id="editor" contenteditable="true">
-        <p></p>
-    </div>
-
+    <div id="editor" contenteditable="true"></div>
     <script>
-        function saveText() {
-            // Hier kann der Inhalt z.B. in localStorage gespeichert oder per AJAX versendet werden.
-            const content = document.getElementById("editor").innerHTML;
-            console.log("Gespeicherter Text:", content);
-            alert("Text gespeichert! (Schau in die Konsole.)");
+        // Den übergeordneten Dialog identifizieren, damit das Fenster im Fokus bleibt
+        const dialog = window.parent.loaded(window.frameElement);
+        // Bring the editor window to the front whenever this iframe gains focus (e.g. click or tab inside editor).
+        window.addEventListener('focus', () => {
+            try {
+                dialog.refocus();
+            } catch (e) {
+                console.error('Error refocusing dialog from text editor:', e);
+            }
+        });
+        function onClick() {
+            dialog.refocus();
         }
+        function execCmd(command) {
+            document.execCommand(command, false, null);
+            document.getElementById('editor').focus();
+        }
+        function clearEditor() {
+            document.getElementById('editor').innerHTML = '';
+            // Entferne gespeicherten Inhalt aus localStorage
+            localStorage.removeItem('textEditorContent');
+        }
+        function saveFile() {
+            // Text ohne HTML-Auszeichnungen speichern
+            const content = document.getElementById('editor').innerText;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            // Verwende den ersten Teil des Inhalts als Dateiname oder fallback
+            const firstLine = content.split('\n')[0] || 'text';
+            const sanitized = firstLine.trim().substring(0, 20).replace(/[^a-zA-Z0-9-_]/g, '') || 'text';
+            a.download = `${sanitized}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        function openFile() {
+            const input = document.getElementById('file-input');
+            input.click();
+        }
+        // Listener um Datei einzulesen
+        document.getElementById('file-input').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const content = e.target.result;
+                // Wenn es sich um HTML handelt, setzen wir innerHTML, ansonsten innerText
+                if (file.name.endsWith('.html')) {
+                    document.getElementById('editor').innerHTML = content;
+                } else {
+                    // Entkomme HTML, damit es als reiner Text erscheint
+                    document.getElementById('editor').innerText = content;
+                }
+            };
+            reader.readAsText(file);
+            // Zurücksetzen der Eingabe für zukünftige Öffnungen derselben Datei
+            event.target.value = '';
+        });
+        // Speicher den Text fortlaufend im localStorage
+        const editor = document.getElementById('editor');
+        editor.addEventListener('input', function () {
+            localStorage.setItem('textEditorContent', editor.innerHTML);
+        });
+        // Beim Laden den gespeicherten Inhalt wiederherstellen
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('textEditorContent');
+            if (saved) {
+                editor.innerHTML = saved;
+            }
+        });
     </script>
-
 </body>
 
 </html>

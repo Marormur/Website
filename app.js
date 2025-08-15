@@ -1,16 +1,19 @@
+// Konfiguriere Tailwind, dunkler Modus folgt den Systemeinstellungen
 tailwind.config = { darkMode: 'media' };
 if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
     document.documentElement.classList.add('dark');
 }
+// Liste aller Modal-IDs, die von der Desktop-Shell verwaltet werden
 const modalIds = ["projects-modal", "about-modal", "settings-modal", "text-modal"];
 
+// Für zukünftige z‑Index‑Verwaltung reserviert
 let topZIndex = 1000;
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Wenn auf einen sichtbaren Modalcontainer geklickt wird, hole das Fenster in den Vordergrund
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function (e) {
             // Verhindere, dass Klicks auf interaktive Elemente im Modal den Fokuswechsel stören.
-            // Wir prüfen also, ob der Target-Node das Modal selbst (oder ein direkter Kindknoten) ist.
             if (e.target === modal || modal.contains(e.target)) {
                 bringDialogToFront(modal.id);
                 updateProgramLabelByTopModal();
@@ -23,14 +26,17 @@ document.addEventListener('DOMContentLoaded', function () {
     restoreWindowPositions();
     loadGithubRepos();
 
+    // Erzeuge globale Dialog-Instanzen für jede App
     window.dialogs = {};
     window.dialogs["projects-modal"] = new Dialog("projects-modal");
-    // window.dialogs["projects-modal"].loadIframe("./projekte.html");
+    // Inhalte können direkt in das Modal gerendert werden; optional: iframe laden
     window.dialogs["about-modal"] = new Dialog("about-modal");
     window.dialogs["settings-modal"] = new Dialog("settings-modal");
     window.dialogs["settings-modal"].loadIframe("./settings.html");
     window.dialogs["text-modal"] = new Dialog("text-modal");
-    // window.dialogs["text-modal"].loadIframe("./text.html");
+    // Lädt den Rich‑Text‑Editor in einem IFrame und registriert einen mousedown‑Handler
+    // damit Klicks im Editorfenster das Modal in den Vordergrund holen.
+    window.dialogs["text-modal"].loadIframe("./text.html");
 });
 
 function bringDialogToFront(dialogId) {
@@ -87,7 +93,7 @@ function updateProgramLabelByTopModal() {
     }
 }
 
-// Zentrale Event-Handler
+// Zentrale Event-Handler für Menü und Dropdowns
 function initEventHandlers() {
     const profileContainer = document.getElementById('profile-container');
     const profileDropdown = document.getElementById('profile-dropdown');
@@ -112,7 +118,6 @@ function initEventHandlers() {
         if (profileDropdown) {
             profileDropdown.classList.add('hidden');
         }
-
         if (programDropdown) {
             programDropdown.classList.add('hidden');
         }
@@ -137,8 +142,6 @@ function initEventHandlers() {
             updateProgramLabelByTopModal();
         });
     }
-
-
 
     // Vereinheitlichte Registrierung der Close-Button Event Listener:
     const closeMapping = {
@@ -217,11 +220,12 @@ function restoreWindowPositions() {
     });
 }
 
+// Lädt GitHub-Repositories und cached sie im LocalStorage
 function loadGithubRepos() {
     const username = "Marormur";
     const cacheKey = `githubRepos_${username}`;
     const cacheTimestampKey = `githubReposTimestamp_${username}`;
-    const cacheDuration = 1000 * 60 * 60; // 1 hour
+    const cacheDuration = 1000 * 60 * 60; // 1 Stunde
     function loadRepos(repos) {
         const list = document.getElementById("repo-list");
         list.innerHTML = "";
@@ -264,6 +268,7 @@ function loadGithubRepos() {
         });
 }
 
+// Hilfsfunktionen für das Laden des Parent-Dialogs
 function loaded(node) {
     var dialog = new Dialog(recursiveParentSearch(node));
     return dialog;
@@ -274,19 +279,17 @@ function recursiveParentSearch(node) {
         return node.id.toString();
     }
     else if (node.parentNode == null)
-        return null
+        return null;
     else return recursiveParentSearch(node.parentNode);
 }
 
 function updateDockIndicators() {
     // Definiere hier, welche Modale mit welchen Indikatoren verbunden werden sollen.
-    // Passe die Einträge an, falls du neue Dialoge (und entsprechende Indicator-Elemente) hinzufügen möchtest.
     const indicatorMappings = [
         { modalId: "projects-modal", indicatorId: "projects-indicator" },
         { modalId: "settings-modal", indicatorId: "settings-indicator" },
         { modalId: "text-modal", indicatorId: "text-indicator" }
     ];
-
     indicatorMappings.forEach(mapping => {
         const modal = document.getElementById(mapping.modalId);
         const indicator = document.getElementById(mapping.indicatorId);
@@ -299,6 +302,8 @@ function updateDockIndicators() {
         }
     });
 }
+
+// Blendet alle Sektionen der Einstellungen aus und zeigt nur die gewünschte an
 function showSettingsSection(section) {
     const allSections = ["settings-general", "settings-about", "settings-network", "settings-battery"];
     allSections.forEach(id => {
@@ -313,22 +318,7 @@ function showSettingsSection(section) {
     }
 }
 
-function recursiveChildSearch(children) {
-    console.log(children);
-    for (var child in children) {
-        console.log(child)
-        if (child.contains('dialog-content'))
-            return child;
-
-        temp = this.recursiveChildSearch(child.children);
-
-        if (temp.innerHTML.contains('dialog-content'))
-            return temp;
-    }
-
-    return null;
-}
-
+// Klasse zum Verwalten eines Fensters (Modal)
 class Dialog {
     constructor(modalId) {
         this.modal = document.getElementById(modalId);
@@ -337,51 +327,39 @@ class Dialog {
         }
         this.init();
     }
-
     init() {
         // Initialisiert Drag & Drop und Resizing
         this.makeDraggable();
         this.makeResizable();
         restoreWindowPositions();
     }
-
     open() {
         this.modal.classList.remove("hidden");
         this.bringToFront();
         saveOpenModals();
         updateDockIndicators();
     }
-
     close() {
         this.modal.classList.add("hidden");
         updateProgramLabelByTopModal();
         updateProgramLabelByTopModal();
         updateDockIndicators();
-
     }
-
     bringToFront() {
-        // Liste aller relevanten Modal-IDs – passe die Liste an, falls du weitere Dialoge hast.
-        modalIds.forEach(id => {
-            const modal = document.getElementById(id);
-            if (modal && !modal.classList.contains("hidden")) {
-                modal.style.zIndex = 1000;
-            }
-        });
-        // Setze dem aktuellen Fenster einen höheren z-Index, damit es oben liegt.
-        this.modal.style.zIndex = 1100;
+        // Erhöhe den globalen Z-Index‑Zähler und setze diesen Dialog nach vorn.
+        // Durch das Hochzählen bleiben bestehende Reihenfolgen erhalten und verhindern, dass
+        // ein anderer Dialog versehentlich überlagert wird. Sichtbare Modale werden nicht
+        // zurückgesetzt, wodurch ständige Umsortierungen verhindert werden.
+        topZIndex = (typeof topZIndex === 'number' ? topZIndex : 1000) + 1;
+        this.modal.style.zIndex = topZIndex.toString();
     }
-
     refocus() {
-        console.log("Test");
+        // Wird aufgerufen, wenn innerhalb des Modals geklickt wird
         this.bringToFront();
         saveOpenModals();
         updateProgramLabelByTopModal();
-        // Hier kannst du deinen Testcode einfügen
     }
-
     makeDraggable() {
-        // Sucht innerhalb des Modals nach einer draggablen Kopfzeile.
         const header = this.modal.querySelector('.draggable-header');
         if (!header) return;
         header.style.cursor = 'move';
@@ -392,13 +370,11 @@ class Dialog {
             if (e.target.closest('button[title="Schließen"]')) return;
             offsetX = e.clientX - this.modal.getBoundingClientRect().left;
             offsetY = e.clientY - this.modal.getBoundingClientRect().top;
-
-            // Stelle sicher, dass das Modal absolut positioniert ist
+            // Modal absolut positionieren
             if (getComputedStyle(this.modal).position !== 'absolute') {
                 this.modal.style.position = 'absolute';
             }
-
-            // Transparentes Overlay erstellen
+            // Transparentes Overlay erstellen, um Events abzufangen
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
             overlay.style.top = '0';
@@ -409,49 +385,32 @@ class Dialog {
             overlay.style.cursor = 'move';
             overlay.style.backgroundColor = 'transparent';
             document.body.appendChild(overlay);
-
             const mouseMoveHandler = (e) => {
                 window.requestAnimationFrame(() => {
                     this.modal.style.left = (e.clientX - offsetX) + 'px';
                     this.modal.style.top = (e.clientY - offsetY) + 'px';
                 });
             };
-
             const mouseUpHandler = (e) => {
-                // Overlay entfernen, sobald der Mausknopf losgelassen wurde
                 overlay.remove();
                 overlay.removeEventListener('mousemove', mouseMoveHandler);
                 overlay.removeEventListener('mouseup', mouseUpHandler);
                 document.removeEventListener('mousemove', mouseMoveHandler);
                 saveWindowPositions();
             };
-
-            // Eventlistener dem Overlay hinzufügen (statt direkt auf document)
             overlay.addEventListener('mousemove', mouseMoveHandler);
             overlay.addEventListener('mouseup', mouseUpHandler);
-
-            // Verhindere das Standardverhalten
             e.preventDefault();
         });
     }
-
     makeResizable() {
-        // Verwende als Ziel-Element das innere Dialog-Element, falls vorhanden, sonst das Modal selbst.
         const target = this.modal.querySelector('.autopointer') || this.modal;
-
-        // Falls bereits ein Resizer im Ziel-Element existiert, beenden
         if (target.querySelector('.resizer')) return;
-
-        // Sicherstellen, dass das Ziel-Element positioniert ist:
         const computedPosition = window.getComputedStyle(target).position;
         if (!computedPosition || computedPosition === 'static') {
             target.style.position = 'relative';
         }
-
-        // Setze Overflow auf visible, damit der Resizer nicht abgeschnitten wird.
         target.style.overflow = "visible";
-
-        // Erstelle den Resizer.
         const resizer = document.createElement('div');
         resizer.classList.add('resizer');
         resizer.style.width = "20px";
@@ -461,10 +420,8 @@ class Dialog {
         resizer.style.bottom = "0";
         resizer.style.cursor = "se-resize";
         resizer.style.backgroundColor = "rgba(122, 122, 122, 0.5)";
-        resizer.style.zIndex = "9999"; // Damit der Resizer immer sichtbar ist.
-
+        resizer.style.zIndex = "9999";
         target.appendChild(resizer);
-
         resizer.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -473,8 +430,6 @@ class Dialog {
             const computedStyle = window.getComputedStyle(target);
             const startWidth = parseInt(computedStyle.width, 10);
             const startHeight = parseInt(computedStyle.height, 10);
-
-            // Transparentes Overlay erstellen, um alle Mouse-Events abzufangen
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
             overlay.style.top = '0';
@@ -485,7 +440,6 @@ class Dialog {
             overlay.style.cursor = 'se-resize';
             overlay.style.backgroundColor = 'transparent';
             document.body.appendChild(overlay);
-
             const mouseMoveHandler = (e) => {
                 window.requestAnimationFrame(() => {
                     const dx = e.clientX - startX;
@@ -496,25 +450,20 @@ class Dialog {
                     target.style.height = newHeight + "px";
                 });
             };
-
             const mouseUpHandler = (e) => {
-                // Overlay entfernen und Event-Listener bereinigen
                 overlay.remove();
                 overlay.removeEventListener('mousemove', mouseMoveHandler);
                 overlay.removeEventListener('mouseup', mouseUpHandler);
                 document.removeEventListener("mousemove", mouseMoveHandler);
                 document.removeEventListener("mouseup", mouseUpHandler);
                 saveWindowPositions();
-                // Optional: Hier den neuen Zustand speichern
             };
-
             overlay.addEventListener("mousemove", mouseMoveHandler);
             overlay.addEventListener("mouseup", mouseUpHandler);
         });
     }
-
     loadIframe(url) {
-        // Versuche, einen vorhandenen dialog-content-Bereich zu finden
+        // Creates or reuses a dedicated content container for iframes
         let contentArea = this.modal.querySelector('.dialog-content');
         if (!contentArea) {
             contentArea = document.createElement('div');
@@ -523,44 +472,48 @@ class Dialog {
             contentArea.style.height = "100%";
             this.modal.appendChild(contentArea);
         }
-        // Lösche alte Inhalte
+        // Clear any previous contents (e.g. existing iframes)
         contentArea.innerHTML = "";
-        // Erstelle das iframe
         const iframe = document.createElement("iframe");
         iframe.src = url;
         iframe.style.width = "100%";
         iframe.style.height = "100%";
         iframe.style.border = "none";
+        // allow attribute to permit fullscreen etc.
         iframe.setAttribute("allow", "fullscreen");
-
         contentArea.appendChild(iframe);
-
-        // Sobald das iframe geladen ist, wird in dessen Dokument ein mousedown-Eventlistener registriert,
-        // der das Modal in den Vordergrund bringt.
+        // When the iframe finishes loading its content we attempt to hook into its document
         iframe.addEventListener("load", () => {
-            setTimeout(500);
-            console.log(iframe.children);
-            iframe.parentNode.parentNode.setAttribute("click", "test()");
-            console.log(iframe.parentNode.parentNode.outerHTML);
-
-            console.log(iframe.innerHTML);
-            if (iframe.innerHTML == "") {
-                //iframe.src = iframe.src;
-                return;
-
-            }
             try {
-                console.log(iframe.src);
-
-                iframe.addEventListener("mousedown", (e) => {
-                    this.refocus();
-                });
+                // Attach a mousedown listener to the iframe's document so that any click inside the
+                // iframe (e.g. inside a contenteditable region) will refocus this modal. We also
+                // attach to the window as a fallback. Same-origin policy allows this for local files.
+                const cw = iframe.contentWindow;
+                if (cw && cw.document) {
+                    const handler = () => {
+                        // Defer bringing to front slightly to allow other event handlers to complete
+                        requestAnimationFrame(() => {
+                            this.refocus();
+                        });
+                    };
+                    ['mousedown', 'click', 'touchstart'].forEach(evt => {
+                        cw.document.addEventListener(evt, handler);
+                    });
+                } else if (cw) {
+                    ['mousedown', 'click', 'touchstart'].forEach(evt => {
+                        cw.addEventListener(evt, () => {
+                            requestAnimationFrame(() => {
+                                this.refocus();
+                            });
+                        });
+                    });
+                }
             } catch (err) {
                 console.error("Could not attach mousedown event in iframe:", err);
             }
         });
     }
-    // Optional: Methode zum Speichern des aktuellen Zustands des Fensters
+    // Optional: speichert den Zustand des Fensters
     saveState() {
         return {
             left: this.modal.style.left,
@@ -570,8 +523,7 @@ class Dialog {
             zIndex: this.modal.style.zIndex,
         };
     }
-
-    // Optional: Methode zum Wiederherstellen eines gespeicherten Zustands
+    // Optional: restauriert einen gespeicherten Zustand
     restoreState(state) {
         if (!state) return;
         if (state.left) this.modal.style.left = state.left;
