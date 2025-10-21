@@ -7,46 +7,64 @@
     <title>Einstellungen</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        :root {
+            color-scheme: light;
+            --settings-body-bg: #fafafa;
+            --settings-text: #111827;
+            --settings-panel-bg: #ffffff;
+            --settings-panel-border: #d1d5db;
+        }
+
+        .dark {
+            color-scheme: dark;
+            --settings-body-bg: #0f172a;
+            --settings-text: #e5e7eb;
+            --settings-panel-bg: #1f2937;
+            --settings-panel-border: #374151;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         html,
         body {
             height: 100%;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
         }
 
         body {
             display: flex;
             flex-direction: column;
-            font-family: sans-serif;
-            background: #fafafa;
+            font-family: system-ui, sans-serif;
+            background: var(--settings-body-bg);
+            color: var(--settings-text);
+            min-height: 0;
         }
 
-        .toolbar {
-            flex: 0 0 auto;
-            padding: 20px;
-            margin-bottom: 10px;
-        }
-
-        .toolbar button {
-            margin-right: 5px;
-            padding: 5px 10px;
-            font-size: 0.9em;
-        }
-
-        #editor {
+        body > .settings-panel {
             flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        .settings-panel {
+            background: var(--settings-panel-bg);
+            border: 1px solid var(--settings-panel-border);
+            display: flex;
             width: 100%;
-            border: 1px solid #ccc;
-            padding: 10px;
-            overflow-y: auto;
-            background: #fff;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .settings-panel > .flex-1 {
+            min-height: 0;
         }
     </style>
 </head>
 
 <body class="flex">
-    <div class="flex dialog-content" name="settings-window" onclick="onClick()">
+    <div class="flex dialog-content settings-panel rounded-lg shadow-sm" name="settings-window" onclick="onClick()">
         <!-- Linke Seitenleiste -->
         <div class="w-48 bg-gray-100 dark:bg-gray-700 p-4 space-y-1">
             <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
@@ -86,6 +104,29 @@
     </div>
 
     <script>
+        function applyTheme(isDark) {
+            document.documentElement.classList.toggle('dark', !!isDark);
+        }
+        (function initThemeSync() {
+            try {
+                const parentRoot = window.parent.document.documentElement;
+                const updateFromParent = () => applyTheme(parentRoot.classList.contains('dark'));
+                updateFromParent();
+                const observer = new MutationObserver(updateFromParent);
+                observer.observe(parentRoot, { attributes: true, attributeFilter: ['class'] });
+            } catch (err) {
+                const mediaQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+                applyTheme(mediaQuery ? mediaQuery.matches : false);
+                if (mediaQuery) {
+                    const listener = (event) => applyTheme(event.matches);
+                    if (typeof mediaQuery.addEventListener === 'function') {
+                        mediaQuery.addEventListener('change', listener);
+                    } else if (typeof mediaQuery.addListener === 'function') {
+                        mediaQuery.addListener(listener);
+                    }
+                }
+            }
+        })();
         // Meldet dem übergeordneten Dokument, dass dieses Fenster den Fokus benötigt
         const dialog = window.parent.loaded(window.frameElement);
         function onClick() {

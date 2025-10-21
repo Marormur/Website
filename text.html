@@ -7,41 +7,71 @@
     <title>Texteditor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        :root {
+            color-scheme: light;
+            --editor-body-bg: #fafafa;
+            --editor-text: #111827;
+            --editor-toolbar-bg: #f5f5f5;
+            --editor-toolbar-border: #d1d5db;
+            --editor-toolbar-button-bg: #ffffff;
+            --editor-toolbar-button-hover: #e5e7eb;
+            --editor-toolbar-button-border: #d1d5db;
+            --editor-surface-bg: #ffffff;
+        }
+
+        .dark {
+            color-scheme: dark;
+            --editor-body-bg: #0f172a;
+            --editor-text: #e5e7eb;
+            --editor-toolbar-bg: #1f2937;
+            --editor-toolbar-border: #374151;
+            --editor-toolbar-button-bg: #111827;
+            --editor-toolbar-button-hover: #1f2937;
+            --editor-toolbar-button-border: #475569;
+            --editor-surface-bg: #111827;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
         }
         body {
             display: flex;
             flex-direction: column;
             font-family: sans-serif;
-            background: #fafafa;
+            background: var(--editor-body-bg);
+            color: var(--editor-text);
         }
         #toolbar {
             flex: 0 0 auto;
-            background: #f5f5f5;
+            background: var(--editor-toolbar-bg);
             padding: 8px;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--editor-toolbar-border);
         }
         #toolbar button {
             margin-right: 4px;
             padding: 4px 8px;
             font-size: 14px;
-            border: 1px solid #ccc;
-            background: #fff;
+            border: 1px solid var(--editor-toolbar-button-border);
+            background: var(--editor-toolbar-button-bg);
             cursor: pointer;
+            color: inherit;
         }
         #toolbar button:hover {
-            background: #eee;
+            background: var(--editor-toolbar-button-hover);
         }
         #editor {
             flex: 1 1 auto;
             padding: 10px;
             overflow-y: auto;
-            background: #fff;
+            background: var(--editor-surface-bg);
             outline: none;
+            border: none;
         }
     </style>
 </head>
@@ -68,6 +98,29 @@
     </div>
     <div id="editor" contenteditable="true"></div>
     <script>
+        function applyTheme(isDark) {
+            document.documentElement.classList.toggle('dark', !!isDark);
+        }
+        (function initThemeSync() {
+            try {
+                const parentRoot = window.parent.document.documentElement;
+                const updateFromParent = () => applyTheme(parentRoot.classList.contains('dark'));
+                updateFromParent();
+                const observer = new MutationObserver(updateFromParent);
+                observer.observe(parentRoot, { attributes: true, attributeFilter: ['class'] });
+            } catch (err) {
+                const mediaQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+                applyTheme(mediaQuery ? mediaQuery.matches : false);
+                if (mediaQuery) {
+                    const listener = (event) => applyTheme(event.matches);
+                    if (typeof mediaQuery.addEventListener === 'function') {
+                        mediaQuery.addEventListener('change', listener);
+                    } else if (typeof mediaQuery.addListener === 'function') {
+                        mediaQuery.addListener(listener);
+                    }
+                }
+            }
+        })();
         // Den übergeordneten Dialog identifizieren, damit das Fenster im Fokus bleibt
         const dialog = window.parent.loaded(window.frameElement);
         // Bring the editor window to the front whenever this iframe gains focus (e.g. click or tab inside editor).

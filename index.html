@@ -55,7 +55,7 @@
     <div id="projects-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
         <!-- Projekte nutzen nun einen flexiblen Container, der sich an der Fenstergröße orientiert. -->
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col"
-            style="width: 70vw; max-width: 900px; height: 60vh; max-height: 85vh;">
+            style="width: 70vw; height: 60vh; max-height: 85vh;">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" id="close-projects-modal"
@@ -76,7 +76,8 @@
     </div>
     <!-- Über mich Modal -->
     <div id="about-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg w-auto max-w-xl autopointer">
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer"
+            style="width: max(320px, 50vw); max-height: 85vh;">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" id="close-about-modal"
@@ -117,7 +118,7 @@
           dynamisch in die .dialog-content ein.
         -->
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col"
-            style="width: 80vw; max-width: 900px; height: 70vh; max-height: 90vh;">
+            style="width: 80vw; height: 70vh; max-height: 90vh;">
             <!-- Header -->
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
@@ -145,7 +146,7 @@
           Der Inhalt wird dynamisch über Dialog.loadIframe geladen.
         -->
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col"
-            style="width: 70vw; max-width: 800px; height: 60vh; max-height: 85vh;">
+            style="width: 70vw; height: 60vh; max-height: 85vh;">
             <!-- Header -->
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">

@@ -31,4 +31,10 @@ body {
 
 .modal .autopointer {
     pointer-events: auto;
+    box-sizing: border-box;
+    max-width: none;
+}
+
+.modal .autopointer > * {
+    min-width: 0;
 }

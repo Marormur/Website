@@ -1,7 +1,14 @@
 // Konfiguriere Tailwind, dunkler Modus folgt den Systemeinstellungen
 tailwind.config = { darkMode: 'media' };
-if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    document.documentElement.classList.add('dark');
+const systemDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+function applySystemTheme(isDark) {
+    document.documentElement.classList.toggle('dark', !!isDark);
+}
+applySystemTheme(systemDarkQuery.matches);
+if (typeof systemDarkQuery.addEventListener === 'function') {
+    systemDarkQuery.addEventListener('change', (event) => applySystemTheme(event.matches));
+} else if (typeof systemDarkQuery.addListener === 'function') {
+    systemDarkQuery.addListener((event) => applySystemTheme(event.matches));
 }
 // Liste aller Modal-IDs, die von der Desktop-Shell verwaltet werden
 const modalIds = ["projects-modal", "about-modal", "settings-modal", "text-modal"];
