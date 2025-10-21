@@ -191,16 +191,23 @@ function restoreOpenModals() {
 }
 
 // Speichern der Fensterpositionen
+function getDialogWindowElement(modal) {
+    if (!modal) return null;
+    return modal.querySelector('.autopointer') || modal;
+}
+
 function saveWindowPositions() {
     const positions = {};
     modalIds.forEach(id => {
         const el = document.getElementById(id);
-        if (el) {
+        const windowEl = getDialogWindowElement(el);
+        if (el && windowEl) {
             positions[id] = {
-                left: el.style.left || "",
-                top: el.style.top || "",
-                width: el.style.width || "",
-                height: el.style.height || ""
+                left: windowEl.style.left || "",
+                top: windowEl.style.top || "",
+                width: windowEl.style.width || "",
+                height: windowEl.style.height || "",
+                position: windowEl.style.position || ""
             };
         }
     });
@@ -211,11 +218,18 @@ function restoreWindowPositions() {
     const positions = JSON.parse(localStorage.getItem("modalPositions") || "{}");
     Object.keys(positions).forEach(id => {
         const el = document.getElementById(id);
-        if (el) {
-            el.style.left = positions[id].left;
-            el.style.top = positions[id].top;
-            el.style.width = positions[id].width;
-            el.style.height = positions[id].height;
+        const windowEl = getDialogWindowElement(el);
+        if (el && windowEl) {
+            const stored = positions[id];
+            if (stored.position) {
+                windowEl.style.position = stored.position;
+            } else if (stored.left || stored.top) {
+                windowEl.style.position = 'fixed';
+            }
+            if (stored.left) windowEl.style.left = stored.left;
+            if (stored.top) windowEl.style.top = stored.top;
+            if (stored.width) windowEl.style.width = stored.width;
+            if (stored.height) windowEl.style.height = stored.height;
         }
     });
 }
@@ -325,6 +339,7 @@ class Dialog {
         if (!this.modal) {
             throw new Error(`Kein Dialog mit der ID ${modalId} gefunden.`);
         }
+        this.windowEl = getDialogWindowElement(this.modal);
         this.init();
     }
     init() {
@@ -351,7 +366,11 @@ class Dialog {
         // ein anderer Dialog versehentlich überlagert wird. Sichtbare Modale werden nicht
         // zurückgesetzt, wodurch ständige Umsortierungen verhindert werden.
         topZIndex = (typeof topZIndex === 'number' ? topZIndex : 1000) + 1;
-        this.modal.style.zIndex = topZIndex.toString();
+        const zValue = topZIndex.toString();
+        this.modal.style.zIndex = zValue;
+        if (this.windowEl) {
+            this.windowEl.style.zIndex = zValue;
+        }
     }
     refocus() {
         // Wird aufgerufen, wenn innerhalb des Modals geklickt wird
@@ -361,19 +380,27 @@ class Dialog {
     }
     makeDraggable() {
         const header = this.modal.querySelector('.draggable-header');
-        if (!header) return;
+        const target = this.windowEl || this.modal;
+        if (!header || !target) return;
         header.style.cursor = 'move';
         let offsetX = 0, offsetY = 0;
         header.addEventListener('mousedown', (e) => {
             this.refocus();
             // Wenn der Klick auf einen Schließen-Button innerhalb der Kopfzeile erfolgt, ignoriere den Drag-Vorgang
             if (e.target.closest('button[title="Schließen"]')) return;
-            offsetX = e.clientX - this.modal.getBoundingClientRect().left;
-            offsetY = e.clientY - this.modal.getBoundingClientRect().top;
-            // Modal absolut positionieren
-            if (getComputedStyle(this.modal).position !== 'absolute') {
-                this.modal.style.position = 'absolute';
+            const rect = target.getBoundingClientRect();
+            const computedPosition = window.getComputedStyle(target).position;
+            // Beim ersten Drag die aktuelle Position einfrieren, damit es nicht springt.
+            if (computedPosition === 'static' || computedPosition === 'relative') {
+                target.style.position = 'fixed';
+                target.style.left = rect.left + 'px';
+                target.style.top = rect.top + 'px';
+            } else {
+                if (!target.style.left) target.style.left = rect.left + 'px';
+                if (!target.style.top) target.style.top = rect.top + 'px';
             }
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
             // Transparentes Overlay erstellen, um Events abzufangen
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
@@ -385,26 +412,38 @@ class Dialog {
             overlay.style.cursor = 'move';
             overlay.style.backgroundColor = 'transparent';
             document.body.appendChild(overlay);
-            const mouseMoveHandler = (e) => {
-                window.requestAnimationFrame(() => {
-                    this.modal.style.left = (e.clientX - offsetX) + 'px';
-                    this.modal.style.top = (e.clientY - offsetY) + 'px';
-                });
-            };
-            const mouseUpHandler = (e) => {
+            let isDragging = true;
+            const cleanup = (shouldSave = true) => {
+                if (!isDragging) return;
+                isDragging = false;
                 overlay.remove();
                 overlay.removeEventListener('mousemove', mouseMoveHandler);
                 overlay.removeEventListener('mouseup', mouseUpHandler);
-                document.removeEventListener('mousemove', mouseMoveHandler);
-                saveWindowPositions();
+                window.removeEventListener('mouseup', mouseUpHandler);
+                window.removeEventListener('blur', blurHandler);
+                window.removeEventListener('mousemove', mouseMoveHandler);
+                if (shouldSave) {
+                    saveWindowPositions();
+                }
             };
+            const mouseMoveHandler = (e) => {
+                window.requestAnimationFrame(() => {
+                    target.style.left = (e.clientX - offsetX) + 'px';
+                    target.style.top = (e.clientY - offsetY) + 'px';
+                });
+            };
+            const mouseUpHandler = () => cleanup(true);
+            const blurHandler = () => cleanup(true);
             overlay.addEventListener('mousemove', mouseMoveHandler);
             overlay.addEventListener('mouseup', mouseUpHandler);
+            window.addEventListener('mousemove', mouseMoveHandler);
+            window.addEventListener('mouseup', mouseUpHandler);
+            window.addEventListener('blur', blurHandler);
             e.preventDefault();
         });
     }
     makeResizable() {
-        const target = this.modal.querySelector('.autopointer') || this.modal;
+        const target = this.windowEl || this.modal;
         if (target.querySelector('.resizer')) return;
         const computedPosition = window.getComputedStyle(target).position;
         if (!computedPosition || computedPosition === 'static') {
