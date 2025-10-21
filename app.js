@@ -1,14 +1,34 @@
-// Konfiguriere Tailwind, dunkler Modus folgt den Systemeinstellungen
-tailwind.config = { darkMode: 'media' };
+const THEME_PREFERENCE_KEY = 'themePreference';
 const systemDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
-function applySystemTheme(isDark) {
-    document.documentElement.classList.toggle('dark', !!isDark);
+const validThemePreferences = ['system', 'light', 'dark'];
+let themePreference = localStorage.getItem(THEME_PREFERENCE_KEY);
+if (!validThemePreferences.includes(themePreference)) {
+    themePreference = 'system';
 }
-applySystemTheme(systemDarkQuery.matches);
+function updateThemeFromPreference() {
+    const useDark = themePreference === 'dark' || (themePreference === 'system' && systemDarkQuery.matches);
+    document.documentElement.classList.toggle('dark', useDark);
+}
+function setThemePreference(pref) {
+    if (!validThemePreferences.includes(pref)) return;
+    themePreference = pref;
+    localStorage.setItem(THEME_PREFERENCE_KEY, pref);
+    updateThemeFromPreference();
+    window.dispatchEvent(new CustomEvent('themePreferenceChange', { detail: { preference: pref } }));
+}
+function getThemePreference() {
+    return themePreference;
+}
+window.setThemePreference = setThemePreference;
+window.getThemePreference = getThemePreference;
+updateThemeFromPreference();
+const handleSystemThemeChange = () => {
+    updateThemeFromPreference();
+};
 if (typeof systemDarkQuery.addEventListener === 'function') {
-    systemDarkQuery.addEventListener('change', (event) => applySystemTheme(event.matches));
+    systemDarkQuery.addEventListener('change', handleSystemThemeChange);
 } else if (typeof systemDarkQuery.addListener === 'function') {
-    systemDarkQuery.addListener((event) => applySystemTheme(event.matches));
+    systemDarkQuery.addListener(handleSystemThemeChange);
 }
 // Liste aller Modal-IDs, die von der Desktop-Shell verwaltet werden
 const modalIds = ["projects-modal", "about-modal", "settings-modal", "text-modal"];
@@ -326,7 +346,7 @@ function updateDockIndicators() {
 
 // Blendet alle Sektionen der Einstellungen aus und zeigt nur die gewünschte an
 function showSettingsSection(section) {
-    const allSections = ["settings-general", "settings-about", "settings-network", "settings-battery"];
+    const allSections = ["settings-general", "settings-display", "settings-about", "settings-network", "settings-battery"];
     allSections.forEach(id => {
         const el = document.getElementById(id);
         if (el) {

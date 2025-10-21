@@ -8,6 +8,10 @@
     <!-- Tailwind via CDN for quick styling -->
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = Object.assign({}, window.tailwind.config, { darkMode: 'class' });
+    </script>
     <!-- Unsere zentrale Logik für Fenster und Dock -->
     <script src="app.js"></script>
 </head>

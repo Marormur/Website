@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Einstellungen</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = Object.assign({}, window.tailwind.config, { darkMode: 'class' });
+    </script>
     <style>
         :root {
             color-scheme: light;
@@ -66,10 +70,16 @@
 <body class="flex">
     <div class="flex dialog-content settings-panel rounded-lg shadow-sm" name="settings-window" onclick="onClick()">
         <!-- Linke Seitenleiste -->
-        <div class="w-48 bg-gray-100 dark:bg-gray-700 p-4 space-y-1">
+        <div class="w-48 bg-gray-100 dark:bg-gray-700 p-4 space-y-1 overflow-auto">
             <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
+                data-settings-nav="general"
                 onclick="showSettingsSection('general')">
                 Allgemein
+            </div>
+            <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
+                data-settings-nav="display"
+                onclick="showSettingsSection('display')">
+                Darstellung
             </div>
             <!-- Weitere Menüpunkte können hier ergänzt werden -->
         </div>
@@ -97,6 +107,41 @@
                     <div class="text-xs text-gray-500 dark:text-gray-400 border-t border-gray-300 dark:border-gray-700 pt-2 w-full">
                         © 2025 Marvin T. — Alle Rechte vorbehalten.
                     </div>
+                </div>
+            </div>
+            <!-- Sektion: Darstellung -->
+            <div id="settings-display" class="hidden">
+                <div class="flex flex-col gap-6 mt-4 w-full">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Darstellungsoptionen</h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                            Passe an, wie der Desktop mit hellem und dunklem Design umgeht.
+                        </p>
+                    </div>
+                    <fieldset class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+                        <legend class="text-sm font-medium text-gray-700 dark:text-gray-200 px-1">Darkmode</legend>
+                        <label class="flex items-center gap-3 cursor-pointer select-none">
+                            <input type="radio" name="theme-mode" value="system" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                            <div>
+                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100">System</span>
+                                <span class="block text-xs text-gray-600 dark:text-gray-300">Folgt den aktuellen Systemeinstellungen.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer select-none">
+                            <input type="radio" name="theme-mode" value="light" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                            <div>
+                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100">Hell</span>
+                                <span class="block text-xs text-gray-600 dark:text-gray-300">Bleibt immer im hellen Erscheinungsbild.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer select-none">
+                            <input type="radio" name="theme-mode" value="dark" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                            <div>
+                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100">Dunkel</span>
+                                <span class="block text-xs text-gray-600 dark:text-gray-300">Bleibt immer im dunklen Erscheinungsbild.</span>
+                            </div>
+                        </label>
+                    </fieldset>
                 </div>
             </div>
             <!-- Weitere Sektionen (Über Marvin, Netzwerk, Akku) können hier ergänzt werden -->
@@ -133,7 +178,73 @@
             dialog.refocus();
         }
         function showSettingsSection(section) {
-            window.parent.showSettingsSection(section);
+            const localSections = ['settings-general', 'settings-display'];
+            localSections.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.classList.add('hidden');
+                }
+            });
+            const target = document.getElementById(`settings-${section}`);
+            if (target) {
+                target.classList.remove('hidden');
+            }
+            const navItems = Array.from(document.querySelectorAll('[data-settings-nav]'));
+            navItems.forEach(item => {
+                if (item.dataset.settingsNav === section) {
+                    item.classList.add('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-gray-100', 'font-medium');
+                } else {
+                    item.classList.remove('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-gray-100', 'font-medium');
+                }
+            });
+            try {
+                if (window.parent && window.parent !== window && typeof window.parent.showSettingsSection === 'function') {
+                    window.parent.showSettingsSection(section);
+                }
+            } catch (err) {
+                // Ignoriere fehlenden Zugriff auf das Elternfenster.
+            }
+        }
+        const themeRadios = Array.from(document.querySelectorAll('input[name="theme-mode"]'));
+        function syncThemePreference(pref) {
+            themeRadios.forEach(radio => {
+                radio.checked = (radio.value === pref);
+            });
+        }
+        function detectInitialPreference() {
+            try {
+                if (typeof window.parent.getThemePreference === 'function') {
+                    syncThemePreference(window.parent.getThemePreference());
+                    return;
+                }
+            } catch (err) {
+                console.error('Could not read theme preference from parent:', err);
+            }
+            syncThemePreference('system');
+        }
+        showSettingsSection('general');
+        themeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (!radio.checked) return;
+                try {
+                    if (typeof window.parent.setThemePreference === 'function') {
+                        window.parent.setThemePreference(radio.value);
+                    }
+                } catch (err) {
+                    console.error('Could not set theme preference on parent:', err);
+                }
+                syncThemePreference(radio.value);
+            });
+        });
+        detectInitialPreference();
+        try {
+            window.parent.addEventListener('themePreferenceChange', (event) => {
+                if (event && event.detail && event.detail.preference) {
+                    syncThemePreference(event.detail.preference);
+                }
+            });
+        } catch (err) {
+            // Ignoriere, falls kein Zugriff auf das Parent-Fenster möglich ist
         }
     </script>
 </body>
