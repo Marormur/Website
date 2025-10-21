@@ -36,6 +36,26 @@ const modalIds = ["projects-modal", "about-modal", "settings-modal", "text-modal
 // Für zukünftige z‑Index‑Verwaltung reserviert
 let topZIndex = 1000;
 
+function syncTopZIndexWithDOM() {
+    let maxZ = Number.isFinite(topZIndex) ? topZIndex : 1000;
+    modalIds.forEach(id => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
+        if (!Number.isNaN(modalZ)) {
+            maxZ = Math.max(maxZ, modalZ);
+        }
+        const windowEl = getDialogWindowElement(modal);
+        if (windowEl) {
+            const contentZ = parseInt(window.getComputedStyle(windowEl).zIndex, 10);
+            if (!Number.isNaN(contentZ)) {
+                maxZ = Math.max(maxZ, contentZ);
+            }
+        }
+    });
+    topZIndex = maxZ;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // Wenn auf einen sichtbaren Modalcontainer geklickt wird, hole das Fenster in den Vordergrund
     document.querySelectorAll('.modal').forEach(modal => {
@@ -48,22 +68,27 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    initEventHandlers();
-    restoreOpenModals();
-    restoreWindowPositions();
-    loadGithubRepos();
-
-    // Erzeuge globale Dialog-Instanzen für jede App
     window.dialogs = {};
-    window.dialogs["projects-modal"] = new Dialog("projects-modal");
-    // Inhalte können direkt in das Modal gerendert werden; optional: iframe laden
-    window.dialogs["about-modal"] = new Dialog("about-modal");
-    window.dialogs["settings-modal"] = new Dialog("settings-modal");
-    window.dialogs["settings-modal"].loadIframe("./settings.html");
-    window.dialogs["text-modal"] = new Dialog("text-modal");
-    // Lädt den Rich‑Text‑Editor in einem IFrame und registriert einen mousedown‑Handler
-    // damit Klicks im Editorfenster das Modal in den Vordergrund holen.
-    window.dialogs["text-modal"].loadIframe("./text.html");
+    modalIds.forEach(id => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        window.dialogs[id] = new Dialog(id);
+    });
+
+    syncTopZIndexWithDOM();
+    restoreWindowPositions();
+    restoreOpenModals();
+    loadGithubRepos();
+    initEventHandlers();
+
+    if (window.dialogs["settings-modal"]) {
+        window.dialogs["settings-modal"].loadIframe("./settings.html");
+    }
+    if (window.dialogs["text-modal"]) {
+        // Lädt den Rich‑Text‑Editor in einem IFrame und registriert einen mousedown‑Handler
+        // damit Klicks im Editorfenster das Modal in den Vordergrund holen.
+        window.dialogs["text-modal"].loadIframe("./text.html");
+    }
 });
 
 function bringDialogToFront(dialogId) {
@@ -188,10 +213,10 @@ function initEventHandlers() {
                 } else {
                     const modal = document.getElementById(modalId);
                     if (modal) modal.classList.add("hidden");
+                    saveOpenModals();
+                    updateDockIndicators();
+                    updateProgramLabelByTopModal();
                 }
-                updateProgramLabelByTopModal();
-                saveOpenModals();
-                updateDockIndicators();
             });
         }
     });
@@ -210,8 +235,13 @@ function saveOpenModals() {
 function restoreOpenModals() {
     const openModals = JSON.parse(localStorage.getItem("openModals") || "[]");
     openModals.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove("hidden");
+        const dialogInstance = window.dialogs && window.dialogs[id];
+        if (dialogInstance) {
+            dialogInstance.open();
+        } else {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove("hidden");
+        }
     });
     updateDockIndicators();
     updateProgramLabelByTopModal();
@@ -267,51 +297,112 @@ function loadGithubRepos() {
     const cacheKey = `githubRepos_${username}`;
     const cacheTimestampKey = `githubReposTimestamp_${username}`;
     const cacheDuration = 1000 * 60 * 60; // 1 Stunde
-    function loadRepos(repos) {
-        const list = document.getElementById("repo-list");
+    const list = document.getElementById("repo-list");
+    if (!list) return;
+
+    const renderEmptyState = (message) => {
         list.innerHTML = "";
-        if (Array.isArray(repos)) {
-            repos.forEach(repo => {
-                const item = document.createElement("li");
-                item.innerHTML = `
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition">
-                        <h3 class="text-xl font-semibold mb-2">
-                          <a href="${repo.html_url}" target="_blank" class="text-blue-600 hover:underline">${repo.name}</a>
-                        </h3>
-                        <p>${repo.description || "Keine Beschreibung"}</p>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        } else {
-            console.error("Unerwartetes API-Response-Format:", repos);
-        }
-    }
-    const cachedRepos = localStorage.getItem(cacheKey);
-    const cachedTimestamp = localStorage.getItem(cacheTimestampKey);
-    if (cachedRepos && cachedTimestamp) {
-        const age = Date.now() - parseInt(cachedTimestamp, 10);
-        if (age < cacheDuration) {
-            const repos = JSON.parse(cachedRepos);
-            loadRepos(repos);
+        const item = document.createElement("li");
+        const card = document.createElement("div");
+        card.className = "bg-white dark:bg-gray-800 p-4 rounded-lg shadow text-gray-600 dark:text-gray-300";
+        card.textContent = message;
+        item.appendChild(card);
+        list.appendChild(item);
+    };
+
+    const renderRepos = (repos) => {
+        list.innerHTML = "";
+        if (!Array.isArray(repos) || repos.length === 0) {
+            renderEmptyState("Keine öffentlichen Repositories gefunden.");
             return;
         }
+        repos.forEach(repo => {
+            const item = document.createElement("li");
+            const card = document.createElement("div");
+            card.className = "bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition";
+
+            const title = document.createElement("h3");
+            title.className = "text-xl font-semibold mb-2";
+
+            const link = document.createElement("a");
+            link.className = "text-blue-600 hover:underline";
+            link.href = repo.html_url || "#";
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = repo.name || "Unbenanntes Repository";
+
+            const description = document.createElement("p");
+            description.textContent = repo.description || "Keine Beschreibung verfügbar.";
+
+            title.appendChild(link);
+            card.appendChild(title);
+            card.appendChild(description);
+            item.appendChild(card);
+            list.appendChild(item);
+        });
+    };
+
+    const tryRenderCachedRepos = () => {
+        const cachedRepos = localStorage.getItem(cacheKey);
+        const cachedTimestamp = localStorage.getItem(cacheTimestampKey);
+        if (!cachedRepos || !cachedTimestamp) {
+            return { served: false, fresh: false };
+        }
+        try {
+            const parsed = JSON.parse(cachedRepos);
+            if (!Array.isArray(parsed)) {
+                return { served: false, fresh: false };
+            }
+            renderRepos(parsed);
+            const age = Date.now() - parseInt(cachedTimestamp, 10);
+            const isFresh = Number.isFinite(age) && age < cacheDuration;
+            return { served: true, fresh: isFresh };
+        } catch (err) {
+            console.warn("Konnte Cache nicht lesen:", err);
+            return { served: false, fresh: false };
+        }
+    };
+
+    const cacheStatus = tryRenderCachedRepos();
+    if (cacheStatus.fresh) {
+        return;
     }
+
     fetch(`https://api.github.com/users/${username}/repos`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`GitHub API antwortete mit Status ${res.status}`);
+            }
+            return res.json();
+        })
         .then(repos => {
+            if (!Array.isArray(repos)) {
+                throw new Error("Unerwartetes Antwortformat der GitHub API");
+            }
             localStorage.setItem(cacheKey, JSON.stringify(repos));
             localStorage.setItem(cacheTimestampKey, Date.now().toString());
-            loadRepos(repos);
+            renderRepos(repos);
         })
         .catch(err => {
             console.error("Fehler beim Laden der Repos:", err);
+            if (!cacheStatus.served) {
+                renderEmptyState("Repos konnten nicht geladen werden. Bitte versuche es später erneut.");
+            }
         });
 }
 
 // Hilfsfunktionen für das Laden des Parent-Dialogs
 function loaded(node) {
-    var dialog = new Dialog(recursiveParentSearch(node));
+    const dialogId = recursiveParentSearch(node);
+    if (!dialogId) return null;
+    if (window.dialogs && window.dialogs[dialogId]) {
+        return window.dialogs[dialogId];
+    }
+    const dialog = new Dialog(dialogId);
+    if (!window.dialogs) {
+        window.dialogs = {};
+    }
+    window.dialogs[dialogId] = dialog;
     return dialog;
 }
 
@@ -373,19 +464,20 @@ class Dialog {
         // Initialisiert Drag & Drop und Resizing
         this.makeDraggable();
         this.makeResizable();
-        restoreWindowPositions();
     }
     open() {
         this.modal.classList.remove("hidden");
         this.bringToFront();
         saveOpenModals();
         updateDockIndicators();
+        updateProgramLabelByTopModal();
     }
     close() {
+        if (this.modal.classList.contains("hidden")) return;
         this.modal.classList.add("hidden");
-        updateProgramLabelByTopModal();
-        updateProgramLabelByTopModal();
+        saveOpenModals();
         updateDockIndicators();
+        updateProgramLabelByTopModal();
     }
     bringToFront() {
         // Erhöhe den globalen Z-Index‑Zähler und setze diesen Dialog nach vorn.

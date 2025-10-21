@@ -73,26 +73,64 @@
     </div>
     <script>
         const username = "Marormur";
+        const grid = document.getElementById('repo-grid');
+
+        function renderMessage(message) {
+            if (!grid) return;
+            grid.innerHTML = "";
+            const card = document.createElement('div');
+            card.className = "repo-card";
+            const paragraph = document.createElement('p');
+            paragraph.textContent = message;
+            card.appendChild(paragraph);
+            grid.appendChild(card);
+        }
+
+        function renderRepos(repos) {
+            if (!grid) return;
+            grid.innerHTML = "";
+            if (!Array.isArray(repos) || repos.length === 0) {
+                renderMessage("Keine öffentlichen Repositories gefunden.");
+                return;
+            }
+            repos.forEach(repo => {
+                const card = document.createElement('div');
+                card.className = "repo-card";
+
+                const title = document.createElement('h3');
+                const link = document.createElement('a');
+                link.href = repo.html_url || "#";
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.textContent = repo.name || "Unbenanntes Repository";
+                title.appendChild(link);
+
+                const description = document.createElement('p');
+                description.textContent = repo.description ? repo.description : "Keine Beschreibung verfügbar.";
+
+                card.appendChild(title);
+                card.appendChild(description);
+                grid.appendChild(card);
+            });
+        }
+
         function loadRepos() {
             fetch(`https://api.github.com/users/${username}/repos`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`GitHub API antwortete mit Status ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(repos => {
-                    const grid = document.getElementById('repo-grid');
-                    grid.innerHTML = "";
-                    repos.forEach(repo => {
-                        const card = document.createElement('div');
-                        card.className = "repo-card";
-                        card.innerHTML = `
-                            <h3><a href="${repo.html_url}" target="_blank">${repo.name}</a></h3>
-                            <p>${repo.description ? repo.description : "Keine Beschreibung verfügbar."}</p>
-                        `;
-                        grid.appendChild(card);
-                    });
+                    if (!Array.isArray(repos)) {
+                        throw new Error("Unerwartetes Antwortformat der GitHub API");
+                    }
+                    renderRepos(repos);
                 })
                 .catch(err => {
                     console.error("Fehler beim Laden der Repos:", err);
-                    document.getElementById('repo-grid').innerHTML =
-                        "<p>Repos konnten nicht geladen werden. Bitte versuchen Sie es später erneut.</p>";
+                    renderMessage("Repos konnten nicht geladen werden. Bitte versuche es später erneut.");
                 });
         }
         loadRepos();
