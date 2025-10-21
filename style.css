@@ -12,6 +12,16 @@ body {
     font-family: sans-serif;
 }
 
+body > header {
+    position: relative;
+    z-index: 4000 !important;
+}
+
+#profile-dropdown,
+#program-dropdown {
+    z-index: 2147483647 !important;
+}
+
 /* Stelle sicher, dass iframes und Modale sauber gestylt sind */
 .modal iframe {
     width: 100%;

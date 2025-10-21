@@ -56,12 +56,45 @@ function syncTopZIndexWithDOM() {
     topZIndex = maxZ;
 }
 
+function getMenuBarBottom() {
+    const header = document.querySelector('body > header');
+    if (!header) {
+        return 0;
+    }
+    const rect = header.getBoundingClientRect();
+    return rect.bottom;
+}
+
+function clampWindowToMenuBar(target) {
+    if (!target) return;
+    const minTop = getMenuBarBottom();
+    if (minTop <= 0) return;
+    const computed = window.getComputedStyle(target);
+    if (computed.position === 'static') {
+        target.style.position = 'fixed';
+    }
+    const currentTop = parseFloat(target.style.top);
+    const numericTop = Number.isNaN(currentTop) ? parseFloat(computed.top) : currentTop;
+    if (!Number.isNaN(numericTop) && numericTop < minTop) {
+        target.style.top = `${minTop}px`;
+    } else if (Number.isNaN(numericTop)) {
+        const rect = target.getBoundingClientRect();
+        if (rect.top < minTop) {
+            if (!target.style.left) {
+                target.style.left = `${rect.left}px`;
+            }
+            target.style.top = `${minTop}px`;
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // Wenn auf einen sichtbaren Modalcontainer geklickt wird, hole das Fenster in den Vordergrund
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function (e) {
             // Verhindere, dass Klicks auf interaktive Elemente im Modal den Fokuswechsel stören.
             if (e.target === modal || modal.contains(e.target)) {
+                hideMenuDropdowns();
                 bringDialogToFront(modal.id);
                 updateProgramLabelByTopModal();
             }
@@ -145,6 +178,17 @@ function updateProgramLabelByTopModal() {
     }
 }
 
+function hideMenuDropdowns() {
+    const profileDropdown = document.getElementById('profile-dropdown');
+    if (profileDropdown) {
+        profileDropdown.classList.add('hidden');
+    }
+    const programDropdown = document.getElementById('program-dropdown');
+    if (programDropdown) {
+        programDropdown.classList.add('hidden');
+    }
+}
+
 // Zentrale Event-Handler für Menü und Dropdowns
 function initEventHandlers() {
     const profileContainer = document.getElementById('profile-container');
@@ -166,14 +210,7 @@ function initEventHandlers() {
         if (programDropdown) { programDropdown.classList.toggle('hidden'); }
     });
 
-    document.addEventListener('click', function () {
-        if (profileDropdown) {
-            profileDropdown.classList.add('hidden');
-        }
-        if (programDropdown) {
-            programDropdown.classList.add('hidden');
-        }
-    });
+    document.addEventListener('click', hideMenuDropdowns);
 
     if (dropdownAbout) {
         dropdownAbout.addEventListener('click', function (event) {
@@ -288,6 +325,7 @@ function restoreWindowPositions() {
             if (stored.width) windowEl.style.width = stored.width;
             if (stored.height) windowEl.style.height = stored.height;
         }
+        clampWindowToMenuBar(windowEl);
     });
 }
 
@@ -466,8 +504,10 @@ class Dialog {
         this.makeResizable();
     }
     open() {
+        hideMenuDropdowns();
         this.modal.classList.remove("hidden");
         this.bringToFront();
+        this.enforceMenuBarBoundary();
         saveOpenModals();
         updateDockIndicators();
         updateProgramLabelByTopModal();
@@ -494,6 +534,7 @@ class Dialog {
     refocus() {
         // Wird aufgerufen, wenn innerhalb des Modals geklickt wird
         this.bringToFront();
+        hideMenuDropdowns();
         saveOpenModals();
         updateProgramLabelByTopModal();
     }
@@ -518,6 +559,7 @@ class Dialog {
                 if (!target.style.left) target.style.left = rect.left + 'px';
                 if (!target.style.top) target.style.top = rect.top + 'px';
             }
+            clampWindowToMenuBar(target);
             offsetX = e.clientX - rect.left;
             offsetY = e.clientY - rect.top;
             // Transparentes Overlay erstellen, um Events abzufangen
@@ -547,8 +589,11 @@ class Dialog {
             };
             const mouseMoveHandler = (e) => {
                 window.requestAnimationFrame(() => {
-                    target.style.left = (e.clientX - offsetX) + 'px';
-                    target.style.top = (e.clientY - offsetY) + 'px';
+                    const newLeft = e.clientX - offsetX;
+                    const newTop = e.clientY - offsetY;
+                    const minTop = getMenuBarBottom();
+                    target.style.left = newLeft + 'px';
+                    target.style.top = Math.max(minTop, newTop) + 'px';
                 });
             };
             const mouseUpHandler = () => cleanup(true);
@@ -619,6 +664,9 @@ class Dialog {
             overlay.addEventListener("mousemove", mouseMoveHandler);
             overlay.addEventListener("mouseup", mouseUpHandler);
         });
+    }
+    enforceMenuBarBoundary() {
+        clampWindowToMenuBar(this.windowEl || this.modal);
     }
     loadIframe(url) {
         // Creates or reuses a dedicated content container for iframes
