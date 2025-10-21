@@ -336,48 +336,441 @@ function loadGithubRepos() {
     const cacheTimestampKey = `githubReposTimestamp_${username}`;
     const cacheDuration = 1000 * 60 * 60; // 1 Stunde
     const list = document.getElementById("repo-list");
-    if (!list) return;
+    const fileList = document.getElementById("repo-files");
+    const breadcrumbs = document.getElementById("finder-breadcrumbs");
+    const finderMain = document.getElementById("finder-main");
+    const finderPlaceholder = document.getElementById("finder-placeholder");
+    if (!list || !fileList || !breadcrumbs || !finderMain || !finderPlaceholder) return;
 
-    const renderEmptyState = (message) => {
+    const state = {
+        repos: [],
+        selectedRepo: null,
+        selectedPath: "",
+        contentCache: {},
+        repoButtons: new Map()
+    };
+
+    const textFileExtensions = [
+        ".txt", ".md", ".markdown", ".mdx", ".json", ".jsonc", ".csv", ".tsv", ".yaml", ".yml",
+        ".xml", ".html", ".htm", ".css", ".scss", ".sass", ".less",
+        ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".vue",
+        ".c", ".h", ".cpp", ".hpp", ".cc", ".cxx", ".hh", ".ino",
+        ".java", ".kt", ".kts", ".swift", ".cs", ".py", ".rb", ".php", ".rs", ".go",
+        ".sh", ".bash", ".zsh", ".fish", ".ps1", ".bat", ".cmd",
+        ".ini", ".cfg", ".conf", ".config", ".env", ".gitignore", ".gitattributes",
+        ".log", ".sql"
+    ];
+
+    const isProbablyTextFile = (name) => {
+        if (!name || typeof name !== "string") return false;
+        const lower = name.toLowerCase();
+        return textFileExtensions.some(ext => lower.endsWith(ext));
+    };
+
+    const getTextEditorIframe = () => {
+        const dialog = window.dialogs ? window.dialogs["text-modal"] : null;
+        if (!dialog || !dialog.modal) return null;
+        return dialog.modal.querySelector("iframe");
+    };
+
+    const postToTextEditor = (message, attempt = 0) => {
+        if (!message || typeof message !== "object") {
+            return;
+        }
+        const iframe = getTextEditorIframe();
+        if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage(message, "*");
+            return;
+        }
+        if (attempt < 10) {
+            setTimeout(() => postToTextEditor(message, attempt + 1), 120);
+        } else {
+            console.warn("Texteditor iframe nicht verfügbar, Nachricht konnte nicht gesendet werden.", message);
+        }
+    };
+
+    const decodeBase64ToText = (input) => {
+        if (typeof input !== "string") return null;
+        try {
+            const cleaned = input.replace(/\s/g, "");
+            if (typeof window.atob !== "function") {
+                console.warn("window.atob ist nicht verfügbar.");
+                return null;
+            }
+            const binary = window.atob(cleaned);
+            if (typeof window.TextDecoder === "function") {
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i += 1) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+            }
+            // Fallback für sehr alte Browser
+            const percentEncoded = Array.prototype.map.call(binary, (char) => {
+                return `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`;
+            }).join("");
+            return decodeURIComponent(percentEncoded);
+        } catch (err) {
+            console.error("Konnte Base64-Inhalt nicht dekodieren:", err);
+            return null;
+        }
+    };
+
+    const ensureTextEditorOpen = () => {
+        const dialog = window.dialogs ? window.dialogs["text-modal"] : null;
+        if (dialog && typeof dialog.open === "function") {
+            dialog.open();
+            return dialog;
+        }
+        if (typeof showTab === "function") {
+            showTab("text");
+        }
+        return null;
+    };
+
+    const openTextFileInEditor = (repoName, path, entry) => {
+        if (!entry || !entry.name) return;
+        const textDialog = ensureTextEditorOpen();
+        const filePath = path ? `${path}/${entry.name}` : entry.name;
+        const payloadBase = {
+            repo: repoName,
+            path: filePath,
+            fileName: entry.name,
+            size: entry.size
+        };
+        postToTextEditor({
+            type: "textEditor:showLoading",
+            payload: payloadBase
+        });
+
+        const fetchContent = () => {
+            if (entry.download_url) {
+                return fetch(entry.download_url).then(res => {
+                    if (!res.ok) {
+                        throw new Error(`Download-URL antwortete mit Status ${res.status}`);
+                    }
+                    return res.text();
+                });
+            }
+            return fetch(repoPathToUrl(repoName, filePath))
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`GitHub API antwortete mit Status ${res.status}`);
+                    }
+                    return res.json();
+                })
+                .then(fileData => {
+                    if (!fileData || typeof fileData !== "object" || fileData.type !== "file") {
+                        throw new Error("Unerwartetes Antwortformat beim Laden einer Datei.");
+                    }
+                    if (fileData.encoding === "base64" && typeof fileData.content === "string") {
+                        const decoded = decodeBase64ToText(fileData.content);
+                        if (decoded === null) {
+                            throw new Error("Base64-Inhalt konnte nicht dekodiert werden.");
+                        }
+                        return decoded;
+                    }
+                    if (typeof fileData.download_url === "string") {
+                        return fetch(fileData.download_url).then(res => {
+                            if (!res.ok) {
+                                throw new Error(`Download-URL antwortete mit Status ${res.status}`);
+                            }
+                            return res.text();
+                        });
+                    }
+                    throw new Error("Keine gültige Quelle für den Dateiinhalt gefunden.");
+                });
+        };
+
+        fetchContent()
+            .then(content => {
+                postToTextEditor({
+                    type: "textEditor:loadRemoteFile",
+                    payload: Object.assign({}, payloadBase, {
+                        content,
+                        isHtml: /\.html?$/i.test(entry.name)
+                    })
+                });
+                if (textDialog && typeof textDialog.bringToFront === "function") {
+                    textDialog.bringToFront();
+                }
+            })
+            .catch(err => {
+                console.error("Fehler beim Laden der Datei für den Texteditor:", err);
+                postToTextEditor({
+                    type: "textEditor:loadError",
+                    payload: Object.assign({}, payloadBase, {
+                        message: "Datei konnte nicht geladen werden. Bitte versuche es später erneut."
+                    })
+                });
+            });
+    };
+
+    const showPlaceholder = () => {
+        finderPlaceholder.classList.remove("hidden");
+        finderMain.classList.add("hidden");
+        breadcrumbs.textContent = "";
+        fileList.innerHTML = "";
+    };
+
+    const renderFileMessage = (message) => {
+        fileList.innerHTML = "";
+        const item = document.createElement("li");
+        item.className = "px-4 py-3 text-sm text-gray-500 dark:text-gray-400";
+        item.textContent = message;
+        fileList.appendChild(item);
+    };
+
+    const renderEmptySidebarState = (message) => {
         list.innerHTML = "";
         const item = document.createElement("li");
-        const card = document.createElement("div");
-        card.className = "bg-white dark:bg-gray-800 p-4 rounded-lg shadow text-gray-600 dark:text-gray-300";
-        card.textContent = message;
-        item.appendChild(card);
+        item.className = "px-4 py-3 text-sm text-gray-500 dark:text-gray-400";
+        item.textContent = message;
         list.appendChild(item);
+        showPlaceholder();
+    };
+
+    const updateSidebarHighlight = () => {
+        state.repoButtons.forEach((button, repoName) => {
+            if (repoName === state.selectedRepo) {
+                button.classList.add("bg-blue-100", "dark:bg-blue-900/40", "border-l-blue-500", "dark:border-l-blue-400");
+            } else {
+                button.classList.remove("bg-blue-100", "dark:bg-blue-900/40", "border-l-blue-500", "dark:border-l-blue-400");
+            }
+        });
+    };
+
+    const renderBreadcrumbs = (repoName, path) => {
+        breadcrumbs.innerHTML = "";
+        const elements = [];
+
+        const createCrumbButton = (label, targetPath) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "text-blue-600 dark:text-blue-400 hover:underline";
+            button.textContent = label;
+            button.addEventListener("click", () => loadRepoPath(repoName, targetPath));
+            return button;
+        };
+
+        elements.push(createCrumbButton(repoName, ""));
+
+        if (path) {
+            const segments = path.split("/").filter(Boolean);
+            let cumulative = "";
+            segments.forEach(segment => {
+                cumulative = cumulative ? `${cumulative}/${segment}` : segment;
+                elements.push(createCrumbButton(segment, cumulative));
+            });
+        }
+
+        elements.forEach((element, index) => {
+            if (index > 0) {
+                breadcrumbs.appendChild(document.createTextNode(" / "));
+            }
+            breadcrumbs.appendChild(element);
+        });
+    };
+
+    const parentPath = (path) => {
+        if (!path) return "";
+        const parts = path.split("/").filter(Boolean);
+        parts.pop();
+        return parts.join("/");
+    };
+
+    const storeCacheEntry = (repoName, path, contents) => {
+        const normalized = path || "";
+        if (!state.contentCache[repoName]) {
+            state.contentCache[repoName] = {};
+        }
+        state.contentCache[repoName][normalized] = contents;
+    };
+
+    const readCacheEntry = (repoName, path) => {
+        const normalized = path || "";
+        return state.contentCache[repoName] ? state.contentCache[repoName][normalized] : undefined;
+    };
+
+    const renderFiles = (contents, repoName, path) => {
+        fileList.innerHTML = "";
+        if (!Array.isArray(contents) || contents.length === 0) {
+            renderFileMessage("Keine Dateien in diesem Verzeichnis gefunden.");
+            return;
+        }
+
+        if (path) {
+            const li = document.createElement("li");
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "w-full text-left px-4 py-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700";
+            const backWrapper = document.createElement("span");
+            backWrapper.className = "flex items-center gap-2";
+            const backIcon = document.createElement("span");
+            backIcon.textContent = "◀︎";
+            const backLabel = document.createElement("span");
+            backLabel.className = "font-medium";
+            backLabel.textContent = "Zurück";
+            backWrapper.appendChild(backIcon);
+            backWrapper.appendChild(backLabel);
+            button.appendChild(backWrapper);
+            button.addEventListener("click", () => loadRepoPath(repoName, parentPath(path)));
+            li.appendChild(button);
+            fileList.appendChild(li);
+        }
+
+        const sorted = contents.slice().sort((a, b) => {
+            if (a.type === b.type) {
+                return a.name.localeCompare(b.name, "de", { sensitivity: "base" });
+            }
+            return a.type === "dir" ? -1 : 1;
+        });
+
+        sorted.forEach(entry => {
+            const li = document.createElement("li");
+            if (entry.type === "dir") {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "w-full text-left px-4 py-3 flex items-center justify-between gap-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
+                const label = document.createElement("span");
+                label.className = "flex items-center gap-2 text-gray-700 dark:text-gray-200";
+                const folderIcon = document.createElement("span");
+                folderIcon.textContent = "📁";
+                const folderName = document.createElement("span");
+                folderName.className = "font-medium";
+                folderName.textContent = entry.name;
+                label.appendChild(folderIcon);
+                label.appendChild(folderName);
+                const chevron = document.createElement("span");
+                chevron.className = "text-gray-400";
+                chevron.textContent = "›";
+                button.appendChild(label);
+                button.appendChild(chevron);
+                button.addEventListener("click", () => {
+                    const nextPath = path ? `${path}/${entry.name}` : entry.name;
+                    loadRepoPath(repoName, nextPath);
+                });
+                li.appendChild(button);
+            } else {
+                if (isProbablyTextFile(entry.name)) {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "w-full text-left px-4 py-3 flex items-center justify-between gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
+                    const label = document.createElement("span");
+                    label.className = "flex items-center gap-2";
+                    const fileIcon = document.createElement("span");
+                    fileIcon.textContent = "📄";
+                    const fileName = document.createElement("span");
+                    fileName.textContent = entry.name;
+                    label.appendChild(fileIcon);
+                    label.appendChild(fileName);
+                    button.appendChild(label);
+                    const openHint = document.createElement("span");
+                    openHint.className = "text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider";
+                    openHint.textContent = "Texteditor";
+                    button.appendChild(openHint);
+                    button.addEventListener("click", () => openTextFileInEditor(repoName, path, entry));
+                    li.appendChild(button);
+                } else {
+                    const link = document.createElement("a");
+                    link.href = entry.html_url || entry.download_url || "#";
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+                    link.className = "block px-4 py-3 flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
+                    const fileIcon = document.createElement("span");
+                    fileIcon.textContent = "📄";
+                    const fileName = document.createElement("span");
+                    fileName.textContent = entry.name;
+                    link.appendChild(fileIcon);
+                    link.appendChild(fileName);
+                    li.appendChild(link);
+                }
+            }
+            fileList.appendChild(li);
+        });
+    };
+
+    const repoPathToUrl = (repoName, path) => {
+        const encodedSegments = path ? path.split("/").filter(Boolean).map(encodeURIComponent).join("/") : "";
+        return `https://api.github.com/repos/${username}/${repoName}/contents${encodedSegments ? "/" + encodedSegments : ""}`;
+    };
+
+    const loadRepoPath = (repoName, path = "") => {
+        state.selectedRepo = repoName;
+        state.selectedPath = path;
+        finderPlaceholder.classList.add("hidden");
+        finderMain.classList.remove("hidden");
+        updateSidebarHighlight();
+        renderBreadcrumbs(repoName, path);
+
+        const cached = readCacheEntry(repoName, path);
+        if (cached) {
+            renderFiles(cached, repoName, path);
+            return;
+        }
+
+        renderFileMessage("Lade Dateien …");
+        fetch(repoPathToUrl(repoName, path))
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`GitHub API antwortete mit Status ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(contents => {
+                if (!Array.isArray(contents)) {
+                    throw new Error("Unerwartetes Antwortformat der GitHub API");
+                }
+                storeCacheEntry(repoName, path, contents);
+                renderFiles(contents, repoName, path);
+            })
+            .catch(err => {
+                console.error("Fehler beim Laden der Repo-Inhalte:", err);
+                renderFileMessage("Dateien konnten nicht geladen werden. Bitte versuche es später erneut.");
+            });
     };
 
     const renderRepos = (repos) => {
         list.innerHTML = "";
+        state.repoButtons.clear();
+        state.repos = Array.isArray(repos) ? repos.slice() : [];
         if (!Array.isArray(repos) || repos.length === 0) {
-            renderEmptyState("Keine öffentlichen Repositories gefunden.");
+            renderEmptySidebarState("Keine öffentlichen Repositories gefunden.");
             return;
         }
-        repos.forEach(repo => {
-            const item = document.createElement("li");
-            const card = document.createElement("div");
-            card.className = "bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition";
 
-            const title = document.createElement("h3");
-            title.className = "text-xl font-semibold mb-2";
+        state.repos
+            .slice()
+            .sort((a, b) => a.name.localeCompare(b.name, "de", { sensitivity: "base" }))
+            .forEach(repo => {
+                const item = document.createElement("li");
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "w-full px-4 py-3 text-left flex flex-col gap-1 border-l-4 border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition";
+                const name = document.createElement("span");
+                name.className = "font-semibold text-gray-800 dark:text-gray-100 truncate";
+                name.textContent = repo.name || "Unbenanntes Repository";
+                const description = document.createElement("span");
+                description.className = "text-sm text-gray-500 dark:text-gray-400 truncate";
+                description.textContent = repo.description || "Keine Beschreibung verfügbar.";
+                button.appendChild(name);
+                button.appendChild(description);
+                item.appendChild(button);
+                list.appendChild(item);
+                if (repo.name) {
+                    button.addEventListener("click", () => loadRepoPath(repo.name, ""));
+                    state.repoButtons.set(repo.name, button);
+                } else {
+                    button.disabled = true;
+                }
+            });
 
-            const link = document.createElement("a");
-            link.className = "text-blue-600 hover:underline";
-            link.href = repo.html_url || "#";
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            link.textContent = repo.name || "Unbenanntes Repository";
+        updateSidebarHighlight();
 
-            const description = document.createElement("p");
-            description.textContent = repo.description || "Keine Beschreibung verfügbar.";
-
-            title.appendChild(link);
-            card.appendChild(title);
-            card.appendChild(description);
-            item.appendChild(card);
-            list.appendChild(item);
-        });
+        if (state.selectedRepo && state.repoButtons.has(state.selectedRepo)) {
+            return;
+        }
+        showPlaceholder();
     };
 
     const tryRenderCachedRepos = () => {
@@ -608,62 +1001,227 @@ class Dialog {
     }
     makeResizable() {
         const target = this.windowEl || this.modal;
-        if (target.querySelector('.resizer')) return;
+        if (!target) return;
+
+        const existingHandles = target.querySelectorAll('.resizer');
+        existingHandles.forEach(handle => handle.remove());
+
         const computedPosition = window.getComputedStyle(target).position;
         if (!computedPosition || computedPosition === 'static') {
             target.style.position = 'relative';
         }
-        target.style.overflow = "visible";
-        const resizer = document.createElement('div');
-        resizer.classList.add('resizer');
-        resizer.style.width = "20px";
-        resizer.style.height = "20px";
-        resizer.style.position = "absolute";
-        resizer.style.right = "0";
-        resizer.style.bottom = "0";
-        resizer.style.cursor = "se-resize";
-        resizer.style.backgroundColor = "rgba(122, 122, 122, 0.5)";
-        resizer.style.zIndex = "9999";
-        target.appendChild(resizer);
-        resizer.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const startX = e.clientX;
-            const startY = e.clientY;
-            const computedStyle = window.getComputedStyle(target);
-            const startWidth = parseInt(computedStyle.width, 10);
-            const startHeight = parseInt(computedStyle.height, 10);
-            const overlay = document.createElement('div');
-            overlay.style.position = 'fixed';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100%';
-            overlay.style.height = '100%';
-            overlay.style.zIndex = '9999';
-            overlay.style.cursor = 'se-resize';
-            overlay.style.backgroundColor = 'transparent';
-            document.body.appendChild(overlay);
-            const mouseMoveHandler = (e) => {
-                window.requestAnimationFrame(() => {
-                    const dx = e.clientX - startX;
-                    const dy = e.clientY - startY;
-                    const newWidth = startWidth + dx;
-                    const newHeight = startHeight + dy;
-                    target.style.width = newWidth + "px";
-                    target.style.height = newHeight + "px";
-                });
+
+        const ensureFixedPosition = () => {
+            const computed = window.getComputedStyle(target);
+            const rect = target.getBoundingClientRect();
+            if (computed.position === 'static' || computed.position === 'relative') {
+                target.style.position = 'fixed';
+                target.style.left = rect.left + 'px';
+                target.style.top = rect.top + 'px';
+            } else {
+                if (!target.style.left) target.style.left = rect.left + 'px';
+                if (!target.style.top) target.style.top = rect.top + 'px';
+            }
+        };
+
+        const createHandle = (handle) => {
+            const resizer = document.createElement('div');
+            resizer.classList.add('resizer', `resizer-${handle.name}`);
+            resizer.style.position = 'absolute';
+            resizer.style.zIndex = '9999';
+            resizer.style.backgroundColor = 'transparent';
+            resizer.style.pointerEvents = 'auto';
+            resizer.style.touchAction = 'none';
+            resizer.style.cursor = handle.cursor;
+            Object.assign(resizer.style, handle.style);
+            target.appendChild(resizer);
+
+            const startResize = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                this.refocus();
+                ensureFixedPosition();
+
+                const startX = event.clientX;
+                const startY = event.clientY;
+                const rect = target.getBoundingClientRect();
+                const computed = window.getComputedStyle(target);
+                const minWidth = parseFloat(computed.minWidth) || 240;
+                const minHeight = parseFloat(computed.minHeight) || 160;
+
+                let startLeft = parseFloat(computed.left);
+                let startTop = parseFloat(computed.top);
+                if (!Number.isFinite(startLeft)) startLeft = rect.left;
+                if (!Number.isFinite(startTop)) startTop = rect.top;
+
+                const startWidth = rect.width;
+                const startHeight = rect.height;
+
+                const overlay = document.createElement('div');
+                overlay.style.position = 'fixed';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.zIndex = '9999';
+                overlay.style.cursor = handle.cursor;
+                overlay.style.backgroundColor = 'transparent';
+                overlay.style.touchAction = 'none';
+                document.body.appendChild(overlay);
+
+                let resizing = true;
+
+                const applySize = (clientX, clientY) => {
+                    if (!resizing) return;
+                    window.requestAnimationFrame(() => {
+                        const dx = clientX - startX;
+                        const dy = clientY - startY;
+
+                        let newWidth = startWidth;
+                        let newHeight = startHeight;
+                        let newLeft = startLeft;
+                        let newTop = startTop;
+
+                        if (handle.directions.includes('e')) {
+                            newWidth = startWidth + dx;
+                        }
+                        if (handle.directions.includes('s')) {
+                            newHeight = startHeight + dy;
+                        }
+                        if (handle.directions.includes('w')) {
+                            newWidth = startWidth - dx;
+                            newLeft = startLeft + dx;
+                        }
+                        if (handle.directions.includes('n')) {
+                            newHeight = startHeight - dy;
+                            newTop = startTop + dy;
+                        }
+
+                        if (newWidth < minWidth) {
+                            const deficit = minWidth - newWidth;
+                            if (handle.directions.includes('w')) {
+                                newLeft -= deficit;
+                            }
+                            newWidth = minWidth;
+                        }
+                        if (newHeight < minHeight) {
+                            const deficit = minHeight - newHeight;
+                            if (handle.directions.includes('n')) {
+                                newTop -= deficit;
+                            }
+                            newHeight = minHeight;
+                        }
+
+                        const minTop = getMenuBarBottom();
+                        if (handle.directions.includes('n') && newTop < minTop) {
+                            const overshoot = minTop - newTop;
+                            newTop = minTop;
+                            newHeight = Math.max(minHeight, newHeight - overshoot);
+                        }
+
+                        if (handle.directions.includes('w') || handle.directions.includes('e')) {
+                            target.style.width = Math.max(minWidth, newWidth) + 'px';
+                        }
+                        if (handle.directions.includes('s') || handle.directions.includes('n')) {
+                            target.style.height = Math.max(minHeight, newHeight) + 'px';
+                        }
+                        if (handle.directions.includes('w')) {
+                            target.style.left = newLeft + 'px';
+                        }
+                        if (handle.directions.includes('n')) {
+                            target.style.top = newTop + 'px';
+                        }
+                    });
+                };
+
+                const stopResize = () => {
+                    if (!resizing) return;
+                    resizing = false;
+                    overlay.remove();
+                    overlay.removeEventListener('mousemove', overlayMouseMove);
+                    overlay.removeEventListener('mouseup', overlayMouseUp);
+                    window.removeEventListener('mousemove', windowMouseMove);
+                    window.removeEventListener('mouseup', windowMouseUp);
+                    window.removeEventListener('blur', onBlur);
+                    clampWindowToMenuBar(target);
+                    saveWindowPositions();
+                };
+
+                const overlayMouseMove = (moveEvent) => applySize(moveEvent.clientX, moveEvent.clientY);
+                const windowMouseMove = (moveEvent) => applySize(moveEvent.clientX, moveEvent.clientY);
+                const overlayMouseUp = () => stopResize();
+                const windowMouseUp = () => stopResize();
+                const onBlur = () => stopResize();
+
+                overlay.addEventListener('mousemove', overlayMouseMove);
+                overlay.addEventListener('mouseup', overlayMouseUp);
+                window.addEventListener('mousemove', windowMouseMove);
+                window.addEventListener('mouseup', windowMouseUp);
+                window.addEventListener('blur', onBlur);
             };
-            const mouseUpHandler = (e) => {
-                overlay.remove();
-                overlay.removeEventListener('mousemove', mouseMoveHandler);
-                overlay.removeEventListener('mouseup', mouseUpHandler);
-                document.removeEventListener("mousemove", mouseMoveHandler);
-                document.removeEventListener("mouseup", mouseUpHandler);
-                saveWindowPositions();
-            };
-            overlay.addEventListener("mousemove", mouseMoveHandler);
-            overlay.addEventListener("mouseup", mouseUpHandler);
-        });
+
+            resizer.addEventListener('mousedown', startResize);
+        };
+
+        target.style.overflow = 'visible';
+
+        const handles = [
+            {
+                name: 'top',
+                cursor: 'n-resize',
+                directions: ['n'],
+                style: { top: '-4px', left: '12px', right: '12px', height: '8px' }
+            },
+            {
+                name: 'bottom',
+                cursor: 's-resize',
+                directions: ['s'],
+                style: { bottom: '-4px', left: '12px', right: '12px', height: '8px' }
+            },
+            {
+                name: 'left',
+                cursor: 'w-resize',
+                directions: ['w'],
+                style: { left: '-4px', top: '12px', bottom: '12px', width: '8px' }
+            },
+            {
+                name: 'right',
+                cursor: 'e-resize',
+                directions: ['e'],
+                style: { right: '-4px', top: '12px', bottom: '12px', width: '8px' }
+            },
+            {
+                name: 'top-left',
+                cursor: 'nw-resize',
+                directions: ['n', 'w'],
+                style: { top: '-6px', left: '-6px', width: '14px', height: '14px' }
+            },
+            {
+                name: 'top-right',
+                cursor: 'ne-resize',
+                directions: ['n', 'e'],
+                style: { top: '-6px', right: '-6px', width: '14px', height: '14px' }
+            },
+            {
+                name: 'bottom-left',
+                cursor: 'sw-resize',
+                directions: ['s', 'w'],
+                style: { bottom: '-6px', left: '-6px', width: '14px', height: '14px' }
+            },
+            {
+                name: 'bottom-right',
+                cursor: 'se-resize',
+                directions: ['s', 'e'],
+                style: {
+                    bottom: '-6px',
+                    right: '-6px',
+                    width: '14px',
+                    height: '14px'
+                }
+            }
+        ];
+
+        handles.forEach(createHandle);
     }
     enforceMenuBarBoundary() {
         clampWindowToMenuBar(this.windowEl || this.modal);

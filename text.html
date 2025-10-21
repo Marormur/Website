@@ -69,6 +69,19 @@
         #toolbar button:hover {
             background: var(--editor-toolbar-button-hover);
         }
+        #file-status {
+            flex: 0 0 auto;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--editor-toolbar-border);
+            background: var(--editor-body-bg);
+            color: var(--editor-text);
+            font-size: 14px;
+            opacity: 0.75;
+            display: none;
+        }
+        #file-status.active {
+            display: block;
+        }
         #editor {
             flex: 1 1 auto;
             padding: 10px;
@@ -100,6 +113,7 @@
         <!-- Hidden file input for opening files -->
         <input type="file" id="file-input" accept=".txt,.html" style="display:none">
     </div>
+    <div id="file-status"></div>
     <div id="editor" contenteditable="true"></div>
     <script>
         function applyTheme(isDark) {
@@ -138,6 +152,30 @@
         function onClick() {
             dialog.refocus();
         }
+        const statusBar = document.getElementById('file-status');
+        let currentRemoteFile = null;
+        function formatFileLabel(meta = {}) {
+            const parts = [];
+            if (meta.repo) {
+                parts.push(meta.repo);
+            }
+            if (meta.path) {
+                parts.push(meta.path);
+            } else if (meta.fileName) {
+                parts.push(meta.fileName);
+            }
+            return parts.join(' / ');
+        }
+        function setStatus(message) {
+            if (!statusBar) return;
+            if (message) {
+                statusBar.textContent = message;
+                statusBar.classList.add('active');
+            } else {
+                statusBar.textContent = '';
+                statusBar.classList.remove('active');
+            }
+        }
         function execCmd(command) {
             document.execCommand(command, false, null);
             document.getElementById('editor').focus();
@@ -146,6 +184,8 @@
             document.getElementById('editor').innerHTML = '';
             // Entferne gespeicherten Inhalt aus localStorage
             localStorage.removeItem('textEditorContent');
+            currentRemoteFile = null;
+            setStatus('');
         }
         function saveFile() {
             // Text ohne HTML-Auszeichnungen speichern
@@ -181,6 +221,8 @@
                     // Entkomme HTML, damit es als reiner Text erscheint
                     document.getElementById('editor').innerText = content;
                 }
+                currentRemoteFile = { fileName: file.name };
+                setStatus(file.name);
             };
             reader.readAsText(file);
             // Zurücksetzen der Eingabe für zukünftige Öffnungen derselben Datei
@@ -196,6 +238,50 @@
             const saved = localStorage.getItem('textEditorContent');
             if (saved) {
                 editor.innerHTML = saved;
+            }
+        });
+        function loadRemoteFileIntoEditor(payload = {}) {
+            if (typeof payload.content !== 'string') {
+                return;
+            }
+            const isHtmlFile = typeof payload.isHtml === 'boolean'
+                ? payload.isHtml
+                : (payload.fileName ? /\.html?$/i.test(payload.fileName) : false);
+            if (isHtmlFile) {
+                editor.innerHTML = payload.content;
+            } else {
+                editor.innerText = payload.content;
+            }
+            currentRemoteFile = payload;
+            const label = formatFileLabel(payload);
+            setStatus(label);
+            document.title = payload.fileName ? `Texteditor – ${payload.fileName}` : 'Texteditor';
+            localStorage.setItem('textEditorContent', editor.innerHTML);
+            // Fokus nach dem Laden setzen, damit direkt getippt werden kann
+            editor.focus();
+        }
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+            if (!data || typeof data !== 'object') {
+                return;
+            }
+            switch (data.type) {
+                case 'textEditor:showLoading': {
+                    const label = formatFileLabel(data.payload);
+                    setStatus(label ? `${label} (lädt …)` : 'Lade Datei …');
+                    break;
+                }
+                case 'textEditor:loadRemoteFile':
+                    loadRemoteFileIntoEditor(data.payload);
+                    break;
+                case 'textEditor:loadError': {
+                    const label = formatFileLabel(data.payload);
+                    const message = data.payload && data.payload.message ? data.payload.message : 'Datei konnte nicht geladen werden.';
+                    setStatus(label ? `${label} — ${message}` : message);
+                    break;
+                }
+                default:
+                    break;
             }
         });
     </script>

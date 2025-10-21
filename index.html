@@ -58,7 +58,7 @@
     <!-- Projekte Modal -->
     <div id="projects-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
         <!-- Projekte nutzen nun einen flexiblen Container, der sich an der Fenstergröße orientiert. -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col"
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col min-h-0"
             style="width: 70vw; height: 60vh; max-height: 85vh;">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
@@ -71,10 +71,35 @@
                 </div>
                 <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Projekte</h2>
             </div>
-            <div class="p-4 overflow-auto flex-1">
-                <!-- Liste der Repositories wird dynamisch gefüllt. Die Scrollbar erscheint,
-                     wenn die Liste höher als der verfügbare Raum ist. -->
-                <ul id="repo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></ul>
+            <div class="p-4 flex-1 flex flex-col min-h-0 h-full">
+                <div class="flex gap-4 h-full min-h-0">
+                    <!-- Seitenleiste mit allen Repositories -->
+                    <aside id="repo-sidebar"
+                        class="w-64 max-w-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden flex flex-col min-h-0">
+                        <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            Repositories
+                        </div>
+                        <ul id="repo-list"
+                            class="flex-1 overflow-auto divide-y divide-gray-200 dark:divide-gray-700 m-0 p-0 list-none max-h-full"></ul>
+                    </aside>
+                    <!-- Dateiansicht ähnlich dem Finder -->
+                    <section id="finder-content"
+                        class="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg flex flex-col min-h-0">
+                        <div id="finder-placeholder"
+                            class="m-auto text-center text-gray-500 dark:text-gray-400 px-6">
+                            Wähle ein Repository aus, um dessen Dateien zu sehen.
+                        </div>
+                        <div id="finder-main" class="hidden h-full flex flex-col min-h-0">
+                            <div id="finder-breadcrumbs"
+                                class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300">
+                            </div>
+                            <div id="finder-list-container" class="flex-1 overflow-auto min-h-0">
+                                <ul id="repo-files"
+                                    class="divide-y divide-gray-200 dark:divide-gray-700 m-0 p-0 list-none max-h-full"></ul>
+                            </div>
+                        </div>
+                    </section>
+                </div>
             </div>
         </div>
     </div>
