@@ -240,10 +240,23 @@
                 }
             }
         })();
-        // Meldet dem übergeordneten Dokument, dass dieses Fenster den Fokus benötigt
-        const dialog = window.parent.loaded(window.frameElement);
+        // Sicher Fokus anfordern: Nur wenn Parent-API verfügbar ist
+        let dialog = null;
+        try {
+            if (window.parent && typeof window.parent.loaded === 'function') {
+                dialog = window.parent.loaded(window.frameElement);
+            }
+        } catch (err) {
+            console.warn('Dialog context could not be resolved:', err);
+        }
         function onClick() {
-            dialog.refocus();
+            if (dialog && typeof dialog.refocus === 'function') {
+                try {
+                    dialog.refocus();
+                } catch (err) {
+                    console.error('Error refocusing dialog from settings click:', err);
+                }
+            }
         }
         function showSettingsSection(section) {
             const localSections = ['settings-general', 'settings-display', 'settings-language'];

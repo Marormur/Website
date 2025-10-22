@@ -712,7 +712,8 @@ function loadGithubRepos() {
         }
         const iframe = getTextEditorIframe();
         if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage(message, "*");
+            const targetOrigin = window.location ? window.location.origin : '*';
+            iframe.contentWindow.postMessage(message, targetOrigin);
             return;
         }
         if (attempt < 10) {

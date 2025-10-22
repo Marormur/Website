@@ -145,9 +145,19 @@
             }
         })();
         // Den übergeordneten Dialog identifizieren, damit das Fenster im Fokus bleibt
-        const dialog = window.parent.loaded(window.frameElement);
+        let dialog = null;
+        try {
+            if (window.parent && typeof window.parent.loaded === 'function') {
+                dialog = window.parent.loaded(window.frameElement);
+            }
+        } catch (err) {
+            console.warn('Dialog context could not be resolved:', err);
+        }
         // Bring the editor window to the front whenever this iframe gains focus (e.g. click or tab inside editor).
         window.addEventListener('focus', () => {
+            if (!dialog || typeof dialog.refocus !== 'function') {
+                return;
+            }
             try {
                 dialog.refocus();
             } catch (e) {
@@ -155,7 +165,13 @@
             }
         });
         function onClick() {
-            dialog.refocus();
+            if (dialog && typeof dialog.refocus === 'function') {
+                try {
+                    dialog.refocus();
+                } catch (err) {
+                    console.error('Error refocusing dialog from click handler:', err);
+                }
+            }
         }
         const appI18n = window.appI18n || {
             translate: (key) => key,
@@ -330,10 +346,12 @@
             syncSaveButtonState();
         });
         editor.addEventListener('focus', () => {
-            try {
-                dialog.refocus();
-            } catch (err) {
-                console.error('Error refocusing dialog from textarea:', err);
+            if (dialog && typeof dialog.refocus === 'function') {
+                try {
+                    dialog.refocus();
+                } catch (err) {
+                    console.error('Error refocusing dialog from textarea:', err);
+                }
             }
         });
 
