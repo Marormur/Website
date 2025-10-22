@@ -188,6 +188,64 @@ function clampWindowToMenuBar(target) {
     }
 }
 
+function computeSnapMetrics(side) {
+    if (side !== 'left' && side !== 'right') return null;
+    const minTop = Math.round(getMenuBarBottom());
+    const viewportWidth = Math.max(window.innerWidth || 0, 0);
+    const viewportHeight = Math.max(window.innerHeight || 0, 0);
+    if (viewportWidth <= 0 || viewportHeight <= 0) return null;
+    const minWidth = Math.min(320, viewportWidth);
+    const halfWidth = Math.round(viewportWidth / 2);
+    const width = Math.max(Math.min(halfWidth, viewportWidth), minWidth);
+    const left = side === 'left' ? 0 : Math.max(0, viewportWidth - width);
+    const top = minTop;
+    const height = Math.max(0, viewportHeight - top);
+    return { left, top, width, height };
+}
+
+let snapPreviewElement = null;
+
+function ensureSnapPreviewElement() {
+    if (snapPreviewElement && snapPreviewElement.isConnected) {
+        return snapPreviewElement;
+    }
+    if (!document || !document.body) {
+        return null;
+    }
+    snapPreviewElement = document.getElementById('snap-preview-overlay');
+    if (!snapPreviewElement) {
+        snapPreviewElement = document.createElement('div');
+        snapPreviewElement.id = 'snap-preview-overlay';
+        snapPreviewElement.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(snapPreviewElement);
+    }
+    return snapPreviewElement;
+}
+
+function showSnapPreview(side) {
+    const metrics = computeSnapMetrics(side);
+    if (!metrics) {
+        hideSnapPreview();
+        return;
+    }
+    const el = ensureSnapPreviewElement();
+    if (!el) return;
+    el.style.left = `${metrics.left}px`;
+    el.style.top = `${metrics.top}px`;
+    el.style.width = `${metrics.width}px`;
+    el.style.height = `${metrics.height}px`;
+    el.setAttribute('data-side', side);
+    el.classList.add('snap-preview-visible');
+}
+
+function hideSnapPreview() {
+    if (!snapPreviewElement || !snapPreviewElement.isConnected) {
+        return;
+    }
+    snapPreviewElement.classList.remove('snap-preview-visible');
+    snapPreviewElement.removeAttribute('data-side');
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // Wenn auf einen sichtbaren Modalcontainer geklickt wird, hole das Fenster in den Vordergrund
     document.querySelectorAll('.modal').forEach(modal => {
@@ -1440,6 +1498,7 @@ class Dialog {
             throw new Error(`Kein Dialog mit der ID ${modalId} gefunden.`);
         }
         this.windowEl = getDialogWindowElement(this.modal);
+        this.lastDragPointerX = null;
         this.init();
     }
     init() {
@@ -1514,6 +1573,8 @@ class Dialog {
     toggleMaximize() {
         const target = this.windowEl || this.modal;
         if (!target) return;
+        // Wenn das Fenster angedockt ist, zunächst lösen, um konsistente Maße zu erhalten
+        this.unsnap({ silent: true });
         const ds = this.modal.dataset || {};
         const isMax = ds.maximized === 'true';
         if (isMax) {
@@ -1541,7 +1602,7 @@ class Dialog {
         this.modal.dataset.prevHeight = target.style.height || computed.height || '';
         this.modal.dataset.prevPosition = target.style.position || computed.position || '';
         // Auf maximierte Größe setzen (unterhalb der Menüleiste)
-        const minTop = getMenuBarBottom();
+        const minTop = Math.round(getMenuBarBottom());
         target.style.position = 'fixed';
         target.style.left = '0px';
         target.style.top = `${minTop}px`;
@@ -1551,6 +1612,109 @@ class Dialog {
         this.modal.dataset.maximized = 'true';
         this.bringToFront();
         saveWindowPositions();
+    }
+    snapTo(side, options = {}) {
+        const target = this.windowEl || this.modal;
+        if (!target) return null;
+        if (side !== 'left' && side !== 'right') return null;
+        const { silent = false } = options;
+        const ds = this.modal.dataset || {};
+        const alreadySnapped = ds.snapped;
+        if (!alreadySnapped) {
+            const computed = window.getComputedStyle(target);
+            ds.prevSnapLeft = target.style.left || computed.left || '';
+            ds.prevSnapTop = target.style.top || computed.top || '';
+            ds.prevSnapWidth = target.style.width || computed.width || '';
+            ds.prevSnapHeight = target.style.height || computed.height || '';
+            ds.prevSnapPosition = target.style.position || computed.position || '';
+            ds.prevSnapRight = target.style.right || computed.right || '';
+            ds.prevSnapBottom = target.style.bottom || computed.bottom || '';
+        }
+        const metrics = computeSnapMetrics(side);
+        if (!metrics) {
+            this.unsnap({ silent: true });
+            return null;
+        }
+        target.style.position = 'fixed';
+        target.style.top = `${metrics.top}px`;
+        target.style.left = `${metrics.left}px`;
+        target.style.width = `${metrics.width}px`;
+        target.style.height = `calc(100vh - ${metrics.top}px)`;
+        target.style.right = '';
+        target.style.bottom = '';
+        ds.snapped = side;
+        this.bringToFront();
+        hideSnapPreview();
+        if (!silent) {
+            saveWindowPositions();
+        }
+        return side;
+    }
+    unsnap(options = {}) {
+        const target = this.windowEl || this.modal;
+        if (!target) return false;
+        const { silent = false } = options;
+        const ds = this.modal.dataset || {};
+        if (!ds.snapped) return false;
+        const restore = (key, prop) => {
+            if (Object.prototype.hasOwnProperty.call(ds, key)) {
+                const value = ds[key];
+                if (value === '') {
+                    target.style[prop] = '';
+                } else {
+                    target.style[prop] = value;
+                }
+                delete ds[key];
+            } else {
+                target.style[prop] = '';
+            }
+        };
+        restore('prevSnapLeft', 'left');
+        restore('prevSnapTop', 'top');
+        restore('prevSnapWidth', 'width');
+        restore('prevSnapHeight', 'height');
+        restore('prevSnapPosition', 'position');
+        restore('prevSnapRight', 'right');
+        restore('prevSnapBottom', 'bottom');
+        delete ds.snapped;
+        hideSnapPreview();
+        this.enforceMenuBarBoundary();
+        if (!silent) {
+            saveWindowPositions();
+        }
+        return true;
+    }
+    applySnapAfterDrag(target, pointerX) {
+        if (!target) {
+            hideSnapPreview();
+            return null;
+        }
+        const candidate = this.getSnapCandidate(target, pointerX);
+        if (candidate) {
+            const side = this.snapTo(candidate, { silent: true });
+            hideSnapPreview();
+            return side;
+        }
+        this.unsnap({ silent: true });
+        hideSnapPreview();
+        return null;
+    }
+    getSnapCandidate(target, pointerX) {
+        if (!target) return null;
+        const viewportWidth = Math.max(window.innerWidth || 0, 0);
+        if (viewportWidth <= 0) return null;
+        const threshold = Math.max(3, Math.min(14, viewportWidth * 0.0035));
+        const rect = target.getBoundingClientRect();
+        const pointerDistLeft = typeof pointerX === 'number' ? Math.max(0, pointerX) : Math.abs(rect.left);
+        if (Math.abs(rect.left) <= threshold || pointerDistLeft <= threshold) {
+            return 'left';
+        }
+        const distRight = viewportWidth - rect.right;
+        const pointerDistRight = typeof pointerX === 'number' ? Math.max(0, viewportWidth - pointerX) : Math.abs(distRight);
+        if (Math.abs(distRight) <= threshold || pointerDistRight <= threshold) {
+            return 'right';
+        }
+        return null;
     }
     bringToFront() {
         // Erhöhe den globalen Z-Index‑Zähler und setze diesen Dialog nach vorn.
@@ -1584,20 +1748,40 @@ class Dialog {
             if (e.target.closest('[data-dialog-action]')) return;
             // Beim maximierten Fenster kein Drag
             if (this.modal.dataset && this.modal.dataset.maximized === 'true') return;
-            const rect = target.getBoundingClientRect();
+            const pointerX = e.clientX;
+            const pointerY = e.clientY;
+            const initialSnapSide = this.modal.dataset ? this.modal.dataset.snapped : null;
+            let rect = target.getBoundingClientRect();
+            let localOffsetX = pointerX - rect.left;
+            let localOffsetY = pointerY - rect.top;
+            if (initialSnapSide) {
+                const preservedOffsetX = localOffsetX;
+                const preservedOffsetY = localOffsetY;
+                this.unsnap({ silent: true });
+                // Positioniere das Fenster direkt unter dem Cursor mit den gespeicherten Offsets
+                const minTopAfterUnsnap = getMenuBarBottom();
+                target.style.position = 'fixed';
+                target.style.left = `${pointerX - preservedOffsetX}px`;
+                target.style.top = `${Math.max(minTopAfterUnsnap, pointerY - preservedOffsetY)}px`;
+                rect = target.getBoundingClientRect();
+                localOffsetX = pointerX - rect.left;
+                localOffsetY = pointerY - rect.top;
+            }
             const computedPosition = window.getComputedStyle(target).position;
             // Beim ersten Drag die aktuelle Position einfrieren, damit es nicht springt.
             if (computedPosition === 'static' || computedPosition === 'relative') {
                 target.style.position = 'fixed';
-                target.style.left = rect.left + 'px';
-                target.style.top = rect.top + 'px';
-            } else {
-                if (!target.style.left) target.style.left = rect.left + 'px';
-                if (!target.style.top) target.style.top = rect.top + 'px';
+            } else if (!target.style.position) {
+                target.style.position = computedPosition;
             }
+            const minTop = getMenuBarBottom();
+            target.style.left = `${pointerX - localOffsetX}px`;
+            target.style.top = `${Math.max(minTop, pointerY - localOffsetY)}px`;
             clampWindowToMenuBar(target);
-            offsetX = e.clientX - rect.left;
-            offsetY = e.clientY - rect.top;
+            const adjustedRect = target.getBoundingClientRect();
+            offsetX = pointerX - adjustedRect.left;
+            offsetY = pointerY - adjustedRect.top;
+            this.lastDragPointerX = pointerX;
             // Transparentes Overlay erstellen, um Events abzufangen
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
@@ -1610,6 +1794,7 @@ class Dialog {
             overlay.style.backgroundColor = 'transparent';
             document.body.appendChild(overlay);
             let isDragging = true;
+            let moved = false;
             const cleanup = (shouldSave = true) => {
                 if (!isDragging) return;
                 isDragging = false;
@@ -1619,17 +1804,32 @@ class Dialog {
                 window.removeEventListener('mouseup', mouseUpHandler);
                 window.removeEventListener('blur', blurHandler);
                 window.removeEventListener('mousemove', mouseMoveHandler);
+                hideSnapPreview();
                 if (shouldSave) {
+                    if (moved) {
+                        this.applySnapAfterDrag(target, this.lastDragPointerX);
+                    } else if (initialSnapSide) {
+                        this.snapTo(initialSnapSide, { silent: true });
+                    }
                     saveWindowPositions();
                 }
+                this.lastDragPointerX = null;
             };
             const mouseMoveHandler = (e) => {
+                moved = true;
                 window.requestAnimationFrame(() => {
                     const newLeft = e.clientX - offsetX;
                     const newTop = e.clientY - offsetY;
                     const minTop = getMenuBarBottom();
                     target.style.left = newLeft + 'px';
                     target.style.top = Math.max(minTop, newTop) + 'px';
+                    this.lastDragPointerX = e.clientX;
+                    const candidate = this.getSnapCandidate(target, this.lastDragPointerX);
+                    if (candidate) {
+                        showSnapPreview(candidate);
+                    } else {
+                        hideSnapPreview();
+                    }
                 });
             };
             const mouseUpHandler = () => cleanup(true);
