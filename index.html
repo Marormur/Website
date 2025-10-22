@@ -276,51 +276,52 @@
     </div>
 
     <!-- Dock -->
-    <div id="dock"
-        class="fixed bottom-0 left-0 right-0 flex justify-center bg-white bg-opacity-20 dark:bg-gray-900 dark:bg-opacity-30 backdrop-blur-md text-white p-4 z-[2000]">
-        <!-- Sucher Projekte -->
-        <div class="group relative flex flex-col items-center cursor-pointer mx-2" onclick="showTab('projects')">
-            <span
-                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50"
-                data-i18n="dock.finder">
-                Sucher
-            </span>
-            <img src="./img/sucher.png" alt="Sucher Icon" class="w-20 h-20">
-            <span id="projects-indicator"
-                class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
-        </div>
-        <!-- Texteditor -->
-        <div class="group relative flex flex-col items-center cursor-pointer mx-2" onclick="showTab('text')">
-            <span
-                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50"
-                data-i18n="dock.text">
-                Texteditor
-            </span>
-            <img src="./img/notepad.png" alt="Texteditor Icon" class="w-20 h-20">
-            <span id="text-indicator"
-                class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
-        </div>
-        <!-- Bildbetrachter -->
-        <div class="group relative flex flex-col items-center cursor-pointer mx-2" onclick="showTab('image')">
-            <span
-                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50"
-                data-i18n="dock.image">
-                Bildbetrachter
-            </span>
-            <img src="./img/imageviewer.png" alt="Bildbetrachter Icon" class="w-20 h-20">
-            <span id="image-indicator"
-                class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
-        </div>
-        <!-- Einstellungen -->
-        <div class="group relative flex flex-col items-center cursor-pointer mx-2" onclick="showTab('settings')">
-            <span
-                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50"
-                data-i18n="dock.settings">
-                Systemeinstellungen
-            </span>
-            <img src="./img/settings.png" alt="Settings Icon" class="w-20 h-20">
-            <span id="settings-indicator"
-                class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
+    <div id="dock" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000]">
+        <div class="dock-tray inline-flex items-end gap-2 px-3 py-2">
+            <!-- Sucher Projekte -->
+            <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="showTab('projects')">
+                <span
+                    class="dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50"
+                    data-i18n="dock.finder">
+                    Sucher
+                </span>
+                <img src="./img/sucher.png" alt="Sucher Icon" class="dock-icon">
+                <span id="projects-indicator"
+                    class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
+            </div>
+            <!-- Texteditor -->
+            <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="showTab('text')">
+                <span
+                    class="dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50"
+                    data-i18n="dock.text">
+                    Texteditor
+                </span>
+                <img src="./img/notepad.png" alt="Texteditor Icon" class="dock-icon">
+                <span id="text-indicator"
+                    class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
+            </div>
+            <!-- Bildbetrachter -->
+            <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="showTab('image')">
+                <span
+                    class="dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50"
+                    data-i18n="dock.image">
+                    Bildbetrachter
+                </span>
+                <img src="./img/imageviewer.png" alt="Bildbetrachter Icon" class="dock-icon">
+                <span id="image-indicator"
+                    class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
+            </div>
+            <!-- Einstellungen -->
+            <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="showTab('settings')">
+                <span
+                    class="dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50"
+                    data-i18n="dock.settings">
+                    Systemeinstellungen
+                </span>
+                <img src="./img/settings.png" alt="Settings Icon" class="dock-icon">
+                <span id="settings-indicator"
+                    class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
+            </div>
         </div>
     </div>
     <script>

@@ -165,6 +165,16 @@ function getMenuBarBottom() {
     return rect.bottom;
 }
 
+// Ermittelt die vom Dock belegte Reserve am unteren Rand (in Pixeln)
+function getDockReservedBottom() {
+    const dock = document.getElementById('dock');
+    if (!dock || dock.classList.contains('hidden')) return 0;
+    const rect = dock.getBoundingClientRect();
+    const vh = Math.max(window.innerHeight || 0, 0);
+    if (vh <= 0) return 0;
+    return Math.round(Math.max(0, vh - rect.top));
+}
+
 function clampWindowToMenuBar(target) {
     if (!target) return;
     const minTop = getMenuBarBottom();
@@ -199,7 +209,8 @@ function computeSnapMetrics(side) {
     const width = Math.max(Math.min(halfWidth, viewportWidth), minWidth);
     const left = side === 'left' ? 0 : Math.max(0, viewportWidth - width);
     const top = minTop;
-    const height = Math.max(0, viewportHeight - top);
+    const dockReserve = getDockReservedBottom();
+    const height = Math.max(0, viewportHeight - top - dockReserve);
     return { left, top, width, height };
 }
 
@@ -246,6 +257,42 @@ function hideSnapPreview() {
     snapPreviewElement.removeAttribute('data-side');
 }
 
+// Dock-Magnification im macOS-Stil
+function initDockMagnification() {
+    const dock = document.getElementById('dock');
+    if (!dock) return;
+    const icons = Array.from(dock.querySelectorAll('.dock-icon'));
+    if (!icons.length) return;
+    let rafId = null;
+    let pointerX = null;
+    const maxScale = 1.6;
+    const minScale = 1.0;
+    const radius = 120; // Einflussradius in px
+    const sigma = radius / 3;
+    const apply = () => {
+        rafId = null;
+        if (pointerX == null) {
+            icons.forEach(icon => { icon.style.transform = ''; icon.style.zIndex = ''; });
+            return;
+        }
+        icons.forEach(icon => {
+            const rect = icon.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const dx = Math.abs(pointerX - cx);
+            const influence = Math.exp(-(dx * dx) / (2 * sigma * sigma)); // 0..1
+            const scale = minScale + (maxScale - minScale) * influence;
+            const translateY = -8 * influence; // leichtes Anheben
+            icon.style.transformOrigin = 'bottom center';
+            icon.style.transform = `translateY(${translateY.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+            icon.style.zIndex = String(100 + Math.round(influence * 100));
+        });
+    };
+    const onMove = (e) => { pointerX = e.clientX; if (!rafId) rafId = requestAnimationFrame(apply); };
+    const onLeave = () => { pointerX = null; if (!rafId) rafId = requestAnimationFrame(apply); };
+    dock.addEventListener('mousemove', onMove);
+    dock.addEventListener('mouseleave', onLeave);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // Wenn auf einen sichtbaren Modalcontainer geklickt wird, hole das Fenster in den Vordergrund
     document.querySelectorAll('.modal').forEach(modal => {
@@ -280,6 +327,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // damit Klicks im Editorfenster das Modal in den Vordergrund holen.
         window.dialogs["text-modal"].loadIframe("./text.html");
     }
+    initDockMagnification();
 });
 
 function bringDialogToFront(dialogId) {
@@ -1609,6 +1657,12 @@ class Dialog {
         target.style.width = '100vw';
         // Höhe: restlicher Platz unterhalb der Menüleiste
         target.style.height = `calc(100vh - ${minTop}px)`;
+        // Dock-Reserve berücksichtigen
+        try {
+            const __dockReserve = getDockReservedBottom();
+            const __maxHeight = Math.max(0, (window.innerHeight || 0) - minTop - __dockReserve);
+            target.style.height = `${__maxHeight}px`;
+        } catch (e) { /* noop */ }
         this.modal.dataset.maximized = 'true';
         this.bringToFront();
         saveWindowPositions();
@@ -1639,7 +1693,8 @@ class Dialog {
         target.style.top = `${metrics.top}px`;
         target.style.left = `${metrics.left}px`;
         target.style.width = `${metrics.width}px`;
-        target.style.height = `calc(100vh - ${metrics.top}px)`;
+        // exakte Höhe unter Berücksichtigung des Docks
+        target.style.height = `${metrics.height}px`;
         target.style.right = '';
         target.style.bottom = '';
         ds.snapped = side;
