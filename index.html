@@ -29,6 +29,8 @@
                 class="hidden absolute left-0 mt-2 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg z-[10000]">
                 <a href="#" id="dropdown-about" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
                     Marvin</a>
+                <a href="#" id="dropdown-reset-layout"
+                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Fenster zurücksetzen</a>
                 <a href="#" id="dropdown-settings"
                     class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Systemeinstellungen</a>
                 <a href="https://www.linkedin.com/in/marvin-temmen-788537216" rel="noopener" target="_blank"
@@ -43,6 +45,8 @@
                 class="hidden absolute top-full left-0 mt-1 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg z-[10000]">
                 <a href="#" id="about-program" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
                     Sucher</a>
+                <a href="#" id="program-close-current"
+                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Programm schließen</a>
             </div>
         </nav>
         <!-- Uhrzeitelement -->
@@ -221,6 +225,32 @@
                         Öffne eine Bilddatei aus dem Sucher, um die Vorschau zu sehen.
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <!-- Programminfo Modal -->
+    <div id="program-info-modal" class="fixed inset-0 flex items-center justify-center hidden modal" data-no-resize="true">
+        <div class="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl autopointer flex flex-col"
+            style="width: min(360px, 90vw);">
+            <div class="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-t-2xl draggable-header">
+                <div class="flex space-x-2">
+                    <button title="Schließen" id="close-program-info-modal"
+                        class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                    </button>
+                    <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                </div>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Über dieses Programm</h2>
+            </div>
+            <div class="p-6 flex flex-col items-center text-center gap-4">
+                <img id="program-info-icon" src="" alt="" class="w-20 h-20 rounded-2xl shadow-md hidden">
+                <div class="flex flex-col gap-2">
+                    <p id="program-info-name" class="text-xl font-semibold text-gray-900 dark:text-gray-100"></p>
+                    <p id="program-info-tagline" class="text-sm text-gray-600 dark:text-gray-300"></p>
+                    <p id="program-info-version" class="text-sm font-medium text-gray-700 dark:text-gray-200"></p>
+                </div>
+                <p id="program-info-copyright" class="text-xs text-gray-500 dark:text-gray-400"></p>
             </div>
         </div>
     </div>

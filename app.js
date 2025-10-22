@@ -31,10 +31,90 @@ if (typeof systemDarkQuery.addEventListener === 'function') {
     systemDarkQuery.addListener(handleSystemThemeChange);
 }
 // Liste aller Modal-IDs, die von der Desktop-Shell verwaltet werden
-const modalIds = ["projects-modal", "about-modal", "settings-modal", "text-modal", "image-modal"];
+const modalIds = ["projects-modal", "about-modal", "settings-modal", "text-modal", "image-modal", "program-info-modal"];
+const transientModalIds = new Set(["program-info-modal"]);
 
 // Für zukünftige z‑Index‑Verwaltung reserviert
 let topZIndex = 1000;
+
+const defaultProgramInfo = {
+    modalId: null,
+    programLabel: "Sucher",
+    infoLabel: "Über Sucher",
+    fallbackInfoModalId: "program-info-modal",
+    icon: "./img/sucher.png",
+    about: {
+        name: "Sucher",
+        tagline: "Dein persönlicher Dateimanager.",
+        version: "Version 1.0",
+        copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
+    }
+};
+
+const programInfoMap = {
+    "projects-modal": {
+        programLabel: "Sucher",
+        infoLabel: "Über Sucher",
+        fallbackInfoModalId: "program-info-modal",
+        icon: "./img/sucher.png",
+        about: {
+            name: "Sucher",
+            tagline: "Der innovative Desktop-Dateimanager.",
+            version: "Version 1.0",
+            copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
+        }
+    },
+    "settings-modal": {
+        programLabel: "Systemeinstellungen",
+        infoLabel: "Über Systemeinstellungen",
+        fallbackInfoModalId: "program-info-modal",
+        icon: "./img/settings.png",
+        about: {
+            name: "Systemeinstellungen",
+            tagline: "Konfiguriere Erscheinungsbild, Accounts und mehr.",
+            version: "Version 1.0",
+            copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
+        }
+    },
+    "text-modal": {
+        programLabel: "Texteditor",
+        infoLabel: "Über Texteditor",
+        fallbackInfoModalId: "program-info-modal",
+        icon: "./img/notepad.png",
+        about: {
+            name: "Texteditor",
+            tagline: "Leichtgewichtiger Editor für deine Notizen.",
+            version: "Version 1.0",
+            copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
+        }
+    },
+    "image-modal": {
+        programLabel: "Bildanzeige",
+        infoLabel: "Über Bildanzeige",
+        fallbackInfoModalId: "program-info-modal",
+        icon: "./img/imageviewer.png",
+        about: {
+            name: "Bildanzeige",
+            tagline: "Betrachte Screenshots und Fotos mit Vorschau.",
+            version: "Version 1.0",
+            copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
+        }
+    },
+    "about-modal": {
+        programLabel: "Über Marvin",
+        infoLabel: "Über dieses Fenster",
+        fallbackInfoModalId: "program-info-modal",
+        icon: "./img/profil.jpg",
+        about: {
+            name: "Über Marvin",
+            tagline: "Erfahre mehr über Marvin Temmen.",
+            version: "Version 1.0",
+            copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
+        }
+    }
+};
+
+let currentProgramInfo = { ...defaultProgramInfo };
 
 function syncTopZIndexWithDOM() {
     let maxZ = Number.isFinite(topZIndex) ? topZIndex : 1000;
@@ -140,7 +220,7 @@ function updateProgramLabel(newLabel) {
     }
 }
 
-// Funktion, um das aktuell oberste Modal zu ermitteln und den Program-Namen anzupassen
+// Funktion, um das aktuell oberste Modal zu ermitteln
 function getTopModal() {
     let topModal = null;
     let highestZ = 0;
@@ -157,28 +237,115 @@ function getTopModal() {
     return topModal;
 }
 
+function getProgramInfo(modalId) {
+    const infoFromMap = modalId ? programInfoMap[modalId] : null;
+    const merged = { ...defaultProgramInfo, ...(infoFromMap || {}) };
+    merged.modalId = modalId || null;
+    return merged;
+}
+
+function updateProgramInfoMenu(info) {
+    const infoLink = document.getElementById("about-program");
+    if (!infoLink) return;
+    infoLink.innerText = info.infoLabel || defaultProgramInfo.infoLabel;
+    if (info.fallbackInfoModalId) {
+        infoLink.dataset.fallbackInfoModalId = info.fallbackInfoModalId;
+    } else {
+        delete infoLink.dataset.fallbackInfoModalId;
+    }
+}
+
+function renderProgramInfo(info) {
+    const modal = document.getElementById("program-info-modal");
+    if (!modal) return;
+    const about = info.about || defaultProgramInfo.about || {};
+    const iconEl = modal.querySelector("#program-info-icon");
+    if (iconEl) {
+        if (info.icon) {
+            iconEl.src = info.icon;
+            iconEl.alt = about.name || info.programLabel || "Programm";
+            iconEl.classList.remove("hidden");
+        } else {
+            iconEl.classList.add("hidden");
+        }
+    }
+    const nameEl = modal.querySelector("#program-info-name");
+    if (nameEl) {
+        nameEl.textContent = about.name || info.programLabel || defaultProgramInfo.programLabel;
+    }
+    const taglineEl = modal.querySelector("#program-info-tagline");
+    if (taglineEl) {
+        const tagline = about.tagline || "";
+        taglineEl.textContent = tagline;
+        taglineEl.classList.toggle("hidden", !tagline);
+    }
+    const versionEl = modal.querySelector("#program-info-version");
+    if (versionEl) {
+        const version = about.version || "";
+        versionEl.textContent = version;
+        versionEl.classList.toggle("hidden", !version);
+    }
+    const copyrightEl = modal.querySelector("#program-info-copyright");
+    if (copyrightEl) {
+        const copyright = about.copyright || "";
+        copyrightEl.textContent = copyright;
+        copyrightEl.classList.toggle("hidden", !copyright);
+    }
+}
+
+function openProgramInfoDialog(event, infoOverride) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    hideMenuDropdowns();
+    const info = infoOverride || currentProgramInfo || getProgramInfo(null);
+    currentProgramInfo = info;
+    const infoEvent = new CustomEvent("programInfoRequested", {
+        detail: {
+            modalId: info.modalId,
+            info
+        },
+        cancelable: true
+    });
+    const dispatchResult = window.dispatchEvent(infoEvent);
+    if (!dispatchResult) {
+        return;
+    }
+    const fallbackId = info.fallbackInfoModalId;
+    if (!fallbackId) {
+        return;
+    }
+    if (fallbackId === "program-info-modal") {
+        renderProgramInfo(info);
+    }
+    const dialogInstance = window.dialogs && window.dialogs[fallbackId];
+    if (dialogInstance && typeof dialogInstance.open === "function") {
+        dialogInstance.open();
+    } else {
+        const modalElement = document.getElementById(fallbackId);
+        if (modalElement) {
+            modalElement.classList.remove("hidden");
+            bringDialogToFront(fallbackId);
+            updateProgramLabelByTopModal();
+        } else {
+            console.warn(`Kein Fallback-Info-Dialog für ${fallbackId} gefunden.`);
+        }
+    }
+}
+
 function updateProgramLabelByTopModal() {
     const topModal = getTopModal();
-    if (topModal) {
-        switch (topModal.id) {
-            case "projects-modal":
-                updateProgramLabel("Sucher");
-                break;
-            case "settings-modal":
-                updateProgramLabel("Systemeinstellungen");
-                break;
-            case "text-modal":
-                updateProgramLabel("Texteditor");
-                break;
-            case "image-modal":
-                updateProgramLabel("Bildbetrachter");
-                break;
-            default:
-                updateProgramLabel("Sucher");
-        }
+    let info;
+    if (topModal && topModal.id === "program-info-modal" && currentProgramInfo && currentProgramInfo.modalId) {
+        info = currentProgramInfo;
     } else {
-        updateProgramLabel("Sucher");
+        info = getProgramInfo(topModal ? topModal.id : null);
+        currentProgramInfo = info;
     }
+    updateProgramLabel(info.programLabel || defaultProgramInfo.programLabel);
+    updateProgramInfoMenu(info);
+    return info;
 }
 
 function hideMenuDropdowns() {
@@ -199,6 +366,9 @@ function initEventHandlers() {
     const programDropdown = document.getElementById('program-dropdown');
     const programLabel = document.getElementById('program-label');
     const dropdownAbout = document.getElementById('dropdown-about');
+    const aboutProgramLink = document.getElementById('about-program');
+    const resetLayoutButton = document.getElementById('dropdown-reset-layout');
+    const closeProgramButton = document.getElementById('program-close-current');
     const settingsButton = document.getElementById('dropdown-settings');
 
     profileContainer.addEventListener('click', function (event) {
@@ -216,12 +386,22 @@ function initEventHandlers() {
     document.addEventListener('click', hideMenuDropdowns);
 
     if (dropdownAbout) {
-        dropdownAbout.addEventListener('click', function (event) {
+        dropdownAbout.addEventListener('click', (event) => {
+            openProgramInfoDialog(event, getProgramInfo("about-modal"));
+        });
+    }
+
+    if (aboutProgramLink) {
+        aboutProgramLink.addEventListener('click', (event) => {
+            openProgramInfoDialog(event);
+        });
+    }
+
+    if (resetLayoutButton) {
+        resetLayoutButton.addEventListener('click', function (event) {
             event.preventDefault();
             event.stopPropagation();
-            if (profileDropdown) profileDropdown.classList.add('hidden');
-            window.dialogs["about-modal"].open();
-            updateProgramLabelByTopModal();
+            resetWindowLayout();
         });
     }
 
@@ -235,13 +415,35 @@ function initEventHandlers() {
         });
     }
 
+    if (closeProgramButton) {
+        closeProgramButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            hideMenuDropdowns();
+            const topModal = getTopModal();
+            if (!topModal) {
+                return;
+            }
+            const dialogInstance = window.dialogs && window.dialogs[topModal.id];
+            if (dialogInstance && typeof dialogInstance.close === 'function') {
+                dialogInstance.close();
+            } else {
+                topModal.classList.add('hidden');
+                saveOpenModals();
+                updateDockIndicators();
+                updateProgramLabelByTopModal();
+            }
+        });
+    }
+
     // Vereinheitlichte Registrierung der Close-Button Event Listener:
     const closeMapping = {
         "close-projects-modal": "projects-modal",
         "close-about-modal": "about-modal",
         "close-settings-modal": "settings-modal",
         "close-text-modal": "text-modal",
-        "close-image-modal": "image-modal"
+        "close-image-modal": "image-modal",
+        "close-program-info-modal": "program-info-modal"
     };
     Object.entries(closeMapping).forEach(([btnId, modalId]) => {
         const btn = document.getElementById(btnId);
@@ -266,6 +468,7 @@ function initEventHandlers() {
 // Zustandsspeicherung: Offene Fenster speichern
 function saveOpenModals() {
     const openModals = modalIds.filter(id => {
+        if (transientModalIds.has(id)) return false;
         const el = document.getElementById(id);
         return el && !el.classList.contains("hidden");
     });
@@ -276,6 +479,7 @@ function saveOpenModals() {
 function restoreOpenModals() {
     const openModals = JSON.parse(localStorage.getItem("openModals") || "[]");
     openModals.forEach(id => {
+        if (transientModalIds.has(id)) return;
         const dialogInstance = window.dialogs && window.dialogs[id];
         if (dialogInstance) {
             dialogInstance.open();
@@ -297,6 +501,7 @@ function getDialogWindowElement(modal) {
 function saveWindowPositions() {
     const positions = {};
     modalIds.forEach(id => {
+        if (transientModalIds.has(id)) return;
         const el = document.getElementById(id);
         const windowEl = getDialogWindowElement(el);
         if (el && windowEl) {
@@ -315,6 +520,7 @@ function saveWindowPositions() {
 function restoreWindowPositions() {
     const positions = JSON.parse(localStorage.getItem("modalPositions") || "{}");
     Object.keys(positions).forEach(id => {
+        if (transientModalIds.has(id)) return;
         const el = document.getElementById(id);
         const windowEl = getDialogWindowElement(el);
         if (el && windowEl) {
@@ -331,6 +537,36 @@ function restoreWindowPositions() {
         }
         clampWindowToMenuBar(windowEl);
     });
+}
+
+function resetWindowLayout() {
+    modalIds.forEach(id => {
+        const modal = document.getElementById(id);
+        const windowEl = getDialogWindowElement(modal);
+        if (modal) {
+            modal.style.zIndex = '';
+        }
+        if (windowEl) {
+            windowEl.style.left = '';
+            windowEl.style.top = '';
+            windowEl.style.width = '';
+            windowEl.style.height = '';
+            windowEl.style.position = '';
+            windowEl.style.zIndex = '';
+        }
+    });
+    topZIndex = 1000;
+    localStorage.removeItem("modalPositions");
+    hideMenuDropdowns();
+    syncTopZIndexWithDOM();
+    if (window.dialogs) {
+        Object.values(window.dialogs).forEach(dialog => {
+            if (dialog && typeof dialog.enforceMenuBarBoundary === 'function') {
+                dialog.enforceMenuBarBoundary();
+            }
+        });
+    }
+    updateProgramLabelByTopModal();
 }
 
 // Lädt GitHub-Repositories und cached sie im LocalStorage
@@ -1161,6 +1397,9 @@ class Dialog {
         });
     }
     makeResizable() {
+        if (this.modal.dataset.noResize === "true") {
+            return;
+        }
         const target = this.windowEl || this.modal;
         if (!target) return;
 
