@@ -175,9 +175,9 @@
             settingsPage: {
                 title: 'Einstellungen',
                 nav: {
-                    general: 'Allgemein',
-                    display: 'Darstellung',
-                    language: 'Sprache'
+                    general: '👤 Allgemein',
+                    display: '🖥️ Darstellung',
+                    language: '🌐 Sprache'
                 },
                 general: {
                     title: 'Allgemein',
@@ -404,9 +404,9 @@
             settingsPage: {
                 title: 'Settings',
                 nav: {
-                    general: 'General',
-                    display: 'Appearance',
-                    language: 'Language'
+                    general: '👤 General',
+                    display: '🖥️ Appearance',
+                    language: '🌐 Language'
                 },
                 general: {
                     title: 'General',
