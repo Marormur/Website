@@ -12,6 +12,18 @@ body {
     font-family: sans-serif;
 }
 
+:root {
+    --window-shadow: 0 22px 45px rgba(15, 23, 42, 0.18);
+    --window-shadow-hover: 0 28px 58px rgba(15, 23, 42, 0.25);
+    --window-border: rgba(15, 23, 42, 0.12);
+}
+
+.dark {
+    --window-shadow: 0 26px 52px rgba(15, 23, 42, 0.45);
+    --window-shadow-hover: 0 34px 68px rgba(15, 23, 42, 0.55);
+    --window-border: rgba(148, 163, 184, 0.2);
+}
+
 body > header {
     position: relative;
     z-index: 4000 !important;
@@ -43,10 +55,18 @@ body > header {
     pointer-events: auto;
     box-sizing: border-box;
     max-width: none;
+    border: 1px solid var(--window-border);
+    box-shadow: var(--window-shadow);
+    transition: box-shadow 0.25s ease;
 }
 
 .modal .autopointer > * {
     min-width: 0;
+}
+
+.modal .autopointer:focus-within,
+.modal .autopointer:hover {
+    box-shadow: var(--window-shadow-hover);
 }
 
 .no-select {
