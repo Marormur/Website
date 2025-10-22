@@ -144,7 +144,9 @@
                 loadingImage: 'Lade {name} …',
                 imageLoadError: 'Bild konnte nicht geladen werden.',
                 imageLoadErrorRetry: 'Bild konnte nicht geladen werden. Bitte versuche es später erneut.',
-                fileLoadError: 'Datei konnte nicht geladen werden. Bitte versuche es später erneut.'
+                fileLoadError: 'Datei konnte nicht geladen werden. Bitte versuche es später erneut.',
+                rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                pathNotFound: 'Der ausgewählte Pfad ist nicht mehr verfügbar.'
             },
             textEditor: {
                 title: 'Texteditor',
@@ -166,7 +168,8 @@
                 status: {
                     loading: 'Lade Datei …',
                     loadingWithLabel: '{label} (lädt …)',
-                    loadError: 'Datei konnte nicht geladen werden.'
+                    loadError: 'Datei konnte nicht geladen werden.',
+                    rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.'
                 }
             },
             settingsPage: {
@@ -370,7 +373,9 @@
                 loadingImage: 'Loading {name}…',
                 imageLoadError: 'Could not load the image.',
                 imageLoadErrorRetry: 'The image could not be loaded. Please try again later.',
-                fileLoadError: 'The file could not be loaded. Please try again later.'
+                fileLoadError: 'The file could not be loaded. Please try again later.',
+                rateLimit: 'GitHub rate limit reached. Please try again later.',
+                pathNotFound: 'The selected path is no longer available.'
             },
             textEditor: {
                 title: 'Text editor',
@@ -392,7 +397,8 @@
                 status: {
                     loading: 'Loading file…',
                     loadingWithLabel: '{label} (loading…)',
-                    loadError: 'The file could not be loaded.'
+                    loadError: 'The file could not be loaded.',
+                    rateLimit: 'GitHub rate limit was reached. Please try again later.'
                 }
             },
             settingsPage: {

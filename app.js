@@ -36,6 +36,49 @@ const transientModalIds = new Set(["program-info-modal"]);
 
 // Für zukünftige z‑Index‑Verwaltung reserviert
 let topZIndex = 1000;
+const FINDER_STATE_STORAGE_KEY = 'finderState';
+
+function readFinderState() {
+    try {
+        const raw = localStorage.getItem(FINDER_STATE_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        const repo = typeof parsed.repo === 'string' ? parsed.repo.trim() : '';
+        if (!repo) return null;
+        return {
+            repo,
+            path: typeof parsed.path === 'string' ? parsed.path : ''
+        };
+    } catch (err) {
+        console.warn('Finder state konnte nicht gelesen werden:', err);
+        return null;
+    }
+}
+
+function writeFinderState(state) {
+    if (!state || typeof state.repo !== 'string' || !state.repo) {
+        clearFinderState();
+        return;
+    }
+    const payload = {
+        repo: state.repo,
+        path: typeof state.path === 'string' ? state.path : ''
+    };
+    try {
+        localStorage.setItem(FINDER_STATE_STORAGE_KEY, JSON.stringify(payload));
+    } catch (err) {
+        console.warn('Finder state konnte nicht gespeichert werden:', err);
+    }
+}
+
+function clearFinderState() {
+    try {
+        localStorage.removeItem(FINDER_STATE_STORAGE_KEY);
+    } catch (err) {
+        console.warn('Finder state konnte nicht gelöscht werden:', err);
+    }
+}
 
 const appI18n = window.appI18n || {
     translate: (key) => key,
@@ -558,6 +601,7 @@ function resetWindowLayout() {
             }
         });
     }
+    clearFinderState();
     updateProgramLabelByTopModal();
 }
 
@@ -587,6 +631,47 @@ function loadGithubRepos() {
         repoButtons: new Map(),
         imageAbortController: null
     };
+
+    let pendingFinderState = readFinderState();
+    const RATE_LIMIT_ERROR = 'RATE_LIMIT';
+    const NOT_FOUND_ERROR = 'NOT_FOUND';
+    const githubHeaders = { Accept: 'application/vnd.github+json' };
+    const withGithubOptions = (options = {}) => {
+        const merged = Object.assign({}, options);
+        const optionHeaders = options.headers || {};
+        merged.headers = Object.assign({}, githubHeaders, optionHeaders);
+        return merged;
+    };
+    const createRateLimitError = () => {
+        const error = new Error("GitHub API rate limit reached");
+        error.code = RATE_LIMIT_ERROR;
+        return error;
+    };
+    const createNotFoundError = () => {
+        const error = new Error("Requested GitHub resource was not found");
+        error.code = NOT_FOUND_ERROR;
+        return error;
+    };
+    const isRateLimitResponse = (res) => {
+        if (!res) return false;
+        if (res.status !== 403) return false;
+        const remaining = res.headers ? res.headers.get('x-ratelimit-remaining') : null;
+        return remaining === '0';
+    };
+    const assertGithubResponseOk = (res) => {
+        if (res.ok) return res;
+        if (res.status === 404) {
+            throw createNotFoundError();
+        }
+        if (isRateLimitResponse(res)) {
+            throw createRateLimitError();
+        }
+        const error = new Error(`GitHub API antwortete mit Status ${res.status}`);
+        error.status = res.status;
+        throw error;
+    };
+    const isRateLimitError = (error) => Boolean(error && error.code === RATE_LIMIT_ERROR);
+    const isNotFoundError = (error) => Boolean(error && error.code === NOT_FOUND_ERROR);
 
     const textFileExtensions = [
         ".txt", ".md", ".markdown", ".mdx", ".json", ".jsonc", ".csv", ".tsv", ".yaml", ".yml",
@@ -782,14 +867,12 @@ function loadGithubRepos() {
         }
 
         const fetchOptions = supportsAbortController && state.imageAbortController
-            ? { signal: state.imageAbortController.signal }
-            : {};
+            ? withGithubOptions({ signal: state.imageAbortController.signal })
+            : withGithubOptions();
 
         fetch(repoPathToUrl(repoName, filePath), fetchOptions)
             .then(res => {
-                if (!res.ok) {
-                    throw new Error(`GitHub API antwortete mit Status ${res.status}`);
-                }
+                assertGithubResponseOk(res);
                 return res.json();
             })
             .then(data => {
@@ -811,8 +894,12 @@ function loadGithubRepos() {
                 if (err.name === "AbortError") {
                     return;
                 }
-                console.error("Fehler beim Laden der Bilddatei:", err);
-                setImagePlaceholder("finder.imageLoadErrorRetry");
+                if (isRateLimitError(err)) {
+                    setImagePlaceholder("finder.rateLimit");
+                } else {
+                    console.error("Fehler beim Laden der Bilddatei:", err);
+                    setImagePlaceholder("finder.imageLoadErrorRetry");
+                }
             });
     };
 
@@ -840,11 +927,9 @@ function loadGithubRepos() {
                     return res.text();
                 });
             }
-            return fetch(repoPathToUrl(repoName, filePath))
+            return fetch(repoPathToUrl(repoName, filePath), withGithubOptions())
                 .then(res => {
-                    if (!res.ok) {
-                        throw new Error(`GitHub API antwortete mit Status ${res.status}`);
-                    }
+                    assertGithubResponseOk(res);
                     return res.json();
                 })
                 .then(fileData => {
@@ -884,10 +969,11 @@ function loadGithubRepos() {
             })
             .catch(err => {
                 console.error("Fehler beim Laden der Datei für den Texteditor:", err);
+                const messageKey = isRateLimitError(err) ? "textEditor.status.rateLimit" : "finder.fileLoadError";
                 postToTextEditor({
                     type: "textEditor:loadError",
                     payload: Object.assign({}, payloadBase, {
-                        message: appI18n.translate("finder.fileLoadError")
+                        message: appI18n.translate(messageKey)
                     })
                 });
             });
@@ -1108,12 +1194,18 @@ function loadGithubRepos() {
     };
 
     const loadRepoPath = (repoName, path = "") => {
+        pendingFinderState = null;
         state.selectedRepo = repoName;
         state.selectedPath = path;
         finderPlaceholder.classList.add("hidden");
         finderMain.classList.remove("hidden");
         updateSidebarHighlight();
         renderBreadcrumbs(repoName, path);
+        if (repoName) {
+            writeFinderState({ repo: repoName, path });
+        } else {
+            clearFinderState();
+        }
 
         const cached = readCacheEntry(repoName, path);
         if (cached) {
@@ -1122,11 +1214,9 @@ function loadGithubRepos() {
         }
 
         renderFileMessage("finder.loadingFiles");
-        fetch(repoPathToUrl(repoName, path))
+        fetch(repoPathToUrl(repoName, path), withGithubOptions())
             .then(res => {
-                if (!res.ok) {
-                    throw new Error(`GitHub API antwortete mit Status ${res.status}`);
-                }
+                assertGithubResponseOk(res);
                 return res.json();
             })
             .then(contents => {
@@ -1137,8 +1227,17 @@ function loadGithubRepos() {
                 renderFiles(contents, repoName, path);
             })
             .catch(err => {
-                console.error("Fehler beim Laden der Repo-Inhalte:", err);
-                renderFileMessage("finder.filesLoadError");
+                if (isRateLimitError(err)) {
+                    renderFileMessage("finder.rateLimit");
+                } else if (isNotFoundError(err)) {
+                    renderFileMessage("finder.pathNotFound");
+                    if (state.selectedRepo === repoName && state.selectedPath === path) {
+                        writeFinderState({ repo: repoName, path: "" });
+                    }
+                } else {
+                    console.error("Fehler beim Laden der Repo-Inhalte:", err);
+                    renderFileMessage("finder.filesLoadError");
+                }
             });
     };
 
@@ -1147,6 +1246,7 @@ function loadGithubRepos() {
         state.repoButtons.clear();
         state.repos = Array.isArray(repos) ? repos.slice() : [];
         if (!Array.isArray(repos) || repos.length === 0) {
+            clearFinderState();
             renderEmptySidebarState("finder.noRepositories");
             return;
         }
@@ -1192,8 +1292,24 @@ function loadGithubRepos() {
 
         updateSidebarHighlight();
 
+        if (pendingFinderState && typeof pendingFinderState.repo === "string") {
+            if (state.repoButtons.has(pendingFinderState.repo)) {
+                const target = pendingFinderState;
+                pendingFinderState = null;
+                loadRepoPath(target.repo, target.path || "");
+                return;
+            }
+            pendingFinderState = null;
+            clearFinderState();
+        }
+
         if (state.selectedRepo && state.repoButtons.has(state.selectedRepo)) {
             return;
+        }
+        if (state.selectedRepo && !state.repoButtons.has(state.selectedRepo)) {
+            clearFinderState();
+            state.selectedRepo = null;
+            state.selectedPath = "";
         }
         showPlaceholder();
     };
@@ -1224,11 +1340,9 @@ function loadGithubRepos() {
         return;
     }
 
-    fetch(`https://api.github.com/users/${username}/repos`)
+    fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, withGithubOptions())
         .then(res => {
-            if (!res.ok) {
-                throw new Error(`GitHub API antwortete mit Status ${res.status}`);
-            }
+            assertGithubResponseOk(res);
             return res.json();
         })
         .then(repos => {
@@ -1242,7 +1356,12 @@ function loadGithubRepos() {
         .catch(err => {
             console.error("Fehler beim Laden der Repos:", err);
             if (!cacheStatus.served) {
-                renderEmptySidebarState("finder.repositoriesError");
+                if (isRateLimitError(err)) {
+                    clearFinderState();
+                    renderEmptySidebarState("finder.rateLimit");
+                } else {
+                    renderEmptySidebarState("finder.repositoriesError");
+                }
             }
         });
 }

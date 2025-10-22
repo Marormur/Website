@@ -110,9 +110,9 @@
 
 <body class="dialog-content" onclick="onClick()">
     <div id="toolbar">
-        <button type="button" onclick="clearEditor()" title="Neues Dokument">Neu</button>
-        <button type="button" onclick="openFile()" title="Datei öffnen">Öffnen</button>
-        <button type="button" onclick="saveFile()" title="Speichern" id="save-button">Speichern</button>
+        <button type="button" onclick="clearEditor()" data-i18n="textEditor.toolbar.clear" data-i18n-title="textEditor.toolbar.clear">Neu</button>
+        <button type="button" onclick="openFile()" data-i18n="textEditor.toolbar.open" data-i18n-title="textEditor.toolbar.open">Öffnen</button>
+        <button type="button" onclick="saveFile()" data-i18n="textEditor.toolbar.save" data-i18n-title="textEditor.toolbar.save" id="save-button">Speichern</button>
         <!-- Hidden file input for opening files -->
         <input type="file" id="file-input"
             accept=".txt,.md,.markdown,.html,.htm,.css,.scss,.js,.jsx,.ts,.tsx,.json,.yml,.yaml,.xml,.csv,.tsv,.ini,.cfg,.conf,.env,.gitignore,.log,.c,.h,.cpp,.hpp,.java,.kt,.swift,.cs,.py,.rb,.php,.rs,.go,.sh,.bash,.zsh,.fish,.ps1,.bat"
@@ -175,7 +175,8 @@
                 const label = params && params.label ? params.label : '';
                 return label ? `${label} (lädt …)` : 'Lade Datei …';
             },
-            'textEditor.status.loadError': () => 'Datei konnte nicht geladen werden.'
+            'textEditor.status.loadError': () => 'Datei konnte nicht geladen werden.',
+            'textEditor.status.rateLimit': () => 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.'
         };
         function resolveTranslation(key, params) {
             if (!key) return { text: '', translated: false };
