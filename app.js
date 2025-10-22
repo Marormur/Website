@@ -37,84 +37,61 @@ const transientModalIds = new Set(["program-info-modal"]);
 // Für zukünftige z‑Index‑Verwaltung reserviert
 let topZIndex = 1000;
 
-const defaultProgramInfo = {
-    modalId: null,
-    programLabel: "Sucher",
-    infoLabel: "Über Sucher",
-    fallbackInfoModalId: "program-info-modal",
-    icon: "./img/sucher.png",
-    about: {
-        name: "Sucher",
-        tagline: "Dein persönlicher Dateimanager.",
-        version: "Version 1.0",
-        copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
-    }
+const appI18n = window.appI18n || {
+    translate: (key) => key,
+    applyTranslations: () => { },
+    setLanguagePreference: () => { },
+    getLanguagePreference: () => 'system',
+    getActiveLanguage: () => 'en'
 };
 
-const programInfoMap = {
+const programInfoDefinitions = {
+    default: {
+        programKey: 'programs.default',
+        fallbackInfoModalId: 'program-info-modal',
+        icon: './img/sucher.png'
+    },
     "projects-modal": {
-        programLabel: "Sucher",
-        infoLabel: "Über Sucher",
-        fallbackInfoModalId: "program-info-modal",
-        icon: "./img/sucher.png",
-        about: {
-            name: "Sucher",
-            tagline: "Der innovative Desktop-Dateimanager.",
-            version: "Version 1.0",
-            copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
-        }
+        programKey: 'programs.projects',
+        icon: './img/sucher.png'
     },
     "settings-modal": {
-        programLabel: "Systemeinstellungen",
-        infoLabel: "Über Systemeinstellungen",
-        fallbackInfoModalId: "program-info-modal",
-        icon: "./img/settings.png",
-        about: {
-            name: "Systemeinstellungen",
-            tagline: "Konfiguriere Erscheinungsbild, Accounts und mehr.",
-            version: "Version 1.0",
-            copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
-        }
+        programKey: 'programs.settings',
+        icon: './img/settings.png'
     },
     "text-modal": {
-        programLabel: "Texteditor",
-        infoLabel: "Über Texteditor",
-        fallbackInfoModalId: "program-info-modal",
-        icon: "./img/notepad.png",
-        about: {
-            name: "Texteditor",
-            tagline: "Leichtgewichtiger Editor für deine Notizen.",
-            version: "Version 1.0",
-            copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
-        }
+        programKey: 'programs.text',
+        icon: './img/notepad.png'
     },
     "image-modal": {
-        programLabel: "Bildanzeige",
-        infoLabel: "Über Bildanzeige",
-        fallbackInfoModalId: "program-info-modal",
-        icon: "./img/imageviewer.png",
-        about: {
-            name: "Bildanzeige",
-            tagline: "Betrachte Screenshots und Fotos mit Vorschau.",
-            version: "Version 1.0",
-            copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
-        }
+        programKey: 'programs.image',
+        icon: './img/imageviewer.png'
     },
     "about-modal": {
-        programLabel: "Über Marvin",
-        infoLabel: "Über dieses Fenster",
-        fallbackInfoModalId: "program-info-modal",
-        icon: "./img/profil.jpg",
-        about: {
-            name: "Über Marvin",
-            tagline: "Erfahre mehr über Marvin Temmen.",
-            version: "Version 1.0",
-            copyright: "© Marvin Temmen. Alle Rechte vorbehalten."
-        }
+        programKey: 'programs.about',
+        icon: './img/profil.jpg'
     }
 };
 
-let currentProgramInfo = { ...defaultProgramInfo };
+function resolveProgramInfo(modalId) {
+    const definition = Object.assign({}, programInfoDefinitions.default, modalId ? programInfoDefinitions[modalId] || {} : {});
+    const programKey = definition.programKey || programInfoDefinitions.default.programKey || 'programs.default';
+    const aboutFields = ['name', 'tagline', 'version', 'copyright'];
+    const info = {
+        modalId: modalId || null,
+        programLabel: appI18n.translate(`${programKey}.label`),
+        infoLabel: appI18n.translate(`${programKey}.infoLabel`),
+        fallbackInfoModalId: definition.fallbackInfoModalId || 'program-info-modal',
+        icon: definition.icon || programInfoDefinitions.default.icon,
+        about: {}
+    };
+    aboutFields.forEach((field) => {
+        info.about[field] = appI18n.translate(`${programKey}.about.${field}`);
+    });
+    return info;
+}
+
+let currentProgramInfo = resolveProgramInfo(null);
 
 function syncTopZIndexWithDOM() {
     let maxZ = Number.isFinite(topZIndex) ? topZIndex : 1000;
@@ -238,16 +215,14 @@ function getTopModal() {
 }
 
 function getProgramInfo(modalId) {
-    const infoFromMap = modalId ? programInfoMap[modalId] : null;
-    const merged = { ...defaultProgramInfo, ...(infoFromMap || {}) };
-    merged.modalId = modalId || null;
-    return merged;
+    return resolveProgramInfo(modalId);
 }
 
 function updateProgramInfoMenu(info) {
     const infoLink = document.getElementById("about-program");
     if (!infoLink) return;
-    infoLink.innerText = info.infoLabel || defaultProgramInfo.infoLabel;
+    const fallbackInfo = resolveProgramInfo(null);
+    infoLink.innerText = info.infoLabel || fallbackInfo.infoLabel;
     if (info.fallbackInfoModalId) {
         infoLink.dataset.fallbackInfoModalId = info.fallbackInfoModalId;
     } else {
@@ -258,7 +233,8 @@ function updateProgramInfoMenu(info) {
 function renderProgramInfo(info) {
     const modal = document.getElementById("program-info-modal");
     if (!modal) return;
-    const about = info.about || defaultProgramInfo.about || {};
+    const fallbackInfo = resolveProgramInfo(null);
+    const about = info.about || fallbackInfo.about || {};
     const iconEl = modal.querySelector("#program-info-icon");
     if (iconEl) {
         if (info.icon) {
@@ -271,7 +247,7 @@ function renderProgramInfo(info) {
     }
     const nameEl = modal.querySelector("#program-info-name");
     if (nameEl) {
-        nameEl.textContent = about.name || info.programLabel || defaultProgramInfo.programLabel;
+        nameEl.textContent = about.name || info.programLabel || fallbackInfo.programLabel;
     }
     const taglineEl = modal.querySelector("#program-info-tagline");
     if (taglineEl) {
@@ -338,15 +314,21 @@ function updateProgramLabelByTopModal() {
     const topModal = getTopModal();
     let info;
     if (topModal && topModal.id === "program-info-modal" && currentProgramInfo && currentProgramInfo.modalId) {
-        info = currentProgramInfo;
+        info = resolveProgramInfo(currentProgramInfo.modalId);
+        currentProgramInfo = info;
     } else {
         info = getProgramInfo(topModal ? topModal.id : null);
         currentProgramInfo = info;
     }
-    updateProgramLabel(info.programLabel || defaultProgramInfo.programLabel);
+    updateProgramLabel(info.programLabel);
     updateProgramInfoMenu(info);
     return info;
 }
+
+window.addEventListener("languagePreferenceChange", () => {
+    currentProgramInfo = resolveProgramInfo(currentProgramInfo ? currentProgramInfo.modalId : null);
+    updateProgramLabelByTopModal();
+});
 
 function hideMenuDropdowns() {
     const profileDropdown = document.getElementById('profile-dropdown');
@@ -696,16 +678,33 @@ function loadGithubRepos() {
         return null;
     };
 
-    const setImagePlaceholder = (message) => {
+    let imagePlaceholderState = null;
+    const setImagePlaceholder = (messageKey, params) => {
         if (!imagePlaceholder) return;
-        if (message) {
-            imagePlaceholder.textContent = message;
-            imagePlaceholder.classList.remove("hidden");
-        } else {
+        if (typeof messageKey !== "string" || messageKey.length === 0) {
+            imagePlaceholder.removeAttribute("data-i18n");
+            imagePlaceholder.removeAttribute("data-i18n-params");
             imagePlaceholder.textContent = "";
             imagePlaceholder.classList.add("hidden");
+            imagePlaceholderState = null;
+            return;
         }
+        imagePlaceholder.setAttribute("data-i18n", messageKey);
+        if (params && Object.keys(params).length > 0) {
+            imagePlaceholder.setAttribute("data-i18n-params", JSON.stringify(params));
+        } else {
+            imagePlaceholder.removeAttribute("data-i18n-params");
+        }
+        imagePlaceholderState = { key: messageKey, params: params || undefined };
+        appI18n.applyTranslations(imagePlaceholder);
+        imagePlaceholder.classList.remove("hidden");
     };
+
+    window.addEventListener("languagePreferenceChange", () => {
+        if (imagePlaceholderState) {
+            setImagePlaceholder(imagePlaceholderState.key, imagePlaceholderState.params);
+        }
+    });
 
     const updateImageInfo = ({ repo, path, dimensions, size }) => {
         if (!imageInfo) return;
@@ -746,7 +745,7 @@ function loadGithubRepos() {
             imageViewer.classList.add("hidden");
         }
         updateImageInfo({ repo: repoName, path: filePath, size: entry.size });
-        setImagePlaceholder(`Lade ${entry.name} …`);
+        setImagePlaceholder("finder.loadingImage", { name: entry.name });
 
         const finalize = (src) => {
             if (!imageViewer) return;
@@ -760,7 +759,7 @@ function loadGithubRepos() {
                 }
             };
             imageViewer.onerror = () => {
-                setImagePlaceholder("Bild konnte nicht geladen werden.");
+                setImagePlaceholder("finder.imageLoadError");
                 imageViewer.classList.add("hidden");
             };
             imageViewer.src = src;
@@ -803,7 +802,7 @@ function loadGithubRepos() {
                     return;
                 }
                 console.error("Fehler beim Laden der Bilddatei:", err);
-                setImagePlaceholder("Bild konnte nicht geladen werden. Bitte versuche es später erneut.");
+                setImagePlaceholder("finder.imageLoadErrorRetry");
             });
     };
 
@@ -879,7 +878,7 @@ function loadGithubRepos() {
                 postToTextEditor({
                     type: "textEditor:loadError",
                     payload: Object.assign({}, payloadBase, {
-                        message: "Datei konnte nicht geladen werden. Bitte versuche es später erneut."
+                        message: appI18n.translate("finder.fileLoadError")
                     })
                 });
             });
@@ -892,19 +891,24 @@ function loadGithubRepos() {
         fileList.innerHTML = "";
     };
 
-    const renderFileMessage = (message) => {
+    const renderFileMessage = (messageKey, params) => {
         fileList.innerHTML = "";
         const item = document.createElement("li");
         item.className = "px-4 py-3 text-sm text-gray-500 dark:text-gray-400";
-        item.textContent = message;
+        item.setAttribute("data-i18n", messageKey);
+        if (params && Object.keys(params).length > 0) {
+            item.setAttribute("data-i18n-params", JSON.stringify(params));
+        }
+        appI18n.applyTranslations(item);
         fileList.appendChild(item);
     };
 
-    const renderEmptySidebarState = (message) => {
+    const renderEmptySidebarState = (messageKey) => {
         list.innerHTML = "";
         const item = document.createElement("li");
         item.className = "px-4 py-3 text-sm text-gray-500 dark:text-gray-400";
-        item.textContent = message;
+        item.setAttribute("data-i18n", messageKey);
+        appI18n.applyTranslations(item);
         list.appendChild(item);
         showPlaceholder();
     };
@@ -974,7 +978,7 @@ function loadGithubRepos() {
     const renderFiles = (contents, repoName, path) => {
         fileList.innerHTML = "";
         if (!Array.isArray(contents) || contents.length === 0) {
-            renderFileMessage("Keine Dateien in diesem Verzeichnis gefunden.");
+            renderFileMessage("finder.emptyDirectory");
             return;
         }
 
@@ -989,7 +993,8 @@ function loadGithubRepos() {
             backIcon.textContent = "◀︎";
             const backLabel = document.createElement("span");
             backLabel.className = "font-medium";
-            backLabel.textContent = "Zurück";
+            backLabel.setAttribute("data-i18n", "finder.back");
+            appI18n.applyTranslations(backLabel);
             backWrapper.appendChild(backIcon);
             backWrapper.appendChild(backLabel);
             button.appendChild(backWrapper);
@@ -1045,7 +1050,8 @@ function loadGithubRepos() {
                 button.appendChild(label);
                 const openHint = document.createElement("span");
                 openHint.className = "text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider";
-                openHint.textContent = "Bildbetrachter";
+                openHint.setAttribute("data-i18n", "finder.imageViewer");
+                appI18n.applyTranslations(openHint);
                 button.appendChild(openHint);
                 button.addEventListener("click", () => openImageFileInViewer(repoName, path, entry));
                 li.appendChild(button);
@@ -1064,7 +1070,8 @@ function loadGithubRepos() {
                 button.appendChild(label);
                 const openHint = document.createElement("span");
                 openHint.className = "text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider";
-                openHint.textContent = "Texteditor";
+                openHint.setAttribute("data-i18n", "finder.textEditor");
+                appI18n.applyTranslations(openHint);
                 button.appendChild(openHint);
                 button.addEventListener("click", () => openTextFileInEditor(repoName, path, entry));
                 li.appendChild(button);
@@ -1105,7 +1112,7 @@ function loadGithubRepos() {
             return;
         }
 
-        renderFileMessage("Lade Dateien …");
+        renderFileMessage("finder.loadingFiles");
         fetch(repoPathToUrl(repoName, path))
             .then(res => {
                 if (!res.ok) {
@@ -1122,7 +1129,7 @@ function loadGithubRepos() {
             })
             .catch(err => {
                 console.error("Fehler beim Laden der Repo-Inhalte:", err);
-                renderFileMessage("Dateien konnten nicht geladen werden. Bitte versuche es später erneut.");
+                renderFileMessage("finder.filesLoadError");
             });
     };
 
@@ -1131,13 +1138,14 @@ function loadGithubRepos() {
         state.repoButtons.clear();
         state.repos = Array.isArray(repos) ? repos.slice() : [];
         if (!Array.isArray(repos) || repos.length === 0) {
-            renderEmptySidebarState("Keine öffentlichen Repositories gefunden.");
+            renderEmptySidebarState("finder.noRepositories");
             return;
         }
 
+        const locale = appI18n.getActiveLanguage ? appI18n.getActiveLanguage() : "de";
         state.repos
             .slice()
-            .sort((a, b) => a.name.localeCompare(b.name, "de", { sensitivity: "base" }))
+            .sort((a, b) => a.name.localeCompare(b.name, locale, { sensitivity: "base" }))
             .forEach(repo => {
                 const item = document.createElement("li");
                 const button = document.createElement("button");
@@ -1145,10 +1153,22 @@ function loadGithubRepos() {
                 button.className = "w-full px-4 py-3 text-left flex flex-col gap-1 border-l-4 border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition";
                 const name = document.createElement("span");
                 name.className = "font-semibold text-gray-800 dark:text-gray-100 truncate";
-                name.textContent = repo.name || "Unbenanntes Repository";
+                if (repo.name) {
+                    name.textContent = repo.name;
+                    name.removeAttribute("data-i18n");
+                } else {
+                    name.setAttribute("data-i18n", "finder.repoUnnamed");
+                    appI18n.applyTranslations(name);
+                }
                 const description = document.createElement("span");
                 description.className = "text-sm text-gray-500 dark:text-gray-400 truncate";
-                description.textContent = repo.description || "Keine Beschreibung verfügbar.";
+                if (repo.description) {
+                    description.textContent = repo.description;
+                    description.removeAttribute("data-i18n");
+                } else {
+                    description.setAttribute("data-i18n", "finder.repoDescriptionMissing");
+                    appI18n.applyTranslations(description);
+                }
                 button.appendChild(name);
                 button.appendChild(description);
                 item.appendChild(button);
@@ -1213,7 +1233,7 @@ function loadGithubRepos() {
         .catch(err => {
             console.error("Fehler beim Laden der Repos:", err);
             if (!cacheStatus.served) {
-                renderEmptyState("Repos konnten nicht geladen werden. Bitte versuche es später erneut.");
+                renderEmptySidebarState("finder.repositoriesError");
             }
         });
 }

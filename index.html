@@ -12,6 +12,7 @@
         window.tailwind = window.tailwind || {};
         window.tailwind.config = Object.assign({}, window.tailwind.config, { darkMode: 'class' });
     </script>
+    <script src="i18n.js"></script>
     <!-- Unsere zentrale Logik für Fenster und Dock -->
     <script src="app.js"></script>
 </head>
@@ -27,26 +28,31 @@
                 class="w-10 h-10 object-cover rounded-full border-2 border-white cursor-pointer no-select">
             <div id="profile-dropdown"
                 class="hidden absolute left-0 mt-2 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg z-[10000]">
-                <a href="#" id="dropdown-about" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
-                    Marvin</a>
+                <a href="#" id="dropdown-about" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    data-i18n="header.profile.about">Über Marvin</a>
                 <a href="#" id="dropdown-reset-layout"
-                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Fenster zurücksetzen</a>
+                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    data-i18n="header.profile.resetLayout">Fenster zurücksetzen</a>
                 <a href="#" id="dropdown-settings"
-                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Systemeinstellungen</a>
+                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    data-i18n="header.profile.settings">Systemeinstellungen</a>
                 <a href="https://www.linkedin.com/in/marvin-temmen-788537216" rel="noopener" target="_blank"
-                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">LinkedIn</a>
+                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    data-i18n="header.profile.linkedin">LinkedIn</a>
             </div>
         </div>
         <!-- Menüpunkte -->
         <nav class="flex space-x-4 items-center relative">
             <span id="program-label"
-                class="py-2 px-4 cursor-pointer no-select text-gray-900 dark:text-gray-100">Sucher</span>
+                class="py-2 px-4 cursor-pointer no-select text-gray-900 dark:text-gray-100"
+                data-i18n="programs.default.label">Sucher</span>
             <div id="program-dropdown"
                 class="hidden absolute top-full left-0 mt-1 w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded shadow-lg z-[10000]">
-                <a href="#" id="about-program" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Über
-                    Sucher</a>
+                <a href="#" id="about-program" class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    data-i18n="programs.default.infoLabel">Über Sucher</a>
                 <a href="#" id="program-close-current"
-                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700">Programm schließen</a>
+                    class="block px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    data-i18n="header.program.close">Programm schließen</a>
             </div>
         </nav>
         <!-- Uhrzeitelement -->
@@ -56,7 +62,7 @@
     <div id="desktop-icons" class="fixed right-0 top-10 mt-4 flex flex-col gap-4 p-4">
         <div class="flex flex-col items-center cursor-pointer" onclick="showTab('projects')">
             <span class="text-5xl">📁</span>
-            <span class="mt-2 text-lg font-semibold">Projekte</span>
+            <span class="mt-2 text-lg font-semibold" data-i18n="desktop.projects">Projekte</span>
         </div>
     </div>
     <!-- Projekte Modal -->
@@ -66,14 +72,15 @@
             style="width: 70vw; height: 60vh; max-height: 85vh;">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
-                    <button title="Schließen" id="close-projects-modal"
+                    <button title="Schließen" data-i18n-title="common.close" id="close-projects-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Projekte</h2>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
+                    data-i18n="modals.projects.title">Projekte</h2>
             </div>
             <div class="p-4 flex-1 flex flex-col min-h-0 h-full">
                 <div class="flex gap-4 h-full min-h-0">
@@ -81,7 +88,8 @@
                     <aside id="repo-sidebar"
                         class="w-64 max-w-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden flex flex-col min-h-0">
                         <div
-                            class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+                            data-i18n="modals.projects.repositories">
                             Repositories
                         </div>
                         <ul id="repo-list"
@@ -91,7 +99,8 @@
                     <!-- Dateiansicht ähnlich dem Finder -->
                     <section id="finder-content"
                         class="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg flex flex-col min-h-0">
-                        <div id="finder-placeholder" class="m-auto text-center text-gray-500 dark:text-gray-400 px-6">
+                        <div id="finder-placeholder" class="m-auto text-center text-gray-500 dark:text-gray-400 px-6"
+                            data-i18n="modals.projects.placeholder">
                             Wähle ein Repository aus, um dessen Dateien zu sehen.
                         </div>
                         <div id="finder-main" class="hidden h-full flex flex-col min-h-0">
@@ -115,30 +124,36 @@
             style="width: max(320px, 50vw); max-height: 85vh;">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
-                    <button title="Schließen" id="close-about-modal"
+                    <button title="Schließen" data-i18n-title="common.close" id="close-about-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Über Marvin</h2>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
+                    data-i18n="modals.about.title">Über Marvin</h2>
             </div>
             <div class="flex flex-col items-center text-gray-700 dark:text-gray-200 mt-8">
                 <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-4">
                 <h2 class="text-xl font-semibold">Marvin Temmen</h2>
-                <p class="text-sm">März 1999</p>
+                <p class="text-sm" data-i18n="modals.about.birth">März 1999</p>
                 <div class="mt-4 space-y-1 text-sm">
-                    <p><strong>Wohnort:</strong> Deutschland</p>
-                    <p><strong>Beruf:</strong> Softwareentwickler</p>
+                    <p><strong data-i18n="modals.about.locationLabel">Wohnort</strong>: <span
+                            data-i18n="modals.about.locationValue">Deutschland</span></p>
+                    <p><strong data-i18n="modals.about.jobLabel">Beruf</strong>: <span
+                            data-i18n="modals.about.jobValue">Softwareentwickler</span></p>
+                    <p><strong data-i18n="modals.about.employerLabel">Arbeitgeber</strong>: <span
+                            data-i18n="modals.about.employerValue">WinWorker</span></p>
                 </div>
                 <button class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
                     onclick="showTab('settings')">
-                    Mehr Infos …
+                    <span data-i18n="modals.about.moreButton">Mehr Infos …</span>
                 </button>
                 <div
                     class="mt-6 text-xs text-center text-gray-500 dark:text-gray-400 border-t border-gray-300 dark:border-gray-700 pt-2">
-                    © 2025 Marvin T. — Alle Rechte vorbehalten.
+                    <span data-i18n="modals.about.copyright">© 2025 Marvin T. —
+                        Alle Rechte vorbehalten.</span>
                 </div>
             </div>
         </div>
@@ -157,14 +172,15 @@
             <!-- Header -->
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
-                    <button title="Schließen" id="close-settings-modal"
+                    <button title="Schließen" data-i18n-title="common.close" id="close-settings-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Systemeinstellungen</h2>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
+                    data-i18n="modals.settings.title">Systemeinstellungen</h2>
             </div>
             <!-- Content -->
             <!-- Der eigentliche IFrame wird zur Laufzeit über Dialog.loadIframe erzeugt. Dieses
@@ -185,14 +201,15 @@
             <!-- Header -->
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
-                    <button title="Schließen" id="close-text-modal"
+                    <button title="Schließen" data-i18n-title="common.close" id="close-text-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Texteditor</h2>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
+                    data-i18n="modals.text.title">Texteditor</h2>
             </div>
             <!-- Content -->
             <div class="dialog-content flex-1"></div>
@@ -204,14 +221,15 @@
             style="width: min(80vw, 960px); height: min(70vh, 720px);">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
-                    <button title="Schließen" id="close-image-modal"
+                    <button title="Schließen" data-i18n-title="common.close" id="close-image-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Bildbetrachter</h2>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
+                    data-i18n="modals.image.title">Bildbetrachter</h2>
             </div>
             <div class="flex-1 flex flex-col min-h-0">
                 <div id="image-info"
@@ -221,7 +239,8 @@
                     class="flex-1 flex items-center justify-center bg-gray-100 dark:bg-gray-900 relative overflow-auto">
                     <img id="image-viewer" class="max-w-full max-h-full object-contain drop-shadow-lg hidden"
                         alt="Vorschau ausgewählter Datei">
-                    <div id="image-placeholder" class="text-gray-500 dark:text-gray-400 text-center px-6">
+                    <div id="image-placeholder" class="text-gray-500 dark:text-gray-400 text-center px-6"
+                        data-i18n="modals.image.placeholder">
                         Öffne eine Bilddatei aus dem Sucher, um die Vorschau zu sehen.
                     </div>
                 </div>
@@ -234,14 +253,15 @@
             style="width: min(360px, 90vw);">
             <div class="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-t-2xl draggable-header">
                 <div class="flex space-x-2">
-                    <button title="Schließen" id="close-program-info-modal"
+                    <button title="Schließen" data-i18n-title="common.close" id="close-program-info-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select">Über dieses Programm</h2>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
+                    data-i18n="modals.programInfo.title">Über dieses Programm</h2>
             </div>
             <div class="p-6 flex flex-col items-center text-center gap-4">
                 <img id="program-info-icon" src="" alt="" class="w-20 h-20 rounded-2xl shadow-md hidden">
@@ -261,7 +281,8 @@
         <!-- Sucher Projekte -->
         <div class="group relative flex flex-col items-center cursor-pointer mx-2" onclick="showTab('projects')">
             <span
-                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50">
+                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50"
+                data-i18n="dock.finder">
                 Sucher
             </span>
             <img src="./img/sucher.png" alt="Sucher Icon" class="w-20 h-20">
@@ -271,7 +292,8 @@
         <!-- Texteditor -->
         <div class="group relative flex flex-col items-center cursor-pointer mx-2" onclick="showTab('text')">
             <span
-                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50">
+                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50"
+                data-i18n="dock.text">
                 Texteditor
             </span>
             <img src="./img/notepad.png" alt="Texteditor Icon" class="w-20 h-20">
@@ -281,7 +303,8 @@
         <!-- Bildbetrachter -->
         <div class="group relative flex flex-col items-center cursor-pointer mx-2" onclick="showTab('image')">
             <span
-                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50">
+                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50"
+                data-i18n="dock.image">
                 Bildbetrachter
             </span>
             <img src="./img/imageviewer.png" alt="Bildbetrachter Icon" class="w-20 h-20">
@@ -291,7 +314,8 @@
         <!-- Einstellungen -->
         <div class="group relative flex flex-col items-center cursor-pointer mx-2" onclick="showTab('settings')">
             <span
-                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50">
+                class="hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white bg-gray-900 bg-opacity-80 px-2 py-1 rounded z-50"
+                data-i18n="dock.settings">
                 Systemeinstellungen
             </span>
             <img src="./img/settings.png" alt="Settings Icon" class="w-20 h-20">

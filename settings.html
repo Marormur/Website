@@ -4,12 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Einstellungen</title>
+    <title data-i18n="settingsPage.title">Einstellungen</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         window.tailwind = window.tailwind || {};
         window.tailwind.config = Object.assign({}, window.tailwind.config, { darkMode: 'class' });
     </script>
+    <script src="i18n.js"></script>
     <style>
         :root {
             color-scheme: light;
@@ -73,15 +74,22 @@
         <div class="w-48 bg-gray-100 dark:bg-gray-700 p-4 space-y-1 overflow-auto">
             <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
                 data-settings-nav="general"
-                onclick="showSettingsSection('general')">
+                onclick="showSettingsSection('general')"
+                data-i18n="settingsPage.nav.general">
                 Allgemein
             </div>
             <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
                 data-settings-nav="display"
-                onclick="showSettingsSection('display')">
+                onclick="showSettingsSection('display')"
+                data-i18n="settingsPage.nav.display">
                 Darstellung
             </div>
-            <!-- Weitere Menüpunkte können hier ergänzt werden -->
+            <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
+                data-settings-nav="language"
+                onclick="showSettingsSection('language')"
+                data-i18n="settingsPage.nav.language">
+                Sprache
+            </div>
         </div>
         <!-- Rechte Hauptansicht -->
         <div class="flex-1 p-6 overflow-auto text-gray-800 dark:text-gray-200">
@@ -92,20 +100,21 @@
                      wodurch keine leeren Ränder bei großen Fenstern entstehen. -->
                 <div class="flex flex-col items-start text-gray-700 dark:text-gray-200 mt-8 w-full space-y-4">
                     <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-2">
-                    <h2 class="text-xl font-semibold">Marvin Temmen</h2>
-                    <p class="text-sm">März 1999</p>
+                    <h2 class="text-xl font-semibold" data-i18n="settingsPage.general.name">Marvin Temmen</h2>
+                    <p class="text-sm" data-i18n="settingsPage.general.birth">März 1999</p>
                     <!-- Persönliche Daten in einer responsiven Tabelle. Auf kleinen Bildschirmen
                          wird eine Spalte genutzt, auf mittleren und größeren zwei Spalten. -->
                     <div class="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 w-full grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-8">
-                        <div class="text-gray-600 dark:text-gray-300">Wohnort</div>
-                        <div class="text-gray-800 dark:text-gray-100">Deutschland</div>
-                        <div class="text-gray-600 dark:text-gray-300">Beruf</div>
-                        <div class="text-gray-800 dark:text-gray-100">Softwareentwickler</div>
-                        <div class="text-gray-600 dark:text-gray-300">Arbeitgeber</div>
-                        <div class="text-gray-800 dark:text-gray-100">WinWorker</div>
+                        <div class="text-gray-600 dark:text-gray-300" data-i18n="settingsPage.general.locationLabel">Wohnort</div>
+                        <div class="text-gray-800 dark:text-gray-100" data-i18n="settingsPage.general.locationValue">Deutschland</div>
+                        <div class="text-gray-600 dark:text-gray-300" data-i18n="settingsPage.general.jobLabel">Beruf</div>
+                        <div class="text-gray-800 dark:text-gray-100" data-i18n="settingsPage.general.jobValue">Softwareentwickler</div>
+                        <div class="text-gray-600 dark:text-gray-300" data-i18n="settingsPage.general.employerLabel">Arbeitgeber</div>
+                        <div class="text-gray-800 dark:text-gray-100" data-i18n="settingsPage.general.employerValue">WinWorker</div>
                     </div>
                     <div class="text-xs text-gray-500 dark:text-gray-400 border-t border-gray-300 dark:border-gray-700 pt-2 w-full">
-                        © 2025 Marvin T. — Alle Rechte vorbehalten.
+                        <span data-i18n="settingsPage.general.copyright">© 2025 Marvin T. — Alle Rechte
+                            vorbehalten.</span>
                     </div>
                 </div>
             </div>
@@ -113,32 +122,88 @@
             <div id="settings-display" class="hidden">
                 <div class="flex flex-col gap-6 mt-4 w-full">
                     <div>
-                        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Darstellungsoptionen</h2>
-                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100"
+                            data-i18n="settingsPage.display.title">Darstellungsoptionen</h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1"
+                            data-i18n="settingsPage.display.description">
                             Passe an, wie der Desktop mit hellem und dunklem Design umgeht.
                         </p>
                     </div>
                     <fieldset class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
-                        <legend class="text-sm font-medium text-gray-700 dark:text-gray-200 px-1">Darkmode</legend>
+                        <legend class="text-sm font-medium text-gray-700 dark:text-gray-200 px-1"
+                            data-i18n="settingsPage.display.legend">Darkmode</legend>
                         <label class="flex items-center gap-3 cursor-pointer select-none">
                             <input type="radio" name="theme-mode" value="system" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
                             <div>
-                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100">System</span>
-                                <span class="block text-xs text-gray-600 dark:text-gray-300">Folgt den aktuellen Systemeinstellungen.</span>
+                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                    data-i18n="settingsPage.display.options.system.label">System</span>
+                                <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                    data-i18n="settingsPage.display.options.system.description">Folgt den aktuellen Systemeinstellungen.</span>
                             </div>
                         </label>
                         <label class="flex items-center gap-3 cursor-pointer select-none">
                             <input type="radio" name="theme-mode" value="light" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
                             <div>
-                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100">Hell</span>
-                                <span class="block text-xs text-gray-600 dark:text-gray-300">Bleibt immer im hellen Erscheinungsbild.</span>
+                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                    data-i18n="settingsPage.display.options.light.label">Hell</span>
+                                <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                    data-i18n="settingsPage.display.options.light.description">Bleibt immer im hellen Erscheinungsbild.</span>
                             </div>
                         </label>
                         <label class="flex items-center gap-3 cursor-pointer select-none">
                             <input type="radio" name="theme-mode" value="dark" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
                             <div>
-                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100">Dunkel</span>
-                                <span class="block text-xs text-gray-600 dark:text-gray-300">Bleibt immer im dunklen Erscheinungsbild.</span>
+                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                    data-i18n="settingsPage.display.options.dark.label">Dunkel</span>
+                                <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                    data-i18n="settingsPage.display.options.dark.description">Bleibt immer im dunklen Erscheinungsbild.</span>
+                            </div>
+                        </label>
+                    </fieldset>
+                </div>
+            </div>
+            <!-- Sektion: Sprache -->
+            <div id="settings-language" class="hidden">
+                <div class="flex flex-col gap-6 mt-4 w-full">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100"
+                            data-i18n="settingsPage.language.title">Sprache</h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1"
+                            data-i18n="settingsPage.language.description">
+                            Wähle, in welcher Sprache die Oberfläche angezeigt wird.
+                        </p>
+                    </div>
+                    <fieldset class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+                        <legend class="text-sm font-medium text-gray-700 dark:text-gray-200 px-1"
+                            data-i18n="settingsPage.language.legend">Bevorzugte Sprache</legend>
+                        <label class="flex items-center gap-3 cursor-pointer select-none">
+                            <input type="radio" name="language-preference" value="system"
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                            <div>
+                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                    data-i18n="settingsPage.language.options.system.label">System</span>
+                                <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                    data-i18n="settingsPage.language.options.system.description">Verwendet automatisch die Sprache deines Systems.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer select-none">
+                            <input type="radio" name="language-preference" value="de"
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                            <div>
+                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                    data-i18n="settingsPage.language.options.de.label">Deutsch</span>
+                                <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                    data-i18n="settingsPage.language.options.de.description">Zeigt Inhalte immer auf Deutsch.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer select-none">
+                            <input type="radio" name="language-preference" value="en"
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                            <div>
+                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                    data-i18n="settingsPage.language.options.en.label">Englisch</span>
+                                <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                    data-i18n="settingsPage.language.options.en.description">Zeigt Inhalte immer auf Englisch.</span>
                             </div>
                         </label>
                     </fieldset>
@@ -178,7 +243,7 @@
             dialog.refocus();
         }
         function showSettingsSection(section) {
-            const localSections = ['settings-general', 'settings-display'];
+            const localSections = ['settings-general', 'settings-display', 'settings-language'];
             localSections.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -211,7 +276,7 @@
                 radio.checked = (radio.value === pref);
             });
         }
-        function detectInitialPreference() {
+        function detectInitialThemePreference() {
             try {
                 if (typeof window.parent.getThemePreference === 'function') {
                     syncThemePreference(window.parent.getThemePreference());
@@ -236,11 +301,65 @@
                 syncThemePreference(radio.value);
             });
         });
-        detectInitialPreference();
+        detectInitialThemePreference();
         try {
             window.parent.addEventListener('themePreferenceChange', (event) => {
                 if (event && event.detail && event.detail.preference) {
                     syncThemePreference(event.detail.preference);
+                }
+            });
+        } catch (err) {
+            // Ignoriere, falls kein Zugriff auf das Parent-Fenster möglich ist
+        }
+        const languageRadios = Array.from(document.querySelectorAll('input[name="language-preference"]'));
+        function syncLanguagePreference(pref) {
+            languageRadios.forEach(radio => {
+                radio.checked = (radio.value === pref);
+            });
+        }
+        function detectInitialLanguagePreference() {
+            let preference = 'system';
+            try {
+                if (window.parent && window.parent.appI18n && typeof window.parent.appI18n.getLanguagePreference === 'function') {
+                    preference = window.parent.appI18n.getLanguagePreference();
+                } else if (window.appI18n && typeof window.appI18n.getLanguagePreference === 'function') {
+                    preference = window.appI18n.getLanguagePreference();
+                }
+            } catch (err) {
+                if (window.appI18n && typeof window.appI18n.getLanguagePreference === 'function') {
+                    preference = window.appI18n.getLanguagePreference();
+                }
+            }
+            syncLanguagePreference(preference);
+        }
+        languageRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (!radio.checked) return;
+                const value = radio.value;
+                try {
+                    if (window.parent && window.parent.appI18n && typeof window.parent.appI18n.setLanguagePreference === 'function') {
+                        window.parent.appI18n.setLanguagePreference(value);
+                    } else if (window.appI18n && typeof window.appI18n.setLanguagePreference === 'function') {
+                        window.appI18n.setLanguagePreference(value);
+                    }
+                } catch (err) {
+                    if (window.appI18n && typeof window.appI18n.setLanguagePreference === 'function') {
+                        window.appI18n.setLanguagePreference(value);
+                    }
+                }
+                syncLanguagePreference(value);
+            });
+        });
+        detectInitialLanguagePreference();
+        window.addEventListener('languagePreferenceChange', (event) => {
+            if (event && event.detail && event.detail.preference) {
+                syncLanguagePreference(event.detail.preference);
+            }
+        });
+        try {
+            window.parent.addEventListener('languagePreferenceChange', (event) => {
+                if (event && event.detail && event.detail.preference) {
+                    syncLanguagePreference(event.detail.preference);
                 }
             });
         } catch (err) {
