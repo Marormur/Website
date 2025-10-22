@@ -505,7 +505,10 @@ function saveOpenModals() {
     const openModals = modalIds.filter(id => {
         if (transientModalIds.has(id)) return false;
         const el = document.getElementById(id);
-        return el && !el.classList.contains("hidden");
+        if (!el) return false;
+        // Als "offen" zählen sowohl sichtbare als auch minimierte Fenster
+        const minimized = el.dataset && el.dataset.minimized === 'true';
+        return !el.classList.contains("hidden") || minimized;
     });
     localStorage.setItem("openModals", JSON.stringify(openModals));
 }
@@ -1403,7 +1406,9 @@ function updateDockIndicators() {
         const modal = document.getElementById(mapping.modalId);
         const indicator = document.getElementById(mapping.indicatorId);
         if (modal && indicator) {
-            if (!modal.classList.contains("hidden")) {
+            // Dot anzeigen, wenn Fenster sichtbar ODER minimiert ist
+            const minimized = modal.dataset && modal.dataset.minimized === 'true';
+            if (!modal.classList.contains("hidden") || minimized) {
                 indicator.classList.remove("hidden");
             } else {
                 indicator.classList.add("hidden");
@@ -1441,10 +1446,48 @@ class Dialog {
         // Initialisiert Drag & Drop und Resizing
         this.makeDraggable();
         this.makeResizable();
+        const closeButton = this.modal.querySelector('.draggable-header button[id^="close-"]');
+        if (closeButton) {
+            closeButton.style.cursor = 'pointer';
+            closeButton.dataset.dialogAction = 'close';
+            if (!closeButton.dataset.dialogBoundClose) {
+                closeButton.dataset.dialogBoundClose = 'true';
+                closeButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.close();
+                });
+            }
+        }
+        // Verkabele macOS-ähnliche Titelbar-Buttons (Gelb = Minimize, Grün = Maximize)
+        const minimizeEl = this.modal.querySelector('.draggable-header .bg-yellow-500.rounded-full');
+        const maximizeEl = this.modal.querySelector('.draggable-header .bg-green-500.rounded-full');
+        if (minimizeEl) {
+            minimizeEl.style.cursor = 'pointer';
+            minimizeEl.title = minimizeEl.title || 'Minimieren';
+            minimizeEl.dataset.dialogAction = 'minimize';
+            minimizeEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.minimize();
+            });
+        }
+        if (maximizeEl) {
+            maximizeEl.style.cursor = 'pointer';
+            maximizeEl.title = maximizeEl.title || 'Maximieren';
+            maximizeEl.dataset.dialogAction = 'maximize';
+            maximizeEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleMaximize();
+            });
+        }
     }
     open() {
         hideMenuDropdowns();
         this.modal.classList.remove("hidden");
+        // Öffnen hebt Minimiert-Status auf
+        if (this.modal.dataset) {
+            delete this.modal.dataset.minimized;
+        }
         this.bringToFront();
         this.enforceMenuBarBoundary();
         saveOpenModals();
@@ -1457,6 +1500,57 @@ class Dialog {
         saveOpenModals();
         updateDockIndicators();
         updateProgramLabelByTopModal();
+    }
+    minimize() {
+        // Markiere als minimiert und blende das Fenster aus, Dock-Anzeige bleibt erhalten
+        if (this.modal.dataset) this.modal.dataset.minimized = 'true';
+        if (!this.modal.classList.contains('hidden')) {
+            this.modal.classList.add('hidden');
+        }
+        saveOpenModals();
+        updateDockIndicators();
+        updateProgramLabelByTopModal();
+    }
+    toggleMaximize() {
+        const target = this.windowEl || this.modal;
+        if (!target) return;
+        const ds = this.modal.dataset || {};
+        const isMax = ds.maximized === 'true';
+        if (isMax) {
+            // Zurücksetzen auf vorherige Größe/Position
+            if (ds.prevLeft !== undefined) target.style.left = ds.prevLeft;
+            if (ds.prevTop !== undefined) target.style.top = ds.prevTop;
+            if (ds.prevWidth !== undefined) target.style.width = ds.prevWidth;
+            if (ds.prevHeight !== undefined) target.style.height = ds.prevHeight;
+            if (ds.prevPosition !== undefined) target.style.position = ds.prevPosition;
+            delete this.modal.dataset.maximized;
+            delete this.modal.dataset.prevLeft;
+            delete this.modal.dataset.prevTop;
+            delete this.modal.dataset.prevWidth;
+            delete this.modal.dataset.prevHeight;
+            delete this.modal.dataset.prevPosition;
+            this.enforceMenuBarBoundary();
+            saveWindowPositions();
+            return;
+        }
+        // Speichere aktuelle Größe/Position
+        const computed = window.getComputedStyle(target);
+        this.modal.dataset.prevLeft = target.style.left || computed.left || '';
+        this.modal.dataset.prevTop = target.style.top || computed.top || '';
+        this.modal.dataset.prevWidth = target.style.width || computed.width || '';
+        this.modal.dataset.prevHeight = target.style.height || computed.height || '';
+        this.modal.dataset.prevPosition = target.style.position || computed.position || '';
+        // Auf maximierte Größe setzen (unterhalb der Menüleiste)
+        const minTop = getMenuBarBottom();
+        target.style.position = 'fixed';
+        target.style.left = '0px';
+        target.style.top = `${minTop}px`;
+        target.style.width = '100vw';
+        // Höhe: restlicher Platz unterhalb der Menüleiste
+        target.style.height = `calc(100vh - ${minTop}px)`;
+        this.modal.dataset.maximized = 'true';
+        this.bringToFront();
+        saveWindowPositions();
     }
     bringToFront() {
         // Erhöhe den globalen Z-Index‑Zähler und setze diesen Dialog nach vorn.
@@ -1485,8 +1579,11 @@ class Dialog {
         let offsetX = 0, offsetY = 0;
         header.addEventListener('mousedown', (e) => {
             this.refocus();
-            // Wenn der Klick auf einen Schließen-Button innerhalb der Kopfzeile erfolgt, ignoriere den Drag-Vorgang
-            if (e.target.closest('button[title="Schließen"]')) return;
+            // Wenn auf einen Steuerungs-Button geklickt wird (schließen/minimieren/maximieren), kein Drag starten
+            if (e.target.closest('button[id^="close-"]')) return;
+            if (e.target.closest('[data-dialog-action]')) return;
+            // Beim maximierten Fenster kein Drag
+            if (this.modal.dataset && this.modal.dataset.maximized === 'true') return;
             const rect = target.getBoundingClientRect();
             const computedPosition = window.getComputedStyle(target).position;
             // Beim ersten Drag die aktuelle Position einfrieren, damit es nicht springt.

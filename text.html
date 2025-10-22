@@ -40,11 +40,13 @@
             box-sizing: border-box;
         }
 
-        html, body {
+        html,
+        body {
             height: 100%;
             margin: 0;
             padding: 0;
         }
+
         body {
             display: flex;
             flex-direction: column;
@@ -52,6 +54,7 @@
             background: var(--editor-body-bg);
             color: var(--editor-text);
         }
+
         #toolbar {
             flex: 0 0 auto;
             background: var(--editor-toolbar-bg);
@@ -61,6 +64,7 @@
             gap: 8px;
             align-items: center;
         }
+
         #toolbar button {
             margin: 0;
             padding: 6px 12px;
@@ -71,13 +75,16 @@
             color: inherit;
             border-radius: 6px;
         }
+
         #toolbar button:hover {
             background: var(--editor-toolbar-button-hover);
         }
+
         #toolbar button:disabled {
             opacity: 0.5;
             cursor: default;
         }
+
         #file-status {
             flex: 0 0 auto;
             padding: 8px 16px;
@@ -88,9 +95,11 @@
             opacity: 0.75;
             display: none;
         }
+
         #file-status.active {
             display: block;
         }
+
         #editor {
             flex: 1 1 auto;
             width: 100%;
@@ -110,16 +119,19 @@
 
 <body class="dialog-content" onclick="onClick()">
     <div id="toolbar">
-        <button type="button" onclick="clearEditor()" data-i18n="textEditor.toolbar.clear" data-i18n-title="textEditor.toolbar.clear">Neu</button>
-        <button type="button" onclick="openFile()" data-i18n="textEditor.toolbar.open" data-i18n-title="textEditor.toolbar.open">Öffnen</button>
-        <button type="button" onclick="saveFile()" data-i18n="textEditor.toolbar.save" data-i18n-title="textEditor.toolbar.save" id="save-button">Speichern</button>
+        <button type="button" onclick="clearEditor()" data-i18n="textEditor.toolbar.clear"
+            data-i18n-title="textEditor.toolbar.clear">Neu</button>
+        <button type="button" onclick="openFile()" data-i18n="textEditor.toolbar.open"
+            data-i18n-title="textEditor.toolbar.open">Öffnen</button>
+        <button type="button" onclick="saveFile()" data-i18n="textEditor.toolbar.save"
+            data-i18n-title="textEditor.toolbar.save" id="save-button">Speichern</button>
         <!-- Hidden file input for opening files -->
         <input type="file" id="file-input"
             accept=".txt,.md,.markdown,.html,.htm,.css,.scss,.js,.jsx,.ts,.tsx,.json,.yml,.yaml,.xml,.csv,.tsv,.ini,.cfg,.conf,.env,.gitignore,.log,.c,.h,.cpp,.hpp,.java,.kt,.swift,.cs,.py,.rb,.php,.rs,.go,.sh,.bash,.zsh,.fish,.ps1,.bat"
             style="display:none">
     </div>
     <div id="file-status"></div>
-    <textarea id="editor" spellcheck="false" wrap="off"></textarea>
+    <textarea id="editor" spellcheck="false" wrap="off" title="textarea"></textarea>
     <script>
         function applyTheme(isDark) {
             document.documentElement.classList.toggle('dark', !!isDark);
