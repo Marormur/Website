@@ -233,6 +233,7 @@ function updateProgramInfoMenu(info) {
 function renderProgramInfo(info) {
     const modal = document.getElementById("program-info-modal");
     if (!modal) return;
+    modal.dataset.infoTarget = info.modalId || "";
     const fallbackInfo = resolveProgramInfo(null);
     const about = info.about || fallbackInfo.about || {};
     const iconEl = modal.querySelector("#program-info-icon");
@@ -326,8 +327,17 @@ function updateProgramLabelByTopModal() {
 }
 
 window.addEventListener("languagePreferenceChange", () => {
-    currentProgramInfo = resolveProgramInfo(currentProgramInfo ? currentProgramInfo.modalId : null);
-    updateProgramLabelByTopModal();
+    const info = updateProgramLabelByTopModal();
+    const programInfoModal = document.getElementById("program-info-modal");
+    if (programInfoModal && !programInfoModal.classList.contains("hidden")) {
+        const targetId = programInfoModal.dataset.infoTarget || (info ? info.modalId : null) || null;
+        const infoForDialog = resolveProgramInfo(targetId);
+        renderProgramInfo(infoForDialog);
+        // Wenn der Programminfo-Dialog das aktive Programm repräsentiert, synchronisieren wir den aktuellen Zustand
+        if (info && info.modalId === infoForDialog.modalId) {
+            currentProgramInfo = infoForDialog;
+        }
+    }
 });
 
 function hideMenuDropdowns() {
