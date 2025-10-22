@@ -865,8 +865,7 @@ function loadGithubRepos() {
                 postToTextEditor({
                     type: "textEditor:loadRemoteFile",
                     payload: Object.assign({}, payloadBase, {
-                        content,
-                        isHtml: /\.html?$/i.test(entry.name)
+                        content
                     })
                 });
                 if (textDialog && typeof textDialog.bringToFront === "function") {

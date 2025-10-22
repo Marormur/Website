@@ -55,20 +55,28 @@
         #toolbar {
             flex: 0 0 auto;
             background: var(--editor-toolbar-bg);
-            padding: 8px;
+            padding: 8px 12px;
             border-bottom: 1px solid var(--editor-toolbar-border);
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
         #toolbar button {
-            margin-right: 4px;
-            padding: 4px 8px;
+            margin: 0;
+            padding: 6px 12px;
             font-size: 14px;
             border: 1px solid var(--editor-toolbar-button-border);
             background: var(--editor-toolbar-button-bg);
             cursor: pointer;
             color: inherit;
+            border-radius: 6px;
         }
         #toolbar button:hover {
             background: var(--editor-toolbar-button-hover);
+        }
+        #toolbar button:disabled {
+            opacity: 0.5;
+            cursor: default;
         }
         #file-status {
             flex: 0 0 auto;
@@ -85,74 +93,33 @@
         }
         #editor {
             flex: 1 1 auto;
-            padding: 10px;
-            overflow-y: auto;
-            background: var(--editor-surface-bg);
-            outline: none;
+            width: 100%;
+            resize: none;
+            padding: 16px;
             border: none;
+            outline: none;
+            background: var(--editor-surface-bg);
+            color: inherit;
+            font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            tab-size: 4;
         }
     </style>
 </head>
 
 <body class="dialog-content" onclick="onClick()">
     <div id="toolbar">
-        <!-- Basic formatting -->
-        <button type="button" onclick="execCmd('bold')" title="Fett"
-            data-i18n-title="textEditor.toolbar.bold" data-i18n-aria-label="textEditor.toolbar.bold">
-            <strong>B</strong>
-        </button>
-        <button type="button" onclick="execCmd('italic')" title="Kursiv"
-            data-i18n-title="textEditor.toolbar.italic" data-i18n-aria-label="textEditor.toolbar.italic">
-            <em>I</em>
-        </button>
-        <button type="button" onclick="execCmd('underline')" title="Unterstrichen"
-            data-i18n-title="textEditor.toolbar.underline" data-i18n-aria-label="textEditor.toolbar.underline">
-            <u>U</u>
-        </button>
-        <button type="button" onclick="execCmd('strikeThrough')" title="Durchgestrichen"
-            data-i18n-title="textEditor.toolbar.strikeThrough" data-i18n-aria-label="textEditor.toolbar.strikeThrough">
-            <s>S</s>
-        </button>
-        <!-- Lists -->
-        <button type="button" onclick="execCmd('insertUnorderedList')" title="Ungeordnete Liste"
-            data-i18n-title="textEditor.toolbar.unorderedList"
-            data-i18n-aria-label="textEditor.toolbar.unorderedList">
-            <span aria-hidden="true">•</span>
-            <span class="ml-1" data-i18n="textEditor.toolbar.unorderedList">Ungeordnete Liste</span>
-        </button>
-        <button type="button" onclick="execCmd('insertOrderedList')" title="Geordnete Liste"
-            data-i18n-title="textEditor.toolbar.orderedList"
-            data-i18n-aria-label="textEditor.toolbar.orderedList">
-            <span aria-hidden="true">1.</span>
-            <span class="ml-1" data-i18n="textEditor.toolbar.orderedList">Geordnete Liste</span>
-        </button>
-        <!-- Undo/Redo -->
-        <button type="button" onclick="execCmd('undo')" title="Rückgängig"
-            data-i18n-title="textEditor.toolbar.undo" data-i18n-aria-label="textEditor.toolbar.undo">
-            <span data-i18n="textEditor.toolbar.undo">Undo</span>
-        </button>
-        <button type="button" onclick="execCmd('redo')" title="Wiederholen"
-            data-i18n-title="textEditor.toolbar.redo" data-i18n-aria-label="textEditor.toolbar.redo">
-            <span data-i18n="textEditor.toolbar.redo">Redo</span>
-        </button>
-        <!-- File operations -->
-        <button type="button" onclick="clearEditor()" title="Neues Dokument"
-            data-i18n-title="textEditor.toolbar.clear" data-i18n-aria-label="textEditor.toolbar.clear">
-            <span data-i18n="textEditor.toolbar.clear">Neu</span>
-        </button>
-        <button type="button" onclick="openFile()" title="Datei öffnen"
-            data-i18n-title="textEditor.toolbar.open" data-i18n-aria-label="textEditor.toolbar.open">
-            <span data-i18n="textEditor.toolbar.open">Öffnen</span>
-        </button>
-        <button type="button" onclick="saveFile()" title="Speichern"
-            data-i18n-title="textEditor.toolbar.save" data-i18n-aria-label="textEditor.toolbar.save">
-            <span data-i18n="textEditor.toolbar.save">Speichern</span>
-        </button>
+        <button type="button" onclick="clearEditor()" title="Neues Dokument">Neu</button>
+        <button type="button" onclick="openFile()" title="Datei öffnen">Öffnen</button>
+        <button type="button" onclick="saveFile()" title="Speichern" id="save-button">Speichern</button>
         <!-- Hidden file input for opening files -->
-        <input type="file" id="file-input" accept=".txt,.html" style="display:none">
+        <input type="file" id="file-input"
+            accept=".txt,.md,.markdown,.html,.htm,.css,.scss,.js,.jsx,.ts,.tsx,.json,.yml,.yaml,.xml,.csv,.tsv,.ini,.cfg,.conf,.env,.gitignore,.log,.c,.h,.cpp,.hpp,.java,.kt,.swift,.cs,.py,.rb,.php,.rs,.go,.sh,.bash,.zsh,.fish,.ps1,.bat"
+            style="display:none">
     </div>
     <div id="file-status"></div>
-    <div id="editor" contenteditable="true"></div>
+    <textarea id="editor" spellcheck="false" wrap="off"></textarea>
     <script>
         function applyTheme(isDark) {
             document.documentElement.classList.toggle('dark', !!isDark);
@@ -197,6 +164,35 @@
             getActiveLanguage: () => 'en',
             setLanguagePreference: () => { }
         };
+        const fallbackMessages = {
+            'textEditor.documentTitle': () => 'Texteditor',
+            'textEditor.documentTitleWithFile': (params) => {
+                const fileName = params && params.fileName ? params.fileName : '';
+                return fileName ? `Texteditor – ${fileName}` : 'Texteditor';
+            },
+            'textEditor.status.loading': () => 'Lade Datei …',
+            'textEditor.status.loadingWithLabel': (params) => {
+                const label = params && params.label ? params.label : '';
+                return label ? `${label} (lädt …)` : 'Lade Datei …';
+            },
+            'textEditor.status.loadError': () => 'Datei konnte nicht geladen werden.'
+        };
+        function resolveTranslation(key, params) {
+            if (!key) return { text: '', translated: false };
+            try {
+                const translated = appI18n.translate(key, params);
+                if (translated && translated !== key) {
+                    return { text: translated, translated: true };
+                }
+            } catch (err) {
+                console.warn('Translation failed, falling back to default text:', err);
+            }
+            const fallbackFn = fallbackMessages[key];
+            if (typeof fallbackFn === 'function') {
+                return { text: fallbackFn(params || {}), translated: false };
+            }
+            return { text: key, translated: false };
+        }
         const statusBar = document.getElementById('file-status');
         let statusState = null;
         let currentRemoteFile = null;
@@ -212,14 +208,24 @@
                 return;
             }
             if (statusState.type === 'i18n') {
-                statusBar.setAttribute('data-i18n', statusState.key);
-                if (statusState.params) {
-                    statusBar.setAttribute('data-i18n-params', JSON.stringify(statusState.params));
+                const { text, translated } = resolveTranslation(statusState.key, statusState.params);
+                statusBar.textContent = text;
+                if (translated) {
+                    statusBar.setAttribute('data-i18n', statusState.key);
+                    if (statusState.params) {
+                        statusBar.setAttribute('data-i18n-params', JSON.stringify(statusState.params));
+                    } else {
+                        statusBar.removeAttribute('data-i18n-params');
+                    }
+                    try {
+                        appI18n.applyTranslations(statusBar);
+                    } catch (err) {
+                        console.warn('Could not apply translations for status bar:', err);
+                    }
                 } else {
+                    statusBar.removeAttribute('data-i18n');
                     statusBar.removeAttribute('data-i18n-params');
                 }
-                statusBar.textContent = appI18n.translate(statusState.key, statusState.params);
-                appI18n.applyTranslations(statusBar);
             } else {
                 statusBar.removeAttribute('data-i18n');
                 statusBar.removeAttribute('data-i18n-params');
@@ -245,9 +251,11 @@
         }
         function updateDocumentTitle() {
             if (currentRemoteFile && currentRemoteFile.fileName) {
-                document.title = appI18n.translate('textEditor.documentTitleWithFile', { fileName: currentRemoteFile.fileName });
+                const { text } = resolveTranslation('textEditor.documentTitleWithFile', { fileName: currentRemoteFile.fileName });
+                document.title = text;
             } else {
-                document.title = appI18n.translate('textEditor.documentTitle');
+                const { text } = resolveTranslation('textEditor.documentTitle');
+                document.title = text;
             }
         }
         updateDocumentTitle();
@@ -263,26 +271,29 @@
             }
             return parts.join(' / ');
         }
-        function execCmd(command) {
-            document.execCommand(command, false, null);
-            document.getElementById('editor').focus();
+        const editor = document.getElementById('editor');
+        const saveButton = document.getElementById('save-button');
+
+        function syncSaveButtonState() {
+            if (!saveButton) return;
+            saveButton.disabled = editor.value.length === 0;
         }
+
         function clearEditor() {
-            document.getElementById('editor').innerHTML = '';
-            // Entferne gespeicherten Inhalt aus localStorage
+            editor.value = '';
             localStorage.removeItem('textEditorContent');
             currentRemoteFile = null;
             updateDocumentTitle();
             clearStatus();
+            syncSaveButtonState();
+            editor.focus();
         }
         function saveFile() {
-            // Text ohne HTML-Auszeichnungen speichern
-            const content = document.getElementById('editor').innerText;
-            const blob = new Blob([content], { type: 'text/plain' });
+            const content = editor.value;
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            // Verwende den ersten Teil des Inhalts als Dateiname oder fallback
             const firstLine = content.split('\n')[0] || 'text';
             const sanitized = firstLine.trim().substring(0, 20).replace(/[^a-zA-Z0-9-_]/g, '') || 'text';
             a.download = `${sanitized}.txt`;
@@ -302,51 +313,48 @@
             const reader = new FileReader();
             reader.onload = function (e) {
                 const content = e.target.result;
-                // Wenn es sich um HTML handelt, setzen wir innerHTML, ansonsten innerText
-                if (file.name.endsWith('.html')) {
-                    document.getElementById('editor').innerHTML = content;
-                } else {
-                    // Entkomme HTML, damit es als reiner Text erscheint
-                    document.getElementById('editor').innerText = content;
-                }
+                editor.value = content;
                 currentRemoteFile = { fileName: file.name };
                 updateDocumentTitle();
                 setStatusPlain(file.name);
+                syncSaveButtonState();
+                editor.focus();
             };
             reader.readAsText(file);
             // Zurücksetzen der Eingabe für zukünftige Öffnungen derselben Datei
             event.target.value = '';
         });
-        // Speicher den Text fortlaufend im localStorage
-        const editor = document.getElementById('editor');
-        editor.addEventListener('input', function () {
-            localStorage.setItem('textEditorContent', editor.innerHTML);
+        editor.addEventListener('input', () => {
+            localStorage.setItem('textEditorContent', editor.value);
+            syncSaveButtonState();
         });
-        // Beim Laden den gespeicherten Inhalt wiederherstellen
+        editor.addEventListener('focus', () => {
+            try {
+                dialog.refocus();
+            } catch (err) {
+                console.error('Error refocusing dialog from textarea:', err);
+            }
+        });
+
         window.addEventListener('DOMContentLoaded', () => {
             const saved = localStorage.getItem('textEditorContent');
             if (saved) {
-                editor.innerHTML = saved;
+                editor.value = saved;
+                syncSaveButtonState();
             }
         });
+        syncSaveButtonState();
         function loadRemoteFileIntoEditor(payload = {}) {
             if (typeof payload.content !== 'string') {
                 return;
             }
-            const isHtmlFile = typeof payload.isHtml === 'boolean'
-                ? payload.isHtml
-                : (payload.fileName ? /\.html?$/i.test(payload.fileName) : false);
-            if (isHtmlFile) {
-                editor.innerHTML = payload.content;
-            } else {
-                editor.innerText = payload.content;
-            }
+            editor.value = payload.content;
             currentRemoteFile = payload;
             const label = formatFileLabel(payload);
             updateDocumentTitle();
             setStatusPlain(label);
-            localStorage.setItem('textEditorContent', editor.innerHTML);
-            // Fokus nach dem Laden setzen, damit direkt getippt werden kann
+            localStorage.setItem('textEditorContent', editor.value);
+            syncSaveButtonState();
             editor.focus();
         }
         window.addEventListener('message', (event) => {
@@ -369,7 +377,8 @@
                     break;
                 case 'textEditor:loadError': {
                     const label = formatFileLabel(data.payload);
-                    const message = data.payload && data.payload.message ? data.payload.message : appI18n.translate('textEditor.status.loadError');
+                    const fallback = resolveTranslation('textEditor.status.loadError');
+                    const message = data.payload && data.payload.message ? data.payload.message : fallback.text;
                     if (label) {
                         setStatusPlain(`${label} — ${message}`);
                     } else {
