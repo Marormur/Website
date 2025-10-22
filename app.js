@@ -31,7 +31,7 @@ if (typeof systemDarkQuery.addEventListener === 'function') {
     systemDarkQuery.addListener(handleSystemThemeChange);
 }
 // Liste aller Modal-IDs, die von der Desktop-Shell verwaltet werden
-const modalIds = ["projects-modal", "about-modal", "settings-modal", "text-modal"];
+const modalIds = ["projects-modal", "about-modal", "settings-modal", "text-modal", "image-modal"];
 
 // Für zukünftige z‑Index‑Verwaltung reserviert
 let topZIndex = 1000;
@@ -170,6 +170,9 @@ function updateProgramLabelByTopModal() {
             case "text-modal":
                 updateProgramLabel("Texteditor");
                 break;
+            case "image-modal":
+                updateProgramLabel("Bildbetrachter");
+                break;
             default:
                 updateProgramLabel("Sucher");
         }
@@ -237,7 +240,8 @@ function initEventHandlers() {
         "close-projects-modal": "projects-modal",
         "close-about-modal": "about-modal",
         "close-settings-modal": "settings-modal",
-        "close-text-modal": "text-modal"
+        "close-text-modal": "text-modal",
+        "close-image-modal": "image-modal"
     };
     Object.entries(closeMapping).forEach(([btnId, modalId]) => {
         const btn = document.getElementById(btnId);
@@ -340,14 +344,20 @@ function loadGithubRepos() {
     const breadcrumbs = document.getElementById("finder-breadcrumbs");
     const finderMain = document.getElementById("finder-main");
     const finderPlaceholder = document.getElementById("finder-placeholder");
-    if (!list || !fileList || !breadcrumbs || !finderMain || !finderPlaceholder) return;
+    const imageViewer = document.getElementById("image-viewer");
+    const imageInfo = document.getElementById("image-info");
+    const imagePlaceholder = document.getElementById("image-placeholder");
+    if (!list || !fileList || !breadcrumbs || !finderMain || !finderPlaceholder || !imageViewer || !imageInfo || !imagePlaceholder) return;
+
+    const supportsAbortController = typeof window.AbortController === "function";
 
     const state = {
         repos: [],
         selectedRepo: null,
         selectedPath: "",
         contentCache: {},
-        repoButtons: new Map()
+        repoButtons: new Map(),
+        imageAbortController: null
     };
 
     const textFileExtensions = [
@@ -361,10 +371,20 @@ function loadGithubRepos() {
         ".log", ".sql"
     ];
 
+    const imageFileExtensions = [
+        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".svg", ".tiff", ".tif", ".heic", ".heif", ".avif"
+    ];
+
     const isProbablyTextFile = (name) => {
         if (!name || typeof name !== "string") return false;
         const lower = name.toLowerCase();
         return textFileExtensions.some(ext => lower.endsWith(ext));
+    };
+
+    const isImageFile = (name) => {
+        if (!name || typeof name !== "string") return false;
+        const lower = name.toLowerCase();
+        return imageFileExtensions.some(ext => lower.endsWith(ext));
     };
 
     const getTextEditorIframe = () => {
@@ -426,6 +446,129 @@ function loadGithubRepos() {
             showTab("text");
         }
         return null;
+    };
+
+    const ensureImageViewerOpen = () => {
+        const dialog = window.dialogs ? window.dialogs["image-modal"] : null;
+        if (dialog && typeof dialog.open === "function") {
+            dialog.open();
+            return dialog;
+        }
+        if (typeof showTab === "function") {
+            showTab("image");
+        }
+        return null;
+    };
+
+    const setImagePlaceholder = (message) => {
+        if (!imagePlaceholder) return;
+        if (message) {
+            imagePlaceholder.textContent = message;
+            imagePlaceholder.classList.remove("hidden");
+        } else {
+            imagePlaceholder.textContent = "";
+            imagePlaceholder.classList.add("hidden");
+        }
+    };
+
+    const updateImageInfo = ({ repo, path, dimensions, size }) => {
+        if (!imageInfo) return;
+        const parts = [];
+        if (repo) parts.push(repo);
+        if (path) parts.push(path);
+        const meta = [];
+        if (dimensions) meta.push(dimensions);
+        if (typeof size === "number" && size > 0) {
+            const kb = (size / 1024).toFixed(1);
+            meta.push(`${kb} KB`);
+        }
+        const info = [
+            parts.join(" / "),
+            meta.join(" • ")
+        ].filter(Boolean).join(" — ");
+        if (info) {
+            imageInfo.textContent = info;
+            imageInfo.classList.remove("hidden");
+        } else {
+            imageInfo.textContent = "";
+            imageInfo.classList.add("hidden");
+        }
+    };
+
+    const openImageFileInViewer = (repoName, path, entry) => {
+        if (!entry || !entry.name) return;
+        const viewerDialog = ensureImageViewerOpen();
+        const filePath = path ? `${path}/${entry.name}` : entry.name;
+
+        if (supportsAbortController && state.imageAbortController) {
+            state.imageAbortController.abort();
+        }
+        state.imageAbortController = supportsAbortController ? new AbortController() : null;
+
+        if (imageViewer) {
+            imageViewer.src = "";
+            imageViewer.classList.add("hidden");
+        }
+        updateImageInfo({ repo: repoName, path: filePath, size: entry.size });
+        setImagePlaceholder(`Lade ${entry.name} …`);
+
+        const finalize = (src) => {
+            if (!imageViewer) return;
+            imageViewer.onload = () => {
+                const natural = `${imageViewer.naturalWidth} × ${imageViewer.naturalHeight}px`;
+                updateImageInfo({ repo: repoName, path: filePath, size: entry.size, dimensions: natural });
+                setImagePlaceholder("");
+                imageViewer.classList.remove("hidden");
+                if (viewerDialog && typeof viewerDialog.bringToFront === "function") {
+                    viewerDialog.bringToFront();
+                }
+            };
+            imageViewer.onerror = () => {
+                setImagePlaceholder("Bild konnte nicht geladen werden.");
+                imageViewer.classList.add("hidden");
+            };
+            imageViewer.src = src;
+        };
+
+        const downloadUrl = entry.download_url;
+        if (downloadUrl) {
+            finalize(downloadUrl);
+            return;
+        }
+
+        const fetchOptions = supportsAbortController && state.imageAbortController
+            ? { signal: state.imageAbortController.signal }
+            : {};
+
+        fetch(repoPathToUrl(repoName, filePath), fetchOptions)
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`GitHub API antwortete mit Status ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (!data || typeof data !== "object" || data.type !== "file") {
+                    throw new Error("Unerwartetes Antwortformat beim Laden einer Bilddatei.");
+                }
+                if (typeof data.download_url === "string") {
+                    finalize(data.download_url);
+                    return;
+                }
+                if (data.encoding === "base64" && typeof data.content === "string") {
+                    const cleaned = data.content.replace(/\s/g, "");
+                    finalize(`data:${data.content_type || "image/*"};base64,${cleaned}`);
+                    return;
+                }
+                throw new Error("Keine Quelle für das Bild verfügbar.");
+            })
+            .catch(err => {
+                if (err.name === "AbortError") {
+                    return;
+                }
+                console.error("Fehler beim Laden der Bilddatei:", err);
+                setImagePlaceholder("Bild konnte nicht geladen werden. Bitte versuche es später erneut.");
+            });
     };
 
     const openTextFileInEditor = (repoName, path, entry) => {
@@ -651,40 +794,57 @@ function loadGithubRepos() {
                     loadRepoPath(repoName, nextPath);
                 });
                 li.appendChild(button);
+            } else if (isImageFile(entry.name)) {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "w-full text-left px-4 py-3 flex items-center justify-between gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
+                const label = document.createElement("span");
+                label.className = "flex items-center gap-2";
+                const fileIcon = document.createElement("span");
+                fileIcon.textContent = "🖼️";
+                const fileName = document.createElement("span");
+                fileName.textContent = entry.name;
+                label.appendChild(fileIcon);
+                label.appendChild(fileName);
+                button.appendChild(label);
+                const openHint = document.createElement("span");
+                openHint.className = "text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider";
+                openHint.textContent = "Bildbetrachter";
+                button.appendChild(openHint);
+                button.addEventListener("click", () => openImageFileInViewer(repoName, path, entry));
+                li.appendChild(button);
+            } else if (isProbablyTextFile(entry.name)) {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "w-full text-left px-4 py-3 flex items-center justify-between gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
+                const label = document.createElement("span");
+                label.className = "flex items-center gap-2";
+                const fileIcon = document.createElement("span");
+                fileIcon.textContent = "📄";
+                const fileName = document.createElement("span");
+                fileName.textContent = entry.name;
+                label.appendChild(fileIcon);
+                label.appendChild(fileName);
+                button.appendChild(label);
+                const openHint = document.createElement("span");
+                openHint.className = "text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider";
+                openHint.textContent = "Texteditor";
+                button.appendChild(openHint);
+                button.addEventListener("click", () => openTextFileInEditor(repoName, path, entry));
+                li.appendChild(button);
             } else {
-                if (isProbablyTextFile(entry.name)) {
-                    const button = document.createElement("button");
-                    button.type = "button";
-                    button.className = "w-full text-left px-4 py-3 flex items-center justify-between gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
-                    const label = document.createElement("span");
-                    label.className = "flex items-center gap-2";
-                    const fileIcon = document.createElement("span");
-                    fileIcon.textContent = "📄";
-                    const fileName = document.createElement("span");
-                    fileName.textContent = entry.name;
-                    label.appendChild(fileIcon);
-                    label.appendChild(fileName);
-                    button.appendChild(label);
-                    const openHint = document.createElement("span");
-                    openHint.className = "text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider";
-                    openHint.textContent = "Texteditor";
-                    button.appendChild(openHint);
-                    button.addEventListener("click", () => openTextFileInEditor(repoName, path, entry));
-                    li.appendChild(button);
-                } else {
-                    const link = document.createElement("a");
-                    link.href = entry.html_url || entry.download_url || "#";
-                    link.target = "_blank";
-                    link.rel = "noopener noreferrer";
-                    link.className = "block px-4 py-3 flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
-                    const fileIcon = document.createElement("span");
-                    fileIcon.textContent = "📄";
-                    const fileName = document.createElement("span");
-                    fileName.textContent = entry.name;
-                    link.appendChild(fileIcon);
-                    link.appendChild(fileName);
-                    li.appendChild(link);
-                }
+                const link = document.createElement("a");
+                link.href = entry.html_url || entry.download_url || "#";
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.className = "block px-4 py-3 flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
+                const fileIcon = document.createElement("span");
+                fileIcon.textContent = "📄";
+                const fileName = document.createElement("span");
+                fileName.textContent = entry.name;
+                link.appendChild(fileIcon);
+                link.appendChild(fileName);
+                li.appendChild(link);
             }
             fileList.appendChild(li);
         });
@@ -851,7 +1011,8 @@ function updateDockIndicators() {
     const indicatorMappings = [
         { modalId: "projects-modal", indicatorId: "projects-indicator" },
         { modalId: "settings-modal", indicatorId: "settings-indicator" },
-        { modalId: "text-modal", indicatorId: "text-indicator" }
+        { modalId: "text-modal", indicatorId: "text-indicator" },
+        { modalId: "image-modal", indicatorId: "image-indicator" }
     ];
     indicatorMappings.forEach(mapping => {
         const modal = document.getElementById(mapping.modalId);
