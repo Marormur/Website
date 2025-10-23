@@ -302,10 +302,121 @@
         }
         const editor = document.getElementById('editor');
         const saveButton = document.getElementById('save-button');
+        const wrapPreferenceKey = 'textEditorWrapMode';
+        const storedWrapMode = localStorage.getItem(wrapPreferenceKey);
+        let wrapMode = storedWrapMode === 'soft' ? 'soft' : 'off';
+
+        function applyWrapMode(mode) {
+            const normalized = mode === 'soft' ? 'soft' : 'off';
+            wrapMode = normalized;
+            editor.wrap = normalized;
+            editor.style.whiteSpace = normalized === 'soft' ? 'pre-wrap' : 'pre';
+            try {
+                localStorage.setItem(wrapPreferenceKey, normalized);
+            } catch (err) {
+                console.warn('Wrap preference could not be stored:', err);
+            }
+        }
+
+        applyWrapMode(wrapMode);
+
+        function toggleWrapMode() {
+            const next = wrapMode === 'soft' ? 'off' : 'soft';
+            applyWrapMode(next);
+            setStatusPlain(next === 'soft' ? 'Zeilenumbruch aktiviert' : 'Zeilenumbruch deaktiviert');
+            editor.focus();
+        }
 
         function syncSaveButtonState() {
             if (!saveButton) return;
             saveButton.disabled = editor.value.length === 0;
+        }
+
+        function focusEditor() {
+            editor.focus();
+        }
+
+        function tryExecCommand(command) {
+            try {
+                return document.execCommand(command);
+            } catch (err) {
+                console.warn(`Command ${command} ist nicht verfügbar`, err);
+                return false;
+            }
+        }
+
+        function insertTextAtCursor(text) {
+            if (typeof text !== 'string') return;
+            const start = typeof editor.selectionStart === 'number' ? editor.selectionStart : editor.value.length;
+            const end = typeof editor.selectionEnd === 'number' ? editor.selectionEnd : start;
+            editor.setRangeText(text, start, end, 'end');
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        function handleMenuAction(action) {
+            if (!action) return;
+            switch (action) {
+                case 'file:new':
+                    clearEditor();
+                    break;
+                case 'file:open':
+                    openFile();
+                    break;
+                case 'file:save':
+                    saveFile();
+                    break;
+                case 'edit:undo':
+                    focusEditor();
+                    if (!tryExecCommand('undo')) {
+                        setStatusPlain('Keine Änderungen zum Rückgängigmachen.');
+                    }
+                    break;
+                case 'edit:redo':
+                    focusEditor();
+                    if (!tryExecCommand('redo')) {
+                        setStatusPlain('Keine Änderungen zum Wiederholen.');
+                    }
+                    break;
+                case 'edit:cut':
+                    focusEditor();
+                    if (!tryExecCommand('cut')) {
+                        setStatusPlain('Ausschneiden nicht möglich.');
+                    }
+                    break;
+                case 'edit:copy':
+                    focusEditor();
+                    if (!tryExecCommand('copy')) {
+                        setStatusPlain('Kopieren nicht möglich.');
+                    }
+                    break;
+                case 'edit:paste':
+                    focusEditor();
+                    if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
+                        navigator.clipboard.readText()
+                            .then(text => {
+                                if (text) {
+                                    insertTextAtCursor(text);
+                                }
+                            })
+                            .catch(() => {
+                                if (!tryExecCommand('paste')) {
+                                    setStatusPlain('Einfügen nicht möglich.');
+                                }
+                            });
+                    } else if (!tryExecCommand('paste')) {
+                        setStatusPlain('Einfügen nicht möglich.');
+                    }
+                    break;
+                case 'edit:selectAll':
+                    focusEditor();
+                    editor.select();
+                    break;
+                case 'view:toggleWrap':
+                    toggleWrapMode();
+                    break;
+                default:
+                    console.warn('Unbekannte Menüaktion:', action);
+            }
         }
 
         function clearEditor() {
@@ -417,7 +528,11 @@
                     }
                     break;
                 }
+                case 'textEditor:menuAction':
+                    handleMenuAction(data.command || data.action);
+                    break;
                 default:
+                    console.warn('Unhandled message type for text editor:', data);
                     break;
             }
         });

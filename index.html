@@ -23,7 +23,8 @@
         <div class="menubar-left">
             <div id="apple-menu-container" class="menubar-trigger">
                 <button id="apple-menu-trigger" type="button" class="menubar-logo" aria-label="Apple-Menü"
-                    aria-haspopup="true" aria-expanded="false">
+                    aria-haspopup="true" aria-expanded="false" aria-controls="apple-menu-dropdown"
+                    data-menubar-trigger-button="true">
                     👨🏼‍💻
                 </button>
                 <ul id="apple-menu-dropdown" class="menu-dropdown hidden" role="menu"
@@ -51,7 +52,8 @@
             </div>
             <div id="program-menu-container" class="menubar-trigger">
                 <button id="program-label" type="button" class="menubar-item menubar-app no-select"
-                    data-i18n="programs.default.label" aria-haspopup="true" aria-expanded="false">
+                    data-i18n="programs.default.label" aria-haspopup="true" aria-expanded="false"
+                    aria-controls="program-dropdown" data-menubar-trigger-button="true">
                     Sucher
                 </button>
                 <ul id="program-dropdown" class="menu-dropdown hidden" role="menu" aria-labelledby="program-label">
@@ -66,44 +68,204 @@
                     </li>
                 </ul>
             </div>
-            <nav class="menubar-links" aria-label="Anwendungsmenüs">
-                <button class="menubar-item" type="button">Ablage</button>
-                <button class="menubar-item" type="button">Bearbeiten</button>
-                <button class="menubar-item" type="button">Darstellung</button>
-                <button class="menubar-item" type="button">Fenster</button>
-                <button class="menubar-item" type="button">Hilfe</button>
-            </nav>
+            <nav id="menubar-links" class="menubar-links" aria-label="Anwendungsmenüs"></nav>
         </div>
         <div class="menubar-right">
-            <button class="menubar-status-icon" type="button" aria-label="Kontrollzentrum" title="Kontrollzentrum">
-                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path d="M5 5h6v6H5zM13 5h6v4h-6zM13 11h6v8h-6zM5 13h6v6H5z" fill="currentColor" />
-                </svg>
-            </button>
-            <button class="menubar-status-icon" type="button" aria-label="WLAN" title="WLAN">
-                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path
-                        d="M12 18.25a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5m0-3.75a4.75 4.75 0 0 1 3.35 1.37L12 19.22l-3.35-3.35A4.75 4.75 0 0 1 12 14.5m0-4.5a8.74 8.74 0 0 1 6.21 2.57L21.06 15l-1.77 1.77-1.63-1.63A6.24 6.24 0 0 0 12 12.5a6.24 6.24 0 0 0-4.66 2.64l-1.63 1.63L3.94 15l2.85-2.85A8.74 8.74 0 0 1 12 10z"
-                        fill="currentColor" />
-                </svg>
-            </button>
-            <div class="menubar-status menubar-battery" aria-label="Batteriestatus"
-                title="Batterie vollständig geladen">
-                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path
-                        d="M17 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1v1h-1v-1H8v1H7v-1H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1V6h1v1h8V6h1zM6 9v6h12V9z"
-                        fill="currentColor" />
-                    <rect x="7" y="10" width="10" height="4" rx="1" fill="currentColor" />
-                </svg>
-                <span class="menubar-battery-label">100%</span>
+            <div class="menubar-status-cluster">
+                <div class="menubar-trigger menubar-status-trigger">
+                    <button id="control-center-trigger" type="button" class="menubar-status-icon" aria-label="Kontrollzentrum"
+                        title="Kontrollzentrum" aria-haspopup="true" aria-expanded="false" aria-controls="control-center-menu"
+                        data-system-menu-trigger="control-center">
+                        <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path
+                                d="M6 4h6a2 2 0 0 1 2 2v4H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2m6 10H6a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h6v-6m2 0h6v6h-6v-6m0-2h6a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-6v6Z"
+                                fill="currentColor" />
+                        </svg>
+                    </button>
+                    <div id="control-center-menu" class="menu-dropdown menu-right hidden system-dropdown"
+                        aria-labelledby="control-center-trigger">
+                        <div class="system-section" role="presentation">
+                            <h3 class="system-section-title">Schnellaktionen</h3>
+                            <div class="system-toggle-grid" role="group" aria-label="Schnellaktionen">
+                                <button type="button" class="system-toggle" data-system-toggle="wifi" aria-pressed="true">
+                                    <span class="system-toggle-icon" data-icon="wifi"></span>
+                                    <span class="system-toggle-label">WLAN</span>
+                                    <span class="system-toggle-status" data-state="wifi"></span>
+                                </button>
+                                <button type="button" class="system-toggle" data-system-toggle="bluetooth"
+                                    aria-pressed="true">
+                                    <span class="system-toggle-icon" data-icon="bluetooth"></span>
+                                    <span class="system-toggle-label">Bluetooth</span>
+                                    <span class="system-toggle-status" data-state="bluetooth"></span>
+                                </button>
+                                <button type="button" class="system-toggle" data-system-toggle="focus" aria-pressed="false">
+                                    <span class="system-toggle-icon" data-icon="moon"></span>
+                                    <span class="system-toggle-label">Fokus</span>
+                                    <span class="system-toggle-status" data-state="focus"></span>
+                                </button>
+                                <button type="button" class="system-toggle" data-system-toggle="dark-mode"
+                                    aria-pressed="false">
+                                    <span class="system-toggle-icon" data-icon="appearance"></span>
+                                    <span class="system-toggle-label">Dark Mode</span>
+                                    <span class="system-toggle-status" data-state="dark-mode"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="system-section" role="presentation">
+                            <label for="system-brightness" class="system-slider-label">
+                                <span class="system-slider-icon" data-icon="sun"></span>
+                                Helligkeit
+                                <span class="system-slider-value" data-state="brightness"></span>
+                            </label>
+                            <input id="system-brightness" type="range" min="10" max="100" value="80" class="system-slider"
+                                data-system-slider="brightness">
+                            <label for="system-volume" class="system-slider-label">
+                                <span class="system-slider-icon" data-icon="volume"></span>
+                                Lautstärke
+                                <span class="system-slider-value" data-state="volume"></span>
+                            </label>
+                            <input id="system-volume" type="range" min="0" max="100" value="65" class="system-slider"
+                                data-system-slider="volume">
+                        </div>
+                    </div>
+                </div>
+                <div class="menubar-trigger menubar-status-trigger">
+                    <button id="wifi-status-trigger" type="button" class="menubar-status-icon" aria-label="WLAN Status"
+                        aria-haspopup="true" aria-expanded="false" aria-controls="wifi-menu" data-system-menu-trigger="wifi">
+                        <span class="menubar-status-icon-svg" data-icon="wifi"></span>
+                    </button>
+                    <div id="wifi-menu" class="menu-dropdown menu-right hidden system-dropdown"
+                        aria-labelledby="wifi-status-trigger">
+                        <div class="system-section" role="presentation">
+                            <button type="button" class="menu-item system-menu-item" aria-pressed="true"
+                                data-system-action="toggle-wifi">
+                                <span class="menu-item-label">WLAN</span>
+                                <span class="system-state-pill" data-state="wifi"></span>
+                            </button>
+                        </div>
+                        <div class="system-section" role="presentation">
+                            <p class="system-section-title">Bevorzugte Netzwerke</p>
+                            <button type="button" class="menu-item system-menu-item" data-network="HomeLAN"
+                                aria-pressed="true">
+                                <span class="menu-item-label">HomeLAN</span>
+                                <span class="system-network-indicator">Verbunden</span>
+                            </button>
+                            <button type="button" class="menu-item system-menu-item" data-network="Office"
+                                aria-pressed="false">
+                                <span class="menu-item-label">Office</span>
+                                <span class="system-network-indicator">Automatisch</span>
+                            </button>
+                            <button type="button" class="menu-item system-menu-item" data-network="Hotspot"
+                                aria-pressed="false">
+                                <span class="menu-item-label">Marvin iPhone</span>
+                                <span class="system-network-indicator">Persönlicher Hotspot</span>
+                            </button>
+                        </div>
+                        <div class="system-section" role="presentation">
+                            <button type="button" class="menu-item system-menu-item" data-system-action="open-network">
+                                <span class="menu-item-label">Netzwerkeinstellungen …</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="menubar-trigger menubar-status-trigger">
+                    <button id="bluetooth-status-trigger" type="button" class="menubar-status-icon" aria-label="Bluetooth Status"
+                        aria-haspopup="true" aria-expanded="false" aria-controls="bluetooth-menu"
+                        data-system-menu-trigger="bluetooth">
+                        <span class="menubar-status-icon-svg" data-icon="bluetooth"></span>
+                    </button>
+                    <div id="bluetooth-menu" class="menu-dropdown menu-right hidden system-dropdown"
+                        aria-labelledby="bluetooth-status-trigger">
+                        <div class="system-section" role="presentation">
+                            <button type="button" class="menu-item system-menu-item" aria-pressed="true"
+                                data-system-action="toggle-bluetooth">
+                                <span class="menu-item-label">Bluetooth</span>
+                                <span class="system-state-pill" data-state="bluetooth"></span>
+                            </button>
+                        </div>
+                        <div class="system-section" role="presentation">
+                            <p class="system-section-title">Geräte</p>
+                            <button type="button" class="menu-item system-menu-item" data-device="AirPods"
+                                aria-pressed="true">
+                                <span class="menu-item-label">Marvins AirPods Pro</span>
+                                <span class="system-network-indicator">Verbunden</span>
+                            </button>
+                            <button type="button" class="menu-item system-menu-item" data-device="Keyboard"
+                                aria-pressed="false">
+                                <span class="menu-item-label">Magic Keyboard</span>
+                                <span class="system-network-indicator">Bereit</span>
+                            </button>
+                            <button type="button" class="menu-item system-menu-item" data-device="Speaker"
+                                aria-pressed="false">
+                                <span class="menu-item-label">HomeSpeaker</span>
+                                <span class="system-network-indicator">Nicht verbunden</span>
+                            </button>
+                        </div>
+                        <div class="system-section" role="presentation">
+                            <button type="button" class="menu-item system-menu-item" data-system-action="open-bluetooth">
+                                <span class="menu-item-label">Bluetooth-Einstellungen …</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="menubar-trigger menubar-status-trigger">
+                    <button id="sound-status-trigger" type="button" class="menubar-status-icon" aria-label="Ton"
+                        aria-haspopup="true" aria-expanded="false" aria-controls="sound-menu" data-system-menu-trigger="sound">
+                        <span class="menubar-status-icon-svg" data-icon="volume"></span>
+                    </button>
+                    <div id="sound-menu" class="menu-dropdown menu-right hidden system-dropdown"
+                        aria-labelledby="sound-status-trigger">
+                        <div class="system-section" role="presentation">
+                            <label for="sound-volume-slider" class="system-slider-label">
+                                <span class="system-slider-icon" data-icon="volume"></span>
+                                Lautstärke
+                                <span class="system-slider-value" data-state="volume"></span>
+                            </label>
+                            <input id="sound-volume-slider" type="range" min="0" max="100" value="65" class="system-slider"
+                                data-system-slider="volume">
+                        </div>
+                        <div class="system-section" role="presentation" aria-label="Ausgabegeräte">
+                            <p class="system-section-title">Ausgabegeräte</p>
+                            <button type="button" class="menu-item system-menu-item"
+                                aria-pressed="true" data-audio-device="speakers">
+                                <span class="menu-item-label">MacBook Lautsprecher</span>
+                            </button>
+                            <button type="button" class="menu-item system-menu-item"
+                                aria-pressed="false" data-audio-device="airpods">
+                                <span class="menu-item-label">Marvins AirPods Pro</span>
+                            </button>
+                            <button type="button" class="menu-item system-menu-item"
+                                aria-pressed="false" data-audio-device="display">
+                                <span class="menu-item-label">Dell Monitor</span>
+                            </button>
+                        </div>
+                        <div class="system-section" role="presentation">
+                            <button type="button" class="menu-item system-menu-item" data-system-action="open-sound">
+                                <span class="menu-item-label">Ton-Einstellungen …</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="menubar-status menubar-battery" aria-label="Batteriestatus" title="Batterie vollständig geladen">
+                    <span class="menubar-status-icon-svg" data-icon="battery"></span>
+                    <span class="menubar-battery-label" data-state="battery">100%</span>
+                </div>
+                <button class="menubar-status-icon" type="button" aria-label="Spotlight Suche" title="Spotlight"
+                    data-system-action="open-spotlight">
+                    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                            d="M11 4a7 7 0 0 1 5.46 11.31l3.11 3.12-1.41 1.41-3.12-3.11A7 7 0 1 1 11 4m0 2a5 5 0 1 0 .001 10.001A5 5 0 0 0 11 6z"
+                            fill="currentColor" />
+                    </svg>
+                </button>
+                <button class="menubar-status-icon" type="button" aria-label="Siri" title="Siri" data-system-action="open-siri">
+                    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                            d="M12 2c2.21 0 4 1.79 4 4v4c0 2.21-1.79 4-4 4s-4-1.79-4-4V6c0-2.21 1.79-4 4-4m0 18c-3.31 0-6-2.69-6-6h1.5a4.5 4.5 0 1 0 9 0H18c0 3.31-2.69 6-6 6m-1 2h2v2h-2z"
+                            fill="currentColor" />
+                    </svg>
+                </button>
             </div>
-            <button class="menubar-status-icon" type="button" aria-label="Spotlight Suche" title="Spotlight">
-                <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path
-                        d="M11 4a7 7 0 0 1 5.46 11.31l3.11 3.12-1.41 1.41-3.12-3.11A7 7 0 1 1 11 4m0 2a5 5 0 1 0 .001 10.001A5 5 0 0 0 11 6z"
-                        fill="currentColor" />
-                </svg>
-            </button>
             <span id="clock" class="menubar-clock no-select" aria-live="polite"></span>
         </div>
     </header>

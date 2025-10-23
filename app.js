@@ -135,6 +135,518 @@ function resolveProgramInfo(modalId) {
 }
 
 let currentProgramInfo = resolveProgramInfo(null);
+let currentMenuModalId = null;
+let menuActionIdCounter = 0;
+const menuActionHandlers = new Map();
+
+const menuDefinitions = {
+    default: buildDefaultMenuDefinition,
+    "projects-modal": buildFinderMenuDefinition,
+    "settings-modal": buildSettingsMenuDefinition,
+    "text-modal": buildTextEditorMenuDefinition,
+    "image-modal": buildImageViewerMenuDefinition,
+    "about-modal": buildAboutMenuDefinition,
+    "program-info-modal": buildProgramInfoMenuDefinition
+};
+
+const systemStatus = {
+    wifi: true,
+    bluetooth: true,
+    focus: false,
+    darkMode: document.documentElement.classList.contains('dark'),
+    brightness: 80,
+    volume: 65,
+    audioDevice: 'speakers',
+    network: 'HomeLAN',
+    battery: 100,
+    connectedBluetoothDevice: 'AirPods'
+};
+
+const SYSTEM_ICONS = {
+    wifiOn: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 18.25a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5m0-3.75a4.75 4.75 0 0 1 3.35 1.37L12 19.22l-3.35-3.35A4.75 4.75 0 0 1 12 14.5m0-4.5a8.74 8.74 0 0 1 6.21 2.57L21.06 15l-1.77 1.77-1.63-1.63A6.24 6.24 0 0 0 12 12.5a6.24 6.24 0 0 0-4.66 2.64l-1.63 1.63L3.94 15l2.85-2.85A8.74 8.74 0 0 1 12 10z" fill="currentColor"/></svg>',
+    wifiOff: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 18.25a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5m0-3.75a4.75 4.75 0 0 1 3.35 1.37l-1.77 1.77-4.5-4.5A4.74 4.74 0 0 1 12 14.5m0-4.5a8.74 8.74 0 0 1 6.21 2.57l-1.77 1.77-10-10A12.78 12.78 0 0 1 12 6M4.27 3 3 4.27l4.2 4.2A8.64 8.64 0 0 0 3 12l1.77 1.77A10.72 10.72 0 0 1 12 10c1.2 0 2.37.2 3.46.58l1.7 1.7a8.62 8.62 0 0 0-1.39-.88l1.42 1.42a10.44 10.44 0 0 1 1.91 1.38l1.88-1.88z" fill="currentColor"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    bluetoothOn: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a1 1 0 0 1 .64.23l5 4.2a1 1 0 0 1-.05 1.58L14.28 12l3.31 3.99a1 1 0 0 1 .05 1.58l-5 4.2A1 1 0 0 1 11 21v-6.34L8.7 16.9l-1.4-1.4 3.7-3.5-3.7-3.5 1.4-1.4L11 9.34V3a1 1 0 0 1 1-1Zm1 4.85v3.28l1.82-1.64Zm1.82 9.94L13 13.38v3.77Z" fill="currentColor"/></svg>',
+    bluetoothOff: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a1 1 0 0 1 .64.23l3.68 3.09-1.38 1.23-2.94-2.46V9.3L10.39 8l-1.1 1.1 3.71 3.52-1.08.98 1.08 1 1.11-1.01 1.44 1.36-2.37 2v-3.36l-2.26-2.15-2.78 2.64 1.4 1.4L11 14.66V21a1 1 0 0 1-1.64.77l-3.68-3.09 1.38-1.23 2.94 2.46v-3.5l-7-6.63L4.27 8 20 23.73 21.27 22 13 13.34l5-4.53a1 1 0 0 0-.05-1.58L12.64 2.23A1 1 0 0 0 12 2Z" fill="currentColor"/></svg>',
+    moon: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79Z" fill="currentColor"/></svg>',
+    appearanceLight: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16" fill="currentColor" opacity="0.4"/></svg>',
+    appearanceDark: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 20a8 8 0 0 0 0-16" fill="currentColor" opacity="0.75"/></svg>',
+    sun: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4a1 1 0 0 1-1-1V2h2v1a1 1 0 0 1-1 1Zm0 18a1 1 0 0 1-1-1v-1h2v1a1 1 0 0 1-1 1Zm8-9a1 1 0 0 1-1-1h1a1 1 0 0 1 1 1Zm-16 0a1 1 0 0 1-1-1h1a1 1 0 0 1-1 1Zm12.66 6.66-1.41-1.41 1.06-1.06 1.41 1.41ZM6.69 6.7 5.28 5.28 6.34 4.22 7.75 5.63ZM18.37 4.22l1.06 1.06-1.41 1.41-1.06-1.06ZM5.63 18.37l-1.41 1.41-1.06-1.06 1.41-1.41ZM12 7a5 5 0 1 1-5 5 5 5 0 0 1 5-5Z" fill="currentColor"/></svg>',
+    volumeMute: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6h4l5 5V4l-5 5H5z" fill="currentColor"/><path d="m16 9 5 5m0-5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    volumeLow: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6h4l5 5V4l-5 5H5z" fill="currentColor"/><path d="M16.5 12a3 3 0 0 0-1.5-2.6v5.2a3 3 0 0 0 1.5-2.6Z" fill="currentColor"/></svg>',
+    volumeMedium: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6h4l5 5V4l-5 5H5z" fill="currentColor"/><path d="M16.5 12a3 3 0 0 0-1.5-2.6v5.2a3 3 0 0 0 1.5-2.6Z" fill="currentColor"/><path d="M19.5 12a5 5 0 0 0-2.5-4.33v8.66A5 5 0 0 0 19.5 12Z" fill="currentColor" opacity="0.7"/></svg>',
+    volumeHigh: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6h4l5 5V4l-5 5H5z" fill="currentColor"/><path d="M16.5 12a3 3 0 0 0-1.5-2.6v5.2a3 3 0 0 0 1.5-2.6Z" fill="currentColor"/><path d="M19.5 12a5 5 0 0 0-2.5-4.33v8.66A5 5 0 0 0 19.5 12Z" fill="currentColor" opacity="0.7"/><path d="M22 12a7 7 0 0 0-3.5-6.06v12.12A7 7 0 0 0 22 12Z" fill="currentColor" opacity="0.45"/></svg>',
+    batteryFull: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1v1h-1v-1H8v1H7v-1H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1V6h1v1h8V6h1zM6 9v6h12V9z" fill="currentColor"/><rect x="7" y="10" width="10" height="4" rx="1" fill="currentColor"/></svg>'
+};
+
+const MENU_ICONS = {
+    finder: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h8v6H4zm0 10h8v6H4zm10-10h6v6h-6zm0 10h6v6h-6z" fill="currentColor"/></svg>',
+    reload: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 0 1-9.9 1H5a7 7 0 0 0 13.94 1A7 7 0 0 0 12 6z" fill="currentColor"/></svg>',
+    close: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4L12 13.4 6.4 19 5 17.6 10.6 12 5 6.4 6.4 5z" fill="currentColor"/></svg>',
+    settings: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6m0-7 2.25 2.5 3.22-.84.73 3.27 3.05 1.36-1.36 3.05 1.36 3.05-3.05 1.36-.73 3.27-3.22-.84L12 22l-2.25-2.5-3.22.84-.73-3.27-3.05-1.36L3.11 12 1.75 8.95l3.05-1.36.73-3.27 3.22.84Z" fill="currentColor"/></svg>',
+    info: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 7h2V9h-2zm0 4h2v6h-2z" fill="currentColor"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Z" fill="currentColor"/></svg>',
+    newFile: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Zm2 16H8v-2h8Zm0-4H8v-2h8Zm-3-6V3.5L18.5 8Z" fill="currentColor"/></svg>',
+    open: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 19H8a2 2 0 0 1-2-2V5h7l2 2h6Z" fill="currentColor"/><path d="M5 9h16v9a2 2 0 0 1-2 2H9" fill="currentColor" opacity="0.4"/></svg>',
+    save: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7Zm0 16H5v-6h12Zm0-8H5V5h10v4h2Z" fill="currentColor"/></svg>',
+    undo: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5 9 8l3 3V9a5 5 0 0 1 5 5 5 5 0 0 1-4.77 4.99V21A7 7 0 0 0 19 14a7 7 0 0 0-7-7Z" fill="currentColor"/><path d="M9 8v3l3-3Z" fill="currentColor"/></svg>',
+    redo: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 5 3 3-3 3V9a5 5 0 0 0-5 5 5 5 0 0 0 4.77 4.99V21A7 7 0 0 1 5 14a7 7 0 0 1 7-7Z" fill="currentColor"/><path d="M15 8v3l-3-3Z" fill="currentColor"/></svg>',
+    cut: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 7.5 11.17 9 2 18.17 3.83 20 13 10.83 14.5 12.33l-5 5A3.5 3.5 0 1 0 12 19a3.49 3.49 0 0 0-.17-1.06l1.61-1.61L19 21h3l-8-8 4.35-4.35A3.49 3.49 0 0 0 20.5 9a3.5 3.5 0 1 0-3.5-3.5 3.49 3.49 0 0 0 .33 1.5L9 15.83 7.5 14.33l1.61-1.61A3.49 3.49 0 0 0 9 12a3.5 3.5 0 1 0-.33-6.5Z" fill="currentColor"/></svg>',
+    copy: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12Z" fill="currentColor"/><path d="M20 5H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H8V7h12Z" fill="currentColor"/></svg>',
+    paste: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 4h-3.18A3 3 0 0 0 13 2h-2a3 3 0 0 0-2.82 2H5a2 2 0 0 0-2 2v1h18V6a2 2 0 0 0-2-2Zm-7-1h2a1 1 0 0 1 1 1h-4a1 1 0 0 1 1-1Z" fill="currentColor"/><path d="M4 9v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z" fill="currentColor"/></svg>',
+    selectAll: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3H5v2h2V3Zm4 0H9v2h2V3Zm4 0h-2v2h2V3Zm4 0h-2v2h2V3ZM7 7H5v2h2V7Zm12 0h-2v2h2V7ZM7 11H5v2h2v-2Zm12 0h-2v2h2v-2ZM7 15H5v2h2v-2Zm12 0h-2v2h2v-2ZM7 19H5v2h2v-2Zm4 0H9v2h2v-2Zm4 0h-2v2h2v-2Zm4 0h-2v2h2v-2Z" fill="currentColor"/></svg>',
+    wrap: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16v2H4Zm0 4h9v2H4Zm0 8h9v2H4Zm16-5h-5a3 3 0 0 0 0 6h3a1 1 0 0 0 0-2h-3a1 1 0 0 1 0-2h5Z" fill="currentColor"/></svg>',
+    imageOpen: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5v14h14V5Zm12 12H7V7h10Z" fill="currentColor"/><path d="M9 13s1.5-2 3-2 3 2 3 2l2-3v6H7V9l2 4Z" fill="currentColor"/></svg>',
+    download: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v10l3.5-3.5 1.5 1.5-6 6-6-6 1.5-1.5L11 13V3Z" fill="currentColor"/><path d="M5 18h14v2H5Z" fill="currentColor"/></svg>',
+    window: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6H4Zm0 8v6a2 2 0 0 0 2 2h6v-8Z" fill="currentColor"/></svg>',
+    help: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 18h2v-2h-2Zm1-16a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Zm0-14a4 4 0 0 1 4 4c0 3-4 3.25-4 5h-2c0-3 4-3.25 4-5a2 2 0 0 0-4 0H8a4 4 0 0 1 4-4Z" fill="currentColor"/></svg>',
+    projects: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h8v6H4zm0 10h8v6H4zm10-10h6v6h-6zm0 10h6v6h-6z" fill="currentColor"/></svg>',
+    appearance: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16" fill="currentColor" opacity="0.4"/></svg>',
+    windowMinimize: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="2" rx="1" fill="currentColor"/></svg>',
+    windowZoom: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5h6v2H7v4H5Zm8-2h6a2 2 0 0 1 2 2v6h-2V7h-4Zm8 16h-6v-2h4v-4h2Zm-8 2H5a2 2 0 0 1-2-2v-6h2v4h4Z" fill="currentColor"/></svg>',
+    windowFront: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h12v12H4Z" fill="currentColor" opacity="0.5"/><path d="M8 3h12v12H8Z" fill="currentColor"/></svg>'
+};
+
+const ICON_FALLBACK_EMOJI = {
+    wifi: '📶',
+    bluetooth: '🔵',
+    focus: '🌙',
+    'dark-mode': '🌓',
+    sun: '☀️',
+    moon: '🌙',
+    appearance: '🎨',
+    volume: '🔊',
+    battery: '🔋',
+    finder: '🗂️',
+    reload: '🔄',
+    close: '✖️',
+    settings: '⚙️',
+    info: 'ℹ️',
+    newFile: '🆕',
+    open: '📂',
+    save: '💾',
+    undo: '↩️',
+    redo: '↪️',
+    cut: '✂️',
+    copy: '📄',
+    paste: '📋',
+    selectAll: '✅',
+    wrap: '🧵',
+    imageOpen: '🖼️',
+    download: '⬇️',
+    window: '🪟',
+    windowMinimize: '➖',
+    windowZoom: '🟢',
+    windowFront: '⬆️',
+    help: '❓',
+    projects: '🧰'
+};
+
+const svgParser = typeof DOMParser === 'function' ? new DOMParser() : null;
+
+function ensureSvgNamespace(svgMarkup) {
+    if (typeof svgMarkup !== 'string' || !svgMarkup.length) {
+        return '';
+    }
+    if (svgMarkup.includes('xmlns')) {
+        return svgMarkup;
+    }
+    return svgMarkup.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+}
+
+function getMenuIconSvg(iconKey) {
+    if (!iconKey) return '';
+    const svg = MENU_ICONS[iconKey] || '';
+    return ensureSvgNamespace(svg);
+}
+
+function renderIconIntoElement(target, svgMarkup, fallbackKey) {
+    if (!target) return;
+    while (target.firstChild) {
+        target.removeChild(target.firstChild);
+    }
+    if (svgMarkup && svgParser) {
+        try {
+            const doc = svgParser.parseFromString(svgMarkup, 'image/svg+xml');
+            const svgEl = doc && doc.documentElement;
+            if (svgEl && svgEl.tagName && svgEl.tagName.toLowerCase() === 'svg') {
+                const imported = target.ownerDocument.importNode(svgEl, true);
+                if (!imported.getAttribute('width')) {
+                    imported.setAttribute('width', target.dataset.iconSize || '16');
+                }
+                if (!imported.getAttribute('height')) {
+                    imported.setAttribute('height', target.dataset.iconSize || '16');
+                }
+                imported.setAttribute('focusable', 'false');
+                imported.setAttribute('aria-hidden', 'true');
+                target.appendChild(imported);
+                return;
+            }
+        } catch (err) {
+            console.warn('SVG parsing failed; falling back to emoji.', err);
+        }
+    }
+    const fallback = ICON_FALLBACK_EMOJI[fallbackKey] || '';
+    if (fallback) {
+        target.textContent = fallback;
+    }
+}
+
+function applySystemIcon(iconToken, iconKey) {
+    const svg = SYSTEM_ICONS[iconKey];
+    const markup = svg ? ensureSvgNamespace(svg) : '';
+    document.querySelectorAll(`[data-icon="${iconToken}"]`).forEach(el => {
+        renderIconIntoElement(el, markup, iconToken);
+    });
+}
+
+function updateSystemStateText(stateKey, text) {
+    document.querySelectorAll(`[data-state="${stateKey}"]`).forEach(el => {
+        el.textContent = text;
+    });
+}
+
+function updateSystemToggleState(toggleKey, active) {
+    const toggle = document.querySelector(`[data-system-toggle="${toggleKey}"]`);
+    if (toggle) {
+        toggle.classList.toggle('is-active', !!active);
+        toggle.setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
+}
+
+function updateSystemMenuCheckbox(actionKey, checked) {
+    const checkbox = document.querySelector(`[data-system-action="${actionKey}"]`);
+    if (checkbox) {
+        checkbox.setAttribute('aria-pressed', checked ? 'true' : 'false');
+        checkbox.classList.toggle('is-active', !!checked);
+    }
+}
+
+function updateSystemSliderValue(type, value) {
+    document.querySelectorAll(`[data-system-slider="${type}"]`).forEach(slider => {
+        if (Number(slider.value) !== value) {
+            slider.value = value;
+        }
+    });
+    document.querySelectorAll(`[data-state="${type}"]`).forEach(label => {
+        label.textContent = `${value}%`;
+    });
+}
+
+function updateWifiUI() {
+    const iconKey = systemStatus.wifi ? 'wifiOn' : 'wifiOff';
+    applySystemIcon('wifi', iconKey);
+    updateSystemStateText('wifi', systemStatus.wifi ? 'Ein' : 'Aus');
+    updateSystemToggleState('wifi', systemStatus.wifi);
+    updateSystemMenuCheckbox('toggle-wifi', systemStatus.wifi);
+    document.querySelectorAll('#wifi-menu [data-network]').forEach(btn => {
+        const disabled = !systemStatus.wifi;
+        if (disabled) {
+            btn.setAttribute('aria-disabled', 'true');
+        } else {
+            btn.removeAttribute('aria-disabled');
+        }
+    });
+    setConnectedNetwork(systemStatus.network, { silent: true });
+}
+
+function updateBluetoothUI() {
+    const iconKey = systemStatus.bluetooth ? 'bluetoothOn' : 'bluetoothOff';
+    applySystemIcon('bluetooth', iconKey);
+    updateSystemStateText('bluetooth', systemStatus.bluetooth ? 'Ein' : 'Aus');
+    updateSystemToggleState('bluetooth', systemStatus.bluetooth);
+    updateSystemMenuCheckbox('toggle-bluetooth', systemStatus.bluetooth);
+    const devices = document.querySelectorAll('#bluetooth-menu [data-device]');
+    devices.forEach(btn => {
+        const indicator = btn.querySelector('.system-network-indicator');
+        if (indicator && !indicator.dataset.default) {
+            indicator.dataset.default = indicator.textContent || '';
+        }
+        const disabled = !systemStatus.bluetooth;
+        if (disabled) {
+            btn.setAttribute('aria-disabled', 'true');
+        } else {
+            btn.removeAttribute('aria-disabled');
+        }
+    });
+    setBluetoothDevice(systemStatus.connectedBluetoothDevice, { silent: true, syncAudio: false });
+}
+
+function updateFocusUI() {
+    updateSystemToggleState('focus', systemStatus.focus);
+    updateSystemStateText('focus', systemStatus.focus ? 'Aktiv' : 'Aus');
+}
+
+function updateDarkModeUI() {
+    const isDark = systemStatus.darkMode;
+    updateSystemToggleState('dark-mode', isDark);
+    updateSystemStateText('dark-mode', isDark ? 'Aktiv' : 'Aus');
+    applySystemIcon('appearance', isDark ? 'appearanceDark' : 'appearanceLight');
+}
+
+function updateVolumeUI() {
+    const value = Math.max(0, Math.min(100, Number(systemStatus.volume) || 0));
+    systemStatus.volume = value;
+    let iconKey = 'volumeMute';
+    if (value === 0) {
+        iconKey = 'volumeMute';
+    } else if (value <= 33) {
+        iconKey = 'volumeLow';
+    } else if (value <= 66) {
+        iconKey = 'volumeMedium';
+    } else {
+        iconKey = 'volumeHigh';
+    }
+    applySystemIcon('volume', iconKey);
+    updateSystemSliderValue('volume', value);
+}
+
+function updateBrightnessUI() {
+    const value = Math.max(0, Math.min(100, Number(systemStatus.brightness) || 0));
+    systemStatus.brightness = value;
+    updateSystemSliderValue('brightness', value);
+}
+
+function updateBatteryUI() {
+    applySystemIcon('battery', 'batteryFull');
+    updateSystemStateText('battery', `${systemStatus.battery}%`);
+}
+
+function updateAudioDeviceUI() {
+    const active = systemStatus.audioDevice;
+    document.querySelectorAll('[data-audio-device]').forEach(btn => {
+        const isActive = btn.dataset.audioDevice === active;
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        btn.classList.toggle('is-active', isActive);
+    });
+}
+
+function setConnectedNetwork(network, options = {}) {
+    if (network) {
+        systemStatus.network = network;
+    }
+    const activeNetwork = systemStatus.network;
+    document.querySelectorAll('#wifi-menu [data-network]').forEach(btn => {
+        const indicator = btn.querySelector('.system-network-indicator');
+        if (indicator && !indicator.dataset.default) {
+            indicator.dataset.default = indicator.textContent || '';
+        }
+        const isActive = !btn.hasAttribute('aria-disabled') && btn.dataset.network === activeNetwork && systemStatus.wifi;
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        if (indicator) {
+            if (!systemStatus.wifi) {
+                indicator.textContent = 'Aus';
+            } else if (isActive) {
+                indicator.textContent = 'Verbunden';
+            } else {
+                indicator.textContent = indicator.dataset.default || '';
+            }
+        }
+    });
+    if (!options.silent) {
+        hideMenuDropdowns();
+    }
+}
+
+function setBluetoothDevice(deviceName, options = {}) {
+    const syncAudio = options.syncAudio !== false;
+    if (deviceName) {
+        systemStatus.connectedBluetoothDevice = deviceName;
+        if (syncAudio && deviceName === 'AirPods') {
+            systemStatus.audioDevice = 'airpods';
+        }
+    }
+    const activeDevice = systemStatus.connectedBluetoothDevice;
+    document.querySelectorAll('#bluetooth-menu [data-device]').forEach(btn => {
+        const indicator = btn.querySelector('.system-network-indicator');
+        if (indicator && !indicator.dataset.default) {
+            indicator.dataset.default = indicator.textContent || '';
+        }
+        const isActive = systemStatus.bluetooth && btn.dataset.device === activeDevice;
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        if (indicator) {
+            if (!systemStatus.bluetooth) {
+                indicator.textContent = 'Aus';
+            } else if (isActive) {
+                indicator.textContent = 'Verbunden';
+            } else {
+                indicator.textContent = indicator.dataset.default || '';
+            }
+        }
+    });
+    updateAudioDeviceUI();
+    if (!options.silent) {
+        hideMenuDropdowns();
+    }
+}
+
+function setAudioDevice(deviceKey, options = {}) {
+    if (!deviceKey) return;
+    systemStatus.audioDevice = deviceKey;
+    if (deviceKey === 'airpods') {
+        systemStatus.connectedBluetoothDevice = 'AirPods';
+    }
+    updateAudioDeviceUI();
+    updateBluetoothUI();
+    if (!options.silent) {
+        hideMenuDropdowns();
+    }
+}
+
+function handleSystemToggle(toggleKey) {
+    switch (toggleKey) {
+        case 'wifi':
+            systemStatus.wifi = !systemStatus.wifi;
+            updateWifiUI();
+            break;
+        case 'bluetooth':
+            systemStatus.bluetooth = !systemStatus.bluetooth;
+            updateBluetoothUI();
+            break;
+        case 'focus':
+            systemStatus.focus = !systemStatus.focus;
+            updateFocusUI();
+            break;
+        case 'dark-mode': {
+            const next = !document.documentElement.classList.contains('dark');
+            systemStatus.darkMode = next;
+            if (typeof setThemePreference === 'function') {
+                setThemePreference(next ? 'dark' : 'light');
+            } else {
+                document.documentElement.classList.toggle('dark', next);
+            }
+            updateDarkModeUI();
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+function handleSystemAction(actionKey) {
+    switch (actionKey) {
+        case 'toggle-wifi':
+            handleSystemToggle('wifi');
+            break;
+        case 'toggle-bluetooth':
+            handleSystemToggle('bluetooth');
+            break;
+        case 'open-network':
+        case 'open-bluetooth':
+        case 'open-sound':
+            if (window.dialogs && window.dialogs['settings-modal']) {
+                window.dialogs['settings-modal'].open();
+            } else if (typeof showTab === 'function') {
+                showTab('settings');
+            }
+            hideMenuDropdowns();
+            break;
+        case 'open-spotlight':
+        case 'open-siri':
+            console.info(`Aktion "${actionKey}" ausgelöst.`);
+            hideMenuDropdowns();
+            break;
+        default:
+            break;
+    }
+}
+
+function handleSystemSliderInput(type, value) {
+    if (!Number.isFinite(value)) return;
+    if (type === 'volume') {
+        systemStatus.volume = value;
+        updateVolumeUI();
+    } else if (type === 'brightness') {
+        systemStatus.brightness = value;
+        updateBrightnessUI();
+    }
+}
+
+function updateAllSystemStatusUI() {
+    applySystemIcon('sun', 'sun');
+    applySystemIcon('moon', 'moon');
+    updateWifiUI();
+    updateBluetoothUI();
+    updateFocusUI();
+    updateDarkModeUI();
+    updateVolumeUI();
+    updateBrightnessUI();
+    updateBatteryUI();
+    updateAudioDeviceUI();
+}
+
+function initSystemStatusControls() {
+    document.querySelectorAll('.system-network-indicator').forEach(indicator => {
+        if (!indicator.dataset.default) {
+            indicator.dataset.default = indicator.textContent || '';
+        }
+    });
+
+    document.querySelectorAll('[data-system-menu-trigger]').forEach(trigger => {
+        trigger.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const menuId = trigger.getAttribute('aria-controls');
+            const menu = menuId ? document.getElementById(menuId) : null;
+            const shouldOpen = menu && menu.classList.contains('hidden');
+            hideMenuDropdowns();
+            if (menu && shouldOpen) {
+                menu.classList.remove('hidden');
+                trigger.setAttribute('aria-expanded', 'true');
+            }
+        });
+    });
+
+    document.querySelectorAll('[data-system-toggle]').forEach(toggle => {
+        toggle.addEventListener('click', (event) => {
+            event.stopPropagation();
+            handleSystemToggle(toggle.dataset.systemToggle);
+        });
+    });
+
+    document.querySelectorAll('[data-system-slider]').forEach(slider => {
+        ['pointerdown', 'mousedown', 'touchstart'].forEach(evt => {
+            slider.addEventListener(evt, e => e.stopPropagation());
+        });
+        slider.addEventListener('input', (event) => {
+            event.stopPropagation();
+            const value = Number(slider.value);
+            handleSystemSliderInput(slider.dataset.systemSlider, value);
+        });
+    });
+
+    document.querySelectorAll('[data-system-action]').forEach(btn => {
+        btn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            handleSystemAction(btn.dataset.systemAction);
+        });
+    });
+
+    document.querySelectorAll('[data-audio-device]').forEach(btn => {
+        btn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (btn.getAttribute('aria-disabled') === 'true') return;
+            setAudioDevice(btn.dataset.audioDevice);
+        });
+    });
+
+    document.querySelectorAll('[data-network]').forEach(btn => {
+        btn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (btn.getAttribute('aria-disabled') === 'true') return;
+            setConnectedNetwork(btn.dataset.network);
+        });
+    });
+
+    document.querySelectorAll('[data-device]').forEach(btn => {
+        btn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (btn.getAttribute('aria-disabled') === 'true') return;
+            setBluetoothDevice(btn.dataset.device, { syncAudio: true });
+        });
+    });
+
+    updateAllSystemStatusUI();
+}
 
 function syncTopZIndexWithDOM() {
     let maxZ = Number.isFinite(topZIndex) ? topZIndex : 1000;
@@ -341,6 +853,7 @@ document.addEventListener('DOMContentLoaded', function () {
     restoreOpenModals();
     loadGithubRepos();
     initEventHandlers();
+    initSystemStatusControls();
 
     if (window.dialogs["settings-modal"]) {
         window.dialogs["settings-modal"].loadIframe("./settings.html");
@@ -483,6 +996,598 @@ function openProgramInfoDialog(event, infoOverride) {
     }
 }
 
+function createMenuContext(modalId) {
+    const resolvedId = modalId || null;
+    const dialog = resolvedId && window.dialogs ? window.dialogs[resolvedId] : null;
+    return {
+        modalId: resolvedId,
+        dialog,
+        info: resolveProgramInfo(resolvedId)
+    };
+}
+
+function registerMenuAction(handler) {
+    if (typeof handler !== 'function') {
+        return null;
+    }
+    const actionId = `menu-action-${++menuActionIdCounter}`;
+    menuActionHandlers.set(actionId, handler);
+    return actionId;
+}
+
+function normalizeMenuItems(items, context) {
+    if (!Array.isArray(items)) return [];
+    const normalized = [];
+    let previousWasSeparator = true;
+    items.forEach(item => {
+        if (!item) return;
+        if (item.type === 'separator') {
+            if (previousWasSeparator) {
+                return;
+            }
+            normalized.push({ type: 'separator' });
+            previousWasSeparator = true;
+            return;
+        }
+        const clone = Object.assign({}, item);
+        if (typeof clone.disabled === 'function') {
+            clone.disabled = clone.disabled(context);
+        }
+        if (typeof clone.label === 'function') {
+            clone.label = clone.label(context);
+        }
+        if (typeof clone.shortcut === 'function') {
+            clone.shortcut = clone.shortcut(context);
+        }
+        normalized.push(clone);
+        previousWasSeparator = false;
+    });
+    while (normalized.length && normalized[normalized.length - 1].type === 'separator') {
+        normalized.pop();
+    }
+    return normalized;
+}
+
+function renderApplicationMenu(activeModalId) {
+    const container = document.getElementById('menubar-links');
+    if (!container) return;
+    const modalKey = activeModalId && menuDefinitions[activeModalId] ? activeModalId : 'default';
+    const builder = menuDefinitions[modalKey] || menuDefinitions.default;
+    const context = createMenuContext(activeModalId || null);
+    const sections = typeof builder === 'function' ? builder(context) : Array.isArray(builder) ? builder : [];
+    container.innerHTML = '';
+    menuActionHandlers.clear();
+    menuActionIdCounter = 0;
+    currentMenuModalId = activeModalId || null;
+    if (!Array.isArray(sections) || sections.length === 0) {
+        return;
+    }
+    sections.forEach((section, sectionIndex) => {
+        if (!section) return;
+        const items = normalizeMenuItems(section.items, context);
+        if (!items.length) return;
+        const trigger = document.createElement('div');
+        trigger.className = 'menubar-trigger';
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'menubar-item';
+        button.dataset.menubarTriggerButton = 'true';
+        const label = typeof section.label === 'function' ? section.label(context) : section.label;
+        button.textContent = label || '';
+        const sectionId = section.id || `section-${sectionIndex}`;
+        const buttonId = `menubar-menu-${sectionId}`;
+        const dropdownId = `menu-dropdown-${sectionId}`;
+        button.id = buttonId;
+        button.setAttribute('aria-haspopup', 'true');
+        button.setAttribute('aria-expanded', 'false');
+        button.setAttribute('aria-controls', dropdownId);
+        const dropdown = document.createElement('ul');
+        dropdown.id = dropdownId;
+        dropdown.className = 'menu-dropdown hidden';
+        dropdown.setAttribute('role', 'menu');
+        dropdown.setAttribute('aria-labelledby', buttonId);
+        items.forEach(item => {
+            if (item.type === 'separator') {
+                const separator = document.createElement('li');
+                separator.className = 'menu-separator';
+                separator.setAttribute('role', 'separator');
+                separator.setAttribute('aria-hidden', 'true');
+                dropdown.appendChild(separator);
+                return;
+            }
+            const li = document.createElement('li');
+            li.setAttribute('role', 'none');
+            const tagName = item.href ? 'a' : 'button';
+            const actionEl = document.createElement(tagName);
+            actionEl.className = 'menu-item';
+            if (tagName === 'button') {
+                actionEl.type = 'button';
+            } else {
+                actionEl.href = item.href;
+                if (item.external) {
+                    actionEl.rel = 'noopener noreferrer';
+                    actionEl.target = '_blank';
+                }
+            }
+            const itemLabel = item.label != null ? item.label : '';
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'menu-item-label';
+            if (item.icon) {
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'menu-item-icon';
+                const iconSvg = getMenuIconSvg(item.icon);
+                renderIconIntoElement(iconSpan, iconSvg, item.icon);
+                labelSpan.appendChild(iconSpan);
+            }
+            labelSpan.appendChild(document.createTextNode(itemLabel));
+            actionEl.appendChild(labelSpan);
+            if (item.shortcut) {
+                const shortcutSpan = document.createElement('span');
+                shortcutSpan.className = 'menu-item-shortcut';
+                shortcutSpan.textContent = item.shortcut;
+                actionEl.appendChild(shortcutSpan);
+            }
+            actionEl.setAttribute('role', 'menuitem');
+            if (item.title) {
+                actionEl.title = item.title;
+            }
+            const isDisabled = Boolean(item.disabled);
+            if (isDisabled) {
+                actionEl.setAttribute('aria-disabled', 'true');
+                if (tagName === 'button') {
+                    actionEl.disabled = true;
+                }
+            } else if (typeof item.action === 'function') {
+                const actionId = registerMenuAction(item.action);
+                if (actionId) {
+                    actionEl.dataset.menuAction = actionId;
+                }
+            }
+            if (item.href && typeof item.onClick === 'function') {
+                actionEl.addEventListener('click', (event) => {
+                    const result = item.onClick(event);
+                    if (result === false) {
+                        event.preventDefault();
+                    }
+                });
+            }
+            li.appendChild(actionEl);
+            dropdown.appendChild(li);
+        });
+        if (!dropdown.childElementCount) {
+            return;
+        }
+        trigger.appendChild(button);
+        trigger.appendChild(dropdown);
+        container.appendChild(trigger);
+        button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const shouldOpen = dropdown.classList.contains('hidden');
+            hideMenuDropdowns();
+            if (shouldOpen) {
+                dropdown.classList.remove('hidden');
+                button.setAttribute('aria-expanded', 'true');
+            }
+        });
+    });
+}
+
+function handleMenuActionActivation(event) {
+    const target = event.target instanceof Element ? event.target.closest('[data-menu-action]') : null;
+    if (!target) return;
+    const actionId = target.getAttribute('data-menu-action');
+    const handler = actionId ? menuActionHandlers.get(actionId) : null;
+    if (typeof handler !== 'function') return;
+    event.preventDefault();
+    event.stopPropagation();
+    hideMenuDropdowns();
+    try {
+        handler();
+    } catch (err) {
+        console.error('Fehler beim Ausführen eines Menübefehls:', err);
+    }
+}
+
+function createWindowMenuSection(context) {
+    return {
+        id: 'window',
+        label: 'Fenster',
+        items: getWindowMenuItems(context)
+    };
+}
+
+function getWindowMenuItems(context) {
+    const dialog = context && context.dialog;
+    const hasDialog = Boolean(dialog && typeof dialog.close === 'function');
+    return [
+        {
+            id: 'window-minimize',
+            label: 'Minimieren',
+            shortcut: '⌘M',
+            disabled: !hasDialog,
+            icon: 'windowMinimize',
+            action: () => {
+                if (dialog && typeof dialog.minimize === 'function') {
+                    dialog.minimize();
+                }
+            }
+        },
+        {
+            id: 'window-zoom',
+            label: 'Zoomen',
+            shortcut: '⌃⌘F',
+            disabled: !hasDialog,
+            icon: 'windowZoom',
+            action: () => {
+                if (dialog && typeof dialog.toggleMaximize === 'function') {
+                    dialog.toggleMaximize();
+                }
+            }
+        },
+        {
+            type: 'separator'
+        },
+        {
+            id: 'window-all-front',
+            label: 'Alle nach vorne bringen',
+            disabled: !hasAnyVisibleDialog(),
+            icon: 'windowFront',
+            action: bringAllWindowsToFront
+        },
+        {
+            type: 'separator'
+        },
+        {
+            id: 'window-close',
+            label: 'Fenster schließen',
+            shortcut: '⌘W',
+            disabled: !hasDialog,
+            icon: 'close',
+            action: () => closeContextWindow(context)
+        }
+    ];
+}
+
+function createHelpMenuSection(context, overrides = {}) {
+    const sectionLabel = overrides.sectionLabel || 'Hilfe';
+    const itemLabel = overrides.itemLabel || 'Programmhilfe anzeigen';
+    const infoModalId = overrides.infoModalId || context.modalId || null;
+    return {
+        id: overrides.id || 'help',
+        label: sectionLabel,
+        items: [
+            {
+                id: 'help-show-info',
+                label: itemLabel,
+                icon: overrides.itemIcon || 'help',
+                action: () => openProgramInfoFromMenu(infoModalId)
+            }
+        ]
+    };
+}
+
+function buildDefaultMenuDefinition(context) {
+    return buildFinderMenuDefinition(context);
+}
+
+function buildFinderMenuDefinition(context) {
+    return [
+        {
+            id: 'file',
+            label: 'Ablage',
+            items: [
+                {
+                    id: 'finder-new-window',
+                    label: 'Neues Finder-Fenster',
+                    shortcut: '⌘N',
+                    icon: 'finder',
+                    action: () => showTab('projects')
+                },
+                {
+                    id: 'finder-reload',
+                    label: 'Finder neu laden',
+                    shortcut: '⌘R',
+                    icon: 'reload',
+                    action: loadGithubRepos
+                },
+                {
+                    type: 'separator'
+                },
+                {
+                    id: 'finder-close',
+                    label: 'Fenster schließen',
+                    shortcut: '⌘W',
+                    disabled: () => !(context && context.dialog),
+                    icon: 'close',
+                    action: () => closeContextWindow(context)
+                }
+            ]
+        },
+        createWindowMenuSection(context),
+        createHelpMenuSection(context, { itemLabel: 'Finder-Hilfe anzeigen', infoModalId: 'projects-modal', itemIcon: 'help' })
+    ];
+}
+
+function buildSettingsMenuDefinition(context) {
+    return [
+        {
+            id: 'file',
+            label: 'Ablage',
+            items: [
+                {
+                    id: 'settings-close',
+                    label: 'Fenster schließen',
+                    shortcut: '⌘W',
+                    disabled: () => !(context && context.dialog),
+                    icon: 'close',
+                    action: () => closeContextWindow(context)
+                }
+            ]
+        },
+        createWindowMenuSection(context),
+        createHelpMenuSection(context, { itemLabel: 'Einstellungs-Hilfe anzeigen', infoModalId: 'settings-modal', itemIcon: 'help' })
+    ];
+}
+
+function buildTextEditorMenuDefinition(context) {
+    return [
+        {
+            id: 'file',
+            label: 'Ablage',
+            items: [
+                {
+                    id: 'text-new',
+                    label: 'Neu',
+                    shortcut: '⌘N',
+                    icon: 'newFile',
+                    action: () => sendTextEditorMenuAction('file:new')
+                },
+                {
+                    id: 'text-open',
+                    label: 'Öffnen …',
+                    shortcut: '⌘O',
+                    icon: 'open',
+                    action: () => sendTextEditorMenuAction('file:open')
+                },
+                {
+                    id: 'text-save',
+                    label: 'Speichern',
+                    shortcut: '⌘S',
+                    icon: 'save',
+                    action: () => sendTextEditorMenuAction('file:save')
+                }
+            ]
+        },
+        {
+            id: 'edit',
+            label: 'Bearbeiten',
+            items: [
+                {
+                    id: 'text-undo',
+                    label: 'Rückgängig',
+                    shortcut: '⌘Z',
+                    icon: 'undo',
+                    action: () => sendTextEditorMenuAction('edit:undo')
+                },
+                {
+                    id: 'text-redo',
+                    label: 'Wiederholen',
+                    shortcut: '⇧⌘Z',
+                    icon: 'redo',
+                    action: () => sendTextEditorMenuAction('edit:redo')
+                },
+                {
+                    type: 'separator'
+                },
+                {
+                    id: 'text-cut',
+                    label: 'Ausschneiden',
+                    shortcut: '⌘X',
+                    icon: 'cut',
+                    action: () => sendTextEditorMenuAction('edit:cut')
+                },
+                {
+                    id: 'text-copy',
+                    label: 'Kopieren',
+                    shortcut: '⌘C',
+                    icon: 'copy',
+                    action: () => sendTextEditorMenuAction('edit:copy')
+                },
+                {
+                    id: 'text-paste',
+                    label: 'Einfügen',
+                    shortcut: '⌘V',
+                    icon: 'paste',
+                    action: () => sendTextEditorMenuAction('edit:paste')
+                },
+                {
+                    type: 'separator'
+                },
+                {
+                    id: 'text-select-all',
+                    label: 'Alles auswählen',
+                    shortcut: '⌘A',
+                    icon: 'selectAll',
+                    action: () => sendTextEditorMenuAction('edit:selectAll')
+                }
+            ]
+        },
+        {
+            id: 'view',
+            label: 'Darstellung',
+            items: [
+                {
+                    id: 'text-toggle-wrap',
+                    label: 'Zeilenumbruch umschalten',
+                    shortcut: '⌥⌘W',
+                    icon: 'wrap',
+                    action: () => sendTextEditorMenuAction('view:toggleWrap')
+                }
+            ]
+        },
+        createWindowMenuSection(context),
+        createHelpMenuSection(context, { itemLabel: 'Texteditor-Hilfe anzeigen', infoModalId: 'text-modal', itemIcon: 'help' })
+    ];
+}
+
+function buildImageViewerMenuDefinition(context) {
+    const state = getImageViewerState();
+    return [
+        {
+            id: 'file',
+            label: 'Ablage',
+            items: [
+                {
+                    id: 'image-open-tab',
+                    label: 'Bild in neuem Tab öffnen',
+                    disabled: !state.hasImage,
+                    icon: 'imageOpen',
+                    action: openActiveImageInNewTab
+                },
+                {
+                    id: 'image-download',
+                    label: 'Bild sichern …',
+                    disabled: !state.hasImage,
+                    icon: 'download',
+                    action: downloadActiveImage
+                },
+                {
+                    type: 'separator'
+                },
+                {
+                    id: 'image-close',
+                    label: 'Fenster schließen',
+                    shortcut: '⌘W',
+                    disabled: () => !(context && context.dialog),
+                    icon: 'close',
+                    action: () => closeContextWindow(context)
+                }
+            ]
+        },
+        createWindowMenuSection(context),
+        createHelpMenuSection(context, { itemLabel: 'Bildbetrachter-Hilfe anzeigen', infoModalId: 'image-modal', itemIcon: 'help' })
+    ];
+}
+
+function buildAboutMenuDefinition(context) {
+    return [
+        {
+            id: 'file',
+            label: 'Ablage',
+            items: [
+                {
+                    id: 'about-close',
+                    label: 'Fenster schließen',
+                    shortcut: '⌘W',
+                    disabled: () => !(context && context.dialog),
+                    icon: 'close',
+                    action: () => closeContextWindow(context)
+                }
+            ]
+        },
+        createWindowMenuSection(context),
+        createHelpMenuSection(context, { itemLabel: 'Über Marvin', infoModalId: 'about-modal', itemIcon: 'info' })
+    ];
+}
+
+function buildProgramInfoMenuDefinition(context) {
+    return [
+        {
+            id: 'file',
+            label: 'Ablage',
+            items: [
+                {
+                    id: 'program-info-close',
+                    label: 'Fenster schließen',
+                    shortcut: '⌘W',
+                    disabled: () => !(context && context.dialog),
+                    icon: 'close',
+                    action: () => closeContextWindow(context)
+                }
+            ]
+        },
+        createWindowMenuSection(context)
+    ];
+}
+
+function closeContextWindow(context) {
+    const dialog = context && context.dialog;
+    if (dialog && typeof dialog.close === 'function') {
+        dialog.close();
+    } else if (context && context.modalId) {
+        const modal = document.getElementById(context.modalId);
+        if (modal && !modal.classList.contains('hidden')) {
+            modal.classList.add('hidden');
+            saveOpenModals();
+            updateDockIndicators();
+            updateProgramLabelByTopModal();
+        }
+    }
+}
+
+function hasAnyVisibleDialog() {
+    if (!window.dialogs) return false;
+    return Object.values(window.dialogs).some(dialog => dialog && dialog.modal && !dialog.modal.classList.contains('hidden'));
+}
+
+function bringAllWindowsToFront() {
+    if (!window.dialogs) return;
+    modalIds.forEach(id => {
+        const dialog = window.dialogs[id];
+        if (dialog && dialog.modal && !dialog.modal.classList.contains('hidden') && typeof dialog.bringToFront === 'function') {
+            dialog.bringToFront();
+        }
+    });
+}
+
+function openProgramInfoFromMenu(targetModalId) {
+    const info = resolveProgramInfo(targetModalId || null);
+    openProgramInfoDialog(null, info);
+}
+
+function sendTextEditorMenuAction(command) {
+    if (!command) return;
+    postToTextEditor({
+        type: 'textEditor:menuAction',
+        command
+    });
+}
+
+function getImageViewerState() {
+    const viewer = document.getElementById('image-viewer');
+    if (!viewer) {
+        return { hasImage: false, src: '' };
+    }
+    const hidden = viewer.classList.contains('hidden');
+    const src = viewer.getAttribute('src') || viewer.src || '';
+    const hasImage = Boolean(src && src.trim() && !hidden);
+    return { hasImage, src };
+}
+
+function openActiveImageInNewTab() {
+    const state = getImageViewerState();
+    if (!state.hasImage || !state.src) return;
+    window.open(state.src, '_blank', 'noopener');
+}
+
+function downloadActiveImage() {
+    const state = getImageViewerState();
+    if (!state.hasImage || !state.src) return;
+    const link = document.createElement('a');
+    link.href = state.src;
+    let fileName = 'bild';
+    try {
+        const url = new URL(state.src, window.location.href);
+        fileName = url.pathname.split('/').pop() || fileName;
+    } catch (err) {
+        fileName = 'bild';
+    }
+    link.download = fileName || 'bild';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 function updateProgramLabelByTopModal() {
     const topModal = getTopModal();
     let info;
@@ -495,6 +1600,7 @@ function updateProgramLabelByTopModal() {
     }
     updateProgramLabel(info.programLabel);
     updateProgramInfoMenu(info);
+    renderApplicationMenu(topModal ? topModal.id : null);
     return info;
 }
 
@@ -512,23 +1618,23 @@ window.addEventListener("languagePreferenceChange", () => {
     }
 });
 
+window.addEventListener('themePreferenceChange', () => {
+    systemStatus.darkMode = document.documentElement.classList.contains('dark');
+    updateDarkModeUI();
+});
+
 function hideMenuDropdowns() {
-    const appleMenuDropdown = document.getElementById('apple-menu-dropdown');
-    const appleMenuTrigger = document.getElementById('apple-menu-trigger');
-    if (appleMenuDropdown) {
-        appleMenuDropdown.classList.add('hidden');
-    }
-    if (appleMenuTrigger) {
-        appleMenuTrigger.setAttribute('aria-expanded', 'false');
-    }
-    const programDropdown = document.getElementById('program-dropdown');
-    if (programDropdown) {
-        programDropdown.classList.add('hidden');
-    }
-    const programLabel = document.getElementById('program-label');
-    if (programLabel) {
-        programLabel.setAttribute('aria-expanded', 'false');
-    }
+    document.querySelectorAll('.menu-dropdown').forEach(dropdown => {
+        if (!dropdown.classList.contains('hidden')) {
+            dropdown.classList.add('hidden');
+        }
+    });
+    document.querySelectorAll('[data-menubar-trigger-button="true"]').forEach(button => {
+        button.setAttribute('aria-expanded', 'false');
+    });
+    document.querySelectorAll('[data-system-menu-trigger]').forEach(button => {
+        button.setAttribute('aria-expanded', 'false');
+    });
 }
 
 // Zentrale Event-Handler für Menü und Dropdowns
@@ -543,30 +1649,31 @@ function initEventHandlers() {
     const closeProgramButton = document.getElementById('program-close-current');
     const settingsButton = document.getElementById('dropdown-settings');
 
-    appleMenuTrigger.addEventListener('click', function (event) {
-        if (programDropdown) { programDropdown.classList.add('hidden'); }
-        if (programLabel) { programLabel.setAttribute('aria-expanded', 'false'); }
-        if (appleMenuDropdown) {
-            const willShow = appleMenuDropdown.classList.contains('hidden');
-            appleMenuDropdown.classList.toggle('hidden');
-            appleMenuTrigger.setAttribute('aria-expanded', willShow ? 'true' : 'false');
-        }
-        event.stopPropagation();
-    });
+    if (appleMenuTrigger) {
+        appleMenuTrigger.addEventListener('click', function (event) {
+            event.stopPropagation();
+            const shouldOpen = appleMenuDropdown && appleMenuDropdown.classList.contains('hidden');
+            hideMenuDropdowns();
+            if (appleMenuDropdown && shouldOpen) {
+                appleMenuDropdown.classList.remove('hidden');
+                appleMenuTrigger.setAttribute('aria-expanded', 'true');
+            }
+        });
+    }
 
-    programLabel.addEventListener('click', function (event) {
-        event.stopPropagation();
-        if (appleMenuDropdown) {
-            appleMenuDropdown.classList.add('hidden');
-            appleMenuTrigger.setAttribute('aria-expanded', 'false');
-        }
-        if (programDropdown) {
-            const willShow = programDropdown.classList.contains('hidden');
-            programDropdown.classList.toggle('hidden');
-            programLabel.setAttribute('aria-expanded', willShow ? 'true' : 'false');
-        }
-    });
+    if (programLabel) {
+        programLabel.addEventListener('click', function (event) {
+            event.stopPropagation();
+            const shouldOpen = programDropdown && programDropdown.classList.contains('hidden');
+            hideMenuDropdowns();
+            if (programDropdown && shouldOpen) {
+                programDropdown.classList.remove('hidden');
+                programLabel.setAttribute('aria-expanded', 'true');
+            }
+        });
+    }
 
+    document.addEventListener('click', handleMenuActionActivation);
     document.addEventListener('click', hideMenuDropdowns);
 
     if (dropdownAbout) {
@@ -869,7 +1976,10 @@ function loadGithubRepos() {
         }
         const iframe = getTextEditorIframe();
         if (iframe && iframe.contentWindow) {
-            const targetOrigin = window.location ? window.location.origin : '*';
+            let targetOrigin = '*';
+            if (window.location && typeof window.location.origin === 'string' && window.location.origin !== 'null') {
+                targetOrigin = window.location.origin;
+            }
             iframe.contentWindow.postMessage(message, targetOrigin);
             return;
         }
@@ -1007,6 +2117,7 @@ function loadGithubRepos() {
                 updateImageInfo({ repo: repoName, path: filePath, size: entry.size, dimensions: natural });
                 setImagePlaceholder("");
                 imageViewer.classList.remove("hidden");
+                renderApplicationMenu('image-modal');
                 if (viewerDialog && typeof viewerDialog.bringToFront === "function") {
                     viewerDialog.bringToFront();
                 }
@@ -1014,6 +2125,7 @@ function loadGithubRepos() {
             imageViewer.onerror = () => {
                 setImagePlaceholder("finder.imageLoadError");
                 imageViewer.classList.add("hidden");
+                renderApplicationMenu('image-modal');
             };
             imageViewer.src = src;
         };
