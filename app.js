@@ -240,6 +240,17 @@ const ICON_FALLBACK_EMOJI = {
     projects: '🧰'
 };
 
+function translate(key, fallback) {
+    if (!window.appI18n || typeof appI18n.translate !== 'function') {
+        return fallback || key;
+    }
+    const result = appI18n.translate(key);
+    if (result === key && fallback) {
+        return fallback;
+    }
+    return result;
+}
+
 const svgParser = typeof DOMParser === 'function' ? new DOMParser() : null;
 
 function ensureSvgNamespace(svgMarkup) {
@@ -300,7 +311,7 @@ function applySystemIcon(iconToken, iconKey) {
 
 function updateSystemStateText(stateKey, text) {
     document.querySelectorAll(`[data-state="${stateKey}"]`).forEach(el => {
-        el.textContent = text;
+        el.textContent = text != null ? String(text) : '';
     });
 }
 
@@ -334,7 +345,7 @@ function updateSystemSliderValue(type, value) {
 function updateWifiUI() {
     const iconKey = systemStatus.wifi ? 'wifiOn' : 'wifiOff';
     applySystemIcon('wifi', iconKey);
-    updateSystemStateText('wifi', systemStatus.wifi ? 'Ein' : 'Aus');
+    updateSystemStateText('wifi', translate(systemStatus.wifi ? 'menubar.state.on' : 'menubar.state.off'));
     updateSystemToggleState('wifi', systemStatus.wifi);
     updateSystemMenuCheckbox('toggle-wifi', systemStatus.wifi);
     document.querySelectorAll('#wifi-menu [data-network]').forEach(btn => {
@@ -351,7 +362,7 @@ function updateWifiUI() {
 function updateBluetoothUI() {
     const iconKey = systemStatus.bluetooth ? 'bluetoothOn' : 'bluetoothOff';
     applySystemIcon('bluetooth', iconKey);
-    updateSystemStateText('bluetooth', systemStatus.bluetooth ? 'Ein' : 'Aus');
+    updateSystemStateText('bluetooth', translate(systemStatus.bluetooth ? 'menubar.state.on' : 'menubar.state.off'));
     updateSystemToggleState('bluetooth', systemStatus.bluetooth);
     updateSystemMenuCheckbox('toggle-bluetooth', systemStatus.bluetooth);
     const devices = document.querySelectorAll('#bluetooth-menu [data-device]');
@@ -372,13 +383,13 @@ function updateBluetoothUI() {
 
 function updateFocusUI() {
     updateSystemToggleState('focus', systemStatus.focus);
-    updateSystemStateText('focus', systemStatus.focus ? 'Aktiv' : 'Aus');
+    updateSystemStateText('focus', translate(systemStatus.focus ? 'menubar.state.active' : 'menubar.state.off'));
 }
 
 function updateDarkModeUI() {
     const isDark = systemStatus.darkMode;
     updateSystemToggleState('dark-mode', isDark);
-    updateSystemStateText('dark-mode', isDark ? 'Aktiv' : 'Aus');
+    updateSystemStateText('dark-mode', translate(isDark ? 'menubar.state.active' : 'menubar.state.off'));
     applySystemIcon('appearance', isDark ? 'appearanceDark' : 'appearanceLight');
 }
 
@@ -434,9 +445,9 @@ function setConnectedNetwork(network, options = {}) {
         btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         if (indicator) {
             if (!systemStatus.wifi) {
-                indicator.textContent = 'Aus';
+                indicator.textContent = translate('menubar.state.off');
             } else if (isActive) {
-                indicator.textContent = 'Verbunden';
+                indicator.textContent = translate('menubar.state.connected');
             } else {
                 indicator.textContent = indicator.dataset.default || '';
             }
@@ -466,9 +477,9 @@ function setBluetoothDevice(deviceName, options = {}) {
         btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         if (indicator) {
             if (!systemStatus.bluetooth) {
-                indicator.textContent = 'Aus';
+                indicator.textContent = translate('menubar.state.off');
             } else if (isActive) {
-                indicator.textContent = 'Verbunden';
+                indicator.textContent = translate('menubar.state.connected');
             } else {
                 indicator.textContent = indicator.dataset.default || '';
             }
@@ -577,9 +588,7 @@ function updateAllSystemStatusUI() {
 
 function initSystemStatusControls() {
     document.querySelectorAll('.system-network-indicator').forEach(indicator => {
-        if (!indicator.dataset.default) {
-            indicator.dataset.default = indicator.textContent || '';
-        }
+        indicator.dataset.default = indicator.textContent || '';
     });
 
     document.querySelectorAll('[data-system-menu-trigger]').forEach(trigger => {
@@ -1099,7 +1108,7 @@ function renderApplicationMenu(activeModalId) {
                     actionEl.target = '_blank';
                 }
             }
-            const itemLabel = item.label != null ? item.label : '';
+            const itemLabel = item.label != null ? (typeof item.label === 'function' ? item.label(context) : item.label) : '';
             const labelSpan = document.createElement('span');
             labelSpan.className = 'menu-item-label';
             if (item.icon) {
@@ -1173,7 +1182,7 @@ function handleMenuActionActivation(event) {
 function createWindowMenuSection(context) {
     return {
         id: 'window',
-        label: 'Fenster',
+        label: () => translate('menu.sections.window'),
         items: getWindowMenuItems(context)
     };
 }
@@ -1184,7 +1193,7 @@ function getWindowMenuItems(context) {
     return [
         {
             id: 'window-minimize',
-            label: 'Minimieren',
+            label: () => translate('menu.window.minimize'),
             shortcut: '⌘M',
             disabled: !hasDialog,
             icon: 'windowMinimize',
@@ -1196,7 +1205,7 @@ function getWindowMenuItems(context) {
         },
         {
             id: 'window-zoom',
-            label: 'Zoomen',
+            label: () => translate('menu.window.zoom'),
             shortcut: '⌃⌘F',
             disabled: !hasDialog,
             icon: 'windowZoom',
@@ -1211,7 +1220,7 @@ function getWindowMenuItems(context) {
         },
         {
             id: 'window-all-front',
-            label: 'Alle nach vorne bringen',
+            label: () => translate('menu.window.bringToFront'),
             disabled: !hasAnyVisibleDialog(),
             icon: 'windowFront',
             action: bringAllWindowsToFront
@@ -1221,7 +1230,7 @@ function getWindowMenuItems(context) {
         },
         {
             id: 'window-close',
-            label: 'Fenster schließen',
+            label: () => translate('menu.window.close'),
             shortcut: '⌘W',
             disabled: !hasDialog,
             icon: 'close',
@@ -1231,16 +1240,16 @@ function getWindowMenuItems(context) {
 }
 
 function createHelpMenuSection(context, overrides = {}) {
-    const sectionLabel = overrides.sectionLabel || 'Hilfe';
-    const itemLabel = overrides.itemLabel || 'Programmhilfe anzeigen';
+    const sectionKey = overrides.sectionKey || 'menu.sections.help';
+    const itemKey = overrides.itemKey || 'menu.help.showHelp';
     const infoModalId = overrides.infoModalId || context.modalId || null;
     return {
         id: overrides.id || 'help',
-        label: sectionLabel,
+        label: () => translate(sectionKey),
         items: [
             {
                 id: 'help-show-info',
-                label: itemLabel,
+                label: () => translate(itemKey),
                 icon: overrides.itemIcon || 'help',
                 action: () => openProgramInfoFromMenu(infoModalId)
             }
@@ -1256,18 +1265,18 @@ function buildFinderMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: 'Ablage',
+            label: () => translate('menu.sections.file'),
             items: [
                 {
                     id: 'finder-new-window',
-                    label: 'Neues Finder-Fenster',
+                    label: () => translate('menu.finder.newWindow'),
                     shortcut: '⌘N',
                     icon: 'finder',
                     action: () => showTab('projects')
                 },
                 {
                     id: 'finder-reload',
-                    label: 'Finder neu laden',
+                    label: () => translate('menu.finder.reload'),
                     shortcut: '⌘R',
                     icon: 'reload',
                     action: loadGithubRepos
@@ -1277,7 +1286,7 @@ function buildFinderMenuDefinition(context) {
                 },
                 {
                     id: 'finder-close',
-                    label: 'Fenster schließen',
+                    label: () => translate('menu.finder.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
                     icon: 'close',
@@ -1286,7 +1295,7 @@ function buildFinderMenuDefinition(context) {
             ]
         },
         createWindowMenuSection(context),
-        createHelpMenuSection(context, { itemLabel: 'Finder-Hilfe anzeigen', infoModalId: 'projects-modal', itemIcon: 'help' })
+        createHelpMenuSection(context, { itemKey: 'menu.finder.help', infoModalId: 'projects-modal', itemIcon: 'help' })
     ];
 }
 
@@ -1294,11 +1303,11 @@ function buildSettingsMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: 'Ablage',
+            label: () => translate('menu.sections.file'),
             items: [
                 {
                     id: 'settings-close',
-                    label: 'Fenster schließen',
+                    label: () => translate('menu.settings.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
                     icon: 'close',
@@ -1307,7 +1316,7 @@ function buildSettingsMenuDefinition(context) {
             ]
         },
         createWindowMenuSection(context),
-        createHelpMenuSection(context, { itemLabel: 'Einstellungs-Hilfe anzeigen', infoModalId: 'settings-modal', itemIcon: 'help' })
+        createHelpMenuSection(context, { itemKey: 'menu.settings.help', infoModalId: 'settings-modal', itemIcon: 'help' })
     ];
 }
 
@@ -1315,25 +1324,25 @@ function buildTextEditorMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: 'Ablage',
+            label: () => translate('menu.sections.file'),
             items: [
                 {
                     id: 'text-new',
-                    label: 'Neu',
+                    label: () => translate('menu.text.newFile'),
                     shortcut: '⌘N',
                     icon: 'newFile',
                     action: () => sendTextEditorMenuAction('file:new')
                 },
                 {
                     id: 'text-open',
-                    label: 'Öffnen …',
+                    label: () => translate('menu.text.open'),
                     shortcut: '⌘O',
                     icon: 'open',
                     action: () => sendTextEditorMenuAction('file:open')
                 },
                 {
                     id: 'text-save',
-                    label: 'Speichern',
+                    label: () => translate('menu.text.save'),
                     shortcut: '⌘S',
                     icon: 'save',
                     action: () => sendTextEditorMenuAction('file:save')
@@ -1342,18 +1351,18 @@ function buildTextEditorMenuDefinition(context) {
         },
         {
             id: 'edit',
-            label: 'Bearbeiten',
+            label: () => translate('menu.sections.edit'),
             items: [
                 {
                     id: 'text-undo',
-                    label: 'Rückgängig',
+                    label: () => translate('menu.text.undo'),
                     shortcut: '⌘Z',
                     icon: 'undo',
                     action: () => sendTextEditorMenuAction('edit:undo')
                 },
                 {
                     id: 'text-redo',
-                    label: 'Wiederholen',
+                    label: () => translate('menu.text.redo'),
                     shortcut: '⇧⌘Z',
                     icon: 'redo',
                     action: () => sendTextEditorMenuAction('edit:redo')
@@ -1363,21 +1372,21 @@ function buildTextEditorMenuDefinition(context) {
                 },
                 {
                     id: 'text-cut',
-                    label: 'Ausschneiden',
+                    label: () => translate('menu.text.cut'),
                     shortcut: '⌘X',
                     icon: 'cut',
                     action: () => sendTextEditorMenuAction('edit:cut')
                 },
                 {
                     id: 'text-copy',
-                    label: 'Kopieren',
+                    label: () => translate('menu.text.copy'),
                     shortcut: '⌘C',
                     icon: 'copy',
                     action: () => sendTextEditorMenuAction('edit:copy')
                 },
                 {
                     id: 'text-paste',
-                    label: 'Einfügen',
+                    label: () => translate('menu.text.paste'),
                     shortcut: '⌘V',
                     icon: 'paste',
                     action: () => sendTextEditorMenuAction('edit:paste')
@@ -1387,7 +1396,7 @@ function buildTextEditorMenuDefinition(context) {
                 },
                 {
                     id: 'text-select-all',
-                    label: 'Alles auswählen',
+                    label: () => translate('menu.text.selectAll'),
                     shortcut: '⌘A',
                     icon: 'selectAll',
                     action: () => sendTextEditorMenuAction('edit:selectAll')
@@ -1396,11 +1405,11 @@ function buildTextEditorMenuDefinition(context) {
         },
         {
             id: 'view',
-            label: 'Darstellung',
+            label: () => translate('menu.sections.view'),
             items: [
                 {
                     id: 'text-toggle-wrap',
-                    label: 'Zeilenumbruch umschalten',
+                    label: () => translate('menu.text.toggleWrap'),
                     shortcut: '⌥⌘W',
                     icon: 'wrap',
                     action: () => sendTextEditorMenuAction('view:toggleWrap')
@@ -1408,7 +1417,7 @@ function buildTextEditorMenuDefinition(context) {
             ]
         },
         createWindowMenuSection(context),
-        createHelpMenuSection(context, { itemLabel: 'Texteditor-Hilfe anzeigen', infoModalId: 'text-modal', itemIcon: 'help' })
+        createHelpMenuSection(context, { itemKey: 'menu.text.help', infoModalId: 'text-modal', itemIcon: 'help' })
     ];
 }
 
@@ -1417,18 +1426,18 @@ function buildImageViewerMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: 'Ablage',
+            label: () => translate('menu.sections.file'),
             items: [
                 {
                     id: 'image-open-tab',
-                    label: 'Bild in neuem Tab öffnen',
+                    label: () => translate('menu.image.openInTab'),
                     disabled: !state.hasImage,
                     icon: 'imageOpen',
                     action: openActiveImageInNewTab
                 },
                 {
                     id: 'image-download',
-                    label: 'Bild sichern …',
+                    label: () => translate('menu.image.saveImage'),
                     disabled: !state.hasImage,
                     icon: 'download',
                     action: downloadActiveImage
@@ -1438,7 +1447,7 @@ function buildImageViewerMenuDefinition(context) {
                 },
                 {
                     id: 'image-close',
-                    label: 'Fenster schließen',
+                    label: () => translate('menu.image.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
                     icon: 'close',
@@ -1447,7 +1456,7 @@ function buildImageViewerMenuDefinition(context) {
             ]
         },
         createWindowMenuSection(context),
-        createHelpMenuSection(context, { itemLabel: 'Bildbetrachter-Hilfe anzeigen', infoModalId: 'image-modal', itemIcon: 'help' })
+        createHelpMenuSection(context, { itemKey: 'menu.image.help', infoModalId: 'image-modal', itemIcon: 'help' })
     ];
 }
 
@@ -1455,11 +1464,11 @@ function buildAboutMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: 'Ablage',
+            label: () => translate('menu.sections.file'),
             items: [
                 {
                     id: 'about-close',
-                    label: 'Fenster schließen',
+                    label: () => translate('menu.about.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
                     icon: 'close',
@@ -1468,7 +1477,7 @@ function buildAboutMenuDefinition(context) {
             ]
         },
         createWindowMenuSection(context),
-        createHelpMenuSection(context, { itemLabel: 'Über Marvin', infoModalId: 'about-modal', itemIcon: 'info' })
+        createHelpMenuSection(context, { itemKey: 'menu.about.help', infoModalId: 'about-modal', itemIcon: 'info' })
     ];
 }
 
@@ -1476,11 +1485,11 @@ function buildProgramInfoMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: 'Ablage',
+            label: () => translate('menu.sections.file'),
             items: [
                 {
                     id: 'program-info-close',
-                    label: 'Fenster schließen',
+                    label: () => translate('menu.programInfo.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
                     icon: 'close',
@@ -1598,6 +1607,10 @@ window.addEventListener("languagePreferenceChange", () => {
             currentProgramInfo = infoForDialog;
         }
     }
+    document.querySelectorAll('.system-network-indicator').forEach(indicator => {
+        indicator.dataset.default = indicator.textContent || '';
+    });
+    updateAllSystemStatusUI();
 });
 
 window.addEventListener('themePreferenceChange', () => {

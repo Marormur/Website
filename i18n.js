@@ -36,6 +36,71 @@
                 image: 'Bildbetrachter',
                 settings: 'Systemeinstellungen'
             },
+            menubar: {
+                appleMenu: {
+                    label: 'Apple-Menü'
+                },
+                applicationMenus: 'Anwendungsmenüs',
+                controlCenter: {
+                    label: 'Kontrollzentrum',
+                    quickActions: 'Schnellaktionen',
+                    quickActionsAria: 'Schnellaktionen',
+                    brightness: 'Helligkeit',
+                    volume: 'Lautstärke'
+                },
+                toggles: {
+                    wifi: 'WLAN',
+                    wifiStatus: 'WLAN-Status',
+                    bluetooth: 'Bluetooth',
+                    bluetoothStatus: 'Bluetooth-Status',
+                    focus: 'Fokus',
+                    darkMode: 'Dark Mode'
+                },
+                wifi: {
+                    preferredNetworks: 'Bevorzugte Netzwerke'
+                },
+                bluetooth: {
+                    devices: 'Geräte',
+                    airpods: 'Marvins AirPods Pro',
+                    keyboard: 'Magic Keyboard',
+                    speaker: 'HomeSpeaker'
+                },
+                sound: {
+                    label: 'Ton',
+                    outputDevices: 'Ausgabegeräte',
+                    devices: {
+                        speakers: 'MacBook Lautsprecher',
+                        airpods: 'Marvins AirPods Pro',
+                        display: 'Samsung Monitor'
+                    }
+                },
+                networks: {
+                    home: 'HomeLAN',
+                    office: 'Office',
+                    hotspot: 'Marvin iPhone'
+                },
+                state: {
+                    on: 'Ein',
+                    off: 'Aus',
+                    active: 'Aktiv',
+                    connected: 'Verbunden',
+                    ready: 'Bereit',
+                    notConnected: 'Nicht verbunden',
+                    hotspot: 'Persönlicher Hotspot',
+                    automatic: 'Automatisch'
+                },
+                actions: {
+                    networkSettings: 'Netzwerkeinstellungen …',
+                    bluetoothSettings: 'Bluetooth-Einstellungen …',
+                    soundSettings: 'Ton-Einstellungen …',
+                    spotlight: 'Spotlight',
+                    siri: 'Siri'
+                },
+                battery: {
+                    label: 'Batteriestatus',
+                    fullLabel: 'Batterie vollständig geladen'
+                }
+            },
             modals: {
                 projects: {
                     title: 'Projekte',
@@ -172,6 +237,60 @@
                     rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.'
                 }
             },
+            menu: {
+                sections: {
+                    file: 'Ablage',
+                    edit: 'Bearbeiten',
+                    view: 'Darstellung',
+                    window: 'Fenster',
+                    help: 'Hilfe'
+                },
+                finder: {
+                    newWindow: 'Neues Finder-Fenster',
+                    reload: 'Finder neu laden',
+                    close: 'Fenster schließen',
+                    help: 'Finder-Hilfe anzeigen'
+                },
+                settings: {
+                    close: 'Fenster schließen',
+                    help: 'Einstellungs-Hilfe anzeigen'
+                },
+                text: {
+                    newFile: 'Neu',
+                    open: 'Öffnen …',
+                    save: 'Speichern',
+                    undo: 'Rückgängig',
+                    redo: 'Wiederholen',
+                    cut: 'Ausschneiden',
+                    copy: 'Kopieren',
+                    paste: 'Einfügen',
+                    selectAll: 'Alles auswählen',
+                    toggleWrap: 'Zeilenumbruch umschalten',
+                    help: 'Texteditor-Hilfe anzeigen'
+                },
+                image: {
+                    openInTab: 'Bild in neuem Tab öffnen',
+                    saveImage: 'Bild sichern …',
+                    close: 'Fenster schließen',
+                    help: 'Bildbetrachter-Hilfe anzeigen'
+                },
+                about: {
+                    close: 'Fenster schließen',
+                    help: 'Über Marvin'
+                },
+                programInfo: {
+                    close: 'Fenster schließen'
+                },
+                window: {
+                    minimize: 'Minimieren',
+                    zoom: 'Zoomen',
+                    bringToFront: 'Alle nach vorne bringen',
+                    close: 'Fenster schließen'
+                },
+                help: {
+                    showHelp: 'Programmhilfe anzeigen'
+                }
+            },
             settingsPage: {
                 title: 'Einstellungen',
                 nav: {
@@ -264,6 +383,71 @@
                 text: 'Text editor',
                 image: 'Image viewer',
                 settings: 'System settings'
+            },
+            menubar: {
+                appleMenu: {
+                    label: 'Apple menu'
+                },
+                applicationMenus: 'Application menus',
+                controlCenter: {
+                    label: 'Control Center',
+                    quickActions: 'Quick Actions',
+                    quickActionsAria: 'Quick Actions',
+                    brightness: 'Brightness',
+                    volume: 'Volume'
+                },
+                toggles: {
+                    wifi: 'Wi-Fi',
+                    wifiStatus: 'Wi-Fi status',
+                    bluetooth: 'Bluetooth',
+                    bluetoothStatus: 'Bluetooth status',
+                    focus: 'Focus mode',
+                    darkMode: 'Dark mode'
+                },
+                wifi: {
+                    preferredNetworks: 'Preferred networks'
+                },
+                bluetooth: {
+                    devices: 'Devices',
+                    airpods: "Marvin's AirPods Pro",
+                    keyboard: 'Magic Keyboard',
+                    speaker: 'HomeSpeaker'
+                },
+                sound: {
+                    label: 'Sound',
+                    outputDevices: 'Output devices',
+                    devices: {
+                        speakers: 'MacBook speakers',
+                        airpods: "Marvin's AirPods Pro",
+                        display: 'External display'
+                    }
+                },
+                networks: {
+                    home: 'HomeLAN',
+                    office: 'Office',
+                    hotspot: "Marvin's iPhone"
+                },
+                state: {
+                    on: 'On',
+                    off: 'Off',
+                    active: 'Active',
+                    connected: 'Connected',
+                    ready: 'Ready',
+                    notConnected: 'Not connected',
+                    hotspot: 'Personal hotspot',
+                    automatic: 'Automatic'
+                },
+                actions: {
+                    networkSettings: 'Network settings…',
+                    bluetoothSettings: 'Bluetooth settings…',
+                    soundSettings: 'Sound settings…',
+                    spotlight: 'Spotlight',
+                    siri: 'Siri'
+                },
+                battery: {
+                    label: 'Battery status',
+                    fullLabel: 'Battery fully charged'
+                }
             },
             modals: {
                 projects: {
@@ -399,6 +583,60 @@
                     loadingWithLabel: '{label} (loading…)',
                     loadError: 'The file could not be loaded.',
                     rateLimit: 'GitHub rate limit was reached. Please try again later.'
+                }
+            },
+            menu: {
+                sections: {
+                    file: 'File',
+                    edit: 'Edit',
+                    view: 'View',
+                    window: 'Window',
+                    help: 'Help'
+                },
+                finder: {
+                    newWindow: 'New Finder Window',
+                    reload: 'Reload Finder',
+                    close: 'Close window',
+                    help: 'Show Finder help'
+                },
+                settings: {
+                    close: 'Close window',
+                    help: 'Show settings help'
+                },
+                text: {
+                    newFile: 'New',
+                    open: 'Open…',
+                    save: 'Save',
+                    undo: 'Undo',
+                    redo: 'Redo',
+                    cut: 'Cut',
+                    copy: 'Copy',
+                    paste: 'Paste',
+                    selectAll: 'Select all',
+                    toggleWrap: 'Toggle line wrap',
+                    help: 'Show text editor help'
+                },
+                image: {
+                    openInTab: 'Open image in new tab',
+                    saveImage: 'Save image…',
+                    close: 'Close window',
+                    help: 'Show image viewer help'
+                },
+                about: {
+                    close: 'Close window',
+                    help: 'About Marvin'
+                },
+                programInfo: {
+                    close: 'Close window'
+                },
+                window: {
+                    minimize: 'Minimize',
+                    zoom: 'Zoom',
+                    bringToFront: 'Bring all to front',
+                    close: 'Close window'
+                },
+                help: {
+                    showHelp: 'Show app help'
                 }
             },
             settingsPage: {
