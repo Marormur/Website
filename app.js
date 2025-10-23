@@ -583,17 +583,7 @@ function initSystemStatusControls() {
     });
 
     document.querySelectorAll('[data-system-menu-trigger]').forEach(trigger => {
-        trigger.addEventListener('click', (event) => {
-            event.stopPropagation();
-            const menuId = trigger.getAttribute('aria-controls');
-            const menu = menuId ? document.getElementById(menuId) : null;
-            const shouldOpen = menu && menu.classList.contains('hidden');
-            hideMenuDropdowns();
-            if (menu && shouldOpen) {
-                menu.classList.remove('hidden');
-                trigger.setAttribute('aria-expanded', 'true');
-            }
-        });
+        bindDropdownTrigger(trigger, { hoverRequiresOpen: true });
     });
 
     document.querySelectorAll('[data-system-toggle]').forEach(toggle => {
@@ -1160,15 +1150,7 @@ function renderApplicationMenu(activeModalId) {
         trigger.appendChild(button);
         trigger.appendChild(dropdown);
         container.appendChild(trigger);
-        button.addEventListener('click', (event) => {
-            event.stopPropagation();
-            const shouldOpen = dropdown.classList.contains('hidden');
-            hideMenuDropdowns();
-            if (shouldOpen) {
-                dropdown.classList.remove('hidden');
-                button.setAttribute('aria-expanded', 'true');
-            }
-        });
+        bindDropdownTrigger(button, { hoverRequiresOpen: true });
     });
 }
 
@@ -1637,11 +1619,47 @@ function hideMenuDropdowns() {
     });
 }
 
+function isAnyDropdownOpen() {
+    return Boolean(document.querySelector('.menu-dropdown:not(.hidden)'));
+}
+
+function toggleMenuDropdown(trigger, options = {}) {
+    if (!trigger) return;
+    const menuId = trigger.getAttribute('aria-controls');
+    if (!menuId) return;
+    const menu = document.getElementById(menuId);
+    if (!menu) return;
+    const forceOpen = Boolean(options.forceOpen);
+    const wasOpen = !menu.classList.contains('hidden');
+    const shouldOpen = forceOpen || !wasOpen;
+    hideMenuDropdowns();
+    if (shouldOpen) {
+        menu.classList.remove('hidden');
+        trigger.setAttribute('aria-expanded', 'true');
+    }
+}
+
+function bindDropdownTrigger(trigger, options = {}) {
+    if (!trigger) return;
+    const hoverRequiresExisting = options.hoverRequiresOpen !== undefined ? options.hoverRequiresOpen : true;
+    trigger.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleMenuDropdown(trigger);
+    });
+    trigger.addEventListener('mouseenter', () => {
+        if (hoverRequiresExisting && !isAnyDropdownOpen()) {
+            return;
+        }
+        toggleMenuDropdown(trigger, { forceOpen: true });
+    });
+    trigger.addEventListener('focus', () => {
+        toggleMenuDropdown(trigger, { forceOpen: true });
+    });
+}
+
 // Zentrale Event-Handler für Menü und Dropdowns
 function initEventHandlers() {
     const appleMenuTrigger = document.getElementById('apple-menu-trigger');
-    const appleMenuDropdown = document.getElementById('apple-menu-dropdown');
-    const programDropdown = document.getElementById('program-dropdown');
     const programLabel = document.getElementById('program-label');
     const dropdownAbout = document.getElementById('dropdown-about');
     const aboutProgramLink = document.getElementById('about-program');
@@ -1649,29 +1667,8 @@ function initEventHandlers() {
     const closeProgramButton = document.getElementById('program-close-current');
     const settingsButton = document.getElementById('dropdown-settings');
 
-    if (appleMenuTrigger) {
-        appleMenuTrigger.addEventListener('click', function (event) {
-            event.stopPropagation();
-            const shouldOpen = appleMenuDropdown && appleMenuDropdown.classList.contains('hidden');
-            hideMenuDropdowns();
-            if (appleMenuDropdown && shouldOpen) {
-                appleMenuDropdown.classList.remove('hidden');
-                appleMenuTrigger.setAttribute('aria-expanded', 'true');
-            }
-        });
-    }
-
-    if (programLabel) {
-        programLabel.addEventListener('click', function (event) {
-            event.stopPropagation();
-            const shouldOpen = programDropdown && programDropdown.classList.contains('hidden');
-            hideMenuDropdowns();
-            if (programDropdown && shouldOpen) {
-                programDropdown.classList.remove('hidden');
-                programLabel.setAttribute('aria-expanded', 'true');
-            }
-        });
-    }
+    bindDropdownTrigger(appleMenuTrigger, { hoverRequiresOpen: true });
+    bindDropdownTrigger(programLabel, { hoverRequiresOpen: true });
 
     document.addEventListener('click', handleMenuActionActivation);
     document.addEventListener('click', hideMenuDropdowns);
@@ -1700,12 +1697,7 @@ function initEventHandlers() {
         settingsButton.addEventListener('click', function (event) {
             event.preventDefault();
             event.stopPropagation();
-            if (appleMenuDropdown) {
-                appleMenuDropdown.classList.add('hidden');
-            }
-            if (appleMenuTrigger) {
-                appleMenuTrigger.setAttribute('aria-expanded', 'false');
-            }
+            hideMenuDropdowns();
             window.dialogs["settings-modal"].open();
             updateProgramLabelByTopModal();
         });
