@@ -263,6 +263,15 @@ function initDockMagnification() {
     if (!dock) return;
     const icons = Array.from(dock.querySelectorAll('.dock-icon'));
     if (!icons.length) return;
+    const items = icons.map(icon => {
+        const parent = icon.parentElement;
+        const tooltip = parent ? parent.querySelector('.dock-tooltip') : null;
+        return {
+            icon,
+            tooltip,
+            baseHeight: icon.offsetHeight || 0
+        };
+    });
     let rafId = null;
     let pointerX = null;
     const maxScale = 1.6;
@@ -272,10 +281,17 @@ function initDockMagnification() {
     const apply = () => {
         rafId = null;
         if (pointerX == null) {
-            icons.forEach(icon => { icon.style.transform = ''; icon.style.zIndex = ''; });
+            items.forEach(({ icon, tooltip }) => {
+                icon.style.transform = '';
+                icon.style.zIndex = '';
+                if (tooltip) {
+                    tooltip.style.transform = '';
+                    tooltip.style.zIndex = '';
+                }
+            });
             return;
         }
-        icons.forEach(icon => {
+        items.forEach(({ icon, tooltip, baseHeight }) => {
             const rect = icon.getBoundingClientRect();
             const cx = rect.left + rect.width / 2;
             const dx = Math.abs(pointerX - cx);
@@ -285,6 +301,13 @@ function initDockMagnification() {
             icon.style.transformOrigin = 'bottom center';
             icon.style.transform = `translateY(${translateY.toFixed(1)}px) scale(${scale.toFixed(3)})`;
             icon.style.zIndex = String(100 + Math.round(influence * 100));
+            if (tooltip) {
+                const base = baseHeight || icon.offsetHeight || 0;
+                const lift = Math.max(0, base * (scale - 1) - translateY);
+                const gap = 12; // zusätzlicher Abstand zwischen Icon und Tooltip
+                tooltip.style.transform = `translateY(-${(lift + gap).toFixed(1)}px)`;
+                tooltip.style.zIndex = '400';
+            }
         });
     };
     const onMove = (e) => { pointerX = e.clientX; if (!rafId) rafId = requestAnimationFrame(apply); };
