@@ -798,14 +798,7 @@
     }
 
     function detectSystemLanguage() {
-        // Prefer the document language if set and supported (e.g., <html lang="de">)
-        try {
-            if (document && document.documentElement) {
-                const docLang = normalizeLanguage(document.documentElement.lang);
-                if (docLang) return docLang;
-            }
-        } catch (_) { /* ignore */ }
-
+        // Detect from the browser/OS preferences only (ignore current document lang to avoid sticky state)
         const candidates = getBrowserLanguages();
         for (const candidate of candidates) {
             const normalized = normalizeLanguage(candidate);

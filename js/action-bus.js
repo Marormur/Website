@@ -219,9 +219,10 @@ console.log('ActionBus loaded');
         // Über-Dialog öffnen (aus Apple-Menü)
         'openAbout': () => {
             if (window.hideMenuDropdowns) window.hideMenuDropdowns();
-            if (window.openDesktopItemById) {
-                window.openDesktopItemById('about');
+            if (window.dialogs?.['about-modal']) {
+                window.dialogs['about-modal'].open();
             }
+            if (window.updateProgramLabelByTopModal) window.updateProgramLabelByTopModal();
         },
 
         // Settings öffnen

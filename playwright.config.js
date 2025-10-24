@@ -7,6 +7,12 @@
 
 const { defineConfig, devices } = require('@playwright/test');
 
+// Decide how to provide a web server for tests:
+// - In local dev with VS Code Live Server on :3000, we reuse it (default)
+// - In CI (or when USE_NODE_SERVER=1), we start our own Node server on :5173
+const useNodeServer = !!process.env.CI || process.env.USE_NODE_SERVER === '1';
+const BASE_URL = useNodeServer ? 'http://127.0.0.1:5173' : 'http://127.0.0.1:3000';
+
 module.exports = defineConfig({
     testDir: './tests',
     timeout: 30 * 1000,
@@ -17,7 +23,7 @@ module.exports = defineConfig({
     workers: process.env.CI ? 1 : undefined,
     reporter: 'list',
     use: {
-        baseURL: 'http://127.0.0.1:5173',
+        baseURL: BASE_URL,
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
         video: 'retain-on-failure'
@@ -37,10 +43,17 @@ module.exports = defineConfig({
             use: { ...devices['Desktop Safari'] }
         }
     ],
-    webServer: {
-        command: 'echo "Using VS Code Live Server on port 3000"',
-        url: 'http://127.0.0.1:3000',
-        reuseExistingServer: true,
-        timeout: 30 * 1000
-    }
+    webServer: useNodeServer
+        ? {
+            command: 'node server.js',
+            url: 'http://127.0.0.1:5173',
+            reuseExistingServer: !process.env.CI,
+            timeout: 60 * 1000
+        }
+        : {
+            command: 'echo "Using VS Code Live Server on port 3000"',
+            url: 'http://127.0.0.1:3000',
+            reuseExistingServer: true,
+            timeout: 30 * 1000
+        }
 });
