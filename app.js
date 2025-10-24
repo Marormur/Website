@@ -1,203 +1,53 @@
-console.log('App.js loaded v2');
+console.log('App.js loaded v3');
 // ============================================================================
-// HINWEIS: Viele Konstanten und Funktionen wurden in separate Module ausgelagert:
-// - constants.js: Alle Konstanten (MODAL_IDS, Theme-Keys, etc.)
-// - icons.js: Icon-Definitionen und SVG-Rendering
-// - theme.js: Theme-Management (Dark/Light Mode)
-// - dock.js: Dock-Magnification und -Verwaltung
-// - menu.js: Menu-System und Menu-Definitionen
+// HINWEIS: Zentrale Systeme wurden in Module ausgelagert:
 // 
-// Diese Module exportieren über window.ModuleName.
-// Wrapper-Funktionen unten ermöglichen einfachen Zugriff ohne window.* überall.
-// WICHTIG: Keine const-Aliase für exportierte Werte, um Duplikate zu vermeiden!
+// NEUE SYSTEME:
+// - window-manager.js: Zentrale Fensterverwaltung & Registry
+// - action-bus.js: Deklaratives Event-System
+// - window-configs.js: Alle Fenster-Definitionen
+// - api.js: Saubere Schnittstelle zu allen Modulen
+//
+// BESTEHENDE MODULE:
+// - constants.js: Konstanten
+// - icons.js: Icon-Management
+// - theme.js: Theme-Management
+// - dock.js: Dock-System
+// - menu.js: Menu-System
+// - desktop.js: Desktop-Items
+// - system.js: System-UI (WiFi, Bluetooth, etc.)
+// - storage.js: Persistence
+// - finder.js: Finder-System
+// - dialog.js: Dialog-Klasse
+//
+// ZUGRIFF AUF SYSTEME:
+// Über das zentrale API-Objekt: API.theme.setPreference('dark')
+// Oder Legacy-Funktionen (werden automatisch erstellt)
 // ============================================================================
-
-// ===== Wrapper-Funktionen für Module =====
-
-// Theme-System
-function setThemePreference(pref) {
-    if (window.ThemeSystem?.setThemePreference) {
-        return window.ThemeSystem.setThemePreference(pref);
-    }
-}
-
-function getThemePreference() {
-    if (window.ThemeSystem?.getThemePreference) {
-        return window.ThemeSystem.getThemePreference();
-    }
-    return 'system';
-}
-
-// Icon-System
-function ensureSvgNamespace(svg) {
-    if (window.IconSystem?.ensureSvgNamespace) {
-        return window.IconSystem.ensureSvgNamespace(svg);
-    }
-    return svg;
-}
-
-function getMenuIconSvg(key) {
-    if (window.IconSystem?.getMenuIconSvg) {
-        return window.IconSystem.getMenuIconSvg(key);
-    }
-    return '';
-}
-
-function renderIconIntoElement(el, svg, key) {
-    if (window.IconSystem?.renderIconIntoElement) {
-        window.IconSystem.renderIconIntoElement(el, svg, key);
-    }
-}
-
-// Dock-System
-function getDockReservedBottom() {
-    if (window.DockSystem?.getDockReservedBottom) {
-        return window.DockSystem.getDockReservedBottom();
-    }
-    return 0;
-}
-
-function initDockMagnification() {
-    if (window.DockSystem?.initDockMagnification) {
-        window.DockSystem.initDockMagnification();
-    }
-}
-
-// Menu-System
-function renderApplicationMenu(modalId) {
-    if (window.MenuSystem?.renderApplicationMenu) {
-        window.MenuSystem.renderApplicationMenu(modalId);
-    }
-}
-
-function handleMenuActionActivation(event) {
-    if (window.MenuSystem?.handleMenuActionActivation) {
-        window.MenuSystem.handleMenuActionActivation(event);
-    }
-}
-
-// Desktop-System
-function initDesktop() {
-    if (window.DesktopSystem?.initDesktop) {
-        window.DesktopSystem.initDesktop();
-    }
-}
-
-function openDesktopItemById(itemId) {
-    if (window.DesktopSystem?.openDesktopItemById) {
-        return window.DesktopSystem.openDesktopItemById(itemId);
-    }
-    return false;
-}
-
-// System UI (WiFi, Bluetooth, Volume, etc.)
-function initSystemStatusControls() {
-    if (window.SystemUI?.initSystemStatusControls) {
-        window.SystemUI.initSystemStatusControls();
-    }
-}
-
-function updateAllSystemStatusUI() {
-    if (window.SystemUI?.updateAllSystemStatusUI) {
-        window.SystemUI.updateAllSystemStatusUI();
-    }
-}
-
-function handleSystemToggle(toggleKey) {
-    if (window.SystemUI?.handleSystemToggle) {
-        window.SystemUI.handleSystemToggle(toggleKey);
-    }
-}
-
-function setConnectedNetwork(network, options) {
-    if (window.SystemUI?.setConnectedNetwork) {
-        window.SystemUI.setConnectedNetwork(network, options);
-    }
-}
-
-function setBluetoothDevice(deviceName, options) {
-    if (window.SystemUI?.setBluetoothDevice) {
-        window.SystemUI.setBluetoothDevice(deviceName, options);
-    }
-}
-
-function setAudioDevice(deviceKey, options) {
-    if (window.SystemUI?.setAudioDevice) {
-        window.SystemUI.setAudioDevice(deviceKey, options);
-    }
-}
-
-// Storage & Persistence
-function readFinderState() {
-    if (window.StorageSystem?.readFinderState) {
-        return window.StorageSystem.readFinderState();
-    }
-    return null;
-}
-
-function writeFinderState(state) {
-    if (window.StorageSystem?.writeFinderState) {
-        window.StorageSystem.writeFinderState(state);
-    }
-}
-
-function clearFinderState() {
-    if (window.StorageSystem?.clearFinderState) {
-        window.StorageSystem.clearFinderState();
-    }
-}
-
-function saveOpenModals() {
-    if (window.StorageSystem?.saveOpenModals) {
-        window.StorageSystem.saveOpenModals();
-    }
-}
-
-function restoreOpenModals() {
-    if (window.StorageSystem?.restoreOpenModals) {
-        window.StorageSystem.restoreOpenModals();
-    }
-}
-
-function saveWindowPositions() {
-    if (window.StorageSystem?.saveWindowPositions) {
-        window.StorageSystem.saveWindowPositions();
-    }
-}
-
-function restoreWindowPositions() {
-    if (window.StorageSystem?.restoreWindowPositions) {
-        window.StorageSystem.restoreWindowPositions();
-    }
-}
-
-function getDialogWindowElement(modal) {
-    if (window.StorageSystem?.getDialogWindowElement) {
-        return window.StorageSystem.getDialogWindowElement(modal);
-    }
-    if (!modal) return null;
-    return modal.querySelector('.autopointer') || modal;
-}
-
-function resetWindowLayout() {
-    if (window.StorageSystem?.resetWindowLayout) {
-        window.StorageSystem.resetWindowLayout();
-    }
-}
 
 // ===== App.js Konfiguration =====
 
-// Liste aller Modal-IDs, die von der Desktop-Shell verwaltet werden
-var modalIds = window.APP_CONSTANTS?.MODAL_IDS || [
-    "finder-modal", "projects-modal", "about-modal", "settings-modal",
-    "text-modal", "image-modal", "program-info-modal"
-];
-var transientModalIds = window.APP_CONSTANTS?.TRANSIENT_MODAL_IDS || new Set(["program-info-modal"]);
+// Modal-IDs werden jetzt vom WindowManager verwaltet
+// Legacy-Support für bestehenden Code
+var modalIds = null;
+var transientModalIds = null;
 
-// Für zukünftige z‑Index‑Verwaltung reserviert
-let topZIndex = window.APP_CONSTANTS?.BASE_Z_INDEX || 1000;
-// Expose globally for use by storage module
-window.topZIndex = topZIndex;
+// Initialisierung nach DOMContentLoaded
+function initModalIds() {
+    if (window.WindowManager) {
+        modalIds = window.WindowManager.getAllWindowIds();
+        const transientIds = window.WindowManager.getTransientWindowIds();
+        transientModalIds = new Set(transientIds);
+    } else {
+        // Fallback
+        modalIds = window.APP_CONSTANTS?.MODAL_IDS || [
+            "finder-modal", "projects-modal", "about-modal", "settings-modal",
+            "text-modal", "image-modal", "program-info-modal"
+        ];
+        transientModalIds = window.APP_CONSTANTS?.TRANSIENT_MODAL_IDS || new Set(["program-info-modal"]);
+    }
+}
+
 
 const appI18n = window.appI18n || {
     translate: (key) => key,
@@ -221,54 +71,24 @@ if (typeof window !== 'undefined') {
     window.translate = translate;
 }
 
-const programInfoDefinitions = {
-    default: {
-        programKey: 'programs.default',
-        fallbackInfoModalId: 'program-info-modal',
-        icon: './img/sucher.png'
-    },
-    "finder-modal": {
-        programKey: 'programs.finder',
-        icon: './img/sucher.png'
-    },
-    "projects-modal": {
-        programKey: 'programs.projects',
-        icon: './img/sucher.png'
-    },
-    "settings-modal": {
-        programKey: 'programs.settings',
-        icon: './img/settings.png'
-    },
-    "text-modal": {
-        programKey: 'programs.text',
-        icon: './img/notepad.png'
-    },
-    "image-modal": {
-        programKey: 'programs.image',
-        icon: './img/imageviewer.png'
-    },
-    "about-modal": {
-        programKey: 'programs.about',
-        icon: './img/profil.jpg'
-    }
-};
+// ============================================================================
+// Program Info wird jetzt vom WindowManager verwaltet
+// Legacy-Support für bestehenden Code
+// ============================================================================
 
 function resolveProgramInfo(modalId) {
-    const definition = Object.assign({}, programInfoDefinitions.default, modalId ? programInfoDefinitions[modalId] || {} : {});
-    const programKey = definition.programKey || programInfoDefinitions.default.programKey || 'programs.default';
-    const aboutFields = ['name', 'tagline', 'version', 'copyright'];
-    const info = {
+    if (window.WindowManager) {
+        return window.WindowManager.getProgramInfo(modalId);
+    }
+    // Fallback für alte Implementierung
+    return {
         modalId: modalId || null,
-        programLabel: appI18n.translate(`${programKey}.label`),
-        infoLabel: appI18n.translate(`${programKey}.infoLabel`),
-        fallbackInfoModalId: definition.fallbackInfoModalId || 'program-info-modal',
-        icon: definition.icon || programInfoDefinitions.default.icon,
+        programLabel: translate('programs.default.label'),
+        infoLabel: translate('programs.default.infoLabel'),
+        fallbackInfoModalId: 'program-info-modal',
+        icon: './img/sucher.png',
         about: {}
     };
-    aboutFields.forEach((field) => {
-        info.about[field] = appI18n.translate(`${programKey}.about.${field}`);
-    });
-    return info;
 }
 
 let currentProgramInfo = resolveProgramInfo(null);
@@ -280,24 +100,26 @@ let currentMenuModalId = null;
 // ============================================================================
 
 function syncTopZIndexWithDOM() {
-    let maxZ = Number.isFinite(topZIndex) ? topZIndex : 1000;
-    modalIds.forEach(id => {
-        const modal = document.getElementById(id);
-        if (!modal) return;
-        const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
-        if (!Number.isNaN(modalZ)) {
-            maxZ = Math.max(maxZ, modalZ);
-        }
-        const windowEl = getDialogWindowElement(modal);
-        if (windowEl) {
-            const contentZ = parseInt(window.getComputedStyle(windowEl).zIndex, 10);
-            if (!Number.isNaN(contentZ)) {
-                maxZ = Math.max(maxZ, contentZ);
+    if (window.WindowManager && typeof window.WindowManager.syncZIndexWithDOM === 'function') {
+        window.WindowManager.syncZIndexWithDOM();
+        return;
+    }
+
+    // Fallback für alte Implementierung
+    let maxZ = 1000;
+    if (modalIds) {
+        modalIds.forEach(id => {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
+            if (!Number.isNaN(modalZ)) {
+                maxZ = Math.max(maxZ, modalZ);
             }
-        }
-    });
-    topZIndex = maxZ;
-    window.topZIndex = maxZ; // Sync to global
+        });
+    }
+    if (window.topZIndex !== undefined) {
+        window.topZIndex = maxZ;
+    }
 }
 // Expose globally for use by storage module
 window.syncTopZIndexWithDOM = syncTopZIndexWithDOM;
@@ -406,6 +228,14 @@ function hideSnapPreview() {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Modal-IDs initialisieren
+    initModalIds();
+
+    // ActionBus initialisieren
+    if (window.ActionBus) {
+        window.ActionBus.init();
+    }
+
     // Wenn auf einen sichtbaren Modalcontainer geklickt wird, hole das Fenster in den Vordergrund
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function (e) {
@@ -418,12 +248,21 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Dialog-Instanzen erstellen und im WindowManager registrieren
     window.dialogs = {};
-    modalIds.forEach(id => {
-        const modal = document.getElementById(id);
-        if (!modal) return;
-        window.dialogs[id] = new Dialog(id);
-    });
+    if (modalIds && Array.isArray(modalIds)) {
+        modalIds.forEach(id => {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            const dialogInstance = new Dialog(id);
+            window.dialogs[id] = dialogInstance;
+
+            // Im WindowManager registrieren
+            if (window.WindowManager) {
+                window.WindowManager.setDialogInstance(id, dialogInstance);
+            }
+        });
+    }
 
     syncTopZIndexWithDOM();
     restoreWindowPositions();
@@ -467,18 +306,25 @@ function updateProgramLabel(newLabel) {
 
 // Funktion, um das aktuell oberste Modal zu ermitteln
 function getTopModal() {
+    if (window.WindowManager && typeof window.WindowManager.getTopWindow === 'function') {
+        return window.WindowManager.getTopWindow();
+    }
+
+    // Fallback für alte Implementierung
     let topModal = null;
     let highestZ = 0;
-    modalIds.forEach(id => {
-        const modal = document.getElementById(id);
-        if (modal && !modal.classList.contains("hidden")) {
-            const zIndex = parseInt(getComputedStyle(modal).zIndex, 10) || 0;
-            if (zIndex > highestZ) {
-                highestZ = zIndex;
-                topModal = modal;
+    if (modalIds) {
+        modalIds.forEach(id => {
+            const modal = document.getElementById(id);
+            if (modal && !modal.classList.contains("hidden")) {
+                const zIndex = parseInt(getComputedStyle(modal).zIndex, 10) || 0;
+                if (zIndex > highestZ) {
+                    highestZ = zIndex;
+                    topModal = modal;
+                }
             }
-        }
-    });
+        });
+    }
     return topModal;
 }
 
@@ -644,7 +490,7 @@ function hasAnyVisibleDialog() {
 }
 
 function bringAllWindowsToFront() {
-    if (!window.dialogs) return;
+    if (!window.dialogs || !modalIds || !Array.isArray(modalIds)) return;
     modalIds.forEach(id => {
         const dialog = window.dialogs[id];
         if (dialog && dialog.modal && !dialog.modal.classList.contains('hidden') && typeof dialog.bringToFront === 'function') {
@@ -844,11 +690,6 @@ window.bindDropdownTrigger = bindDropdownTrigger;
 function initEventHandlers() {
     const appleMenuTrigger = document.getElementById('apple-menu-trigger');
     const programLabel = document.getElementById('program-label');
-    const dropdownAbout = document.getElementById('dropdown-about');
-    const aboutProgramLink = document.getElementById('about-program');
-    const resetLayoutButton = document.getElementById('dropdown-reset-layout');
-    const closeProgramButton = document.getElementById('program-close-current');
-    const settingsButton = document.getElementById('dropdown-settings');
 
     bindDropdownTrigger(appleMenuTrigger, { hoverRequiresOpen: true });
     bindDropdownTrigger(programLabel, { hoverRequiresOpen: true });
@@ -865,106 +706,7 @@ function initEventHandlers() {
         }
     });
 
-    if (dropdownAbout) {
-        dropdownAbout.addEventListener('click', (event) => {
-            // Öffne das eigentliche "Über"-Modal (wie das Desktop-Icon) statt des allgemeinen
-            // Programm‑Info Dialogs. Das verhindert, dass das Programm‑Info Modal (program-info-modal)
-            // angezeigt wird und sorgt dafür, dass der gleiche Inhalt wie beim Desktop-Icon erscheint.
-            event.preventDefault();
-            event.stopPropagation();
-            hideMenuDropdowns();
-            // Reuse openDesktopItemById which knows how to open modal by desktop item id 'about'
-            if (typeof openDesktopItemById === 'function') {
-                openDesktopItemById('about');
-                return;
-            }
-            // Fallback: direkte Öffnung des about-modal
-            const dialogInstance = window.dialogs && window.dialogs['about-modal'];
-            if (dialogInstance && typeof dialogInstance.open === 'function') {
-                dialogInstance.open();
-            } else {
-                const modalElement = document.getElementById('about-modal');
-                if (modalElement) {
-                    modalElement.classList.remove('hidden');
-                    bringDialogToFront('about-modal');
-                    updateProgramLabelByTopModal();
-                }
-            }
-        });
-    }
-
-    if (aboutProgramLink) {
-        aboutProgramLink.addEventListener('click', (event) => {
-            openProgramInfoDialog(event);
-        });
-    }
-
-    if (resetLayoutButton) {
-        resetLayoutButton.addEventListener('click', function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-            resetWindowLayout();
-        });
-    }
-
-    if (settingsButton) {
-        settingsButton.addEventListener('click', function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-            hideMenuDropdowns();
-            window.dialogs["settings-modal"].open();
-            updateProgramLabelByTopModal();
-        });
-    }
-
-    if (closeProgramButton) {
-        closeProgramButton.addEventListener('click', function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-            hideMenuDropdowns();
-            const topModal = getTopModal();
-            if (!topModal) {
-                return;
-            }
-            const dialogInstance = window.dialogs && window.dialogs[topModal.id];
-            if (dialogInstance && typeof dialogInstance.close === 'function') {
-                dialogInstance.close();
-            } else {
-                topModal.classList.add('hidden');
-                saveOpenModals();
-                updateDockIndicators();
-                updateProgramLabelByTopModal();
-            }
-        });
-    }
-
-    // Vereinheitlichte Registrierung der Close-Button Event Listener:
-    const closeMapping = {
-        "close-projects-modal": "projects-modal",
-        "close-about-modal": "about-modal",
-        "close-settings-modal": "settings-modal",
-        "close-text-modal": "text-modal",
-        "close-image-modal": "image-modal",
-        "close-program-info-modal": "program-info-modal"
-    };
-    Object.entries(closeMapping).forEach(([btnId, modalId]) => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.addEventListener("click", function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (window.dialogs[modalId]) {
-                    window.dialogs[modalId].close();
-                } else {
-                    const modal = document.getElementById(modalId);
-                    if (modal) modal.classList.add("hidden");
-                    saveOpenModals();
-                    updateDockIndicators();
-                    updateProgramLabelByTopModal();
-                }
-            });
-        }
-    });
+    // Einzelne Button-Handler entfallen: werden nun über ActionBus (data-action) behandelt
 }
 
 // ============================================================================
