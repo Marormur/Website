@@ -17,9 +17,9 @@ Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale un
 - `app.js` – Fenster-/Dialoglogik, Theme‑Handling, GitHub‑Integration, Finder‑Ansicht
 - `i18n.js` – Übersetzungen (DE/EN), Sprachumschaltung und -präferenz
 - `style.css`, `dialog.css` – ergänzende Styles
-- `text.html` – IFrame‑basierter Texteditor (Themensync, lokale Datei öffnen/speichern)
+- Texteditor – inline gerendert (kein IFrame), Themensync und lokale Datei öffnen/speichern
 - `image`/`img` – Assets (Profilbild, App‑Icons, Wallpaper)
-- `settings.html` – Einstellungen (Darstellung/Theme, Sprache)
+- Einstellungen – inline gerendert über `SettingsSystem` (Darstellung/Theme, Sprache)
 - `projekte.html` – alternative, einfache Repos‑Übersicht (Kartenansicht)
 
 ## Schnellstart
@@ -53,7 +53,7 @@ Option B – Lokaler Server (empfohlen):
 - GitHub‑Nutzername ändern: in `app.js` (Funktion `loadGithubRepos`) und in `projekte.html` die Variable `username` anpassen.
 - Branding: Bilder in `img/` austauschen (`profil.jpg`, Icons, Wallpaper).
 - Sprachen: Texte in `i18n.js` pflegen; Standard‑Sprache via Präferenz steuern.
-- Styling: Tailwind via CDN; zusätzliche Regeln in `style.css`/`dialog.css`.
+- Styling: Tailwind per CLI‑Build (`src/input.css` → `dist/output.css`), zusätzliche Regeln in `style.css`/`dialog.css`.
 
 ## Deployment
 

@@ -16,11 +16,11 @@ Bei jedem Push auf den `main`-Branch:
 # Dependencies installieren
 npm install
 
-# Tailwind CSS im Watch-Modus starten
+# Tailwind CSS im Watch‑Modus starten (oder Task "Tailwind CSS: Watch")
 npm run watch:css
 
-# In einem zweiten Terminal: Live Server starten
-# (z.B. VS Code Live Server Extension auf Port 5500)
+# Dev‑Server starten (oder VS Code Task "Start Dev Server")
+npm run dev
 
 # Tests laufen lassen
 npm run test:e2e
@@ -30,7 +30,7 @@ npm run test:e2e
 
 - `dist/output.css` wird von Tailwind generiert und sollte im Git committed werden
 - Die `.nojekyll` Datei sorgt dafür, dass GitHub Pages alle Dateien ausliefert
-- CSS-Änderungen immer in `src/input.css` oder `style.css` machen, nicht in `dist/output.css`
+- CSS‑Änderungen immer in `src/input.css` oder `style.css` machen, nicht in `dist/output.css`
 
 ## 🔧 GitHub Pages Setup
 

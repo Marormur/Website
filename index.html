@@ -533,12 +533,11 @@
     <!-- Einstellungen Modal -->
     <div id="settings-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
         <!--
-          Die Einstellungen werden in einem adaptiven Dialog angezeigt. Statt einer festen
-          IFrame‑Höhe verwenden wir einen flexiblen Container, dessen Größe sich am
-          verfügbaren Viewport orientiert. Über das Resize‑Handle kann der Benutzer die
-          Fenstergröße nach Wunsch anpassen. Dialog.loadIframe fügt den IFrame-Inhalt
-          dynamisch in die .dialog-content ein.
-        -->
+                    Die Einstellungen werden in einem adaptiven Dialog angezeigt. Statt IFrames wird das
+                    UI inline über das SettingsSystem in den Container gerendert. Der flexible Container
+                    passt sich dem Viewport an; über das Resize‑Handle kann die Fenstergröße angepasst
+                    werden.
+                -->
         <div
             class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col w-[80vw] h-[70vh] max-h-[90vh]">
             <!-- Header -->
@@ -563,10 +562,10 @@
     <!-- Texteditor Modal -->
     <div id="text-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
         <!--
-          Der Texteditordialog verwendet nun ebenfalls einen flexiblen Container. Durch eine
-          prozentuale Breite/Höhe wächst und schrumpft das Fenster je nach Bildschirmgröße.
-          Der Inhalt wird dynamisch über Dialog.loadIframe geladen.
-        -->
+                    Der Texteditordialog verwendet ebenfalls einen flexiblen Container und rendert den
+                    Editor inline über das TextEditorSystem (kein IFrame). Prozentuale Breite/Höhe lassen
+                    das Fenster je nach Bildschirmgröße wachsen oder schrumpfen.
+                -->
         <div
             class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col w-[70vw] h-[60vh] max-h-[85vh]">
             <!-- Header -->
@@ -746,6 +745,62 @@
         }
         updateClock();
         setInterval(updateClock, 1000);
+    </script>
+
+    <!-- Dev-only: Live Reload client (SSE) with CSS hot-reload. Active only on localhost. -->
+    <script>
+        (function () {
+            function bust(href) {
+                var url = new URL(href, window.location.href);
+                url.searchParams.set('lr', Date.now().toString());
+                return url.toString();
+            }
+            function hotReloadCSS(changedPath) {
+                var links = document.querySelectorAll('link[rel="stylesheet"]');
+                var changed = 0;
+                links.forEach(function (link) {
+                    var url = new URL(link.href, window.location.href);
+                    // Gleiche Origin und (grobe) Pfad-Übereinstimmung
+                    var isSameOrigin = url.origin === window.location.origin;
+                    var match = !changedPath || url.pathname.endsWith(changedPath.replace(/^\\\\|^\//, '')) || (url.pathname.indexOf('/dist/') !== -1 && changedPath.indexOf('/dist/') !== -1);
+                    if (isSameOrigin && match) {
+                        link.href = bust(link.href);
+                        changed++;
+                    }
+                });
+                if (!changed) {
+                    // Fallback: alle lokalen Stylesheets neu laden
+                    links.forEach(function (link) {
+                        var url = new URL(link.href, window.location.href);
+                        if (url.origin === window.location.origin) link.href = bust(link.href);
+                    });
+                }
+            }
+
+            try {
+                var host = window.location.hostname;
+                if (host === 'localhost' || host === '127.0.0.1') {
+                    var es = new EventSource('/livereload');
+                    var timer;
+                    es.addEventListener('reload', function (ev) {
+                        clearTimeout(timer);
+                        var data = {};
+                        try { data = JSON.parse(ev.data || '{}'); } catch (_) { }
+                        timer = setTimeout(function () {
+                            if (data.kind === 'css') {
+                                hotReloadCSS(data.path || '');
+                            } else {
+                                window.location.reload();
+                            }
+                        }, 120);
+                    });
+                    // EventSource auto-reconnects by default
+                    console.log('[LR] Live reload client connected.');
+                }
+            } catch (e) {
+                console.debug('[LR] Live reload not active:', e);
+            }
+        })();
     </script>
 </body>
 

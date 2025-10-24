@@ -12,6 +12,19 @@
             "url": "http://127.0.0.1:5173",
             "webRoot": "${workspaceFolder}",
             "preLaunchTask": "Start Dev Server",
+            // Auto-refresh the tab when files change while debugging (Firefox Debugger feature)
+            "reloadOnChange": {
+                "watch": [
+                    "${workspaceFolder}/**/*.html",
+                    "${workspaceFolder}/**/*.css",
+                    "${workspaceFolder}/**/*.js"
+                ],
+                "ignore": [
+                    "${workspaceFolder}/node_modules/**",
+                    "${workspaceFolder}/dist/**",
+                    "${workspaceFolder}/.git/**"
+                ]
+            },
             "pathMappings": [
                 {
                     "url": "http://127.0.0.1:5173",
