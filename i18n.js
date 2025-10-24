@@ -22,6 +22,17 @@
                 image: {
                     openInTab: 'Bild in neuem Tab öffnen',
                     save: 'Bild sichern …'
+                },
+                finder: {
+                    openItem: 'Öffnen',
+                    getInfo: 'Informationen',
+                    refresh: 'Aktualisieren',
+                    newFolder: 'Neuer Ordner',
+                    viewList: 'Als Liste',
+                    viewGrid: 'Als Raster',
+                    sortByName: 'Nach Name sortieren',
+                    sortByDate: 'Nach Datum sortieren',
+                    sortBySize: 'Nach Größe sortieren'
                 }
             },
             common: {
@@ -424,6 +435,17 @@
                 image: {
                     openInTab: 'Open image in new tab',
                     save: 'Save image…'
+                },
+                finder: {
+                    openItem: 'Open',
+                    getInfo: 'Get Info',
+                    refresh: 'Refresh',
+                    newFolder: 'New Folder',
+                    viewList: 'View as List',
+                    viewGrid: 'View as Grid',
+                    sortByName: 'Sort by Name',
+                    sortByDate: 'Sort by Date',
+                    sortBySize: 'Sort by Size'
                 }
             },
             common: {
