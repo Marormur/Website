@@ -1978,7 +1978,29 @@ function initEventHandlers() {
 
     if (dropdownAbout) {
         dropdownAbout.addEventListener('click', (event) => {
-            openProgramInfoDialog(event, getProgramInfo("about-modal"));
+            // Öffne das eigentliche "Über"-Modal (wie das Desktop-Icon) statt des allgemeinen
+            // Programm‑Info Dialogs. Das verhindert, dass das Programm‑Info Modal (program-info-modal)
+            // angezeigt wird und sorgt dafür, dass der gleiche Inhalt wie beim Desktop-Icon erscheint.
+            event.preventDefault();
+            event.stopPropagation();
+            hideMenuDropdowns();
+            // Reuse openDesktopItemById which knows how to open modal by desktop item id 'about'
+            if (typeof openDesktopItemById === 'function') {
+                openDesktopItemById('about');
+                return;
+            }
+            // Fallback: direkte Öffnung des about-modal
+            const dialogInstance = window.dialogs && window.dialogs['about-modal'];
+            if (dialogInstance && typeof dialogInstance.open === 'function') {
+                dialogInstance.open();
+            } else {
+                const modalElement = document.getElementById('about-modal');
+                if (modalElement) {
+                    modalElement.classList.remove('hidden');
+                    bringDialogToFront('about-modal');
+                    updateProgramLabelByTopModal();
+                }
+            }
         });
     }
 
