@@ -5,10 +5,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Marvin</title>
+    <link rel="icon" href="./img/sucher.png">
     <link rel="stylesheet" href="dist/output.css">
     <link rel="stylesheet" href="style.css">
+
+    <!-- i18n System -->
     <script src="i18n.js"></script>
-    <!-- Unsere zentrale Logik für Fenster und Dock -->
+
+    <!-- Modularisierte Komponenten (in Ladereihenfolge) -->
+    <script src="./js/constants.js"></script>
+    <script src="./js/icons.js"></script>
+    <script src="./js/theme.js"></script>
+    <script src="./js/dock.js"></script>
+    <script src="./js/dialog.js"></script>
+    <script src="./js/desktop.js"></script>
+    <script src="./js/system.js"></script>
+    <script src="./js/storage.js"></script>
+    <script src="./js/menu.js"></script>
+
+    <!-- Hauptanwendung -->
     <script src="app.js"></script>
 </head>
 

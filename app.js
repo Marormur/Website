@@ -1,84 +1,203 @@
-const THEME_PREFERENCE_KEY = 'themePreference';
-const systemDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
-const validThemePreferences = ['system', 'light', 'dark'];
-let themePreference = localStorage.getItem(THEME_PREFERENCE_KEY);
-if (!validThemePreferences.includes(themePreference)) {
-    themePreference = 'system';
-}
-function updateThemeFromPreference() {
-    const useDark = themePreference === 'dark' || (themePreference === 'system' && systemDarkQuery.matches);
-    document.documentElement.classList.toggle('dark', useDark);
-}
+console.log('App.js loaded v2');
+// ============================================================================
+// HINWEIS: Viele Konstanten und Funktionen wurden in separate Module ausgelagert:
+// - constants.js: Alle Konstanten (MODAL_IDS, Theme-Keys, etc.)
+// - icons.js: Icon-Definitionen und SVG-Rendering
+// - theme.js: Theme-Management (Dark/Light Mode)
+// - dock.js: Dock-Magnification und -Verwaltung
+// - menu.js: Menu-System und Menu-Definitionen
+// 
+// Diese Module exportieren über window.ModuleName.
+// Wrapper-Funktionen unten ermöglichen einfachen Zugriff ohne window.* überall.
+// WICHTIG: Keine const-Aliase für exportierte Werte, um Duplikate zu vermeiden!
+// ============================================================================
+
+// ===== Wrapper-Funktionen für Module =====
+
+// Theme-System
 function setThemePreference(pref) {
-    if (!validThemePreferences.includes(pref)) return;
-    themePreference = pref;
-    localStorage.setItem(THEME_PREFERENCE_KEY, pref);
-    updateThemeFromPreference();
-    window.dispatchEvent(new CustomEvent('themePreferenceChange', { detail: { preference: pref } }));
-}
-function getThemePreference() {
-    return themePreference;
-}
-window.setThemePreference = setThemePreference;
-window.getThemePreference = getThemePreference;
-updateThemeFromPreference();
-const handleSystemThemeChange = () => {
-    updateThemeFromPreference();
-};
-if (typeof systemDarkQuery.addEventListener === 'function') {
-    systemDarkQuery.addEventListener('change', handleSystemThemeChange);
-} else if (typeof systemDarkQuery.addListener === 'function') {
-    systemDarkQuery.addListener(handleSystemThemeChange);
-}
-// Liste aller Modal-IDs, die von der Desktop-Shell verwaltet werden
-const modalIds = ["projects-modal", "about-modal", "settings-modal", "text-modal", "image-modal", "program-info-modal"];
-const transientModalIds = new Set(["program-info-modal"]);
-
-// Für zukünftige z‑Index‑Verwaltung reserviert
-let topZIndex = 1000;
-const FINDER_STATE_STORAGE_KEY = 'finderState';
-
-function readFinderState() {
-    try {
-        const raw = localStorage.getItem(FINDER_STATE_STORAGE_KEY);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!parsed || typeof parsed !== 'object') return null;
-        const repo = typeof parsed.repo === 'string' ? parsed.repo.trim() : '';
-        if (!repo) return null;
-        return {
-            repo,
-            path: typeof parsed.path === 'string' ? parsed.path : ''
-        };
-    } catch (err) {
-        console.warn('Finder state konnte nicht gelesen werden:', err);
-        return null;
+    if (window.ThemeSystem?.setThemePreference) {
+        return window.ThemeSystem.setThemePreference(pref);
     }
+}
+
+function getThemePreference() {
+    if (window.ThemeSystem?.getThemePreference) {
+        return window.ThemeSystem.getThemePreference();
+    }
+    return 'system';
+}
+
+// Icon-System
+function ensureSvgNamespace(svg) {
+    if (window.IconSystem?.ensureSvgNamespace) {
+        return window.IconSystem.ensureSvgNamespace(svg);
+    }
+    return svg;
+}
+
+function getMenuIconSvg(key) {
+    if (window.IconSystem?.getMenuIconSvg) {
+        return window.IconSystem.getMenuIconSvg(key);
+    }
+    return '';
+}
+
+function renderIconIntoElement(el, svg, key) {
+    if (window.IconSystem?.renderIconIntoElement) {
+        window.IconSystem.renderIconIntoElement(el, svg, key);
+    }
+}
+
+// Dock-System
+function getDockReservedBottom() {
+    if (window.DockSystem?.getDockReservedBottom) {
+        return window.DockSystem.getDockReservedBottom();
+    }
+    return 0;
+}
+
+function initDockMagnification() {
+    if (window.DockSystem?.initDockMagnification) {
+        window.DockSystem.initDockMagnification();
+    }
+}
+
+// Menu-System
+function renderApplicationMenu(modalId) {
+    if (window.MenuSystem?.renderApplicationMenu) {
+        window.MenuSystem.renderApplicationMenu(modalId);
+    }
+}
+
+function handleMenuActionActivation(event) {
+    if (window.MenuSystem?.handleMenuActionActivation) {
+        window.MenuSystem.handleMenuActionActivation(event);
+    }
+}
+
+// Desktop-System
+function initDesktop() {
+    if (window.DesktopSystem?.initDesktop) {
+        window.DesktopSystem.initDesktop();
+    }
+}
+
+function openDesktopItemById(itemId) {
+    if (window.DesktopSystem?.openDesktopItemById) {
+        return window.DesktopSystem.openDesktopItemById(itemId);
+    }
+    return false;
+}
+
+// System UI (WiFi, Bluetooth, Volume, etc.)
+function initSystemStatusControls() {
+    if (window.SystemUI?.initSystemStatusControls) {
+        window.SystemUI.initSystemStatusControls();
+    }
+}
+
+function updateAllSystemStatusUI() {
+    if (window.SystemUI?.updateAllSystemStatusUI) {
+        window.SystemUI.updateAllSystemStatusUI();
+    }
+}
+
+function handleSystemToggle(toggleKey) {
+    if (window.SystemUI?.handleSystemToggle) {
+        window.SystemUI.handleSystemToggle(toggleKey);
+    }
+}
+
+function setConnectedNetwork(network, options) {
+    if (window.SystemUI?.setConnectedNetwork) {
+        window.SystemUI.setConnectedNetwork(network, options);
+    }
+}
+
+function setBluetoothDevice(deviceName, options) {
+    if (window.SystemUI?.setBluetoothDevice) {
+        window.SystemUI.setBluetoothDevice(deviceName, options);
+    }
+}
+
+function setAudioDevice(deviceKey, options) {
+    if (window.SystemUI?.setAudioDevice) {
+        window.SystemUI.setAudioDevice(deviceKey, options);
+    }
+}
+
+// Storage & Persistence
+function readFinderState() {
+    if (window.StorageSystem?.readFinderState) {
+        return window.StorageSystem.readFinderState();
+    }
+    return null;
 }
 
 function writeFinderState(state) {
-    if (!state || typeof state.repo !== 'string' || !state.repo) {
-        clearFinderState();
-        return;
-    }
-    const payload = {
-        repo: state.repo,
-        path: typeof state.path === 'string' ? state.path : ''
-    };
-    try {
-        localStorage.setItem(FINDER_STATE_STORAGE_KEY, JSON.stringify(payload));
-    } catch (err) {
-        console.warn('Finder state konnte nicht gespeichert werden:', err);
+    if (window.StorageSystem?.writeFinderState) {
+        window.StorageSystem.writeFinderState(state);
     }
 }
 
 function clearFinderState() {
-    try {
-        localStorage.removeItem(FINDER_STATE_STORAGE_KEY);
-    } catch (err) {
-        console.warn('Finder state konnte nicht gelöscht werden:', err);
+    if (window.StorageSystem?.clearFinderState) {
+        window.StorageSystem.clearFinderState();
     }
 }
+
+function saveOpenModals() {
+    if (window.StorageSystem?.saveOpenModals) {
+        window.StorageSystem.saveOpenModals();
+    }
+}
+
+function restoreOpenModals() {
+    if (window.StorageSystem?.restoreOpenModals) {
+        window.StorageSystem.restoreOpenModals();
+    }
+}
+
+function saveWindowPositions() {
+    if (window.StorageSystem?.saveWindowPositions) {
+        window.StorageSystem.saveWindowPositions();
+    }
+}
+
+function restoreWindowPositions() {
+    if (window.StorageSystem?.restoreWindowPositions) {
+        window.StorageSystem.restoreWindowPositions();
+    }
+}
+
+function getDialogWindowElement(modal) {
+    if (window.StorageSystem?.getDialogWindowElement) {
+        return window.StorageSystem.getDialogWindowElement(modal);
+    }
+    if (!modal) return null;
+    return modal.querySelector('.autopointer') || modal;
+}
+
+function resetWindowLayout() {
+    if (window.StorageSystem?.resetWindowLayout) {
+        window.StorageSystem.resetWindowLayout();
+    }
+}
+
+// ===== App.js Konfiguration =====
+
+// Liste aller Modal-IDs, die von der Desktop-Shell verwaltet werden
+var modalIds = window.APP_CONSTANTS?.MODAL_IDS || [
+    "projects-modal", "about-modal", "settings-modal",
+    "text-modal", "image-modal", "program-info-modal"
+];
+var transientModalIds = window.APP_CONSTANTS?.TRANSIENT_MODAL_IDS || new Set(["program-info-modal"]);
+
+// Für zukünftige z‑Index‑Verwaltung reserviert
+let topZIndex = window.APP_CONSTANTS?.BASE_Z_INDEX || 1000;
+// Expose globally for use by storage module
+window.topZIndex = topZIndex;
 
 const appI18n = window.appI18n || {
     translate: (key) => key,
@@ -87,6 +206,20 @@ const appI18n = window.appI18n || {
     getLanguagePreference: () => 'system',
     getActiveLanguage: () => 'en'
 };
+
+// Leichtgewichtige Übersetzungs-Hilfsfunktion (nutzt window.appI18n)
+function translate(key, fallback) {
+    if (!window.appI18n || typeof appI18n.translate !== 'function') {
+        return fallback || key;
+    }
+    const result = appI18n.translate(key);
+    if (result === key && fallback) return fallback;
+    return result;
+}
+// Stelle sicher, dass die Funktion auch als globale Eigenschaft (window.translate) erreichbar ist
+if (typeof window !== 'undefined') {
+    window.translate = translate;
+}
 
 const programInfoDefinitions = {
     default: {
@@ -136,989 +269,11 @@ function resolveProgramInfo(modalId) {
 
 let currentProgramInfo = resolveProgramInfo(null);
 let currentMenuModalId = null;
-let menuActionIdCounter = 0;
-const menuActionHandlers = new Map();
 
-const menuDefinitions = {
-    default: buildDefaultMenuDefinition,
-    "projects-modal": buildFinderMenuDefinition,
-    "settings-modal": buildSettingsMenuDefinition,
-    "text-modal": buildTextEditorMenuDefinition,
-    "image-modal": buildImageViewerMenuDefinition,
-    "about-modal": buildAboutMenuDefinition,
-    "program-info-modal": buildProgramInfoMenuDefinition
-};
-
-const systemStatus = {
-    wifi: true,
-    bluetooth: true,
-    focus: false,
-    darkMode: document.documentElement.classList.contains('dark'),
-    brightness: 80,
-    volume: 65,
-    audioDevice: 'speakers',
-    network: 'HomeLAN',
-    battery: 100,
-    connectedBluetoothDevice: 'AirPods'
-};
-
-const SYSTEM_ICONS = {
-    wifiOn: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 18.25a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5m0-3.75a4.75 4.75 0 0 1 3.35 1.37L12 19.22l-3.35-3.35A4.75 4.75 0 0 1 12 14.5m0-4.5a8.74 8.74 0 0 1 6.21 2.57L21.06 15l-1.77 1.77-1.63-1.63A6.24 6.24 0 0 0 12 12.5a6.24 6.24 0 0 0-4.66 2.64l-1.63 1.63L3.94 15l2.85-2.85A8.74 8.74 0 0 1 12 10z" fill="currentColor"/></svg>',
-    wifiOff: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 18.25a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5m0-3.75a4.75 4.75 0 0 1 3.35 1.37l-1.77 1.77-4.5-4.5A4.74 4.74 0 0 1 12 14.5m0-4.5a8.74 8.74 0 0 1 6.21 2.57l-1.77 1.77-10-10A12.78 12.78 0 0 1 12 6M4.27 3 3 4.27l4.2 4.2A8.64 8.64 0 0 0 3 12l1.77 1.77A10.72 10.72 0 0 1 12 10c1.2 0 2.37.2 3.46.58l1.7 1.7a8.62 8.62 0 0 0-1.39-.88l1.42 1.42a10.44 10.44 0 0 1 1.91 1.38l1.88-1.88z" fill="currentColor"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-    bluetoothOn: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a1 1 0 0 1 .64.23l5 4.2a1 1 0 0 1-.05 1.58L14.28 12l3.31 3.99a1 1 0 0 1 .05 1.58l-5 4.2A1 1 0 0 1 11 21v-6.34L8.7 16.9l-1.4-1.4 3.7-3.5-3.7-3.5 1.4-1.4L11 9.34V3a1 1 0 0 1 1-1Zm1 4.85v3.28l1.82-1.64Zm1.82 9.94L13 13.38v3.77Z" fill="currentColor"/></svg>',
-    bluetoothOff: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a1 1 0 0 1 .64.23l3.68 3.09-1.38 1.23-2.94-2.46V9.3L10.39 8l-1.1 1.1 3.71 3.52-1.08.98 1.08 1 1.11-1.01 1.44 1.36-2.37 2v-3.36l-2.26-2.15-2.78 2.64 1.4 1.4L11 14.66V21a1 1 0 0 1-1.64.77l-3.68-3.09 1.38-1.23 2.94 2.46v-3.5l-7-6.63L4.27 8 20 23.73 21.27 22 13 13.34l5-4.53a1 1 0 0 0-.05-1.58L12.64 2.23A1 1 0 0 0 12 2Z" fill="currentColor"/></svg>',
-    moon: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79Z" fill="currentColor"/></svg>',
-    appearanceLight: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16" fill="currentColor" opacity="0.4"/></svg>',
-    appearanceDark: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 20a8 8 0 0 0 0-16" fill="currentColor" opacity="0.75"/></svg>',
-    sun: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4a1 1 0 0 1-1-1V2h2v1a1 1 0 0 1-1 1Zm0 18a1 1 0 0 1-1-1v-1h2v1a1 1 0 0 1-1 1Zm8-9a1 1 0 0 1-1-1h1a1 1 0 0 1 1 1Zm-16 0a1 1 0 0 1-1-1h1a1 1 0 0 1-1 1Zm12.66 6.66-1.41-1.41 1.06-1.06 1.41 1.41ZM6.69 6.7 5.28 5.28 6.34 4.22 7.75 5.63ZM18.37 4.22l1.06 1.06-1.41 1.41-1.06-1.06ZM5.63 18.37l-1.41 1.41-1.06-1.06 1.41-1.41ZM12 7a5 5 0 1 1-5 5 5 5 0 0 1 5-5Z" fill="currentColor"/></svg>',
-    volumeMute: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6h4l5 5V4l-5 5H5z" fill="currentColor"/><path d="m16 9 5 5m0-5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-    volumeLow: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6h4l5 5V4l-5 5H5z" fill="currentColor"/><path d="M16.5 12a3 3 0 0 0-1.5-2.6v5.2a3 3 0 0 0 1.5-2.6Z" fill="currentColor"/></svg>',
-    volumeMedium: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6h4l5 5V4l-5 5H5z" fill="currentColor"/><path d="M16.5 12a3 3 0 0 0-1.5-2.6v5.2a3 3 0 0 0 1.5-2.6Z" fill="currentColor"/><path d="M19.5 12a5 5 0 0 0-2.5-4.33v8.66A5 5 0 0 0 19.5 12Z" fill="currentColor" opacity="0.7"/></svg>',
-    volumeHigh: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6h4l5 5V4l-5 5H5z" fill="currentColor"/><path d="M16.5 12a3 3 0 0 0-1.5-2.6v5.2a3 3 0 0 0 1.5-2.6Z" fill="currentColor"/><path d="M19.5 12a5 5 0 0 0-2.5-4.33v8.66A5 5 0 0 0 19.5 12Z" fill="currentColor" opacity="0.7"/><path d="M22 12a7 7 0 0 0-3.5-6.06v12.12A7 7 0 0 0 22 12Z" fill="currentColor" opacity="0.45"/></svg>',
-    batteryFull: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1v1h-1v-1H8v1H7v-1H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1V6h1v1h8V6h1zM6 9v6h12V9z" fill="currentColor"/><rect x="7" y="10" width="10" height="4" rx="1" fill="currentColor"/></svg>'
-};
-
-const MENU_ICONS = {
-    finder: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h8v6H4zm0 10h8v6H4zm10-10h6v6h-6zm0 10h6v6h-6z" fill="currentColor"/></svg>',
-    reload: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 0 1-9.9 1H5a7 7 0 0 0 13.94 1A7 7 0 0 0 12 6z" fill="currentColor"/></svg>',
-    close: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4L12 13.4 6.4 19 5 17.6 10.6 12 5 6.4 6.4 5z" fill="currentColor"/></svg>',
-    settings: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6m0-7 2.25 2.5 3.22-.84.73 3.27 3.05 1.36-1.36 3.05 1.36 3.05-3.05 1.36-.73 3.27-3.22-.84L12 22l-2.25-2.5-3.22.84-.73-3.27-3.05-1.36L3.11 12 1.75 8.95l3.05-1.36.73-3.27 3.22.84Z" fill="currentColor"/></svg>',
-    info: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 7h2V9h-2zm0 4h2v6h-2z" fill="currentColor"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Z" fill="currentColor"/></svg>',
-    newFile: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Zm2 16H8v-2h8Zm0-4H8v-2h8Zm-3-6V3.5L18.5 8Z" fill="currentColor"/></svg>',
-    open: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 19H8a2 2 0 0 1-2-2V5h7l2 2h6Z" fill="currentColor"/><path d="M5 9h16v9a2 2 0 0 1-2 2H9" fill="currentColor" opacity="0.4"/></svg>',
-    save: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7Zm0 16H5v-6h12Zm0-8H5V5h10v4h2Z" fill="currentColor"/></svg>',
-    undo: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5 9 8l3 3V9a5 5 0 0 1 5 5 5 5 0 0 1-4.77 4.99V21A7 7 0 0 0 19 14a7 7 0 0 0-7-7Z" fill="currentColor"/><path d="M9 8v3l3-3Z" fill="currentColor"/></svg>',
-    redo: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 5 3 3-3 3V9a5 5 0 0 0-5 5 5 5 0 0 0 4.77 4.99V21A7 7 0 0 1 5 14a7 7 0 0 1 7-7Z" fill="currentColor"/><path d="M15 8v3l-3-3Z" fill="currentColor"/></svg>',
-    cut: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 7.5 11.17 9 2 18.17 3.83 20 13 10.83 14.5 12.33l-5 5A3.5 3.5 0 1 0 12 19a3.49 3.49 0 0 0-.17-1.06l1.61-1.61L19 21h3l-8-8 4.35-4.35A3.49 3.49 0 0 0 20.5 9a3.5 3.5 0 1 0-3.5-3.5 3.49 3.49 0 0 0 .33 1.5L9 15.83 7.5 14.33l1.61-1.61A3.49 3.49 0 0 0 9 12a3.5 3.5 0 1 0-.33-6.5Z" fill="currentColor"/></svg>',
-    copy: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12Z" fill="currentColor"/><path d="M20 5H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H8V7h12Z" fill="currentColor"/></svg>',
-    paste: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 4h-3.18A3 3 0 0 0 13 2h-2a3 3 0 0 0-2.82 2H5a2 2 0 0 0-2 2v1h18V6a2 2 0 0 0-2-2Zm-7-1h2a1 1 0 0 1 1 1h-4a1 1 0 0 1 1-1Z" fill="currentColor"/><path d="M4 9v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z" fill="currentColor"/></svg>',
-    selectAll: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3H5v2h2V3Zm4 0H9v2h2V3Zm4 0h-2v2h2V3Zm4 0h-2v2h2V3ZM7 7H5v2h2V7Zm12 0h-2v2h2V7ZM7 11H5v2h2v-2Zm12 0h-2v2h2v-2ZM7 15H5v2h2v-2Zm12 0h-2v2h2v-2ZM7 19H5v2h2v-2Zm4 0H9v2h2v-2Zm4 0h-2v2h2v-2Zm4 0h-2v2h2v-2Z" fill="currentColor"/></svg>',
-    wrap: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16v2H4Zm0 4h9v2H4Zm0 8h9v2H4Zm16-5h-5a3 3 0 0 0 0 6h3a1 1 0 0 0 0-2h-3a1 1 0 0 1 0-2h5Z" fill="currentColor"/></svg>',
-    imageOpen: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5v14h14V5Zm12 12H7V7h10Z" fill="currentColor"/><path d="M9 13s1.5-2 3-2 3 2 3 2l2-3v6H7V9l2 4Z" fill="currentColor"/></svg>',
-    download: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v10l3.5-3.5 1.5 1.5-6 6-6-6 1.5-1.5L11 13V3Z" fill="currentColor"/><path d="M5 18h14v2H5Z" fill="currentColor"/></svg>',
-    window: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6H4Zm0 8v6a2 2 0 0 0 2 2h6v-8Z" fill="currentColor"/></svg>',
-    help: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 18h2v-2h-2Zm1-16a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Zm0-14a4 4 0 0 1 4 4c0 3-4 3.25-4 5h-2c0-3 4-3.25 4-5a2 2 0 0 0-4 0H8a4 4 0 0 1 4-4Z" fill="currentColor"/></svg>',
-    projects: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h8v6H4zm0 10h8v6H4zm10-10h6v6h-6zm0 10h6v6h-6z" fill="currentColor"/></svg>',
-    appearance: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16" fill="currentColor" opacity="0.4"/></svg>',
-    windowMinimize: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="2" rx="1" fill="currentColor"/></svg>',
-    windowZoom: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5h6v2H7v4H5Zm8-2h6a2 2 0 0 1 2 2v6h-2V7h-4Zm8 16h-6v-2h4v-4h2Zm-8 2H5a2 2 0 0 1-2-2v-6h2v4h4Z" fill="currentColor"/></svg>',
-    windowFront: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h12v12H4Z" fill="currentColor" opacity="0.5"/><path d="M8 3h12v12H8Z" fill="currentColor"/></svg>'
-};
-
-const ICON_FALLBACK_EMOJI = {
-    wifi: '📶',
-    bluetooth: '🔵',
-    focus: '🌙',
-    'dark-mode': '🌓',
-    sun: '☀️',
-    moon: '🌙',
-    appearance: '🎨',
-    volume: '🔊',
-    battery: '🔋',
-    finder: '🗂️',
-    reload: '🔄',
-    close: '✖️',
-    settings: '⚙️',
-    info: 'ℹ️',
-    newFile: '🆕',
-    open: '📂',
-    save: '💾',
-    undo: '↩️',
-    redo: '↪️',
-    cut: '✂️',
-    copy: '📄',
-    paste: '📋',
-    selectAll: '✅',
-    wrap: '🧵',
-    imageOpen: '🖼️',
-    download: '⬇️',
-    window: '🪟',
-    windowMinimize: '➖',
-    windowZoom: '🟢',
-    windowFront: '⬆️',
-    help: '❓',
-    projects: '🧰'
-};
-
-const DESKTOP_ITEMS = [
-    {
-        id: 'projects',
-        modalId: 'projects-modal',
-        emoji: '📁',
-        labelKey: 'desktop.projects',
-        fallbackLabel: 'Projekte'
-    },
-    {
-        id: 'about',
-        modalId: 'about-modal',
-        icon: './img/profil.jpg',
-        labelKey: 'desktop.about',
-        fallbackLabel: 'Über Marvin'
-    }
-];
-
-const desktopItemsById = new Map();
-const desktopButtons = new Map();
-let desktopSelectedItemId = null;
-// Support multi-selection on the desktop (like macOS)
-const desktopSelectedIds = new Set();
-let desktopLastFocusedIndex = -1;
-// When a rubberband drag just happened, suppress the background click that would
-// otherwise clear the selection (prevents race between drag and click).
-let desktopSuppressBackgroundClick = false;
-
-function updateDesktopSelectionUI() {
-    // Sync desktopSelectedItemId (primary focused) with last focused index
-    if (desktopLastFocusedIndex >= 0 && DESKTOP_ITEMS[desktopLastFocusedIndex]) {
-        desktopSelectedItemId = DESKTOP_ITEMS[desktopLastFocusedIndex].id;
-    } else {
-        desktopSelectedItemId = desktopSelectedIds.size === 1 ? Array.from(desktopSelectedIds)[0] : null;
-    }
-    // Update buttons' attributes
-    desktopButtons.forEach((btn, id) => {
-        if (desktopSelectedIds.has(id)) {
-            btn.dataset.selected = 'true';
-            btn.setAttribute('aria-selected', 'true');
-        } else {
-            btn.removeAttribute('data-selected');
-            btn.setAttribute('aria-selected', 'false');
-        }
-    });
-}
-
-function translate(key, fallback) {
-    if (!window.appI18n || typeof appI18n.translate !== 'function') {
-        return fallback || key;
-    }
-    const result = appI18n.translate(key);
-    if (result === key && fallback) {
-        return fallback;
-    }
-    return result;
-}
-
-const svgParser = typeof DOMParser === 'function' ? new DOMParser() : null;
-
-function ensureSvgNamespace(svgMarkup) {
-    if (typeof svgMarkup !== 'string' || !svgMarkup.length) {
-        return '';
-    }
-    if (svgMarkup.includes('xmlns')) {
-        return svgMarkup;
-    }
-    return svgMarkup.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
-}
-
-function getMenuIconSvg(iconKey) {
-    if (!iconKey) return '';
-    const svg = MENU_ICONS[iconKey] || '';
-    return ensureSvgNamespace(svg);
-}
-
-function renderIconIntoElement(target, svgMarkup, fallbackKey) {
-    if (!target) return;
-    while (target.firstChild) {
-        target.removeChild(target.firstChild);
-    }
-    if (svgMarkup && svgParser) {
-        try {
-            const doc = svgParser.parseFromString(svgMarkup, 'image/svg+xml');
-            const svgEl = doc && doc.documentElement;
-            if (svgEl && svgEl.tagName && svgEl.tagName.toLowerCase() === 'svg') {
-                const imported = target.ownerDocument.importNode(svgEl, true);
-                if (!imported.getAttribute('width')) {
-                    imported.setAttribute('width', target.dataset.iconSize || '16');
-                }
-                if (!imported.getAttribute('height')) {
-                    imported.setAttribute('height', target.dataset.iconSize || '16');
-                }
-                imported.setAttribute('focusable', 'false');
-                imported.setAttribute('aria-hidden', 'true');
-                target.appendChild(imported);
-                return;
-            }
-        } catch (err) {
-            console.warn('SVG parsing failed; falling back to emoji.', err);
-        }
-    }
-    const fallback = ICON_FALLBACK_EMOJI[fallbackKey] || '';
-    if (fallback) {
-        target.textContent = fallback;
-    }
-}
-
-function getDesktopAreaElement() {
-    return document.getElementById('desktop');
-}
-
-function getDesktopContainerElement() {
-    return document.getElementById('desktop-icons');
-}
-
-function createDesktopButton(item, index) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'desktop-icon-button no-select';
-    button.dataset.desktopItemId = item.id;
-    button.dataset.desktopIndex = String(index);
-    button.setAttribute('role', 'option');
-    button.setAttribute('aria-selected', 'false');
-    button.setAttribute('data-i18n-title', item.labelKey);
-    button.setAttribute('data-i18n-aria-label', item.labelKey);
-    const labelText = translate(item.labelKey, item.fallbackLabel);
-    button.title = labelText;
-    button.setAttribute('aria-label', labelText);
-    button.draggable = false;
-
-    const graphic = document.createElement('span');
-    graphic.className = 'desktop-icon-graphic';
-    if (item.icon) {
-        const img = document.createElement('img');
-        img.src = item.icon;
-        img.alt = '';
-        img.decoding = 'async';
-        img.referrerPolicy = 'no-referrer';
-        img.draggable = false;
-        graphic.appendChild(img);
-    } else if (item.emoji) {
-        graphic.textContent = item.emoji;
-    }
-    button.appendChild(graphic);
-
-    const label = document.createElement('span');
-    label.className = 'desktop-icon-label no-select';
-    label.textContent = labelText;
-    label.setAttribute('data-i18n', item.labelKey);
-    button.appendChild(label);
-
-    button.addEventListener('pointerdown', (event) => {
-        if (!event) return;
-        if (event.pointerType) {
-            button.dataset.activePointerType = event.pointerType;
-        } else {
-            delete button.dataset.activePointerType;
-        }
-    });
-    button.addEventListener('touchstart', () => {
-        button.dataset.activePointerType = 'touch';
-    }, { passive: true });
-    button.addEventListener('mousedown', () => {
-        button.dataset.activePointerType = 'mouse';
-    });
-
-    button.addEventListener('click', (event) => {
-        event.preventDefault();
-        const index = Number(button.dataset.desktopIndex || 0);
-        const isMeta = event.ctrlKey || event.metaKey;
-        const isShift = event.shiftKey;
-
-        if (isShift && desktopLastFocusedIndex >= 0) {
-            // Select range from last focused to clicked
-            const start = Math.min(desktopLastFocusedIndex, index);
-            const end = Math.max(desktopLastFocusedIndex, index);
-            for (let i = start; i <= end; i++) {
-                const id = (DESKTOP_ITEMS[i] && DESKTOP_ITEMS[i].id) || null;
-                if (id) desktopSelectedIds.add(id);
-            }
-            desktopLastFocusedIndex = index;
-            updateDesktopSelectionUI();
-        } else if (isMeta) {
-            // Toggle selection
-            if (desktopSelectedIds.has(item.id)) {
-                desktopSelectedIds.delete(item.id);
-            } else {
-                desktopSelectedIds.add(item.id);
-            }
-            desktopLastFocusedIndex = index;
-            updateDesktopSelectionUI();
-        } else {
-            // Normal click: single select
-            desktopSelectedIds.clear();
-            desktopSelectedIds.add(item.id);
-            desktopLastFocusedIndex = index;
-            updateDesktopSelectionUI();
-        }
-
-        const pointerType = button.dataset.activePointerType || '';
-        const shouldOpenOnSingleTap = pointerType === 'touch' || pointerType === 'pen';
-        // Double-click or single tap on touch opens
-        if (shouldOpenOnSingleTap || (typeof event.detail === 'number' && event.detail >= 2)) {
-            openDesktopItemById(item.id);
-        }
-        delete button.dataset.activePointerType;
-    });
-
-    button.addEventListener('keydown', handleDesktopKeydown);
-    button.addEventListener('focus', () => {
-        selectDesktopItem(item.id, { focus: false });
-    });
-
-    return button;
-}
-
-function renderDesktopIcons() {
-    const container = getDesktopContainerElement();
-    if (!container) {
-        return;
-    }
-    container.innerHTML = '';
-    desktopItemsById.clear();
-    desktopButtons.clear();
-    DESKTOP_ITEMS.forEach((item, index) => {
-        desktopItemsById.set(item.id, item);
-        const button = createDesktopButton(item, index);
-        desktopButtons.set(item.id, button);
-        container.appendChild(button);
-    });
-    if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
-        window.appI18n.applyTranslations(container);
-    }
-}
-
-function selectDesktopItem(itemId, options = {}) {
-    const { focus = true } = options;
-    if (desktopSelectedItemId && desktopSelectedItemId === itemId) {
-        if (focus && desktopButtons.has(itemId)) {
-            const btn = desktopButtons.get(itemId);
-            if (typeof btn.focus === 'function') {
-                try {
-                    btn.focus({ preventScroll: true });
-                } catch (err) {
-                    btn.focus();
-                }
-            }
-        }
-        return;
-    }
-    if (desktopSelectedItemId && desktopButtons.has(desktopSelectedItemId)) {
-        const previousButton = desktopButtons.get(desktopSelectedItemId);
-        previousButton.removeAttribute('data-selected');
-        previousButton.setAttribute('aria-selected', 'false');
-    }
-    // Keep single-select API: selecting via keyboard or programmatically should
-    // clear multi-selection and set the focused item.
-    desktopSelectedIds.clear();
-    if (itemId) desktopSelectedIds.add(itemId);
-    desktopLastFocusedIndex = DESKTOP_ITEMS.findIndex(entry => entry.id === itemId);
-    updateDesktopSelectionUI();
-    if (focus && itemId && desktopButtons.has(itemId)) {
-        const nextButton = desktopButtons.get(itemId);
-        if (typeof nextButton.focus === 'function') {
-            try {
-                nextButton.focus({ preventScroll: true });
-            } catch (err) {
-                nextButton.focus();
-            }
-        }
-    }
-}
-
-function clearDesktopSelection(options = {}) {
-    const { blur = false } = options;
-    // Clear all selected ids and UI
-    const hadSelection = desktopSelectedIds.size > 0 || desktopSelectedItemId != null;
-    desktopSelectedIds.clear();
-    desktopLastFocusedIndex = -1;
-    desktopSelectedItemId = null;
-    desktopButtons.forEach((btn) => {
-        btn.removeAttribute('data-selected');
-        btn.setAttribute('aria-selected', 'false');
-    });
-    if (!hadSelection) return;
-    if (blur) {
-        // attempt to blur the previously focused element
-        const prev = document.querySelector('.desktop-icon-button[aria-selected="true"]');
-        if (prev && typeof prev.blur === 'function') prev.blur();
-    }
-}
-
-function focusDesktopItemByIndex(index) {
-    if (!Array.isArray(DESKTOP_ITEMS) || DESKTOP_ITEMS.length === 0) return;
-    if (index < 0) index = 0;
-    if (index >= DESKTOP_ITEMS.length) index = DESKTOP_ITEMS.length - 1;
-    const item = DESKTOP_ITEMS[index];
-    if (!item) return;
-    selectDesktopItem(item.id, { focus: true });
-}
-
-function moveDesktopSelection(offset) {
-    if (!offset) return;
-    if (!Array.isArray(DESKTOP_ITEMS) || DESKTOP_ITEMS.length === 0) return;
-    const currentIndex = desktopSelectedItemId
-        ? DESKTOP_ITEMS.findIndex(entry => entry.id === desktopSelectedItemId)
-        : -1;
-    let targetIndex;
-    if (currentIndex === -1) {
-        targetIndex = offset > 0 ? 0 : DESKTOP_ITEMS.length - 1;
-    } else {
-        targetIndex = currentIndex + offset;
-        if (targetIndex < 0) targetIndex = 0;
-        if (targetIndex >= DESKTOP_ITEMS.length) targetIndex = DESKTOP_ITEMS.length - 1;
-    }
-    focusDesktopItemByIndex(targetIndex);
-}
-
-function openDesktopItem(item) {
-    if (!item) return false;
-    if (typeof item.onOpen === 'function') {
-        return !!item.onOpen(item);
-    }
-    if (item.modalId) {
-        const dialog = window.dialogs && window.dialogs[item.modalId];
-        if (dialog && typeof dialog.open === 'function') {
-            dialog.open();
-            return true;
-        }
-        const modalElement = document.getElementById(item.modalId);
-        if (modalElement) {
-            modalElement.classList.remove('hidden');
-            if (typeof bringDialogToFront === 'function') {
-                bringDialogToFront(item.modalId);
-            }
-            if (typeof updateProgramLabelByTopModal === 'function') {
-                updateProgramLabelByTopModal();
-            }
-            return true;
-        }
-    }
-    if (item.href) {
-        const target = item.target || '_blank';
-        window.open(item.href, target, 'noopener');
-        return true;
-    }
-    return false;
-}
-
-function openDesktopItemById(itemId) {
-    if (!itemId) return false;
-    const item = desktopItemsById.get(itemId);
-    if (!item) return false;
-    selectDesktopItem(itemId, { focus: true });
-    return openDesktopItem(item);
-}
-
-function handleDesktopKeydown(event) {
-    const { key } = event;
-    const target = event.currentTarget;
-    if (!target || !target.dataset) return;
-    const itemId = target.dataset.desktopItemId;
-    if (!itemId) return;
-    switch (key) {
-        case 'Enter':
-        case ' ':
-            event.preventDefault();
-            openDesktopItemById(itemId);
-            return;
-        case 'ArrowDown':
-        case 'ArrowRight':
-            event.preventDefault();
-            moveDesktopSelection(1);
-            return;
-        case 'ArrowUp':
-        case 'ArrowLeft':
-            event.preventDefault();
-            moveDesktopSelection(-1);
-            return;
-        case 'Home':
-            event.preventDefault();
-            focusDesktopItemByIndex(0);
-            return;
-        case 'End':
-            event.preventDefault();
-            focusDesktopItemByIndex(DESKTOP_ITEMS.length - 1);
-            return;
-        case 'Escape':
-            event.preventDefault();
-            clearDesktopSelection({ blur: true });
-            return;
-        default:
-            break;
-    }
-}
-
-function handleDesktopBackgroundPointer(event) {
-    if (event && typeof event.button === 'number' && event.button !== 0) {
-        return;
-    }
-    if (desktopSuppressBackgroundClick) {
-        // ignore this click because it was part of a rubberband operation
-        return;
-    }
-    if (event && event.target && event.target.closest('.desktop-icon-button')) {
-        return;
-    }
-    clearDesktopSelection({ blur: true });
-}
-
-function initDesktop() {
-    renderDesktopIcons();
-    const desktopArea = getDesktopAreaElement();
-    if (desktopArea) {
-        // Click on background clears selection (non-drag)
-        desktopArea.addEventListener('click', handleDesktopBackgroundPointer);
-        desktopArea.addEventListener('touchstart', handleDesktopBackgroundPointer, { passive: true });
-
-        // Rubberband selection using pointer events
-        let rubber = null;
-        let rubberStart = null;
-        const onPointerMove = (e) => {
-            if (!rubber || !rubberStart) return;
-            const x1 = Math.min(rubberStart.x, e.clientX);
-            const y1 = Math.min(rubberStart.y, e.clientY);
-            const x2 = Math.max(rubberStart.x, e.clientX);
-            const y2 = Math.max(rubberStart.y, e.clientY);
-            rubber.style.left = x1 + 'px';
-            rubber.style.top = y1 + 'px';
-            rubber.style.width = (x2 - x1) + 'px';
-            rubber.style.height = (y2 - y1) + 'px';
-
-            // Mark intersecting icons
-            desktopButtons.forEach((btn, id) => {
-                const rect = btn.getBoundingClientRect();
-                const intersects = !(rect.right < x1 || rect.left > x2 || rect.bottom < y1 || rect.top > y2);
-                if (intersects) {
-                    btn.classList.add('rubber-selected');
-                } else {
-                    btn.classList.remove('rubber-selected');
-                }
-            });
-        };
-
-        const onPointerUp = (e) => {
-            if (!rubber || !rubberStart) return;
-            // Collect selected items
-            const selected = [];
-            desktopButtons.forEach((btn, id) => {
-                if (btn.classList.contains('rubber-selected')) {
-                    selected.push(id);
-                    btn.classList.remove('rubber-selected');
-                }
-            });
-            // If meta key was pressed during drag, toggle; else replace
-            if (e.ctrlKey || e.metaKey) {
-                selected.forEach(id => {
-                    if (desktopSelectedIds.has(id)) desktopSelectedIds.delete(id);
-                    else desktopSelectedIds.add(id);
-                });
-            } else {
-                desktopSelectedIds.clear();
-                selected.forEach(id => desktopSelectedIds.add(id));
-            }
-            // focus last selected if any
-            if (selected.length > 0) {
-                const lastId = selected[selected.length - 1];
-                desktopLastFocusedIndex = DESKTOP_ITEMS.findIndex(entry => entry.id === lastId);
-            }
-            updateDesktopSelectionUI();
-
-            // cleanup via helper so all listeners are removed consistently
-            cleanupRubber(false);
-        };
-
-        // If the pointer interaction is canceled (pointercancel), or the window
-        // loses focus or becomes hidden, we should abort the rubberband and
-        // remove the selection rectangle to avoid leaving it stuck.
-        const onPointerCancel = () => cleanupRubber(true);
-        const onWindowBlur = () => cleanupRubber(true);
-        const onVisibilityChange = () => {
-            if (document.visibilityState !== 'visible') cleanupRubber(true);
-        };
-
-        const cleanupRubber = (abortOnly) => {
-            if (!rubber) return;
-            // remove temporary highlight classes
-            desktopButtons.forEach((btn) => btn.classList.remove('rubber-selected'));
-            try { rubber.remove(); } catch (err) { /* ignore */ }
-            rubber = null;
-            rubberStart = null;
-            window.removeEventListener('pointermove', onPointerMove);
-            window.removeEventListener('pointerup', onPointerUp);
-            window.removeEventListener('pointercancel', onPointerCancel);
-            window.removeEventListener('blur', onWindowBlur);
-            document.removeEventListener('visibilitychange', onVisibilityChange);
-            // suppress immediate background click to avoid clearing selection
-            desktopSuppressBackgroundClick = true;
-            setTimeout(() => { desktopSuppressBackgroundClick = false; }, 120);
-            // if abortOnly is true we don't change selection state; otherwise selection already applied
-        };
-
-        desktopArea.addEventListener('pointerdown', (e) => {
-            // Only left button and when clicking on empty area
-            if (e.button !== 0) return;
-            if (e.target && e.target.closest && e.target.closest('.desktop-icon-button')) return;
-            // start rubberband
-            rubberStart = { x: e.clientX, y: e.clientY };
-            rubber = document.createElement('div');
-            rubber.className = 'desktop-rubberband';
-            Object.assign(rubber.style, {
-                position: 'fixed',
-                left: rubberStart.x + 'px',
-                top: rubberStart.y + 'px',
-                width: '0px',
-                height: '0px',
-                zIndex: 99999,
-                border: '1px dashed rgba(255,255,255,0.6)',
-                background: 'rgba(59,130,246,0.12)',
-                pointerEvents: 'none'
-            });
-            document.body.appendChild(rubber);
-            // mark that a rubberband interaction is in progress so clicks don't
-            // immediately clear selection
-            desktopSuppressBackgroundClick = true;
-            window.addEventListener('pointermove', onPointerMove);
-            window.addEventListener('pointerup', onPointerUp);
-            window.addEventListener('pointercancel', onPointerCancel);
-            window.addEventListener('blur', onWindowBlur);
-            document.addEventListener('visibilitychange', onVisibilityChange);
-        });
-    }
-}
-
-function applySystemIcon(iconToken, iconKey) {
-    const svg = SYSTEM_ICONS[iconKey];
-    const markup = svg ? ensureSvgNamespace(svg) : '';
-    document.querySelectorAll(`[data-icon="${iconToken}"]`).forEach(el => {
-        renderIconIntoElement(el, markup, iconToken);
-    });
-}
-
-function updateSystemStateText(stateKey, text) {
-    document.querySelectorAll(`[data-state="${stateKey}"]`).forEach(el => {
-        el.textContent = text != null ? String(text) : '';
-    });
-}
-
-function updateSystemToggleState(toggleKey, active) {
-    const toggle = document.querySelector(`[data-system-toggle="${toggleKey}"]`);
-    if (toggle) {
-        toggle.classList.toggle('is-active', !!active);
-        toggle.setAttribute('aria-pressed', active ? 'true' : 'false');
-    }
-}
-
-function updateSystemMenuCheckbox(actionKey, checked) {
-    const checkbox = document.querySelector(`[data-system-action="${actionKey}"]`);
-    if (checkbox) {
-        checkbox.setAttribute('aria-pressed', checked ? 'true' : 'false');
-        checkbox.classList.toggle('is-active', !!checked);
-    }
-}
-
-function updateSystemSliderValue(type, value) {
-    document.querySelectorAll(`[data-system-slider="${type}"]`).forEach(slider => {
-        if (Number(slider.value) !== value) {
-            slider.value = value;
-        }
-    });
-    document.querySelectorAll(`[data-state="${type}"]`).forEach(label => {
-        label.textContent = `${value}%`;
-    });
-}
-
-function updateWifiUI() {
-    const iconKey = systemStatus.wifi ? 'wifiOn' : 'wifiOff';
-    applySystemIcon('wifi', iconKey);
-    updateSystemStateText('wifi', translate(systemStatus.wifi ? 'menubar.state.on' : 'menubar.state.off'));
-    updateSystemToggleState('wifi', systemStatus.wifi);
-    updateSystemMenuCheckbox('toggle-wifi', systemStatus.wifi);
-    document.querySelectorAll('#wifi-menu [data-network]').forEach(btn => {
-        const disabled = !systemStatus.wifi;
-        if (disabled) {
-            btn.setAttribute('aria-disabled', 'true');
-        } else {
-            btn.removeAttribute('aria-disabled');
-        }
-    });
-    setConnectedNetwork(systemStatus.network, { silent: true });
-}
-
-function updateBluetoothUI() {
-    const iconKey = systemStatus.bluetooth ? 'bluetoothOn' : 'bluetoothOff';
-    applySystemIcon('bluetooth', iconKey);
-    updateSystemStateText('bluetooth', translate(systemStatus.bluetooth ? 'menubar.state.on' : 'menubar.state.off'));
-    updateSystemToggleState('bluetooth', systemStatus.bluetooth);
-    updateSystemMenuCheckbox('toggle-bluetooth', systemStatus.bluetooth);
-    const devices = document.querySelectorAll('#bluetooth-menu [data-device]');
-    devices.forEach(btn => {
-        const indicator = btn.querySelector('.system-network-indicator');
-        if (indicator && !indicator.dataset.default) {
-            indicator.dataset.default = indicator.textContent || '';
-        }
-        const disabled = !systemStatus.bluetooth;
-        if (disabled) {
-            btn.setAttribute('aria-disabled', 'true');
-        } else {
-            btn.removeAttribute('aria-disabled');
-        }
-    });
-    setBluetoothDevice(systemStatus.connectedBluetoothDevice, { silent: true, syncAudio: false });
-}
-
-function updateFocusUI() {
-    updateSystemToggleState('focus', systemStatus.focus);
-    updateSystemStateText('focus', translate(systemStatus.focus ? 'menubar.state.active' : 'menubar.state.off'));
-}
-
-function updateDarkModeUI() {
-    const isDark = systemStatus.darkMode;
-    updateSystemToggleState('dark-mode', isDark);
-    updateSystemStateText('dark-mode', translate(isDark ? 'menubar.state.active' : 'menubar.state.off'));
-    applySystemIcon('appearance', isDark ? 'appearanceDark' : 'appearanceLight');
-}
-
-function updateVolumeUI() {
-    const value = Math.max(0, Math.min(100, Number(systemStatus.volume) || 0));
-    systemStatus.volume = value;
-    let iconKey = 'volumeMute';
-    if (value === 0) {
-        iconKey = 'volumeMute';
-    } else if (value <= 33) {
-        iconKey = 'volumeLow';
-    } else if (value <= 66) {
-        iconKey = 'volumeMedium';
-    } else {
-        iconKey = 'volumeHigh';
-    }
-    applySystemIcon('volume', iconKey);
-    updateSystemSliderValue('volume', value);
-}
-
-function updateBrightnessUI() {
-    const value = Math.max(0, Math.min(100, Number(systemStatus.brightness) || 0));
-    systemStatus.brightness = value;
-    updateSystemSliderValue('brightness', value);
-}
-
-function updateBatteryUI() {
-    applySystemIcon('battery', 'batteryFull');
-    updateSystemStateText('battery', `${systemStatus.battery}%`);
-}
-
-function updateAudioDeviceUI() {
-    const active = systemStatus.audioDevice;
-    document.querySelectorAll('[data-audio-device]').forEach(btn => {
-        const isActive = btn.dataset.audioDevice === active;
-        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        btn.classList.toggle('is-active', isActive);
-    });
-}
-
-function setConnectedNetwork(network, options = {}) {
-    if (network) {
-        systemStatus.network = network;
-    }
-    const activeNetwork = systemStatus.network;
-    document.querySelectorAll('#wifi-menu [data-network]').forEach(btn => {
-        const indicator = btn.querySelector('.system-network-indicator');
-        if (indicator && !indicator.dataset.default) {
-            indicator.dataset.default = indicator.textContent || '';
-        }
-        const isActive = !btn.hasAttribute('aria-disabled') && btn.dataset.network === activeNetwork && systemStatus.wifi;
-        btn.classList.toggle('is-active', isActive);
-        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        if (indicator) {
-            if (!systemStatus.wifi) {
-                indicator.textContent = translate('menubar.state.off');
-            } else if (isActive) {
-                indicator.textContent = translate('menubar.state.connected');
-            } else {
-                indicator.textContent = indicator.dataset.default || '';
-            }
-        }
-    });
-    if (!options.silent) {
-        hideMenuDropdowns();
-    }
-}
-
-function setBluetoothDevice(deviceName, options = {}) {
-    const syncAudio = options.syncAudio !== false;
-    if (deviceName) {
-        systemStatus.connectedBluetoothDevice = deviceName;
-        if (syncAudio && deviceName === 'AirPods') {
-            systemStatus.audioDevice = 'airpods';
-        }
-    }
-    const activeDevice = systemStatus.connectedBluetoothDevice;
-    document.querySelectorAll('#bluetooth-menu [data-device]').forEach(btn => {
-        const indicator = btn.querySelector('.system-network-indicator');
-        if (indicator && !indicator.dataset.default) {
-            indicator.dataset.default = indicator.textContent || '';
-        }
-        const isActive = systemStatus.bluetooth && btn.dataset.device === activeDevice;
-        btn.classList.toggle('is-active', isActive);
-        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        if (indicator) {
-            if (!systemStatus.bluetooth) {
-                indicator.textContent = translate('menubar.state.off');
-            } else if (isActive) {
-                indicator.textContent = translate('menubar.state.connected');
-            } else {
-                indicator.textContent = indicator.dataset.default || '';
-            }
-        }
-    });
-    updateAudioDeviceUI();
-    if (!options.silent) {
-        hideMenuDropdowns();
-    }
-}
-
-function setAudioDevice(deviceKey, options = {}) {
-    if (!deviceKey) return;
-    systemStatus.audioDevice = deviceKey;
-    if (deviceKey === 'airpods') {
-        systemStatus.connectedBluetoothDevice = 'AirPods';
-    }
-    updateAudioDeviceUI();
-    updateBluetoothUI();
-    if (!options.silent) {
-        hideMenuDropdowns();
-    }
-}
-
-function handleSystemToggle(toggleKey) {
-    switch (toggleKey) {
-        case 'wifi':
-            systemStatus.wifi = !systemStatus.wifi;
-            updateWifiUI();
-            break;
-        case 'bluetooth':
-            systemStatus.bluetooth = !systemStatus.bluetooth;
-            updateBluetoothUI();
-            break;
-        case 'focus':
-            systemStatus.focus = !systemStatus.focus;
-            updateFocusUI();
-            break;
-        case 'dark-mode': {
-            const next = !document.documentElement.classList.contains('dark');
-            systemStatus.darkMode = next;
-            if (typeof setThemePreference === 'function') {
-                setThemePreference(next ? 'dark' : 'light');
-            } else {
-                document.documentElement.classList.toggle('dark', next);
-            }
-            updateDarkModeUI();
-            break;
-        }
-        default:
-            break;
-    }
-}
-
-function handleSystemAction(actionKey) {
-    switch (actionKey) {
-        case 'toggle-wifi':
-            handleSystemToggle('wifi');
-            break;
-        case 'toggle-bluetooth':
-            handleSystemToggle('bluetooth');
-            break;
-        case 'open-network':
-        case 'open-bluetooth':
-        case 'open-sound':
-            if (window.dialogs && window.dialogs['settings-modal']) {
-                window.dialogs['settings-modal'].open();
-            } else if (typeof showTab === 'function') {
-                showTab('settings');
-            }
-            hideMenuDropdowns();
-            break;
-        case 'open-spotlight':
-        case 'open-siri':
-            console.info(`Aktion "${actionKey}" ausgelöst.`);
-            hideMenuDropdowns();
-            break;
-        default:
-            break;
-    }
-}
-
-function handleSystemSliderInput(type, value) {
-    if (!Number.isFinite(value)) return;
-    if (type === 'volume') {
-        systemStatus.volume = value;
-        updateVolumeUI();
-    } else if (type === 'brightness') {
-        systemStatus.brightness = value;
-        updateBrightnessUI();
-    }
-}
-
-function updateAllSystemStatusUI() {
-    applySystemIcon('sun', 'sun');
-    applySystemIcon('moon', 'moon');
-    updateWifiUI();
-    updateBluetoothUI();
-    updateFocusUI();
-    updateDarkModeUI();
-    updateVolumeUI();
-    updateBrightnessUI();
-    updateBatteryUI();
-    updateAudioDeviceUI();
-}
-
-function initSystemStatusControls() {
-    document.querySelectorAll('.system-network-indicator').forEach(indicator => {
-        indicator.dataset.default = indicator.textContent || '';
-    });
-
-    document.querySelectorAll('[data-system-menu-trigger]').forEach(trigger => {
-        bindDropdownTrigger(trigger, { hoverRequiresOpen: true });
-    });
-
-    document.querySelectorAll('[data-system-toggle]').forEach(toggle => {
-        toggle.addEventListener('click', (event) => {
-            event.stopPropagation();
-            handleSystemToggle(toggle.dataset.systemToggle);
-        });
-    });
-
-    document.querySelectorAll('[data-system-slider]').forEach(slider => {
-        ['pointerdown', 'mousedown', 'touchstart'].forEach(evt => {
-            slider.addEventListener(evt, e => e.stopPropagation());
-        });
-        slider.addEventListener('input', (event) => {
-            event.stopPropagation();
-            const value = Number(slider.value);
-            handleSystemSliderInput(slider.dataset.systemSlider, value);
-        });
-    });
-
-    document.querySelectorAll('[data-system-action]').forEach(btn => {
-        btn.addEventListener('click', (event) => {
-            event.stopPropagation();
-            handleSystemAction(btn.dataset.systemAction);
-        });
-    });
-
-    document.querySelectorAll('[data-audio-device]').forEach(btn => {
-        btn.addEventListener('click', (event) => {
-            event.stopPropagation();
-            if (btn.getAttribute('aria-disabled') === 'true') return;
-            setAudioDevice(btn.dataset.audioDevice);
-        });
-    });
-
-    document.querySelectorAll('[data-network]').forEach(btn => {
-        btn.addEventListener('click', (event) => {
-            event.stopPropagation();
-            if (btn.getAttribute('aria-disabled') === 'true') return;
-            setConnectedNetwork(btn.dataset.network);
-        });
-    });
-
-    document.querySelectorAll('[data-device]').forEach(btn => {
-        btn.addEventListener('click', (event) => {
-            event.stopPropagation();
-            if (btn.getAttribute('aria-disabled') === 'true') return;
-            setBluetoothDevice(btn.dataset.device, { syncAudio: true });
-        });
-    });
-
-    updateAllSystemStatusUI();
-}
+// ============================================================================
+// menuDefinitions, menuActionIdCounter, menuActionHandlers sind jetzt in menu.js
+// System status (WiFi, Bluetooth, etc.) ist jetzt in system.js
+// ============================================================================
 
 function syncTopZIndexWithDOM() {
     let maxZ = Number.isFinite(topZIndex) ? topZIndex : 1000;
@@ -1138,7 +293,10 @@ function syncTopZIndexWithDOM() {
         }
     });
     topZIndex = maxZ;
+    window.topZIndex = maxZ; // Sync to global
 }
+// Expose globally for use by storage module
+window.syncTopZIndexWithDOM = syncTopZIndexWithDOM;
 
 function getMenuBarBottom() {
     const header = document.querySelector('body > header');
@@ -1149,15 +307,10 @@ function getMenuBarBottom() {
     return rect.bottom;
 }
 
-// Ermittelt die vom Dock belegte Reserve am unteren Rand (in Pixeln)
-function getDockReservedBottom() {
-    const dock = document.getElementById('dock');
-    if (!dock || dock.classList.contains('hidden')) return 0;
-    const rect = dock.getBoundingClientRect();
-    const vh = Math.max(window.innerHeight || 0, 0);
-    if (vh <= 0) return 0;
-    return Math.round(Math.max(0, vh - rect.top));
-}
+// ============================================================================
+// Dock-Funktionen sind jetzt in dock.js
+// Aliase werden bereits oben definiert
+// ============================================================================
 
 function clampWindowToMenuBar(target) {
     if (!target) return;
@@ -1181,6 +334,8 @@ function clampWindowToMenuBar(target) {
         }
     }
 }
+// Expose globally for use by storage module
+window.clampWindowToMenuBar = clampWindowToMenuBar;
 
 function computeSnapMetrics(side) {
     if (side !== 'left' && side !== 'right') return null;
@@ -1241,64 +396,10 @@ function hideSnapPreview() {
     snapPreviewElement.removeAttribute('data-side');
 }
 
-// Dock-Magnification im macOS-Stil
-function initDockMagnification() {
-    const dock = document.getElementById('dock');
-    if (!dock) return;
-    const icons = Array.from(dock.querySelectorAll('.dock-icon'));
-    if (!icons.length) return;
-    const items = icons.map(icon => {
-        const parent = icon.parentElement;
-        const tooltip = parent ? parent.querySelector('.dock-tooltip') : null;
-        return {
-            icon,
-            tooltip,
-            baseHeight: icon.offsetHeight || 0
-        };
-    });
-    let rafId = null;
-    let pointerX = null;
-    const maxScale = 1.6;
-    const minScale = 1.0;
-    const radius = 120; // Einflussradius in px
-    const sigma = radius / 3;
-    const apply = () => {
-        rafId = null;
-        if (pointerX == null) {
-            items.forEach(({ icon, tooltip }) => {
-                icon.style.transform = '';
-                icon.style.zIndex = '';
-                if (tooltip) {
-                    tooltip.style.transform = '';
-                    tooltip.style.zIndex = '';
-                }
-            });
-            return;
-        }
-        items.forEach(({ icon, tooltip, baseHeight }) => {
-            const rect = icon.getBoundingClientRect();
-            const cx = rect.left + rect.width / 2;
-            const dx = Math.abs(pointerX - cx);
-            const influence = Math.exp(-(dx * dx) / (2 * sigma * sigma)); // 0..1
-            const scale = minScale + (maxScale - minScale) * influence;
-            const translateY = -8 * influence; // leichtes Anheben
-            icon.style.transformOrigin = 'bottom center';
-            icon.style.transform = `translateY(${translateY.toFixed(1)}px) scale(${scale.toFixed(3)})`;
-            icon.style.zIndex = String(100 + Math.round(influence * 100));
-            if (tooltip) {
-                const base = baseHeight || icon.offsetHeight || 0;
-                const lift = Math.max(0, base * (scale - 1) - translateY);
-                const gap = 12; // zusätzlicher Abstand zwischen Icon und Tooltip
-                tooltip.style.transform = `translateY(-${(lift + gap).toFixed(1)}px)`;
-                tooltip.style.zIndex = '400';
-            }
-        });
-    };
-    const onMove = (e) => { pointerX = e.clientX; if (!rafId) rafId = requestAnimationFrame(apply); };
-    const onLeave = () => { pointerX = null; if (!rafId) rafId = requestAnimationFrame(apply); };
-    dock.addEventListener('mousemove', onMove);
-    dock.addEventListener('mouseleave', onLeave);
-}
+// ============================================================================
+// initDockMagnification ist jetzt in dock.js
+// Alias wird bereits oben definiert
+// ============================================================================
 
 document.addEventListener('DOMContentLoaded', function () {
     // Wenn auf einen sichtbaren Modalcontainer geklickt wird, hole das Fenster in den Vordergrund
@@ -1480,500 +581,38 @@ function createMenuContext(modalId) {
 }
 
 function registerMenuAction(handler) {
-    if (typeof handler !== 'function') {
-        return null;
+    // Diese Funktion ist jetzt in menu.js, wird aber hier noch als Fallback benötigt
+    if (window.MenuSystem && window.MenuSystem.registerMenuAction) {
+        return window.MenuSystem.registerMenuAction(handler);
     }
-    const actionId = `menu-action-${++menuActionIdCounter}`;
-    menuActionHandlers.set(actionId, handler);
-    return actionId;
+    return null;
 }
 
 function normalizeMenuItems(items, context) {
-    if (!Array.isArray(items)) return [];
-    const normalized = [];
-    let previousWasSeparator = true;
-    items.forEach(item => {
-        if (!item) return;
-        if (item.type === 'separator') {
-            if (previousWasSeparator) {
-                return;
-            }
-            normalized.push({ type: 'separator' });
-            previousWasSeparator = true;
-            return;
-        }
-        const clone = Object.assign({}, item);
-        if (typeof clone.disabled === 'function') {
-            clone.disabled = clone.disabled(context);
-        }
-        if (typeof clone.label === 'function') {
-            clone.label = clone.label(context);
-        }
-        if (typeof clone.shortcut === 'function') {
-            clone.shortcut = clone.shortcut(context);
-        }
-        normalized.push(clone);
-        previousWasSeparator = false;
-    });
-    while (normalized.length && normalized[normalized.length - 1].type === 'separator') {
-        normalized.pop();
+    // Diese Funktion ist jetzt in menu.js
+    if (window.MenuSystem && window.MenuSystem.normalizeMenuItems) {
+        return window.MenuSystem.normalizeMenuItems(items, context);
     }
-    return normalized;
+    return [];
 }
 
-function renderApplicationMenu(activeModalId) {
-    const container = document.getElementById('menubar-links');
-    if (!container) return;
-    const modalKey = activeModalId && menuDefinitions[activeModalId] ? activeModalId : 'default';
-    const builder = menuDefinitions[modalKey] || menuDefinitions.default;
-    const context = createMenuContext(activeModalId || null);
-    const sections = typeof builder === 'function' ? builder(context) : Array.isArray(builder) ? builder : [];
-    container.innerHTML = '';
-    menuActionHandlers.clear();
-    menuActionIdCounter = 0;
-    currentMenuModalId = activeModalId || null;
-    if (!Array.isArray(sections) || sections.length === 0) {
-        return;
-    }
-    sections.forEach((section, sectionIndex) => {
-        if (!section) return;
-        const items = normalizeMenuItems(section.items, context);
-        if (!items.length) return;
-        const trigger = document.createElement('div');
-        trigger.className = 'menubar-trigger';
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'menubar-item';
-        button.dataset.menubarTriggerButton = 'true';
-        const label = typeof section.label === 'function' ? section.label(context) : section.label;
-        button.textContent = label || '';
-        const sectionId = section.id || `section-${sectionIndex}`;
-        const buttonId = `menubar-menu-${sectionId}`;
-        const dropdownId = `menu-dropdown-${sectionId}`;
-        button.id = buttonId;
-        button.setAttribute('aria-haspopup', 'true');
-        button.setAttribute('aria-expanded', 'false');
-        button.setAttribute('aria-controls', dropdownId);
-        const dropdown = document.createElement('ul');
-        dropdown.id = dropdownId;
-        dropdown.className = 'menu-dropdown hidden';
-        dropdown.setAttribute('role', 'menu');
-        dropdown.setAttribute('aria-labelledby', buttonId);
-        items.forEach(item => {
-            if (item.type === 'separator') {
-                const separator = document.createElement('li');
-                separator.className = 'menu-separator';
-                separator.setAttribute('role', 'separator');
-                separator.setAttribute('aria-hidden', 'true');
-                dropdown.appendChild(separator);
-                return;
-            }
-            const li = document.createElement('li');
-            li.setAttribute('role', 'none');
-            const tagName = item.href ? 'a' : 'button';
-            const actionEl = document.createElement(tagName);
-            actionEl.className = 'menu-item';
-            if (tagName === 'button') {
-                actionEl.type = 'button';
-            } else {
-                actionEl.href = item.href;
-                if (item.external) {
-                    actionEl.rel = 'noopener noreferrer';
-                    actionEl.target = '_blank';
-                }
-            }
-            const itemLabel = item.label != null ? (typeof item.label === 'function' ? item.label(context) : item.label) : '';
-            const labelSpan = document.createElement('span');
-            labelSpan.className = 'menu-item-label';
-            if (item.icon) {
-                const iconSpan = document.createElement('span');
-                iconSpan.className = 'menu-item-icon';
-                const iconSvg = getMenuIconSvg(item.icon);
-                renderIconIntoElement(iconSpan, iconSvg, item.icon);
-                labelSpan.appendChild(iconSpan);
-            }
-            labelSpan.appendChild(document.createTextNode(itemLabel));
-            actionEl.appendChild(labelSpan);
-            if (item.shortcut) {
-                const shortcutSpan = document.createElement('span');
-                shortcutSpan.className = 'menu-item-shortcut';
-                shortcutSpan.textContent = item.shortcut;
-                actionEl.appendChild(shortcutSpan);
-            }
-            actionEl.setAttribute('role', 'menuitem');
-            if (item.title) {
-                actionEl.title = item.title;
-            }
-            const isDisabled = Boolean(item.disabled);
-            if (isDisabled) {
-                actionEl.setAttribute('aria-disabled', 'true');
-                if (tagName === 'button') {
-                    actionEl.disabled = true;
-                }
-            } else if (typeof item.action === 'function') {
-                const actionId = registerMenuAction(item.action);
-                if (actionId) {
-                    actionEl.dataset.menuAction = actionId;
-                }
-            }
-            if (item.href && typeof item.onClick === 'function') {
-                actionEl.addEventListener('click', (event) => {
-                    const result = item.onClick(event);
-                    if (result === false) {
-                        event.preventDefault();
-                    }
-                });
-            }
-            li.appendChild(actionEl);
-            dropdown.appendChild(li);
-        });
-        if (!dropdown.childElementCount) {
-            return;
-        }
-        trigger.appendChild(button);
-        trigger.appendChild(dropdown);
-        container.appendChild(trigger);
-        bindDropdownTrigger(button, { hoverRequiresOpen: true });
-    });
-}
+// ============================================================================
+// renderApplicationMenu und handleMenuActionActivation sind VOLLSTÄNDIG in menu.js
+// Diese werden über Aliase (Zeile 31-32) aufgerufen: window.MenuSystem.renderApplicationMenu
+// Die alten Implementierungen wurden entfernt, um Konflikte zu vermeiden
+// ============================================================================
 
-function handleMenuActionActivation(event) {
-    const target = event.target instanceof Element ? event.target.closest('[data-menu-action]') : null;
-    if (!target) return;
-    const actionId = target.getAttribute('data-menu-action');
-    const handler = actionId ? menuActionHandlers.get(actionId) : null;
-    if (typeof handler !== 'function') return;
-    event.preventDefault();
-    event.stopPropagation();
-    hideMenuDropdowns();
-    try {
-        handler();
-    } catch (err) {
-        console.error('Fehler beim Ausführen eines Menübefehls:', err);
-    }
-}
+// ============================================================================
+// MENU-HELPER-FUNKTIONEN sind jetzt in menu.js
+// createWindowMenuSection, getWindowMenuItems, createHelpMenuSection
+// wurden nach menu.js verschoben.
+// ============================================================================
 
-function createWindowMenuSection(context) {
-    return {
-        id: 'window',
-        label: () => translate('menu.sections.window'),
-        items: getWindowMenuItems(context)
-    };
-}
-
-function getWindowMenuItems(context) {
-    const dialog = context && context.dialog;
-    const hasDialog = Boolean(dialog && typeof dialog.close === 'function');
-    return [
-        {
-            id: 'window-minimize',
-            label: () => translate('menu.window.minimize'),
-            shortcut: '⌘M',
-            disabled: !hasDialog,
-            icon: 'windowMinimize',
-            action: () => {
-                if (dialog && typeof dialog.minimize === 'function') {
-                    dialog.minimize();
-                }
-            }
-        },
-        {
-            id: 'window-zoom',
-            label: () => translate('menu.window.zoom'),
-            shortcut: '⌃⌘F',
-            disabled: !hasDialog,
-            icon: 'windowZoom',
-            action: () => {
-                if (dialog && typeof dialog.toggleMaximize === 'function') {
-                    dialog.toggleMaximize();
-                }
-            }
-        },
-        {
-            type: 'separator'
-        },
-        {
-            id: 'window-all-front',
-            label: () => translate('menu.window.bringToFront'),
-            disabled: !hasAnyVisibleDialog(),
-            icon: 'windowFront',
-            action: bringAllWindowsToFront
-        },
-        {
-            type: 'separator'
-        },
-        {
-            id: 'window-close',
-            label: () => translate('menu.window.close'),
-            shortcut: '⌘W',
-            disabled: !hasDialog,
-            icon: 'close',
-            action: () => closeContextWindow(context)
-        }
-    ];
-}
-
-function createHelpMenuSection(context, overrides = {}) {
-    const sectionKey = overrides.sectionKey || 'menu.sections.help';
-    const itemKey = overrides.itemKey || 'menu.help.showHelp';
-    const infoModalId = overrides.infoModalId || context.modalId || null;
-    return {
-        id: overrides.id || 'help',
-        label: () => translate(sectionKey),
-        items: [
-            {
-                id: 'help-show-info',
-                label: () => translate(itemKey),
-                icon: overrides.itemIcon || 'help',
-                action: () => openProgramInfoFromMenu(infoModalId)
-            }
-        ]
-    };
-}
-
-function buildDefaultMenuDefinition(context) {
-    return buildFinderMenuDefinition(context);
-}
-
-function buildFinderMenuDefinition(context) {
-    return [
-        {
-            id: 'file',
-            label: () => translate('menu.sections.file'),
-            items: [
-                {
-                    id: 'finder-new-window',
-                    label: () => translate('menu.finder.newWindow'),
-                    shortcut: '⌘N',
-                    icon: 'finder',
-                    action: () => showTab('projects')
-                },
-                {
-                    id: 'finder-reload',
-                    label: () => translate('menu.finder.reload'),
-                    shortcut: '⌘R',
-                    icon: 'reload',
-                    action: loadGithubRepos
-                },
-                {
-                    type: 'separator'
-                },
-                {
-                    id: 'finder-close',
-                    label: () => translate('menu.finder.close'),
-                    shortcut: '⌘W',
-                    disabled: () => !(context && context.dialog),
-                    icon: 'close',
-                    action: () => closeContextWindow(context)
-                }
-            ]
-        },
-        createWindowMenuSection(context),
-        createHelpMenuSection(context, { itemKey: 'menu.finder.help', infoModalId: 'projects-modal', itemIcon: 'help' })
-    ];
-}
-
-function buildSettingsMenuDefinition(context) {
-    return [
-        {
-            id: 'file',
-            label: () => translate('menu.sections.file'),
-            items: [
-                {
-                    id: 'settings-close',
-                    label: () => translate('menu.settings.close'),
-                    shortcut: '⌘W',
-                    disabled: () => !(context && context.dialog),
-                    icon: 'close',
-                    action: () => closeContextWindow(context)
-                }
-            ]
-        },
-        createWindowMenuSection(context),
-        createHelpMenuSection(context, { itemKey: 'menu.settings.help', infoModalId: 'settings-modal', itemIcon: 'help' })
-    ];
-}
-
-function buildTextEditorMenuDefinition(context) {
-    return [
-        {
-            id: 'file',
-            label: () => translate('menu.sections.file'),
-            items: [
-                {
-                    id: 'text-new',
-                    label: () => translate('menu.text.newFile'),
-                    shortcut: '⌘N',
-                    icon: 'newFile',
-                    action: () => sendTextEditorMenuAction('file:new')
-                },
-                {
-                    id: 'text-open',
-                    label: () => translate('menu.text.open'),
-                    shortcut: '⌘O',
-                    icon: 'open',
-                    action: () => sendTextEditorMenuAction('file:open')
-                },
-                {
-                    id: 'text-save',
-                    label: () => translate('menu.text.save'),
-                    shortcut: '⌘S',
-                    icon: 'save',
-                    action: () => sendTextEditorMenuAction('file:save')
-                }
-            ]
-        },
-        {
-            id: 'edit',
-            label: () => translate('menu.sections.edit'),
-            items: [
-                {
-                    id: 'text-undo',
-                    label: () => translate('menu.text.undo'),
-                    shortcut: '⌘Z',
-                    icon: 'undo',
-                    action: () => sendTextEditorMenuAction('edit:undo')
-                },
-                {
-                    id: 'text-redo',
-                    label: () => translate('menu.text.redo'),
-                    shortcut: '⇧⌘Z',
-                    icon: 'redo',
-                    action: () => sendTextEditorMenuAction('edit:redo')
-                },
-                {
-                    type: 'separator'
-                },
-                {
-                    id: 'text-cut',
-                    label: () => translate('menu.text.cut'),
-                    shortcut: '⌘X',
-                    icon: 'cut',
-                    action: () => sendTextEditorMenuAction('edit:cut')
-                },
-                {
-                    id: 'text-copy',
-                    label: () => translate('menu.text.copy'),
-                    shortcut: '⌘C',
-                    icon: 'copy',
-                    action: () => sendTextEditorMenuAction('edit:copy')
-                },
-                {
-                    id: 'text-paste',
-                    label: () => translate('menu.text.paste'),
-                    shortcut: '⌘V',
-                    icon: 'paste',
-                    action: () => sendTextEditorMenuAction('edit:paste')
-                },
-                {
-                    type: 'separator'
-                },
-                {
-                    id: 'text-select-all',
-                    label: () => translate('menu.text.selectAll'),
-                    shortcut: '⌘A',
-                    icon: 'selectAll',
-                    action: () => sendTextEditorMenuAction('edit:selectAll')
-                }
-            ]
-        },
-        {
-            id: 'view',
-            label: () => translate('menu.sections.view'),
-            items: [
-                {
-                    id: 'text-toggle-wrap',
-                    label: () => translate('menu.text.toggleWrap'),
-                    shortcut: '⌥⌘W',
-                    icon: 'wrap',
-                    action: () => sendTextEditorMenuAction('view:toggleWrap')
-                }
-            ]
-        },
-        createWindowMenuSection(context),
-        createHelpMenuSection(context, { itemKey: 'menu.text.help', infoModalId: 'text-modal', itemIcon: 'help' })
-    ];
-}
-
-function buildImageViewerMenuDefinition(context) {
-    const state = getImageViewerState();
-    return [
-        {
-            id: 'file',
-            label: () => translate('menu.sections.file'),
-            items: [
-                {
-                    id: 'image-open-tab',
-                    label: () => translate('menu.image.openInTab'),
-                    disabled: !state.hasImage,
-                    icon: 'imageOpen',
-                    action: openActiveImageInNewTab
-                },
-                {
-                    id: 'image-download',
-                    label: () => translate('menu.image.saveImage'),
-                    disabled: !state.hasImage,
-                    icon: 'download',
-                    action: downloadActiveImage
-                },
-                {
-                    type: 'separator'
-                },
-                {
-                    id: 'image-close',
-                    label: () => translate('menu.image.close'),
-                    shortcut: '⌘W',
-                    disabled: () => !(context && context.dialog),
-                    icon: 'close',
-                    action: () => closeContextWindow(context)
-                }
-            ]
-        },
-        createWindowMenuSection(context),
-        createHelpMenuSection(context, { itemKey: 'menu.image.help', infoModalId: 'image-modal', itemIcon: 'help' })
-    ];
-}
-
-function buildAboutMenuDefinition(context) {
-    return [
-        {
-            id: 'file',
-            label: () => translate('menu.sections.file'),
-            items: [
-                {
-                    id: 'about-close',
-                    label: () => translate('menu.about.close'),
-                    shortcut: '⌘W',
-                    disabled: () => !(context && context.dialog),
-                    icon: 'close',
-                    action: () => closeContextWindow(context)
-                }
-            ]
-        },
-        createWindowMenuSection(context),
-        createHelpMenuSection(context, { itemKey: 'menu.about.help', infoModalId: 'about-modal', itemIcon: 'info' })
-    ];
-}
-
-function buildProgramInfoMenuDefinition(context) {
-    return [
-        {
-            id: 'file',
-            label: () => translate('menu.sections.file'),
-            items: [
-                {
-                    id: 'program-info-close',
-                    label: () => translate('menu.programInfo.close'),
-                    shortcut: '⌘W',
-                    disabled: () => !(context && context.dialog),
-                    icon: 'close',
-                    action: () => closeContextWindow(context)
-                }
-            ]
-        },
-        createWindowMenuSection(context)
-    ];
-}
+// ============================================================================
+// MENU-DEFINITIONEN sind jetzt in menu.js
+// Die Funktionen buildDefaultMenuDefinition, buildFinderMenuDefinition, etc.
+// wurden nach menu.js verschoben.
+// ============================================================================
 
 function closeContextWindow(context) {
     const dialog = context && context.dialog;
@@ -2068,6 +707,8 @@ function updateProgramLabelByTopModal() {
     renderApplicationMenu(topModal ? topModal.id : null);
     return info;
 }
+// Expose globally for use by storage module
+window.updateProgramLabelByTopModal = updateProgramLabelByTopModal;
 
 window.addEventListener("languagePreferenceChange", () => {
     const info = updateProgramLabelByTopModal();
@@ -2081,15 +722,13 @@ window.addEventListener("languagePreferenceChange", () => {
             currentProgramInfo = infoForDialog;
         }
     }
-    document.querySelectorAll('.system-network-indicator').forEach(indicator => {
-        indicator.dataset.default = indicator.textContent || '';
-    });
+    // System status UI is now handled by SystemUI module
     updateAllSystemStatusUI();
 });
 
 window.addEventListener('themePreferenceChange', () => {
-    systemStatus.darkMode = document.documentElement.classList.contains('dark');
-    updateDarkModeUI();
+    // System UI module will handle dark mode state updates
+    updateAllSystemStatusUI();
 });
 
 function hideMenuDropdowns() {
@@ -2104,6 +743,23 @@ function hideMenuDropdowns() {
     document.querySelectorAll('[data-system-menu-trigger]').forEach(button => {
         button.setAttribute('aria-expanded', 'false');
     });
+}
+// Expose globally for use by SystemUI module
+window.hideMenuDropdowns = hideMenuDropdowns;
+
+// Close menus only when clicking outside of menubar triggers and dropdowns
+function handleDocumentClickToCloseMenus(event) {
+    // Guard against immediate re-closing right after we opened via trigger
+    if (window.__lastMenuInteractionAt && (Date.now() - window.__lastMenuInteractionAt) < 200) {
+        return;
+    }
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+    // If the click is inside a menubar trigger or an open dropdown, do nothing
+    if (target.closest('.menubar-trigger') || target.closest('.menu-dropdown')) {
+        return;
+    }
+    hideMenuDropdowns();
 }
 
 function isAnyDropdownOpen() {
@@ -2129,20 +785,38 @@ function toggleMenuDropdown(trigger, options = {}) {
 function bindDropdownTrigger(trigger, options = {}) {
     if (!trigger) return;
     const hoverRequiresExisting = options.hoverRequiresOpen !== undefined ? options.hoverRequiresOpen : true;
+    let clickJustOccurred = false;
+
     trigger.addEventListener('click', (event) => {
         event.stopPropagation();
-        toggleMenuDropdown(trigger);
+        clickJustOccurred = true;
+        // Note the time of this interaction so the document closer ignores it
+        window.__lastMenuInteractionAt = Date.now();
+        // Always force open on click to avoid focus->click toggle race on first interaction
+        toggleMenuDropdown(trigger, { forceOpen: true });
+        // Reset flag after a short delay to allow hover to work again
+        setTimeout(() => {
+            clickJustOccurred = false;
+        }, 200);
     });
     trigger.addEventListener('mouseenter', () => {
+        // Ignore mouseenter if click just occurred to prevent immediate close
+        if (clickJustOccurred) {
+            return;
+        }
+        window.__lastMenuInteractionAt = Date.now();
         if (hoverRequiresExisting && !isAnyDropdownOpen()) {
             return;
         }
         toggleMenuDropdown(trigger, { forceOpen: true });
     });
     trigger.addEventListener('focus', () => {
+        window.__lastMenuInteractionAt = Date.now();
         toggleMenuDropdown(trigger, { forceOpen: true });
     });
 }
+// Expose globally for use by SystemUI module
+window.bindDropdownTrigger = bindDropdownTrigger;
 
 // Zentrale Event-Handler für Menü und Dropdowns
 function initEventHandlers() {
@@ -2158,7 +832,14 @@ function initEventHandlers() {
     bindDropdownTrigger(programLabel, { hoverRequiresOpen: true });
 
     document.addEventListener('click', handleMenuActionActivation);
-    document.addEventListener('click', hideMenuDropdowns);
+    document.addEventListener('click', handleDocumentClickToCloseMenus);
+
+    // Close any open dropdown with Escape for accessibility
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            hideMenuDropdowns();
+        }
+    });
 
     if (dropdownAbout) {
         dropdownAbout.addEventListener('click', (event) => {
@@ -2262,113 +943,9 @@ function initEventHandlers() {
     });
 }
 
-// Zustandsspeicherung: Offene Fenster speichern
-function saveOpenModals() {
-    const openModals = modalIds.filter(id => {
-        if (transientModalIds.has(id)) return false;
-        const el = document.getElementById(id);
-        if (!el) return false;
-        // Als "offen" zählen sowohl sichtbare als auch minimierte Fenster
-        const minimized = el.dataset && el.dataset.minimized === 'true';
-        return !el.classList.contains("hidden") || minimized;
-    });
-    localStorage.setItem("openModals", JSON.stringify(openModals));
-}
-
-// Zustandsspeicherung: Offene Fenster wiederherstellen
-function restoreOpenModals() {
-    const openModals = JSON.parse(localStorage.getItem("openModals") || "[]");
-    openModals.forEach(id => {
-        if (transientModalIds.has(id)) return;
-        const dialogInstance = window.dialogs && window.dialogs[id];
-        if (dialogInstance) {
-            dialogInstance.open();
-        } else {
-            const el = document.getElementById(id);
-            if (el) el.classList.remove("hidden");
-        }
-    });
-    updateDockIndicators();
-    updateProgramLabelByTopModal();
-}
-
-// Speichern der Fensterpositionen
-function getDialogWindowElement(modal) {
-    if (!modal) return null;
-    return modal.querySelector('.autopointer') || modal;
-}
-
-function saveWindowPositions() {
-    const positions = {};
-    modalIds.forEach(id => {
-        if (transientModalIds.has(id)) return;
-        const el = document.getElementById(id);
-        const windowEl = getDialogWindowElement(el);
-        if (el && windowEl) {
-            positions[id] = {
-                left: windowEl.style.left || "",
-                top: windowEl.style.top || "",
-                width: windowEl.style.width || "",
-                height: windowEl.style.height || "",
-                position: windowEl.style.position || ""
-            };
-        }
-    });
-    localStorage.setItem("modalPositions", JSON.stringify(positions));
-}
-
-function restoreWindowPositions() {
-    const positions = JSON.parse(localStorage.getItem("modalPositions") || "{}");
-    Object.keys(positions).forEach(id => {
-        if (transientModalIds.has(id)) return;
-        const el = document.getElementById(id);
-        const windowEl = getDialogWindowElement(el);
-        if (el && windowEl) {
-            const stored = positions[id];
-            if (stored.position) {
-                windowEl.style.position = stored.position;
-            } else if (stored.left || stored.top) {
-                windowEl.style.position = 'fixed';
-            }
-            if (stored.left) windowEl.style.left = stored.left;
-            if (stored.top) windowEl.style.top = stored.top;
-            if (stored.width) windowEl.style.width = stored.width;
-            if (stored.height) windowEl.style.height = stored.height;
-        }
-        clampWindowToMenuBar(windowEl);
-    });
-}
-
-function resetWindowLayout() {
-    modalIds.forEach(id => {
-        const modal = document.getElementById(id);
-        const windowEl = getDialogWindowElement(modal);
-        if (modal) {
-            modal.style.zIndex = '';
-        }
-        if (windowEl) {
-            windowEl.style.left = '';
-            windowEl.style.top = '';
-            windowEl.style.width = '';
-            windowEl.style.height = '';
-            windowEl.style.position = '';
-            windowEl.style.zIndex = '';
-        }
-    });
-    topZIndex = 1000;
-    localStorage.removeItem("modalPositions");
-    hideMenuDropdowns();
-    syncTopZIndexWithDOM();
-    if (window.dialogs) {
-        Object.values(window.dialogs).forEach(dialog => {
-            if (dialog && typeof dialog.enforceMenuBarBoundary === 'function') {
-                dialog.enforceMenuBarBoundary();
-            }
-        });
-    }
-    clearFinderState();
-    updateProgramLabelByTopModal();
-}
+// ============================================================================
+// Persistence functions are now in storage.js (window.StorageSystem)
+// ============================================================================
 
 // Lädt GitHub-Repositories und cached sie im LocalStorage
 function loadGithubRepos() {
@@ -3183,6 +1760,8 @@ function updateDockIndicators() {
         }
     });
 }
+// Expose globally for use by storage module
+window.updateDockIndicators = updateDockIndicators;
 
 // Blendet alle Sektionen der Einstellungen aus und zeigt nur die gewünschte an
 function showSettingsSection(section) {
@@ -3199,663 +1778,4 @@ function showSettingsSection(section) {
     }
 }
 
-// Klasse zum Verwalten eines Fensters (Modal)
-class Dialog {
-    constructor(modalId) {
-        this.modal = document.getElementById(modalId);
-        if (!this.modal) {
-            throw new Error(`Kein Dialog mit der ID ${modalId} gefunden.`);
-        }
-        this.windowEl = getDialogWindowElement(this.modal);
-        this.lastDragPointerX = null;
-        this.init();
-    }
-    init() {
-        // Initialisiert Drag & Drop und Resizing
-        this.makeDraggable();
-        this.makeResizable();
-        const closeButton = this.modal.querySelector('.draggable-header button[id^="close-"]');
-        if (closeButton) {
-            closeButton.style.cursor = 'pointer';
-            closeButton.dataset.dialogAction = 'close';
-            if (!closeButton.dataset.dialogBoundClose) {
-                closeButton.dataset.dialogBoundClose = 'true';
-                closeButton.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.close();
-                });
-            }
-        }
-        // Verkabele macOS-ähnliche Titelbar-Buttons (Gelb = Minimize, Grün = Maximize)
-        const minimizeEl = this.modal.querySelector('.draggable-header .bg-yellow-500.rounded-full');
-        const maximizeEl = this.modal.querySelector('.draggable-header .bg-green-500.rounded-full');
-        if (minimizeEl) {
-            minimizeEl.style.cursor = 'pointer';
-            minimizeEl.title = minimizeEl.title || 'Minimieren';
-            minimizeEl.dataset.dialogAction = 'minimize';
-            minimizeEl.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.minimize();
-            });
-        }
-        if (maximizeEl) {
-            maximizeEl.style.cursor = 'pointer';
-            maximizeEl.title = maximizeEl.title || 'Maximieren';
-            maximizeEl.dataset.dialogAction = 'maximize';
-            maximizeEl.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.toggleMaximize();
-            });
-        }
-    }
-    open() {
-        hideMenuDropdowns();
-        this.modal.classList.remove("hidden");
-        // Öffnen hebt Minimiert-Status auf
-        if (this.modal.dataset) {
-            delete this.modal.dataset.minimized;
-        }
-        this.bringToFront();
-        this.enforceMenuBarBoundary();
-        saveOpenModals();
-        updateDockIndicators();
-        updateProgramLabelByTopModal();
-    }
-    close() {
-        if (this.modal.classList.contains("hidden")) return;
-        this.modal.classList.add("hidden");
-        saveOpenModals();
-        updateDockIndicators();
-        updateProgramLabelByTopModal();
-    }
-    minimize() {
-        // Markiere als minimiert und blende das Fenster aus, Dock-Anzeige bleibt erhalten
-        if (this.modal.dataset) this.modal.dataset.minimized = 'true';
-        if (!this.modal.classList.contains('hidden')) {
-            this.modal.classList.add('hidden');
-        }
-        saveOpenModals();
-        updateDockIndicators();
-        updateProgramLabelByTopModal();
-    }
-    toggleMaximize() {
-        const target = this.windowEl || this.modal;
-        if (!target) return;
-        // Wenn das Fenster angedockt ist, zunächst lösen, um konsistente Maße zu erhalten
-        this.unsnap({ silent: true });
-        const ds = this.modal.dataset || {};
-        const isMax = ds.maximized === 'true';
-        if (isMax) {
-            // Zurücksetzen auf vorherige Größe/Position
-            if (ds.prevLeft !== undefined) target.style.left = ds.prevLeft;
-            if (ds.prevTop !== undefined) target.style.top = ds.prevTop;
-            if (ds.prevWidth !== undefined) target.style.width = ds.prevWidth;
-            if (ds.prevHeight !== undefined) target.style.height = ds.prevHeight;
-            if (ds.prevPosition !== undefined) target.style.position = ds.prevPosition;
-            delete this.modal.dataset.maximized;
-            delete this.modal.dataset.prevLeft;
-            delete this.modal.dataset.prevTop;
-            delete this.modal.dataset.prevWidth;
-            delete this.modal.dataset.prevHeight;
-            delete this.modal.dataset.prevPosition;
-            this.enforceMenuBarBoundary();
-            saveWindowPositions();
-            return;
-        }
-        // Speichere aktuelle Größe/Position
-        const computed = window.getComputedStyle(target);
-        this.modal.dataset.prevLeft = target.style.left || computed.left || '';
-        this.modal.dataset.prevTop = target.style.top || computed.top || '';
-        this.modal.dataset.prevWidth = target.style.width || computed.width || '';
-        this.modal.dataset.prevHeight = target.style.height || computed.height || '';
-        this.modal.dataset.prevPosition = target.style.position || computed.position || '';
-        // Auf maximierte Größe setzen (unterhalb der Menüleiste)
-        const minTop = Math.round(getMenuBarBottom());
-        target.style.position = 'fixed';
-        target.style.left = '0px';
-        target.style.top = `${minTop}px`;
-        target.style.width = '100vw';
-        // Höhe: restlicher Platz unterhalb der Menüleiste
-        target.style.height = `calc(100vh - ${minTop}px)`;
-        // Dock-Reserve berücksichtigen
-        try {
-            const __dockReserve = getDockReservedBottom();
-            const __maxHeight = Math.max(0, (window.innerHeight || 0) - minTop - __dockReserve);
-            target.style.height = `${__maxHeight}px`;
-        } catch (e) { /* noop */ }
-        this.modal.dataset.maximized = 'true';
-        this.bringToFront();
-        saveWindowPositions();
-    }
-    snapTo(side, options = {}) {
-        const target = this.windowEl || this.modal;
-        if (!target) return null;
-        if (side !== 'left' && side !== 'right') return null;
-        const { silent = false } = options;
-        const ds = this.modal.dataset || {};
-        const alreadySnapped = ds.snapped;
-        if (!alreadySnapped) {
-            const computed = window.getComputedStyle(target);
-            ds.prevSnapLeft = target.style.left || computed.left || '';
-            ds.prevSnapTop = target.style.top || computed.top || '';
-            ds.prevSnapWidth = target.style.width || computed.width || '';
-            ds.prevSnapHeight = target.style.height || computed.height || '';
-            ds.prevSnapPosition = target.style.position || computed.position || '';
-            ds.prevSnapRight = target.style.right || computed.right || '';
-            ds.prevSnapBottom = target.style.bottom || computed.bottom || '';
-        }
-        const metrics = computeSnapMetrics(side);
-        if (!metrics) {
-            this.unsnap({ silent: true });
-            return null;
-        }
-        target.style.position = 'fixed';
-        target.style.top = `${metrics.top}px`;
-        target.style.left = `${metrics.left}px`;
-        target.style.width = `${metrics.width}px`;
-        // exakte Höhe unter Berücksichtigung des Docks
-        target.style.height = `${metrics.height}px`;
-        target.style.right = '';
-        target.style.bottom = '';
-        ds.snapped = side;
-        this.bringToFront();
-        hideSnapPreview();
-        if (!silent) {
-            saveWindowPositions();
-        }
-        return side;
-    }
-    unsnap(options = {}) {
-        const target = this.windowEl || this.modal;
-        if (!target) return false;
-        const { silent = false } = options;
-        const ds = this.modal.dataset || {};
-        if (!ds.snapped) return false;
-        const restore = (key, prop) => {
-            if (Object.prototype.hasOwnProperty.call(ds, key)) {
-                const value = ds[key];
-                if (value === '') {
-                    target.style[prop] = '';
-                } else {
-                    target.style[prop] = value;
-                }
-                delete ds[key];
-            } else {
-                target.style[prop] = '';
-            }
-        };
-        restore('prevSnapLeft', 'left');
-        restore('prevSnapTop', 'top');
-        restore('prevSnapWidth', 'width');
-        restore('prevSnapHeight', 'height');
-        restore('prevSnapPosition', 'position');
-        restore('prevSnapRight', 'right');
-        restore('prevSnapBottom', 'bottom');
-        delete ds.snapped;
-        hideSnapPreview();
-        this.enforceMenuBarBoundary();
-        if (!silent) {
-            saveWindowPositions();
-        }
-        return true;
-    }
-    applySnapAfterDrag(target, pointerX) {
-        if (!target) {
-            hideSnapPreview();
-            return null;
-        }
-        const candidate = this.getSnapCandidate(target, pointerX);
-        if (candidate) {
-            const side = this.snapTo(candidate, { silent: true });
-            hideSnapPreview();
-            return side;
-        }
-        this.unsnap({ silent: true });
-        hideSnapPreview();
-        return null;
-    }
-    getSnapCandidate(target, pointerX) {
-        if (!target) return null;
-        const viewportWidth = Math.max(window.innerWidth || 0, 0);
-        if (viewportWidth <= 0) return null;
-        const threshold = Math.max(3, Math.min(14, viewportWidth * 0.0035));
-        const rect = target.getBoundingClientRect();
-        const pointerDistLeft = typeof pointerX === 'number' ? Math.max(0, pointerX) : Math.abs(rect.left);
-        if (Math.abs(rect.left) <= threshold || pointerDistLeft <= threshold) {
-            return 'left';
-        }
-        const distRight = viewportWidth - rect.right;
-        const pointerDistRight = typeof pointerX === 'number' ? Math.max(0, viewportWidth - pointerX) : Math.abs(distRight);
-        if (Math.abs(distRight) <= threshold || pointerDistRight <= threshold) {
-            return 'right';
-        }
-        return null;
-    }
-    bringToFront() {
-        // Erhöhe den globalen Z-Index‑Zähler und setze diesen Dialog nach vorn.
-        // Durch das Hochzählen bleiben bestehende Reihenfolgen erhalten und verhindern, dass
-        // ein anderer Dialog versehentlich überlagert wird. Sichtbare Modale werden nicht
-        // zurückgesetzt, wodurch ständige Umsortierungen verhindert werden.
-        topZIndex = (typeof topZIndex === 'number' ? topZIndex : 1000) + 1;
-        const zValue = topZIndex.toString();
-        this.modal.style.zIndex = zValue;
-        if (this.windowEl) {
-            this.windowEl.style.zIndex = zValue;
-        }
-    }
-    refocus() {
-        // Wird aufgerufen, wenn innerhalb des Modals geklickt wird
-        this.bringToFront();
-        hideMenuDropdowns();
-        saveOpenModals();
-        updateProgramLabelByTopModal();
-    }
-    makeDraggable() {
-        const header = this.modal.querySelector('.draggable-header');
-        const target = this.windowEl || this.modal;
-        if (!header || !target) return;
-        header.style.cursor = 'move';
-        let offsetX = 0, offsetY = 0;
-        header.addEventListener('mousedown', (e) => {
-            this.refocus();
-            // Wenn auf einen Steuerungs-Button geklickt wird (schließen/minimieren/maximieren), kein Drag starten
-            if (e.target.closest('button[id^="close-"]')) return;
-            if (e.target.closest('[data-dialog-action]')) return;
-            // Beim maximierten Fenster kein Drag
-            if (this.modal.dataset && this.modal.dataset.maximized === 'true') return;
-            const pointerX = e.clientX;
-            const pointerY = e.clientY;
-            const initialSnapSide = this.modal.dataset ? this.modal.dataset.snapped : null;
-            let rect = target.getBoundingClientRect();
-            let localOffsetX = pointerX - rect.left;
-            let localOffsetY = pointerY - rect.top;
-            if (initialSnapSide) {
-                const preservedOffsetX = localOffsetX;
-                const preservedOffsetY = localOffsetY;
-                this.unsnap({ silent: true });
-                // Positioniere das Fenster direkt unter dem Cursor mit den gespeicherten Offsets
-                const minTopAfterUnsnap = getMenuBarBottom();
-                target.style.position = 'fixed';
-                target.style.left = `${pointerX - preservedOffsetX}px`;
-                target.style.top = `${Math.max(minTopAfterUnsnap, pointerY - preservedOffsetY)}px`;
-                rect = target.getBoundingClientRect();
-                localOffsetX = pointerX - rect.left;
-                localOffsetY = pointerY - rect.top;
-            }
-            const computedPosition = window.getComputedStyle(target).position;
-            // Beim ersten Drag die aktuelle Position einfrieren, damit es nicht springt.
-            if (computedPosition === 'static' || computedPosition === 'relative') {
-                target.style.position = 'fixed';
-            } else if (!target.style.position) {
-                target.style.position = computedPosition;
-            }
-            const minTop = getMenuBarBottom();
-            target.style.left = `${pointerX - localOffsetX}px`;
-            target.style.top = `${Math.max(minTop, pointerY - localOffsetY)}px`;
-            clampWindowToMenuBar(target);
-            const adjustedRect = target.getBoundingClientRect();
-            offsetX = pointerX - adjustedRect.left;
-            offsetY = pointerY - adjustedRect.top;
-            this.lastDragPointerX = pointerX;
-            // Transparentes Overlay erstellen, um Events abzufangen
-            const overlay = document.createElement('div');
-            overlay.style.position = 'fixed';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100%';
-            overlay.style.height = '100%';
-            overlay.style.zIndex = '9999';
-            overlay.style.cursor = 'move';
-            overlay.style.backgroundColor = 'transparent';
-            document.body.appendChild(overlay);
-            let isDragging = true;
-            let moved = false;
-            const cleanup = (shouldSave = true) => {
-                if (!isDragging) return;
-                isDragging = false;
-                overlay.remove();
-                overlay.removeEventListener('mousemove', mouseMoveHandler);
-                overlay.removeEventListener('mouseup', mouseUpHandler);
-                window.removeEventListener('mouseup', mouseUpHandler);
-                window.removeEventListener('blur', blurHandler);
-                window.removeEventListener('mousemove', mouseMoveHandler);
-                hideSnapPreview();
-                if (shouldSave) {
-                    if (moved) {
-                        this.applySnapAfterDrag(target, this.lastDragPointerX);
-                    } else if (initialSnapSide) {
-                        this.snapTo(initialSnapSide, { silent: true });
-                    }
-                    saveWindowPositions();
-                }
-                this.lastDragPointerX = null;
-            };
-            const mouseMoveHandler = (e) => {
-                moved = true;
-                window.requestAnimationFrame(() => {
-                    const newLeft = e.clientX - offsetX;
-                    const newTop = e.clientY - offsetY;
-                    const minTop = getMenuBarBottom();
-                    target.style.left = newLeft + 'px';
-                    target.style.top = Math.max(minTop, newTop) + 'px';
-                    this.lastDragPointerX = e.clientX;
-                    const candidate = this.getSnapCandidate(target, this.lastDragPointerX);
-                    if (candidate) {
-                        showSnapPreview(candidate);
-                    } else {
-                        hideSnapPreview();
-                    }
-                });
-            };
-            const mouseUpHandler = () => cleanup(true);
-            const blurHandler = () => cleanup(true);
-            overlay.addEventListener('mousemove', mouseMoveHandler);
-            overlay.addEventListener('mouseup', mouseUpHandler);
-            window.addEventListener('mousemove', mouseMoveHandler);
-            window.addEventListener('mouseup', mouseUpHandler);
-            window.addEventListener('blur', blurHandler);
-            e.preventDefault();
-        });
-    }
-    makeResizable() {
-        if (this.modal.dataset.noResize === "true") {
-            return;
-        }
-        const target = this.windowEl || this.modal;
-        if (!target) return;
-
-        const existingHandles = target.querySelectorAll('.resizer');
-        existingHandles.forEach(handle => handle.remove());
-
-        const computedPosition = window.getComputedStyle(target).position;
-        if (!computedPosition || computedPosition === 'static') {
-            target.style.position = 'relative';
-        }
-
-        const ensureFixedPosition = () => {
-            const computed = window.getComputedStyle(target);
-            const rect = target.getBoundingClientRect();
-            if (computed.position === 'static' || computed.position === 'relative') {
-                target.style.position = 'fixed';
-                target.style.left = rect.left + 'px';
-                target.style.top = rect.top + 'px';
-            } else {
-                if (!target.style.left) target.style.left = rect.left + 'px';
-                if (!target.style.top) target.style.top = rect.top + 'px';
-            }
-        };
-
-        const createHandle = (handle) => {
-            const resizer = document.createElement('div');
-            resizer.classList.add('resizer', `resizer-${handle.name}`);
-            resizer.style.position = 'absolute';
-            resizer.style.zIndex = '9999';
-            resizer.style.backgroundColor = 'transparent';
-            resizer.style.pointerEvents = 'auto';
-            resizer.style.touchAction = 'none';
-            resizer.style.cursor = handle.cursor;
-            Object.assign(resizer.style, handle.style);
-            target.appendChild(resizer);
-
-            const startResize = (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                this.refocus();
-                ensureFixedPosition();
-
-                const startX = event.clientX;
-                const startY = event.clientY;
-                const rect = target.getBoundingClientRect();
-                const computed = window.getComputedStyle(target);
-                const minWidth = parseFloat(computed.minWidth) || 240;
-                const minHeight = parseFloat(computed.minHeight) || 160;
-
-                let startLeft = parseFloat(computed.left);
-                let startTop = parseFloat(computed.top);
-                if (!Number.isFinite(startLeft)) startLeft = rect.left;
-                if (!Number.isFinite(startTop)) startTop = rect.top;
-
-                const startWidth = rect.width;
-                const startHeight = rect.height;
-
-                const overlay = document.createElement('div');
-                overlay.style.position = 'fixed';
-                overlay.style.top = '0';
-                overlay.style.left = '0';
-                overlay.style.width = '100%';
-                overlay.style.height = '100%';
-                overlay.style.zIndex = '9999';
-                overlay.style.cursor = handle.cursor;
-                overlay.style.backgroundColor = 'transparent';
-                overlay.style.touchAction = 'none';
-                document.body.appendChild(overlay);
-
-                let resizing = true;
-
-                const applySize = (clientX, clientY) => {
-                    if (!resizing) return;
-                    window.requestAnimationFrame(() => {
-                        const dx = clientX - startX;
-                        const dy = clientY - startY;
-
-                        let newWidth = startWidth;
-                        let newHeight = startHeight;
-                        let newLeft = startLeft;
-                        let newTop = startTop;
-
-                        if (handle.directions.includes('e')) {
-                            newWidth = startWidth + dx;
-                        }
-                        if (handle.directions.includes('s')) {
-                            newHeight = startHeight + dy;
-                        }
-                        if (handle.directions.includes('w')) {
-                            newWidth = startWidth - dx;
-                            newLeft = startLeft + dx;
-                        }
-                        if (handle.directions.includes('n')) {
-                            newHeight = startHeight - dy;
-                            newTop = startTop + dy;
-                        }
-
-                        if (newWidth < minWidth) {
-                            const deficit = minWidth - newWidth;
-                            if (handle.directions.includes('w')) {
-                                newLeft -= deficit;
-                            }
-                            newWidth = minWidth;
-                        }
-                        if (newHeight < minHeight) {
-                            const deficit = minHeight - newHeight;
-                            if (handle.directions.includes('n')) {
-                                newTop -= deficit;
-                            }
-                            newHeight = minHeight;
-                        }
-
-                        const minTop = getMenuBarBottom();
-                        if (handle.directions.includes('n') && newTop < minTop) {
-                            const overshoot = minTop - newTop;
-                            newTop = minTop;
-                            newHeight = Math.max(minHeight, newHeight - overshoot);
-                        }
-
-                        if (handle.directions.includes('w') || handle.directions.includes('e')) {
-                            target.style.width = Math.max(minWidth, newWidth) + 'px';
-                        }
-                        if (handle.directions.includes('s') || handle.directions.includes('n')) {
-                            target.style.height = Math.max(minHeight, newHeight) + 'px';
-                        }
-                        if (handle.directions.includes('w')) {
-                            target.style.left = newLeft + 'px';
-                        }
-                        if (handle.directions.includes('n')) {
-                            target.style.top = newTop + 'px';
-                        }
-                    });
-                };
-
-                const stopResize = () => {
-                    if (!resizing) return;
-                    resizing = false;
-                    overlay.remove();
-                    overlay.removeEventListener('mousemove', overlayMouseMove);
-                    overlay.removeEventListener('mouseup', overlayMouseUp);
-                    window.removeEventListener('mousemove', windowMouseMove);
-                    window.removeEventListener('mouseup', windowMouseUp);
-                    window.removeEventListener('blur', onBlur);
-                    clampWindowToMenuBar(target);
-                    saveWindowPositions();
-                };
-
-                const overlayMouseMove = (moveEvent) => applySize(moveEvent.clientX, moveEvent.clientY);
-                const windowMouseMove = (moveEvent) => applySize(moveEvent.clientX, moveEvent.clientY);
-                const overlayMouseUp = () => stopResize();
-                const windowMouseUp = () => stopResize();
-                const onBlur = () => stopResize();
-
-                overlay.addEventListener('mousemove', overlayMouseMove);
-                overlay.addEventListener('mouseup', overlayMouseUp);
-                window.addEventListener('mousemove', windowMouseMove);
-                window.addEventListener('mouseup', windowMouseUp);
-                window.addEventListener('blur', onBlur);
-            };
-
-            resizer.addEventListener('mousedown', startResize);
-        };
-
-        target.style.overflow = 'visible';
-
-        const handles = [
-            {
-                name: 'top',
-                cursor: 'n-resize',
-                directions: ['n'],
-                style: { top: '-4px', left: '12px', right: '12px', height: '8px' }
-            },
-            {
-                name: 'bottom',
-                cursor: 's-resize',
-                directions: ['s'],
-                style: { bottom: '-4px', left: '12px', right: '12px', height: '8px' }
-            },
-            {
-                name: 'left',
-                cursor: 'w-resize',
-                directions: ['w'],
-                style: { left: '-4px', top: '12px', bottom: '12px', width: '8px' }
-            },
-            {
-                name: 'right',
-                cursor: 'e-resize',
-                directions: ['e'],
-                style: { right: '-4px', top: '12px', bottom: '12px', width: '8px' }
-            },
-            {
-                name: 'top-left',
-                cursor: 'nw-resize',
-                directions: ['n', 'w'],
-                style: { top: '-6px', left: '-6px', width: '14px', height: '14px' }
-            },
-            {
-                name: 'top-right',
-                cursor: 'ne-resize',
-                directions: ['n', 'e'],
-                style: { top: '-6px', right: '-6px', width: '14px', height: '14px' }
-            },
-            {
-                name: 'bottom-left',
-                cursor: 'sw-resize',
-                directions: ['s', 'w'],
-                style: { bottom: '-6px', left: '-6px', width: '14px', height: '14px' }
-            },
-            {
-                name: 'bottom-right',
-                cursor: 'se-resize',
-                directions: ['s', 'e'],
-                style: {
-                    bottom: '-6px',
-                    right: '-6px',
-                    width: '14px',
-                    height: '14px'
-                }
-            }
-        ];
-
-        handles.forEach(createHandle);
-    }
-    enforceMenuBarBoundary() {
-        clampWindowToMenuBar(this.windowEl || this.modal);
-    }
-    loadIframe(url) {
-        // Creates or reuses a dedicated content container for iframes
-        let contentArea = this.modal.querySelector('.dialog-content');
-        if (!contentArea) {
-            contentArea = document.createElement('div');
-            contentArea.classList.add('dialog-content');
-            contentArea.style.width = "100%";
-            contentArea.style.height = "100%";
-            this.modal.appendChild(contentArea);
-        }
-        // Clear any previous contents (e.g. existing iframes)
-        contentArea.innerHTML = "";
-        const iframe = document.createElement("iframe");
-        iframe.src = url;
-        iframe.style.width = "100%";
-        iframe.style.height = "100%";
-        iframe.style.border = "none";
-        // allow attribute to permit fullscreen etc.
-        iframe.setAttribute("allow", "fullscreen");
-        contentArea.appendChild(iframe);
-        // When the iframe finishes loading its content we attempt to hook into its document
-        iframe.addEventListener("load", () => {
-            try {
-                // Attach a mousedown listener to the iframe's document so that any click inside the
-                // iframe (e.g. inside a contenteditable region) will refocus this modal. We also
-                // attach to the window as a fallback. Same-origin policy allows this for local files.
-                const cw = iframe.contentWindow;
-                if (cw && cw.document) {
-                    const handler = () => {
-                        // Defer bringing to front slightly to allow other event handlers to complete
-                        requestAnimationFrame(() => {
-                            this.refocus();
-                        });
-                    };
-                    ['mousedown', 'click', 'touchstart'].forEach(evt => {
-                        cw.document.addEventListener(evt, handler);
-                    });
-                } else if (cw) {
-                    ['mousedown', 'click', 'touchstart'].forEach(evt => {
-                        cw.addEventListener(evt, () => {
-                            requestAnimationFrame(() => {
-                                this.refocus();
-                            });
-                        });
-                    });
-                }
-            } catch (err) {
-                console.error("Could not attach mousedown event in iframe:", err);
-            }
-        });
-    }
-    // Optional: speichert den Zustand des Fensters
-    saveState() {
-        return {
-            left: this.modal.style.left,
-            top: this.modal.style.top,
-            width: this.modal.style.width,
-            height: this.modal.style.height,
-            zIndex: this.modal.style.zIndex,
-        };
-    }
-    // Optional: restauriert einen gespeicherten Zustand
-    restoreState(state) {
-        if (!state) return;
-        if (state.left) this.modal.style.left = state.left;
-        if (state.top) this.modal.style.top = state.top;
-        if (state.width) this.modal.style.width = state.width;
-        if (state.height) this.modal.style.height = state.height;
-        if (state.zIndex) this.modal.style.zIndex = state.zIndex;
-    }
-}
+// Dialog-Klasse wurde nach js/dialog.js extrahiert und steht global als window.Dialog zur Verfügung.
