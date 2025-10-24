@@ -88,18 +88,37 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, HOST, () => {
     console.log(`Server running at http://${HOST}:${PORT}/`);
-    // Start file watcher for live reload (best-effort; optional in production)
+    // Start file watcher for live reload (dev only)
     try {
         chokidar = require('chokidar');
-        const watcher = chokidar.watch([
-            path.join(__dirname, '**/*.html'),
-            path.join(__dirname, '**/*.js'),
-            // CSS: nur gebaute Dateien beobachten → reload erst NACH erfolgreichem Tailwind-Build
+        if (process.env.NO_WATCH === '1' || process.env.CI === 'true') {
+            console.log('[LR] Live reload disabled by environment (NO_WATCH/CI).');
+            return;
+        }
+
+        // Keep the watch surface small to avoid excessive memory on Windows
+        const watchPaths = [
+            path.join(__dirname, 'index.html'),
+            path.join(__dirname, '*.html'), // root-level html
+            path.join(__dirname, 'js/**/*.js'),
+            path.join(__dirname, 'style.css'),
+            // CSS: only built files → reload after successful Tailwind build
             path.join(__dirname, 'dist/**/*.css')
-        ], {
-            // Ignoriere dotfiles, node_modules, git – aber NICHT dist (wir wollen dist/css beobachten)
-            ignored: [/(^|[/\\])\../, '**/node_modules/**', '**/.git/**'],
+        ];
+
+        const watcher = chokidar.watch(watchPaths, {
+            ignored: [
+                // dotfiles
+                /(^|[\/\\])\../,
+                // heavy dirs
+                '**/node_modules/**',
+                '**/.git/**',
+                '**/test-results/**',
+                '**/.vscode/**'
+            ],
             ignoreInitial: true,
+            awaitWriteFinish: { stabilityThreshold: 150, pollInterval: 50 },
+            depth: 6,
         });
 
         const broadcastReload = (changedPath) => {
@@ -108,14 +127,48 @@ server.listen(PORT, HOST, () => {
             const kind = ext === '.css' ? 'css' : (ext === '.html' ? 'html' : 'js');
             const msg = `event: reload\ndata: ${JSON.stringify({ path: rel, kind, ts: Date.now() })}\n\n`;
             for (const client of sseClients) {
-                try { client.write(msg); } catch (_) { }
+                try {
+                    if (client.writableEnded || client.destroyed) {
+                        sseClients.delete(client);
+                    } else {
+                        client.write(msg);
+                    }
+                } catch (_) { /* drop broken client on next tick */ }
             }
             console.log(`[LR] Reload triggered by: ${rel}`);
         };
 
-        watcher.on('add', broadcastReload)
-            .on('change', broadcastReload)
-            .on('unlink', broadcastReload);
+        // Throttle bursts of events
+        let lastEventPath = '';
+        let timer = null;
+        function scheduleReload(p) {
+            lastEventPath = p;
+            if (timer) return;
+            timer = setTimeout(() => {
+                const pth = lastEventPath;
+                lastEventPath = '';
+                timer = null;
+                broadcastReload(pth);
+            }, 120);
+        }
+
+        watcher.on('add', scheduleReload)
+            .on('change', scheduleReload)
+            .on('unlink', scheduleReload);
+
+        // Periodic heartbeat to prune dead SSE clients
+        setInterval(() => {
+            const ping = `: ping ${Date.now()}\n\n`;
+            for (const client of sseClients) {
+                try {
+                    if (client.writableEnded || client.destroyed) {
+                        sseClients.delete(client);
+                    } else {
+                        client.write(ping);
+                    }
+                } catch (_) { /* ignore */ }
+            }
+        }, 30000).unref();
         console.log('[LR] Live reload enabled (SSE).');
     } catch (err) {
         console.log('[LR] Live reload disabled (chokidar not installed). Run "npm i -D chokidar" to enable.');

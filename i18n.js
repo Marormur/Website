@@ -10,6 +10,20 @@
 
     const translations = {
         de: {
+            context: {
+                menuLabel: 'Kontextmenü',
+                open: 'Öffnen',
+                openFinder: 'Finder öffnen',
+                openTextEditor: 'Texteditor öffnen',
+                openProjects: 'Projekte öffnen',
+                openSettings: 'Systemeinstellungen …',
+                toggleDarkMode: 'Dark Mode umschalten',
+                about: 'Über Marvin',
+                image: {
+                    openInTab: 'Bild in neuem Tab öffnen',
+                    save: 'Bild sichern …'
+                }
+            },
             common: {
                 close: 'Schließen',
                 system: 'System',
@@ -398,6 +412,20 @@
             }
         },
         en: {
+            context: {
+                menuLabel: 'Context menu',
+                open: 'Open',
+                openFinder: 'Open Finder',
+                openTextEditor: 'Open Text editor',
+                openProjects: 'Open Projects',
+                openSettings: 'System settings…',
+                toggleDarkMode: 'Toggle dark mode',
+                about: 'About Marvin',
+                image: {
+                    openInTab: 'Open image in new tab',
+                    save: 'Save image…'
+                }
+            },
             common: {
                 close: 'Close',
                 system: 'System',

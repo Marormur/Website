@@ -344,6 +344,14 @@ html.dark .menu-dropdown {
     box-shadow: 0 22px 42px rgba(0, 0, 0, 0.55);
 }
 
+/* Context menu overrides: fixed positioning at cursor with high z-index */
+.menu-dropdown.context-menu {
+    position: fixed;
+    /* top/left are set dynamically by JS */
+    z-index: 2147483647;
+    /* ensure above all app windows and dropdowns */
+}
+
 .menu-dropdown li {
     margin: 0;
     padding: 0;
