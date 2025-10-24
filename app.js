@@ -277,14 +277,22 @@ document.addEventListener('DOMContentLoaded', function () {
         window.FinderSystem.init();
     }
 
-    if (window.dialogs["settings-modal"]) {
-        window.dialogs["settings-modal"].loadIframe("./settings.html");
+    // Initialize settings module
+    if (window.SettingsSystem) {
+        const settingsContainer = document.getElementById('settings-container');
+        if (settingsContainer) {
+            window.SettingsSystem.init(settingsContainer);
+        }
     }
-    if (window.dialogs["text-modal"]) {
-        // Lädt den Rich‑Text‑Editor in einem IFrame und registriert einen mousedown‑Handler
-        // damit Klicks im Editorfenster das Modal in den Vordergrund holen.
-        window.dialogs["text-modal"].loadIframe("./text.html");
+
+    // Initialize text editor module
+    if (window.TextEditorSystem) {
+        const textEditorContainer = document.getElementById('text-editor-container');
+        if (textEditorContainer) {
+            window.TextEditorSystem.init(textEditorContainer);
+        }
     }
+
     initDockMagnification();
 });
 

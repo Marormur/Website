@@ -29,6 +29,9 @@
     <script src="./js/action-bus.js"></script>
     <script src="./js/window-configs.js"></script>
     <script src="./js/api.js"></script>
+    <!-- Inline module scripts -->
+    <script src="./js/settings.js"></script>
+    <script src="./js/text-editor.js"></script>
 
     <!-- Hauptanwendung -->
     <script src="app.js"></script>
@@ -553,10 +556,8 @@
                     data-i18n="modals.settings.title">Systemeinstellungen</h2>
             </div>
             <!-- Content -->
-            <!-- Der eigentliche IFrame wird zur Laufzeit über Dialog.loadIframe erzeugt. Dieses
-                 Platzhalter‑Element füllt den verbleibenden Raum zwischen Header und
-                 Fußzeile und sorgt dafür, dass die Größe des Fensters flexibel bleibt. -->
-            <div class="dialog-content flex-1"></div>
+            <!-- Settings rendered inline via SettingsSystem module -->
+            <div id="settings-container" class="flex-1 overflow-hidden"></div>
         </div>
     </div>
     <!-- Texteditor Modal -->
@@ -583,7 +584,8 @@
                     Texteditor</h2>
             </div>
             <!-- Content -->
-            <div class="dialog-content flex-1"></div>
+            <!-- Text editor rendered inline via TextEditorSystem module -->
+            <div id="text-editor-container" class="flex-1 overflow-hidden"></div>
         </div>
     </div>
     <!-- Bildbetrachter Modal -->

@@ -38,7 +38,15 @@ console.log('Window Configurations loaded');
             icon: './img/settings.png',
             closeButtonId: 'close-settings-modal',
             metadata: {
-                iframeUrl: './settings.html'
+                initHandler: function () {
+                    // Initialize settings module if not already done
+                    if (window.SettingsSystem && !window.SettingsSystem.container) {
+                        const container = document.getElementById('settings-container');
+                        if (container) {
+                            window.SettingsSystem.init(container);
+                        }
+                    }
+                }
             }
         },
         {
@@ -48,7 +56,15 @@ console.log('Window Configurations loaded');
             icon: './img/notepad.png',
             closeButtonId: 'close-text-modal',
             metadata: {
-                iframeUrl: './text.html'
+                initHandler: function () {
+                    // Initialize text editor module if not already done
+                    if (window.TextEditorSystem && !window.TextEditorSystem.container) {
+                        const container = document.getElementById('text-editor-container');
+                        if (container) {
+                            window.TextEditorSystem.init(container);
+                        }
+                    }
+                }
             }
         },
         {

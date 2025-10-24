@@ -106,6 +106,26 @@ console.log('API loaded');
             'closeFinder'
         ]),
 
+        // Text Editor
+        textEditor: {
+            init: (container) => window.TextEditorSystem?.init(container),
+            loadRemoteFile: (payload) => window.TextEditorSystem?.loadRemoteFile(payload),
+            showLoading: (payload) => window.TextEditorSystem?.showLoading(payload),
+            showLoadError: (payload) => window.TextEditorSystem?.showLoadError(payload),
+            clearEditor: () => window.TextEditorSystem?.clearEditor(),
+            saveFile: () => window.TextEditorSystem?.saveFile(),
+            openFile: () => window.TextEditorSystem?.openFile(),
+            handleMenuAction: (action) => window.TextEditorSystem?.handleMenuAction(action)
+        },
+
+        // Settings
+        settings: {
+            init: (container) => window.SettingsSystem?.init(container),
+            showSection: (section) => window.SettingsSystem?.showSection(section),
+            syncThemePreference: () => window.SettingsSystem?.syncThemePreference(),
+            syncLanguagePreference: () => window.SettingsSystem?.syncLanguagePreference()
+        },
+
         // Window-Manager
         window: {
             register: (config) => window.WindowManager?.register(config),

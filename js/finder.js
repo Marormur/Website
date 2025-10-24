@@ -693,26 +693,6 @@ console.log('Finder.js loaded');
         return null;
     }
 
-    function getTextEditorIframe() {
-        const dlg = window.dialogs && window.dialogs['text-modal'];
-        if (!dlg || !dlg.modal) return null;
-        return dlg.modal.querySelector('iframe');
-    }
-    function postToTextEditor(message, attempt = 0) {
-        const iframe = getTextEditorIframe();
-        if (iframe && iframe.contentWindow) {
-            let targetOrigin = '*';
-            if (window.location && typeof window.location.origin === 'string' && window.location.origin !== 'null') {
-                targetOrigin = window.location.origin;
-            }
-            iframe.contentWindow.postMessage(message, targetOrigin);
-            return;
-        }
-        if (attempt < 10) {
-            setTimeout(() => postToTextEditor(message, attempt + 1), 120);
-        }
-    }
-
     function openGithubImage(entry) {
         const dlg = ensureImageViewerOpen();
         const img = document.getElementById('image-viewer');
@@ -756,7 +736,14 @@ console.log('Finder.js loaded');
     function openGithubText(entry) {
         const dlg = ensureTextEditorOpen();
         const payloadBase = { fileName: entry.name, size: entry.size };
-        postToTextEditor({ type: 'textEditor:showLoading', payload: payloadBase });
+        
+        // Show loading state via direct API call
+        if (window.API && window.API.textEditor) {
+            window.API.textEditor.showLoading(payloadBase);
+        } else if (window.TextEditorSystem) {
+            window.TextEditorSystem.showLoading(payloadBase);
+        }
+
         const fetchText = () => {
             if (entry.download_url) {
                 return fetch(entry.download_url).then(r => {
@@ -788,11 +775,21 @@ console.log('Finder.js loaded');
         };
         fetchText()
             .then(content => {
-                postToTextEditor({ type: 'textEditor:loadRemoteFile', payload: Object.assign({}, payloadBase, { content }) });
+                // Load remote file via direct API call
+                if (window.API && window.API.textEditor) {
+                    window.API.textEditor.loadRemoteFile(Object.assign({}, payloadBase, { content }));
+                } else if (window.TextEditorSystem) {
+                    window.TextEditorSystem.loadRemoteFile(Object.assign({}, payloadBase, { content }));
+                }
                 if (dlg && typeof dlg.bringToFront === 'function') dlg.bringToFront();
             })
             .catch(() => {
-                postToTextEditor({ type: 'textEditor:loadError', payload: Object.assign({}, payloadBase, { message: 'Fehler beim Laden' }) });
+                // Show error via direct API call
+                if (window.API && window.API.textEditor) {
+                    window.API.textEditor.showLoadError(Object.assign({}, payloadBase, { message: 'Fehler beim Laden' }));
+                } else if (window.TextEditorSystem) {
+                    window.TextEditorSystem.showLoadError(Object.assign({}, payloadBase, { message: 'Fehler beim Laden' }));
+                }
             });
     }
 
