@@ -10,7 +10,7 @@
             if (!this.modal) {
                 throw new Error(`Kein Dialog mit der ID ${modalId} gefunden.`);
             }
-            this.windowEl = getDialogWindowElement(this.modal);
+            this.windowEl = (window.StorageSystem?.getDialogWindowElement || ((modal) => modal?.querySelector('.autopointer') || modal))(this.modal);
             this.lastDragPointerX = null;
             this.init();
         }
