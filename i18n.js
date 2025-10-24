@@ -19,6 +19,11 @@
                 openSettings: 'Systemeinstellungen …',
                 toggleDarkMode: 'Dark Mode umschalten',
                 about: 'Über Marvin',
+                dock: {
+                    open: 'Öffnen',
+                    quit: 'Beenden',
+                    options: 'Optionen'
+                },
                 image: {
                     openInTab: 'Bild in neuem Tab öffnen',
                     save: 'Bild sichern …'
@@ -421,6 +426,11 @@
                 openSettings: 'System settings…',
                 toggleDarkMode: 'Toggle dark mode',
                 about: 'About Marvin',
+                dock: {
+                    open: 'Open',
+                    quit: 'Quit',
+                    options: 'Options'
+                },
                 image: {
                     openInTab: 'Open image in new tab',
                     save: 'Save image…'

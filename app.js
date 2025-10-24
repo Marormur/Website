@@ -294,6 +294,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     initDockMagnification();
+    
+    // Initialize drag & drop for dock icons
+    if (typeof window.DockSystem !== 'undefined' && typeof window.DockSystem.initDockDragDrop === 'function') {
+        window.DockSystem.initDockDragDrop();
+    }
 });
 
 function bringDialogToFront(dialogId) {

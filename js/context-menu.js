@@ -73,15 +73,51 @@
         const inDockItem = !!(target && target.closest && target.closest('#dock .dock-item'));
         const inImageModal = !!(target && target.closest && target.closest('#image-modal'));
 
-        // Dock item: offer "Open" for its window-id
+        // Dock item: offer "Open", "Quit", and "Options"
         if (inDockItem) {
             const dockItem = target.closest('#dock .dock-item');
             const winId = dockItem && dockItem.getAttribute('data-window-id');
             if (winId) {
+                // Check if window is currently open
+                const windowEl = document.getElementById(winId);
+                const isOpen = windowEl && !windowEl.classList.contains('hidden');
+                
                 items.push({
                     id: 'open-dock-window',
-                    label: i18n.translate('context.open') || 'Öffnen',
+                    label: i18n.translate('context.dock.open') || i18n.translate('context.open') || 'Öffnen',
                     action: () => openModal(winId)
+                });
+                
+                if (isOpen) {
+                    items.push({
+                        id: 'quit-dock-window',
+                        label: i18n.translate('context.dock.quit') || 'Beenden',
+                        action: () => {
+                            // Close the window
+                            if (windowEl) {
+                                windowEl.classList.add('hidden');
+                                // Update indicator if present
+                                const indicator = dockItem.querySelector('[id$="-indicator"]');
+                                if (indicator) {
+                                    indicator.classList.add('hidden');
+                                }
+                                // Update program label
+                                if (typeof window.updateProgramLabelByTopModal === 'function') {
+                                    window.updateProgramLabelByTopModal();
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                items.push({ type: 'separator' });
+                items.push({
+                    id: 'dock-options',
+                    label: i18n.translate('context.dock.options') || 'Optionen',
+                    action: () => {
+                        // Could open settings or show dock preferences
+                        openModal('settings-modal');
+                    }
                 });
                 items.push({ type: 'separator' });
             }
