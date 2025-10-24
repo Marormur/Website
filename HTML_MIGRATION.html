@@ -1,0 +1,157 @@
+<!-- 
+HTML Migration Beispiel
+=======================
+
+Zeigt, wie man bestehende HTML-Elemente auf das neue ActionBus-System migriert.
+-->
+
+<!-- ===== CLOSE BUTTONS ===== -->
+
+<!-- ALT: Mit manuellen Event-Handlern -->
+<button title="Schließen" id="close-finder-modal" class="window-button window-close">
+    <svg>...</svg>
+</button>
+
+<!-- NEU: Mit data-action (empfohlen für neue Fenster) -->
+<button title="Schließen" data-i18n-title="common.close" data-action="closeWindow" data-window-id="finder-modal"
+    class="window-button window-close">
+    <svg>...</svg>
+</button>
+
+
+<!-- ===== MENU BUTTONS ===== -->
+
+<!-- ALT: Mit spezifischen IDs und Event-Handlern -->
+<button id="dropdown-settings" class="menu-item">
+    Einstellungen...
+</button>
+
+<!-- NEU: Mit data-action -->
+<button data-action="openSettings" class="menu-item" data-i18n="header.profile.settings">
+    Einstellungen...
+</button>
+
+
+<!-- ALT: Reset Layout Button -->
+<button id="dropdown-reset-layout" class="menu-item">
+    Fenster zurücksetzen
+</button>
+
+<!-- NEU: Mit data-action -->
+<button data-action="resetWindowLayout" class="menu-item" data-i18n="header.profile.resetLayout">
+    Fenster zurücksetzen
+</button>
+
+
+<!-- ALT: Close Current Program -->
+<button id="program-close-current" class="menu-item">
+    Programm schließen
+</button>
+
+<!-- NEU: Mit data-action -->
+<button data-action="closeTopWindow" class="menu-item" data-i18n="header.program.close">
+    Programm schließen
+</button>
+
+
+<!-- ===== DESKTOP ICONS ===== -->
+
+<!-- ALT: Mit onclick oder spezifischen Event-Handlern -->
+<div class="desktop-icon" onclick="openDesktopItemById('finder')">
+    <img src="./img/sucher.png" alt="Sucher">
+    <span>Sucher</span>
+</div>
+
+<!-- NEU: Mit data-action -->
+<button class="desktop-icon" data-action="openDesktopItem" data-item-id="finder">
+    <img src="./img/sucher.png" alt="Sucher">
+    <span data-i18n="desktop.finder">Sucher</span>
+</button>
+
+
+<!-- ===== DOCK ICONS ===== -->
+
+<!-- ALT: Mit onclick -->
+<div class="dock-icon" onclick="openDesktopItemById('finder')">
+    <img src="./img/sucher.png" alt="Sucher">
+</div>
+
+<!-- NEU: Mit data-action -->
+<button class="dock-icon" data-action="openDesktopItem" data-item-id="finder">
+    <img src="./img/sucher.png" alt="Sucher">
+</button>
+
+
+<!-- ===== CUSTOM ACTIONS ===== -->
+
+<!-- Custom Action registrieren in JS: -->
+<script>
+    ActionBus.register('showNotification', (params) => {
+        alert(params.message);
+    });
+</script>
+
+<!-- In HTML verwenden: -->
+<button data-action="showNotification" data-message="Hello World!">
+    Show Notification
+</button>
+
+
+<!-- ===== VORTEILE DER MIGRATION ===== -->
+
+<!--
+✅ Weniger JavaScript-Code
+✅ Deklarativer und lesbarer
+✅ Einfacher zu warten
+✅ Automatisches Event-Handling
+✅ Keine IDs mehr nötig (außer für Styling)
+✅ Einfacher zu testen
+
+HINWEIS:
+--------
+Die Migration ist OPTIONAL! Das alte System funktioniert weiterhin.
+Neue Fenster sollten aber das neue System nutzen.
+-->
+
+
+<!-- ===== VOLLSTÄNDIGES BEISPIEL: NEUES FENSTER ===== -->
+
+<!-- 1. In window-configs.js registrieren: -->
+<script>
+    {
+        id: 'calculator-modal',
+            type: 'persistent',
+                programKey: 'programs.calculator',
+                    icon: './img/calculator.png',
+                        closeButtonId: 'close-calculator-modal'  // Optional, wenn data-action genutzt wird
+    }
+</script>
+
+<!-- 2. HTML erstellen: -->
+<div id="calculator-modal" class="modal hidden">
+    <div class="autopointer dialog-window">
+        <div class="window-titlebar">
+            <div class="window-buttons">
+                <!-- Neue Methode: data-action -->
+                <button title="Schließen" data-action="closeWindow" data-window-id="calculator-modal"
+                    class="window-button window-close">
+                    <svg>...</svg>
+                </button>
+            </div>
+            <div class="window-title" data-i18n="programs.calculator.label">
+                Rechner
+            </div>
+        </div>
+        <div class="dialog-content">
+            <!-- Calculator Content -->
+        </div>
+    </div>
+</div>
+
+<!-- 3. Desktop Icon: -->
+<button class="desktop-icon" data-action="openDesktopItem" data-item-id="calculator">
+    <img src="./img/calculator.png" alt="Calculator">
+    <span data-i18n="desktop.calculator">Rechner</span>
+</button>
+
+<!-- Fertig! Kein JavaScript-Code nötig! 🎉 -->
