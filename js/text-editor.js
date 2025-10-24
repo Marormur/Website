@@ -52,18 +52,52 @@
 
             this.container.innerHTML = `
                 <div class="dialog-content flex flex-col h-full" style="background: var(--editor-body-bg, #fafafa); color: var(--editor-text, #111827);">
-                    <div id="text-toolbar" class="flex-none" style="background: var(--editor-toolbar-bg, #f5f5f5); padding: 8px 12px; border-bottom: 1px solid var(--editor-toolbar-border, #d1d5db); display: flex; gap: 8px; align-items: center;">
+                    <!-- File Operations Toolbar -->
+                    <div id="text-toolbar" class="flex-none" style="background: var(--editor-toolbar-bg, #f5f5f5); padding: 8px 12px; border-bottom: 1px solid var(--editor-toolbar-border, #d1d5db); display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                         <button type="button" data-action="textEditor:clear" class="text-editor-btn" data-i18n="textEditor.toolbar.clear" data-i18n-title="textEditor.toolbar.clear">Neu</button>
                         <button type="button" data-action="textEditor:open" class="text-editor-btn" data-i18n="textEditor.toolbar.open" data-i18n-title="textEditor.toolbar.open">Öffnen</button>
                         <button type="button" data-action="textEditor:save" class="text-editor-btn" id="text-save-button" data-i18n="textEditor.toolbar.save" data-i18n-title="textEditor.toolbar.save">Speichern</button>
+                        <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
+                        <button type="button" data-action="textEditor:bold" class="text-editor-btn" title="Bold" style="font-weight: bold;">B</button>
+                        <button type="button" data-action="textEditor:italic" class="text-editor-btn" title="Italic" style="font-style: italic;">I</button>
+                        <button type="button" data-action="textEditor:underline" class="text-editor-btn" title="Underline" style="text-decoration: underline;">U</button>
+                        <button type="button" data-action="textEditor:strikethrough" class="text-editor-btn" title="Strikethrough" style="text-decoration: line-through;">S</button>
+                        <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
+                        <button type="button" data-action="textEditor:heading1" class="text-editor-btn" title="Heading 1">H1</button>
+                        <button type="button" data-action="textEditor:heading2" class="text-editor-btn" title="Heading 2">H2</button>
+                        <button type="button" data-action="textEditor:heading3" class="text-editor-btn" title="Heading 3">H3</button>
+                        <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
+                        <button type="button" data-action="textEditor:unorderedList" class="text-editor-btn" title="Bullet List">• List</button>
+                        <button type="button" data-action="textEditor:orderedList" class="text-editor-btn" title="Numbered List">1. List</button>
+                        <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
+                        <button type="button" data-action="textEditor:alignLeft" class="text-editor-btn" title="Align Left">⇤</button>
+                        <button type="button" data-action="textEditor:alignCenter" class="text-editor-btn" title="Align Center">≡</button>
+                        <button type="button" data-action="textEditor:alignRight" class="text-editor-btn" title="Align Right">⇥</button>
+                        <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
+                        <button type="button" data-action="textEditor:insertLink" class="text-editor-btn" title="Insert Link">🔗</button>
+                        <button type="button" data-action="textEditor:findReplace" class="text-editor-btn" title="Find & Replace">🔍</button>
                         <input type="file" id="text-file-input"
                             accept=".txt,.md,.markdown,.html,.htm,.css,.scss,.js,.jsx,.ts,.tsx,.json,.yml,.yaml,.xml,.csv,.tsv,.ini,.cfg,.conf,.env,.gitignore,.log,.c,.h,.cpp,.hpp,.java,.kt,.swift,.cs,.py,.rb,.php,.rs,.go,.sh,.bash,.zsh,.fish,.ps1,.bat"
                             style="display:none">
+                    </div>
+                    <!-- Find and Replace Panel (Hidden by default) -->
+                    <div id="find-replace-panel" class="flex-none" style="background: var(--editor-toolbar-bg, #f5f5f5); padding: 8px 12px; border-bottom: 1px solid var(--editor-toolbar-border, #d1d5db); display: none; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="find-input" placeholder="Find..." style="padding: 4px 8px; border: 1px solid var(--editor-toolbar-border, #d1d5db); border-radius: 4px; background: var(--editor-surface-bg, #ffffff); color: var(--editor-text, #111827); font-size: 13px;">
+                        <input type="text" id="replace-input" placeholder="Replace..." style="padding: 4px 8px; border: 1px solid var(--editor-toolbar-border, #d1d5db); border-radius: 4px; background: var(--editor-surface-bg, #ffffff); color: var(--editor-text, #111827); font-size: 13px;">
+                        <button type="button" data-action="textEditor:findNext" class="text-editor-btn" style="font-size: 12px;">Next</button>
+                        <button type="button" data-action="textEditor:replaceOne" class="text-editor-btn" style="font-size: 12px;">Replace</button>
+                        <button type="button" data-action="textEditor:replaceAll" class="text-editor-btn" style="font-size: 12px;">Replace All</button>
+                        <button type="button" data-action="textEditor:closeFindReplace" class="text-editor-btn" style="font-size: 12px;">✕</button>
                     </div>
                     <div id="text-file-status" class="flex-none" style="padding: 8px 16px; border-bottom: 1px solid var(--editor-toolbar-border, #d1d5db); background: var(--editor-body-bg, #fafafa); color: var(--editor-text, #111827); font-size: 14px; opacity: 0.75; display: none;"></div>
                     <textarea id="text-editor-textarea" spellcheck="false" wrap="off" class="flex-1 w-full resize-none p-4 border-0 outline-none" 
                         style="background: var(--editor-surface-bg, #ffffff); color: inherit; font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 14px; line-height: 1.6; tab-size: 4;"
                         title="textarea"></textarea>
+                    <!-- Status Bar with Word Count -->
+                    <div id="word-count-bar" class="flex-none" style="background: var(--editor-toolbar-bg, #f5f5f5); padding: 6px 12px; border-top: 1px solid var(--editor-toolbar-border, #d1d5db); font-size: 12px; color: var(--editor-text, #111827); opacity: 0.75; display: flex; justify-content: space-between;">
+                        <span id="word-count-display">Words: 0 | Characters: 0</span>
+                        <span id="line-col-display">Line 1, Col 1</span>
+                    </div>
                 </div>
             `;
 
@@ -117,6 +151,11 @@
             this.statusBar = this.container.querySelector('#text-file-status');
             this.saveButton = this.container.querySelector('#text-save-button');
             this.fileInput = this.container.querySelector('#text-file-input');
+            this.wordCountDisplay = this.container.querySelector('#word-count-display');
+            this.lineColDisplay = this.container.querySelector('#line-col-display');
+            this.findReplacePanel = this.container.querySelector('#find-replace-panel');
+            this.findInput = this.container.querySelector('#find-input');
+            this.replaceInput = this.container.querySelector('#replace-input');
         },
 
         /**
@@ -163,9 +202,19 @@
         attachListeners() {
             if (!this.editor || !this.fileInput) return;
 
-            // Editor input listener for auto-save
+            // Editor input listener for auto-save and word count
             this.editor.addEventListener('input', () => {
                 this.handleEditorInput();
+                this.updateWordCount();
+            });
+
+            // Editor selection and cursor listener
+            this.editor.addEventListener('click', () => {
+                this.updateCursorPosition();
+            });
+
+            this.editor.addEventListener('keyup', () => {
+                this.updateCursorPosition();
             });
 
             // File input change listener
@@ -187,6 +236,10 @@
                 this.updateDocumentTitle();
                 this.applyStatusState();
             });
+
+            // Initial word count and cursor position
+            this.updateWordCount();
+            this.updateCursorPosition();
         },
 
         /**
@@ -205,7 +258,26 @@
                 'textEditor:cut': () => this.execCommand('cut'),
                 'textEditor:copy': () => this.execCommand('copy'),
                 'textEditor:paste': () => this.handlePaste(),
-                'textEditor:selectAll': () => this.selectAll()
+                'textEditor:selectAll': () => this.selectAll(),
+                // New formatting actions
+                'textEditor:bold': () => this.wrapSelection('**', '**'),
+                'textEditor:italic': () => this.wrapSelection('*', '*'),
+                'textEditor:underline': () => this.wrapSelection('<u>', '</u>'),
+                'textEditor:strikethrough': () => this.wrapSelection('~~', '~~'),
+                'textEditor:heading1': () => this.insertHeading(1),
+                'textEditor:heading2': () => this.insertHeading(2),
+                'textEditor:heading3': () => this.insertHeading(3),
+                'textEditor:unorderedList': () => this.insertList('unordered'),
+                'textEditor:orderedList': () => this.insertList('ordered'),
+                'textEditor:alignLeft': () => this.alignText('left'),
+                'textEditor:alignCenter': () => this.alignText('center'),
+                'textEditor:alignRight': () => this.alignText('right'),
+                'textEditor:insertLink': () => this.insertLink(),
+                'textEditor:findReplace': () => this.toggleFindReplace(),
+                'textEditor:findNext': () => this.findNext(),
+                'textEditor:replaceOne': () => this.replaceOne(),
+                'textEditor:replaceAll': () => this.replaceAll(),
+                'textEditor:closeFindReplace': () => this.closeFindReplace()
             });
         },
 
@@ -644,6 +716,277 @@
             }
         },
 
+        // ==================== New Formatting Methods ====================
+
+        /**
+         * Wrap selected text with prefix and suffix
+         * @param {string} prefix - Text to insert before selection
+         * @param {string} suffix - Text to insert after selection
+         */
+        wrapSelection(prefix, suffix) {
+            if (!this.editor) return;
+
+            const start = this.editor.selectionStart;
+            const end = this.editor.selectionEnd;
+            const selectedText = this.editor.value.substring(start, end);
+            const wrappedText = prefix + selectedText + suffix;
+
+            this.editor.setRangeText(wrappedText, start, end, 'select');
+            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+            this.focusEditor();
+        },
+
+        /**
+         * Insert heading at current line
+         * @param {number} level - Heading level (1-3)
+         */
+        insertHeading(level) {
+            if (!this.editor) return;
+
+            const start = this.editor.selectionStart;
+            const text = this.editor.value;
+            
+            // Find the start of the current line
+            let lineStart = text.lastIndexOf('\n', start - 1) + 1;
+            let lineEnd = text.indexOf('\n', start);
+            if (lineEnd === -1) lineEnd = text.length;
+            
+            const currentLine = text.substring(lineStart, lineEnd);
+            const prefix = '#'.repeat(level) + ' ';
+            
+            // Check if line already starts with heading markers
+            const headingMatch = currentLine.match(/^#+\s/);
+            let newLine;
+            
+            if (headingMatch) {
+                // Replace existing heading
+                newLine = prefix + currentLine.substring(headingMatch[0].length);
+            } else {
+                // Add new heading
+                newLine = prefix + currentLine;
+            }
+            
+            this.editor.setRangeText(newLine, lineStart, lineEnd, 'end');
+            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+            this.focusEditor();
+        },
+
+        /**
+         * Insert list at current line or for selected lines
+         * @param {string} type - List type ('ordered' or 'unordered')
+         */
+        insertList(type) {
+            if (!this.editor) return;
+
+            const start = this.editor.selectionStart;
+            const end = this.editor.selectionEnd;
+            const text = this.editor.value;
+            
+            // Find the start and end of affected lines
+            let lineStart = text.lastIndexOf('\n', start - 1) + 1;
+            let lineEnd = text.indexOf('\n', end);
+            if (lineEnd === -1) lineEnd = text.length;
+            
+            const selectedLines = text.substring(lineStart, lineEnd).split('\n');
+            const prefix = type === 'ordered' ? '1. ' : '- ';
+            
+            const newLines = selectedLines.map((line, index) => {
+                // Remove existing list markers
+                const cleanLine = line.replace(/^(\d+\.\s|-\s|\*\s)/, '');
+                
+                if (type === 'ordered') {
+                    return `${index + 1}. ${cleanLine}`;
+                } else {
+                    return `- ${cleanLine}`;
+                }
+            });
+            
+            const newText = newLines.join('\n');
+            this.editor.setRangeText(newText, lineStart, lineEnd, 'end');
+            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+            this.focusEditor();
+        },
+
+        /**
+         * Align text (add HTML alignment tags)
+         * @param {string} alignment - Alignment type ('left', 'center', 'right')
+         */
+        alignText(alignment) {
+            if (!this.editor) return;
+
+            const start = this.editor.selectionStart;
+            const end = this.editor.selectionEnd;
+            const text = this.editor.value;
+            
+            // Find the start and end of affected lines
+            let lineStart = text.lastIndexOf('\n', start - 1) + 1;
+            let lineEnd = text.indexOf('\n', end);
+            if (lineEnd === -1) lineEnd = text.length;
+            
+            const selectedText = text.substring(lineStart, lineEnd);
+            const alignedText = `<div style="text-align: ${alignment};">\n${selectedText}\n</div>`;
+            
+            this.editor.setRangeText(alignedText, lineStart, lineEnd, 'end');
+            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+            this.focusEditor();
+        },
+
+        /**
+         * Insert link at cursor or wrap selection
+         */
+        insertLink() {
+            if (!this.editor) return;
+
+            const start = this.editor.selectionStart;
+            const end = this.editor.selectionEnd;
+            const selectedText = this.editor.value.substring(start, end);
+            
+            const url = prompt('Enter URL:', 'https://');
+            if (!url) return;
+            
+            const linkText = selectedText || 'link text';
+            const markdown = `[${linkText}](${url})`;
+            
+            this.editor.setRangeText(markdown, start, end, 'end');
+            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+            this.focusEditor();
+        },
+
+        /**
+         * Update word and character count
+         */
+        updateWordCount() {
+            if (!this.editor || !this.wordCountDisplay) return;
+
+            const text = this.editor.value;
+            const chars = text.length;
+            const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            
+            this.wordCountDisplay.textContent = `Words: ${words} | Characters: ${chars}`;
+        },
+
+        /**
+         * Update cursor position display
+         */
+        updateCursorPosition() {
+            if (!this.editor || !this.lineColDisplay) return;
+
+            const text = this.editor.value;
+            const pos = this.editor.selectionStart;
+            
+            const textBeforeCursor = text.substring(0, pos);
+            const lines = textBeforeCursor.split('\n');
+            const line = lines.length;
+            const col = lines[lines.length - 1].length + 1;
+            
+            this.lineColDisplay.textContent = `Line ${line}, Col ${col}`;
+        },
+
+        /**
+         * Toggle find and replace panel
+         */
+        toggleFindReplace() {
+            if (!this.findReplacePanel) return;
+
+            if (this.findReplacePanel.style.display === 'none') {
+                this.findReplacePanel.style.display = 'flex';
+                if (this.findInput) {
+                    this.findInput.focus();
+                }
+            } else {
+                this.findReplacePanel.style.display = 'none';
+                this.focusEditor();
+            }
+        },
+
+        /**
+         * Close find and replace panel
+         */
+        closeFindReplace() {
+            if (!this.findReplacePanel) return;
+            this.findReplacePanel.style.display = 'none';
+            this.focusEditor();
+        },
+
+        /**
+         * Find next occurrence
+         */
+        findNext() {
+            if (!this.editor || !this.findInput) return;
+
+            const searchText = this.findInput.value;
+            if (!searchText) return;
+
+            const text = this.editor.value;
+            const start = this.editor.selectionEnd;
+            const index = text.indexOf(searchText, start);
+            
+            if (index !== -1) {
+                this.editor.setSelectionRange(index, index + searchText.length);
+                this.editor.focus();
+            } else {
+                // Wrap around to beginning
+                const firstIndex = text.indexOf(searchText);
+                if (firstIndex !== -1) {
+                    this.editor.setSelectionRange(firstIndex, firstIndex + searchText.length);
+                    this.editor.focus();
+                } else {
+                    alert('No match found');
+                }
+            }
+        },
+
+        /**
+         * Replace one occurrence
+         */
+        replaceOne() {
+            if (!this.editor || !this.findInput || !this.replaceInput) return;
+
+            const searchText = this.findInput.value;
+            const replaceText = this.replaceInput.value;
+            
+            if (!searchText) return;
+
+            const start = this.editor.selectionStart;
+            const end = this.editor.selectionEnd;
+            const selectedText = this.editor.value.substring(start, end);
+            
+            if (selectedText === searchText) {
+                this.editor.setRangeText(replaceText, start, end, 'end');
+                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+                this.findNext(); // Find next occurrence
+            } else {
+                this.findNext(); // Find first occurrence
+            }
+        },
+
+        /**
+         * Replace all occurrences
+         */
+        replaceAll() {
+            if (!this.editor || !this.findInput || !this.replaceInput) return;
+
+            const searchText = this.findInput.value;
+            const replaceText = this.replaceInput.value;
+            
+            if (!searchText) return;
+
+            const text = this.editor.value;
+            const newText = text.split(searchText).join(replaceText);
+            
+            if (text !== newText) {
+                this.editor.value = newText;
+                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                const count = (text.length - newText.length + replaceText.length * (newText.split(replaceText).length - 1)) / searchText.length;
+                alert(`Replaced ${Math.floor(count)} occurrence(s)`);
+            } else {
+                alert('No match found');
+            }
+            
+            this.focusEditor();
+        },
+
         /**
          * Destroy text editor
          */
@@ -656,6 +999,11 @@
             this.statusBar = null;
             this.saveButton = null;
             this.fileInput = null;
+            this.wordCountDisplay = null;
+            this.lineColDisplay = null;
+            this.findReplacePanel = null;
+            this.findInput = null;
+            this.replaceInput = null;
         }
     };
 
