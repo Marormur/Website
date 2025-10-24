@@ -14,7 +14,27 @@
     }
 
     const DESKTOP_ITEMS = [
-        { id: 'about', modalId: 'about-modal', icon: './img/profil.jpg', labelKey: 'desktop.about', fallbackLabel: 'Über Marvin' }
+        { id: 'about', modalId: 'about-modal', icon: './img/profil.jpg', labelKey: 'desktop.about', fallbackLabel: 'Über Marvin' },
+        // Shortcut: GitHub "Ordner" öffnet den Finder direkt in der GitHub-Ansicht
+        {
+            id: 'github',
+            // Verwende Emoji-Icon für den Ordner, bis ein spezielles Icon vorhanden ist
+            emoji: '📂',
+            labelKey: 'desktop.github',
+            fallbackLabel: 'GitHub Projekte',
+            onOpen: () => {
+                // Öffne Finder und navigiere zur GitHub-Root-Ansicht
+                if (typeof window.showTab === 'function') {
+                    window.showTab('finder');
+                }
+                if (window.FinderSystem && typeof window.FinderSystem.navigateTo === 'function') {
+                    // Root-Pfad, explizit View 'github'
+                    window.FinderSystem.navigateTo([], 'github');
+                }
+                // Menü und Dock-Indikatoren werden innerhalb der Dialog-/App-Logik bereits aktualisiert
+                return true;
+            }
+        }
     ];
 
     const desktopItemsById = new Map();

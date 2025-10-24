@@ -30,6 +30,7 @@
             desktop: {
                 finder: 'Sucher',
                 projects: 'Projekte',
+                github: 'GitHub Projekte',
                 text: 'Texteditor',
                 image: 'Bildbetrachter',
                 settings: 'Systemeinstellungen',
@@ -416,6 +417,7 @@
             },
             desktop: {
                 projects: 'Projects',
+                github: 'GitHub Projects',
                 text: 'Text editor',
                 image: 'Image viewer',
                 settings: 'System settings',

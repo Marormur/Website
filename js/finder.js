@@ -80,6 +80,49 @@ console.log('Finder.js loaded');
     // GitHub Integration (lightweight, embedded in Finder)
     const GITHUB_USERNAME = 'Marormur';
     const githubContentCache = new Map(); // key: `${repo}:${path}` => Array of items
+    const GITHUB_CACHE_NS = 'finderGithubCacheV1:';
+
+    function getGithubHeaders() {
+        const headers = { 'Accept': 'application/vnd.github.v3+json' };
+        try {
+            const token = localStorage.getItem('githubToken');
+            if (token && token.trim()) {
+                headers['Authorization'] = `token ${token.trim()}`;
+            }
+        } catch (_) { /* ignore */ }
+        return headers;
+    }
+
+    function getCacheTtl() {
+        const dflt = 5 * 60 * 1000;
+        try {
+            const constants = window.APP_CONSTANTS || {};
+            return typeof constants.GITHUB_CACHE_DURATION === 'number' ? constants.GITHUB_CACHE_DURATION : dflt;
+        } catch (_) { return dflt; }
+    }
+    function makeCacheKey(kind, repo = '', subPath = '') {
+        if (kind === 'repos') return GITHUB_CACHE_NS + 'repos';
+        return `${GITHUB_CACHE_NS}contents:${repo}:${subPath}`;
+    }
+    function writeCache(kind, repo, subPath, data) {
+        const key = makeCacheKey(kind, repo, subPath);
+        try {
+            const payload = { t: Date.now(), d: data };
+            localStorage.setItem(key, JSON.stringify(payload));
+        } catch (_) { /* ignore */ }
+    }
+    function readCache(kind, repo, subPath) {
+        const key = makeCacheKey(kind, repo, subPath);
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== 'object') return null;
+            const ttl = getCacheTtl();
+            if (typeof parsed.t !== 'number' || (Date.now() - parsed.t) > ttl) return null;
+            return Array.isArray(parsed.d) ? parsed.d : null;
+        } catch (_) { return null; }
+    }
 
     // ============================================================================
     // DOM References
@@ -253,18 +296,44 @@ console.log('Finder.js loaded');
     function getGithubItems() {
         // Root der GitHub-Ansicht: Repos anzeigen
         if (finderState.currentPath.length === 0) {
+            // Versuche, Cache direkt zu nutzen
+            if (!finderState.githubRepos.length) {
+                const cachedRepos = readCache('repos');
+                if (Array.isArray(cachedRepos) && cachedRepos.length) {
+                    // cachedRepos sind bereits in gemapptem Format
+                    return cachedRepos;
+                }
+            }
             if (!finderState.githubRepos.length && !finderState.githubLoading && !finderState.githubError) {
                 finderState.githubLoading = true;
                 fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`, {
-                    headers: { 'Accept': 'application/vnd.github.v3+json' }
+                    headers: getGithubHeaders()
                 })
-                    .then(r => r.ok ? r.json() : Promise.reject(r))
+                    .then(r => {
+                        if (!r.ok) {
+                            // Spezifische Rate-Limit-Behandlung
+                            if (r.status === 403) {
+                                finderState.githubError = true;
+                                return Promise.reject(r);
+                            }
+                            return Promise.reject(r);
+                        }
+                        return r.json();
+                    })
                     .then(repos => {
-                        finderState.githubRepos = Array.isArray(repos) ? repos : [];
+                        const list = (Array.isArray(repos) ? repos : []).map(r => ({
+                            name: r.name || (window.translate ? window.translate('finder.repoUnnamed') : 'Unbenanntes Repository'),
+                            type: 'folder',
+                            icon: '📂',
+                            size: 0,
+                            modified: r.updated_at || r.pushed_at || r.created_at || new Date().toISOString(),
+                            html_url: r.html_url
+                        }));
+                        finderState.githubRepos = repos || [];
+                        writeCache('repos', '', '', list);
                         finderState.githubError = false;
                     })
                     .catch(() => {
-                        finderState.githubRepos = [];
                         finderState.githubError = true;
                     })
                     .finally(() => {
@@ -278,8 +347,13 @@ console.log('Finder.js loaded');
                 ];
             }
             if (finderState.githubError) {
+                // Fallback auf Cache, falls verfügbar
+                const cachedRepos = readCache('repos');
+                if (Array.isArray(cachedRepos) && cachedRepos.length) {
+                    return cachedRepos;
+                }
                 return [
-                    { name: (window.translate ? window.translate('finder.repositoriesError') : 'Repos konnten nicht geladen werden.'), type: 'info', icon: '⚠️', size: 0 }
+                    { name: (window.translate ? window.translate('finder.rateLimit') : 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.'), type: 'info', icon: '⚠️', size: 0 }
                 ];
             }
             if (!finderState.githubRepos.length) {
@@ -293,7 +367,6 @@ console.log('Finder.js loaded');
                 icon: '📂',
                 size: 0,
                 modified: r.updated_at || r.pushed_at || r.created_at || new Date().toISOString(),
-                // Behalte nützliche Metadaten falls später benötigt
                 html_url: r.html_url
             }));
         }
@@ -302,14 +375,30 @@ console.log('Finder.js loaded');
         const repo = finderState.currentPath[0];
         const subPath = finderState.currentPath.slice(1).join('/');
         const cacheKey = `${repo}:${subPath}`;
-        const cached = githubContentCache.get(cacheKey);
+        let cached = githubContentCache.get(cacheKey);
+        if (!cached) {
+            const fromStorage = readCache('contents', repo, subPath);
+            if (Array.isArray(fromStorage) && fromStorage.length) {
+                cached = fromStorage;
+                githubContentCache.set(cacheKey, cached);
+            }
+        }
         if (!cached && !finderState.githubLoading && !finderState.githubError) {
             finderState.githubLoading = true;
             const pathPart = subPath ? `/${encodeURIComponent(subPath).replace(/%2F/g, '/')}` : '';
             fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${encodeURIComponent(repo)}/contents${pathPart}`, {
-                headers: { 'Accept': 'application/vnd.github.v3+json' }
+                headers: getGithubHeaders()
             })
-                .then(r => r.ok ? r.json() : Promise.reject(r))
+                .then(r => {
+                    if (!r.ok) {
+                        if (r.status === 403) {
+                            finderState.githubError = true;
+                            return Promise.reject(r);
+                        }
+                        return Promise.reject(r);
+                    }
+                    return r.json();
+                })
                 .then(items => {
                     const mapped = (Array.isArray(items) ? items : [items]).map(it => {
                         const isDir = it.type === 'dir';
@@ -325,10 +414,13 @@ console.log('Finder.js loaded');
                         };
                     });
                     githubContentCache.set(cacheKey, mapped);
+                    writeCache('contents', repo, subPath, mapped);
                     finderState.githubError = false;
                 })
                 .catch(() => {
-                    githubContentCache.set(cacheKey, []);
+                    // Auf Cache zurückfallen, falls vorhanden
+                    const fallback = readCache('contents', repo, subPath) || [];
+                    githubContentCache.set(cacheKey, fallback);
                     finderState.githubError = true;
                 })
                 .finally(() => {
@@ -342,8 +434,12 @@ console.log('Finder.js loaded');
             ];
         }
         if (finderState.githubError && !cached) {
+            const fallback = readCache('contents', repo, subPath);
+            if (Array.isArray(fallback) && fallback.length) {
+                return fallback;
+            }
             return [
-                { name: (window.translate ? window.translate('finder.filesLoadError') : 'Dateien konnten nicht geladen werden.'), type: 'info', icon: '⚠️', size: 0 }
+                { name: (window.translate ? window.translate('finder.rateLimit') : 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.'), type: 'info', icon: '⚠️', size: 0 }
             ];
         }
         const list = Array.isArray(cached) ? cached : [];
