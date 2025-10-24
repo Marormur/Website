@@ -595,7 +595,22 @@
                     return label ? `${label} (lädt …)` : 'Lade Datei …';
                 },
                 'textEditor.status.loadError': () => 'Datei konnte nicht geladen werden.',
-                'textEditor.status.rateLimit': () => 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.'
+                'textEditor.status.rateLimit': () => 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                'textEditor.status.wordCount': (p) => {
+                    const words = p && typeof p.words === 'number' ? p.words : 0;
+                    const chars = p && typeof p.chars === 'number' ? p.chars : 0;
+                    return `Words: ${words} | Characters: ${chars}`;
+                },
+                'textEditor.status.position': (p) => {
+                    const line = p && typeof p.line === 'number' ? p.line : 1;
+                    const col = p && typeof p.col === 'number' ? p.col : 1;
+                    return `Line ${line}, Col ${col}`;
+                },
+                'textEditor.findReplace.noMatch': () => 'No match found',
+                'textEditor.findReplace.replacedCount': (p) => {
+                    const count = p && typeof p.count === 'number' ? p.count : 0;
+                    return `Replaced ${count} occurrence(s)`;
+                }
             };
 
             try {
@@ -993,10 +1008,11 @@
             if (!searchText) return;
 
             const text = this.editor.value;
-            const count = text.split(searchText).length - 1;
-            const newText = text.split(searchText).join(replaceText);
+            const parts = text.split(searchText);
+            const count = parts.length - 1;
             
-            if (text !== newText) {
+            if (count > 0) {
+                const newText = parts.join(replaceText);
                 this.editor.value = newText;
                 this.editor.dispatchEvent(new Event('input', { bubbles: true }));
                 
