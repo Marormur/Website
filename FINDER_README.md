@@ -42,6 +42,20 @@ Computer
 └── Videos
 ```
 
+### Kontextmenü (Rechtsklick)
+Der Finder unterstützt ein intelligentes Kontextmenü:
+
+**Auf Dateien/Ordnern:**
+- **Öffnen** - Öffnet die Datei oder navigiert in den Ordner
+- **Informationen** - Zeigt Datei-/Ordnerdetails (in Entwicklung)
+
+**Im leeren Bereich:**
+- **Aktualisieren** - Lädt den aktuellen Ordner neu
+- **Als Liste** / **Als Raster** - Wechselt zwischen Ansichtsmodi
+- **Nach Name sortieren** - Sortiert Elemente alphabetisch
+- **Nach Datum sortieren** - Sortiert nach Änderungsdatum
+- **Nach Größe sortieren** - Sortiert nach Dateigröße
+
 ## Technische Details
 
 ### Änderungen gegenüber vorheriger Version
@@ -70,7 +84,7 @@ Computer
 
 ### Mittelfristig
 - [ ] Datei-Upload per Drag & Drop
-- [ ] Kontextmenü (Rechtsklick)
+- [x] Kontextmenü (Rechtsklick) - Implementiert mit Dateien/Ordner-Aktionen und Ansichtsoptionen
 - [ ] Ordner erstellen/umbenennen/löschen
 - [ ] Suche implementieren
 
