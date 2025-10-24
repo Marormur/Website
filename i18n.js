@@ -48,14 +48,16 @@
                 text: 'Texteditor',
                 image: 'Bildbetrachter',
                 settings: 'Systemeinstellungen',
-                about: 'Über Marvin'
+                about: 'Über Marvin',
+                launchpad: 'Launchpad'
             },
             dock: {
                 finder: 'Sucher',
                 projects: 'GitHub Projekte',
                 text: 'Texteditor',
                 image: 'Bildbetrachter',
-                settings: 'Systemeinstellungen'
+                settings: 'Systemeinstellungen',
+                launchpad: 'Launchpad'
             },
             menubar: {
                 appleMenu: {
@@ -155,6 +157,10 @@
                 },
                 programInfo: {
                     title: 'Über dieses Programm'
+                },
+                launchpad: {
+                    title: 'Launchpad',
+                    searchPlaceholder: 'Programme suchen'
                 }
             },
             finder: {
@@ -261,6 +267,16 @@
                     about: {
                         name: 'Über Marvin',
                         tagline: 'Erfahre mehr über Marvin Temmen.',
+                        version: 'Version 1.0',
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
+                    }
+                },
+                launchpad: {
+                    label: 'Launchpad',
+                    infoLabel: 'Über Launchpad',
+                    about: {
+                        name: 'Launchpad',
+                        tagline: 'Starte alle deine Programme.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
                     }
@@ -449,13 +465,15 @@
                 text: 'Text editor',
                 image: 'Image viewer',
                 settings: 'System settings',
-                about: 'About Marvin'
+                about: 'About Marvin',
+                launchpad: 'Launchpad'
             },
             dock: {
                 finder: 'Finder',
                 text: 'Text editor',
                 image: 'Image viewer',
-                settings: 'System settings'
+                settings: 'System settings',
+                launchpad: 'Launchpad'
             },
             menubar: {
                 appleMenu: {
@@ -552,6 +570,10 @@
                 },
                 programInfo: {
                     title: 'About this app'
+                },
+                launchpad: {
+                    title: 'Launchpad',
+                    searchPlaceholder: 'Search apps'
                 }
             },
             programs: {
@@ -611,6 +633,16 @@
                     about: {
                         name: 'About Marvin',
                         tagline: 'Learn more about Marvin Temmen.',
+                        version: 'Version 1.0',
+                        copyright: '© Marvin Temmen. All rights reserved.'
+                    }
+                },
+                launchpad: {
+                    label: 'Launchpad',
+                    infoLabel: 'About Launchpad',
+                    about: {
+                        name: 'Launchpad',
+                        tagline: 'Launch all your apps.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. All rights reserved.'
                     }
