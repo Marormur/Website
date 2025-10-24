@@ -47,7 +47,7 @@ Der Finder unterstützt ein intelligentes Kontextmenü:
 
 **Auf Dateien/Ordnern:**
 - **Öffnen** - Öffnet die Datei oder navigiert in den Ordner
-- **Informationen** - Zeigt Datei-/Ordnerdetails (in Entwicklung)
+- **Informationen** - Zeigt Datei-/Ordnerdetails (Platzhalter, vollständige Implementierung geplant)
 
 **Im leeren Bereich:**
 - **Aktualisieren** - Lädt den aktuellen Ordner neu
