@@ -141,6 +141,17 @@ html.dark .desktop-icon-graphic {
     border-radius: inherit;
 }
 
+/* Rubberband selection visuals */
+.desktop-rubberband {
+    mix-blend-mode: normal;
+    border-radius: 4px;
+}
+
+/* Temporary highlight when an icon is inside the rubberband */
+.desktop-icon-button.rubber-selected {
+    box-shadow: 0 28px 48px rgba(37, 99, 235, 0.18);
+}
+
 .desktop-icon-label {
     display: inline-block;
     text-align: center;

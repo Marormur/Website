@@ -260,6 +260,31 @@ const DESKTOP_ITEMS = [
 const desktopItemsById = new Map();
 const desktopButtons = new Map();
 let desktopSelectedItemId = null;
+// Support multi-selection on the desktop (like macOS)
+const desktopSelectedIds = new Set();
+let desktopLastFocusedIndex = -1;
+// When a rubberband drag just happened, suppress the background click that would
+// otherwise clear the selection (prevents race between drag and click).
+let desktopSuppressBackgroundClick = false;
+
+function updateDesktopSelectionUI() {
+    // Sync desktopSelectedItemId (primary focused) with last focused index
+    if (desktopLastFocusedIndex >= 0 && DESKTOP_ITEMS[desktopLastFocusedIndex]) {
+        desktopSelectedItemId = DESKTOP_ITEMS[desktopLastFocusedIndex].id;
+    } else {
+        desktopSelectedItemId = desktopSelectedIds.size === 1 ? Array.from(desktopSelectedIds)[0] : null;
+    }
+    // Update buttons' attributes
+    desktopButtons.forEach((btn, id) => {
+        if (desktopSelectedIds.has(id)) {
+            btn.dataset.selected = 'true';
+            btn.setAttribute('aria-selected', 'true');
+        } else {
+            btn.removeAttribute('data-selected');
+            btn.setAttribute('aria-selected', 'false');
+        }
+    });
+}
 
 function translate(key, fallback) {
     if (!window.appI18n || typeof appI18n.translate !== 'function') {
@@ -383,9 +408,40 @@ function createDesktopButton(item, index) {
 
     button.addEventListener('click', (event) => {
         event.preventDefault();
-        selectDesktopItem(item.id, { focus: false });
+        const index = Number(button.dataset.desktopIndex || 0);
+        const isMeta = event.ctrlKey || event.metaKey;
+        const isShift = event.shiftKey;
+
+        if (isShift && desktopLastFocusedIndex >= 0) {
+            // Select range from last focused to clicked
+            const start = Math.min(desktopLastFocusedIndex, index);
+            const end = Math.max(desktopLastFocusedIndex, index);
+            for (let i = start; i <= end; i++) {
+                const id = (DESKTOP_ITEMS[i] && DESKTOP_ITEMS[i].id) || null;
+                if (id) desktopSelectedIds.add(id);
+            }
+            desktopLastFocusedIndex = index;
+            updateDesktopSelectionUI();
+        } else if (isMeta) {
+            // Toggle selection
+            if (desktopSelectedIds.has(item.id)) {
+                desktopSelectedIds.delete(item.id);
+            } else {
+                desktopSelectedIds.add(item.id);
+            }
+            desktopLastFocusedIndex = index;
+            updateDesktopSelectionUI();
+        } else {
+            // Normal click: single select
+            desktopSelectedIds.clear();
+            desktopSelectedIds.add(item.id);
+            desktopLastFocusedIndex = index;
+            updateDesktopSelectionUI();
+        }
+
         const pointerType = button.dataset.activePointerType || '';
         const shouldOpenOnSingleTap = pointerType === 'touch' || pointerType === 'pen';
+        // Double-click or single tap on touch opens
         if (shouldOpenOnSingleTap || (typeof event.detail === 'number' && event.detail >= 2)) {
             openDesktopItemById(item.id);
         }
@@ -439,12 +495,15 @@ function selectDesktopItem(itemId, options = {}) {
         previousButton.removeAttribute('data-selected');
         previousButton.setAttribute('aria-selected', 'false');
     }
-    desktopSelectedItemId = itemId || null;
-    if (itemId && desktopButtons.has(itemId)) {
+    // Keep single-select API: selecting via keyboard or programmatically should
+    // clear multi-selection and set the focused item.
+    desktopSelectedIds.clear();
+    if (itemId) desktopSelectedIds.add(itemId);
+    desktopLastFocusedIndex = DESKTOP_ITEMS.findIndex(entry => entry.id === itemId);
+    updateDesktopSelectionUI();
+    if (focus && itemId && desktopButtons.has(itemId)) {
         const nextButton = desktopButtons.get(itemId);
-        nextButton.dataset.selected = 'true';
-        nextButton.setAttribute('aria-selected', 'true');
-        if (focus && typeof nextButton.focus === 'function') {
+        if (typeof nextButton.focus === 'function') {
             try {
                 nextButton.focus({ preventScroll: true });
             } catch (err) {
@@ -456,14 +515,20 @@ function selectDesktopItem(itemId, options = {}) {
 
 function clearDesktopSelection(options = {}) {
     const { blur = false } = options;
-    const previousId = desktopSelectedItemId;
-    if (!previousId) return;
-    selectDesktopItem(null, { focus: false });
-    if (blur && desktopButtons.has(previousId)) {
-        const button = desktopButtons.get(previousId);
-        if (typeof button.blur === 'function') {
-            button.blur();
-        }
+    // Clear all selected ids and UI
+    const hadSelection = desktopSelectedIds.size > 0 || desktopSelectedItemId != null;
+    desktopSelectedIds.clear();
+    desktopLastFocusedIndex = -1;
+    desktopSelectedItemId = null;
+    desktopButtons.forEach((btn) => {
+        btn.removeAttribute('data-selected');
+        btn.setAttribute('aria-selected', 'false');
+    });
+    if (!hadSelection) return;
+    if (blur) {
+        // attempt to blur the previously focused element
+        const prev = document.querySelector('.desktop-icon-button[aria-selected="true"]');
+        if (prev && typeof prev.blur === 'function') prev.blur();
     }
 }
 
@@ -575,6 +640,10 @@ function handleDesktopBackgroundPointer(event) {
     if (event && typeof event.button === 'number' && event.button !== 0) {
         return;
     }
+    if (desktopSuppressBackgroundClick) {
+        // ignore this click because it was part of a rubberband operation
+        return;
+    }
     if (event && event.target && event.target.closest('.desktop-icon-button')) {
         return;
     }
@@ -585,8 +654,123 @@ function initDesktop() {
     renderDesktopIcons();
     const desktopArea = getDesktopAreaElement();
     if (desktopArea) {
-        desktopArea.addEventListener('mousedown', handleDesktopBackgroundPointer);
+        // Click on background clears selection (non-drag)
+        desktopArea.addEventListener('click', handleDesktopBackgroundPointer);
         desktopArea.addEventListener('touchstart', handleDesktopBackgroundPointer, { passive: true });
+
+        // Rubberband selection using pointer events
+        let rubber = null;
+        let rubberStart = null;
+        const onPointerMove = (e) => {
+            if (!rubber || !rubberStart) return;
+            const x1 = Math.min(rubberStart.x, e.clientX);
+            const y1 = Math.min(rubberStart.y, e.clientY);
+            const x2 = Math.max(rubberStart.x, e.clientX);
+            const y2 = Math.max(rubberStart.y, e.clientY);
+            rubber.style.left = x1 + 'px';
+            rubber.style.top = y1 + 'px';
+            rubber.style.width = (x2 - x1) + 'px';
+            rubber.style.height = (y2 - y1) + 'px';
+
+            // Mark intersecting icons
+            desktopButtons.forEach((btn, id) => {
+                const rect = btn.getBoundingClientRect();
+                const intersects = !(rect.right < x1 || rect.left > x2 || rect.bottom < y1 || rect.top > y2);
+                if (intersects) {
+                    btn.classList.add('rubber-selected');
+                } else {
+                    btn.classList.remove('rubber-selected');
+                }
+            });
+        };
+
+        const onPointerUp = (e) => {
+            if (!rubber || !rubberStart) return;
+            // Collect selected items
+            const selected = [];
+            desktopButtons.forEach((btn, id) => {
+                if (btn.classList.contains('rubber-selected')) {
+                    selected.push(id);
+                    btn.classList.remove('rubber-selected');
+                }
+            });
+            // If meta key was pressed during drag, toggle; else replace
+            if (e.ctrlKey || e.metaKey) {
+                selected.forEach(id => {
+                    if (desktopSelectedIds.has(id)) desktopSelectedIds.delete(id);
+                    else desktopSelectedIds.add(id);
+                });
+            } else {
+                desktopSelectedIds.clear();
+                selected.forEach(id => desktopSelectedIds.add(id));
+            }
+            // focus last selected if any
+            if (selected.length > 0) {
+                const lastId = selected[selected.length - 1];
+                desktopLastFocusedIndex = DESKTOP_ITEMS.findIndex(entry => entry.id === lastId);
+            }
+            updateDesktopSelectionUI();
+
+            // cleanup via helper so all listeners are removed consistently
+            cleanupRubber(false);
+        };
+
+        // If the pointer interaction is canceled (pointercancel), or the window
+        // loses focus or becomes hidden, we should abort the rubberband and
+        // remove the selection rectangle to avoid leaving it stuck.
+        const onPointerCancel = () => cleanupRubber(true);
+        const onWindowBlur = () => cleanupRubber(true);
+        const onVisibilityChange = () => {
+            if (document.visibilityState !== 'visible') cleanupRubber(true);
+        };
+
+        const cleanupRubber = (abortOnly) => {
+            if (!rubber) return;
+            // remove temporary highlight classes
+            desktopButtons.forEach((btn) => btn.classList.remove('rubber-selected'));
+            try { rubber.remove(); } catch (err) { /* ignore */ }
+            rubber = null;
+            rubberStart = null;
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerCancel);
+            window.removeEventListener('blur', onWindowBlur);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            // suppress immediate background click to avoid clearing selection
+            desktopSuppressBackgroundClick = true;
+            setTimeout(() => { desktopSuppressBackgroundClick = false; }, 120);
+            // if abortOnly is true we don't change selection state; otherwise selection already applied
+        };
+
+        desktopArea.addEventListener('pointerdown', (e) => {
+            // Only left button and when clicking on empty area
+            if (e.button !== 0) return;
+            if (e.target && e.target.closest && e.target.closest('.desktop-icon-button')) return;
+            // start rubberband
+            rubberStart = { x: e.clientX, y: e.clientY };
+            rubber = document.createElement('div');
+            rubber.className = 'desktop-rubberband';
+            Object.assign(rubber.style, {
+                position: 'fixed',
+                left: rubberStart.x + 'px',
+                top: rubberStart.y + 'px',
+                width: '0px',
+                height: '0px',
+                zIndex: 99999,
+                border: '1px dashed rgba(255,255,255,0.6)',
+                background: 'rgba(59,130,246,0.12)',
+                pointerEvents: 'none'
+            });
+            document.body.appendChild(rubber);
+            // mark that a rubberband interaction is in progress so clicks don't
+            // immediately clear selection
+            desktopSuppressBackgroundClick = true;
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerup', onPointerUp);
+            window.addEventListener('pointercancel', onPointerCancel);
+            window.addEventListener('blur', onWindowBlur);
+            document.addEventListener('visibilitychange', onVisibilityChange);
+        });
     }
 }
 
