@@ -494,7 +494,7 @@
             const dropdownId = `menu-dropdown-${sectionId}`;
 
             button.id = buttonId;
-            button.setAttribute('aria-haspopup', 'true');
+            button.setAttribute('aria-haspopup', 'menu');
             button.setAttribute('aria-expanded', 'false');
             button.setAttribute('aria-controls', dropdownId);
 

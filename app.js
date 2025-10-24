@@ -791,9 +791,20 @@ function bindDropdownTrigger(trigger, options = {}) {
         event.stopPropagation();
         clickJustOccurred = true;
         // Note the time of this interaction so the document closer ignores it
-        window.__lastMenuInteractionAt = Date.now();
-        // Always force open on click to avoid focus->click toggle race on first interaction
-        toggleMenuDropdown(trigger, { forceOpen: true });
+        const now = Date.now();
+        window.__lastMenuInteractionAt = now;
+        // Toggle behavior: if already open and not immediately after focus, close; otherwise open
+        const menuId = trigger.getAttribute('aria-controls');
+        const menu = menuId ? document.getElementById(menuId) : null;
+        const isOpen = menu ? !menu.classList.contains('hidden') : false;
+        const sinceFocus = now - (window.__lastMenuFocusAt || 0);
+        if (isOpen && sinceFocus > 200) {
+            hideMenuDropdowns();
+            trigger.setAttribute('aria-expanded', 'false');
+        } else {
+            // Force open to avoid focus->click race on first interaction
+            toggleMenuDropdown(trigger, { forceOpen: true });
+        }
         // Reset flag after a short delay to allow hover to work again
         setTimeout(() => {
             clickJustOccurred = false;
@@ -811,7 +822,9 @@ function bindDropdownTrigger(trigger, options = {}) {
         toggleMenuDropdown(trigger, { forceOpen: true });
     });
     trigger.addEventListener('focus', () => {
-        window.__lastMenuInteractionAt = Date.now();
+        const now = Date.now();
+        window.__lastMenuInteractionAt = now;
+        window.__lastMenuFocusAt = now;
         toggleMenuDropdown(trigger, { forceOpen: true });
     });
 }
@@ -833,6 +846,8 @@ function initEventHandlers() {
 
     document.addEventListener('click', handleMenuActionActivation);
     document.addEventListener('click', handleDocumentClickToCloseMenus);
+    // Also close on pointerdown for snappier UX; inside-trigger/menu is guarded
+    document.addEventListener('pointerdown', handleDocumentClickToCloseMenus, { capture: true });
 
     // Close any open dropdown with Escape for accessibility
     document.addEventListener('keydown', (event) => {

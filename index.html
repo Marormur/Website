@@ -33,7 +33,7 @@
         <div class="menubar-left">
             <div id="apple-menu-container" class="menubar-trigger">
                 <button id="apple-menu-trigger" type="button" class="menubar-logo" aria-label="Apple-Menü"
-                    aria-haspopup="true" aria-expanded="false" aria-controls="apple-menu-dropdown"
+                    aria-haspopup="menu" aria-expanded="false" aria-controls="apple-menu-dropdown"
                     data-menubar-trigger-button="true">
                     👨🏼‍💻
                 </button>
@@ -62,7 +62,7 @@
             </div>
             <div id="program-menu-container" class="menubar-trigger">
                 <button id="program-label" type="button" class="menubar-item menubar-app no-select"
-                    data-i18n="programs.default.label" aria-haspopup="true" aria-expanded="false"
+                    data-i18n="programs.default.label" aria-haspopup="menu" aria-expanded="false"
                     aria-controls="program-dropdown" data-menubar-trigger-button="true">
                     Sucher
                 </button>
@@ -78,14 +78,14 @@
                     </li>
                 </ul>
             </div>
-            <nav id="menubar-links" class="menubar-links" aria-label="Anwendungsmenüs"
+            <nav id="menubar-links" class="menubar-links" role="menubar" aria-label="Anwendungsmenüs"
                 data-i18n-aria-label="menubar.applicationMenus"></nav>
         </div>
         <div class="menubar-right">
             <div class="menubar-status-cluster">
                 <div class="menubar-trigger menubar-status-trigger">
                     <button id="wifi-status-trigger" type="button" class="menubar-status-icon" aria-label="WLAN Status"
-                        data-i18n-aria-label="menubar.toggles.wifiStatus" aria-haspopup="true" aria-expanded="false"
+                        data-i18n-aria-label="menubar.toggles.wifiStatus" aria-haspopup="menu" aria-expanded="false"
                         aria-controls="wifi-menu" data-system-menu-trigger="wifi">
                         <span class="menubar-status-icon-svg" data-icon="wifi"></span>
                     </button>
@@ -132,7 +132,7 @@
                 <div class="menubar-trigger menubar-status-trigger">
                     <button id="bluetooth-status-trigger" type="button" class="menubar-status-icon"
                         aria-label="Bluetooth Status" data-i18n-aria-label="menubar.toggles.bluetoothStatus"
-                        aria-haspopup="true" aria-expanded="false" aria-controls="bluetooth-menu"
+                        aria-haspopup="menu" aria-expanded="false" aria-controls="bluetooth-menu"
                         data-system-menu-trigger="bluetooth">
                         <span class="menubar-status-icon-svg" data-icon="bluetooth"></span>
                     </button>
@@ -178,7 +178,7 @@
                 </div>
                 <div class="menubar-trigger menubar-status-trigger">
                     <button id="sound-status-trigger" type="button" class="menubar-status-icon" aria-label="Ton"
-                        data-i18n-aria-label="menubar.sound.label" aria-haspopup="true" aria-expanded="false"
+                        data-i18n-aria-label="menubar.sound.label" aria-haspopup="menu" aria-expanded="false"
                         aria-controls="sound-menu" data-system-menu-trigger="sound">
                         <span class="menubar-status-icon-svg" data-icon="volume"></span>
                     </button>
@@ -248,7 +248,7 @@
                     <button id="control-center-trigger" type="button" class="menubar-status-icon"
                         aria-label="Kontrollzentrum" title="Kontrollzentrum"
                         data-i18n-aria-label="menubar.controlCenter.label" data-i18n-title="menubar.controlCenter.label"
-                        aria-haspopup="true" aria-expanded="false" aria-controls="control-center-menu"
+                        aria-haspopup="menu" aria-expanded="false" aria-controls="control-center-menu"
                         data-system-menu-trigger="control-center">
                         <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                             <path
@@ -323,8 +323,8 @@
     <!-- Projekte Modal -->
     <div id="projects-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
         <!-- Projekte nutzen nun einen flexiblen Container, der sich an der Fenstergröße orientiert. -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col min-h-0"
-            style="width: 70vw; height: 60vh; max-height: 85vh;">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col min-h-0 w-[70vw] h-[60vh] max-h-[85vh]">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" data-i18n-title="common.close" id="close-projects-modal"
@@ -374,8 +374,7 @@
     </div>
     <!-- Über mich Modal -->
     <div id="about-modal" class="fixed inset-0 flex items-center justify-center hidden modal" data-no-resize="true">
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer"
-            style="width: 320px; height: 440px;">
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer w-[320px] h-[440px]">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" data-i18n-title="common.close" id="close-about-modal"
@@ -421,8 +420,8 @@
           Fenstergröße nach Wunsch anpassen. Dialog.loadIframe fügt den IFrame-Inhalt
           dynamisch in die .dialog-content ein.
         -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col"
-            style="width: 80vw; height: 70vh; max-height: 90vh;">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col w-[80vw] h-[70vh] max-h-[90vh]">
             <!-- Header -->
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
@@ -450,8 +449,8 @@
           prozentuale Breite/Höhe wächst und schrumpft das Fenster je nach Bildschirmgröße.
           Der Inhalt wird dynamisch über Dialog.loadIframe geladen.
         -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col"
-            style="width: 70vw; height: 60vh; max-height: 85vh;">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col w-[70vw] h-[60vh] max-h-[85vh]">
             <!-- Header -->
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
@@ -471,8 +470,8 @@
     </div>
     <!-- Bildbetrachter Modal -->
     <div id="image-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
-        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col"
-            style="width: min(80vw, 960px); height: min(70vh, 720px);">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col w-[min(80vw,960px)] h-[min(70vh,720px)]">
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" data-i18n-title="common.close" id="close-image-modal"
@@ -504,8 +503,8 @@
     <!-- Programminfo Modal -->
     <div id="program-info-modal" class="fixed inset-0 flex items-center justify-center hidden modal"
         data-no-resize="true">
-        <div class="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl autopointer flex flex-col"
-            style="width: min(360px, 90vw);">
+        <div
+            class="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl autopointer flex flex-col w-[min(360px,90vw)]">
             <div class="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-t-2xl draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" data-i18n-title="common.close" id="close-program-info-modal"
