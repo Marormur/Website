@@ -58,36 +58,36 @@
                         <button type="button" data-action="textEditor:open" class="text-editor-btn" data-i18n="textEditor.toolbar.open" data-i18n-title="textEditor.toolbar.open">Öffnen</button>
                         <button type="button" data-action="textEditor:save" class="text-editor-btn" id="text-save-button" data-i18n="textEditor.toolbar.save" data-i18n-title="textEditor.toolbar.save">Speichern</button>
                         <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
-                        <button type="button" data-action="textEditor:bold" class="text-editor-btn" title="Bold" style="font-weight: bold;">B</button>
-                        <button type="button" data-action="textEditor:italic" class="text-editor-btn" title="Italic" style="font-style: italic;">I</button>
-                        <button type="button" data-action="textEditor:underline" class="text-editor-btn" title="Underline" style="text-decoration: underline;">U</button>
-                        <button type="button" data-action="textEditor:strikethrough" class="text-editor-btn" title="Strikethrough" style="text-decoration: line-through;">S</button>
+                        <button type="button" data-action="textEditor:bold" class="text-editor-btn" data-i18n-title="textEditor.toolbar.bold" style="font-weight: bold;">B</button>
+                        <button type="button" data-action="textEditor:italic" class="text-editor-btn" data-i18n-title="textEditor.toolbar.italic" style="font-style: italic;">I</button>
+                        <button type="button" data-action="textEditor:underline" class="text-editor-btn" data-i18n-title="textEditor.toolbar.underline" style="text-decoration: underline;">U</button>
+                        <button type="button" data-action="textEditor:strikethrough" class="text-editor-btn" data-i18n-title="textEditor.toolbar.strikeThrough" style="text-decoration: line-through;">S</button>
                         <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
-                        <button type="button" data-action="textEditor:heading1" class="text-editor-btn" title="Heading 1">H1</button>
-                        <button type="button" data-action="textEditor:heading2" class="text-editor-btn" title="Heading 2">H2</button>
-                        <button type="button" data-action="textEditor:heading3" class="text-editor-btn" title="Heading 3">H3</button>
+                        <button type="button" data-action="textEditor:heading1" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading1">H1</button>
+                        <button type="button" data-action="textEditor:heading2" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading2">H2</button>
+                        <button type="button" data-action="textEditor:heading3" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading3">H3</button>
                         <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
-                        <button type="button" data-action="textEditor:unorderedList" class="text-editor-btn" title="Bullet List">• List</button>
-                        <button type="button" data-action="textEditor:orderedList" class="text-editor-btn" title="Numbered List">1. List</button>
+                        <button type="button" data-action="textEditor:unorderedList" class="text-editor-btn" data-i18n-title="textEditor.toolbar.unorderedList">• List</button>
+                        <button type="button" data-action="textEditor:orderedList" class="text-editor-btn" data-i18n-title="textEditor.toolbar.orderedList">1. List</button>
                         <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
-                        <button type="button" data-action="textEditor:alignLeft" class="text-editor-btn" title="Align Left">⇤</button>
-                        <button type="button" data-action="textEditor:alignCenter" class="text-editor-btn" title="Align Center">≡</button>
-                        <button type="button" data-action="textEditor:alignRight" class="text-editor-btn" title="Align Right">⇥</button>
+                        <button type="button" data-action="textEditor:alignLeft" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignLeft">⇤</button>
+                        <button type="button" data-action="textEditor:alignCenter" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignCenter">≡</button>
+                        <button type="button" data-action="textEditor:alignRight" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignRight">⇥</button>
                         <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
-                        <button type="button" data-action="textEditor:insertLink" class="text-editor-btn" title="Insert Link">🔗</button>
-                        <button type="button" data-action="textEditor:findReplace" class="text-editor-btn" title="Find & Replace">🔍</button>
+                        <button type="button" data-action="textEditor:insertLink" class="text-editor-btn" data-i18n-title="textEditor.toolbar.insertLink">🔗</button>
+                        <button type="button" data-action="textEditor:findReplace" class="text-editor-btn" data-i18n-title="textEditor.toolbar.findReplace">🔍</button>
                         <input type="file" id="text-file-input"
                             accept=".txt,.md,.markdown,.html,.htm,.css,.scss,.js,.jsx,.ts,.tsx,.json,.yml,.yaml,.xml,.csv,.tsv,.ini,.cfg,.conf,.env,.gitignore,.log,.c,.h,.cpp,.hpp,.java,.kt,.swift,.cs,.py,.rb,.php,.rs,.go,.sh,.bash,.zsh,.fish,.ps1,.bat"
                             style="display:none">
                     </div>
                     <!-- Find and Replace Panel (Hidden by default) -->
                     <div id="find-replace-panel" class="flex-none" style="background: var(--editor-toolbar-bg, #f5f5f5); padding: 8px 12px; border-bottom: 1px solid var(--editor-toolbar-border, #d1d5db); display: none; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <input type="text" id="find-input" placeholder="Find..." style="padding: 4px 8px; border: 1px solid var(--editor-toolbar-border, #d1d5db); border-radius: 4px; background: var(--editor-surface-bg, #ffffff); color: var(--editor-text, #111827); font-size: 13px;">
-                        <input type="text" id="replace-input" placeholder="Replace..." style="padding: 4px 8px; border: 1px solid var(--editor-toolbar-border, #d1d5db); border-radius: 4px; background: var(--editor-surface-bg, #ffffff); color: var(--editor-text, #111827); font-size: 13px;">
-                        <button type="button" data-action="textEditor:findNext" class="text-editor-btn" style="font-size: 12px;">Next</button>
-                        <button type="button" data-action="textEditor:replaceOne" class="text-editor-btn" style="font-size: 12px;">Replace</button>
-                        <button type="button" data-action="textEditor:replaceAll" class="text-editor-btn" style="font-size: 12px;">Replace All</button>
-                        <button type="button" data-action="textEditor:closeFindReplace" class="text-editor-btn" style="font-size: 12px;">✕</button>
+                        <input type="text" id="find-input" data-i18n-placeholder="textEditor.findReplace.find" placeholder="Find..." style="padding: 4px 8px; border: 1px solid var(--editor-toolbar-border, #d1d5db); border-radius: 4px; background: var(--editor-surface-bg, #ffffff); color: var(--editor-text, #111827); font-size: 13px;">
+                        <input type="text" id="replace-input" data-i18n-placeholder="textEditor.findReplace.replace" placeholder="Replace..." style="padding: 4px 8px; border: 1px solid var(--editor-toolbar-border, #d1d5db); border-radius: 4px; background: var(--editor-surface-bg, #ffffff); color: var(--editor-text, #111827); font-size: 13px;">
+                        <button type="button" data-action="textEditor:findNext" class="text-editor-btn" data-i18n="textEditor.findReplace.next" data-i18n-title="textEditor.findReplace.next" style="font-size: 12px;">Next</button>
+                        <button type="button" data-action="textEditor:replaceOne" class="text-editor-btn" data-i18n="textEditor.findReplace.replaceOne" data-i18n-title="textEditor.findReplace.replaceOne" style="font-size: 12px;">Replace</button>
+                        <button type="button" data-action="textEditor:replaceAll" class="text-editor-btn" data-i18n="textEditor.findReplace.replaceAll" data-i18n-title="textEditor.findReplace.replaceAll" style="font-size: 12px;">Replace All</button>
+                        <button type="button" data-action="textEditor:closeFindReplace" class="text-editor-btn" data-i18n="textEditor.findReplace.close" data-i18n-title="textEditor.findReplace.close" style="font-size: 12px;">✕</button>
                     </div>
                     <div id="text-file-status" class="flex-none" style="padding: 8px 16px; border-bottom: 1px solid var(--editor-toolbar-border, #d1d5db); background: var(--editor-body-bg, #fafafa); color: var(--editor-text, #111827); font-size: 14px; opacity: 0.75; display: none;"></div>
                     <textarea id="text-editor-textarea" spellcheck="false" wrap="off" class="flex-1 w-full resize-none p-4 border-0 outline-none" 
@@ -95,8 +95,8 @@
                         title="textarea"></textarea>
                     <!-- Status Bar with Word Count -->
                     <div id="word-count-bar" class="flex-none" style="background: var(--editor-toolbar-bg, #f5f5f5); padding: 6px 12px; border-top: 1px solid var(--editor-toolbar-border, #d1d5db); font-size: 12px; color: var(--editor-text, #111827); opacity: 0.75; display: flex; justify-content: space-between;">
-                        <span id="word-count-display">Words: 0 | Characters: 0</span>
-                        <span id="line-col-display">Line 1, Col 1</span>
+                        <span id="word-count-display" data-i18n="textEditor.status.wordCount" data-i18n-params='{"words":0,"chars":0}'>Words: 0 | Characters: 0</span>
+                        <span id="line-col-display" data-i18n="textEditor.status.position" data-i18n-params='{"line":1,"col":1}'>Line 1, Col 1</span>
                     </div>
                 </div>
             `;
@@ -862,6 +862,16 @@
             const chars = text.length;
             const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
             
+            // Use i18n if available
+            if (window.appI18n && typeof window.appI18n.translate === 'function') {
+                const translated = window.appI18n.translate('textEditor.status.wordCount', { words, chars });
+                if (translated && translated !== 'textEditor.status.wordCount') {
+                    this.wordCountDisplay.textContent = translated;
+                    return;
+                }
+            }
+            
+            // Fallback to English
             this.wordCountDisplay.textContent = `Words: ${words} | Characters: ${chars}`;
         },
 
@@ -879,6 +889,16 @@
             const line = lines.length;
             const col = lines[lines.length - 1].length + 1;
             
+            // Use i18n if available
+            if (window.appI18n && typeof window.appI18n.translate === 'function') {
+                const translated = window.appI18n.translate('textEditor.status.position', { line, col });
+                if (translated && translated !== 'textEditor.status.position') {
+                    this.lineColDisplay.textContent = translated;
+                    return;
+                }
+            }
+            
+            // Fallback to English
             this.lineColDisplay.textContent = `Line ${line}, Col ${col}`;
         },
 
@@ -931,7 +951,8 @@
                     this.editor.setSelectionRange(firstIndex, firstIndex + searchText.length);
                     this.editor.focus();
                 } else {
-                    alert('No match found');
+                    const message = this.resolveTranslation('textEditor.findReplace.noMatch').text || 'No match found';
+                    alert(message);
                 }
             }
         },
@@ -972,16 +993,18 @@
             if (!searchText) return;
 
             const text = this.editor.value;
+            const count = text.split(searchText).length - 1;
             const newText = text.split(searchText).join(replaceText);
             
             if (text !== newText) {
                 this.editor.value = newText;
                 this.editor.dispatchEvent(new Event('input', { bubbles: true }));
                 
-                const count = (text.length - newText.length + replaceText.length * (newText.split(replaceText).length - 1)) / searchText.length;
-                alert(`Replaced ${Math.floor(count)} occurrence(s)`);
+                const message = this.resolveTranslation('textEditor.findReplace.replacedCount', { count }).text || `Replaced ${count} occurrence(s)`;
+                alert(message);
             } else {
-                alert('No match found');
+                const message = this.resolveTranslation('textEditor.findReplace.noMatch').text || 'No match found';
+                alert(message);
             }
             
             this.focusEditor();

@@ -298,13 +298,17 @@
                     next: 'Weiter',
                     replaceOne: 'Ersetzen',
                     replaceAll: 'Alle ersetzen',
-                    close: 'Schließen'
+                    close: 'Schließen',
+                    noMatch: 'Keine Übereinstimmung gefunden',
+                    replacedCount: '{count} Vorkommen ersetzt'
                 },
                 status: {
                     loading: 'Lade Datei …',
                     loadingWithLabel: '{label} (lädt …)',
                     loadError: 'Datei konnte nicht geladen werden.',
-                    rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.'
+                    rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                    wordCount: 'Wörter: {words} | Zeichen: {chars}',
+                    position: 'Zeile {line}, Spalte {col}'
                 }
             },
             menu: {
@@ -698,13 +702,17 @@
                     next: 'Next',
                     replaceOne: 'Replace',
                     replaceAll: 'Replace all',
-                    close: 'Close'
+                    close: 'Close',
+                    noMatch: 'No match found',
+                    replacedCount: 'Replaced {count} occurrence(s)'
                 },
                 status: {
                     loading: 'Loading file…',
                     loadingWithLabel: '{label} (loading…)',
                     loadError: 'The file could not be loaded.',
-                    rateLimit: 'GitHub rate limit was reached. Please try again later.'
+                    rateLimit: 'GitHub rate limit was reached. Please try again later.',
+                    wordCount: 'Words: {words} | Characters: {chars}',
+                    position: 'Line {line}, Col {col}'
                 }
             },
             menu: {
