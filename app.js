@@ -240,6 +240,27 @@ const ICON_FALLBACK_EMOJI = {
     projects: '🧰'
 };
 
+const DESKTOP_ITEMS = [
+    {
+        id: 'projects',
+        modalId: 'projects-modal',
+        emoji: '📁',
+        labelKey: 'desktop.projects',
+        fallbackLabel: 'Projekte'
+    },
+    {
+        id: 'about',
+        modalId: 'about-modal',
+        icon: './img/profil.jpg',
+        labelKey: 'desktop.about',
+        fallbackLabel: 'Über Marvin'
+    }
+];
+
+const desktopItemsById = new Map();
+const desktopButtons = new Map();
+let desktopSelectedItemId = null;
+
 function translate(key, fallback) {
     if (!window.appI18n || typeof appI18n.translate !== 'function') {
         return fallback || key;
@@ -298,6 +319,274 @@ function renderIconIntoElement(target, svgMarkup, fallbackKey) {
     const fallback = ICON_FALLBACK_EMOJI[fallbackKey] || '';
     if (fallback) {
         target.textContent = fallback;
+    }
+}
+
+function getDesktopAreaElement() {
+    return document.getElementById('desktop');
+}
+
+function getDesktopContainerElement() {
+    return document.getElementById('desktop-icons');
+}
+
+function createDesktopButton(item, index) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'desktop-icon-button no-select';
+    button.dataset.desktopItemId = item.id;
+    button.dataset.desktopIndex = String(index);
+    button.setAttribute('role', 'option');
+    button.setAttribute('aria-selected', 'false');
+    button.setAttribute('data-i18n-title', item.labelKey);
+    button.setAttribute('data-i18n-aria-label', item.labelKey);
+    const labelText = translate(item.labelKey, item.fallbackLabel);
+    button.title = labelText;
+    button.setAttribute('aria-label', labelText);
+    button.draggable = false;
+
+    const graphic = document.createElement('span');
+    graphic.className = 'desktop-icon-graphic';
+    if (item.icon) {
+        const img = document.createElement('img');
+        img.src = item.icon;
+        img.alt = '';
+        img.decoding = 'async';
+        img.referrerPolicy = 'no-referrer';
+        img.draggable = false;
+        graphic.appendChild(img);
+    } else if (item.emoji) {
+        graphic.textContent = item.emoji;
+    }
+    button.appendChild(graphic);
+
+    const label = document.createElement('span');
+    label.className = 'desktop-icon-label no-select';
+    label.textContent = labelText;
+    label.setAttribute('data-i18n', item.labelKey);
+    button.appendChild(label);
+
+    button.addEventListener('pointerdown', (event) => {
+        if (!event) return;
+        if (event.pointerType) {
+            button.dataset.activePointerType = event.pointerType;
+        } else {
+            delete button.dataset.activePointerType;
+        }
+    });
+    button.addEventListener('touchstart', () => {
+        button.dataset.activePointerType = 'touch';
+    }, { passive: true });
+    button.addEventListener('mousedown', () => {
+        button.dataset.activePointerType = 'mouse';
+    });
+
+    button.addEventListener('click', (event) => {
+        event.preventDefault();
+        selectDesktopItem(item.id, { focus: false });
+        const pointerType = button.dataset.activePointerType || '';
+        const shouldOpenOnSingleTap = pointerType === 'touch' || pointerType === 'pen';
+        if (shouldOpenOnSingleTap || (typeof event.detail === 'number' && event.detail >= 2)) {
+            openDesktopItemById(item.id);
+        }
+        delete button.dataset.activePointerType;
+    });
+
+    button.addEventListener('keydown', handleDesktopKeydown);
+    button.addEventListener('focus', () => {
+        selectDesktopItem(item.id, { focus: false });
+    });
+
+    return button;
+}
+
+function renderDesktopIcons() {
+    const container = getDesktopContainerElement();
+    if (!container) {
+        return;
+    }
+    container.innerHTML = '';
+    desktopItemsById.clear();
+    desktopButtons.clear();
+    DESKTOP_ITEMS.forEach((item, index) => {
+        desktopItemsById.set(item.id, item);
+        const button = createDesktopButton(item, index);
+        desktopButtons.set(item.id, button);
+        container.appendChild(button);
+    });
+    if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
+        window.appI18n.applyTranslations(container);
+    }
+}
+
+function selectDesktopItem(itemId, options = {}) {
+    const { focus = true } = options;
+    if (desktopSelectedItemId && desktopSelectedItemId === itemId) {
+        if (focus && desktopButtons.has(itemId)) {
+            const btn = desktopButtons.get(itemId);
+            if (typeof btn.focus === 'function') {
+                try {
+                    btn.focus({ preventScroll: true });
+                } catch (err) {
+                    btn.focus();
+                }
+            }
+        }
+        return;
+    }
+    if (desktopSelectedItemId && desktopButtons.has(desktopSelectedItemId)) {
+        const previousButton = desktopButtons.get(desktopSelectedItemId);
+        previousButton.removeAttribute('data-selected');
+        previousButton.setAttribute('aria-selected', 'false');
+    }
+    desktopSelectedItemId = itemId || null;
+    if (itemId && desktopButtons.has(itemId)) {
+        const nextButton = desktopButtons.get(itemId);
+        nextButton.dataset.selected = 'true';
+        nextButton.setAttribute('aria-selected', 'true');
+        if (focus && typeof nextButton.focus === 'function') {
+            try {
+                nextButton.focus({ preventScroll: true });
+            } catch (err) {
+                nextButton.focus();
+            }
+        }
+    }
+}
+
+function clearDesktopSelection(options = {}) {
+    const { blur = false } = options;
+    const previousId = desktopSelectedItemId;
+    if (!previousId) return;
+    selectDesktopItem(null, { focus: false });
+    if (blur && desktopButtons.has(previousId)) {
+        const button = desktopButtons.get(previousId);
+        if (typeof button.blur === 'function') {
+            button.blur();
+        }
+    }
+}
+
+function focusDesktopItemByIndex(index) {
+    if (!Array.isArray(DESKTOP_ITEMS) || DESKTOP_ITEMS.length === 0) return;
+    if (index < 0) index = 0;
+    if (index >= DESKTOP_ITEMS.length) index = DESKTOP_ITEMS.length - 1;
+    const item = DESKTOP_ITEMS[index];
+    if (!item) return;
+    selectDesktopItem(item.id, { focus: true });
+}
+
+function moveDesktopSelection(offset) {
+    if (!offset) return;
+    if (!Array.isArray(DESKTOP_ITEMS) || DESKTOP_ITEMS.length === 0) return;
+    const currentIndex = desktopSelectedItemId
+        ? DESKTOP_ITEMS.findIndex(entry => entry.id === desktopSelectedItemId)
+        : -1;
+    let targetIndex;
+    if (currentIndex === -1) {
+        targetIndex = offset > 0 ? 0 : DESKTOP_ITEMS.length - 1;
+    } else {
+        targetIndex = currentIndex + offset;
+        if (targetIndex < 0) targetIndex = 0;
+        if (targetIndex >= DESKTOP_ITEMS.length) targetIndex = DESKTOP_ITEMS.length - 1;
+    }
+    focusDesktopItemByIndex(targetIndex);
+}
+
+function openDesktopItem(item) {
+    if (!item) return false;
+    if (typeof item.onOpen === 'function') {
+        return !!item.onOpen(item);
+    }
+    if (item.modalId) {
+        const dialog = window.dialogs && window.dialogs[item.modalId];
+        if (dialog && typeof dialog.open === 'function') {
+            dialog.open();
+            return true;
+        }
+        const modalElement = document.getElementById(item.modalId);
+        if (modalElement) {
+            modalElement.classList.remove('hidden');
+            if (typeof bringDialogToFront === 'function') {
+                bringDialogToFront(item.modalId);
+            }
+            if (typeof updateProgramLabelByTopModal === 'function') {
+                updateProgramLabelByTopModal();
+            }
+            return true;
+        }
+    }
+    if (item.href) {
+        const target = item.target || '_blank';
+        window.open(item.href, target, 'noopener');
+        return true;
+    }
+    return false;
+}
+
+function openDesktopItemById(itemId) {
+    if (!itemId) return false;
+    const item = desktopItemsById.get(itemId);
+    if (!item) return false;
+    selectDesktopItem(itemId, { focus: true });
+    return openDesktopItem(item);
+}
+
+function handleDesktopKeydown(event) {
+    const { key } = event;
+    const target = event.currentTarget;
+    if (!target || !target.dataset) return;
+    const itemId = target.dataset.desktopItemId;
+    if (!itemId) return;
+    switch (key) {
+        case 'Enter':
+        case ' ':
+            event.preventDefault();
+            openDesktopItemById(itemId);
+            return;
+        case 'ArrowDown':
+        case 'ArrowRight':
+            event.preventDefault();
+            moveDesktopSelection(1);
+            return;
+        case 'ArrowUp':
+        case 'ArrowLeft':
+            event.preventDefault();
+            moveDesktopSelection(-1);
+            return;
+        case 'Home':
+            event.preventDefault();
+            focusDesktopItemByIndex(0);
+            return;
+        case 'End':
+            event.preventDefault();
+            focusDesktopItemByIndex(DESKTOP_ITEMS.length - 1);
+            return;
+        case 'Escape':
+            event.preventDefault();
+            clearDesktopSelection({ blur: true });
+            return;
+        default:
+            break;
+    }
+}
+
+function handleDesktopBackgroundPointer(event) {
+    if (event && typeof event.button === 'number' && event.button !== 0) {
+        return;
+    }
+    if (event && event.target && event.target.closest('.desktop-icon-button')) {
+        return;
+    }
+    clearDesktopSelection({ blur: true });
+}
+
+function initDesktop() {
+    renderDesktopIcons();
+    const desktopArea = getDesktopAreaElement();
+    if (desktopArea) {
+        desktopArea.addEventListener('mousedown', handleDesktopBackgroundPointer);
+        desktopArea.addEventListener('touchstart', handleDesktopBackgroundPointer, { passive: true });
     }
 }
 
@@ -853,6 +1142,7 @@ document.addEventListener('DOMContentLoaded', function () {
     loadGithubRepos();
     initEventHandlers();
     initSystemStatusControls();
+    initDesktop();
 
     if (window.dialogs["settings-modal"]) {
         window.dialogs["settings-modal"].loadIframe("./settings.html");

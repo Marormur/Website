@@ -28,7 +28,11 @@
                 }
             },
             desktop: {
-                projects: 'Projekte'
+                projects: 'Projekte',
+                text: 'Texteditor',
+                image: 'Bildbetrachter',
+                settings: 'Systemeinstellungen',
+                about: 'Über Marvin'
             },
             dock: {
                 finder: 'Sucher',
@@ -376,7 +380,11 @@
                 }
             },
             desktop: {
-                projects: 'Projects'
+                projects: 'Projects',
+                text: 'Text editor',
+                image: 'Image viewer',
+                settings: 'System settings',
+                about: 'About Marvin'
             },
             dock: {
                 finder: 'Finder',

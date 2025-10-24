@@ -287,11 +287,10 @@
             <span id="clock" class="menubar-clock no-select" aria-live="polite"></span>
         </div>
     </header>
-    <!-- Desktop Items -->
-    <div id="desktop-icons" class="fixed right-0 top-10 mt-4 flex flex-col gap-4 p-4">
-        <div class="flex flex-col items-center cursor-pointer" onclick="showTab('projects')">
-            <span class="text-5xl">📁</span>
-            <span class="mt-2 text-lg font-semibold" data-i18n="desktop.projects">Projekte</span>
+    <!-- Desktop -->
+    <div id="desktop" class="desktop-area" aria-label="Desktop">
+        <div id="desktop-icons" class="desktop-icon-column" role="list" aria-label="Desktop Icons">
+            <!-- Desktop icons are rendered dynamically -->
         </div>
     </div>
     <!-- Projekte Modal -->

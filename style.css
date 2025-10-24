@@ -15,6 +15,7 @@ body {
     --window-shadow: 0 22px 45px rgba(15, 23, 42, 0.18);
     --window-shadow-hover: 0 28px 58px rgba(15, 23, 42, 0.25);
     --window-border: rgba(15, 23, 42, 0.12);
+    --desktop-icon-size: 64px;
 }
 
 .dark {
@@ -29,6 +30,126 @@ body>header {
     left: 0;
     right: 0;
     z-index: 4000 !important;
+}
+
+.desktop-area {
+    position: fixed;
+    top: 48px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 28px 36px 120px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    pointer-events: auto;
+    gap: 32px;
+}
+
+.desktop-icon-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 22px;
+    pointer-events: auto;
+}
+
+.desktop-icon-button {
+    width: 116px;
+    max-width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    border: none;
+    background: transparent;
+    padding: 12px 8px 14px;
+    border-radius: 18px;
+    cursor: pointer;
+    color: #f8fafc;
+    text-shadow: 0 2px 6px rgba(15, 23, 42, 0.55);
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+html.dark .desktop-icon-button {
+    color: #e2e8f0;
+    text-shadow: 0 2px 6px rgba(7, 11, 19, 0.75);
+}
+
+.desktop-icon-button:hover {
+    background: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.22);
+}
+
+html.dark .desktop-icon-button:hover {
+    background: rgba(148, 163, 184, 0.22);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.55);
+}
+
+.desktop-icon-button:focus-visible {
+    outline: 2px solid rgba(96, 165, 250, 0.9);
+    outline-offset: 3px;
+}
+
+.desktop-icon-button[data-selected="true"] {
+    background: rgba(59, 130, 246, 0.35);
+    box-shadow: 0 24px 42px rgba(37, 99, 235, 0.32);
+}
+
+html.dark .desktop-icon-button[data-selected="true"] {
+    background: rgba(37, 99, 235, 0.45);
+    box-shadow: 0 26px 48px rgba(15, 23, 42, 0.55);
+}
+
+.desktop-icon-graphic {
+    width: var(--desktop-icon-size);
+    height: var(--desktop-icon-size);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.32);
+}
+
+html.dark .desktop-icon-graphic {
+    background: rgba(30, 41, 59, 0.55);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65);
+}
+
+.desktop-icon-graphic img {
+    width: 64%;
+    height: 64%;
+    object-fit: contain;
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
+    filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.25));
+}
+
+.desktop-icon-label {
+    display: inline-block;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+    padding: 4px 10px 6px;
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    text-shadow: inherit;
+}
+
+.desktop-icon-button[data-selected="true"] .desktop-icon-label {
+    background: rgba(37, 99, 235, 0.85);
+    color: #ffffff;
+}
+
+html.dark .desktop-icon-button[data-selected="true"] .desktop-icon-label {
+    background: rgba(59, 130, 246, 0.85);
+    color: #f8fafc;
 }
 
 .menubar {
@@ -273,13 +394,13 @@ html.dark .menu-item:focus-visible {
     gap: 6px;
 }
 
-.system-section + .system-section {
+.system-section+.system-section {
     border-top: 1px solid rgba(148, 163, 184, 0.2);
     margin-top: 4px;
     padding-top: 12px;
 }
 
-html.dark .system-section + .system-section {
+html.dark .system-section+.system-section {
     border-top-color: rgba(71, 85, 105, 0.35);
 }
 
