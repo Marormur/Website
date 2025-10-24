@@ -39,6 +39,10 @@ console.log('Terminal System loaded');
             this.render();
             this.attachEventListeners();
             this.showWelcomeMessage();
+            // Focus input immediately so users can start typing right away
+            if (this.inputElement && typeof this.inputElement.focus === 'function') {
+                this.inputElement.focus();
+            }
         },
 
         render: function () {
@@ -54,6 +58,7 @@ console.log('Terminal System loaded');
                             class="flex-1 ml-2 bg-transparent outline-none text-green-400"
                             autocomplete="off"
                             spellcheck="false"
+                            aria-label="Terminal input"
                         />
                     </div>
                 </div>
@@ -61,6 +66,14 @@ console.log('Terminal System loaded');
             this.container.innerHTML = html;
             this.outputElement = document.getElementById('terminal-output');
             this.inputElement = document.getElementById('terminal-input');
+            // Provide localized aria-label when possible
+            try {
+                const lang = (window.appI18n && typeof window.appI18n.getActiveLanguage === 'function')
+                    ? window.appI18n.getActiveLanguage()
+                    : (document.documentElement && document.documentElement.lang) || 'en';
+                const label = String(lang).toLowerCase().startsWith('de') ? 'Terminal-Eingabe' : 'Terminal input';
+                if (this.inputElement) this.inputElement.setAttribute('aria-label', label);
+            } catch (_) { /* noop */ }
         },
 
         attachEventListeners: function () {
@@ -76,6 +89,8 @@ console.log('Terminal System loaded');
                         this.historyIndex = this.commandHistory.length;
                     }
                     this.inputElement.value = '';
+                    // Keep focus after executing a command
+                    this.inputElement.focus();
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     if (this.historyIndex > 0) {
@@ -241,6 +256,10 @@ console.log('Terminal System loaded');
             }
 
             const targetPath = args[0];
+            // Handle current directory no-op
+            if (targetPath === '.' || targetPath === './') {
+                return;
+            }
             const dir = this.resolvePath(targetPath);
 
             if (!dir) {
