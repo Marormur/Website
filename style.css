@@ -15,7 +15,8 @@ body {
     --window-shadow: 0 22px 45px rgba(15, 23, 42, 0.18);
     --window-shadow-hover: 0 28px 58px rgba(15, 23, 42, 0.25);
     --window-border: rgba(15, 23, 42, 0.12);
-    --desktop-icon-size: 64px;
+    /* Increased desktop icon mask size for better visual weight */
+    --desktop-icon-size: 88px;
 }
 
 .dark {
@@ -55,16 +56,17 @@ body>header {
 }
 
 .desktop-icon-button {
-    width: 116px;
+    /* compact container so mask appears larger relative to label */
+    width: 100px;
     max-width: 120px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     border: none;
     background: transparent;
-    padding: 12px 8px 14px;
-    border-radius: 18px;
+    padding: 8px 6px 10px;
+    border-radius: 14px;
     cursor: pointer;
     color: #f8fafc;
     text-shadow: 0 2px 6px rgba(15, 23, 42, 0.55);
@@ -104,13 +106,20 @@ html.dark .desktop-icon-button[data-selected="true"] {
 .desktop-icon-graphic {
     width: var(--desktop-icon-size);
     height: var(--desktop-icon-size);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.22);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.32);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.28);
+}
+
+/* Emoji sizing: make emoji fill a larger portion of the mask */
+.desktop-icon-graphic {
+    /* font-size used for text-emoji fallback inside the mask */
+    font-size: calc(var(--desktop-icon-size) * 0.55);
+    line-height: 1;
 }
 
 html.dark .desktop-icon-graphic {
@@ -119,23 +128,27 @@ html.dark .desktop-icon-graphic {
 }
 
 .desktop-icon-graphic img {
-    width: 64%;
-    height: 64%;
-    object-fit: contain;
+    /* Fill the entire mask and use the container's shape as clipping/mask */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
     pointer-events: none;
     -webkit-user-select: none;
     user-select: none;
-    filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.25));
+    filter: drop-shadow(0 6px 12px rgba(15, 23, 42, 0.22));
+    /* ensure the image follows the container rounding */
+    border-radius: inherit;
 }
 
 .desktop-icon-label {
     display: inline-block;
     text-align: center;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
     line-height: 1.2;
-    padding: 4px 10px 6px;
-    border-radius: 12px;
+    padding: 2px 8px 4px;
+    border-radius: 10px;
     background: transparent;
     color: inherit;
     transition: background-color 0.15s ease, color 0.15s ease;
