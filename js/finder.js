@@ -237,7 +237,7 @@ console.log('Finder.js loaded');
                 break;
         }
 
-        parts.push(`<button class="finder-breadcrumb-item" onclick="window.FinderSystem.navigateTo([], '${finderState.currentView}')">${viewLabel}</button>`);
+        parts.push(`<button class="finder-breadcrumb-item" data-action="finder:goRoot">${viewLabel}</button>`);
 
         // Pfad-Teile (überspringe ersten Teil wenn er gleich dem View-Label ist)
         finderState.currentPath.forEach((part, index) => {
@@ -248,7 +248,7 @@ console.log('Finder.js loaded');
 
             const pathUpToHere = finderState.currentPath.slice(0, index + 1);
             parts.push(`<span class="finder-breadcrumb-separator">›</span>`);
-            parts.push(`<button class="finder-breadcrumb-item" onclick="window.FinderSystem.navigateTo(['${pathUpToHere.join("','")}'])">${part}</button>`);
+            parts.push(`<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join('/')}">${part}</button>`);
         });
 
         refs.breadcrumbs.innerHTML = parts.join('');
@@ -542,14 +542,14 @@ console.log('Finder.js loaded');
             <table class="finder-list-table">
                 <thead>
                     <tr>
-                        <th onclick="window.FinderSystem.setSortBy('name')">Name</th>
-                        <th onclick="window.FinderSystem.setSortBy('size')">Größe</th>
-                        <th onclick="window.FinderSystem.setSortBy('date')">Geändert</th>
+                        <th data-action="finder:setSortBy" data-sort-by="name">Name</th>
+                        <th data-action="finder:setSortBy" data-sort-by="size">Größe</th>
+                        <th data-action="finder:setSortBy" data-sort-by="date">Geändert</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${items.map(item => `
-                        <tr class="finder-list-item" ondblclick="window.FinderSystem.openItem('${item.name}', '${item.type}')">
+                        <tr class="finder-list-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                             <td>
                                 <span class="finder-item-icon">${item.icon}</span>
                                 <span class="finder-item-name">${item.name}</span>
@@ -572,7 +572,7 @@ console.log('Finder.js loaded');
         const html = `
             <div class="finder-grid-container">
                 ${items.map(item => `
-                    <div class="finder-grid-item" ondblclick="window.FinderSystem.openItem('${item.name}', '${item.type}')">
+                    <div class="finder-grid-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                         <div class="finder-grid-icon">${item.icon}</div>
                         <div class="finder-grid-name">${item.name}</div>
                     </div>
