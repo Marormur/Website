@@ -20,6 +20,7 @@ const WINDOW_POSITIONS_KEY = 'windowPositions';
 // Modal Management
 // ============================================================================
 const MODAL_IDS = [
+    "finder-modal",
     "projects-modal",
     "about-modal",
     "settings-modal",

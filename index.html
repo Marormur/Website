@@ -22,6 +22,7 @@
     <script src="./js/system.js"></script>
     <script src="./js/storage.js"></script>
     <script src="./js/menu.js"></script>
+    <script src="./js/finder.js"></script>
 
     <!-- Hauptanwendung -->
     <script src="app.js"></script>
@@ -320,6 +321,111 @@
             <!-- Desktop icons are rendered dynamically -->
         </div>
     </div>
+    <!-- Finder Modal - Erweiterte Dateimanager -->
+    <div id="finder-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col min-h-0 w-[80vw] h-[75vh] max-h-[90vh] min-w-[560px] min-h-[360px]">
+            <!-- Header -->
+            <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
+                <div class="flex space-x-2">
+                    <button title="Schließen" data-i18n-title="common.close" id="close-finder-modal"
+                        class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                    </button>
+                    <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                </div>
+                <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
+                    data-i18n="modals.finder.title">Finder</h2>
+            </div>
+
+            <!-- Toolbar -->
+            <div id="finder-toolbar"
+                class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                <button onclick="window.FinderSystem.navigateUp()" class="finder-toolbar-btn" title="Zurück"
+                    data-i18n-title="finder.toolbar.back">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <button onclick="window.FinderSystem.navigateTo([], window.FinderSystem.getState().currentView)"
+                    class="finder-toolbar-btn" title="Vorwärts" data-i18n-title="finder.toolbar.forward">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </button>
+                <div class="flex-1 mx-2">
+                    <div id="finder-path-breadcrumbs"
+                        class="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                        <!-- Breadcrumbs werden dynamisch generiert -->
+                    </div>
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="window.FinderSystem.setViewMode('list')" class="finder-toolbar-btn"
+                        title="Listenansicht" data-i18n-title="finder.toolbar.listView">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 4h18v2H3V4m0 7h18v2H3v-2m0 7h18v2H3v-2Z" />
+                        </svg>
+                    </button>
+                    <button onclick="window.FinderSystem.setViewMode('grid')" class="finder-toolbar-btn"
+                        title="Rasteransicht" data-i18n-title="finder.toolbar.gridView">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 3h8v8H3V3m10 0h8v8h-8V3M3 13h8v8H3v-8m10 0h8v8h-8v-8Z" />
+                        </svg>
+                    </button>
+                </div>
+                <input id="finder-search-input" type="text" placeholder="Suchen"
+                    data-i18n-placeholder="finder.toolbar.search"
+                    class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex gap-0 min-h-0 overflow-hidden">
+                <!-- Sidebar -->
+                <aside
+                    class="w-48 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+                    <div class="py-2">
+                        <!-- Favoriten Section -->
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+                            data-i18n="finder.sidebar.favorites">
+                            Favoriten
+                        </div>
+                        <button id="finder-sidebar-computer" onclick="window.FinderSystem.navigateTo([], 'computer')"
+                            class="finder-sidebar-item finder-sidebar-active">
+                            <span class="finder-sidebar-icon">💻</span>
+                            <span data-i18n="finder.sidebar.computer">Computer</span>
+                        </button>
+                        <button id="finder-sidebar-recent" onclick="window.FinderSystem.navigateTo([], 'recent')"
+                            class="finder-sidebar-item">
+                            <span class="finder-sidebar-icon">🕒</span>
+                            <span data-i18n="finder.sidebar.recent">Zuletzt geöffnet</span>
+                        </button>
+
+                        <!-- Orte Section -->
+                        <div class="px-3 py-1 mt-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+                            data-i18n="finder.sidebar.locations">
+                            Orte
+                        </div>
+                        <button id="finder-sidebar-github" onclick="window.FinderSystem.navigateTo([], 'github')"
+                            class="finder-sidebar-item">
+                            <span class="finder-sidebar-icon">📂</span>
+                            <span data-i18n="finder.sidebar.github">GitHub Projekte</span>
+                        </button>
+                        <button id="finder-sidebar-favorites" onclick="window.FinderSystem.navigateTo([], 'favorites')"
+                            class="finder-sidebar-item">
+                            <span class="finder-sidebar-icon">⭐</span>
+                            <span data-i18n="finder.sidebar.starred">Mit Stern</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Main Content -->
+                <div id="finder-content-area" class="flex-1 overflow-auto bg-white dark:bg-gray-800 p-4">
+                    <!-- Content wird dynamisch generiert -->
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Projekte Modal -->
     <div id="projects-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
         <!-- Projekte nutzen nun einen flexiblen Container, der sich an der Fenstergröße orientiert. -->
@@ -532,16 +638,15 @@
     <!-- Dock -->
     <div id="dock" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000]">
         <div class="dock-tray inline-flex items-end gap-2 px-3 py-2">
-            <!-- Sucher Projekte -->
-            <div class="dock-item group relative flex flex-col items-center cursor-pointer"
-                onclick="showTab('projects')">
+            <!-- Finder -->
+            <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="showTab('finder')">
                 <span
                     class="dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50"
                     data-i18n="dock.finder">
-                    Sucher
+                    Finder
                 </span>
-                <img src="./img/sucher.png" alt="Sucher Icon" class="dock-icon">
-                <span id="projects-indicator"
+                <img src="./img/sucher.png" alt="Finder Icon" class="dock-icon">
+                <span id="finder-indicator"
                     class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
             </div>
             <!-- Texteditor -->
@@ -584,8 +689,30 @@
         // Uhrzeit aktualisieren (HH:MM)
         function showTab(tabName) {
             // Öffnet das gewünschte Fenster über das globale Dialog-Objekt
-            if (window.dialogs && window.dialogs[tabName + '-modal']) {
-                window.dialogs[tabName + '-modal'].open();
+            const modalId = tabName + '-modal';
+            const el = document.getElementById(modalId);
+            // Stelle sicher, dass das Dialog-Objekt existiert
+            if (!window.dialogs) window.dialogs = {};
+            if (!window.dialogs[modalId] && el && typeof window.Dialog === 'function') {
+                try { window.dialogs[modalId] = new window.Dialog(modalId); } catch (e) { /* noop */ }
+            }
+            // Bevorzugt über Dialog-API öffnen (stellt Drag/Resize/Buttons sicher)
+            const dlg = window.dialogs && window.dialogs[modalId];
+            if (dlg && typeof dlg.open === 'function') {
+                dlg.open();
+            } else if (el) {
+                // Fallback (robuster für Firefox / frühe Klicks): Modal-Element direkt einblenden
+                el.classList.remove('hidden');
+                if (typeof window.bringDialogToFront === 'function') {
+                    window.bringDialogToFront(modalId);
+                }
+            }
+            // Nach dem Öffnen: Übersetzungen anwenden und Menü aktualisieren
+            if (el && window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
+                window.appI18n.applyTranslations(el);
+            }
+            if (typeof window.updateProgramLabelByTopModal === 'function') {
+                window.updateProgramLabelByTopModal();
             }
         }
         function updateClock() {

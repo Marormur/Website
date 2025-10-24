@@ -14,7 +14,6 @@
     }
 
     const DESKTOP_ITEMS = [
-        { id: 'projects', modalId: 'projects-modal', emoji: '📁', labelKey: 'desktop.projects', fallbackLabel: 'Projekte' },
         { id: 'about', modalId: 'about-modal', icon: './img/profil.jpg', labelKey: 'desktop.about', fallbackLabel: 'Über Marvin' }
     ];
 

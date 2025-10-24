@@ -24,6 +24,59 @@
         "kind": "build",
         "isDefault": true
       }
+    },
+    {
+      "label": "E2E: Install Playwright browsers",
+      "type": "shell",
+      "command": "npm run pw:install",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "E2E: Test (headless)",
+      "type": "shell",
+      "command": "npm run test:e2e",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "E2E: Test (headed)",
+      "type": "shell",
+      "command": "npm run test:e2e:headed",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "E2E: Test (UI mode)",
+      "type": "shell",
+      "command": "npm run test:e2e:ui",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }

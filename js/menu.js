@@ -92,7 +92,8 @@
                         shortcut: '⌘N',
                         icon: 'finder',
                         action: () => {
-                            if (window.showTab) window.showTab('projects');
+                            // Open a new Finder window
+                            if (window.showTab) window.showTab('finder');
                         }
                     },
                     {
@@ -120,7 +121,8 @@
             createWindowMenuSection(context),
             createHelpMenuSection(context, {
                 itemKey: 'menu.finder.help',
-                infoModalId: 'projects-modal',
+                // Show Finder program info, not Projects
+                infoModalId: 'finder-modal',
                 itemIcon: 'help'
             })
         ];
@@ -444,6 +446,7 @@
 
     const menuDefinitions = {
         default: buildDefaultMenuDefinition,
+        "finder-modal": buildFinderMenuDefinition,
         "projects-modal": buildFinderMenuDefinition,
         "settings-modal": buildSettingsMenuDefinition,
         "text-modal": buildTextEditorMenuDefinition,

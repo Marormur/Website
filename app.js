@@ -189,7 +189,7 @@ function resetWindowLayout() {
 
 // Liste aller Modal-IDs, die von der Desktop-Shell verwaltet werden
 var modalIds = window.APP_CONSTANTS?.MODAL_IDS || [
-    "projects-modal", "about-modal", "settings-modal",
+    "finder-modal", "projects-modal", "about-modal", "settings-modal",
     "text-modal", "image-modal", "program-info-modal"
 ];
 var transientModalIds = window.APP_CONSTANTS?.TRANSIENT_MODAL_IDS || new Set(["program-info-modal"]);
@@ -225,6 +225,10 @@ const programInfoDefinitions = {
     default: {
         programKey: 'programs.default',
         fallbackInfoModalId: 'program-info-modal',
+        icon: './img/sucher.png'
+    },
+    "finder-modal": {
+        programKey: 'programs.finder',
         icon: './img/sucher.png'
     },
     "projects-modal": {
@@ -428,6 +432,11 @@ document.addEventListener('DOMContentLoaded', function () {
     initEventHandlers();
     initSystemStatusControls();
     initDesktop();
+
+    // Finder initialisieren nach Dialog-Setup
+    if (window.FinderSystem && typeof window.FinderSystem.init === 'function') {
+        window.FinderSystem.init();
+    }
 
     if (window.dialogs["settings-modal"]) {
         window.dialogs["settings-modal"].loadIframe("./settings.html");
@@ -1756,6 +1765,7 @@ function recursiveParentSearch(node) {
 function updateDockIndicators() {
     // Definiere hier, welche Modale mit welchen Indikatoren verbunden werden sollen.
     const indicatorMappings = [
+        { modalId: "finder-modal", indicatorId: "finder-indicator" },
         { modalId: "projects-modal", indicatorId: "projects-indicator" },
         { modalId: "settings-modal", indicatorId: "settings-indicator" },
         { modalId: "text-modal", indicatorId: "text-indicator" },

@@ -28,6 +28,7 @@
                 }
             },
             desktop: {
+                finder: 'Sucher',
                 projects: 'Projekte',
                 text: 'Texteditor',
                 image: 'Bildbetrachter',
@@ -36,6 +37,7 @@
             },
             dock: {
                 finder: 'Sucher',
+                projects: 'GitHub Projekte',
                 text: 'Texteditor',
                 image: 'Bildbetrachter',
                 settings: 'Systemeinstellungen'
@@ -133,9 +135,49 @@
                     title: 'Bildbetrachter',
                     placeholder: 'Öffne eine Bilddatei aus dem Sucher, um die Vorschau zu sehen.'
                 },
+                finder: {
+                    title: 'Sucher'
+                },
                 programInfo: {
                     title: 'Über dieses Programm'
                 }
+            },
+            finder: {
+                // Toolbar
+                toolbar: {
+                    back: 'Zurück',
+                    forward: 'Vorwärts',
+                    listView: 'Listenansicht',
+                    gridView: 'Rasteransicht',
+                    search: 'Suchen'
+                },
+                // Sidebar
+                sidebar: {
+                    favorites: 'Favoriten',
+                    computer: 'Computer',
+                    recent: 'Zuletzt geöffnet',
+                    locations: 'Orte',
+                    github: 'GitHub Projekte',
+                    starred: 'Mit Stern'
+                },
+                // Platzhalter und Meldungen
+                back: 'Zurück',
+                imageViewer: 'Bildbetrachter',
+                textEditor: 'Texteditor',
+                loadingFiles: 'Lade Dateien …',
+                filesLoadError: 'Dateien konnten nicht geladen werden. Bitte versuche es später erneut.',
+                emptyDirectory: 'Keine Dateien in diesem Verzeichnis gefunden.',
+                empty: 'Dieser Ordner ist leer',
+                noRepositories: 'Keine öffentlichen Repositories gefunden.',
+                repositoriesError: 'Repos konnten nicht geladen werden. Bitte versuche es später erneut.',
+                repoDescriptionMissing: 'Keine Beschreibung verfügbar.',
+                repoUnnamed: 'Unbenanntes Repository',
+                loadingImage: 'Lade {name} …',
+                imageLoadError: 'Bild konnte nicht geladen werden.',
+                imageLoadErrorRetry: 'Bild konnte nicht geladen werden. Bitte versuche es später erneut.',
+                fileLoadError: 'Datei konnte nicht geladen werden. Bitte versuche es später erneut.',
+                rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                pathNotFound: 'Der ausgewählte Pfad ist nicht mehr verfügbar.'
             },
             programs: {
                 default: {
@@ -148,12 +190,22 @@
                         copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
                     }
                 },
-                projects: {
-                    label: 'Sucher',
-                    infoLabel: 'Über Sucher',
+                finder: {
+                    label: 'Finder',
+                    infoLabel: 'Über Finder',
                     about: {
-                        name: 'Sucher',
+                        name: 'Finder',
                         tagline: 'Der innovative Desktop-Dateimanager.',
+                        version: 'Version 2.0',
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
+                    }
+                },
+                projects: {
+                    label: 'GitHub Projekte',
+                    infoLabel: 'Über GitHub Projekte',
+                    about: {
+                        name: 'GitHub Projekte',
+                        tagline: 'Durchsuche deine GitHub-Repositories.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
                     }
@@ -199,24 +251,7 @@
                     }
                 }
             },
-            finder: {
-                back: 'Zurück',
-                imageViewer: 'Bildbetrachter',
-                textEditor: 'Texteditor',
-                loadingFiles: 'Lade Dateien …',
-                filesLoadError: 'Dateien konnten nicht geladen werden. Bitte versuche es später erneut.',
-                emptyDirectory: 'Keine Dateien in diesem Verzeichnis gefunden.',
-                noRepositories: 'Keine öffentlichen Repositories gefunden.',
-                repositoriesError: 'Repos konnten nicht geladen werden. Bitte versuche es später erneut.',
-                repoDescriptionMissing: 'Keine Beschreibung verfügbar.',
-                repoUnnamed: 'Unbenanntes Repository',
-                loadingImage: 'Lade {name} …',
-                imageLoadError: 'Bild konnte nicht geladen werden.',
-                imageLoadErrorRetry: 'Bild konnte nicht geladen werden. Bitte versuche es später erneut.',
-                fileLoadError: 'Datei konnte nicht geladen werden. Bitte versuche es später erneut.',
-                rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
-                pathNotFound: 'Der ausgewählte Pfad ist nicht mehr verfügbar.'
-            },
+            // Hinweis: Zusätzliche Finder-Schlüssel sind mit dem oberen finder-Block zusammengeführt
             textEditor: {
                 title: 'Texteditor',
                 documentTitle: 'Texteditor',
@@ -501,11 +536,11 @@
                     }
                 },
                 projects: {
-                    label: 'Finder',
-                    infoLabel: 'About Finder',
+                    label: 'GitHub Projects',
+                    infoLabel: 'About GitHub Projects',
                     about: {
-                        name: 'Finder',
-                        tagline: 'The innovative desktop file manager.',
+                        name: 'GitHub Projects',
+                        tagline: 'Browse your GitHub repositories.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. All rights reserved.'
                     }
@@ -552,6 +587,23 @@
                 }
             },
             finder: {
+                // Toolbar
+                toolbar: {
+                    back: 'Back',
+                    forward: 'Forward',
+                    listView: 'List view',
+                    gridView: 'Grid view',
+                    search: 'Search'
+                },
+                // Sidebar
+                sidebar: {
+                    favorites: 'Favorites',
+                    computer: 'Computer',
+                    recent: 'Recent',
+                    locations: 'Locations',
+                    github: 'GitHub Projects',
+                    starred: 'Starred'
+                },
                 back: 'Back',
                 imageViewer: 'Image viewer',
                 textEditor: 'Text editor',
@@ -744,6 +796,14 @@
     }
 
     function detectSystemLanguage() {
+        // Prefer the document language if set and supported (e.g., <html lang="de">)
+        try {
+            if (document && document.documentElement) {
+                const docLang = normalizeLanguage(document.documentElement.lang);
+                if (docLang) return docLang;
+            }
+        } catch (_) { /* ignore */ }
+
         const candidates = getBrowserLanguages();
         for (const candidate of candidates) {
             const normalized = normalizeLanguage(candidate);
