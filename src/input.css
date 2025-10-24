@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles to preserve existing design */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    background: url("../img/wallpaper.png") no-repeat center center fixed !important;
+    background-size: cover !important;
+    margin: 0;
+    padding: 0;
+}

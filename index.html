@@ -5,13 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Marvin</title>
-    <!-- Tailwind via CDN for quick styling -->
+    <link rel="stylesheet" href="dist/output.css">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        window.tailwind = window.tailwind || {};
-        window.tailwind.config = Object.assign({}, window.tailwind.config, { darkMode: 'class' });
-    </script>
     <script src="i18n.js"></script>
     <!-- Unsere zentrale Logik für Fenster und Dock -->
     <script src="app.js"></script>
@@ -73,71 +68,6 @@
         </div>
         <div class="menubar-right">
             <div class="menubar-status-cluster">
-                <div class="menubar-trigger menubar-status-trigger">
-                    <button id="control-center-trigger" type="button" class="menubar-status-icon"
-                        aria-label="Kontrollzentrum" title="Kontrollzentrum"
-                        data-i18n-aria-label="menubar.controlCenter.label" data-i18n-title="menubar.controlCenter.label"
-                        aria-haspopup="true" aria-expanded="false" aria-controls="control-center-menu"
-                        data-system-menu-trigger="control-center">
-                        <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <path
-                                d="M6 4h6a2 2 0 0 1 2 2v4H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2m6 10H6a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h6v-6m2 0h6v6h-6v-6m0-2h6a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-6v6Z"
-                                fill="currentColor" />
-                        </svg>
-                    </button>
-                    <div id="control-center-menu" class="menu-dropdown menu-right hidden system-dropdown"
-                        aria-labelledby="control-center-trigger">
-                        <div class="system-section" role="presentation">
-                            <h3 class="system-section-title" data-i18n="menubar.controlCenter.quickActions">
-                                Schnellaktionen</h3>
-                            <div class="system-toggle-grid" role="group"
-                                data-i18n-aria-label="menubar.controlCenter.quickActionsAria">
-                                <button type="button" class="system-toggle" data-system-toggle="wifi"
-                                    aria-pressed="true">
-                                    <span class="system-toggle-icon" data-icon="wifi"></span>
-                                    <span class="system-toggle-label" data-i18n="menubar.toggles.wifi">WLAN</span>
-                                    <span class="system-toggle-status" data-state="wifi"></span>
-                                </button>
-                                <button type="button" class="system-toggle" data-system-toggle="bluetooth"
-                                    aria-pressed="true">
-                                    <span class="system-toggle-icon" data-icon="bluetooth"></span>
-                                    <span class="system-toggle-label"
-                                        data-i18n="menubar.toggles.bluetooth">Bluetooth</span>
-                                    <span class="system-toggle-status" data-state="bluetooth"></span>
-                                </button>
-                                <button type="button" class="system-toggle" data-system-toggle="focus"
-                                    aria-pressed="false">
-                                    <span class="system-toggle-icon" data-icon="moon"></span>
-                                    <span class="system-toggle-label" data-i18n="menubar.toggles.focus">Fokus</span>
-                                    <span class="system-toggle-status" data-state="focus"></span>
-                                </button>
-                                <button type="button" class="system-toggle" data-system-toggle="dark-mode"
-                                    aria-pressed="false">
-                                    <span class="system-toggle-icon" data-icon="appearance"></span>
-                                    <span class="system-toggle-label" data-i18n="menubar.toggles.darkMode">Dark
-                                        Mode</span>
-                                    <span class="system-toggle-status" data-state="dark-mode"></span>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="system-section" role="presentation">
-                            <label for="system-brightness" class="system-slider-label">
-                                <span class="system-slider-icon" data-icon="sun"></span>
-                                <span data-i18n="menubar.controlCenter.brightness">Helligkeit</span>
-                                <span class="system-slider-value" data-state="brightness"></span>
-                            </label>
-                            <input id="system-brightness" type="range" min="10" max="100" value="80"
-                                class="system-slider" data-system-slider="brightness">
-                            <label for="system-volume" class="system-slider-label">
-                                <span class="system-slider-icon" data-icon="volume"></span>
-                                <span data-i18n="menubar.controlCenter.volume">Lautstärke</span>
-                                <span class="system-slider-value" data-state="volume"></span>
-                            </label>
-                            <input id="system-volume" type="range" min="0" max="100" value="65" class="system-slider"
-                                data-system-slider="volume">
-                        </div>
-                    </div>
-                </div>
                 <div class="menubar-trigger menubar-status-trigger">
                     <button id="wifi-status-trigger" type="button" class="menubar-status-icon" aria-label="WLAN Status"
                         data-i18n-aria-label="menubar.toggles.wifiStatus" aria-haspopup="true" aria-expanded="false"
@@ -299,6 +229,72 @@
                             fill="currentColor" />
                     </svg>
                 </button>
+                <div class="menubar-trigger menubar-status-trigger">
+                    <button id="control-center-trigger" type="button" class="menubar-status-icon"
+                        aria-label="Kontrollzentrum" title="Kontrollzentrum"
+                        data-i18n-aria-label="menubar.controlCenter.label" data-i18n-title="menubar.controlCenter.label"
+                        aria-haspopup="true" aria-expanded="false" aria-controls="control-center-menu"
+                        data-system-menu-trigger="control-center">
+                        <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path
+                                d="M6 4h6a2 2 0 0 1 2 2v4H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2m6 10H6a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h6v-6m2 0h6v6h-6v-6m0-2h6a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-6v6Z"
+                                fill="currentColor" />
+                        </svg>
+                    </button>
+                    <div id="control-center-menu" class="menu-dropdown menu-right hidden system-dropdown"
+                        aria-labelledby="control-center-trigger">
+                        <div class="system-section" role="presentation">
+                            <h3 class="system-section-title" data-i18n="menubar.controlCenter.quickActions">
+                                Schnellaktionen</h3>
+                            <div class="system-toggle-grid" role="group"
+                                data-i18n-aria-label="menubar.controlCenter.quickActionsAria">
+                                <button type="button" class="system-toggle" data-system-toggle="wifi"
+                                    aria-pressed="true">
+                                    <span class="system-toggle-icon" data-icon="wifi"></span>
+                                    <span class="system-toggle-label" data-i18n="menubar.toggles.wifi">WLAN</span>
+                                    <span class="system-toggle-status" data-state="wifi"></span>
+                                </button>
+                                <button type="button" class="system-toggle" data-system-toggle="bluetooth"
+                                    aria-pressed="true">
+                                    <span class="system-toggle-icon" data-icon="bluetooth"></span>
+                                    <span class="system-toggle-label"
+                                        data-i18n="menubar.toggles.bluetooth">Bluetooth</span>
+                                    <span class="system-toggle-status" data-state="bluetooth"></span>
+                                </button>
+                                <button type="button" class="system-toggle" data-system-toggle="focus"
+                                    aria-pressed="false">
+                                    <span class="system-toggle-icon" data-icon="moon"></span>
+                                    <span class="system-toggle-label" data-i18n="menubar.toggles.focus">Fokus</span>
+                                    <span class="system-toggle-status" data-state="focus"></span>
+                                </button>
+                                <button type="button" class="system-toggle" data-system-toggle="dark-mode"
+                                    aria-pressed="false">
+                                    <span class="system-toggle-icon" data-icon="appearance"></span>
+                                    <span class="system-toggle-label" data-i18n="menubar.toggles.darkMode">Dark
+                                        Mode</span>
+                                    <span class="system-toggle-status" data-state="dark-mode"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="system-section" role="presentation">
+                            <label for="system-brightness" class="system-slider-label">
+                                <span class="system-slider-icon" data-icon="sun"></span>
+                                <span data-i18n="menubar.controlCenter.brightness">Helligkeit</span>
+                                <span class="system-slider-value" data-state="brightness"></span>
+                            </label>
+                            <input id="system-brightness" type="range" min="10" max="100" value="80"
+                                class="system-slider" data-system-slider="brightness">
+                            <label for="system-volume" class="system-slider-label">
+                                <span class="system-slider-icon" data-icon="volume"></span>
+                                <span data-i18n="menubar.controlCenter.volume">Lautstärke</span>
+                                <span class="system-slider-value" data-state="volume"></span>
+                            </label>
+                            <input id="system-volume" type="range" min="0" max="100" value="65" class="system-slider"
+                                data-system-slider="volume">
+                        </div>
+                    </div>
+                </div>
+
             </div>
             <span id="clock" class="menubar-clock no-select" aria-live="polite"></span>
         </div>
