@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function () {
     syncTopZIndexWithDOM();
     restoreWindowPositions();
     restoreOpenModals();
-    loadGithubRepos();
+    loadGithubRepos(); // Temporarily disabled for debugging
     initEventHandlers();
     initSystemStatusControls();
     initDesktop();

@@ -512,6 +512,7 @@ html.dark .system-toggle.is-active {
 .system-slider {
     width: 100%;
     -webkit-appearance: none;
+    -moz-appearance: none;
     appearance: none;
     height: 4px;
     border-radius: 999px;
@@ -539,10 +540,22 @@ html.dark .system-slider {
 .system-slider::-moz-range-thumb {
     width: 14px;
     height: 14px;
-    border: none;
+    border: 2px solid #fff;
     border-radius: 50%;
     background: #2563eb;
     cursor: pointer;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.system-slider::-moz-range-track {
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.4);
+    border: none;
+}
+
+html.dark .system-slider::-moz-range-track {
+    background: rgba(71, 85, 105, 0.65);
 }
 
 .system-state-pill {
@@ -681,6 +694,7 @@ html.dark #snap-preview-overlay {
 .no-select {
     -ms-user-select: none;
     -webkit-user-select: none;
+    -moz-user-select: none;
     user-select: none;
 }
 

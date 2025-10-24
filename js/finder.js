@@ -736,7 +736,7 @@ console.log('Finder.js loaded');
     function openGithubText(entry) {
         const dlg = ensureTextEditorOpen();
         const payloadBase = { fileName: entry.name, size: entry.size };
-        
+
         // Show loading state via direct API call
         if (window.API && window.API.textEditor) {
             window.API.textEditor.showLoading(payloadBase);

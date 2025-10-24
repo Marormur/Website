@@ -83,7 +83,7 @@
             if (!this.container) return;
 
             const isDark = document.documentElement.classList.contains('dark');
-            
+
             this.container.style.setProperty('--editor-body-bg', isDark ? '#0f172a' : '#fafafa');
             this.container.style.setProperty('--editor-text', isDark ? '#e5e7eb' : '#111827');
             this.container.style.setProperty('--editor-toolbar-bg', isDark ? '#1f2937' : '#f5f5f5');
@@ -177,9 +177,9 @@
             const themeObserver = new MutationObserver(() => {
                 this.updateCSSVariables();
             });
-            themeObserver.observe(document.documentElement, { 
-                attributes: true, 
-                attributeFilter: ['class'] 
+            themeObserver.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class']
             });
 
             // Listen for language changes
@@ -383,11 +383,11 @@
         insertTextAtCursor(text) {
             if (!this.editor || typeof text !== 'string') return;
 
-            const start = typeof this.editor.selectionStart === 'number' 
-                ? this.editor.selectionStart 
+            const start = typeof this.editor.selectionStart === 'number'
+                ? this.editor.selectionStart
                 : this.editor.value.length;
-            const end = typeof this.editor.selectionEnd === 'number' 
-                ? this.editor.selectionEnd 
+            const end = typeof this.editor.selectionEnd === 'number'
+                ? this.editor.selectionEnd
                 : start;
 
             this.editor.setRangeText(text, start, end, 'end');
@@ -473,7 +473,7 @@
 
             if (this.statusState.type === 'i18n') {
                 const { text, translated } = this.resolveTranslation(
-                    this.statusState.key, 
+                    this.statusState.key,
                     this.statusState.params
                 );
                 this.statusBar.textContent = text;
@@ -485,7 +485,7 @@
                     } else {
                         this.statusBar.removeAttribute('data-i18n-params');
                     }
-                    
+
                     if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
                         window.appI18n.applyTranslations(this.statusBar);
                     }
