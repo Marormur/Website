@@ -14,7 +14,7 @@
     }
 
     const DESKTOP_ITEMS = [
-        { id: 'about', modalId: 'about-modal', icon: './img/profil.jpg', labelKey: 'desktop.about', fallbackLabel: 'Über Marvin' },
+        // { id: 'about', modalId: 'about-modal', icon: './img/profil.jpg', labelKey: 'desktop.about', fallbackLabel: 'Über Marvin' },
         // Shortcut: GitHub "Ordner" öffnet den Finder direkt in der GitHub-Ansicht
         {
             id: 'github',

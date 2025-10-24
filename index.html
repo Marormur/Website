@@ -17,12 +17,18 @@
     <script src="./js/icons.js"></script>
     <script src="./js/theme.js"></script>
     <script src="./js/dock.js"></script>
+    <script src="./js/storage.js"></script>
     <script src="./js/dialog.js"></script>
     <script src="./js/desktop.js"></script>
     <script src="./js/system.js"></script>
-    <script src="./js/storage.js"></script>
     <script src="./js/menu.js"></script>
     <script src="./js/finder.js"></script>
+
+    <!-- Neue zentrale Systeme -->
+    <script src="./js/window-manager.js"></script>
+    <script src="./js/action-bus.js"></script>
+    <script src="./js/window-configs.js"></script>
+    <script src="./js/api.js"></script>
 
     <!-- Hauptanwendung -->
     <script src="app.js"></script>
@@ -42,16 +48,17 @@
                     aria-labelledby="apple-menu-trigger">
                     <li role="none">
                         <button type="button" role="menuitem" id="dropdown-about" class="menu-item" tabindex="-1"
-                            data-i18n="header.profile.about">Über Marvin</button>
+                            data-action="openAbout" data-i18n="header.profile.about">Über Marvin</button>
                     </li>
                     <li class="menu-separator" role="separator" aria-hidden="true"></li>
                     <li role="none">
                         <button type="button" role="menuitem" id="dropdown-reset-layout" class="menu-item" tabindex="-1"
-                            data-i18n="header.profile.resetLayout">Fenster zurücksetzen</button>
+                            data-action="resetWindowLayout" data-i18n="header.profile.resetLayout">Fenster
+                            zurücksetzen</button>
                     </li>
                     <li role="none">
                         <button type="button" role="menuitem" id="dropdown-settings" class="menu-item" tabindex="-1"
-                            data-i18n="header.profile.settings">Systemeinstellungen</button>
+                            data-action="openSettings" data-i18n="header.profile.settings">Systemeinstellungen</button>
                     </li>
                     <li class="menu-separator" role="separator" aria-hidden="true"></li>
                     <li role="none">
@@ -70,12 +77,12 @@
                 <ul id="program-dropdown" class="menu-dropdown hidden" role="menu" aria-labelledby="program-label">
                     <li role="none">
                         <button type="button" role="menuitem" id="about-program" class="menu-item" tabindex="-1"
-                            data-i18n="programs.default.infoLabel">Über Sucher</button>
+                            data-action="openProgramInfo" data-i18n="programs.default.infoLabel">Über Sucher</button>
                     </li>
                     <li class="menu-separator" role="separator" aria-hidden="true"></li>
                     <li role="none">
                         <button type="button" role="menuitem" id="program-close-current" class="menu-item" tabindex="-1"
-                            data-i18n="header.program.close">Programm schließen</button>
+                            data-action="closeTopWindow" data-i18n="header.program.close">Programm schließen</button>
                     </li>
                 </ul>
             </div>
@@ -329,6 +336,7 @@
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" data-i18n-title="common.close" id="close-finder-modal"
+                        data-action="closeWindow" data-window-id="finder-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
@@ -342,14 +350,14 @@
             <!-- Toolbar -->
             <div id="finder-toolbar"
                 class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                <button onclick="window.FinderSystem.navigateUp()" class="finder-toolbar-btn" title="Zurück"
+                <button data-action="finder:navigateUp" class="finder-toolbar-btn" title="Zurück"
                     data-i18n-title="finder.toolbar.back">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M19 12H5M12 19l-7-7 7-7" />
                     </svg>
                 </button>
-                <button onclick="window.FinderSystem.navigateTo([], window.FinderSystem.getState().currentView)"
-                    class="finder-toolbar-btn" title="Vorwärts" data-i18n-title="finder.toolbar.forward">
+                <button data-action="finder:goRoot" class="finder-toolbar-btn" title="Vorwärts"
+                    data-i18n-title="finder.toolbar.forward">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
@@ -361,13 +369,13 @@
                     </div>
                 </div>
                 <div class="flex gap-1">
-                    <button onclick="window.FinderSystem.setViewMode('list')" class="finder-toolbar-btn"
+                    <button data-action="finder:setViewMode" data-view-mode="list" class="finder-toolbar-btn"
                         title="Listenansicht" data-i18n-title="finder.toolbar.listView">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M3 4h18v2H3V4m0 7h18v2H3v-2m0 7h18v2H3v-2Z" />
                         </svg>
                     </button>
-                    <button onclick="window.FinderSystem.setViewMode('grid')" class="finder-toolbar-btn"
+                    <button data-action="finder:setViewMode" data-view-mode="grid" class="finder-toolbar-btn"
                         title="Rasteransicht" data-i18n-title="finder.toolbar.gridView">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M3 3h8v8H3V3m10 0h8v8h-8V3M3 13h8v8H3v-8m10 0h8v8h-8v-8Z" />
@@ -390,12 +398,12 @@
                             data-i18n="finder.sidebar.favorites">
                             Favoriten
                         </div>
-                        <button id="finder-sidebar-computer" onclick="window.FinderSystem.navigateTo([], 'computer')"
+                        <button id="finder-sidebar-computer" data-action="finder:switchView" data-finder-view="computer"
                             class="finder-sidebar-item finder-sidebar-active">
                             <span class="finder-sidebar-icon">💻</span>
                             <span data-i18n="finder.sidebar.computer">Computer</span>
                         </button>
-                        <button id="finder-sidebar-recent" onclick="window.FinderSystem.navigateTo([], 'recent')"
+                        <button id="finder-sidebar-recent" data-action="finder:switchView" data-finder-view="recent"
                             class="finder-sidebar-item">
                             <span class="finder-sidebar-icon">🕒</span>
                             <span data-i18n="finder.sidebar.recent">Zuletzt geöffnet</span>
@@ -406,13 +414,13 @@
                             data-i18n="finder.sidebar.locations">
                             Orte
                         </div>
-                        <button id="finder-sidebar-github" onclick="window.FinderSystem.navigateTo([], 'github')"
+                        <button id="finder-sidebar-github" data-action="finder:switchView" data-finder-view="github"
                             class="finder-sidebar-item">
                             <span class="finder-sidebar-icon">📂</span>
                             <span data-i18n="finder.sidebar.github">GitHub Projekte</span>
                         </button>
-                        <button id="finder-sidebar-favorites" onclick="window.FinderSystem.navigateTo([], 'favorites')"
-                            class="finder-sidebar-item">
+                        <button id="finder-sidebar-favorites" data-action="finder:switchView"
+                            data-finder-view="favorites" class="finder-sidebar-item">
                             <span class="finder-sidebar-icon">⭐</span>
                             <span data-i18n="finder.sidebar.starred">Mit Stern</span>
                         </button>
@@ -434,6 +442,7 @@
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" data-i18n-title="common.close" id="close-projects-modal"
+                        data-action="closeWindow" data-window-id="projects-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
@@ -484,6 +493,7 @@
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" data-i18n-title="common.close" id="close-about-modal"
+                        data-action="closeWindow" data-window-id="about-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
@@ -505,8 +515,8 @@
                     <p><strong data-i18n="modals.about.employerLabel">Arbeitgeber</strong>: <span
                             data-i18n="modals.about.employerValue">WinWorker</span></p>
                 </div>
-                <button class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                    onclick="showTab('settings')">
+                <button class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded" data-action="openWindow"
+                    data-window-id="settings-modal">
                     <span data-i18n="modals.about.moreButton">Mehr Infos …</span>
                 </button>
                 <div
@@ -532,6 +542,7 @@
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" data-i18n-title="common.close" id="close-settings-modal"
+                        data-action="closeWindow" data-window-id="settings-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
@@ -561,6 +572,7 @@
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" data-i18n-title="common.close" id="close-text-modal"
+                        data-action="closeWindow" data-window-id="text-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
@@ -581,6 +593,7 @@
             <div class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" data-i18n-title="common.close" id="close-image-modal"
+                        data-action="closeWindow" data-window-id="image-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
@@ -614,6 +627,7 @@
             <div class="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-t-2xl draggable-header">
                 <div class="flex space-x-2">
                     <button title="Schließen" data-i18n-title="common.close" id="close-program-info-modal"
+                        data-action="closeWindow" data-window-id="program-info-modal"
                         class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300">
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     </button>
@@ -639,7 +653,8 @@
     <div id="dock" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000]">
         <div class="dock-tray inline-flex items-end gap-2 px-3 py-2">
             <!-- Finder -->
-            <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="showTab('finder')">
+            <div class="dock-item group relative flex flex-col items-center cursor-pointer" data-action="openWindow"
+                data-window-id="finder-modal">
                 <span
                     class="dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50"
                     data-i18n="dock.finder">
@@ -650,7 +665,8 @@
                     class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
             </div>
             <!-- Texteditor -->
-            <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="showTab('text')">
+            <div class="dock-item group relative flex flex-col items-center cursor-pointer" data-action="openWindow"
+                data-window-id="text-modal">
                 <span
                     class="dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50"
                     data-i18n="dock.text">
@@ -661,7 +677,8 @@
                     class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
             </div>
             <!-- Bildbetrachter -->
-            <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="showTab('image')">
+            <div class="dock-item group relative flex flex-col items-center cursor-pointer" data-action="openWindow"
+                data-window-id="image-modal">
                 <span
                     class="dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50"
                     data-i18n="dock.image">
@@ -672,8 +689,8 @@
                     class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"></span>
             </div>
             <!-- Einstellungen -->
-            <div class="dock-item group relative flex flex-col items-center cursor-pointer"
-                onclick="showTab('settings')">
+            <div class="dock-item group relative flex flex-col items-center cursor-pointer" data-action="openWindow"
+                data-window-id="settings-modal">
                 <span
                     class="dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50"
                     data-i18n="dock.settings">
