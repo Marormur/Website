@@ -71,9 +71,15 @@ console.log('Finder.js loaded');
         sortBy: 'name', // 'name', 'date', 'size', 'type'
         sortOrder: 'asc', // 'asc', 'desc'
         githubRepos: [],
+        githubLoading: false,
+        githubError: false,
         favorites: new Set(),
         recentFiles: []
     };
+
+    // GitHub Integration (lightweight, embedded in Finder)
+    const GITHUB_USERNAME = 'Marormur';
+    const githubContentCache = new Map(); // key: `${repo}:${path}` => Array of items
 
     // ============================================================================
     // DOM References
@@ -245,31 +251,108 @@ console.log('Finder.js loaded');
     }
 
     function getGithubItems() {
-        // Wenn wir in der GitHub-Ansicht sind, öffne das Projects-Modal im Hintergrund
-        // und zeige eine Integration an
+        // Root der GitHub-Ansicht: Repos anzeigen
         if (finderState.currentPath.length === 0) {
-            // Root-Level: Zeige GitHub als Aktion
+            if (!finderState.githubRepos.length && !finderState.githubLoading && !finderState.githubError) {
+                finderState.githubLoading = true;
+                fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`, {
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
+                })
+                    .then(r => r.ok ? r.json() : Promise.reject(r))
+                    .then(repos => {
+                        finderState.githubRepos = Array.isArray(repos) ? repos : [];
+                        finderState.githubError = false;
+                    })
+                    .catch(() => {
+                        finderState.githubRepos = [];
+                        finderState.githubError = true;
+                    })
+                    .finally(() => {
+                        finderState.githubLoading = false;
+                        renderContent();
+                    });
+            }
+            if (finderState.githubLoading) {
+                return [
+                    { name: (window.translate ? window.translate('finder.loadingFiles') : 'Lade Dateien …'), type: 'info', icon: '⏳', size: 0 }
+                ];
+            }
+            if (finderState.githubError) {
+                return [
+                    { name: (window.translate ? window.translate('finder.repositoriesError') : 'Repos konnten nicht geladen werden.'), type: 'info', icon: '⚠️', size: 0 }
+                ];
+            }
+            if (!finderState.githubRepos.length) {
+                return [
+                    { name: (window.translate ? window.translate('finder.noRepositories') : 'Keine öffentlichen Repositories gefunden.'), type: 'info', icon: 'ℹ️', size: 0 }
+                ];
+            }
+            return finderState.githubRepos.map(r => ({
+                name: r.name || (window.translate ? window.translate('finder.repoUnnamed') : 'Unbenanntes Repository'),
+                type: 'folder',
+                icon: '📂',
+                size: 0,
+                modified: r.updated_at || r.pushed_at || r.created_at || new Date().toISOString(),
+                // Behalte nützliche Metadaten falls später benötigt
+                html_url: r.html_url
+            }));
+        }
+
+        // Innerhalb eines Repos: Dateien/Ordner des Pfads anzeigen
+        const repo = finderState.currentPath[0];
+        const subPath = finderState.currentPath.slice(1).join('/');
+        const cacheKey = `${repo}:${subPath}`;
+        const cached = githubContentCache.get(cacheKey);
+        if (!cached && !finderState.githubLoading && !finderState.githubError) {
+            finderState.githubLoading = true;
+            const pathPart = subPath ? `/${encodeURIComponent(subPath).replace(/%2F/g, '/')}` : '';
+            fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${encodeURIComponent(repo)}/contents${pathPart}`, {
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
+            })
+                .then(r => r.ok ? r.json() : Promise.reject(r))
+                .then(items => {
+                    const mapped = (Array.isArray(items) ? items : [items]).map(it => {
+                        const isDir = it.type === 'dir';
+                        return {
+                            name: it.name,
+                            type: isDir ? 'folder' : 'file',
+                            icon: isDir ? '📁' : '📄',
+                            size: it.size || 0,
+                            modified: '',
+                            url: it.url,
+                            html_url: it.html_url,
+                            download_url: it.download_url
+                        };
+                    });
+                    githubContentCache.set(cacheKey, mapped);
+                    finderState.githubError = false;
+                })
+                .catch(() => {
+                    githubContentCache.set(cacheKey, []);
+                    finderState.githubError = true;
+                })
+                .finally(() => {
+                    finderState.githubLoading = false;
+                    renderContent();
+                });
+        }
+        if (finderState.githubLoading && !cached) {
             return [
-                {
-                    name: '📂 Meine GitHub Repositories',
-                    type: 'action',
-                    icon: '�',
-                    size: 0,
-                    modified: new Date().toISOString(),
-                    action: () => {
-                        // Öffne das Projects-Modal für volle Funktionalität
-                        if (window.dialogs && window.dialogs['projects-modal']) {
-                            window.dialogs['projects-modal'].open();
-                            // Bringe es in den Vordergrund
-                            if (typeof window.dialogs['projects-modal'].bringToFront === 'function') {
-                                window.dialogs['projects-modal'].bringToFront();
-                            }
-                        }
-                    }
-                }
+                { name: (window.translate ? window.translate('finder.loadingFiles') : 'Lade Dateien …'), type: 'info', icon: '⏳', size: 0 }
             ];
         }
-        return [];
+        if (finderState.githubError && !cached) {
+            return [
+                { name: (window.translate ? window.translate('finder.filesLoadError') : 'Dateien konnten nicht geladen werden.'), type: 'info', icon: '⚠️', size: 0 }
+            ];
+        }
+        const list = Array.isArray(cached) ? cached : [];
+        if (!list.length) {
+            return [
+                { name: (window.translate ? window.translate('finder.emptyDirectory') : 'Keine Dateien in diesem Verzeichnis gefunden.'), type: 'info', icon: '📁', size: 0 }
+            ];
+        }
+        return list;
     }
 
     function getFavoriteItems() {
@@ -431,16 +514,31 @@ console.log('Finder.js loaded');
         // Füge zu zuletzt geöffnet hinzu
         addToRecent(name);
 
-        // Öffne basierend auf Dateityp
-        const ext = name.split('.').pop().toLowerCase();
+        // GitHub-spezifische Datei-Öffnung (inline)
+        if (finderState.currentView === 'github') {
+            const items = getCurrentItems();
+            const entry = items.find(i => i && i.name === name);
+            const isImage = isImageFile(name);
+            const isText = isProbablyTextFile(name);
+            if (entry && (isImage || isText)) {
+                if (isImage) {
+                    openGithubImage(entry);
+                    return;
+                }
+                if (isText) {
+                    openGithubText(entry);
+                    return;
+                }
+            }
+        }
 
+        // Fallback: Öffne Editor/Viewer ohne GitHub-Content-Load
+        const ext = name.split('.').pop().toLowerCase();
         if (['txt', 'md', 'js', 'json', 'html', 'css'].includes(ext)) {
-            // Textdatei im Editor öffnen
             if (window.dialogs && window.dialogs['text-modal']) {
                 window.dialogs['text-modal'].open();
             }
         } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) {
-            // Bild im Viewer öffnen
             if (window.dialogs && window.dialogs['image-modal']) {
                 window.dialogs['image-modal'].open();
             }
@@ -450,6 +548,157 @@ console.log('Finder.js loaded');
     // ============================================================================
     // Utilities
     // ============================================================================
+
+    // Dateityp-Erkennung analog zu app.js
+    const textFileExtensions = [
+        '.txt', '.md', '.markdown', '.mdx', '.json', '.jsonc', '.csv', '.tsv', '.yaml', '.yml',
+        '.xml', '.html', '.htm', '.css', '.scss', '.sass', '.less',
+        '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.vue',
+        '.c', '.h', '.cpp', '.hpp', '.cc', '.cxx', '.hh', '.ino',
+        '.java', '.kt', '.kts', '.swift', '.cs', '.py', '.rb', '.php', '.rs', '.go',
+        '.sh', '.bash', '.zsh', '.fish', '.ps1', '.bat', '.cmd',
+        '.ini', '.cfg', '.conf', '.config', '.env', '.gitignore', '.gitattributes',
+        '.log', '.sql'
+    ];
+    const imageFileExtensions = [
+        '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg', '.tiff', '.tif', '.heic', '.heif', '.avif'
+    ];
+    function isProbablyTextFile(filename) {
+        if (!filename) return false;
+        const lower = String(filename).toLowerCase();
+        return textFileExtensions.some(ext => lower.endsWith(ext));
+    }
+    function isImageFile(filename) {
+        if (!filename) return false;
+        const lower = String(filename).toLowerCase();
+        return imageFileExtensions.some(ext => lower.endsWith(ext));
+    }
+
+    function ensureImageViewerOpen() {
+        const dlg = window.dialogs && window.dialogs['image-modal'];
+        if (dlg && typeof dlg.open === 'function') {
+            dlg.open();
+            return dlg;
+        }
+        if (typeof window.showTab === 'function') {
+            window.showTab('image');
+        }
+        return null;
+    }
+    function ensureTextEditorOpen() {
+        const dlg = window.dialogs && window.dialogs['text-modal'];
+        if (dlg && typeof dlg.open === 'function') {
+            dlg.open();
+            return dlg;
+        }
+        if (typeof window.showTab === 'function') {
+            window.showTab('text');
+        }
+        return null;
+    }
+
+    function getTextEditorIframe() {
+        const dlg = window.dialogs && window.dialogs['text-modal'];
+        if (!dlg || !dlg.modal) return null;
+        return dlg.modal.querySelector('iframe');
+    }
+    function postToTextEditor(message, attempt = 0) {
+        const iframe = getTextEditorIframe();
+        if (iframe && iframe.contentWindow) {
+            let targetOrigin = '*';
+            if (window.location && typeof window.location.origin === 'string' && window.location.origin !== 'null') {
+                targetOrigin = window.location.origin;
+            }
+            iframe.contentWindow.postMessage(message, targetOrigin);
+            return;
+        }
+        if (attempt < 10) {
+            setTimeout(() => postToTextEditor(message, attempt + 1), 120);
+        }
+    }
+
+    function openGithubImage(entry) {
+        const dlg = ensureImageViewerOpen();
+        const img = document.getElementById('image-viewer');
+        const placeholder = document.getElementById('image-placeholder');
+        if (img) {
+            img.src = '';
+            img.classList.add('hidden');
+        }
+        if (placeholder) {
+            placeholder.classList.remove('hidden');
+        }
+        const finalize = (src) => {
+            if (!img) return;
+            img.onload = () => {
+                if (placeholder) placeholder.classList.add('hidden');
+                img.classList.remove('hidden');
+                if (dlg && typeof dlg.bringToFront === 'function') dlg.bringToFront();
+            };
+            img.onerror = () => {
+                if (placeholder) placeholder.classList.remove('hidden');
+                img.classList.add('hidden');
+            };
+            img.src = src;
+        };
+        if (entry.download_url) {
+            finalize(entry.download_url);
+            return;
+        }
+        if (entry.url) {
+            fetch(entry.url, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
+                .then(r => r.ok ? r.json() : Promise.reject(r))
+                .then(data => {
+                    if (data && typeof data.download_url === 'string') {
+                        finalize(data.download_url);
+                    }
+                })
+                .catch(() => { /* silently ignore */ });
+        }
+    }
+
+    function openGithubText(entry) {
+        const dlg = ensureTextEditorOpen();
+        const payloadBase = { fileName: entry.name, size: entry.size };
+        postToTextEditor({ type: 'textEditor:showLoading', payload: payloadBase });
+        const fetchText = () => {
+            if (entry.download_url) {
+                return fetch(entry.download_url).then(r => {
+                    if (!r.ok) throw new Error('Download failed');
+                    return r.text();
+                });
+            }
+            if (entry.url) {
+                return fetch(entry.url, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
+                    .then(r => r.ok ? r.json() : Promise.reject(r))
+                    .then(data => {
+                        if (data && typeof data.download_url === 'string') {
+                            return fetch(data.download_url).then(r => {
+                                if (!r.ok) throw new Error('Download failed');
+                                return r.text();
+                            });
+                        }
+                        if (data && data.encoding === 'base64' && typeof data.content === 'string') {
+                            try {
+                                return atob(data.content.replace(/\s/g, ''));
+                            } catch (_) {
+                                throw new Error('Decode error');
+                            }
+                        }
+                        throw new Error('No content');
+                    });
+            }
+            return Promise.reject(new Error('No source'));
+        };
+        fetchText()
+            .then(content => {
+                postToTextEditor({ type: 'textEditor:loadRemoteFile', payload: Object.assign({}, payloadBase, { content }) });
+                if (dlg && typeof dlg.bringToFront === 'function') dlg.bringToFront();
+            })
+            .catch(() => {
+                postToTextEditor({ type: 'textEditor:loadError', payload: Object.assign({}, payloadBase, { message: 'Fehler beim Laden' }) });
+            });
+    }
 
     function formatSize(bytes) {
         if (!bytes || bytes === 0) return '-';
