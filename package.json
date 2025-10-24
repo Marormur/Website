@@ -6,6 +6,7 @@
   "scripts": {
     "build:css": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
     "watch:css": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
+    "dev": "node server.js",
     "pw:install": "playwright install",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
