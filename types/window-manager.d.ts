@@ -26,6 +26,4 @@ declare interface WindowManagerAPI {
 
 declare const WindowManager: WindowManagerAPI;
 
-declare interface Window {
-  WindowManager: WindowManagerAPI;
-}
+// Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

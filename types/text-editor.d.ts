@@ -13,6 +13,4 @@ declare interface TextEditorSystemAPI {
 
 declare const TextEditorSystem: TextEditorSystemAPI;
 
-declare interface Window {
-  TextEditorSystem: TextEditorSystemAPI;
-}
+// Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

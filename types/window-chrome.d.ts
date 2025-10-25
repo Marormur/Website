@@ -44,6 +44,4 @@ declare interface WindowChromeAPI {
 
 declare const WindowChrome: WindowChromeAPI;
 
-declare interface Window {
-  WindowChrome: WindowChromeAPI;
-}
+// Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

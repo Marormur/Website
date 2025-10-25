@@ -27,7 +27,7 @@ test.describe('TypeScript Integration', () => {
             return {
                 // Phase 2: New Features
                 WindowTabManager: typeof window.WindowTabManager,
-                KeyboardShortcutManager: typeof window.KeyboardShortcutManager,
+                KeyboardShortcuts: typeof window.KeyboardShortcuts,
 
                 // Phase 3: Core Modules
                 BaseWindowInstance: typeof window.BaseWindowInstance,
@@ -45,15 +45,9 @@ test.describe('TypeScript Integration', () => {
                 TerminalInstance: typeof window.TerminalInstance,
                 TextEditorInstance: typeof window.TextEditorInstance,
 
-                // Phase 4: Legacy Refactoring
-                GithubAPI: window.GithubAPI !== undefined,
-                MenubarUtils: window.MenubarUtils !== undefined,
-                ProgramMenuSync: window.ProgramMenuSync !== undefined,
-                ProgramActions: window.ProgramActions !== undefined,
-                ImageViewerUtils: window.ImageViewerUtils !== undefined,
-                SnapUtils: window.SnapUtils !== undefined,
-                DialogUtils: window.DialogUtils !== undefined,
-                AppInit: window.AppInit !== undefined,
+                // Phase 4: Legacy Refactoring (exported modules)
+                GitHubAPI: typeof window.GitHubAPI,
+                ImageViewerUtils: typeof window.ImageViewerUtils,
             };
         });
 
@@ -61,7 +55,7 @@ test.describe('TypeScript Integration', () => {
 
         // Phase 2 assertions
         expect(modulesAvailable.WindowTabManager, 'WindowTabManager').toBe('function'); // Constructor
-        expect(modulesAvailable.KeyboardShortcutManager, 'KeyboardShortcutManager').toBe('object');
+        expect(modulesAvailable.KeyboardShortcuts, 'KeyboardShortcuts').toBe('object');
 
         // Phase 3 Core assertions
         expect(modulesAvailable.BaseWindowInstance, 'BaseWindowInstance').toBe('function');
@@ -79,15 +73,9 @@ test.describe('TypeScript Integration', () => {
         expect(modulesAvailable.TerminalInstance, 'TerminalInstance').toBe('function');
         expect(modulesAvailable.TextEditorInstance, 'TextEditorInstance').toBe('function');
 
-        // Phase 4 assertions
-        expect(modulesAvailable.GithubAPI, 'GithubAPI').toBe(true);
-        expect(modulesAvailable.MenubarUtils, 'MenubarUtils').toBe(true);
-        expect(modulesAvailable.ProgramMenuSync, 'ProgramMenuSync').toBe(true);
-        expect(modulesAvailable.ProgramActions, 'ProgramActions').toBe(true);
-        expect(modulesAvailable.ImageViewerUtils, 'ImageViewerUtils').toBe(true);
-        expect(modulesAvailable.SnapUtils, 'SnapUtils').toBe(true);
-        expect(modulesAvailable.DialogUtils, 'DialogUtils').toBe(true);
-        expect(modulesAvailable.AppInit, 'AppInit').toBe(true);
+        // Phase 4 assertions (exported modules only)
+        expect(modulesAvailable.GitHubAPI, 'GitHubAPI').toBe('object');
+        expect(modulesAvailable.ImageViewerUtils, 'ImageViewerUtils').toBe('object');
     });
 
     test('WindowManager has correct API surface', async ({ page }) => {

@@ -128,13 +128,21 @@ console.log('TerminalInstance (TS) loaded');
           e.preventDefault();
           if (this.historyIndex > 0) {
             this.historyIndex--;
-            this.inputElement!.value = this.commandHistory[this.historyIndex];
+            // noUncheckedIndexedAccess: array access may return undefined
+            const historyEntry = this.commandHistory[this.historyIndex];
+            if (historyEntry !== undefined) {
+              this.inputElement!.value = historyEntry;
+            }
           }
         } else if (e.key === 'ArrowDown') {
           e.preventDefault();
           if (this.historyIndex < this.commandHistory.length - 1) {
             this.historyIndex++;
-            this.inputElement!.value = this.commandHistory[this.historyIndex];
+            // noUncheckedIndexedAccess: array access may return undefined
+            const historyEntry = this.commandHistory[this.historyIndex];
+            if (historyEntry !== undefined) {
+              this.inputElement!.value = historyEntry;
+            }
           } else {
             this.historyIndex = this.commandHistory.length;
             this.inputElement!.value = '';
@@ -152,6 +160,9 @@ console.log('TerminalInstance (TS) loaded');
 
       const input = this.inputElement.value;
       const [partialCmd, ...args] = input.split(' ');
+      
+      // noUncheckedIndexedAccess: array destructuring may return undefined
+      if (partialCmd === undefined) return;
 
       const availableCommands = ['help', 'clear', 'ls', 'pwd', 'cd', 'cat', 'echo', 'date', 'whoami'];
 
@@ -159,7 +170,10 @@ console.log('TerminalInstance (TS) loaded');
         const matches = availableCommands.filter((cmd) => cmd.startsWith(partialCmd));
 
         if (matches.length === 1) {
-          this.inputElement.value = matches[0] + ' ';
+          const match = matches[0];
+          if (match !== undefined) {
+            this.inputElement.value = match + ' ';
+          }
         } else if (matches.length > 1) {
           this.addOutput(`guest@marvin:${this.currentPath}$ ${input}`, 'command');
           this.addOutput(matches.join('  '), 'info');
@@ -177,10 +191,17 @@ console.log('TerminalInstance (TS) loaded');
 
     findCommonPrefix(strings: string[]): string {
       if (!strings.length) return '';
-      if (strings.length === 1) return strings[0];
-      let prefix = strings[0];
+      // noUncheckedIndexedAccess: array access may return undefined
+      const firstString = strings[0];
+      if (strings.length === 1) return firstString ?? '';
+      if (firstString === undefined) return '';
+      
+      let prefix: string = firstString;
       for (let i = 1; i < strings.length; i++) {
-        while (strings[i].indexOf(prefix) !== 0) {
+        const currentString = strings[i];
+        if (currentString === undefined) continue;
+        
+        while (currentString.indexOf(prefix) !== 0) {
           prefix = prefix.substring(0, prefix.length - 1);
           if (!prefix) return '';
         }
@@ -209,7 +230,9 @@ console.log('TerminalInstance (TS) loaded');
       } else if (matches.length > 1) {
         this.addOutput(`guest@marvin:${this.currentPath}$ ${this.inputElement!.value}`, 'command');
         const formatted = matches.map((item) => {
-          const itemObj = currentDir.contents[item] as FSNode;
+          // noUncheckedIndexedAccess: dictionary access may return undefined
+          const itemObj = currentDir.contents[item] as FSNode | undefined;
+          if (!itemObj) return item;
           const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
           return prefix + item;
         });
@@ -224,6 +247,10 @@ console.log('TerminalInstance (TS) loaded');
     executeCommand(command: string): void {
       this.addOutput(`guest@marvin:${this.currentPath}$ ${command}`, 'command');
       const [cmd, ...args] = command.split(' ');
+      
+      // noUncheckedIndexedAccess: array destructuring may return undefined
+      if (cmd === undefined) return;
+      
       const commands: Record<string, () => void> = {
         help: () => this.showHelp(),
         clear: () => this.clearOutput(),
@@ -235,8 +262,10 @@ console.log('TerminalInstance (TS) loaded');
         date: () => this.showDate(),
         whoami: () => this.addOutput('guest', 'output'),
       };
-      if (commands[cmd]) {
-        commands[cmd]();
+      
+      const commandFn = commands[cmd];
+      if (commandFn !== undefined) {
+        commandFn();
       } else {
         this.addOutput(`Befehl nicht gefunden: ${cmd}. Gib "help" ein für verfügbare Befehle.`, 'error');
       }
@@ -305,7 +334,9 @@ console.log('TerminalInstance (TS) loaded');
       if (items.length === 0) this.addOutput('(leer)', 'output');
       else {
         items.forEach((item) => {
+          // noUncheckedIndexedAccess: dictionary access may return undefined
           const itemObj = targetDir.contents[item];
+          if (!itemObj) return;
           const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
           this.addOutput(prefix + item, 'output');
         });
@@ -383,8 +414,13 @@ console.log('TerminalInstance (TS) loaded');
     resolvePath(path: string | undefined | null): FSNode | null {
       if (!path) return null;
       const normalizedPath = this.normalizePath(path);
-      if (normalizedPath === '~') return this.fileSystem['~'];
-      let current = this.fileSystem['~'] as FSNode;
+      
+      // noUncheckedIndexedAccess: dictionary access may return undefined
+      const homeNode = this.fileSystem['~'];
+      if (normalizedPath === '~') return homeNode ?? null;
+      if (homeNode === undefined) return null;
+      
+      let current: FSNode = homeNode;
       const parts = normalizedPath
         .replace(/^~\/?/, '')
         .split('/')
@@ -392,7 +428,10 @@ console.log('TerminalInstance (TS) loaded');
       for (const part of parts) {
         if ((current as DirEntry).type !== 'directory') return null;
         if (!(current as DirEntry).contents || !(current as DirEntry).contents[part]) return null;
-        current = (current as DirEntry).contents[part];
+        // noUncheckedIndexedAccess: dictionary access may return undefined
+        const nextNode = (current as DirEntry).contents[part];
+        if (nextNode === undefined) return null;
+        current = nextNode;
       }
       return current;
     }

@@ -147,7 +147,9 @@ console.log('InstanceManager loaded');
       // Update active instance if needed
       if (this.activeInstanceId === instanceId) {
         const remainingIds = this.getAllInstanceIds();
-        this.activeInstanceId = remainingIds.length > 0 ? remainingIds[remainingIds.length - 1] : null;
+        // noUncheckedIndexedAccess: array access returns T | undefined
+        const lastId = remainingIds.length > 0 ? remainingIds[remainingIds.length - 1] : undefined;
+        this.activeInstanceId = lastId ?? null;
       }
 
       console.log(`Destroyed instance: ${instanceId}`);

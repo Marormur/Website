@@ -26,6 +26,4 @@ declare class InstanceManager<T extends BaseWindowInstance = BaseWindowInstance>
   deserializeAll(data: unknown): void;
 }
 
-declare interface Window {
-  InstanceManager: typeof InstanceManager;
-}
+// Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

@@ -11,10 +11,9 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "moduleResolution": "bundler",
 
-    // Type Checking (anfangs locker)
-    "strict": false,
-    "noImplicitAny": false,
-    "strictNullChecks": false,
+    // Type Checking (Phase 5: Full strict mode enabled!)
+    "strict": true, // ✅ Combines all strict* flags
+    "noUncheckedIndexedAccess": true, // ✅ Array/object access returns T | undefined
 
     // Source Maps
     "sourceMap": true,

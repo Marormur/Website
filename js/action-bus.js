@@ -1,3 +1,4 @@
+'use strict';
 /**
  * ActionBus - Declarative event system to wire UI actions via data-action attributes.
  *
@@ -136,8 +137,9 @@ console.log('ActionBus loaded');
                 return;
             }
             const g = window;
-            if (window.WindowManager?.close) {
-                window.WindowManager.close(windowId);
+            const wm = window.WindowManager;
+            if (wm && typeof wm.close === 'function') {
+                wm.close(windowId);
             }
             // Callbacks
             g.saveOpenModals?.();

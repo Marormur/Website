@@ -13,13 +13,10 @@ export {};
 
 /**
  * Global window interface extensions for dialog utilities
+ * Note: APP_CONSTANTS and topZIndex are defined in types/index.d.ts
  */
 declare global {
     interface Window {
-        APP_CONSTANTS?: {
-            MODAL_IDS?: string[];
-        };
-        topZIndex?: number;
         dialogs?: {
             [key: string]: {
                 modal?: HTMLElement;
@@ -49,7 +46,10 @@ function getModalIds(): string[] {
     if (win.WindowManager && typeof win.WindowManager.getAllWindowIds === 'function') {
         return win.WindowManager.getAllWindowIds();
     }
-    return window.APP_CONSTANTS?.MODAL_IDS || [];
+    // Cast window to access APP_CONSTANTS (defined in types/index.d.ts)
+    const w = window as Window & { APP_CONSTANTS?: Record<string, unknown> };
+    const appConstants = w.APP_CONSTANTS as { MODAL_IDS?: string[] } | undefined;
+    return appConstants?.MODAL_IDS || [];
 }
 
 /**
@@ -81,8 +81,11 @@ function syncTopZIndexWithDOM(): void {
         }
     });
 
-    if (window.topZIndex !== undefined) {
-        window.topZIndex = maxZ;
+    // Cast window to access topZIndex (defined in types/index.d.ts)
+    // Note: topZIndex is required in the type definition, but may not exist at runtime
+    const w = window as unknown as Window & { topZIndex?: number };
+    if (w.topZIndex !== undefined) {
+        w.topZIndex = maxZ;
     }
 }
 

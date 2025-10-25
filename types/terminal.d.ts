@@ -6,6 +6,4 @@ declare interface TerminalSystemAPI {
 
 declare const TerminalSystem: TerminalSystemAPI;
 
-declare interface Window {
-  TerminalSystem: TerminalSystemAPI;
-}
+// Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

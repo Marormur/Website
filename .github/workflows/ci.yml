@@ -25,6 +25,10 @@ jobs:
             - name: Typecheck
               run: npm run typecheck
 
+            - name: Type Coverage Check
+              run: npm run type:coverage
+              continue-on-error: true
+
             - name: Build TypeScript
               run: npm run build:ts
 

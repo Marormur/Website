@@ -1,3 +1,4 @@
+'use strict';
 /**
  * src/ts/theme.ts
  * Theme management (dark/light/system) with safe typing and legacy compatibility.

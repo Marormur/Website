@@ -8,6 +8,4 @@ declare interface FinderSystemAPI {
 
 declare const FinderSystem: FinderSystemAPI;
 
-declare interface Window {
-  FinderSystem: FinderSystemAPI;
-}
+// Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

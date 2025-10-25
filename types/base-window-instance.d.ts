@@ -42,6 +42,4 @@ declare class BaseWindowInstance<TState = unknown> {
   emit(eventName: string, data?: unknown): void;
 }
 
-declare interface Window {
-  BaseWindowInstance: typeof BaseWindowInstance;
-}
+// Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

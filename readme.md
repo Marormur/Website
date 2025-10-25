@@ -59,6 +59,17 @@ Dann Browser öffnen: http://localhost:5500/
 
 Für detaillierte Anweisungen: [docs/QUICKSTART.md](./docs/QUICKSTART.md)
 
+### TypeScript Development
+
+Dieses Projekt nutzt TypeScript für verbesserte Typsicherheit. Siehe [docs/TYPESCRIPT_GUIDELINES.md](./docs/TYPESCRIPT_GUIDELINES.md) für Best Practices und Migrationsanleitungen.
+
+```bash
+# TypeScript typecheck
+npm run typecheck
+
+# Type coverage messen
+npm run type:coverage
+```
 
 ## Bedienung
 
@@ -118,13 +129,14 @@ Das neue Multi-Instance System ermöglicht mehrere Fenster des gleichen Typs:
 
 ```javascript
 // Browser Console (F12)
-demoCreateTerminals()  // Erstelle 3 Terminal-Instanzen
-demoCreateEditors()    // Erstelle 3 Editor-Instanzen
+demoCreateTerminals(); // Erstelle 3 Terminal-Instanzen
+demoCreateEditors(); // Erstelle 3 Editor-Instanzen
 ```
 
 Oder: http://localhost:3000/?demo=true
 
 **Dokumentation**:
+
 - [Multi-Instance Quick Start](./docs/MULTI_INSTANCE_QUICKSTART.md)
 - [Migration Guide](./docs/MULTI_INSTANCE_MIGRATION.md)
 - [TODO & Next Steps](./TODO_MULTI_INSTANCE.md)

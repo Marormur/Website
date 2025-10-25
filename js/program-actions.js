@@ -1,3 +1,4 @@
+'use strict';
 (function () {
     'use strict';
     const gw = window;

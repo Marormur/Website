@@ -18,7 +18,10 @@ function getModalIds() {
     if (win.WindowManager && typeof win.WindowManager.getAllWindowIds === 'function') {
         return win.WindowManager.getAllWindowIds();
     }
-    return window.APP_CONSTANTS?.MODAL_IDS || [];
+    // Cast window to access APP_CONSTANTS (defined in types/index.d.ts)
+    const w = window;
+    const appConstants = w.APP_CONSTANTS;
+    return appConstants?.MODAL_IDS || [];
 }
 /**
  * Synchronize the global topZIndex counter with the actual DOM z-index values.
@@ -45,8 +48,11 @@ function syncTopZIndexWithDOM() {
             maxZ = Math.max(maxZ, modalZ);
         }
     });
-    if (window.topZIndex !== undefined) {
-        window.topZIndex = maxZ;
+    // Cast window to access topZIndex (defined in types/index.d.ts)
+    // Note: topZIndex is required in the type definition, but may not exist at runtime
+    const w = window;
+    if (w.topZIndex !== undefined) {
+        w.topZIndex = maxZ;
     }
 }
 /**

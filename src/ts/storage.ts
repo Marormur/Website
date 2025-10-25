@@ -183,6 +183,9 @@
       const windowEl = getDialogWindowElement(el);
       if (el && windowEl) {
         const stored = positions[id];
+        // noUncheckedIndexedAccess: positions[id] may be undefined
+        if (!stored) return;
+        
         if (stored.position) {
           windowEl.style.position = stored.position;
         } else if (stored.left || stored.top) {

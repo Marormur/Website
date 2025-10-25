@@ -14,6 +14,4 @@ declare interface StorageSystemAPI {
 
 declare const StorageSystem: StorageSystemAPI;
 
-declare interface Window {
-  StorageSystem: StorageSystemAPI;
-}
+// Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

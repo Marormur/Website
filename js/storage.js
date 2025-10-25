@@ -1,3 +1,4 @@
+'use strict';
 // ============================================================================
 // src/ts/storage.ts — Persistence & State Management Module (TypeScript)
 // Mirrors js/storage.js API and preserves global export window.StorageSystem
@@ -170,6 +171,9 @@
             const windowEl = getDialogWindowElement(el);
             if (el && windowEl) {
                 const stored = positions[id];
+                // noUncheckedIndexedAccess: positions[id] may be undefined
+                if (!stored)
+                    return;
                 if (stored.position) {
                     windowEl.style.position = stored.position;
                 }

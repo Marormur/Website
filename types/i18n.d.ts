@@ -12,7 +12,4 @@ declare const appI18n: AppI18nAPI;
 
 declare function translate(key: string): string;
 
-declare interface Window {
-  appI18n: AppI18nAPI;
-  translate: (key: string) => string;
-}
+// Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

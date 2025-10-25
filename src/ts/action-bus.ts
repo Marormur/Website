@@ -181,8 +181,9 @@ console.log('ActionBus loaded');
       }
 
       const g = window as unknown as Window & GlobalExtras;
-      if ((window as Window & { WindowManager?: { close?: (id: string) => void } }).WindowManager?.close) {
-        (window as Window & { WindowManager?: { close?: (id: string) => void } }).WindowManager!.close!(windowId);
+      const wm = (window as Window & { WindowManager?: { close?: (id: string) => void } }).WindowManager;
+      if (wm && typeof wm.close === 'function') {
+        wm.close(windowId);
       }
 
       // Callbacks

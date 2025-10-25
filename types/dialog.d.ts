@@ -12,6 +12,4 @@ declare class Dialog {
   isOpen(): boolean;
 }
 
-declare interface Window {
-  Dialog: typeof Dialog;
-}
+// Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

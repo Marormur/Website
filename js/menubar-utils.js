@@ -1,3 +1,4 @@
+'use strict';
 (function () {
     'use strict';
     // Avoid redefining if legacy already provided these

@@ -10,6 +10,4 @@ declare interface ActionBusAPI {
 
 declare const ActionBus: ActionBusAPI;
 
-declare interface Window {
-  ActionBus: ActionBusAPI;
-}
+// Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers
