@@ -6,14 +6,14 @@ const { chromium } = require('@playwright/test');
     const page = await context.newPage();
 
     // Console-Nachrichten aufzeichnen
-    page.on('console', msg => {
+    page.on('console', (msg) => {
         const type = msg.type();
         const text = msg.text();
         console.log(`[${type.toUpperCase()}] ${text}`);
     });
 
     // Page-Fehler aufzeichnen
-    page.on('pageerror', error => {
+    page.on('pageerror', (error) => {
         console.error(`[PAGE ERROR] ${error.message}`);
         console.error(error.stack);
     });
@@ -32,7 +32,7 @@ const { chromium } = require('@playwright/test');
             ActionBus: typeof window.ActionBus !== 'undefined',
             API: typeof window.API !== 'undefined',
             modalIds: window.modalIds,
-            dialogs: window.dialogs ? Object.keys(window.dialogs) : []
+            dialogs: window.dialogs ? Object.keys(window.dialogs) : [],
         };
     });
 

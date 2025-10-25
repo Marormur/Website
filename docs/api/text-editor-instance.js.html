@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>JSDoc: Source: text-editor-instance.js</title>
+
+        <script src="scripts/prettify/prettify.js"></script>
+        <script src="scripts/prettify/lang-css.js"></script>
+        <!--[if lt IE 9]>
+            <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+        <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css" />
+        <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css" />
+    </head>
+
+    <body>
+        <div id="main">
+            <h1 class="page-title">Source: text-editor-instance.js</h1>
+
+            <section>
+                <article>
+                    <pre
+                        class="prettyprint source linenums"
+                    ><code>console.log('TextEditorInstance loaded');
+
+/**
+ * TextEditorInstance - Multi-Instance fähiger Text Editor
+ *
+ * Basiert auf BaseWindowInstance
+ * Ermöglicht mehrere Text Editor Fenster gleichzeitig
+ */
+(function () {
+    'use strict';
+
+    /**
+     * Single Text Editor Instance
+     */
+    class TextEditorInstance extends window.BaseWindowInstance {
+        constructor(config) {
+            super({
+                ...config,
+                type: 'text-editor',
+            });
+
+            // Editor-specific properties
+            this.editor = null;
+            this.statusBar = null;
+            this.saveButton = null;
+            this.fileInput = null;
+            this.wordCountDisplay = null;
+            this.lineColDisplay = null;
+            this.findReplacePanel = null;
+            this.findInput = null;
+            this.replaceInput = null;
+
+            // Editor state
+            this.wrapMode = 'off';
+            this.currentRemoteFile = null;
+            this.currentFilename = config.filename || 'Untitled.txt';
+            this.isDirty = false;
+        }
+
+        /**
+         * Initialize instance state
+         * @protected
+         */
+        _initializeState(initialState) {
+            return {
+                ...super._initializeState(initialState),
+                content: initialState.content || '',
+                filename: initialState.filename || 'Untitled.txt',
+                wrapMode: initialState.wrapMode || 'off',
+                cursorPosition: initialState.cursorPosition || {
+                    line: 1,
+                    col: 1,
+                },
+            };
+        }
+
+        /**
+         * Render text editor UI
+         * @protected
+         */
+        render() {
+            if (!this.container) return;
+
+            const isDark = document.documentElement.classList.contains('dark');
+
+            this.container.innerHTML = `
+                &lt;div class="text-editor-wrapper flex flex-col h-full" style="background: ${isDark ? '#0f172a' : '#fafafa'}; color: ${isDark ? '#e5e7eb' : '#111827'};">
+                    &lt;!-- Toolbar -->
+                    &lt;div class="text-editor-toolbar flex-none" style="background: ${isDark ? '#1f2937' : '#f5f5f5'}; padding: 8px 12px; border-bottom: 1px solid ${isDark ? '#374151' : '#d1d5db'}; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        &lt;button type="button" class="text-editor-btn" data-action="clear" title="Neu">Neu&lt;/button>
+                        &lt;button type="button" class="text-editor-btn" data-action="open" title="Öffnen">Öffnen&lt;/button>
+                        &lt;button type="button" class="text-editor-btn text-save-btn" data-action="save" title="Speichern">Speichern&lt;/button>
+                        &lt;div class="toolbar-separator">&lt;/div>
+                        &lt;button type="button" class="text-editor-btn" data-action="bold" title="Fett" style="font-weight: bold;">B&lt;/button>
+                        &lt;button type="button" class="text-editor-btn" data-action="italic" title="Kursiv" style="font-style: italic;">I&lt;/button>
+                        &lt;button type="button" class="text-editor-btn" data-action="underline" title="Unterstrichen" style="text-decoration: underline;">U&lt;/button>
+                        &lt;div class="toolbar-separator">&lt;/div>
+                        &lt;button type="button" class="text-editor-btn" data-action="find" title="Suchen &amp; Ersetzen">🔍&lt;/button>
+                        &lt;button type="button" class="text-editor-btn" data-action="toggleWrap" title="Zeilenumbruch">⏎&lt;/button>
+                        &lt;input type="file" class="text-file-input" 
+                            accept=".txt,.md,.markdown,.html,.css,.js,.json,.yml,.yaml,.xml" 
+                            style="display:none">
+                    &lt;/div>
+                    
+                    &lt;!-- Find/Replace Panel (hidden by default) -->
+                    &lt;div class="find-replace-panel" style="background: ${isDark ? '#1f2937' : '#f5f5f5'}; padding: 8px 12px; border-bottom: 1px solid ${isDark ? '#374151' : '#d1d5db'}; display: none; gap: 8px; align-items: center;">
+                        &lt;input type="text" class="find-input" placeholder="Suchen..." style="padding: 4px 8px; border: 1px solid ${isDark ? '#475569' : '#d1d5db'}; border-radius: 4px; background: ${isDark ? '#111827' : '#ffffff'}; color: inherit;">
+                        &lt;input type="text" class="replace-input" placeholder="Ersetzen..." style="padding: 4px 8px; border: 1px solid ${isDark ? '#475569' : '#d1d5db'}; border-radius: 4px; background: ${isDark ? '#111827' : '#ffffff'}; color: inherit;">
+                        &lt;button type="button" class="text-editor-btn" data-action="findNext">Weiter&lt;/button>
+                        &lt;button type="button" class="text-editor-btn" data-action="replaceOne">Ersetzen&lt;/button>
+                        &lt;button type="button" class="text-editor-btn" data-action="replaceAll">Alle ersetzen&lt;/button>
+                        &lt;button type="button" class="text-editor-btn" data-action="closeFindReplace">✕&lt;/button>
+                    &lt;/div>
+                    
+                    &lt;!-- Status Bar for filename -->
+                    &lt;div class="text-file-status" style="padding: 6px 12px; border-bottom: 1px solid ${isDark ? '#374151' : '#d1d5db'}; background: ${isDark ? '#1f2937' : '#f5f5f5'}; font-size: 13px; opacity: 0.85; display: none;">&lt;/div>
+                    
+                    &lt;!-- Editor Textarea -->
+                    &lt;textarea class="text-editor-textarea flex-1 w-full resize-none p-4 border-0 outline-none" 
+                        spellcheck="false" 
+                        wrap="off"
+                        style="background: ${isDark ? '#111827' : '#ffffff'}; color: inherit; font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Courier New', monospace; font-size: 14px; line-height: 1.6; tab-size: 4;"
+                        placeholder="Text eingeben...">&lt;/textarea>
+                    
+                    &lt;!-- Status Bar -->
+                    &lt;div class="text-editor-statusbar flex-none" style="background: ${isDark ? '#1f2937' : '#f5f5f5'}; padding: 6px 12px; border-top: 1px solid ${isDark ? '#374151' : '#d1d5db'}; font-size: 12px; opacity: 0.75; display: flex; justify-content: space-between;">
+                        &lt;span class="word-count-display">Wörter: 0 | Zeichen: 0&lt;/span>
+                        &lt;span class="line-col-display">Zeile 1, Spalte 1&lt;/span>
+                    &lt;/div>
+                &lt;/div>
+            `;
+
+            this._applyButtonStyles();
+        }
+
+        /**
+         * Apply button styles
+         * @private
+         */
+        _applyButtonStyles() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const buttons = this.container.querySelectorAll('.text-editor-btn');
+
+            buttons.forEach((btn) => {
+                btn.style.cssText = `
+                    padding: 6px 12px;
+                    font-size: 13px;
+                    border: 1px solid ${isDark ? '#475569' : '#d1d5db'};
+                    background: ${isDark ? '#111827' : '#ffffff'};
+                    color: inherit;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                `;
+            });
+
+            // Separator style
+            const separators =
+                this.container.querySelectorAll('.toolbar-separator');
+            separators.forEach((sep) => {
+                sep.style.cssText = `
+                    width: 1px;
+                    height: 20px;
+                    background: ${isDark ? '#475569' : '#d1d5db'};
+                    margin: 0 4px;
+                `;
+            });
+        }
+
+        /**
+         * Attach event listeners
+         * @protected
+         */
+        attachEventListeners() {
+            if (!this.container) return;
+
+            // Cache elements
+            this.editor = this.container.querySelector('.text-editor-textarea');
+            this.statusBar = this.container.querySelector('.text-file-status');
+            this.saveButton = this.container.querySelector(
+                '[data-action="save"]',
+            );
+            this.fileInput = this.container.querySelector('.text-file-input');
+            this.wordCountDisplay = this.container.querySelector(
+                '.word-count-display',
+            );
+            this.lineColDisplay =
+                this.container.querySelector('.line-col-display');
+            this.findReplacePanel = this.container.querySelector(
+                '.find-replace-panel',
+            );
+            this.findInput = this.container.querySelector('.find-input');
+            this.replaceInput = this.container.querySelector('.replace-input');
+
+            // Load initial content
+            if (this.state.content) {
+                this.editor.value = this.state.content;
+            }
+
+            // Editor events
+            this.editor.addEventListener('input', () => this._handleInput());
+            this.editor.addEventListener('click', () =>
+                this._updateCursorPosition(),
+            );
+            this.editor.addEventListener('keyup', () =>
+                this._updateCursorPosition(),
+            );
+            this.editor.addEventListener('select', () =>
+                this._updateCursorPosition(),
+            );
+
+            // Toolbar actions
+            this.container.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+
+                const action = btn.dataset.action;
+                this._handleAction(action);
+            });
+
+            // File input
+            if (this.fileInput) {
+                this.fileInput.addEventListener('change', (e) =>
+                    this._handleFileOpen(e),
+                );
+            }
+
+            // Initial update
+            this._updateWordCount();
+            this._updateCursorPosition();
+
+            // Load wrap preference
+            this._loadWrapPreference();
+        }
+
+        /**
+         * Handle toolbar action
+         * @private
+         */
+        _handleAction(action) {
+            const actions = {
+                clear: () => this.clearContent(),
+                open: () => this.openFile(),
+                save: () => this.saveFile(),
+                bold: () => this._wrapSelection('**', '**'),
+                italic: () => this._wrapSelection('*', '*'),
+                underline: () => this._wrapSelection('&lt;u>', '&lt;/u>'),
+                find: () => this.toggleFindReplace(),
+                toggleWrap: () => this.toggleWrapMode(),
+                findNext: () => this.findNext(),
+                replaceOne: () => this.replaceOne(),
+                replaceAll: () => this.replaceAll(),
+                closeFindReplace: () => this.closeFindReplace(),
+            };
+
+            if (actions[action]) {
+                actions[action]();
+            }
+        }
+
+        /**
+         * Handle input changes
+         * @private
+         */
+        _handleInput() {
+            this.isDirty = true;
+            this.updateState({ content: this.editor.value });
+            this._updateWordCount();
+            this._updateSaveButton();
+            this.emit('contentChanged', { content: this.editor.value });
+        }
+
+        /**
+         * Update word count
+         * @private
+         */
+        _updateWordCount() {
+            if (!this.editor || !this.wordCountDisplay) return;
+
+            const text = this.editor.value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+
+            this.wordCountDisplay.textContent = `Wörter: ${words} | Zeichen: ${chars}`;
+        }
+
+        /**
+         * Update cursor position
+         * @private
+         */
+        _updateCursorPosition() {
+            if (!this.editor || !this.lineColDisplay) return;
+
+            const pos = this.editor.selectionStart;
+            const textBeforeCursor = this.editor.value.substring(0, pos);
+            const line = (textBeforeCursor.match(/\n/g) || []).length + 1;
+            const lastNewline = textBeforeCursor.lastIndexOf('\n');
+            const col = pos - lastNewline;
+
+            this.lineColDisplay.textContent = `Zeile ${line}, Spalte ${col}`;
+            this.updateState({ cursorPosition: { line, col } });
+        }
+
+        /**
+         * Update save button state
+         * @private
+         */
+        _updateSaveButton() {
+            if (!this.saveButton) return;
+
+            if (this.isDirty) {
+                this.saveButton.style.fontWeight = 'bold';
+                this.saveButton.title = 'Änderungen speichern';
+            } else {
+                this.saveButton.style.fontWeight = 'normal';
+                this.saveButton.title = 'Speichern';
+            }
+        }
+
+        /**
+         * Clear content
+         */
+        clearContent() {
+            if (
+                this.isDirty &amp;&amp;
+                !confirm(
+                    'Ungespeicherte Änderungen gehen verloren. Fortfahren?',
+                )
+            ) {
+                return;
+            }
+
+            this.editor.value = '';
+            this.currentFilename = 'Untitled.txt';
+            this.isDirty = false;
+            this.updateState({ content: '', filename: this.currentFilename });
+            this._updateWordCount();
+            this._updateSaveButton();
+            this._hideStatusBar();
+            this.emit('contentCleared');
+        }
+
+        /**
+         * Open file
+         */
+        openFile() {
+            if (this.fileInput) {
+                this.fileInput.click();
+            }
+        }
+
+        /**
+         * Handle file open
+         * @private
+         */
+        _handleFileOpen(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.editor.value = e.target.result;
+                this.currentFilename = file.name;
+                this.isDirty = false;
+                this.updateState({
+                    content: e.target.result,
+                    filename: file.name,
+                });
+                this._updateWordCount();
+                this._updateSaveButton();
+                this._showStatusBar(`Geöffnet: ${file.name}`);
+                this.emit('fileOpened', { filename: file.name });
+            };
+            reader.readAsText(file);
+        }
+
+        /**
+         * Save file
+         */
+        saveFile() {
+            const content = this.editor.value;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = this.currentFilename;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            this.isDirty = false;
+            this._updateSaveButton();
+            this._showStatusBar(`Gespeichert: ${this.currentFilename}`);
+            this.emit('fileSaved', { filename: this.currentFilename });
+        }
+
+        /**
+         * Wrap selection with markers
+         * @private
+         */
+        _wrapSelection(before, after) {
+            if (!this.editor) return;
+
+            const start = this.editor.selectionStart;
+            const end = this.editor.selectionEnd;
+            const selectedText = this.editor.value.substring(start, end);
+            const replacement = before + selectedText + after;
+
+            this.editor.setRangeText(replacement, start, end, 'select');
+            this.editor.focus();
+            this._handleInput();
+        }
+
+        /**
+         * Toggle wrap mode
+         */
+        toggleWrapMode() {
+            this.wrapMode = this.wrapMode === 'soft' ? 'off' : 'soft';
+            this.editor.wrap = this.wrapMode;
+            this.editor.style.whiteSpace =
+                this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
+
+            try {
+                localStorage.setItem(
+                    `textEditorWrapMode_${this.instanceId}`,
+                    this.wrapMode,
+                );
+            } catch (e) {
+                console.warn('Could not save wrap mode', e);
+            }
+
+            this.updateState({ wrapMode: this.wrapMode });
+            this._showStatusBar(
+                this.wrapMode === 'soft'
+                    ? 'Zeilenumbruch aktiviert'
+                    : 'Zeilenumbruch deaktiviert',
+            );
+        }
+
+        /**
+         * Load wrap preference
+         * @private
+         */
+        _loadWrapPreference() {
+            try {
+                const saved = localStorage.getItem(
+                    `textEditorWrapMode_${this.instanceId}`,
+                );
+                if (saved) {
+                    this.wrapMode = saved;
+                    this.editor.wrap = this.wrapMode;
+                    this.editor.style.whiteSpace =
+                        this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
+                }
+            } catch (e) {
+                console.warn('Could not load wrap mode', e);
+            }
+        }
+
+        /**
+         * Toggle find/replace panel
+         */
+        toggleFindReplace() {
+            if (!this.findReplacePanel) return;
+
+            const isHidden = this.findReplacePanel.style.display === 'none';
+            this.findReplacePanel.style.display = isHidden ? 'flex' : 'none';
+
+            if (isHidden &amp;&amp; this.findInput) {
+                this.findInput.focus();
+            } else {
+                this.editor.focus();
+            }
+        }
+
+        /**
+         * Close find/replace panel
+         */
+        closeFindReplace() {
+            if (this.findReplacePanel) {
+                this.findReplacePanel.style.display = 'none';
+                this.editor.focus();
+            }
+        }
+
+        /**
+         * Find next occurrence
+         */
+        findNext() {
+            if (!this.findInput || !this.editor) return;
+
+            const searchText = this.findInput.value;
+            if (!searchText) return;
+
+            const content = this.editor.value;
+            const currentPos = this.editor.selectionEnd;
+            const index = content.indexOf(searchText, currentPos);
+
+            if (index !== -1) {
+                this.editor.setSelectionRange(index, index + searchText.length);
+                this.editor.focus();
+            } else {
+                // Wrap around to beginning
+                const firstIndex = content.indexOf(searchText);
+                if (firstIndex !== -1) {
+                    this.editor.setSelectionRange(
+                        firstIndex,
+                        firstIndex + searchText.length,
+                    );
+                    this.editor.focus();
+                } else {
+                    this._showStatusBar('Nicht gefunden');
+                }
+            }
+        }
+
+        /**
+         * Replace one occurrence
+         */
+        replaceOne() {
+            if (!this.findInput || !this.replaceInput || !this.editor) return;
+
+            const searchText = this.findInput.value;
+            const replaceText = this.replaceInput.value;
+            if (!searchText) return;
+
+            const start = this.editor.selectionStart;
+            const end = this.editor.selectionEnd;
+            const selectedText = this.editor.value.substring(start, end);
+
+            if (selectedText === searchText) {
+                this.editor.setRangeText(replaceText, start, end, 'end');
+                this._handleInput();
+            }
+
+            this.findNext();
+        }
+
+        /**
+         * Replace all occurrences
+         */
+        replaceAll() {
+            if (!this.findInput || !this.replaceInput || !this.editor) return;
+
+            const searchText = this.findInput.value;
+            const replaceText = this.replaceInput.value;
+            if (!searchText) return;
+
+            const newContent = this.editor.value
+                .split(searchText)
+                .join(replaceText);
+            const count = (
+                this.editor.value.match(new RegExp(searchText, 'g')) || []
+            ).length;
+
+            this.editor.value = newContent;
+            this._handleInput();
+            this._showStatusBar(`${count} Ersetzungen vorgenommen`);
+        }
+
+        /**
+         * Show status bar message
+         * @private
+         */
+        _showStatusBar(message) {
+            if (!this.statusBar) return;
+
+            this.statusBar.textContent = message;
+            this.statusBar.style.display = 'block';
+
+            setTimeout(() => {
+                this._hideStatusBar();
+            }, 3000);
+        }
+
+        /**
+         * Hide status bar
+         * @private
+         */
+        _hideStatusBar() {
+            if (this.statusBar) {
+                this.statusBar.style.display = 'none';
+            }
+        }
+
+        /**
+         * Focus editor
+         */
+        focus() {
+            super.focus();
+            if (this.editor) {
+                this.editor.focus();
+            }
+        }
+
+        /**
+         * Serialize state
+         */
+        serialize() {
+            return {
+                ...super.serialize(),
+                content: this.editor?.value || '',
+                filename: this.currentFilename,
+                wrapMode: this.wrapMode,
+                isDirty: this.isDirty,
+            };
+        }
+
+        /**
+         * Deserialize state
+         */
+        deserialize(data) {
+            super.deserialize(data);
+
+            if (data.content &amp;&amp; this.editor) {
+                this.editor.value = data.content;
+                this._updateWordCount();
+            }
+
+            if (data.filename) {
+                this.currentFilename = data.filename;
+            }
+
+            if (data.wrapMode) {
+                this.wrapMode = data.wrapMode;
+                if (this.editor) {
+                    this.editor.wrap = this.wrapMode;
+                    this.editor.style.whiteSpace =
+                        this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
+                }
+            }
+
+            if (data.isDirty !== undefined) {
+                this.isDirty = data.isDirty;
+                this._updateSaveButton();
+            }
+        }
+    }
+
+    // Export
+    window.TextEditorInstance = TextEditorInstance;
+
+    // Create Text Editor Instance Manager
+    if (window.InstanceManager) {
+        window.TextEditorInstanceManager = new window.InstanceManager({
+            type: 'text-editor',
+            instanceClass: TextEditorInstance,
+            maxInstances: 0, // Unlimited
+            createContainer: function (instanceId) {
+                // Create container and append to text editor modal container
+                const editorModalContainer = document.getElementById(
+                    'text-editor-container',
+                );
+                if (!editorModalContainer) {
+                    console.error('Text editor container not found');
+                    return null;
+                }
+
+                const container = document.createElement('div');
+                container.id = `${instanceId}-container`;
+                container.className = 'text-editor-instance-container h-full';
+
+                // Initially hidden (will be shown by integration layer)
+                container.classList.add('hidden');
+
+                editorModalContainer.appendChild(container);
+                return container;
+            },
+        });
+    }
+})();
+</code></pre>
+                </article>
+            </section>
+        </div>
+
+        <nav>
+            <h2><a href="index.html">Home</a></h2>
+            <h3>Modules</h3>
+            <ul>
+                <li><a href="module-InstanceManager.html">InstanceManager</a></li>
+            </ul>
+            <h3>Classes</h3>
+            <ul>
+                <li><a href="BaseWindowInstance.html">BaseWindowInstance</a></li>
+                <li><a href="KeyboardShortcutManager.html">KeyboardShortcutManager</a></li>
+                <li><a href="MultiInstanceIntegration.html">MultiInstanceIntegration</a></li>
+                <li><a href="SessionManager.html">SessionManager</a></li>
+                <li><a href="TerminalInstance.html">TerminalInstance</a></li>
+                <li><a href="TextEditorInstance.html">TextEditorInstance</a></li>
+                <li><a href="WindowTabManager.html">WindowTabManager</a></li>
+                <li><a href="module-InstanceManager-InstanceManager.html">InstanceManager</a></li>
+            </ul>
+            <h3>Global</h3>
+            <ul>
+                <li><a href="global.html#ensureSvgNamespace">ensureSvgNamespace</a></li>
+                <li><a href="global.html#getDockReservedBottom">getDockReservedBottom</a></li>
+                <li><a href="global.html#getMenuIconSvg">getMenuIconSvg</a></li>
+                <li><a href="global.html#getThemePreference">getThemePreference</a></li>
+                <li><a href="global.html#initDockMagnification">initDockMagnification</a></li>
+                <li><a href="global.html#renderIconIntoElement">renderIconIntoElement</a></li>
+                <li><a href="global.html#setThemePreference">setThemePreference</a></li>
+                <li>
+                    <a href="global.html#updateThemeFromPreference">updateThemeFromPreference</a>
+                </li>
+            </ul>
+        </nav>
+
+        <br class="clear" />
+
+        <footer>
+            Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on
+            Sat Oct 25 2025 16:06:41 GMT+0200 (Central European Summer Time)
+        </footer>
+
+        <script>
+            prettyPrint();
+        </script>
+        <script src="scripts/linenumber.js"></script>
+    </body>
+</html>

@@ -1,14 +1,21 @@
+/**
+ * ActionBus - Declarative event system to wire UI actions via data-action attributes.
+ *
+ * Example:
+ *   <button data-action="closeWindow" data-window-id="finder-modal">Close</button>
+ *   ActionBus.register('closeWindow', (params, el) => { ... })
+ */
 console.log('ActionBus loaded');
 
 /**
  * ActionBus - Deklaratives Event-System
- * 
+ *
  * Vorteile:
  * - Kein manuelles addEventListener mehr für repetitive Aktionen
  * - Actions können über data-action="actionName" triggert werden
  * - Zentrale Verwaltung aller UI-Aktionen
  * - Einfaches Hinzufügen neuer Aktionen
- * 
+ *
  * Verwendung:
  * HTML: <button data-action="closeWindow" data-window-id="finder-modal">Schließen</button>
  * JS: ActionBus.register('closeWindow', (params, element) => { ... });
@@ -20,11 +27,11 @@ console.log('ActionBus loaded');
     const eventDelegates = [];
 
     const ActionBus = {
-        /**
-         * Registriert einen Action-Handler
-         * @param {string} actionName - Name der Action
-         * @param {function} handler - Handler-Funktion (params, element) => void
-         */
+    /**
+     * Registriert einen Action-Handler
+     * @param {string} actionName - Name der Action
+     * @param {Function} handler - Handler-Funktion (params, element) => void
+     */
         register(actionName, handler) {
             if (!actionName || typeof handler !== 'function') {
                 console.error('Invalid action registration:', actionName);
@@ -47,7 +54,7 @@ console.log('ActionBus loaded');
          * Führt eine Action aus
          * @param {string} actionName - Name der Action
          * @param {Object} params - Parameter für die Action
-         * @param {HTMLElement} element - Element das die Action ausgelöst hat
+         * @param {HTMLElement|null} element - Element das die Action ausgelöst hat
          */
         execute(actionName, params = {}, element = null) {
             const handler = actionHandlers.get(actionName);
@@ -83,22 +90,36 @@ console.log('ActionBus loaded');
             });
 
             // Double-click support for data-action-dblclick
-            this.delegateEvent('dblclick', '[data-action-dblclick]', (element, event) => {
-                const actionName = element.getAttribute('data-action-dblclick');
-                const params = this.extractParams(element);
-                if (element.tagName === 'BUTTON' || element.tagName === 'A') {
-                    event.preventDefault();
-                }
-                event.stopPropagation();
-                this.execute(actionName, params, element);
-            });
+            this.delegateEvent(
+                'dblclick',
+                '[data-action-dblclick]',
+                (element, event) => {
+                    const actionName = element.getAttribute(
+                        'data-action-dblclick',
+                    );
+                    const params = this.extractParams(element);
+                    if (
+                        element.tagName === 'BUTTON' ||
+                        element.tagName === 'A'
+                    ) {
+                        event.preventDefault();
+                    }
+                    event.stopPropagation();
+                    this.execute(actionName, params, element);
+                },
+            );
 
             // Support für data-action-hover
-            this.delegateEvent('mouseenter', '[data-action-hover]', (element, event) => {
-                const actionName = element.getAttribute('data-action-hover');
-                const params = this.extractParams(element);
-                this.execute(actionName, params, element);
-            });
+            this.delegateEvent(
+                'mouseenter',
+                '[data-action-hover]',
+                (element, event) => {
+                    const actionName =
+                        element.getAttribute('data-action-hover');
+                    const params = this.extractParams(element);
+                    this.execute(actionName, params, element);
+                },
+            );
 
             console.log('ActionBus initialized');
         },
@@ -147,13 +168,13 @@ console.log('ActionBus loaded');
             });
             eventDelegates.length = 0;
             actionHandlers.clear();
-        }
+        },
     };
 
     // Standard-Actions registrieren
     ActionBus.registerAll({
         // Fenster schließen
-        'closeWindow': (params) => {
+        closeWindow: (params) => {
             const windowId = params.windowId;
             if (!windowId) {
                 console.warn('closeWindow: missing windowId');
@@ -167,11 +188,12 @@ console.log('ActionBus loaded');
             // Callbacks
             if (window.saveOpenModals) window.saveOpenModals();
             if (window.updateDockIndicators) window.updateDockIndicators();
-            if (window.updateProgramLabelByTopModal) window.updateProgramLabelByTopModal();
+            if (window.updateProgramLabelByTopModal)
+                window.updateProgramLabelByTopModal();
         },
 
         // Fenster öffnen
-        'openWindow': (params) => {
+        openWindow: (params) => {
             const windowId = params.windowId;
             if (!windowId) {
                 console.warn('openWindow: missing windowId');
@@ -180,7 +202,10 @@ console.log('ActionBus loaded');
 
             // Close launchpad if it's open (clicking dock icon while launchpad is visible)
             const launchpadModal = document.getElementById('launchpad-modal');
-            if (launchpadModal && !launchpadModal.classList.contains('hidden')) {
+            if (
+                launchpadModal &&
+                !launchpadModal.classList.contains('hidden')
+            ) {
                 if (window.dialogs?.['launchpad-modal']?.close) {
                     window.dialogs['launchpad-modal'].close();
                 }
@@ -191,11 +216,12 @@ console.log('ActionBus loaded');
             }
 
             // Callbacks
-            if (window.updateProgramLabelByTopModal) window.updateProgramLabelByTopModal();
+            if (window.updateProgramLabelByTopModal)
+                window.updateProgramLabelByTopModal();
         },
 
         // Aktuelles (oberstes) Fenster schließen
-        'closeTopWindow': () => {
+        closeTopWindow: () => {
             if (window.hideMenuDropdowns) window.hideMenuDropdowns();
 
             const topModal = window.WindowManager?.getTopWindow();
@@ -207,17 +233,18 @@ console.log('ActionBus loaded');
 
             if (window.saveOpenModals) window.saveOpenModals();
             if (window.updateDockIndicators) window.updateDockIndicators();
-            if (window.updateProgramLabelByTopModal) window.updateProgramLabelByTopModal();
+            if (window.updateProgramLabelByTopModal)
+                window.updateProgramLabelByTopModal();
         },
 
         // Window-Layout zurücksetzen
-        'resetWindowLayout': () => {
+        resetWindowLayout: () => {
             if (window.hideMenuDropdowns) window.hideMenuDropdowns();
             if (window.resetWindowLayout) window.resetWindowLayout();
         },
 
         // Program-Info Dialog öffnen
-        'openProgramInfo': (params, element) => {
+        openProgramInfo: (params, element) => {
             if (window.hideMenuDropdowns) window.hideMenuDropdowns();
             if (window.openProgramInfoDialog) {
                 window.openProgramInfoDialog(null);
@@ -225,25 +252,27 @@ console.log('ActionBus loaded');
         },
 
         // Über-Dialog öffnen (aus Apple-Menü)
-        'openAbout': () => {
+        openAbout: () => {
             if (window.hideMenuDropdowns) window.hideMenuDropdowns();
             if (window.dialogs?.['about-modal']) {
                 window.dialogs['about-modal'].open();
             }
-            if (window.updateProgramLabelByTopModal) window.updateProgramLabelByTopModal();
+            if (window.updateProgramLabelByTopModal)
+                window.updateProgramLabelByTopModal();
         },
 
         // Settings öffnen
-        'openSettings': () => {
+        openSettings: () => {
             if (window.hideMenuDropdowns) window.hideMenuDropdowns();
             if (window.dialogs?.['settings-modal']) {
                 window.dialogs['settings-modal'].open();
             }
-            if (window.updateProgramLabelByTopModal) window.updateProgramLabelByTopModal();
+            if (window.updateProgramLabelByTopModal)
+                window.updateProgramLabelByTopModal();
         },
 
         // Desktop-Item öffnen (für Dock-Icons)
-        'openDesktopItem': (params) => {
+        openDesktopItem: (params) => {
             const itemId = params.itemId;
             if (!itemId) {
                 console.warn('openDesktopItem: missing itemId');
@@ -263,7 +292,10 @@ console.log('ActionBus loaded');
 
         // Finder: zur Root der aktuellen Ansicht
         'finder:goRoot': () => {
-            if (window.FinderSystem?.navigateTo && window.FinderSystem?.getState) {
+            if (
+                window.FinderSystem?.navigateTo &&
+                window.FinderSystem?.getState
+            ) {
                 const view = window.FinderSystem.getState().currentView;
                 window.FinderSystem.navigateTo([], view);
             }
@@ -308,7 +340,8 @@ console.log('ActionBus loaded');
         // Finder: In Pfad navigieren (data-path="A/B/C")
         'finder:navigateToPath': (params) => {
             const raw = params.path || '';
-            const parts = typeof raw === 'string' && raw.length ? raw.split('/') : [];
+            const parts =
+                typeof raw === 'string' && raw.length ? raw.split('/') : [];
             if (window.FinderSystem?.navigateTo) {
                 window.FinderSystem.navigateTo(parts);
             }
@@ -325,10 +358,9 @@ console.log('ActionBus loaded');
             if (window.FinderSystem?.openItem) {
                 window.FinderSystem.openItem(name, type);
             }
-        }
+        },
     });
 
     // Globaler Export
     window.ActionBus = ActionBus;
-
 })();

@@ -2,7 +2,7 @@ console.log('Window Configurations loaded');
 
 /**
  * Window-Konfigurationen
- * 
+ *
  * Hier werden alle Fenster/Modals definiert.
  * Um ein neues Fenster hinzuzufügen, einfach einen neuen Eintrag hier anlegen!
  */
@@ -37,28 +37,33 @@ console.log('Window Configurations loaded');
                 skipMenubarUpdate: true, // Don't update menubar when launchpad is focused
                 initHandler: function () {
                     // Initialize Launchpad module if not already done
-                    if (window.LaunchpadSystem && !window.LaunchpadSystem.container) {
-                        const container = document.getElementById('launchpad-container');
+                    if (
+                        window.LaunchpadSystem &&
+                        !window.LaunchpadSystem.container
+                    ) {
+                        const container = document.getElementById(
+                            'launchpad-container',
+                        );
                         if (container) {
                             window.LaunchpadSystem.init(container);
                         }
                     }
-                }
-            }
+                },
+            },
         },
         {
             id: 'projects-modal',
             type: 'persistent',
             programKey: 'programs.projects',
             icon: './img/sucher.png',
-            closeButtonId: 'close-projects-modal'
+            closeButtonId: 'close-projects-modal',
         },
         {
             id: 'about-modal',
             type: 'persistent',
             programKey: 'programs.about',
             icon: './img/profil.jpg',
-            closeButtonId: 'close-about-modal'
+            closeButtonId: 'close-about-modal',
         },
         {
             id: 'settings-modal',
@@ -69,14 +74,18 @@ console.log('Window Configurations loaded');
             metadata: {
                 initHandler: function () {
                     // Initialize settings module if not already done
-                    if (window.SettingsSystem && !window.SettingsSystem.container) {
-                        const container = document.getElementById('settings-container');
+                    if (
+                        window.SettingsSystem &&
+                        !window.SettingsSystem.container
+                    ) {
+                        const container =
+                            document.getElementById('settings-container');
                         if (container) {
                             window.SettingsSystem.init(container);
                         }
                     }
-                }
-            }
+                },
+            },
         },
         {
             id: 'text-modal',
@@ -94,33 +103,35 @@ console.log('Window Configurations loaded');
                     }
                     // Fallback: Initialize old text editor module if instance manager not available
                     else if (window.TextEditorSystem && !window.TextEditorSystem.container) {
-                        const container = document.getElementById('text-editor-container');
+                        const container = document.getElementById(
+                            'text-editor-container',
+                        );
                         if (container) {
                             window.TextEditorSystem.init(container);
                         }
                     }
-                }
-            }
+                },
+            },
         },
         {
             id: 'image-modal',
             type: 'persistent',
             programKey: 'programs.image',
             icon: './img/imageviewer.png',
-            closeButtonId: 'close-image-modal'
+            closeButtonId: 'close-image-modal',
         },
         {
             id: 'program-info-modal',
             type: 'transient',
             programKey: 'programs.default',
             icon: './img/sucher.png',
-            closeButtonId: 'close-program-info-modal'
+            closeButtonId: 'close-program-info-modal',
         },
         {
             id: 'terminal-modal',
             type: 'persistent',
             programKey: 'programs.terminal',
-            icon: '💻',
+            icon: './img/terminal.png',
             closeButtonId: 'close-terminal-modal',
             metadata: {
                 initHandler: function () {
@@ -132,14 +143,15 @@ console.log('Window Configurations loaded');
                     }
                     // Fallback: Initialize old terminal module if instance manager not available
                     else if (window.TerminalSystem && !window.TerminalSystem.container) {
-                        const container = document.getElementById('terminal-container');
+                        const container =
+                                document.getElementById('terminal-container');
                         if (container) {
                             window.TerminalSystem.init(container);
                         }
                     }
-                }
-            }
-        }
+                },
+            },
+        },
     ];
 
     // Automatisch alle Fenster registrieren wenn WindowManager verfügbar ist
@@ -151,12 +163,13 @@ console.log('Window Configurations loaded');
         document.addEventListener('DOMContentLoaded', () => {
             if (window.WindowManager) {
                 window.WindowManager.registerAll(windowConfigurations);
-                console.log(`Registered ${windowConfigurations.length} windows (delayed)`);
+                console.log(
+                    `Registered ${windowConfigurations.length} windows (delayed)`,
+                );
             }
         });
     }
 
     // Export für Zugriff von außen
     window.windowConfigurations = windowConfigurations;
-
 })();

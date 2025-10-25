@@ -1,9 +1,9 @@
 /**
  * Menu System Module
- * 
+ *
  * Verwaltet die macOS-Menüleiste mit dynamischen Menüdefinitionen für
  * verschiedene Programme (Finder, Einstellungen, Texteditor, etc.).
- * 
+ *
  * Features:
  * - Dynamische Menü-Generierung basierend auf aktivem Fenster
  * - Menu-Action-Handler mit eindeutigen IDs
@@ -37,7 +37,7 @@
         const normalized = [];
         let previousWasSeparator = true;
 
-        items.forEach(item => {
+        items.forEach((item) => {
             if (!item) return;
 
             // Handle separators (keine doppelten Separatoren)
@@ -65,7 +65,10 @@
         });
 
         // Entferne trailing separators
-        while (normalized.length && normalized[normalized.length - 1].type === 'separator') {
+        while (
+            normalized.length &&
+            normalized[normalized.length - 1].type === 'separator'
+        ) {
             normalized.pop();
         }
 
@@ -94,20 +97,37 @@
                         action: () => {
                             // Open a new Finder window (prefer modern API)
                             // If a Finder instance manager exists in future, use it; otherwise open the modal
-                            if (window.FinderInstanceManager && typeof window.FinderInstanceManager.createInstance === 'function') {
-                                const count = window.FinderInstanceManager.getInstanceCount?.() || 0;
-                                window.FinderInstanceManager.createInstance({ title: `Finder ${count + 1}` });
-                            } else if (window.WindowManager && typeof window.WindowManager.open === 'function') {
+                            if (
+                                window.FinderInstanceManager &&
+                                typeof window.FinderInstanceManager
+                                    .createInstance === 'function'
+                            ) {
+                                const count =
+                                    window.FinderInstanceManager.getInstanceCount?.() ||
+                                    0;
+                                window.FinderInstanceManager.createInstance({
+                                    title: `Finder ${count + 1}`,
+                                });
+                            } else if (
+                                window.WindowManager &&
+                                typeof window.WindowManager.open === 'function'
+                            ) {
                                 window.WindowManager.open('finder-modal');
-                            } else if (window.API && window.API.window && typeof window.API.window.open === 'function') {
+                            } else if (
+                                window.API &&
+                                window.API.window &&
+                                typeof window.API.window.open === 'function'
+                            ) {
                                 window.API.window.open('finder-modal');
                             } else if (typeof window.openModal === 'function') {
                                 // Legacy fallback
                                 window.openModal('finder-modal');
                             } else {
-                                console.warn('Finder new window action not available: no window manager found');
+                                console.warn(
+                                    'Finder new window action not available: no window manager found',
+                                );
                             }
-                        }
+                        },
                     },
                     {
                         id: 'finder-reload',
@@ -115,11 +135,12 @@
                         shortcut: '⌘R',
                         icon: 'reload',
                         action: () => {
-                            if (window.loadGithubRepos) window.loadGithubRepos();
-                        }
+                            if (window.loadGithubRepos)
+                                window.loadGithubRepos();
+                        },
                     },
                     {
-                        type: 'separator'
+                        type: 'separator',
                     },
                     {
                         id: 'finder-close',
@@ -127,17 +148,17 @@
                         shortcut: '⌘W',
                         disabled: () => !(context && context.dialog),
                         icon: 'close',
-                        action: () => closeContextWindow(context)
-                    }
-                ]
+                        action: () => closeContextWindow(context),
+                    },
+                ],
             },
             createWindowMenuSection(context),
             createHelpMenuSection(context, {
                 itemKey: 'menu.finder.help',
                 // Show Finder program info, not Projects
                 infoModalId: 'finder-modal',
-                itemIcon: 'help'
-            })
+                itemIcon: 'help',
+            }),
         ];
     }
 
@@ -153,16 +174,16 @@
                         shortcut: '⌘W',
                         disabled: () => !(context && context.dialog),
                         icon: 'close',
-                        action: () => closeContextWindow(context)
-                    }
-                ]
+                        action: () => closeContextWindow(context),
+                    },
+                ],
             },
             createWindowMenuSection(context),
             createHelpMenuSection(context, {
                 itemKey: 'menu.settings.help',
                 infoModalId: 'settings-modal',
-                itemIcon: 'help'
-            })
+                itemIcon: 'help',
+            }),
         ];
     }
 
@@ -177,23 +198,23 @@
                         label: () => translate('menu.text.newFile'),
                         shortcut: '⌘N',
                         icon: 'newFile',
-                        action: () => sendTextEditorMenuAction('file:new')
+                        action: () => sendTextEditorMenuAction('file:new'),
                     },
                     {
                         id: 'text-open',
                         label: () => translate('menu.text.open'),
                         shortcut: '⌘O',
                         icon: 'open',
-                        action: () => sendTextEditorMenuAction('file:open')
+                        action: () => sendTextEditorMenuAction('file:open'),
                     },
                     {
                         id: 'text-save',
                         label: () => translate('menu.text.save'),
                         shortcut: '⌘S',
                         icon: 'save',
-                        action: () => sendTextEditorMenuAction('file:save')
-                    }
-                ]
+                        action: () => sendTextEditorMenuAction('file:save'),
+                    },
+                ],
             },
             {
                 id: 'edit',
@@ -204,50 +225,51 @@
                         label: () => translate('menu.text.undo'),
                         shortcut: '⌘Z',
                         icon: 'undo',
-                        action: () => sendTextEditorMenuAction('edit:undo')
+                        action: () => sendTextEditorMenuAction('edit:undo'),
                     },
                     {
                         id: 'text-redo',
                         label: () => translate('menu.text.redo'),
                         shortcut: '⇧⌘Z',
                         icon: 'redo',
-                        action: () => sendTextEditorMenuAction('edit:redo')
+                        action: () => sendTextEditorMenuAction('edit:redo'),
                     },
                     {
-                        type: 'separator'
+                        type: 'separator',
                     },
                     {
                         id: 'text-cut',
                         label: () => translate('menu.text.cut'),
                         shortcut: '⌘X',
                         icon: 'cut',
-                        action: () => sendTextEditorMenuAction('edit:cut')
+                        action: () => sendTextEditorMenuAction('edit:cut'),
                     },
                     {
                         id: 'text-copy',
                         label: () => translate('menu.text.copy'),
                         shortcut: '⌘C',
                         icon: 'copy',
-                        action: () => sendTextEditorMenuAction('edit:copy')
+                        action: () => sendTextEditorMenuAction('edit:copy'),
                     },
                     {
                         id: 'text-paste',
                         label: () => translate('menu.text.paste'),
                         shortcut: '⌘V',
                         icon: 'paste',
-                        action: () => sendTextEditorMenuAction('edit:paste')
+                        action: () => sendTextEditorMenuAction('edit:paste'),
                     },
                     {
-                        type: 'separator'
+                        type: 'separator',
                     },
                     {
                         id: 'text-select-all',
                         label: () => translate('menu.text.selectAll'),
                         shortcut: '⌘A',
                         icon: 'selectAll',
-                        action: () => sendTextEditorMenuAction('edit:selectAll')
-                    }
-                ]
+                        action: () =>
+                            sendTextEditorMenuAction('edit:selectAll'),
+                    },
+                ],
             },
             {
                 id: 'view',
@@ -258,21 +280,24 @@
                         label: () => translate('menu.text.toggleWrap'),
                         shortcut: '⌥⌘W',
                         icon: 'wrap',
-                        action: () => sendTextEditorMenuAction('view:toggleWrap')
-                    }
-                ]
+                        action: () =>
+                            sendTextEditorMenuAction('view:toggleWrap'),
+                    },
+                ],
             },
             createWindowMenuSection(context),
             createHelpMenuSection(context, {
                 itemKey: 'menu.text.help',
                 infoModalId: 'text-modal',
-                itemIcon: 'help'
-            })
+                itemIcon: 'help',
+            }),
         ];
     }
 
     function buildImageViewerMenuDefinition(context) {
-        const state = window.getImageViewerState ? window.getImageViewerState() : { hasImage: false };
+        const state = window.getImageViewerState
+            ? window.getImageViewerState()
+            : { hasImage: false };
         return [
             {
                 id: 'file',
@@ -284,8 +309,9 @@
                         disabled: !state.hasImage,
                         icon: 'imageOpen',
                         action: () => {
-                            if (window.openActiveImageInNewTab) window.openActiveImageInNewTab();
-                        }
+                            if (window.openActiveImageInNewTab)
+                                window.openActiveImageInNewTab();
+                        },
                     },
                     {
                         id: 'image-download',
@@ -293,11 +319,12 @@
                         disabled: !state.hasImage,
                         icon: 'download',
                         action: () => {
-                            if (window.downloadActiveImage) window.downloadActiveImage();
-                        }
+                            if (window.downloadActiveImage)
+                                window.downloadActiveImage();
+                        },
                     },
                     {
-                        type: 'separator'
+                        type: 'separator',
                     },
                     {
                         id: 'image-close',
@@ -305,16 +332,16 @@
                         shortcut: '⌘W',
                         disabled: () => !(context && context.dialog),
                         icon: 'close',
-                        action: () => closeContextWindow(context)
-                    }
-                ]
+                        action: () => closeContextWindow(context),
+                    },
+                ],
             },
             createWindowMenuSection(context),
             createHelpMenuSection(context, {
                 itemKey: 'menu.image.help',
                 infoModalId: 'image-modal',
-                itemIcon: 'help'
-            })
+                itemIcon: 'help',
+            }),
         ];
     }
 
@@ -330,16 +357,16 @@
                         shortcut: '⌘W',
                         disabled: () => !(context && context.dialog),
                         icon: 'close',
-                        action: () => closeContextWindow(context)
-                    }
-                ]
+                        action: () => closeContextWindow(context),
+                    },
+                ],
             },
             createWindowMenuSection(context),
             createHelpMenuSection(context, {
                 itemKey: 'menu.about.help',
                 infoModalId: 'about-modal',
-                itemIcon: 'info'
-            })
+                itemIcon: 'info',
+            }),
         ];
     }
 
@@ -355,11 +382,11 @@
                         shortcut: '⌘W',
                         disabled: () => !(context && context.dialog),
                         icon: 'close',
-                        action: () => closeContextWindow(context)
-                    }
-                ]
+                        action: () => closeContextWindow(context),
+                    },
+                ],
             },
-            createWindowMenuSection(context)
+            createWindowMenuSection(context),
         ];
     }
 
@@ -376,13 +403,16 @@
                         icon: 'terminal',
                         action: () => {
                             // Create new terminal instance
-                            if (window.TerminalInstanceManager && window.TerminalInstanceManager.createInstance) {
+                            if (
+                                window.TerminalInstanceManager &&
+                                window.TerminalInstanceManager.createInstance
+                            ) {
                                 window.TerminalInstanceManager.createInstance();
                             }
-                        }
+                        },
                     },
                     {
-                        type: 'separator'
+                        type: 'separator',
                     },
                     {
                         id: 'terminal-close',
@@ -390,9 +420,9 @@
                         shortcut: '⌘W',
                         disabled: () => !(context && context.dialog),
                         icon: 'close',
-                        action: () => closeContextWindow(context)
-                    }
-                ]
+                        action: () => closeContextWindow(context),
+                    },
+                ],
             },
             {
                 id: 'edit',
@@ -405,22 +435,29 @@
                         icon: 'clear',
                         action: () => {
                             // Send clear command to active terminal
-                            if (context && context.instanceId && window.TerminalInstanceManager) {
-                                const instance = window.TerminalInstanceManager.getInstance(context.instanceId);
+                            if (
+                                context &&
+                                context.instanceId &&
+                                window.TerminalInstanceManager
+                            ) {
+                                const instance =
+                                    window.TerminalInstanceManager.getInstance(
+                                        context.instanceId,
+                                    );
                                 if (instance && instance.clearOutput) {
                                     instance.clearOutput();
                                 }
                             }
-                        }
-                    }
-                ]
+                        },
+                    },
+                ],
             },
             createWindowMenuSection(context),
             createHelpMenuSection(context, {
                 itemKey: 'menu.terminal.help',
                 infoModalId: 'terminal-modal',
-                itemIcon: 'help'
-            })
+                itemIcon: 'help',
+            }),
         ];
     }
 
@@ -432,7 +469,7 @@
         return {
             id: 'window',
             label: () => translate('menu.sections.window'),
-            items: getWindowMenuItems(context)
+            items: getWindowMenuItems(context),
         };
     }
 
@@ -451,7 +488,7 @@
                     if (dialog && typeof dialog.minimize === 'function') {
                         dialog.minimize();
                     }
-                }
+                },
             },
             {
                 id: 'window-zoom',
@@ -463,8 +500,8 @@
                     if (dialog && typeof dialog.toggleMaximize === 'function') {
                         dialog.toggleMaximize();
                     }
-                }
-            }
+                },
+            },
         ];
 
         // Add multi-instance items if available
@@ -477,7 +514,7 @@
         // Standard window items
         items.push(
             {
-                type: 'separator'
+                type: 'separator',
             },
             {
                 id: 'window-all-front',
@@ -485,11 +522,12 @@
                 disabled: !hasAnyVisibleDialog(),
                 icon: 'windowFront',
                 action: () => {
-                    if (window.bringAllWindowsToFront) window.bringAllWindowsToFront();
-                }
+                    if (window.bringAllWindowsToFront)
+                        window.bringAllWindowsToFront();
+                },
             },
             {
-                type: 'separator'
+                type: 'separator',
             },
             {
                 id: 'window-close',
@@ -497,8 +535,8 @@
                 shortcut: '⌘W',
                 disabled: !hasDialog,
                 icon: 'close',
-                action: () => closeContextWindow(context)
-            }
+                action: () => closeContextWindow(context),
+            },
         );
 
         return items;
@@ -519,10 +557,16 @@
         let manager = null;
         let type = null;
 
-        if (context.modalId === 'terminal-modal' && window.TerminalInstanceManager) {
+        if (
+            context.modalId === 'terminal-modal' &&
+            window.TerminalInstanceManager
+        ) {
             manager = window.TerminalInstanceManager;
             type = 'terminal';
-        } else if (context.modalId === 'text-modal' && window.TextEditorInstanceManager) {
+        } else if (
+            context.modalId === 'text-modal' &&
+            window.TextEditorInstanceManager
+        ) {
             manager = window.TextEditorInstanceManager;
             type = 'text-editor';
         }
@@ -540,9 +584,9 @@
             action: () => {
                 const count = manager.getInstanceCount();
                 manager.createInstance({
-                    title: `${type === 'terminal' ? 'Terminal' : 'Editor'} ${count + 1}`
+                    title: `${type === 'terminal' ? 'Terminal' : 'Editor'} ${count + 1}`,
                 });
-            }
+            },
         });
 
         // List all instances if there are multiple
@@ -551,14 +595,16 @@
             items.push({ type: 'separator' });
 
             instances.forEach((instance, index) => {
-                const isActive = manager.getActiveInstance()?.instanceId === instance.instanceId;
+                const isActive =
+                    manager.getActiveInstance()?.instanceId ===
+                    instance.instanceId;
                 items.push({
                     id: `window-instance-${instance.instanceId}`,
                     label: () => `${isActive ? '✓ ' : '  '}${instance.title}`,
                     shortcut: index < 9 ? `⌘${index + 1}` : undefined,
                     action: () => {
                         manager.setActiveInstance(instance.instanceId);
-                    }
+                    },
                 });
             });
 
@@ -570,11 +616,15 @@
                     label: () => 'Close All',
                     icon: 'close',
                     action: () => {
-                        if (confirm(`Close all ${instances.length} ${type} instances?`)) {
+                        if (
+                            confirm(
+                                `Close all ${instances.length} ${type} instances?`,
+                            )
+                        ) {
                             manager.destroyAllInstances();
                         }
-                    }
-                }
+                    },
+                },
             );
         }
 
@@ -598,9 +648,9 @@
                         if (window.openProgramInfoFromMenu) {
                             window.openProgramInfoFromMenu(infoModalId);
                         }
-                    }
-                }
-            ]
+                    },
+                },
+            ],
         };
     }
 
@@ -610,14 +660,14 @@
 
     const menuDefinitions = {
         default: buildDefaultMenuDefinition,
-        "finder-modal": buildFinderMenuDefinition,
-        "projects-modal": buildFinderMenuDefinition,
-        "settings-modal": buildSettingsMenuDefinition,
-        "text-modal": buildTextEditorMenuDefinition,
-        "image-modal": buildImageViewerMenuDefinition,
-        "about-modal": buildAboutMenuDefinition,
-        "program-info-modal": buildProgramInfoMenuDefinition,
-        "terminal-modal": buildTerminalMenuDefinition
+        'finder-modal': buildFinderMenuDefinition,
+        'projects-modal': buildFinderMenuDefinition,
+        'settings-modal': buildSettingsMenuDefinition,
+        'text-modal': buildTextEditorMenuDefinition,
+        'image-modal': buildImageViewerMenuDefinition,
+        'about-modal': buildAboutMenuDefinition,
+        'program-info-modal': buildProgramInfoMenuDefinition,
+        'terminal-modal': buildTerminalMenuDefinition,
     };
 
     let currentMenuModalId = null;
@@ -626,10 +676,18 @@
         const container = document.getElementById('menubar-links');
         if (!container) return;
 
-        const modalKey = activeModalId && menuDefinitions[activeModalId] ? activeModalId : 'default';
+        const modalKey =
+            activeModalId && menuDefinitions[activeModalId]
+                ? activeModalId
+                : 'default';
         const builder = menuDefinitions[modalKey] || menuDefinitions.default;
         const context = createMenuContext(activeModalId || null);
-        const sections = typeof builder === 'function' ? builder(context) : Array.isArray(builder) ? builder : [];
+        const sections =
+            typeof builder === 'function'
+                ? builder(context)
+                : Array.isArray(builder)
+                    ? builder
+                    : [];
 
         container.innerHTML = '';
         menuActionHandlers.clear();
@@ -654,7 +712,10 @@
             button.className = 'menubar-item';
             button.dataset.menubarTriggerButton = 'true';
 
-            const label = typeof section.label === 'function' ? section.label(context) : section.label;
+            const label =
+                typeof section.label === 'function'
+                    ? section.label(context)
+                    : section.label;
             button.textContent = label || '';
 
             const sectionId = section.id || `section-${sectionIndex}`;
@@ -672,7 +733,7 @@
             dropdown.setAttribute('role', 'menu');
             dropdown.setAttribute('aria-labelledby', buttonId);
 
-            items.forEach(item => {
+            items.forEach((item) => {
                 if (item.type === 'separator') {
                     const separator = document.createElement('li');
                     separator.className = 'menu-separator';
@@ -699,7 +760,12 @@
                     }
                 }
 
-                const itemLabel = item.label != null ? (typeof item.label === 'function' ? item.label(context) : item.label) : '';
+                const itemLabel =
+                    item.label != null
+                        ? typeof item.label === 'function'
+                            ? item.label(context)
+                            : item.label
+                        : '';
 
                 const labelSpan = document.createElement('span');
                 labelSpan.className = 'menu-item-label';
@@ -708,9 +774,15 @@
                 if (item.icon && window.IconSystem) {
                     const iconSpan = document.createElement('span');
                     iconSpan.className = 'menu-item-icon';
-                    const iconSvg = window.IconSystem.getMenuIconSvg ? window.IconSystem.getMenuIconSvg(item.icon) : '';
+                    const iconSvg = window.IconSystem.getMenuIconSvg
+                        ? window.IconSystem.getMenuIconSvg(item.icon)
+                        : '';
                     if (window.IconSystem.renderIconIntoElement) {
-                        window.IconSystem.renderIconIntoElement(iconSpan, iconSvg, item.icon);
+                        window.IconSystem.renderIconIntoElement(
+                            iconSpan,
+                            iconSvg,
+                            item.icon,
+                        );
                     }
                     labelSpan.appendChild(iconSpan);
                 }
@@ -773,7 +845,10 @@
     }
 
     function handleMenuActionActivation(event) {
-        const target = event.target instanceof Element ? event.target.closest('[data-menu-action]') : null;
+        const target =
+            event.target instanceof Element
+                ? event.target.closest('[data-menu-action]')
+                : null;
         if (!target) return;
 
         const actionId = target.getAttribute('data-menu-action');
@@ -806,7 +881,9 @@
 
     function hasAnyVisibleDialog() {
         if (!window.dialogs) return false;
-        return Object.values(window.dialogs).some(d => d && d.isOpen && d.isOpen());
+        return Object.values(window.dialogs).some(
+            (d) => d && d.isOpen && d.isOpen(),
+        );
     }
 
     function sendTextEditorMenuAction(actionType) {
@@ -840,9 +917,8 @@
         renderApplicationMenu,
         handleMenuActionActivation,
         menuDefinitions,
-        getCurrentMenuModalId: () => currentMenuModalId
+        getCurrentMenuModalId: () => currentMenuModalId,
     };
 
     console.log('✅ MenuSystem loaded');
-
 })();

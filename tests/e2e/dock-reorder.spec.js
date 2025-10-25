@@ -1,16 +1,23 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
-const { getDockOrder, dragAfter, dragBefore, expectOrderContains } = require('./utils');
+const { test, expect } = require("@playwright/test");
+const {
+    getDockOrder,
+    dragAfter,
+    dragBefore,
+    expectOrderContains,
+} = require("./utils");
 
-test.describe('Dock Drag & Drop Reordering', () => {
+test.describe("Dock Drag & Drop Reordering", () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
-        await page.waitForSelector('#dock .dock-tray .dock-item');
+        await page.goto("/");
+        await page.waitForSelector("#dock .dock-tray .dock-item");
     });
 
-    test('verschiebe Finder hinter Texteditor und persistiere über Reload', async ({ page }) => {
-        const finder = 'finder-modal';
-        const text = 'text-modal';
+    test("verschiebe Finder hinter Texteditor und persistiere über Reload", async ({
+        page,
+    }) => {
+        const finder = "finder-modal";
+        const text = "text-modal";
 
         const initial = await getDockOrder(page);
         // Wenn bereits in dieser Reihenfolge, tausche erst zurück
@@ -29,14 +36,16 @@ test.describe('Dock Drag & Drop Reordering', () => {
 
         // Nach Reload bleibt Reihenfolge stabil
         await page.reload();
-        await page.waitForSelector('#dock .dock-tray .dock-item');
+        await page.waitForSelector("#dock .dock-tray .dock-item");
         const afterReload = await getDockOrder(page);
         expect(afterReload).toEqual(after);
     });
 
-    test('kann letztes Icon (Einstellungen) nach ganz vorne ziehen', async ({ page }) => {
+    test("kann letztes Icon (Einstellungen) nach ganz vorne ziehen", async ({
+        page,
+    }) => {
         const firstId = (await getDockOrder(page))[0];
-        const settings = 'settings-modal';
+        const settings = "settings-modal";
 
         // Ziehe Settings vor erstes Icon
         await dragBefore(page, settings, firstId);
@@ -45,7 +54,10 @@ test.describe('Dock Drag & Drop Reordering', () => {
         expect(order[0]).toBe(settings);
 
         // Wieder zurück ans Ende, um Seiteneffekte zu vermeiden
-        const lastTarget = order[order.length - 1] === settings ? order[order.length - 2] : order[order.length - 1];
+        const lastTarget =
+            order[order.length - 1] === settings
+                ? order[order.length - 2]
+                : order[order.length - 1];
         await dragAfter(page, settings, lastTarget);
     });
 });

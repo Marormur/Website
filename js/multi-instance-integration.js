@@ -2,7 +2,7 @@ console.log('MultiInstanceIntegration loaded');
 
 /**
  * Multi-Instance Modal Integration
- * 
+ *
  * Integrates the tab system with existing modals (Terminal, TextEditor)
  * Wires up keyboard shortcuts and session management
  */
@@ -44,8 +44,14 @@ console.log('MultiInstanceIntegration loaded');
             console.log('MultiInstanceIntegration: Setting up...');
 
             // Check if required dependencies are available
-            if (!window.InstanceManager || !window.WindowTabManager || !window.KeyboardShortcuts) {
-                console.error('MultiInstanceIntegration: Required dependencies not loaded');
+            if (
+                !window.InstanceManager ||
+                !window.WindowTabManager ||
+                !window.KeyboardShortcuts
+            ) {
+                console.error(
+                    'MultiInstanceIntegration: Required dependencies not loaded',
+                );
                 return;
             }
 
@@ -67,10 +73,16 @@ console.log('MultiInstanceIntegration loaded');
             // Register managers with session manager
             if (window.SessionManager) {
                 if (window.TerminalInstanceManager) {
-                    window.SessionManager.registerManager('terminal', window.TerminalInstanceManager);
+                    window.SessionManager.registerManager(
+                        'terminal',
+                        window.TerminalInstanceManager,
+                    );
                 }
                 if (window.TextEditorInstanceManager) {
-                    window.SessionManager.registerManager('text-editor', window.TextEditorInstanceManager);
+                    window.SessionManager.registerManager(
+                        'text-editor',
+                        window.TextEditorInstanceManager,
+                    );
                 }
                 if (window.FinderInstanceManager) {
                     window.SessionManager.registerManager('finder', window.FinderInstanceManager);
@@ -96,7 +108,9 @@ console.log('MultiInstanceIntegration loaded');
                 instanceManager: window.TerminalInstanceManager,
                 onTabSwitch: (instanceId) => {
                     // Set as active in manager first
-                    window.TerminalInstanceManager.setActiveInstance(instanceId);
+                    window.TerminalInstanceManager.setActiveInstance(
+                        instanceId,
+                    );
                     // Then show/hide instances
                     this.showInstance('terminal', instanceId);
                 },
@@ -105,33 +119,39 @@ console.log('MultiInstanceIntegration loaded');
                 },
                 onNewTab: () => {
                     // Create a new terminal instance
-                    const count = window.TerminalInstanceManager.getInstanceCount();
+                    const count =
+                        window.TerminalInstanceManager.getInstanceCount();
                     window.TerminalInstanceManager.createInstance({
-                        title: `Terminal ${count + 1}`
+                        title: `Terminal ${count + 1}`,
                     });
-                }
+                },
             });
 
             // Register keyboard shortcuts for Terminal
-            this.registerShortcutsForType('terminal', window.TerminalInstanceManager);
+            this.registerShortcutsForType(
+                'terminal',
+                window.TerminalInstanceManager,
+            );
 
             // Store integration info
             this.integrations.set('terminal', {
                 manager: window.TerminalInstanceManager,
                 tabManager: terminalTabManager,
                 modalId: 'terminal-modal',
-                containerId: 'terminal-container'
+                containerId: 'terminal-container',
             });
 
             // Add tabs for any existing instances
-            const existingTerminals = window.TerminalInstanceManager.getAllInstances();
-            existingTerminals.forEach(instance => {
+            const existingTerminals =
+                window.TerminalInstanceManager.getAllInstances();
+            existingTerminals.forEach((instance) => {
                 terminalTabManager.addTab(instance);
             });
 
             // Show the active instance if any exist
             if (existingTerminals.length > 0) {
-                const activeInstance = window.TerminalInstanceManager.getActiveInstance();
+                const activeInstance =
+                    window.TerminalInstanceManager.getActiveInstance();
                 if (activeInstance) {
                     this.showInstance('terminal', activeInstance.instanceId);
                 }
@@ -153,7 +173,9 @@ console.log('MultiInstanceIntegration loaded');
                 instanceManager: window.TextEditorInstanceManager,
                 onTabSwitch: (instanceId) => {
                     // Set as active in manager first
-                    window.TextEditorInstanceManager.setActiveInstance(instanceId);
+                    window.TextEditorInstanceManager.setActiveInstance(
+                        instanceId,
+                    );
                     // Then show/hide instances
                     this.showInstance('text-editor', instanceId);
                 },
@@ -162,33 +184,39 @@ console.log('MultiInstanceIntegration loaded');
                 },
                 onNewTab: () => {
                     // Create a new text editor instance
-                    const count = window.TextEditorInstanceManager.getInstanceCount();
+                    const count =
+                        window.TextEditorInstanceManager.getInstanceCount();
                     window.TextEditorInstanceManager.createInstance({
-                        title: `Editor ${count + 1}`
+                        title: `Editor ${count + 1}`,
                     });
-                }
+                },
             });
 
             // Register keyboard shortcuts for Text Editor
-            this.registerShortcutsForType('text-editor', window.TextEditorInstanceManager);
+            this.registerShortcutsForType(
+                'text-editor',
+                window.TextEditorInstanceManager,
+            );
 
             // Store integration info
             this.integrations.set('text-editor', {
                 manager: window.TextEditorInstanceManager,
                 tabManager: editorTabManager,
                 modalId: 'text-modal',
-                containerId: 'text-editor-container'
+                containerId: 'text-editor-container',
             });
 
             // Add tabs for any existing instances
-            const existingEditors = window.TextEditorInstanceManager.getAllInstances();
-            existingEditors.forEach(instance => {
+            const existingEditors =
+                window.TextEditorInstanceManager.getAllInstances();
+            existingEditors.forEach((instance) => {
                 editorTabManager.addTab(instance);
             });
 
             // Show the active instance if any exist
             if (existingEditors.length > 0) {
-                const activeInstance = window.TextEditorInstanceManager.getActiveInstance();
+                const activeInstance =
+                    window.TextEditorInstanceManager.getActiveInstance();
                 if (activeInstance) {
                     this.showInstance('text-editor', activeInstance.instanceId);
                 }
@@ -272,7 +300,7 @@ console.log('MultiInstanceIntegration loaded');
                 if (instance) {
                     // Add tab for this instance
                     tabManager.addTab(instance);
-                    
+
                     // Show/hide instances based on active state
                     this.updateInstanceVisibility(type);
                 }
@@ -290,7 +318,7 @@ console.log('MultiInstanceIntegration loaded');
             if (!integration) return;
 
             const instances = integration.manager.getAllInstances();
-            instances.forEach(instance => {
+            instances.forEach((instance) => {
                 if (instance.instanceId === instanceId) {
                     instance.show();
                 } else {
@@ -327,12 +355,12 @@ console.log('MultiInstanceIntegration loaded');
                     const activeInstance = manager.getActiveInstance();
                     if (activeInstance && activeInstance.isVisible) {
                         manager.createInstance({
-                            title: `${type} ${manager.getInstanceCount() + 1}`
+                            title: `${type} ${manager.getInstanceCount() + 1}`,
                         });
                     }
                 },
                 description: `New ${type} instance`,
-                context: type
+                context: type,
             });
 
             // Cmd/Ctrl+W - Close instance
@@ -353,7 +381,7 @@ console.log('MultiInstanceIntegration loaded');
                     }
                 },
                 description: `Close ${type} instance`,
-                context: type
+                context: type,
             });
 
             // Cmd/Ctrl+Tab - Next tab
@@ -363,15 +391,17 @@ console.log('MultiInstanceIntegration loaded');
                 handler: () => {
                     const instances = manager.getAllInstances();
                     const activeInstance = manager.getActiveInstance();
-                    
+
                     if (instances.length <= 1 || !activeInstance) return;
-                    
-                    const currentIndex = instances.findIndex(i => i.instanceId === activeInstance.instanceId);
+
+                    const currentIndex = instances.findIndex(
+                        (i) => i.instanceId === activeInstance.instanceId,
+                    );
                     const nextIndex = (currentIndex + 1) % instances.length;
                     manager.setActiveInstance(instances[nextIndex].instanceId);
                 },
                 description: `Next ${type} tab`,
-                context: type
+                context: type,
             });
 
             // Cmd/Ctrl+Shift+Tab - Previous tab
@@ -382,15 +412,19 @@ console.log('MultiInstanceIntegration loaded');
                 handler: () => {
                     const instances = manager.getAllInstances();
                     const activeInstance = manager.getActiveInstance();
-                    
+
                     if (instances.length <= 1 || !activeInstance) return;
-                    
-                    const currentIndex = instances.findIndex(i => i.instanceId === activeInstance.instanceId);
-                    const prevIndex = (currentIndex - 1 + instances.length) % instances.length;
+
+                    const currentIndex = instances.findIndex(
+                        (i) => i.instanceId === activeInstance.instanceId,
+                    );
+                    const prevIndex =
+                        (currentIndex - 1 + instances.length) %
+                        instances.length;
                     manager.setActiveInstance(instances[prevIndex].instanceId);
                 },
                 description: `Previous ${type} tab`,
-                context: type
+                context: type,
             });
 
             // Cmd/Ctrl+1-9 - Jump to specific tab
@@ -401,11 +435,13 @@ console.log('MultiInstanceIntegration loaded');
                     handler: () => {
                         const instances = manager.getAllInstances();
                         if (instances[i - 1]) {
-                            manager.setActiveInstance(instances[i - 1].instanceId);
+                            manager.setActiveInstance(
+                                instances[i - 1].instanceId,
+                            );
                         }
                     },
                     description: `Jump to ${type} tab ${i}`,
-                    context: type
+                    context: type,
                 });
             }
         }
@@ -428,5 +464,4 @@ console.log('MultiInstanceIntegration loaded');
 
     // Auto-initialize
     integration.init();
-
 })();

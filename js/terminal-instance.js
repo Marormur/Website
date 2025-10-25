@@ -2,7 +2,7 @@ console.log('TerminalInstance loaded');
 
 /**
  * TerminalInstance - Multi-Instance fähige Terminal-Implementierung
- * 
+ *
  * Beispiel-Implementierung basierend auf BaseWindowInstance
  * Zeigt, wie man ein bestehendes Modul für Multi-Instance umbauen kann
  */
@@ -17,7 +17,7 @@ console.log('TerminalInstance loaded');
         constructor(config) {
             super({
                 ...config,
-                type: 'terminal'
+                type: 'terminal',
             });
 
             // Terminal-specific state
@@ -32,20 +32,24 @@ console.log('TerminalInstance loaded');
                 '~': {
                     type: 'directory',
                     contents: {
-                        'Desktop': { type: 'directory', contents: {} },
-                        'Documents': {
+                        Desktop: { type: 'directory', contents: {} },
+                        Documents: {
                             type: 'directory',
                             contents: {
-                                'readme.txt': { type: 'file', content: 'Willkommen im Terminal!' }
-                            }
+                                'readme.txt': {
+                                    type: 'file',
+                                    content: 'Willkommen im Terminal!',
+                                },
+                            },
                         },
-                        'Downloads': { type: 'directory', contents: {} },
+                        Downloads: { type: 'directory', contents: {} },
                         'welcome.txt': {
                             type: 'file',
-                            content: 'Willkommen auf Marvins Portfolio-Website!\n\nGib "help" ein, um eine Liste verfügbarer Befehle zu sehen.'
-                        }
-                    }
-                }
+                            content:
+                                'Willkommen auf Marvins Portfolio-Website!\n\nGib "help" ein, um eine Liste verfügbarer Befehle zu sehen.',
+                        },
+                    },
+                },
             };
         }
 
@@ -58,7 +62,7 @@ console.log('TerminalInstance loaded');
                 ...super._initializeState(initialState),
                 currentPath: initialState.currentPath || '~',
                 commandHistory: initialState.commandHistory || [],
-                output: initialState.output || []
+                output: initialState.output || [],
             };
         }
 
@@ -88,8 +92,12 @@ console.log('TerminalInstance loaded');
             `;
 
             this.container.innerHTML = html;
-            this.outputElement = this.container.querySelector('[data-terminal-output]');
-            this.inputElement = this.container.querySelector('[data-terminal-input]');
+            this.outputElement = this.container.querySelector(
+                '[data-terminal-output]',
+            );
+            this.inputElement = this.container.querySelector(
+                '[data-terminal-input]',
+            );
         }
 
         /**
@@ -107,7 +115,9 @@ console.log('TerminalInstance loaded');
                         this.executeCommand(command);
                         this.commandHistory.push(command);
                         this.historyIndex = this.commandHistory.length;
-                        this.updateState({ commandHistory: this.commandHistory });
+                        this.updateState({
+                            commandHistory: this.commandHistory,
+                        });
                     }
                     this.inputElement.value = '';
                     this.inputElement.focus();
@@ -118,13 +128,15 @@ console.log('TerminalInstance loaded');
                     e.preventDefault();
                     if (this.historyIndex > 0) {
                         this.historyIndex--;
-                        this.inputElement.value = this.commandHistory[this.historyIndex];
+                        this.inputElement.value =
+                            this.commandHistory[this.historyIndex];
                     }
                 } else if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     if (this.historyIndex < this.commandHistory.length - 1) {
                         this.historyIndex++;
-                        this.inputElement.value = this.commandHistory[this.historyIndex];
+                        this.inputElement.value =
+                            this.commandHistory[this.historyIndex];
                     } else {
                         this.historyIndex = this.commandHistory.length;
                         this.inputElement.value = '';
@@ -137,7 +149,10 @@ console.log('TerminalInstance loaded');
          * Show welcome message
          */
         showWelcomeMessage() {
-            this.addOutput('Willkommen im Terminal! Gib "help" ein für verfügbare Befehle.', 'info');
+            this.addOutput(
+                'Willkommen im Terminal! Gib "help" ein für verfügbare Befehle.',
+                'info',
+            );
         }
 
         /**
@@ -150,18 +165,33 @@ console.log('TerminalInstance loaded');
             const [partialCmd, ...args] = input.split(' ');
 
             // Liste aller verfügbaren Befehle
-            const availableCommands = ['help', 'clear', 'ls', 'pwd', 'cd', 'cat', 'echo', 'date', 'whoami'];
+            const availableCommands = [
+                'help',
+                'clear',
+                'ls',
+                'pwd',
+                'cd',
+                'cat',
+                'echo',
+                'date',
+                'whoami',
+            ];
 
             // Wenn noch kein Leerzeichen eingegeben wurde, vervollständige den Befehl
             if (args.length === 0) {
-                const matches = availableCommands.filter(cmd => cmd.startsWith(partialCmd));
+                const matches = availableCommands.filter((cmd) =>
+                    cmd.startsWith(partialCmd),
+                );
 
                 if (matches.length === 1) {
                     // Exakte Übereinstimmung gefunden - vervollständige
                     this.inputElement.value = matches[0] + ' ';
                 } else if (matches.length > 1) {
                     // Mehrere Übereinstimmungen - zeige Optionen
-                    this.addOutput(`guest@marvin:${this.currentPath}$ ${input}`, 'command');
+                    this.addOutput(
+                        `guest@marvin:${this.currentPath}$ ${input}`,
+                        'command',
+                    );
                     this.addOutput(matches.join('  '), 'info');
 
                     // Finde gemeinsamen Präfix
@@ -212,19 +242,21 @@ console.log('TerminalInstance loaded');
             let matches;
             if (cmd === 'cd') {
                 // Nur Verzeichnisse für cd
-                matches = items.filter(item =>
-                    currentDir.contents[item].type === 'directory' &&
-                    item.startsWith(partial)
+                matches = items.filter(
+                    (item) =>
+                        currentDir.contents[item].type === 'directory' &&
+                        item.startsWith(partial),
                 );
             } else if (cmd === 'cat') {
                 // Nur Dateien für cat
-                matches = items.filter(item =>
-                    currentDir.contents[item].type === 'file' &&
-                    item.startsWith(partial)
+                matches = items.filter(
+                    (item) =>
+                        currentDir.contents[item].type === 'file' &&
+                        item.startsWith(partial),
                 );
             } else {
                 // Alles
-                matches = items.filter(item => item.startsWith(partial));
+                matches = items.filter((item) => item.startsWith(partial));
             }
 
             if (matches.length === 1) {
@@ -232,10 +264,13 @@ console.log('TerminalInstance loaded');
                 this.inputElement.value = `${cmd} ${matches[0]}`;
             } else if (matches.length > 1) {
                 // Mehrere Übereinstimmungen - zeige Optionen
-                this.addOutput(`guest@marvin:${this.currentPath}$ ${this.inputElement.value}`, 'command');
+                this.addOutput(
+                    `guest@marvin:${this.currentPath}$ ${this.inputElement.value}`,
+                    'command',
+                );
 
                 // Zeige mit Icon-Präfix (wie ls)
-                const formatted = matches.map(item => {
+                const formatted = matches.map((item) => {
                     const itemObj = currentDir.contents[item];
                     const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
                     return prefix + item;
@@ -255,7 +290,10 @@ console.log('TerminalInstance loaded');
          * @param {string} command
          */
         executeCommand(command) {
-            this.addOutput(`guest@marvin:${this.currentPath}$ ${command}`, 'command');
+            this.addOutput(
+                `guest@marvin:${this.currentPath}$ ${command}`,
+                'command',
+            );
 
             const [cmd, ...args] = command.split(' ');
 
@@ -268,13 +306,16 @@ console.log('TerminalInstance loaded');
                 cat: () => this.catFile(args[0]),
                 echo: () => this.echo(args.join(' ')),
                 date: () => this.showDate(),
-                whoami: () => this.addOutput('guest', 'output')
+                whoami: () => this.addOutput('guest', 'output'),
             };
 
             if (commands[cmd]) {
                 commands[cmd]();
             } else {
-                this.addOutput(`Befehl nicht gefunden: ${cmd}. Gib "help" ein für verfügbare Befehle.`, 'error');
+                this.addOutput(
+                    `Befehl nicht gefunden: ${cmd}. Gib "help" ein für verfügbare Befehle.`,
+                    'error',
+                );
             }
         }
 
@@ -293,7 +334,7 @@ console.log('TerminalInstance loaded');
                 command: 'text-blue-400',
                 output: 'text-green-400',
                 error: 'text-red-400',
-                info: 'text-yellow-400'
+                info: 'text-yellow-400',
             };
 
             line.className += ` ${colorMap[type] || 'text-green-400'}`;
@@ -338,10 +379,10 @@ console.log('TerminalInstance loaded');
                 '',
                 'Tipps:',
                 '  ↑/↓          - Durchsuche Befehlshistorie',
-                '  Tab          - Vervollständige Befehle und Pfade'
+                '  Tab          - Vervollständige Befehle und Pfade',
             ];
 
-            helpText.forEach(line => this.addOutput(line, 'info'));
+            helpText.forEach((line) => this.addOutput(line, 'info'));
         }
 
         /**
@@ -350,16 +391,24 @@ console.log('TerminalInstance loaded');
          */
         listDirectory(path) {
             // Resolve the path to list
-            const targetPath = path ? this.normalizePath(path) : this.currentPath;
+            const targetPath = path
+                ? this.normalizePath(path)
+                : this.currentPath;
             const targetDir = this.resolvePath(targetPath);
 
             if (!targetDir) {
-                this.addOutput(`Verzeichnis nicht gefunden: ${path || targetPath}`, 'error');
+                this.addOutput(
+                    `Verzeichnis nicht gefunden: ${path || targetPath}`,
+                    'error',
+                );
                 return;
             }
 
             if (targetDir.type !== 'directory') {
-                this.addOutput(`${path || targetPath} ist kein Verzeichnis`, 'error');
+                this.addOutput(
+                    `${path || targetPath} ist kein Verzeichnis`,
+                    'error',
+                );
                 return;
             }
 
@@ -367,7 +416,7 @@ console.log('TerminalInstance loaded');
             if (items.length === 0) {
                 this.addOutput('(leer)', 'output');
             } else {
-                items.forEach(item => {
+                items.forEach((item) => {
                     const itemObj = targetDir.contents[item];
                     const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
                     this.addOutput(prefix + item, 'output');
@@ -427,19 +476,28 @@ console.log('TerminalInstance loaded');
             if (filename.includes('/')) {
                 // It's a path - resolve it
                 const normalizedPath = this.normalizePath(filename);
-                const pathParts = normalizedPath.split('/').filter(p => p !== '');
+                const pathParts = normalizedPath
+                    .split('/')
+                    .filter((p) => p !== '');
                 fileName = pathParts.pop();
-                const dirPath = pathParts.length > 0 ? pathParts.join('/') : '~';
+                const dirPath =
+                    pathParts.length > 0 ? pathParts.join('/') : '~';
 
                 const dir = this.resolvePath(dirPath);
                 if (!dir) {
-                    this.addOutput(`Verzeichnis nicht gefunden: ${dirPath}`, 'error');
+                    this.addOutput(
+                        `Verzeichnis nicht gefunden: ${dirPath}`,
+                        'error',
+                    );
                     return;
                 }
 
                 const file = dir.contents?.[fileName];
                 if (!file) {
-                    this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
+                    this.addOutput(
+                        `Datei nicht gefunden: ${filename}`,
+                        'error',
+                    );
                 } else if (file.type !== 'file') {
                     this.addOutput(`${filename} ist keine Datei`, 'error');
                 } else {
@@ -451,7 +509,10 @@ console.log('TerminalInstance loaded');
                 const file = currentDir?.contents?.[filename];
 
                 if (!file) {
-                    this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
+                    this.addOutput(
+                        `Datei nicht gefunden: ${filename}`,
+                        'error',
+                    );
                 } else if (file.type !== 'file') {
                     this.addOutput(`${filename} ist keine Datei`, 'error');
                 } else {
@@ -521,13 +582,18 @@ console.log('TerminalInstance loaded');
             }
 
             // Split into parts and resolve . and ..
-            const parts = workingPath.split('/').filter(p => p !== '' && p !== '.');
+            const parts = workingPath
+                .split('/')
+                .filter((p) => p !== '' && p !== '.');
             const resolved = [];
 
             for (const part of parts) {
                 if (part === '..') {
                     // Go up one directory (but not above ~)
-                    if (resolved.length > 0 && resolved[resolved.length - 1] !== '~') {
+                    if (
+                        resolved.length > 0 &&
+                        resolved[resolved.length - 1] !== '~'
+                    ) {
                         resolved.pop();
                     }
                 } else {
@@ -536,7 +602,10 @@ console.log('TerminalInstance loaded');
             }
 
             // Build final path
-            if (resolved.length === 0 || (resolved.length === 1 && resolved[0] === '~')) {
+            if (
+                resolved.length === 0 ||
+                (resolved.length === 1 && resolved[0] === '~')
+            ) {
                 return '~';
             }
 
@@ -568,7 +637,7 @@ console.log('TerminalInstance loaded');
                 ...super.serialize(),
                 currentPath: this.currentPath,
                 commandHistory: this.commandHistory,
-                fileSystem: this.fileSystem
+                fileSystem: this.fileSystem,
             };
         }
 
@@ -616,23 +685,23 @@ console.log('TerminalInstance loaded');
             maxInstances: 0, // Unlimited
             createContainer: function (instanceId) {
                 // Create container and append to terminal modal container
-                const terminalModalContainer = document.getElementById('terminal-container');
+                const terminalModalContainer =
+                    document.getElementById('terminal-container');
                 if (!terminalModalContainer) {
                     console.error('Terminal container not found');
                     return null;
                 }
-                
+
                 const container = document.createElement('div');
                 container.id = `${instanceId}-container`;
                 container.className = 'terminal-instance-container h-full';
-                
+
                 // Initially hidden (will be shown by integration layer)
                 container.classList.add('hidden');
-                
+
                 terminalModalContainer.appendChild(container);
                 return container;
-            }
+            },
         });
     }
-
 })();

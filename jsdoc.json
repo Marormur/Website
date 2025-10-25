@@ -1,0 +1,17 @@
+{
+  "plugins": [],
+  "source": {
+    "include": ["js"],
+    "includePattern": ".*\\.js$",
+    "excludePattern": "(node_modules|docs/api)"
+  },
+  "opts": {
+    "encoding": "utf8",
+    "destination": "docs/api",
+    "recurse": true
+  },
+  "templates": {
+    "cleverLinks": true,
+    "monospaceLinks": true
+  }
+}

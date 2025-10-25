@@ -27,14 +27,17 @@
                 if (typeof window.showTab === 'function') {
                     window.showTab('finder');
                 }
-                if (window.FinderSystem && typeof window.FinderSystem.navigateTo === 'function') {
+                if (
+                    window.FinderSystem &&
+                    typeof window.FinderSystem.navigateTo === 'function'
+                ) {
                     // Root-Pfad, explizit View 'github'
                     window.FinderSystem.navigateTo([], 'github');
                 }
                 // Menü und Dock-Indikatoren werden innerhalb der Dialog-/App-Logik bereits aktualisiert
                 return true;
-            }
-        }
+            },
+        },
     ];
 
     const desktopItemsById = new Map();
@@ -45,10 +48,16 @@
     let desktopSuppressBackgroundClick = false;
 
     function updateDesktopSelectionUI() {
-        if (desktopLastFocusedIndex >= 0 && DESKTOP_ITEMS[desktopLastFocusedIndex]) {
+        if (
+            desktopLastFocusedIndex >= 0 &&
+            DESKTOP_ITEMS[desktopLastFocusedIndex]
+        ) {
             desktopSelectedItemId = DESKTOP_ITEMS[desktopLastFocusedIndex].id;
         } else {
-            desktopSelectedItemId = desktopSelectedIds.size === 1 ? Array.from(desktopSelectedIds)[0] : null;
+            desktopSelectedItemId =
+                desktopSelectedIds.size === 1
+                    ? Array.from(desktopSelectedIds)[0]
+                    : null;
         }
         desktopButtons.forEach((btn, id) => {
             if (desktopSelectedIds.has(id)) {
@@ -61,8 +70,12 @@
         });
     }
 
-    function getDesktopAreaElement() { return document.getElementById('desktop'); }
-    function getDesktopContainerElement() { return document.getElementById('desktop-icons'); }
+    function getDesktopAreaElement() {
+        return document.getElementById('desktop');
+    }
+    function getDesktopContainerElement() {
+        return document.getElementById('desktop-icons');
+    }
 
     function createDesktopButton(item, index) {
         const button = document.createElement('button');
@@ -108,8 +121,16 @@
                 delete button.dataset.activePointerType;
             }
         });
-        button.addEventListener('touchstart', () => { button.dataset.activePointerType = 'touch'; }, { passive: true });
-        button.addEventListener('mousedown', () => { button.dataset.activePointerType = 'mouse'; });
+        button.addEventListener(
+            'touchstart',
+            () => {
+                button.dataset.activePointerType = 'touch';
+            },
+            { passive: true },
+        );
+        button.addEventListener('mousedown', () => {
+            button.dataset.activePointerType = 'mouse';
+        });
 
         button.addEventListener('click', (event) => {
             event.preventDefault();
@@ -121,13 +142,15 @@
                 const start = Math.min(desktopLastFocusedIndex, index);
                 const end = Math.max(desktopLastFocusedIndex, index);
                 for (let i = start; i <= end; i++) {
-                    const id = (DESKTOP_ITEMS[i] && DESKTOP_ITEMS[i].id) || null;
+                    const id =
+                        (DESKTOP_ITEMS[i] && DESKTOP_ITEMS[i].id) || null;
                     if (id) desktopSelectedIds.add(id);
                 }
                 desktopLastFocusedIndex = index;
                 updateDesktopSelectionUI();
             } else if (isMeta) {
-                if (desktopSelectedIds.has(item.id)) desktopSelectedIds.delete(item.id);
+                if (desktopSelectedIds.has(item.id))
+                    desktopSelectedIds.delete(item.id);
                 else desktopSelectedIds.add(item.id);
                 desktopLastFocusedIndex = index;
                 updateDesktopSelectionUI();
@@ -139,15 +162,21 @@
             }
 
             const pointerType = button.dataset.activePointerType || '';
-            const shouldOpenOnSingleTap = pointerType === 'touch' || pointerType === 'pen';
-            if (shouldOpenOnSingleTap || (typeof event.detail === 'number' && event.detail >= 2)) {
+            const shouldOpenOnSingleTap =
+                pointerType === 'touch' || pointerType === 'pen';
+            if (
+                shouldOpenOnSingleTap ||
+                (typeof event.detail === 'number' && event.detail >= 2)
+            ) {
                 openDesktopItemById(item.id);
             }
             delete button.dataset.activePointerType;
         });
 
         button.addEventListener('keydown', handleDesktopKeydown);
-        button.addEventListener('focus', () => { selectDesktopItem(item.id, { focus: false }); });
+        button.addEventListener('focus', () => {
+            selectDesktopItem(item.id, { focus: false });
+        });
 
         return button;
     }
@@ -164,7 +193,10 @@
             desktopButtons.set(item.id, button);
             container.appendChild(button);
         });
-        if (global.appI18n && typeof global.appI18n.applyTranslations === 'function') {
+        if (
+            global.appI18n &&
+            typeof global.appI18n.applyTranslations === 'function'
+        ) {
             global.appI18n.applyTranslations(container);
         }
     }
@@ -175,31 +207,45 @@
             if (focus && desktopButtons.has(itemId)) {
                 const btn = desktopButtons.get(itemId);
                 if (typeof btn.focus === 'function') {
-                    try { btn.focus({ preventScroll: true }); } catch (err) { btn.focus(); }
+                    try {
+                        btn.focus({ preventScroll: true });
+                    } catch (err) {
+                        btn.focus();
+                    }
                 }
             }
             return;
         }
-        if (desktopSelectedItemId && desktopButtons.has(desktopSelectedItemId)) {
+        if (
+            desktopSelectedItemId &&
+            desktopButtons.has(desktopSelectedItemId)
+        ) {
             const previousButton = desktopButtons.get(desktopSelectedItemId);
             previousButton.removeAttribute('data-selected');
             previousButton.setAttribute('aria-selected', 'false');
         }
         desktopSelectedIds.clear();
         if (itemId) desktopSelectedIds.add(itemId);
-        desktopLastFocusedIndex = DESKTOP_ITEMS.findIndex(entry => entry.id === itemId);
+        desktopLastFocusedIndex = DESKTOP_ITEMS.findIndex(
+            (entry) => entry.id === itemId,
+        );
         updateDesktopSelectionUI();
         if (focus && itemId && desktopButtons.has(itemId)) {
             const nextButton = desktopButtons.get(itemId);
             if (typeof nextButton.focus === 'function') {
-                try { nextButton.focus({ preventScroll: true }); } catch (err) { nextButton.focus(); }
+                try {
+                    nextButton.focus({ preventScroll: true });
+                } catch (err) {
+                    nextButton.focus();
+                }
             }
         }
     }
 
     function clearDesktopSelection(options = {}) {
         const { blur = false } = options;
-        const hadSelection = desktopSelectedIds.size > 0 || desktopSelectedItemId != null;
+        const hadSelection =
+            desktopSelectedIds.size > 0 || desktopSelectedItemId != null;
         desktopSelectedIds.clear();
         desktopLastFocusedIndex = -1;
         desktopSelectedItemId = null;
@@ -209,7 +255,9 @@
         });
         if (!hadSelection) return;
         if (blur) {
-            const prev = document.querySelector('.desktop-icon-button[aria-selected="true"]');
+            const prev = document.querySelector(
+                '.desktop-icon-button[aria-selected="true"]',
+            );
             if (prev && typeof prev.blur === 'function') prev.blur();
         }
     }
@@ -226,14 +274,19 @@
     function moveDesktopSelection(offset) {
         if (!offset) return;
         if (!Array.isArray(DESKTOP_ITEMS) || DESKTOP_ITEMS.length === 0) return;
-        const currentIndex = desktopSelectedItemId ? DESKTOP_ITEMS.findIndex(entry => entry.id === desktopSelectedItemId) : -1;
+        const currentIndex = desktopSelectedItemId
+            ? DESKTOP_ITEMS.findIndex(
+                (entry) => entry.id === desktopSelectedItemId,
+            )
+            : -1;
         let targetIndex;
         if (currentIndex === -1) {
             targetIndex = offset > 0 ? 0 : DESKTOP_ITEMS.length - 1;
         } else {
             targetIndex = currentIndex + offset;
             if (targetIndex < 0) targetIndex = 0;
-            if (targetIndex >= DESKTOP_ITEMS.length) targetIndex = DESKTOP_ITEMS.length - 1;
+            if (targetIndex >= DESKTOP_ITEMS.length)
+                targetIndex = DESKTOP_ITEMS.length - 1;
         }
         focusDesktopItemByIndex(targetIndex);
     }
@@ -243,12 +296,19 @@
         if (typeof item.onOpen === 'function') return !!item.onOpen(item);
         if (item.modalId) {
             const dialog = global.dialogs && global.dialogs[item.modalId];
-            if (dialog && typeof dialog.open === 'function') { dialog.open(); return true; }
+            if (dialog && typeof dialog.open === 'function') {
+                dialog.open();
+                return true;
+            }
             const modalElement = document.getElementById(item.modalId);
             if (modalElement) {
                 modalElement.classList.remove('hidden');
-                if (typeof global.bringDialogToFront === 'function') { global.bringDialogToFront(item.modalId); }
-                if (typeof global.updateProgramLabelByTopModal === 'function') { global.updateProgramLabelByTopModal(); }
+                if (typeof global.bringDialogToFront === 'function') {
+                    global.bringDialogToFront(item.modalId);
+                }
+                if (typeof global.updateProgramLabelByTopModal === 'function') {
+                    global.updateProgramLabelByTopModal();
+                }
                 return true;
             }
         }
@@ -276,22 +336,47 @@
         if (!itemId) return;
         switch (key) {
             case 'Enter':
-            case ' ': event.preventDefault(); openDesktopItemById(itemId); return;
+            case ' ':
+                event.preventDefault();
+                openDesktopItemById(itemId);
+                return;
             case 'ArrowDown':
-            case 'ArrowRight': event.preventDefault(); moveDesktopSelection(1); return;
+            case 'ArrowRight':
+                event.preventDefault();
+                moveDesktopSelection(1);
+                return;
             case 'ArrowUp':
-            case 'ArrowLeft': event.preventDefault(); moveDesktopSelection(-1); return;
-            case 'Home': event.preventDefault(); focusDesktopItemByIndex(0); return;
-            case 'End': event.preventDefault(); focusDesktopItemByIndex(DESKTOP_ITEMS.length - 1); return;
-            case 'Escape': event.preventDefault(); clearDesktopSelection({ blur: true }); return;
-            default: break;
+            case 'ArrowLeft':
+                event.preventDefault();
+                moveDesktopSelection(-1);
+                return;
+            case 'Home':
+                event.preventDefault();
+                focusDesktopItemByIndex(0);
+                return;
+            case 'End':
+                event.preventDefault();
+                focusDesktopItemByIndex(DESKTOP_ITEMS.length - 1);
+                return;
+            case 'Escape':
+                event.preventDefault();
+                clearDesktopSelection({ blur: true });
+                return;
+            default:
+                break;
         }
     }
 
     function handleDesktopBackgroundPointer(event) {
-        if (event && typeof event.button === 'number' && event.button !== 0) return;
+        if (event && typeof event.button === 'number' && event.button !== 0)
+            return;
         if (desktopSuppressBackgroundClick) return;
-        if (event && event.target && event.target.closest('.desktop-icon-button')) return;
+        if (
+            event &&
+            event.target &&
+            event.target.closest('.desktop-icon-button')
+        )
+            return;
         clearDesktopSelection({ blur: true });
     }
 
@@ -299,8 +384,15 @@
         renderDesktopIcons();
         const desktopArea = getDesktopAreaElement();
         if (desktopArea) {
-            desktopArea.addEventListener('click', handleDesktopBackgroundPointer);
-            desktopArea.addEventListener('touchstart', handleDesktopBackgroundPointer, { passive: true });
+            desktopArea.addEventListener(
+                'click',
+                handleDesktopBackgroundPointer,
+            );
+            desktopArea.addEventListener(
+                'touchstart',
+                handleDesktopBackgroundPointer,
+                { passive: true },
+            );
 
             let rubber = null;
             let rubberStart = null;
@@ -312,11 +404,16 @@
                 const y2 = Math.max(rubberStart.y, e.clientY);
                 rubber.style.left = x1 + 'px';
                 rubber.style.top = y1 + 'px';
-                rubber.style.width = (x2 - x1) + 'px';
-                rubber.style.height = (y2 - y1) + 'px';
+                rubber.style.width = x2 - x1 + 'px';
+                rubber.style.height = y2 - y1 + 'px';
                 desktopButtons.forEach((btn) => {
                     const rect = btn.getBoundingClientRect();
-                    const intersects = !(rect.right < x1 || rect.left > x2 || rect.bottom < y1 || rect.top > y2);
+                    const intersects = !(
+                        rect.right < x1 ||
+                        rect.left > x2 ||
+                        rect.bottom < y1 ||
+                        rect.top > y2
+                    );
                     if (intersects) btn.classList.add('rubber-selected');
                     else btn.classList.remove('rubber-selected');
                 });
@@ -332,17 +429,20 @@
                     }
                 });
                 if (e.ctrlKey || e.metaKey) {
-                    selected.forEach(id => {
-                        if (desktopSelectedIds.has(id)) desktopSelectedIds.delete(id);
+                    selected.forEach((id) => {
+                        if (desktopSelectedIds.has(id))
+                            desktopSelectedIds.delete(id);
                         else desktopSelectedIds.add(id);
                     });
                 } else {
                     desktopSelectedIds.clear();
-                    selected.forEach(id => desktopSelectedIds.add(id));
+                    selected.forEach((id) => desktopSelectedIds.add(id));
                 }
                 if (selected.length > 0) {
                     const lastId = selected[selected.length - 1];
-                    desktopLastFocusedIndex = DESKTOP_ITEMS.findIndex(entry => entry.id === lastId);
+                    desktopLastFocusedIndex = DESKTOP_ITEMS.findIndex(
+                        (entry) => entry.id === lastId,
+                    );
                 }
                 updateDesktopSelectionUI();
                 cleanupRubber(false);
@@ -350,32 +450,57 @@
 
             const onPointerCancel = () => cleanupRubber(true);
             const onWindowBlur = () => cleanupRubber(true);
-            const onVisibilityChange = () => { if (document.visibilityState !== 'visible') cleanupRubber(true); };
+            const onVisibilityChange = () => {
+                if (document.visibilityState !== 'visible') cleanupRubber(true);
+            };
 
             const cleanupRubber = (abortOnly) => {
                 if (!rubber) return;
-                desktopButtons.forEach((btn) => btn.classList.remove('rubber-selected'));
-                try { rubber.remove(); } catch (err) { /* ignore */ }
+                desktopButtons.forEach((btn) =>
+                    btn.classList.remove('rubber-selected'),
+                );
+                try {
+                    rubber.remove();
+                } catch (err) {
+                    /* ignore */
+                }
                 rubber = null;
                 rubberStart = null;
                 window.removeEventListener('pointermove', onPointerMove);
                 window.removeEventListener('pointerup', onPointerUp);
                 window.removeEventListener('pointercancel', onPointerCancel);
                 window.removeEventListener('blur', onWindowBlur);
-                document.removeEventListener('visibilitychange', onVisibilityChange);
+                document.removeEventListener(
+                    'visibilitychange',
+                    onVisibilityChange,
+                );
                 desktopSuppressBackgroundClick = true;
-                setTimeout(() => { desktopSuppressBackgroundClick = false; }, 120);
+                setTimeout(() => {
+                    desktopSuppressBackgroundClick = false;
+                }, 120);
             };
 
             desktopArea.addEventListener('pointerdown', (e) => {
                 if (e.button !== 0) return;
-                if (e.target && e.target.closest && e.target.closest('.desktop-icon-button')) return;
+                if (
+                    e.target &&
+                    e.target.closest &&
+                    e.target.closest('.desktop-icon-button')
+                )
+                    return;
                 rubberStart = { x: e.clientX, y: e.clientY };
                 rubber = document.createElement('div');
                 rubber.className = 'desktop-rubberband';
                 Object.assign(rubber.style, {
-                    position: 'fixed', left: rubberStart.x + 'px', top: rubberStart.y + 'px', width: '0px', height: '0px',
-                    zIndex: 99999, border: '1px dashed rgba(255,255,255,0.6)', background: 'rgba(59,130,246,0.12)', pointerEvents: 'none'
+                    position: 'fixed',
+                    left: rubberStart.x + 'px',
+                    top: rubberStart.y + 'px',
+                    width: '0px',
+                    height: '0px',
+                    zIndex: 99999,
+                    border: '1px dashed rgba(255,255,255,0.6)',
+                    background: 'rgba(59,130,246,0.12)',
+                    pointerEvents: 'none',
                 });
                 document.body.appendChild(rubber);
                 desktopSuppressBackgroundClick = true;
@@ -383,7 +508,10 @@
                 window.addEventListener('pointerup', onPointerUp);
                 window.addEventListener('pointercancel', onPointerCancel);
                 window.addEventListener('blur', onWindowBlur);
-                document.addEventListener('visibilitychange', onVisibilityChange);
+                document.addEventListener(
+                    'visibilitychange',
+                    onVisibilityChange,
+                );
             });
         }
     }
@@ -394,7 +522,6 @@
         selectDesktopItem,
         moveDesktopSelection,
         openDesktopItemById,
-        clearDesktopSelection
+        clearDesktopSelection,
     };
-
 })(window);

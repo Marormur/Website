@@ -1,7 +1,7 @@
 console.log('App.js loaded v3');
 // ============================================================================
 // HINWEIS: Zentrale Systeme wurden in Module ausgelagert:
-// 
+//
 // NEUE SYSTEME:
 // - window-manager.js: Zentrale Fensterverwaltung & Registry
 // - action-bus.js: Deklaratives Event-System
@@ -41,20 +41,26 @@ function initModalIds() {
     } else {
         // Fallback
         modalIds = window.APP_CONSTANTS?.MODAL_IDS || [
-            "finder-modal", "projects-modal", "about-modal", "settings-modal",
-            "text-modal", "image-modal", "program-info-modal"
+            'finder-modal',
+            'projects-modal',
+            'about-modal',
+            'settings-modal',
+            'text-modal',
+            'image-modal',
+            'program-info-modal',
         ];
-        transientModalIds = window.APP_CONSTANTS?.TRANSIENT_MODAL_IDS || new Set(["program-info-modal"]);
+        transientModalIds =
+            window.APP_CONSTANTS?.TRANSIENT_MODAL_IDS ||
+            new Set(['program-info-modal']);
     }
 }
 
-
 const appI18n = window.appI18n || {
     translate: (key) => key,
-    applyTranslations: () => { },
-    setLanguagePreference: () => { },
+    applyTranslations: () => {},
+    setLanguagePreference: () => {},
     getLanguagePreference: () => 'system',
-    getActiveLanguage: () => 'en'
+    getActiveLanguage: () => 'en',
 };
 
 // Leichtgewichtige Übersetzungs-Hilfsfunktion (nutzt window.appI18n)
@@ -87,12 +93,12 @@ function resolveProgramInfo(modalId) {
         infoLabel: translate('programs.default.infoLabel'),
         fallbackInfoModalId: 'program-info-modal',
         icon: './img/sucher.png',
-        about: {}
+        about: {},
     };
 }
 
 let currentProgramInfo = resolveProgramInfo(null);
-let currentMenuModalId = null;
+const currentMenuModalId = null;
 
 // ============================================================================
 // menuDefinitions, menuActionIdCounter, menuActionHandlers sind jetzt in menu.js
@@ -100,7 +106,10 @@ let currentMenuModalId = null;
 // ============================================================================
 
 function syncTopZIndexWithDOM() {
-    if (window.WindowManager && typeof window.WindowManager.syncZIndexWithDOM === 'function') {
+    if (
+        window.WindowManager &&
+        typeof window.WindowManager.syncZIndexWithDOM === 'function'
+    ) {
         window.WindowManager.syncZIndexWithDOM();
         return;
     }
@@ -108,7 +117,7 @@ function syncTopZIndexWithDOM() {
     // Fallback für alte Implementierung
     let maxZ = 1000;
     if (modalIds) {
-        modalIds.forEach(id => {
+        modalIds.forEach((id) => {
             const modal = document.getElementById(id);
             if (!modal) return;
             const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
@@ -147,7 +156,9 @@ function clampWindowToMenuBar(target) {
         target.style.position = 'fixed';
     }
     const currentTop = parseFloat(target.style.top);
-    const numericTop = Number.isNaN(currentTop) ? parseFloat(computed.top) : currentTop;
+    const numericTop = Number.isNaN(currentTop)
+        ? parseFloat(computed.top)
+        : currentTop;
     if (!Number.isNaN(numericTop) && numericTop < minTop) {
         target.style.top = `${minTop}px`;
     } else if (Number.isNaN(numericTop)) {
@@ -237,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Wenn auf einen sichtbaren Modalcontainer geklickt wird, hole das Fenster in den Vordergrund
-    document.querySelectorAll('.modal').forEach(modal => {
+    document.querySelectorAll('.modal').forEach((modal) => {
         modal.addEventListener('click', function (e) {
             // Verhindere, dass Klicks auf interaktive Elemente im Modal den Fokuswechsel stören.
             if (e.target === modal || modal.contains(e.target)) {
@@ -251,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Dialog-Instanzen erstellen und im WindowManager registrieren
     window.dialogs = {};
     if (modalIds && Array.isArray(modalIds)) {
-        modalIds.forEach(id => {
+        modalIds.forEach((id) => {
             const modal = document.getElementById(id);
             if (!modal) return;
             const dialogInstance = new Dialog(id);
@@ -298,7 +309,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Initialize text editor module
     if (window.TextEditorSystem) {
-        const textEditorContainer = document.getElementById('text-editor-container');
+        const textEditorContainer = document.getElementById(
+            'text-editor-container',
+        );
         if (textEditorContainer) {
             window.TextEditorSystem.init(textEditorContainer);
         }
@@ -313,7 +326,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     initDockMagnification();
-    if (window.DockSystem && typeof window.DockSystem.initDockDragDrop === 'function') {
+    if (
+        window.DockSystem &&
+        typeof window.DockSystem.initDockDragDrop === 'function'
+    ) {
         window.DockSystem.initDockDragDrop();
     }
 });
@@ -322,13 +338,13 @@ function bringDialogToFront(dialogId) {
     if (window.dialogs[dialogId]) {
         window.dialogs[dialogId].bringToFront();
     } else {
-        console.error("Kein Dialog mit der ID " + dialogId + " gefunden.");
+        console.error('Kein Dialog mit der ID ' + dialogId + ' gefunden.');
     }
 }
 
 // Zentrale Funktion zum Aktualisieren des Program-Menütexts
 function updateProgramLabel(newLabel) {
-    const programLabel = document.getElementById("program-label");
+    const programLabel = document.getElementById('program-label');
     if (programLabel) {
         programLabel.innerText = newLabel;
     }
@@ -336,7 +352,10 @@ function updateProgramLabel(newLabel) {
 
 // Funktion, um das aktuell oberste Modal zu ermitteln
 function getTopModal() {
-    if (window.WindowManager && typeof window.WindowManager.getTopWindow === 'function') {
+    if (
+        window.WindowManager &&
+        typeof window.WindowManager.getTopWindow === 'function'
+    ) {
         return window.WindowManager.getTopWindow();
     }
 
@@ -344,10 +363,11 @@ function getTopModal() {
     let topModal = null;
     let highestZ = 0;
     if (modalIds) {
-        modalIds.forEach(id => {
+        modalIds.forEach((id) => {
             const modal = document.getElementById(id);
-            if (modal && !modal.classList.contains("hidden")) {
-                const zIndex = parseInt(getComputedStyle(modal).zIndex, 10) || 0;
+            if (modal && !modal.classList.contains('hidden')) {
+                const zIndex =
+                    parseInt(getComputedStyle(modal).zIndex, 10) || 0;
                 if (zIndex > highestZ) {
                     highestZ = zIndex;
                     topModal = modal;
@@ -363,7 +383,7 @@ function getProgramInfo(modalId) {
 }
 
 function updateProgramInfoMenu(info) {
-    const infoLink = document.getElementById("about-program");
+    const infoLink = document.getElementById('about-program');
     if (!infoLink) return;
     const fallbackInfo = resolveProgramInfo(null);
     infoLink.innerText = info.infoLabel || fallbackInfo.infoLabel;
@@ -375,42 +395,43 @@ function updateProgramInfoMenu(info) {
 }
 
 function renderProgramInfo(info) {
-    const modal = document.getElementById("program-info-modal");
+    const modal = document.getElementById('program-info-modal');
     if (!modal) return;
-    modal.dataset.infoTarget = info.modalId || "";
+    modal.dataset.infoTarget = info.modalId || '';
     const fallbackInfo = resolveProgramInfo(null);
     const about = info.about || fallbackInfo.about || {};
-    const iconEl = modal.querySelector("#program-info-icon");
+    const iconEl = modal.querySelector('#program-info-icon');
     if (iconEl) {
         if (info.icon) {
             iconEl.src = info.icon;
-            iconEl.alt = about.name || info.programLabel || "Programm";
-            iconEl.classList.remove("hidden");
+            iconEl.alt = about.name || info.programLabel || 'Programm';
+            iconEl.classList.remove('hidden');
         } else {
-            iconEl.classList.add("hidden");
+            iconEl.classList.add('hidden');
         }
     }
-    const nameEl = modal.querySelector("#program-info-name");
+    const nameEl = modal.querySelector('#program-info-name');
     if (nameEl) {
-        nameEl.textContent = about.name || info.programLabel || fallbackInfo.programLabel;
+        nameEl.textContent =
+            about.name || info.programLabel || fallbackInfo.programLabel;
     }
-    const taglineEl = modal.querySelector("#program-info-tagline");
+    const taglineEl = modal.querySelector('#program-info-tagline');
     if (taglineEl) {
-        const tagline = about.tagline || "";
+        const tagline = about.tagline || '';
         taglineEl.textContent = tagline;
-        taglineEl.classList.toggle("hidden", !tagline);
+        taglineEl.classList.toggle('hidden', !tagline);
     }
-    const versionEl = modal.querySelector("#program-info-version");
+    const versionEl = modal.querySelector('#program-info-version');
     if (versionEl) {
-        const version = about.version || "";
+        const version = about.version || '';
         versionEl.textContent = version;
-        versionEl.classList.toggle("hidden", !version);
+        versionEl.classList.toggle('hidden', !version);
     }
-    const copyrightEl = modal.querySelector("#program-info-copyright");
+    const copyrightEl = modal.querySelector('#program-info-copyright');
     if (copyrightEl) {
-        const copyright = about.copyright || "";
+        const copyright = about.copyright || '';
         copyrightEl.textContent = copyright;
-        copyrightEl.classList.toggle("hidden", !copyright);
+        copyrightEl.classList.toggle('hidden', !copyright);
     }
 }
 
@@ -422,12 +443,12 @@ function openProgramInfoDialog(event, infoOverride) {
     hideMenuDropdowns();
     const info = infoOverride || currentProgramInfo || getProgramInfo(null);
     currentProgramInfo = info;
-    const infoEvent = new CustomEvent("programInfoRequested", {
+    const infoEvent = new CustomEvent('programInfoRequested', {
         detail: {
             modalId: info.modalId,
-            info
+            info,
         },
-        cancelable: true
+        cancelable: true,
     });
     const dispatchResult = window.dispatchEvent(infoEvent);
     if (!dispatchResult) {
@@ -437,31 +458,34 @@ function openProgramInfoDialog(event, infoOverride) {
     if (!fallbackId) {
         return;
     }
-    if (fallbackId === "program-info-modal") {
+    if (fallbackId === 'program-info-modal') {
         renderProgramInfo(info);
     }
     const dialogInstance = window.dialogs && window.dialogs[fallbackId];
-    if (dialogInstance && typeof dialogInstance.open === "function") {
+    if (dialogInstance && typeof dialogInstance.open === 'function') {
         dialogInstance.open();
     } else {
         const modalElement = document.getElementById(fallbackId);
         if (modalElement) {
-            modalElement.classList.remove("hidden");
+            modalElement.classList.remove('hidden');
             bringDialogToFront(fallbackId);
             updateProgramLabelByTopModal();
         } else {
-            console.warn(`Kein Fallback-Info-Dialog für ${fallbackId} gefunden.`);
+            console.warn(
+                `Kein Fallback-Info-Dialog für ${fallbackId} gefunden.`,
+            );
         }
     }
 }
 
 function createMenuContext(modalId) {
     const resolvedId = modalId || null;
-    const dialog = resolvedId && window.dialogs ? window.dialogs[resolvedId] : null;
+    const dialog =
+        resolvedId && window.dialogs ? window.dialogs[resolvedId] : null;
     return {
         modalId: resolvedId,
         dialog,
-        info: resolveProgramInfo(resolvedId)
+        info: resolveProgramInfo(resolvedId),
     };
 }
 
@@ -516,14 +540,24 @@ function closeContextWindow(context) {
 
 function hasAnyVisibleDialog() {
     if (!window.dialogs) return false;
-    return Object.values(window.dialogs).some(dialog => dialog && dialog.modal && !dialog.modal.classList.contains('hidden'));
+    return Object.values(window.dialogs).some(
+        (dialog) =>
+            dialog &&
+            dialog.modal &&
+            !dialog.modal.classList.contains('hidden'),
+    );
 }
 
 function bringAllWindowsToFront() {
     if (!window.dialogs || !modalIds || !Array.isArray(modalIds)) return;
-    modalIds.forEach(id => {
+    modalIds.forEach((id) => {
         const dialog = window.dialogs[id];
-        if (dialog && dialog.modal && !dialog.modal.classList.contains('hidden') && typeof dialog.bringToFront === 'function') {
+        if (
+            dialog &&
+            dialog.modal &&
+            !dialog.modal.classList.contains('hidden') &&
+            typeof dialog.bringToFront === 'function'
+        ) {
             dialog.bringToFront();
         }
     });
@@ -538,7 +572,7 @@ function sendTextEditorMenuAction(command) {
     if (!command) return;
     postToTextEditor({
         type: 'textEditor:menuAction',
-        command
+        command,
     });
 }
 
@@ -579,28 +613,34 @@ function downloadActiveImage() {
 
 function updateProgramLabelByTopModal() {
     const topModal = getTopModal();
-    
+
     // Skip menubar update for modals with skipMenubarUpdate flag
     if (topModal && window.WindowManager) {
         const config = window.WindowManager.getConfig(topModal.id);
         if (config && config.metadata && config.metadata.skipMenubarUpdate) {
             // Find the next non-skipped modal
-            const allModals = Array.from(document.querySelectorAll('.modal:not(.hidden)'));
+            const allModals = Array.from(
+                document.querySelectorAll('.modal:not(.hidden)'),
+            );
             const sortedModals = allModals.sort((a, b) => {
                 const zIndexA = parseInt(getComputedStyle(a).zIndex, 10) || 0;
                 const zIndexB = parseInt(getComputedStyle(b).zIndex, 10) || 0;
                 return zIndexB - zIndexA;
             });
-            
+
             let nextModal = null;
             for (const modal of sortedModals) {
                 const modalConfig = window.WindowManager.getConfig(modal.id);
-                if (!modalConfig || !modalConfig.metadata || !modalConfig.metadata.skipMenubarUpdate) {
+                if (
+                    !modalConfig ||
+                    !modalConfig.metadata ||
+                    !modalConfig.metadata.skipMenubarUpdate
+                ) {
                     nextModal = modal;
                     break;
                 }
             }
-            
+
             if (nextModal) {
                 const info = getProgramInfo(nextModal.id);
                 currentProgramInfo = info;
@@ -611,9 +651,14 @@ function updateProgramLabelByTopModal() {
             }
         }
     }
-    
+
     let info;
-    if (topModal && topModal.id === "program-info-modal" && currentProgramInfo && currentProgramInfo.modalId) {
+    if (
+        topModal &&
+        topModal.id === 'program-info-modal' &&
+        currentProgramInfo &&
+        currentProgramInfo.modalId
+    ) {
         info = resolveProgramInfo(currentProgramInfo.modalId);
         currentProgramInfo = info;
     } else {
@@ -628,11 +673,14 @@ function updateProgramLabelByTopModal() {
 // Expose globally for use by storage module
 window.updateProgramLabelByTopModal = updateProgramLabelByTopModal;
 
-window.addEventListener("languagePreferenceChange", () => {
+window.addEventListener('languagePreferenceChange', () => {
     const info = updateProgramLabelByTopModal();
-    const programInfoModal = document.getElementById("program-info-modal");
-    if (programInfoModal && !programInfoModal.classList.contains("hidden")) {
-        const targetId = programInfoModal.dataset.infoTarget || (info ? info.modalId : null) || null;
+    const programInfoModal = document.getElementById('program-info-modal');
+    if (programInfoModal && !programInfoModal.classList.contains('hidden')) {
+        const targetId =
+            programInfoModal.dataset.infoTarget ||
+            (info ? info.modalId : null) ||
+            null;
         const infoForDialog = resolveProgramInfo(targetId);
         renderProgramInfo(infoForDialog);
         // Wenn der Programminfo-Dialog das aktive Programm repräsentiert, synchronisieren wir den aktuellen Zustand
@@ -650,17 +698,21 @@ window.addEventListener('themePreferenceChange', () => {
 });
 
 function hideMenuDropdowns() {
-    document.querySelectorAll('.menu-dropdown').forEach(dropdown => {
+    document.querySelectorAll('.menu-dropdown').forEach((dropdown) => {
         if (!dropdown.classList.contains('hidden')) {
             dropdown.classList.add('hidden');
         }
     });
-    document.querySelectorAll('[data-menubar-trigger-button="true"]').forEach(button => {
-        button.setAttribute('aria-expanded', 'false');
-    });
-    document.querySelectorAll('[data-system-menu-trigger]').forEach(button => {
-        button.setAttribute('aria-expanded', 'false');
-    });
+    document
+        .querySelectorAll('[data-menubar-trigger-button="true"]')
+        .forEach((button) => {
+            button.setAttribute('aria-expanded', 'false');
+        });
+    document
+        .querySelectorAll('[data-system-menu-trigger]')
+        .forEach((button) => {
+            button.setAttribute('aria-expanded', 'false');
+        });
 }
 // Expose globally for use by SystemUI module
 window.hideMenuDropdowns = hideMenuDropdowns;
@@ -668,13 +720,19 @@ window.hideMenuDropdowns = hideMenuDropdowns;
 // Close menus only when clicking outside of menubar triggers and dropdowns
 function handleDocumentClickToCloseMenus(event) {
     // Guard against immediate re-closing right after we opened via trigger
-    if (window.__lastMenuInteractionAt && (Date.now() - window.__lastMenuInteractionAt) < 200) {
+    if (
+        window.__lastMenuInteractionAt &&
+        Date.now() - window.__lastMenuInteractionAt < 200
+    ) {
         return;
     }
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
     // If the click is inside a menubar trigger or an open dropdown, do nothing
-    if (target.closest('.menubar-trigger') || target.closest('.menu-dropdown')) {
+    if (
+        target.closest('.menubar-trigger') ||
+        target.closest('.menu-dropdown')
+    ) {
         return;
     }
     hideMenuDropdowns();
@@ -702,7 +760,10 @@ function toggleMenuDropdown(trigger, options = {}) {
 
 function bindDropdownTrigger(trigger, options = {}) {
     if (!trigger) return;
-    const hoverRequiresExisting = options.hoverRequiresOpen !== undefined ? options.hoverRequiresOpen : true;
+    const hoverRequiresExisting =
+        options.hoverRequiresOpen !== undefined
+            ? options.hoverRequiresOpen
+            : true;
     let clickJustOccurred = false;
 
     trigger.addEventListener('click', (event) => {
@@ -760,7 +821,9 @@ function initEventHandlers() {
     document.addEventListener('click', handleMenuActionActivation);
     document.addEventListener('click', handleDocumentClickToCloseMenus);
     // Also close on pointerdown for snappier UX; inside-trigger/menu is guarded
-    document.addEventListener('pointerdown', handleDocumentClickToCloseMenus, { capture: true });
+    document.addEventListener('pointerdown', handleDocumentClickToCloseMenus, {
+        capture: true,
+    });
 
     // Close any open dropdown with Escape for accessibility
     document.addEventListener('keydown', (event) => {
@@ -778,29 +841,40 @@ function initEventHandlers() {
 
 // Lädt GitHub-Repositories und cached sie im LocalStorage
 function loadGithubRepos() {
-    const username = "Marormur";
+    const username = 'Marormur';
     const cacheKey = `githubRepos_${username}`;
     const cacheTimestampKey = `githubReposTimestamp_${username}`;
     const cacheDuration = 1000 * 60 * 60; // 1 Stunde
-    const list = document.getElementById("repo-list");
-    const fileList = document.getElementById("repo-files");
-    const breadcrumbs = document.getElementById("finder-breadcrumbs");
-    const finderMain = document.getElementById("finder-main");
-    const finderPlaceholder = document.getElementById("finder-placeholder");
-    const imageViewer = document.getElementById("image-viewer");
-    const imageInfo = document.getElementById("image-info");
-    const imagePlaceholder = document.getElementById("image-placeholder");
-    if (!list || !fileList || !breadcrumbs || !finderMain || !finderPlaceholder || !imageViewer || !imageInfo || !imagePlaceholder) return;
+    const list = document.getElementById('repo-list');
+    const fileList = document.getElementById('repo-files');
+    const breadcrumbs = document.getElementById('finder-breadcrumbs');
+    const finderMain = document.getElementById('finder-main');
+    const finderPlaceholder = document.getElementById('finder-placeholder');
+    const imageViewer = document.getElementById('image-viewer');
+    const imageInfo = document.getElementById('image-info');
+    const imagePlaceholder = document.getElementById('image-placeholder');
+    if (
+        !list ||
+        !fileList ||
+        !breadcrumbs ||
+        !finderMain ||
+        !finderPlaceholder ||
+        !imageViewer ||
+        !imageInfo ||
+        !imagePlaceholder
+    )
+        return;
 
-    const supportsAbortController = typeof window.AbortController === "function";
+    const supportsAbortController =
+        typeof window.AbortController === 'function';
 
     const state = {
         repos: [],
         selectedRepo: null,
-        selectedPath: "",
+        selectedPath: '',
         contentCache: {},
         repoButtons: new Map(),
-        imageAbortController: null
+        imageAbortController: null,
     };
 
     let pendingFinderState = readFinderState();
@@ -814,19 +888,21 @@ function loadGithubRepos() {
         return merged;
     };
     const createRateLimitError = () => {
-        const error = new Error("GitHub API rate limit reached");
+        const error = new Error('GitHub API rate limit reached');
         error.code = RATE_LIMIT_ERROR;
         return error;
     };
     const createNotFoundError = () => {
-        const error = new Error("Requested GitHub resource was not found");
+        const error = new Error('Requested GitHub resource was not found');
         error.code = NOT_FOUND_ERROR;
         return error;
     };
     const isRateLimitResponse = (res) => {
         if (!res) return false;
         if (res.status !== 403) return false;
-        const remaining = res.headers ? res.headers.get('x-ratelimit-remaining') : null;
+        const remaining = res.headers
+            ? res.headers.get('x-ratelimit-remaining')
+            : null;
         return remaining === '0';
     };
     const assertGithubResponseOk = (res) => {
@@ -837,54 +913,124 @@ function loadGithubRepos() {
         if (isRateLimitResponse(res)) {
             throw createRateLimitError();
         }
-        const error = new Error(`GitHub API antwortete mit Status ${res.status}`);
+        const error = new Error(
+            `GitHub API antwortete mit Status ${res.status}`,
+        );
         error.status = res.status;
         throw error;
     };
-    const isRateLimitError = (error) => Boolean(error && error.code === RATE_LIMIT_ERROR);
-    const isNotFoundError = (error) => Boolean(error && error.code === NOT_FOUND_ERROR);
+    const isRateLimitError = (error) =>
+        Boolean(error && error.code === RATE_LIMIT_ERROR);
+    const isNotFoundError = (error) =>
+        Boolean(error && error.code === NOT_FOUND_ERROR);
 
     const textFileExtensions = [
-        ".txt", ".md", ".markdown", ".mdx", ".json", ".jsonc", ".csv", ".tsv", ".yaml", ".yml",
-        ".xml", ".html", ".htm", ".css", ".scss", ".sass", ".less",
-        ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".vue",
-        ".c", ".h", ".cpp", ".hpp", ".cc", ".cxx", ".hh", ".ino",
-        ".java", ".kt", ".kts", ".swift", ".cs", ".py", ".rb", ".php", ".rs", ".go",
-        ".sh", ".bash", ".zsh", ".fish", ".ps1", ".bat", ".cmd",
-        ".ini", ".cfg", ".conf", ".config", ".env", ".gitignore", ".gitattributes",
-        ".log", ".sql"
+        '.txt',
+        '.md',
+        '.markdown',
+        '.mdx',
+        '.json',
+        '.jsonc',
+        '.csv',
+        '.tsv',
+        '.yaml',
+        '.yml',
+        '.xml',
+        '.html',
+        '.htm',
+        '.css',
+        '.scss',
+        '.sass',
+        '.less',
+        '.js',
+        '.mjs',
+        '.cjs',
+        '.ts',
+        '.tsx',
+        '.jsx',
+        '.vue',
+        '.c',
+        '.h',
+        '.cpp',
+        '.hpp',
+        '.cc',
+        '.cxx',
+        '.hh',
+        '.ino',
+        '.java',
+        '.kt',
+        '.kts',
+        '.swift',
+        '.cs',
+        '.py',
+        '.rb',
+        '.php',
+        '.rs',
+        '.go',
+        '.sh',
+        '.bash',
+        '.zsh',
+        '.fish',
+        '.ps1',
+        '.bat',
+        '.cmd',
+        '.ini',
+        '.cfg',
+        '.conf',
+        '.config',
+        '.env',
+        '.gitignore',
+        '.gitattributes',
+        '.log',
+        '.sql',
     ];
 
     const imageFileExtensions = [
-        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".svg", ".tiff", ".tif", ".heic", ".heif", ".avif"
+        '.png',
+        '.jpg',
+        '.jpeg',
+        '.gif',
+        '.webp',
+        '.bmp',
+        '.ico',
+        '.svg',
+        '.tiff',
+        '.tif',
+        '.heic',
+        '.heif',
+        '.avif',
     ];
 
     const isProbablyTextFile = (name) => {
-        if (!name || typeof name !== "string") return false;
+        if (!name || typeof name !== 'string') return false;
         const lower = name.toLowerCase();
-        return textFileExtensions.some(ext => lower.endsWith(ext));
+        return textFileExtensions.some((ext) => lower.endsWith(ext));
     };
 
     const isImageFile = (name) => {
-        if (!name || typeof name !== "string") return false;
+        if (!name || typeof name !== 'string') return false;
         const lower = name.toLowerCase();
-        return imageFileExtensions.some(ext => lower.endsWith(ext));
+        return imageFileExtensions.some((ext) => lower.endsWith(ext));
     };
 
     const getTextEditorIframe = () => {
-        const dialog = window.dialogs ? window.dialogs["text-modal"] : null;
+        const dialog = window.dialogs ? window.dialogs['text-modal'] : null;
         if (!dialog || !dialog.modal) return null;
-        return dialog.modal.querySelector("iframe");
+        return dialog.modal.querySelector('iframe');
     };
 
     const postToTextEditor = (message, attempt = 0) => {
-        if (!message || typeof message !== "object") {
+        if (!message || typeof message !== 'object') {
             return;
         }
         const iframe = getTextEditorIframe();
         if (iframe && iframe.contentWindow) {
             let targetOrigin = '*';
-            if (window.location && typeof window.location.origin === 'string' && window.location.origin !== 'null') {
+            if (
+                window.location &&
+                typeof window.location.origin === 'string' &&
+                window.location.origin !== 'null'
+            ) {
                 targetOrigin = window.location.origin;
             }
             iframe.contentWindow.postMessage(message, targetOrigin);
@@ -893,57 +1039,62 @@ function loadGithubRepos() {
         if (attempt < 10) {
             setTimeout(() => postToTextEditor(message, attempt + 1), 120);
         } else {
-            console.warn("Texteditor iframe nicht verfügbar, Nachricht konnte nicht gesendet werden.", message);
+            console.warn(
+                'Texteditor iframe nicht verfügbar, Nachricht konnte nicht gesendet werden.',
+                message,
+            );
         }
     };
 
     const decodeBase64ToText = (input) => {
-        if (typeof input !== "string") return null;
+        if (typeof input !== 'string') return null;
         try {
-            const cleaned = input.replace(/\s/g, "");
-            if (typeof window.atob !== "function") {
-                console.warn("window.atob ist nicht verfügbar.");
+            const cleaned = input.replace(/\s/g, '');
+            if (typeof window.atob !== 'function') {
+                console.warn('window.atob ist nicht verfügbar.');
                 return null;
             }
             const binary = window.atob(cleaned);
-            if (typeof window.TextDecoder === "function") {
+            if (typeof window.TextDecoder === 'function') {
                 const bytes = new Uint8Array(binary.length);
                 for (let i = 0; i < binary.length; i += 1) {
                     bytes[i] = binary.charCodeAt(i);
                 }
-                return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+                return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
             }
             // Fallback für sehr alte Browser
-            const percentEncoded = Array.prototype.map.call(binary, (char) => {
-                return `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`;
-            }).join("");
+            const percentEncoded = Array.prototype.map
+                .call(binary, (char) => {
+                    return `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`;
+                })
+                .join('');
             return decodeURIComponent(percentEncoded);
         } catch (err) {
-            console.error("Konnte Base64-Inhalt nicht dekodieren:", err);
+            console.error('Konnte Base64-Inhalt nicht dekodieren:', err);
             return null;
         }
     };
 
     const ensureTextEditorOpen = () => {
-        const dialog = window.dialogs ? window.dialogs["text-modal"] : null;
-        if (dialog && typeof dialog.open === "function") {
+        const dialog = window.dialogs ? window.dialogs['text-modal'] : null;
+        if (dialog && typeof dialog.open === 'function') {
             dialog.open();
             return dialog;
         }
-        if (typeof showTab === "function") {
-            showTab("text");
+        if (typeof showTab === 'function') {
+            showTab('text');
         }
         return null;
     };
 
     const ensureImageViewerOpen = () => {
-        const dialog = window.dialogs ? window.dialogs["image-modal"] : null;
-        if (dialog && typeof dialog.open === "function") {
+        const dialog = window.dialogs ? window.dialogs['image-modal'] : null;
+        if (dialog && typeof dialog.open === 'function') {
             dialog.open();
             return dialog;
         }
-        if (typeof showTab === "function") {
-            showTab("image");
+        if (typeof showTab === 'function') {
+            showTab('image');
         }
         return null;
     };
@@ -951,28 +1102,37 @@ function loadGithubRepos() {
     let imagePlaceholderState = null;
     const setImagePlaceholder = (messageKey, params) => {
         if (!imagePlaceholder) return;
-        if (typeof messageKey !== "string" || messageKey.length === 0) {
-            imagePlaceholder.removeAttribute("data-i18n");
-            imagePlaceholder.removeAttribute("data-i18n-params");
-            imagePlaceholder.textContent = "";
-            imagePlaceholder.classList.add("hidden");
+        if (typeof messageKey !== 'string' || messageKey.length === 0) {
+            imagePlaceholder.removeAttribute('data-i18n');
+            imagePlaceholder.removeAttribute('data-i18n-params');
+            imagePlaceholder.textContent = '';
+            imagePlaceholder.classList.add('hidden');
             imagePlaceholderState = null;
             return;
         }
-        imagePlaceholder.setAttribute("data-i18n", messageKey);
+        imagePlaceholder.setAttribute('data-i18n', messageKey);
         if (params && Object.keys(params).length > 0) {
-            imagePlaceholder.setAttribute("data-i18n-params", JSON.stringify(params));
+            imagePlaceholder.setAttribute(
+                'data-i18n-params',
+                JSON.stringify(params),
+            );
         } else {
-            imagePlaceholder.removeAttribute("data-i18n-params");
+            imagePlaceholder.removeAttribute('data-i18n-params');
         }
-        imagePlaceholderState = { key: messageKey, params: params || undefined };
+        imagePlaceholderState = {
+            key: messageKey,
+            params: params || undefined,
+        };
         appI18n.applyTranslations(imagePlaceholder);
-        imagePlaceholder.classList.remove("hidden");
+        imagePlaceholder.classList.remove('hidden');
     };
 
-    window.addEventListener("languagePreferenceChange", () => {
+    window.addEventListener('languagePreferenceChange', () => {
         if (imagePlaceholderState) {
-            setImagePlaceholder(imagePlaceholderState.key, imagePlaceholderState.params);
+            setImagePlaceholder(
+                imagePlaceholderState.key,
+                imagePlaceholderState.params,
+            );
         }
     });
 
@@ -983,20 +1143,19 @@ function loadGithubRepos() {
         if (path) parts.push(path);
         const meta = [];
         if (dimensions) meta.push(dimensions);
-        if (typeof size === "number" && size > 0) {
+        if (typeof size === 'number' && size > 0) {
             const kb = (size / 1024).toFixed(1);
             meta.push(`${kb} KB`);
         }
-        const info = [
-            parts.join(" / "),
-            meta.join(" • ")
-        ].filter(Boolean).join(" — ");
+        const info = [parts.join(' / '), meta.join(' • ')]
+            .filter(Boolean)
+            .join(' — ');
         if (info) {
             imageInfo.textContent = info;
-            imageInfo.classList.remove("hidden");
+            imageInfo.classList.remove('hidden');
         } else {
-            imageInfo.textContent = "";
-            imageInfo.classList.add("hidden");
+            imageInfo.textContent = '';
+            imageInfo.classList.add('hidden');
         }
     };
 
@@ -1008,30 +1167,40 @@ function loadGithubRepos() {
         if (supportsAbortController && state.imageAbortController) {
             state.imageAbortController.abort();
         }
-        state.imageAbortController = supportsAbortController ? new AbortController() : null;
+        state.imageAbortController = supportsAbortController
+            ? new AbortController()
+            : null;
 
         if (imageViewer) {
-            imageViewer.src = "";
-            imageViewer.classList.add("hidden");
+            imageViewer.src = '';
+            imageViewer.classList.add('hidden');
         }
         updateImageInfo({ repo: repoName, path: filePath, size: entry.size });
-        setImagePlaceholder("finder.loadingImage", { name: entry.name });
+        setImagePlaceholder('finder.loadingImage', { name: entry.name });
 
         const finalize = (src) => {
             if (!imageViewer) return;
             imageViewer.onload = () => {
                 const natural = `${imageViewer.naturalWidth} × ${imageViewer.naturalHeight}px`;
-                updateImageInfo({ repo: repoName, path: filePath, size: entry.size, dimensions: natural });
-                setImagePlaceholder("");
-                imageViewer.classList.remove("hidden");
+                updateImageInfo({
+                    repo: repoName,
+                    path: filePath,
+                    size: entry.size,
+                    dimensions: natural,
+                });
+                setImagePlaceholder('');
+                imageViewer.classList.remove('hidden');
                 renderApplicationMenu('image-modal');
-                if (viewerDialog && typeof viewerDialog.bringToFront === "function") {
+                if (
+                    viewerDialog &&
+                    typeof viewerDialog.bringToFront === 'function'
+                ) {
                     viewerDialog.bringToFront();
                 }
             };
             imageViewer.onerror = () => {
-                setImagePlaceholder("finder.imageLoadError");
-                imageViewer.classList.add("hidden");
+                setImagePlaceholder('finder.imageLoadError');
+                imageViewer.classList.add('hidden');
                 renderApplicationMenu('image-modal');
             };
             imageViewer.src = src;
@@ -1043,39 +1212,49 @@ function loadGithubRepos() {
             return;
         }
 
-        const fetchOptions = supportsAbortController && state.imageAbortController
-            ? withGithubOptions({ signal: state.imageAbortController.signal })
-            : withGithubOptions();
+        const fetchOptions =
+            supportsAbortController && state.imageAbortController
+                ? withGithubOptions({
+                    signal: state.imageAbortController.signal,
+                })
+                : withGithubOptions();
 
         fetch(repoPathToUrl(repoName, filePath), fetchOptions)
-            .then(res => {
+            .then((res) => {
                 assertGithubResponseOk(res);
                 return res.json();
             })
-            .then(data => {
-                if (!data || typeof data !== "object" || data.type !== "file") {
-                    throw new Error("Unerwartetes Antwortformat beim Laden einer Bilddatei.");
+            .then((data) => {
+                if (!data || typeof data !== 'object' || data.type !== 'file') {
+                    throw new Error(
+                        'Unerwartetes Antwortformat beim Laden einer Bilddatei.',
+                    );
                 }
-                if (typeof data.download_url === "string") {
+                if (typeof data.download_url === 'string') {
                     finalize(data.download_url);
                     return;
                 }
-                if (data.encoding === "base64" && typeof data.content === "string") {
-                    const cleaned = data.content.replace(/\s/g, "");
-                    finalize(`data:${data.content_type || "image/*"};base64,${cleaned}`);
+                if (
+                    data.encoding === 'base64' &&
+                    typeof data.content === 'string'
+                ) {
+                    const cleaned = data.content.replace(/\s/g, '');
+                    finalize(
+                        `data:${data.content_type || 'image/*'};base64,${cleaned}`,
+                    );
                     return;
                 }
-                throw new Error("Keine Quelle für das Bild verfügbar.");
+                throw new Error('Keine Quelle für das Bild verfügbar.');
             })
-            .catch(err => {
-                if (err.name === "AbortError") {
+            .catch((err) => {
+                if (err.name === 'AbortError') {
                     return;
                 }
                 if (isRateLimitError(err)) {
-                    setImagePlaceholder("finder.rateLimit");
+                    setImagePlaceholder('finder.rateLimit');
                 } else {
-                    console.error("Fehler beim Laden der Bilddatei:", err);
-                    setImagePlaceholder("finder.imageLoadErrorRetry");
+                    console.error('Fehler beim Laden der Bilddatei:', err);
+                    setImagePlaceholder('finder.imageLoadErrorRetry');
                 }
             });
     };
@@ -1088,98 +1267,123 @@ function loadGithubRepos() {
             repo: repoName,
             path: filePath,
             fileName: entry.name,
-            size: entry.size
+            size: entry.size,
         };
         postToTextEditor({
-            type: "textEditor:showLoading",
-            payload: payloadBase
+            type: 'textEditor:showLoading',
+            payload: payloadBase,
         });
 
         const fetchContent = () => {
             if (entry.download_url) {
-                return fetch(entry.download_url).then(res => {
+                return fetch(entry.download_url).then((res) => {
                     if (!res.ok) {
-                        throw new Error(`Download-URL antwortete mit Status ${res.status}`);
+                        throw new Error(
+                            `Download-URL antwortete mit Status ${res.status}`,
+                        );
                     }
                     return res.text();
                 });
             }
             return fetch(repoPathToUrl(repoName, filePath), withGithubOptions())
-                .then(res => {
+                .then((res) => {
                     assertGithubResponseOk(res);
                     return res.json();
                 })
-                .then(fileData => {
-                    if (!fileData || typeof fileData !== "object" || fileData.type !== "file") {
-                        throw new Error("Unerwartetes Antwortformat beim Laden einer Datei.");
+                .then((fileData) => {
+                    if (
+                        !fileData ||
+                        typeof fileData !== 'object' ||
+                        fileData.type !== 'file'
+                    ) {
+                        throw new Error(
+                            'Unerwartetes Antwortformat beim Laden einer Datei.',
+                        );
                     }
-                    if (fileData.encoding === "base64" && typeof fileData.content === "string") {
+                    if (
+                        fileData.encoding === 'base64' &&
+                        typeof fileData.content === 'string'
+                    ) {
                         const decoded = decodeBase64ToText(fileData.content);
                         if (decoded === null) {
-                            throw new Error("Base64-Inhalt konnte nicht dekodiert werden.");
+                            throw new Error(
+                                'Base64-Inhalt konnte nicht dekodiert werden.',
+                            );
                         }
                         return decoded;
                     }
-                    if (typeof fileData.download_url === "string") {
-                        return fetch(fileData.download_url).then(res => {
+                    if (typeof fileData.download_url === 'string') {
+                        return fetch(fileData.download_url).then((res) => {
                             if (!res.ok) {
-                                throw new Error(`Download-URL antwortete mit Status ${res.status}`);
+                                throw new Error(
+                                    `Download-URL antwortete mit Status ${res.status}`,
+                                );
                             }
                             return res.text();
                         });
                     }
-                    throw new Error("Keine gültige Quelle für den Dateiinhalt gefunden.");
+                    throw new Error(
+                        'Keine gültige Quelle für den Dateiinhalt gefunden.',
+                    );
                 });
         };
 
         fetchContent()
-            .then(content => {
+            .then((content) => {
                 postToTextEditor({
-                    type: "textEditor:loadRemoteFile",
+                    type: 'textEditor:loadRemoteFile',
                     payload: Object.assign({}, payloadBase, {
-                        content
-                    })
+                        content,
+                    }),
                 });
-                if (textDialog && typeof textDialog.bringToFront === "function") {
+                if (
+                    textDialog &&
+                    typeof textDialog.bringToFront === 'function'
+                ) {
                     textDialog.bringToFront();
                 }
             })
-            .catch(err => {
-                console.error("Fehler beim Laden der Datei für den Texteditor:", err);
-                const messageKey = isRateLimitError(err) ? "textEditor.status.rateLimit" : "finder.fileLoadError";
+            .catch((err) => {
+                console.error(
+                    'Fehler beim Laden der Datei für den Texteditor:',
+                    err,
+                );
+                const messageKey = isRateLimitError(err)
+                    ? 'textEditor.status.rateLimit'
+                    : 'finder.fileLoadError';
                 postToTextEditor({
-                    type: "textEditor:loadError",
+                    type: 'textEditor:loadError',
                     payload: Object.assign({}, payloadBase, {
-                        message: appI18n.translate(messageKey)
-                    })
+                        message: appI18n.translate(messageKey),
+                    }),
                 });
             });
     };
 
     const showPlaceholder = () => {
-        finderPlaceholder.classList.remove("hidden");
-        finderMain.classList.add("hidden");
-        breadcrumbs.textContent = "";
-        fileList.innerHTML = "";
+        finderPlaceholder.classList.remove('hidden');
+        finderMain.classList.add('hidden');
+        breadcrumbs.textContent = '';
+        fileList.innerHTML = '';
     };
 
     const renderFileMessage = (messageKey, params) => {
-        fileList.innerHTML = "";
-        const item = document.createElement("li");
-        item.className = "px-4 py-3 text-sm text-gray-500 dark:text-gray-400";
-        item.setAttribute("data-i18n", messageKey);
+        fileList.innerHTML = '';
+        const item = document.createElement('li');
+        item.className = 'px-4 py-3 text-sm text-gray-500 dark:text-gray-400';
+        item.setAttribute('data-i18n', messageKey);
         if (params && Object.keys(params).length > 0) {
-            item.setAttribute("data-i18n-params", JSON.stringify(params));
+            item.setAttribute('data-i18n-params', JSON.stringify(params));
         }
         appI18n.applyTranslations(item);
         fileList.appendChild(item);
     };
 
     const renderEmptySidebarState = (messageKey) => {
-        list.innerHTML = "";
-        const item = document.createElement("li");
-        item.className = "px-4 py-3 text-sm text-gray-500 dark:text-gray-400";
-        item.setAttribute("data-i18n", messageKey);
+        list.innerHTML = '';
+        const item = document.createElement('li');
+        item.className = 'px-4 py-3 text-sm text-gray-500 dark:text-gray-400';
+        item.setAttribute('data-i18n', messageKey);
         appI18n.applyTranslations(item);
         list.appendChild(item);
         showPlaceholder();
@@ -1188,32 +1392,45 @@ function loadGithubRepos() {
     const updateSidebarHighlight = () => {
         state.repoButtons.forEach((button, repoName) => {
             if (repoName === state.selectedRepo) {
-                button.classList.add("bg-blue-100", "dark:bg-blue-900/40", "border-l-blue-500", "dark:border-l-blue-400");
+                button.classList.add(
+                    'bg-blue-100',
+                    'dark:bg-blue-900/40',
+                    'border-l-blue-500',
+                    'dark:border-l-blue-400',
+                );
             } else {
-                button.classList.remove("bg-blue-100", "dark:bg-blue-900/40", "border-l-blue-500", "dark:border-l-blue-400");
+                button.classList.remove(
+                    'bg-blue-100',
+                    'dark:bg-blue-900/40',
+                    'border-l-blue-500',
+                    'dark:border-l-blue-400',
+                );
             }
         });
     };
 
     const renderBreadcrumbs = (repoName, path) => {
-        breadcrumbs.innerHTML = "";
+        breadcrumbs.innerHTML = '';
         const elements = [];
 
         const createCrumbButton = (label, targetPath) => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "text-blue-600 dark:text-blue-400 hover:underline";
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className =
+                'text-blue-600 dark:text-blue-400 hover:underline';
             button.textContent = label;
-            button.addEventListener("click", () => loadRepoPath(repoName, targetPath));
+            button.addEventListener('click', () =>
+                loadRepoPath(repoName, targetPath),
+            );
             return button;
         };
 
-        elements.push(createCrumbButton(repoName, ""));
+        elements.push(createCrumbButton(repoName, ''));
 
         if (path) {
-            const segments = path.split("/").filter(Boolean);
-            let cumulative = "";
-            segments.forEach(segment => {
+            const segments = path.split('/').filter(Boolean);
+            let cumulative = '';
+            segments.forEach((segment) => {
                 cumulative = cumulative ? `${cumulative}/${segment}` : segment;
                 elements.push(createCrumbButton(segment, cumulative));
             });
@@ -1221,21 +1438,21 @@ function loadGithubRepos() {
 
         elements.forEach((element, index) => {
             if (index > 0) {
-                breadcrumbs.appendChild(document.createTextNode(" / "));
+                breadcrumbs.appendChild(document.createTextNode(' / '));
             }
             breadcrumbs.appendChild(element);
         });
     };
 
     const parentPath = (path) => {
-        if (!path) return "";
-        const parts = path.split("/").filter(Boolean);
+        if (!path) return '';
+        const parts = path.split('/').filter(Boolean);
         parts.pop();
-        return parts.join("/");
+        return parts.join('/');
     };
 
     const storeCacheEntry = (repoName, path, contents) => {
-        const normalized = path || "";
+        const normalized = path || '';
         if (!state.contentCache[repoName]) {
             state.contentCache[repoName] = {};
         }
@@ -1243,119 +1460,139 @@ function loadGithubRepos() {
     };
 
     const readCacheEntry = (repoName, path) => {
-        const normalized = path || "";
-        return state.contentCache[repoName] ? state.contentCache[repoName][normalized] : undefined;
+        const normalized = path || '';
+        return state.contentCache[repoName]
+            ? state.contentCache[repoName][normalized]
+            : undefined;
     };
 
     const renderFiles = (contents, repoName, path) => {
-        fileList.innerHTML = "";
+        fileList.innerHTML = '';
         if (!Array.isArray(contents) || contents.length === 0) {
-            renderFileMessage("finder.emptyDirectory");
+            renderFileMessage('finder.emptyDirectory');
             return;
         }
 
         if (path) {
-            const li = document.createElement("li");
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "w-full text-left px-4 py-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700";
-            const backWrapper = document.createElement("span");
-            backWrapper.className = "flex items-center gap-2";
-            const backIcon = document.createElement("span");
-            backIcon.textContent = "◀︎";
-            const backLabel = document.createElement("span");
-            backLabel.className = "font-medium";
-            backLabel.setAttribute("data-i18n", "finder.back");
+            const li = document.createElement('li');
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className =
+                'w-full text-left px-4 py-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700';
+            const backWrapper = document.createElement('span');
+            backWrapper.className = 'flex items-center gap-2';
+            const backIcon = document.createElement('span');
+            backIcon.textContent = '◀︎';
+            const backLabel = document.createElement('span');
+            backLabel.className = 'font-medium';
+            backLabel.setAttribute('data-i18n', 'finder.back');
             appI18n.applyTranslations(backLabel);
             backWrapper.appendChild(backIcon);
             backWrapper.appendChild(backLabel);
             button.appendChild(backWrapper);
-            button.addEventListener("click", () => loadRepoPath(repoName, parentPath(path)));
+            button.addEventListener('click', () =>
+                loadRepoPath(repoName, parentPath(path)),
+            );
             li.appendChild(button);
             fileList.appendChild(li);
         }
 
         const sorted = contents.slice().sort((a, b) => {
             if (a.type === b.type) {
-                return a.name.localeCompare(b.name, "de", { sensitivity: "base" });
+                return a.name.localeCompare(b.name, 'de', {
+                    sensitivity: 'base',
+                });
             }
-            return a.type === "dir" ? -1 : 1;
+            return a.type === 'dir' ? -1 : 1;
         });
 
-        sorted.forEach(entry => {
-            const li = document.createElement("li");
-            if (entry.type === "dir") {
-                const button = document.createElement("button");
-                button.type = "button";
-                button.className = "w-full text-left px-4 py-3 flex items-center justify-between gap-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
-                const label = document.createElement("span");
-                label.className = "flex items-center gap-2 text-gray-700 dark:text-gray-200";
-                const folderIcon = document.createElement("span");
-                folderIcon.textContent = "📁";
-                const folderName = document.createElement("span");
-                folderName.className = "font-medium";
+        sorted.forEach((entry) => {
+            const li = document.createElement('li');
+            if (entry.type === 'dir') {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className =
+                    'w-full text-left px-4 py-3 flex items-center justify-between gap-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition';
+                const label = document.createElement('span');
+                label.className =
+                    'flex items-center gap-2 text-gray-700 dark:text-gray-200';
+                const folderIcon = document.createElement('span');
+                folderIcon.textContent = '📁';
+                const folderName = document.createElement('span');
+                folderName.className = 'font-medium';
                 folderName.textContent = entry.name;
                 label.appendChild(folderIcon);
                 label.appendChild(folderName);
-                const chevron = document.createElement("span");
-                chevron.className = "text-gray-400";
-                chevron.textContent = "›";
+                const chevron = document.createElement('span');
+                chevron.className = 'text-gray-400';
+                chevron.textContent = '›';
                 button.appendChild(label);
                 button.appendChild(chevron);
-                button.addEventListener("click", () => {
-                    const nextPath = path ? `${path}/${entry.name}` : entry.name;
+                button.addEventListener('click', () => {
+                    const nextPath = path
+                        ? `${path}/${entry.name}`
+                        : entry.name;
                     loadRepoPath(repoName, nextPath);
                 });
                 li.appendChild(button);
             } else if (isImageFile(entry.name)) {
-                const button = document.createElement("button");
-                button.type = "button";
-                button.className = "w-full text-left px-4 py-3 flex items-center justify-between gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
-                const label = document.createElement("span");
-                label.className = "flex items-center gap-2";
-                const fileIcon = document.createElement("span");
-                fileIcon.textContent = "🖼️";
-                const fileName = document.createElement("span");
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className =
+                    'w-full text-left px-4 py-3 flex items-center justify-between gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition';
+                const label = document.createElement('span');
+                label.className = 'flex items-center gap-2';
+                const fileIcon = document.createElement('span');
+                fileIcon.textContent = '🖼️';
+                const fileName = document.createElement('span');
                 fileName.textContent = entry.name;
                 label.appendChild(fileIcon);
                 label.appendChild(fileName);
                 button.appendChild(label);
-                const openHint = document.createElement("span");
-                openHint.className = "text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider";
-                openHint.setAttribute("data-i18n", "finder.imageViewer");
+                const openHint = document.createElement('span');
+                openHint.className =
+                    'text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider';
+                openHint.setAttribute('data-i18n', 'finder.imageViewer');
                 appI18n.applyTranslations(openHint);
                 button.appendChild(openHint);
-                button.addEventListener("click", () => openImageFileInViewer(repoName, path, entry));
+                button.addEventListener('click', () =>
+                    openImageFileInViewer(repoName, path, entry),
+                );
                 li.appendChild(button);
             } else if (isProbablyTextFile(entry.name)) {
-                const button = document.createElement("button");
-                button.type = "button";
-                button.className = "w-full text-left px-4 py-3 flex items-center justify-between gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
-                const label = document.createElement("span");
-                label.className = "flex items-center gap-2";
-                const fileIcon = document.createElement("span");
-                fileIcon.textContent = "📄";
-                const fileName = document.createElement("span");
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className =
+                    'w-full text-left px-4 py-3 flex items-center justify-between gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition';
+                const label = document.createElement('span');
+                label.className = 'flex items-center gap-2';
+                const fileIcon = document.createElement('span');
+                fileIcon.textContent = '📄';
+                const fileName = document.createElement('span');
                 fileName.textContent = entry.name;
                 label.appendChild(fileIcon);
                 label.appendChild(fileName);
                 button.appendChild(label);
-                const openHint = document.createElement("span");
-                openHint.className = "text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider";
-                openHint.setAttribute("data-i18n", "finder.textEditor");
+                const openHint = document.createElement('span');
+                openHint.className =
+                    'text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider';
+                openHint.setAttribute('data-i18n', 'finder.textEditor');
                 appI18n.applyTranslations(openHint);
                 button.appendChild(openHint);
-                button.addEventListener("click", () => openTextFileInEditor(repoName, path, entry));
+                button.addEventListener('click', () =>
+                    openTextFileInEditor(repoName, path, entry),
+                );
                 li.appendChild(button);
             } else {
-                const link = document.createElement("a");
-                link.href = entry.html_url || entry.download_url || "#";
-                link.target = "_blank";
-                link.rel = "noopener noreferrer";
-                link.className = "block px-4 py-3 flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition";
-                const fileIcon = document.createElement("span");
-                fileIcon.textContent = "📄";
-                const fileName = document.createElement("span");
+                const link = document.createElement('a');
+                link.href = entry.html_url || entry.download_url || '#';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.className =
+                    'block px-4 py-3 flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition';
+                const fileIcon = document.createElement('span');
+                fileIcon.textContent = '📄';
+                const fileName = document.createElement('span');
                 fileName.textContent = entry.name;
                 link.appendChild(fileIcon);
                 link.appendChild(fileName);
@@ -1366,16 +1603,18 @@ function loadGithubRepos() {
     };
 
     const repoPathToUrl = (repoName, path) => {
-        const encodedSegments = path ? path.split("/").filter(Boolean).map(encodeURIComponent).join("/") : "";
-        return `https://api.github.com/repos/${username}/${repoName}/contents${encodedSegments ? "/" + encodedSegments : ""}`;
+        const encodedSegments = path
+            ? path.split('/').filter(Boolean).map(encodeURIComponent).join('/')
+            : '';
+        return `https://api.github.com/repos/${username}/${repoName}/contents${encodedSegments ? '/' + encodedSegments : ''}`;
     };
 
-    const loadRepoPath = (repoName, path = "") => {
+    const loadRepoPath = (repoName, path = '') => {
         pendingFinderState = null;
         state.selectedRepo = repoName;
         state.selectedPath = path;
-        finderPlaceholder.classList.add("hidden");
-        finderMain.classList.remove("hidden");
+        finderPlaceholder.classList.add('hidden');
+        finderMain.classList.remove('hidden');
         updateSidebarHighlight();
         renderBreadcrumbs(repoName, path);
         if (repoName) {
@@ -1390,69 +1629,84 @@ function loadGithubRepos() {
             return;
         }
 
-        renderFileMessage("finder.loadingFiles");
+        renderFileMessage('finder.loadingFiles');
         fetch(repoPathToUrl(repoName, path), withGithubOptions())
-            .then(res => {
+            .then((res) => {
                 assertGithubResponseOk(res);
                 return res.json();
             })
-            .then(contents => {
+            .then((contents) => {
                 if (!Array.isArray(contents)) {
-                    throw new Error("Unerwartetes Antwortformat der GitHub API");
+                    throw new Error(
+                        'Unerwartetes Antwortformat der GitHub API',
+                    );
                 }
                 storeCacheEntry(repoName, path, contents);
                 renderFiles(contents, repoName, path);
             })
-            .catch(err => {
+            .catch((err) => {
                 if (isRateLimitError(err)) {
-                    renderFileMessage("finder.rateLimit");
+                    renderFileMessage('finder.rateLimit');
                 } else if (isNotFoundError(err)) {
-                    renderFileMessage("finder.pathNotFound");
-                    if (state.selectedRepo === repoName && state.selectedPath === path) {
-                        writeFinderState({ repo: repoName, path: "" });
+                    renderFileMessage('finder.pathNotFound');
+                    if (
+                        state.selectedRepo === repoName &&
+                        state.selectedPath === path
+                    ) {
+                        writeFinderState({ repo: repoName, path: '' });
                     }
                 } else {
-                    console.error("Fehler beim Laden der Repo-Inhalte:", err);
-                    renderFileMessage("finder.filesLoadError");
+                    console.error('Fehler beim Laden der Repo-Inhalte:', err);
+                    renderFileMessage('finder.filesLoadError');
                 }
             });
     };
 
     const renderRepos = (repos) => {
-        list.innerHTML = "";
+        list.innerHTML = '';
         state.repoButtons.clear();
         state.repos = Array.isArray(repos) ? repos.slice() : [];
         if (!Array.isArray(repos) || repos.length === 0) {
             clearFinderState();
-            renderEmptySidebarState("finder.noRepositories");
+            renderEmptySidebarState('finder.noRepositories');
             return;
         }
 
-        const locale = appI18n.getActiveLanguage ? appI18n.getActiveLanguage() : "de";
+        const locale = appI18n.getActiveLanguage
+            ? appI18n.getActiveLanguage()
+            : 'de';
         state.repos
             .slice()
-            .sort((a, b) => a.name.localeCompare(b.name, locale, { sensitivity: "base" }))
-            .forEach(repo => {
-                const item = document.createElement("li");
-                const button = document.createElement("button");
-                button.type = "button";
-                button.className = "w-full px-4 py-3 text-left flex flex-col gap-1 border-l-4 border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition";
-                const name = document.createElement("span");
-                name.className = "font-semibold text-gray-800 dark:text-gray-100 truncate";
+            .sort((a, b) =>
+                a.name.localeCompare(b.name, locale, { sensitivity: 'base' }),
+            )
+            .forEach((repo) => {
+                const item = document.createElement('li');
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className =
+                    'w-full px-4 py-3 text-left flex flex-col gap-1 border-l-4 border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition';
+                const name = document.createElement('span');
+                name.className =
+                    'font-semibold text-gray-800 dark:text-gray-100 truncate';
                 if (repo.name) {
                     name.textContent = repo.name;
-                    name.removeAttribute("data-i18n");
+                    name.removeAttribute('data-i18n');
                 } else {
-                    name.setAttribute("data-i18n", "finder.repoUnnamed");
+                    name.setAttribute('data-i18n', 'finder.repoUnnamed');
                     appI18n.applyTranslations(name);
                 }
-                const description = document.createElement("span");
-                description.className = "text-sm text-gray-500 dark:text-gray-400 truncate";
+                const description = document.createElement('span');
+                description.className =
+                    'text-sm text-gray-500 dark:text-gray-400 truncate';
                 if (repo.description) {
                     description.textContent = repo.description;
-                    description.removeAttribute("data-i18n");
+                    description.removeAttribute('data-i18n');
                 } else {
-                    description.setAttribute("data-i18n", "finder.repoDescriptionMissing");
+                    description.setAttribute(
+                        'data-i18n',
+                        'finder.repoDescriptionMissing',
+                    );
                     appI18n.applyTranslations(description);
                 }
                 button.appendChild(name);
@@ -1460,7 +1714,9 @@ function loadGithubRepos() {
                 item.appendChild(button);
                 list.appendChild(item);
                 if (repo.name) {
-                    button.addEventListener("click", () => loadRepoPath(repo.name, ""));
+                    button.addEventListener('click', () =>
+                        loadRepoPath(repo.name, ''),
+                    );
                     state.repoButtons.set(repo.name, button);
                 } else {
                     button.disabled = true;
@@ -1469,11 +1725,11 @@ function loadGithubRepos() {
 
         updateSidebarHighlight();
 
-        if (pendingFinderState && typeof pendingFinderState.repo === "string") {
+        if (pendingFinderState && typeof pendingFinderState.repo === 'string') {
             if (state.repoButtons.has(pendingFinderState.repo)) {
                 const target = pendingFinderState;
                 pendingFinderState = null;
-                loadRepoPath(target.repo, target.path || "");
+                loadRepoPath(target.repo, target.path || '');
                 return;
             }
             pendingFinderState = null;
@@ -1486,7 +1742,7 @@ function loadGithubRepos() {
         if (state.selectedRepo && !state.repoButtons.has(state.selectedRepo)) {
             clearFinderState();
             state.selectedRepo = null;
-            state.selectedPath = "";
+            state.selectedPath = '';
         }
         showPlaceholder();
     };
@@ -1507,7 +1763,7 @@ function loadGithubRepos() {
             const isFresh = Number.isFinite(age) && age < cacheDuration;
             return { served: true, fresh: isFresh };
         } catch (err) {
-            console.warn("Konnte Cache nicht lesen:", err);
+            console.warn('Konnte Cache nicht lesen:', err);
             return { served: false, fresh: false };
         }
     };
@@ -1517,27 +1773,30 @@ function loadGithubRepos() {
         return;
     }
 
-    fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, withGithubOptions())
-        .then(res => {
+    fetch(
+        `https://api.github.com/users/${username}/repos?per_page=100&sort=updated`,
+        withGithubOptions(),
+    )
+        .then((res) => {
             assertGithubResponseOk(res);
             return res.json();
         })
-        .then(repos => {
+        .then((repos) => {
             if (!Array.isArray(repos)) {
-                throw new Error("Unerwartetes Antwortformat der GitHub API");
+                throw new Error('Unerwartetes Antwortformat der GitHub API');
             }
             localStorage.setItem(cacheKey, JSON.stringify(repos));
             localStorage.setItem(cacheTimestampKey, Date.now().toString());
             renderRepos(repos);
         })
-        .catch(err => {
-            console.error("Fehler beim Laden der Repos:", err);
+        .catch((err) => {
+            console.error('Fehler beim Laden der Repos:', err);
             if (!cacheStatus.served) {
                 if (isRateLimitError(err)) {
                     clearFinderState();
-                    renderEmptySidebarState("finder.rateLimit");
+                    renderEmptySidebarState('finder.rateLimit');
                 } else {
-                    renderEmptySidebarState("finder.repositoriesError");
+                    renderEmptySidebarState('finder.repositoriesError');
                 }
             }
         });
@@ -1559,33 +1818,32 @@ function loaded(node) {
 }
 
 function recursiveParentSearch(node) {
-    if (node.classList != undefined && node.classList.contains("modal")) {
+    if (node.classList != undefined && node.classList.contains('modal')) {
         return node.id.toString();
-    }
-    else if (node.parentNode == null)
-        return null;
+    } else if (node.parentNode == null) return null;
     else return recursiveParentSearch(node.parentNode);
 }
 
 function updateDockIndicators() {
     // Definiere hier, welche Modale mit welchen Indikatoren verbunden werden sollen.
     const indicatorMappings = [
-        { modalId: "finder-modal", indicatorId: "finder-indicator" },
-        { modalId: "projects-modal", indicatorId: "projects-indicator" },
-        { modalId: "settings-modal", indicatorId: "settings-indicator" },
-        { modalId: "text-modal", indicatorId: "text-indicator" },
-        { modalId: "image-modal", indicatorId: "image-indicator" }
+        { modalId: 'finder-modal', indicatorId: 'finder-indicator' },
+        { modalId: 'projects-modal', indicatorId: 'projects-indicator' },
+        { modalId: 'settings-modal', indicatorId: 'settings-indicator' },
+        { modalId: 'text-modal', indicatorId: 'text-indicator' },
+        { modalId: 'image-modal', indicatorId: 'image-indicator' },
     ];
-    indicatorMappings.forEach(mapping => {
+    indicatorMappings.forEach((mapping) => {
         const modal = document.getElementById(mapping.modalId);
         const indicator = document.getElementById(mapping.indicatorId);
         if (modal && indicator) {
             // Dot anzeigen, wenn Fenster sichtbar ODER minimiert ist
-            const minimized = modal.dataset && modal.dataset.minimized === 'true';
-            if (!modal.classList.contains("hidden") || minimized) {
-                indicator.classList.remove("hidden");
+            const minimized =
+                modal.dataset && modal.dataset.minimized === 'true';
+            if (!modal.classList.contains('hidden') || minimized) {
+                indicator.classList.remove('hidden');
             } else {
-                indicator.classList.add("hidden");
+                indicator.classList.add('hidden');
             }
         }
     });
@@ -1595,16 +1853,22 @@ window.updateDockIndicators = updateDockIndicators;
 
 // Blendet alle Sektionen der Einstellungen aus und zeigt nur die gewünschte an
 function showSettingsSection(section) {
-    const allSections = ["settings-general", "settings-display", "settings-about", "settings-network", "settings-battery"];
-    allSections.forEach(id => {
+    const allSections = [
+        'settings-general',
+        'settings-display',
+        'settings-about',
+        'settings-network',
+        'settings-battery',
+    ];
+    allSections.forEach((id) => {
         const el = document.getElementById(id);
         if (el) {
-            el.classList.add("hidden");
+            el.classList.add('hidden');
         }
     });
     const target = document.getElementById(`settings-${section}`);
     if (target) {
-        target.classList.remove("hidden");
+        target.classList.remove('hidden');
     }
 }
 

@@ -38,13 +38,13 @@ function initDockMagnification() {
     if (!icons.length) return;
 
     // Sammle alle Icons mit ihren Tooltips
-    const items = icons.map(icon => {
+    const items = icons.map((icon) => {
         const parent = icon.parentElement;
         const tooltip = parent ? parent.querySelector('.dock-tooltip') : null;
         return {
             icon,
             tooltip,
-            baseHeight: icon.offsetHeight || 0
+            baseHeight: icon.offsetHeight || 0,
         };
     });
 
@@ -52,10 +52,10 @@ function initDockMagnification() {
     let pointerX = null;
 
     // Magnification-Einstellungen
-    const maxScale = 1.6;        // Maximale Vergrößerung
-    const minScale = 1.0;        // Minimale Größe (normal)
-    const radius = 120;          // Einflussradius in px
-    const sigma = radius / 3;    // Gaußsche Standardabweichung
+    const maxScale = 1.6; // Maximale Vergrößerung
+    const minScale = 1.0; // Minimale Größe (normal)
+    const radius = 120; // Einflussradius in px
+    const sigma = radius / 3; // Gaußsche Standardabweichung
 
     const apply = () => {
         rafId = null;
@@ -79,7 +79,13 @@ function initDockMagnification() {
             const centerX = rect.left + rect.width / 2;
             const dx = Math.abs(pointerX - centerX);
             const influence = Math.exp(-(dx * dx) / (2 * sigma * sigma));
-            const scale = Math.max(minScale, Math.min(maxScale, minScale + (maxScale - minScale) * influence));
+            const scale = Math.max(
+                minScale,
+                Math.min(
+                    maxScale,
+                    minScale + (maxScale - minScale) * influence,
+                ),
+            );
 
             // Leichtes Anheben nach oben, abhängig von der Skalierung
             const base = baseHeight || icon.offsetHeight || 0;
@@ -130,8 +136,13 @@ function loadDockOrder() {
 
 function saveDockOrder(order) {
     try {
-        localStorage.setItem(DOCK_ORDER_STORAGE_KEY, JSON.stringify(order || []));
-    } catch (_) { /* ignore */ }
+        localStorage.setItem(
+            DOCK_ORDER_STORAGE_KEY,
+            JSON.stringify(order || []),
+        );
+    } catch (_) {
+        /* ignore */
+    }
 }
 
 function getDockItemId(item) {
@@ -142,7 +153,9 @@ function getDockItemId(item) {
 function getCurrentDockOrder() {
     const tray = document.querySelector('#dock .dock-tray');
     if (!tray) return [];
-    return Array.from(tray.querySelectorAll('.dock-item')).map(getDockItemId).filter(Boolean);
+    return Array.from(tray.querySelectorAll('.dock-item'))
+        .map(getDockItemId)
+        .filter(Boolean);
 }
 
 function applyDockOrder(order) {
@@ -150,10 +163,10 @@ function applyDockOrder(order) {
     const tray = document.querySelector('#dock .dock-tray');
     if (!tray) return;
     const items = Array.from(tray.querySelectorAll('.dock-item'));
-    const map = new Map(items.map(it => [getDockItemId(it), it]));
+    const map = new Map(items.map((it) => [getDockItemId(it), it]));
     // Füge bekannte IDs in gewünschter Reihenfolge ein, unbekannte später anhängen
     const fragment = document.createDocumentFragment();
-    order.forEach(id => {
+    order.forEach((id) => {
         const el = map.get(id);
         if (el) {
             fragment.appendChild(el);
@@ -169,8 +182,8 @@ function createPlaceholder(width, height) {
     const ph = document.createElement('div');
     ph.className = 'dock-placeholder';
     ph.setAttribute('aria-hidden', 'true');
-    ph.style.width = (Math.max(1, Math.round(width || 48))) + 'px';
-    ph.style.height = (Math.max(1, Math.round(height || 48))) + 'px';
+    ph.style.width = Math.max(1, Math.round(width || 48)) + 'px';
+    ph.style.height = Math.max(1, Math.round(height || 48)) + 'px';
     ph.style.opacity = '0';
     ph.style.pointerEvents = 'none';
     return ph;
@@ -196,7 +209,9 @@ function initDockDragDrop() {
             const r = ref.getBoundingClientRect();
             placeholder.style.width = r.width + 'px';
             placeholder.style.height = r.height + 'px';
-        } catch (_) { /* ignore */ }
+        } catch (_) {
+            /* ignore */
+        }
     };
 
     const placeRelativeTo = (targetItem, clientX) => {
@@ -205,14 +220,19 @@ function initDockDragDrop() {
         updatePlaceholderSize(draggedItem || targetItem);
         const rect = targetItem.getBoundingClientRect();
         const insertBefore = clientX < rect.left + rect.width / 2;
-        tray.insertBefore(placeholder, insertBefore ? targetItem : targetItem.nextSibling);
+        tray.insertBefore(
+            placeholder,
+            insertBefore ? targetItem : targetItem.nextSibling,
+        );
     };
 
     const handleTrayDragOver = (e) => {
         if (!draggedItem) return;
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-        const items = Array.from(tray.querySelectorAll('.dock-item')).filter(it => it !== draggedItem);
+        const items = Array.from(tray.querySelectorAll('.dock-item')).filter(
+            (it) => it !== draggedItem,
+        );
         if (!placeholder) placeholder = createPlaceholder();
         if (items.length === 0) {
             tray.appendChild(placeholder);
@@ -222,10 +242,14 @@ function initDockDragDrop() {
         let target = null;
         for (const it of items) {
             const r = it.getBoundingClientRect();
-            if (e.clientX < r.left + r.width / 2) { target = it; break; }
+            if (e.clientX < r.left + r.width / 2) {
+                target = it;
+                break;
+            }
         }
         updatePlaceholderSize(draggedItem || items[0]);
-        if (target) tray.insertBefore(placeholder, target); else tray.appendChild(placeholder);
+        if (target) tray.insertBefore(placeholder, target);
+        else tray.appendChild(placeholder);
     };
 
     const onDragStart = (e) => {
@@ -242,7 +266,9 @@ function initDockDragDrop() {
             e.dataTransfer.setData('text/plain', getDockItemId(item) || '');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setDragImage(icon, r.width / 2, r.height / 2);
-        } catch (_) { /* ignore */ }
+        } catch (_) {
+            /* ignore */
+        }
         // Platzhalter vorläufig an aktuelle Stelle
         const r = item.getBoundingClientRect();
         placeholder = createPlaceholder(r.width, r.height);
@@ -273,13 +299,17 @@ function initDockDragDrop() {
     const onDrop = (e) => {
         if (!draggedItem) return;
         e.preventDefault();
-        const phDidNotMove = placeholder && placeholder.isConnected && (
-            placeholder.previousSibling === draggedItem || placeholder.nextSibling === draggedItem
-        );
+        const phDidNotMove =
+            placeholder &&
+            placeholder.isConnected &&
+            (placeholder.previousSibling === draggedItem ||
+                placeholder.nextSibling === draggedItem);
         // If placeholder didn't move (or is missing), compute target via drop position
         if (!placeholder || !placeholder.isConnected || phDidNotMove) {
             const x = e.clientX;
-            const items = Array.from(tray.querySelectorAll('.dock-item')).filter(it => it !== draggedItem);
+            const items = Array.from(
+                tray.querySelectorAll('.dock-item'),
+            ).filter((it) => it !== draggedItem);
             let inserted = false;
             for (const it of items) {
                 const r = it.getBoundingClientRect();
@@ -312,19 +342,23 @@ function initDockDragDrop() {
     };
 
     // Click-Suppression (versehentliches Öffnen vermeiden)
-    dock.addEventListener('click', (ev) => {
-        if (Date.now() < suppressClicksUntil || draggedItem) {
-            ev.stopPropagation();
-            ev.preventDefault();
-        }
-    }, true);
+    dock.addEventListener(
+        'click',
+        (ev) => {
+            if (Date.now() < suppressClicksUntil || draggedItem) {
+                ev.stopPropagation();
+                ev.preventDefault();
+            }
+        },
+        true,
+    );
 
     // Globale Sicherheitsleine
     window.addEventListener('blur', cleanup);
 
     // Delegation: Items draggable machen und Events binden
     const enableDraggable = () => {
-        tray.querySelectorAll('.dock-item').forEach(it => {
+        tray.querySelectorAll('.dock-item').forEach((it) => {
             it.setAttribute('draggable', 'true');
             it.addEventListener('dragstart', onDragStart);
         });
@@ -347,6 +381,6 @@ if (typeof window !== 'undefined') {
         getCurrentDockOrder,
         loadDockOrder,
         saveDockOrder,
-        applyDockOrder
+        applyDockOrder,
     };
 }

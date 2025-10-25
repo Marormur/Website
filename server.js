@@ -27,7 +27,7 @@ const MIME_TYPES = {
     '.woff': 'font/woff',
     '.woff2': 'font/woff2',
     '.ttf': 'font/ttf',
-    '.txt': 'text/plain; charset=utf-8'
+    '.txt': 'text/plain; charset=utf-8',
 };
 
 // Keep a list of connected SSE clients for live reload
@@ -43,7 +43,7 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive'
+            Connection: 'keep-alive',
         });
         res.write(': connected\n\n'); // comment to establish stream
         sseClients.add(res);
@@ -60,7 +60,9 @@ const server = http.createServer((req, res) => {
     const extname = String(path.extname(filePath)).toLowerCase();
     const contentType = MIME_TYPES[extname] || 'application/octet-stream';
 
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} -> ${filePath}`);
+    console.log(
+        `[${new Date().toISOString()}] ${req.method} ${req.url} -> ${filePath}`,
+    );
 
     fs.readFile(filePath, (error, content) => {
         if (error) {
@@ -69,7 +71,9 @@ const server = http.createServer((req, res) => {
                 res.writeHead(404, { 'Content-Type': 'text/html' });
                 res.end('<h1>404 Not Found</h1>', 'utf-8');
             } else {
-                console.error(`[500] Server error: ${error.code} for ${filePath}`);
+                console.error(
+                    `[500] Server error: ${error.code} for ${filePath}`,
+                );
                 res.writeHead(500);
                 res.end('Server Error: ' + error.code, 'utf-8');
             }
@@ -77,8 +81,8 @@ const server = http.createServer((req, res) => {
             res.writeHead(200, {
                 'Content-Type': contentType,
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
+                Pragma: 'no-cache',
+                Expires: '0',
             });
             res.end(content, 'utf-8');
             console.log(`[200] Served ${filePath} (${contentType})`);
@@ -92,7 +96,9 @@ server.listen(PORT, HOST, () => {
     try {
         chokidar = require('chokidar');
         if (process.env.NO_WATCH === '1' || process.env.CI === 'true') {
-            console.log('[LR] Live reload disabled by environment (NO_WATCH/CI).');
+            console.log(
+                '[LR] Live reload disabled by environment (NO_WATCH/CI).',
+            );
             return;
         }
 
@@ -103,7 +109,7 @@ server.listen(PORT, HOST, () => {
             path.join(__dirname, 'js/**/*.js'),
             path.join(__dirname, 'style.css'),
             // CSS: only built files → reload after successful Tailwind build
-            path.join(__dirname, 'dist/**/*.css')
+            path.join(__dirname, 'dist/**/*.css'),
         ];
 
         const watcher = chokidar.watch(watchPaths, {
@@ -114,7 +120,7 @@ server.listen(PORT, HOST, () => {
                 '**/node_modules/**',
                 '**/.git/**',
                 '**/test-results/**',
-                '**/.vscode/**'
+                '**/.vscode/**',
             ],
             ignoreInitial: true,
             awaitWriteFinish: { stabilityThreshold: 150, pollInterval: 50 },
@@ -124,7 +130,8 @@ server.listen(PORT, HOST, () => {
         const broadcastReload = (changedPath) => {
             const rel = path.relative(__dirname, changedPath || '');
             const ext = path.extname(rel).toLowerCase();
-            const kind = ext === '.css' ? 'css' : (ext === '.html' ? 'html' : 'js');
+            const kind =
+                ext === '.css' ? 'css' : ext === '.html' ? 'html' : 'js';
             const msg = `event: reload\ndata: ${JSON.stringify({ path: rel, kind, ts: Date.now() })}\n\n`;
             for (const client of sseClients) {
                 try {
@@ -133,7 +140,9 @@ server.listen(PORT, HOST, () => {
                     } else {
                         client.write(msg);
                     }
-                } catch (_) { /* drop broken client on next tick */ }
+                } catch (_) {
+                    /* drop broken client on next tick */
+                }
             }
             console.log(`[LR] Reload triggered by: ${rel}`);
         };
@@ -152,7 +161,8 @@ server.listen(PORT, HOST, () => {
             }, 120);
         }
 
-        watcher.on('add', scheduleReload)
+        watcher
+            .on('add', scheduleReload)
             .on('change', scheduleReload)
             .on('unlink', scheduleReload);
 
@@ -166,11 +176,15 @@ server.listen(PORT, HOST, () => {
                     } else {
                         client.write(ping);
                     }
-                } catch (_) { /* ignore */ }
+                } catch (_) {
+                    /* ignore */
+                }
             }
         }, 30000).unref();
         console.log('[LR] Live reload enabled (SSE).');
     } catch (err) {
-        console.log('[LR] Live reload disabled (chokidar not installed). Run "npm i -D chokidar" to enable.');
+        console.log(
+            '[LR] Live reload disabled (chokidar not installed). Run "npm i -D chokidar" to enable.',
+        );
     }
 });

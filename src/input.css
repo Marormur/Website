@@ -1,11 +1,13 @@
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
 
 /* Custom styles to preserve existing design */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    background: url("../img/wallpaper.png") no-repeat center center fixed !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    background: url('../img/wallpaper.png') no-repeat center center fixed !important;
     background-size: cover !important;
     margin: 0;
     padding: 0;
@@ -14,16 +16,15 @@ body {
 /* Window Tabs Styling */
 .window-tab-bar {
     height: 40px;
+    -webkit-user-select: none;
+    /* Safari/iOS support */
     user-select: none;
-}
-
-.window-tabs-container {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
 }
 
 .window-tabs-container::-webkit-scrollbar {
     height: 4px;
+    width: 4px;
+    /* ensure thin vertical scrollbar in WebKit-based browsers */
 }
 
 .window-tabs-container::-webkit-scrollbar-track {
@@ -52,12 +53,12 @@ body {
     background-color: rgba(55, 65, 81, 0.5);
 }
 
-.window-tab[aria-selected="true"] {
+.window-tab[aria-selected='true'] {
     background-color: white;
     border-bottom: 2px solid #3b82f6;
 }
 
-.dark .window-tab[aria-selected="true"] {
+.dark .window-tab[aria-selected='true'] {
     background-color: #1f2937;
 }
 
@@ -86,4 +87,13 @@ body {
 
 .instance-container.active {
     display: block;
+}
+
+/* Firefox-only: apply thin scrollbar when supported */
+@supports (scrollbar-width: thin) {
+    .window-tabs-container {
+        /* stylelint-disable-next-line property-no-unsupported-browser-features */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+    }
 }

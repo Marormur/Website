@@ -1,161 +1,161 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="projectsPage.title">Meine GitHub Projekte</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        window.tailwind = window.tailwind || {};
-        window.tailwind.config = Object.assign({}, window.tailwind.config, { darkMode: 'class' });
-    </script>
-    <script src="i18n.js"></script>
-    <style>
-        body {
-            font-family: sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #fafafa;
-            color: #333;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        /* Einfaches Grid */
-        .repo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .repo-card {
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s;
-        }
-
-        .repo-card:hover {
-            transform: translateY(-4px);
-        }
-
-        .repo-card h3 {
-            margin: 0 0 10px;
-            font-size: 1.2em;
-        }
-
-        .repo-card h3 a {
-            color: #0077ff;
-            text-decoration: none;
-        }
-
-        .repo-card h3 a:hover {
-            text-decoration: underline;
-        }
-
-        .repo-card p {
-            margin: 0;
-            font-size: 0.9em;
-            line-height: 1.4;
-        }
-    </style>
-</head>
-
-<body>
-    <h1 data-i18n="projectsPage.title">Meine GitHub Projekte</h1>
-    <div id="repo-grid" class="repo-grid">
-        <!-- Hier werden die Repositories eingefügt -->
-    </div>
-    <script>
-        const appI18n = window.appI18n || {
-            translate: (key) => key,
-            applyTranslations: () => { }
-        };
-        const username = "Marormur";
-        const grid = document.getElementById('repo-grid');
-
-        function renderMessage(messageKey) {
-            if (!grid) return;
-            grid.innerHTML = "";
-            const card = document.createElement('div');
-            card.className = "repo-card";
-            const paragraph = document.createElement('p');
-            paragraph.setAttribute('data-i18n', messageKey);
-            paragraph.textContent = appI18n.translate(messageKey);
-            appI18n.applyTranslations(paragraph);
-            card.appendChild(paragraph);
-            grid.appendChild(card);
-        }
-
-        function renderRepos(repos) {
-            if (!grid) return;
-            grid.innerHTML = "";
-            if (!Array.isArray(repos) || repos.length === 0) {
-                renderMessage("projectsPage.empty");
-                return;
-            }
-            repos.forEach(repo => {
-                const card = document.createElement('div');
-                card.className = "repo-card";
-
-                const title = document.createElement('h3');
-                const link = document.createElement('a');
-                link.href = repo.html_url || "#";
-                link.target = "_blank";
-                link.rel = "noopener noreferrer";
-                if (repo.name) {
-                    link.textContent = repo.name;
-                    link.removeAttribute('data-i18n');
-                } else {
-                    link.setAttribute('data-i18n', 'projectsPage.repoUnnamed');
-                    link.textContent = appI18n.translate('projectsPage.repoUnnamed');
-                    appI18n.applyTranslations(link);
-                }
-                title.appendChild(link);
-
-                const description = document.createElement('p');
-                if (repo.description) {
-                    description.textContent = repo.description;
-                    description.removeAttribute('data-i18n');
-                } else {
-                    description.setAttribute('data-i18n', 'projectsPage.noDescription');
-                    description.textContent = appI18n.translate('projectsPage.noDescription');
-                    appI18n.applyTranslations(description);
-                }
-
-                card.appendChild(title);
-                card.appendChild(description);
-                grid.appendChild(card);
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title data-i18n="projectsPage.title">Meine GitHub Projekte</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            window.tailwind = window.tailwind || {};
+            window.tailwind.config = Object.assign({}, window.tailwind.config, {
+                darkMode: 'class',
             });
-        }
+        </script>
+        <script src="i18n.js"></script>
+        <style>
+            body {
+                font-family: sans-serif;
+                margin: 0;
+                padding: 20px;
+                background: #fafafa;
+                color: #333;
+            }
 
-        function loadRepos() {
-            fetch(`https://api.github.com/users/${username}/repos`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`GitHub API antwortete mit Status ${response.status}`);
+            h1 {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            /* Einfaches Grid */
+            .repo-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+            }
+
+            .repo-card {
+                background: #fff;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 16px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                transition: transform 0.2s;
+            }
+
+            .repo-card:hover {
+                transform: translateY(-4px);
+            }
+
+            .repo-card h3 {
+                margin: 0 0 10px;
+                font-size: 1.2em;
+            }
+
+            .repo-card h3 a {
+                color: #0077ff;
+                text-decoration: none;
+            }
+
+            .repo-card h3 a:hover {
+                text-decoration: underline;
+            }
+
+            .repo-card p {
+                margin: 0;
+                font-size: 0.9em;
+                line-height: 1.4;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1 data-i18n="projectsPage.title">Meine GitHub Projekte</h1>
+        <div id="repo-grid" class="repo-grid">
+            <!-- Hier werden die Repositories eingefügt -->
+        </div>
+        <script>
+            const appI18n = window.appI18n || {
+                translate: key => key,
+                applyTranslations: () => {},
+            };
+            const username = 'Marormur';
+            const grid = document.getElementById('repo-grid');
+
+            function renderMessage(messageKey) {
+                if (!grid) return;
+                grid.innerHTML = '';
+                const card = document.createElement('div');
+                card.className = 'repo-card';
+                const paragraph = document.createElement('p');
+                paragraph.setAttribute('data-i18n', messageKey);
+                paragraph.textContent = appI18n.translate(messageKey);
+                appI18n.applyTranslations(paragraph);
+                card.appendChild(paragraph);
+                grid.appendChild(card);
+            }
+
+            function renderRepos(repos) {
+                if (!grid) return;
+                grid.innerHTML = '';
+                if (!Array.isArray(repos) || repos.length === 0) {
+                    renderMessage('projectsPage.empty');
+                    return;
+                }
+                repos.forEach(repo => {
+                    const card = document.createElement('div');
+                    card.className = 'repo-card';
+
+                    const title = document.createElement('h3');
+                    const link = document.createElement('a');
+                    link.href = repo.html_url || '#';
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    if (repo.name) {
+                        link.textContent = repo.name;
+                        link.removeAttribute('data-i18n');
+                    } else {
+                        link.setAttribute('data-i18n', 'projectsPage.repoUnnamed');
+                        link.textContent = appI18n.translate('projectsPage.repoUnnamed');
+                        appI18n.applyTranslations(link);
                     }
-                    return response.json();
-                })
-                .then(repos => {
-                    if (!Array.isArray(repos)) {
-                        throw new Error("Unerwartetes Antwortformat der GitHub API");
+                    title.appendChild(link);
+
+                    const description = document.createElement('p');
+                    if (repo.description) {
+                        description.textContent = repo.description;
+                        description.removeAttribute('data-i18n');
+                    } else {
+                        description.setAttribute('data-i18n', 'projectsPage.noDescription');
+                        description.textContent = appI18n.translate('projectsPage.noDescription');
+                        appI18n.applyTranslations(description);
                     }
-                    renderRepos(repos);
-                })
-                .catch(err => {
-                    console.error("Fehler beim Laden der Repos:", err);
-                    renderMessage("projectsPage.error");
+
+                    card.appendChild(title);
+                    card.appendChild(description);
+                    grid.appendChild(card);
                 });
-        }
-        loadRepos();
-    </script>
-</body>
+            }
 
+            function loadRepos() {
+                fetch(`https://api.github.com/users/${username}/repos`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`GitHub API antwortete mit Status ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(repos => {
+                        if (!Array.isArray(repos)) {
+                            throw new Error('Unerwartetes Antwortformat der GitHub API');
+                        }
+                        renderRepos(repos);
+                    })
+                    .catch(err => {
+                        console.error('Fehler beim Laden der Repos:', err);
+                        renderMessage('projectsPage.error');
+                    });
+            }
+            loadRepos();
+        </script>
+    </body>
 </html>

@@ -4,16 +4,30 @@
   "description": "Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale und Menüleiste im macOS‑Look, Dark Mode, Mehrsprachigkeit (DE/EN) und ein integrierter Projekte‑Browser, der öffentliche GitHub‑Repos lädt. Zusätzlich enthält die Seite einen einfachen Texteditor und einen Bildbetrachter.",
   "main": "app.js",
   "scripts": {
-    "build:css": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
+    "build:css": "cross-env NODE_ENV=production npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
+    "build:css:dev": "npx tailwindcss -i ./src/input.css -o ./dist/output.css",
     "watch:css": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
     "dev": "node server.js",
     "pw:install": "playwright install",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
-    "lint": "echo 'Linting skipped - ESLint not installed. Run: npm install --save-dev eslint'",
-    "format:check": "echo 'Format check skipped - Prettier not installed'",
-    "validate": "npm run build:css && npm run lint"
+    "lint": "eslint js/**/*.js app.js i18n.js",
+    "lint:fix": "eslint --fix js/**/*.js app.js i18n.js",
+    "format": "prettier --write \"**/*.{js,css,html,md,json}\"",
+    "format:check": "prettier --check \"**/*.{js,css,html,md,json}\"",
+    "validate": "npm run lint && npm run build:css && npm run test:e2e",
+    "docs:clean": "rimraf docs/api",
+    "docs:generate": "jsdoc -c jsdoc.json -r js/ -d docs/api",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix"
+    ],
+    "*.{css,md,html,json}": [
+      "prettier --write"
+    ]
   },
   "repository": {
     "type": "git",
@@ -28,10 +42,22 @@
   },
   "homepage": "https://github.com/Marormur/Website#readme",
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.38.0",
     "@playwright/test": "^1.56.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
     "autoprefixer": "^10.4.21",
     "chokidar": "^3.6.0",
+    "cross-env": "^10.1.0",
+    "eslint": "^9.38.0",
+    "husky": "^9.1.7",
+    "jsdoc": "^4.0.5",
+    "jsdoc-to-markdown": "^8.0.3",
+    "lint-staged": "^16.2.6",
     "postcss": "^8.5.6",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
     "tailwindcss": "^3.4.18"
   }
 }

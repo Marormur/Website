@@ -2,7 +2,7 @@ console.log('SessionManager loaded');
 
 /**
  * SessionManager - Manages window instance sessions
- * 
+ *
  * Features:
  * - Auto-save instances to localStorage
  * - Restore instances on page load
@@ -62,7 +62,9 @@ console.log('SessionManager loaded');
                 this.saveAllSessions();
             }, this.autoSaveInterval);
 
-            console.log(`SessionManager: Auto-save started (interval: ${this.autoSaveInterval}ms)`);
+            console.log(
+                `SessionManager: Auto-save started (interval: ${this.autoSaveInterval}ms)`,
+            );
         }
 
         /**
@@ -87,7 +89,7 @@ console.log('SessionManager loaded');
                 if (serialized.length > 0) {
                     sessions[type] = {
                         instances: serialized,
-                        activeInstanceId: manager.activeInstanceId
+                        activeInstanceId: manager.activeInstanceId,
                     };
                     totalInstances += serialized.length;
                 }
@@ -97,23 +99,37 @@ console.log('SessionManager loaded');
                 const sessionData = {
                     version: '1.0',
                     timestamp: Date.now(),
-                    sessions
+                    sessions,
                 };
 
                 try {
-                    localStorage.setItem(this.storageKey, JSON.stringify(sessionData));
+                    localStorage.setItem(
+                        this.storageKey,
+                        JSON.stringify(sessionData),
+                    );
                     this.lastSaveTime = Date.now();
-                    console.log(`SessionManager: Saved ${totalInstances} instances across ${Object.keys(sessions).length} types`);
+                    console.log(
+                        `SessionManager: Saved ${totalInstances} instances across ${Object.keys(sessions).length} types`,
+                    );
                 } catch (error) {
                     // Provide specific error messages based on error type
                     if (error.name === 'QuotaExceededError') {
-                        console.error('SessionManager: Storage quota exceeded. Cannot save sessions. Consider clearing old data or reducing instance count.');
+                        console.error(
+                            'SessionManager: Storage quota exceeded. Cannot save sessions. Consider clearing old data or reducing instance count.',
+                        );
                     } else if (error.name === 'SecurityError') {
-                        console.error('SessionManager: localStorage access denied. Sessions cannot be saved (private browsing mode?).');
+                        console.error(
+                            'SessionManager: localStorage access denied. Sessions cannot be saved (private browsing mode?).',
+                        );
                     } else if (error instanceof TypeError) {
-                        console.error('SessionManager: Failed to serialize session data. Some instance state may not be JSON-serializable.');
+                        console.error(
+                            'SessionManager: Failed to serialize session data. Some instance state may not be JSON-serializable.',
+                        );
                     } else {
-                        console.error('SessionManager: Failed to save sessions:', error.message || error);
+                        console.error(
+                            'SessionManager: Failed to save sessions:',
+                            error.message || error,
+                        );
                     }
                     this.handleStorageError(error);
                 }
@@ -142,25 +158,36 @@ console.log('SessionManager loaded');
 
                 let totalRestored = 0;
 
-                Object.entries(sessionData.sessions).forEach(([type, typeData]) => {
-                    const manager = this.instanceManagers.get(type);
-                    if (manager) {
-                        manager.deserializeAll(typeData.instances);
+                Object.entries(sessionData.sessions).forEach(
+                    ([type, typeData]) => {
+                        const manager = this.instanceManagers.get(type);
+                        if (manager) {
+                            manager.deserializeAll(typeData.instances);
 
-                        // Restore active instance
-                        if (typeData.activeInstanceId) {
-                            manager.setActiveInstance(typeData.activeInstanceId);
+                            // Restore active instance
+                            if (typeData.activeInstanceId) {
+                                manager.setActiveInstance(
+                                    typeData.activeInstanceId,
+                                );
+                            }
+
+                            totalRestored += typeData.instances.length;
+                        } else {
+                            console.warn(
+                                `SessionManager: No manager registered for type ${type}`,
+                            );
                         }
+                    },
+                );
 
-                        totalRestored += typeData.instances.length;
-                    } else {
-                        console.warn(`SessionManager: No manager registered for type ${type}`);
-                    }
-                });
-
-                console.log(`SessionManager: Restored ${totalRestored} instances`);
+                console.log(
+                    `SessionManager: Restored ${totalRestored} instances`,
+                );
             } catch (error) {
-                console.error('SessionManager: Failed to restore sessions:', error);
+                console.error(
+                    'SessionManager: Failed to restore sessions:',
+                    error,
+                );
             }
         }
 
@@ -176,16 +203,20 @@ console.log('SessionManager loaded');
                 if (serialized.length > 0) {
                     sessions[type] = {
                         instances: serialized,
-                        activeInstanceId: manager.activeInstanceId
+                        activeInstanceId: manager.activeInstanceId,
                     };
                 }
             });
 
-            return JSON.stringify({
-                version: '1.0',
-                timestamp: Date.now(),
-                sessions
-            }, null, 2);
+            return JSON.stringify(
+                {
+                    version: '1.0',
+                    timestamp: Date.now(),
+                    sessions,
+                },
+                null,
+                2,
+            );
         }
 
         /**
@@ -204,20 +235,27 @@ console.log('SessionManager loaded');
                 this.clearAllSessions();
 
                 // Import new sessions
-                Object.entries(sessionData.sessions).forEach(([type, typeData]) => {
-                    const manager = this.instanceManagers.get(type);
-                    if (manager) {
-                        manager.deserializeAll(typeData.instances);
+                Object.entries(sessionData.sessions).forEach(
+                    ([type, typeData]) => {
+                        const manager = this.instanceManagers.get(type);
+                        if (manager) {
+                            manager.deserializeAll(typeData.instances);
 
-                        if (typeData.activeInstanceId) {
-                            manager.setActiveInstance(typeData.activeInstanceId);
+                            if (typeData.activeInstanceId) {
+                                manager.setActiveInstance(
+                                    typeData.activeInstanceId,
+                                );
+                            }
                         }
-                    }
-                });
+                    },
+                );
 
                 console.log('SessionManager: Session imported successfully');
             } catch (error) {
-                console.error('SessionManager: Failed to import session:', error);
+                console.error(
+                    'SessionManager: Failed to import session:',
+                    error,
+                );
                 throw error;
             }
         }
@@ -246,14 +284,17 @@ console.log('SessionManager loaded');
                 name,
                 description,
                 created: Date.now(),
-                session: JSON.parse(sessionJson)
+                session: JSON.parse(sessionJson),
             };
 
             try {
                 localStorage.setItem(templateKey, JSON.stringify(templateData));
                 console.log(`SessionManager: Template "${name}" saved`);
             } catch (error) {
-                console.error('SessionManager: Failed to save template:', error);
+                console.error(
+                    'SessionManager: Failed to save template:',
+                    error,
+                );
                 throw error;
             }
         }
@@ -275,7 +316,10 @@ console.log('SessionManager loaded');
                 this.importSession(JSON.stringify(templateData.session));
                 console.log(`SessionManager: Template "${name}" loaded`);
             } catch (error) {
-                console.error('SessionManager: Failed to load template:', error);
+                console.error(
+                    'SessionManager: Failed to load template:',
+                    error,
+                );
                 throw error;
             }
         }
@@ -296,10 +340,13 @@ console.log('SessionManager loaded');
                         templates.push({
                             name: data.name,
                             description: data.description,
-                            created: data.created
+                            created: data.created,
                         });
                     } catch (error) {
-                        console.error(`Failed to parse template ${key}:`, error);
+                        console.error(
+                            `Failed to parse template ${key}:`,
+                            error,
+                        );
                     }
                 }
             }
@@ -323,7 +370,9 @@ console.log('SessionManager loaded');
          */
         handleStorageError(error) {
             if (error.name === 'QuotaExceededError') {
-                console.warn('SessionManager: Storage quota exceeded. Consider clearing old data.');
+                console.warn(
+                    'SessionManager: Storage quota exceeded. Consider clearing old data.',
+                );
                 // Could implement cleanup strategy here
             }
         }
@@ -354,7 +403,7 @@ console.log('SessionManager loaded');
                 templateCount,
                 templateSize,
                 totalSize: sessionSize + templateSize,
-                lastSaveTime: this.lastSaveTime
+                lastSaveTime: this.lastSaveTime,
             };
         }
 
@@ -372,5 +421,4 @@ console.log('SessionManager loaded');
 
     // Export to global scope
     window.SessionManager = sessionManager;
-
 })();

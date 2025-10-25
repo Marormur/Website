@@ -1,8 +1,22 @@
+/**
+ * WindowManager - Central registry for windows/modals with z-index management and program metadata.
+ *
+ * Responsibilities:
+ * - Register window configs (persistent/transient)
+ * - Track dialog instances and z-index ordering
+ * - Provide program info via i18n keys
+ *
+ * Usage:
+ *   WindowManager.register({ id: 'finder-modal', type: 'persistent', programKey: 'programs.finder' })
+ *   WindowManager.open('finder-modal')
+ *
+ * Notes: This is legacy JS; types are documented via JSDoc for editor hints.
+ */
 console.log('WindowManager loaded');
 
 /**
  * WindowManager - Zentrale Verwaltung für alle Fenster/Modals
- * 
+ *
  * Vorteile:
  * - Neue Fenster können sich selbst registrieren
  * - Alle Fenster-Metadaten an einem Ort
@@ -13,10 +27,19 @@ console.log('WindowManager loaded');
     'use strict';
 
     const windowRegistry = new Map();
-    let baseZIndex = 1000;
+    const baseZIndex = 1000;
     let topZIndex = 1000;
 
     // Window-Konfiguration
+    /**
+     * @typedef {Object} WindowConfigOptions
+     * @property {string} id
+     * @property {('persistent'|'transient')} [type]
+     * @property {string} [programKey]
+     * @property {string} [icon]
+     * @property {string|null} [closeButtonId]
+     * @property {Object} [metadata]
+     */
     class WindowConfig {
         constructor(options) {
             this.id = options.id;
@@ -41,13 +64,16 @@ console.log('WindowManager loaded');
                 modalId: this.id,
                 programLabel: translate(`${this.programKey}.label`),
                 infoLabel: translate(`${this.programKey}.infoLabel`),
-                fallbackInfoModalId: this.metadata.fallbackInfoModalId || 'program-info-modal',
+                fallbackInfoModalId:
+                    this.metadata.fallbackInfoModalId || 'program-info-modal',
                 icon: this.icon,
-                about: {}
+                about: {},
             };
 
             aboutFields.forEach((field) => {
-                info.about[field] = translate(`${this.programKey}.about.${field}`);
+                info.about[field] = translate(
+                    `${this.programKey}.about.${field}`,
+                );
             });
 
             return info;
@@ -57,6 +83,8 @@ console.log('WindowManager loaded');
     const WindowManager = {
         /**
          * Registriert ein neues Fenster im System
+         * @param {WindowConfigOptions} config
+         * @returns {WindowConfig}
          */
         register(config) {
             const windowConfig = new WindowConfig(config);
@@ -66,13 +94,16 @@ console.log('WindowManager loaded');
 
         /**
          * Registriert mehrere Fenster auf einmal
+         * @param {WindowConfigOptions[]} configs
          */
         registerAll(configs) {
-            configs.forEach(config => this.register(config));
+            configs.forEach((config) => this.register(config));
         },
 
         /**
          * Gibt die Konfiguration eines Fensters zurück
+         * @param {string} windowId
+         * @returns {WindowConfig|null}
          */
         getConfig(windowId) {
             return windowRegistry.get(windowId) || null;
@@ -80,6 +111,7 @@ console.log('WindowManager loaded');
 
         /**
          * Gibt alle registrierten Fenster-IDs zurück
+         * @returns {string[]}
          */
         getAllWindowIds() {
             return Array.from(windowRegistry.keys());
@@ -87,9 +119,10 @@ console.log('WindowManager loaded');
 
         /**
          * Gibt alle persistenten Fenster zurück
+         * @returns {string[]}
          */
         getPersistentWindowIds() {
-            return this.getAllWindowIds().filter(id => {
+            return this.getAllWindowIds().filter((id) => {
                 const config = this.getConfig(id);
                 return config && !config.isTransient();
             });
@@ -97,9 +130,10 @@ console.log('WindowManager loaded');
 
         /**
          * Gibt alle transienten Fenster zurück
+         * @returns {string[]}
          */
         getTransientWindowIds() {
-            return this.getAllWindowIds().filter(id => {
+            return this.getAllWindowIds().filter((id) => {
                 const config = this.getConfig(id);
                 return config && config.isTransient();
             });
@@ -107,6 +141,8 @@ console.log('WindowManager loaded');
 
         /**
          * Setzt die Dialog-Instanz für ein Fenster
+         * @param {string} windowId
+         * @param {any} instance
          */
         setDialogInstance(windowId, instance) {
             const config = this.getConfig(windowId);
@@ -143,10 +179,11 @@ console.log('WindowManager loaded');
             let topModal = null;
             let highestZ = 0;
 
-            this.getAllWindowIds().forEach(id => {
+            this.getAllWindowIds().forEach((id) => {
                 const modal = document.getElementById(id);
-                if (modal && !modal.classList.contains("hidden")) {
-                    const zIndex = parseInt(getComputedStyle(modal).zIndex, 10) || 0;
+                if (modal && !modal.classList.contains('hidden')) {
+                    const zIndex =
+                        parseInt(getComputedStyle(modal).zIndex, 10) || 0;
                     if (zIndex > highestZ) {
                         highestZ = zIndex;
                         topModal = modal;
@@ -175,7 +212,11 @@ console.log('WindowManager loaded');
         open(windowId) {
             // Run per-window init handler once if provided
             const config = this.getConfig(windowId);
-            if (config && config.metadata && typeof config.metadata.initHandler === 'function') {
+            if (
+                config &&
+                config.metadata &&
+                typeof config.metadata.initHandler === 'function'
+            ) {
                 try {
                     if (!config.metadata.__initialized) {
                         config.metadata.initHandler();
@@ -224,18 +265,24 @@ console.log('WindowManager loaded');
         syncZIndexWithDOM() {
             let maxZ = baseZIndex;
 
-            this.getAllWindowIds().forEach(id => {
+            this.getAllWindowIds().forEach((id) => {
                 const modal = document.getElementById(id);
                 if (!modal) return;
 
-                const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
+                const modalZ = parseInt(
+                    window.getComputedStyle(modal).zIndex,
+                    10,
+                );
                 if (!Number.isNaN(modalZ)) {
                     maxZ = Math.max(maxZ, modalZ);
                 }
 
                 const windowEl = this.getDialogWindowElement(modal);
                 if (windowEl) {
-                    const contentZ = parseInt(window.getComputedStyle(windowEl).zIndex, 10);
+                    const contentZ = parseInt(
+                        window.getComputedStyle(windowEl).zIndex,
+                        10,
+                    );
                     if (!Number.isNaN(contentZ)) {
                         maxZ = Math.max(maxZ, contentZ);
                     }
@@ -279,8 +326,8 @@ console.log('WindowManager loaded');
                     name: translate(`${programKey}.about.name`),
                     tagline: translate(`${programKey}.about.tagline`),
                     version: translate(`${programKey}.about.version`),
-                    copyright: translate(`${programKey}.about.copyright`)
-                }
+                    copyright: translate(`${programKey}.about.copyright`),
+                },
             };
         },
 
@@ -295,7 +342,7 @@ console.log('WindowManager loaded');
 
         get baseZIndex() {
             return baseZIndex;
-        }
+        },
     };
 
     // Globaler Export
@@ -304,7 +351,8 @@ console.log('WindowManager loaded');
     // Legacy-Kompatibilität
     Object.defineProperty(window, 'topZIndex', {
         get: () => WindowManager.topZIndex,
-        set: (value) => { WindowManager.topZIndex = value; }
+        set: (value) => {
+            WindowManager.topZIndex = value;
+        },
     });
-
 })();
