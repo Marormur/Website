@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **test(stability): Phase 0.3 – Testing stabilization groundwork** (2025-10-26)
+  - Introduced `docs/TESTING.md` with strategy, env flags, and troubleshooting
+  - Added optional GitHub API mocks via `MOCK_GITHUB=1` integrated in `tests/e2e/utils.js`
+  - VS Code smoke test task now enables `MOCK_GITHUB` by default to avoid network flakiness
+  - Enforced TypeScript type-coverage baseline via `npm run type:baseline` and validate pipeline
+
 - **feat(devex): Phase 0.2 Development Workflow improvements** (2025-01-26)
   - Added TypeScript watch mode: `npm run typecheck:watch`
   - VS Code task: "TypeScript: Watch" integrated into dev environment
@@ -20,6 +26,17 @@ All notable changes to this project will be documented in this file.
   - **Results**: TypeScript 0 errors, E2E 92/93 passing, ESLint 30 warnings (from 54)
 
 ### Fixed
+- fix(tabs): ensure content visibility after closing the active tab
+  - After tab close, select a deterministic next active tab, trigger integration onTabSwitch, and explicitly show/hide instances as a safety net
+  - Eliminates intermittent cases where the new active instance remained hidden (e.g., Finder 3 → Finder 1)
+
+- fix(tabs): keep tab bar and content in sync on keyboard tab switching (Ctrl+Tab/Shift+Ctrl+Tab/1-9)
+  - Switch now updates the visible instance content and refreshes the tab UI
+  - Applies to Terminal, Text Editor, and Finder integrations
+  - Also wraps external active-instance changes to re-render the tab bar
+
+- build(tsconfig): enable strict in tsconfig.tsbuild.json to align with base config and tooling expectations
+
 - **fix(typescript): resolve all 33 strict mode compilation errors** (2025-01-25)
   - Fixed action-bus.ts: typeof check for WindowManager.close instead of conditional access
   - Fixed dialog-utils.ts: removed duplicate Window interface, use central types/index.d.ts
@@ -36,6 +53,12 @@ All notable changes to this project will be documented in this file.
   - **Phase 0.1 Progress**: TypeScript compilation ✅ (33/33 errors fixed)
 
 ### Changed
+- **test(playwright): tune local defaults for reliability** (2025-10-26)
+  - Local workers fixed at 2 (CI remains at 1) to prevent oversubscription
+  - Local retries set to 1 (CI keeps 2)
+  - Increased `expect`, `actionTimeout`, and `navigationTimeout` slightly for stability
+  - Keeps Chromium-only locally; CI runs all browsers
+
 - **perf(tests): optimize E2E test execution speed by 70%** (2025-10-25)
   - Local tests now run only on Chromium instead of all 3 browsers (Chromium/Firefox/WebKit)
   - CI still tests all browsers for full coverage via `CI=1` environment variable
