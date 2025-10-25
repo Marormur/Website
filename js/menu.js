@@ -135,8 +135,27 @@
                         shortcut: '⌘R',
                         icon: 'reload',
                         action: () => {
-                            if (window.loadGithubRepos)
+                            // Prefer modern Finder reload behavior
+                            if (
+                                window.FinderSystem &&
+                                typeof window.FinderSystem.navigateTo === 'function'
+                            ) {
+                                try {
+                                    // Clear in-memory repos so a fresh fetch is triggered
+                                    const st = window.FinderSystem.getState && window.FinderSystem.getState();
+                                    if (st && Array.isArray(st.githubRepos)) {
+                                        st.githubRepos = [];
+                                    }
+                                    // Navigate to Finder root (GitHub view)
+                                    window.FinderSystem.navigateTo([], 'github');
+                                } catch (e) {
+                                    console.warn('Finder reload failed, fallback to legacy if available', e);
+                                    if (window.loadGithubRepos) window.loadGithubRepos();
+                                }
+                            } else if (window.loadGithubRepos) {
+                                // Legacy fallback
                                 window.loadGithubRepos();
+                            }
                         },
                     },
                     {

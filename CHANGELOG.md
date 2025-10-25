@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+- chore: deprecate legacy loadGithubRepos in app.js
+  - Removed init-time usage; menu reload now uses FinderSystem directly
+  - Kept a guarded no-op function that delegates to FinderSystem and returns early
+  - Prepares for full removal of legacy GitHub loader implementation
+
 - feat: extract updateDockIndicators to dock.js module
   - Moved dock indicator update logic from app.js to DockSystem.updateDockIndicators
   - Legacy global alias window.updateDockIndicators preserved for backward compatibility

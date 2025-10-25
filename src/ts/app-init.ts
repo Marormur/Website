@@ -166,7 +166,6 @@ function initApp(): void {
     funcs.syncTopZIndexWithDOM?.();
     funcs.restoreWindowPositions?.();
     funcs.restoreOpenModals?.();
-    funcs.loadGithubRepos?.();
     funcs.initSystemStatusControls?.();
     funcs.initDesktop?.();
 

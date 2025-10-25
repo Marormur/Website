@@ -95,7 +95,6 @@ function initApp() {
     funcs.syncTopZIndexWithDOM?.();
     funcs.restoreWindowPositions?.();
     funcs.restoreOpenModals?.();
-    funcs.loadGithubRepos?.();
     funcs.initSystemStatusControls?.();
     funcs.initDesktop?.();
     // Finder initialisieren nach Dialog-Setup
