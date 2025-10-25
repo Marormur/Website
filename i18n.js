@@ -69,7 +69,7 @@
                 text: 'Texteditor',
                 image: 'Bildbetrachter',
                 settings: 'Systemeinstellungen',
-                launchpad: 'Launchpad',
+                launchpad: 'Apps',
                 terminal: 'Terminal'
             },
             menubar: {
@@ -495,6 +495,7 @@
                 }
             },
             desktop: {
+                finder: 'Finder',
                 projects: 'Projects',
                 github: 'GitHub Projects',
                 text: 'Text editor',
@@ -506,10 +507,11 @@
             },
             dock: {
                 finder: 'Finder',
+                projects: 'GitHub Projects',
                 text: 'Text editor',
                 image: 'Image viewer',
                 settings: 'System settings',
-                launchpad: 'Launchpad',
+                launchpad: 'Apps',
                 terminal: 'Terminal'
             },
             menubar: {
@@ -604,6 +606,9 @@
                 image: {
                     title: 'Image viewer',
                     placeholder: 'Open an image file from Finder to preview it.'
+                },
+                finder: {
+                    title: 'Finder'
                 },
                 programInfo: {
                     title: 'About this app'
