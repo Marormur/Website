@@ -101,7 +101,7 @@
     {
       "label": "Start Dev Server",
       "type": "shell",
-      "command": "if (Test-NetConnection -ComputerName 127.0.0.1 -Port 5173 -InformationLevel Quiet) { Write-Host 'Server running at http://127.0.0.1:5173/'; } else { node server.js }",
+      "command": "if (Test-NetConnection -ComputerName 127.0.0.1 -Port 5173 -InformationLevel Quiet) { 'Server running at http://127.0.0.1:5173/' | Write-Output; Start-Sleep -Milliseconds 200; } else { node server.js }",
       "isBackground": true,
       "problemMatcher": {
         "owner": "dev-server",
@@ -213,7 +213,7 @@
     {
       "label": "Start Dev Server (No Watch)",
       "type": "shell",
-      "command": "if (Test-NetConnection -ComputerName 127.0.0.1 -Port 5173 -InformationLevel Quiet) { Write-Host 'Server running at http://127.0.0.1:5173/'; } else { node server.js }",
+      "command": "if (Test-NetConnection -ComputerName 127.0.0.1 -Port 5173 -InformationLevel Quiet) { 'Server running at http://127.0.0.1:5173/' | Write-Output; Start-Sleep -Milliseconds 200; } else { node server.js }",
       "isBackground": true,
       "options": {
         "env": {
