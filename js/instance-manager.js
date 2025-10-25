@@ -189,10 +189,16 @@ console.log('InstanceManager loaded');
         setActiveInstance(instanceId) {
             if (this.instances.has(instanceId)) {
                 const previousId = this.activeInstanceId;
+                
+                // Guard: avoid recursion if already active
+                if (previousId === instanceId) {
+                    return;
+                }
+                
                 this.activeInstanceId = instanceId;
 
                 // Blur previous instance
-                if (previousId && previousId !== instanceId) {
+                if (previousId) {
                     const previousInstance = this.instances.get(previousId);
                     if (previousInstance) {
                         previousInstance.blur();
