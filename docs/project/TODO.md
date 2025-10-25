@@ -78,7 +78,7 @@ Hinweis: Diese Tasks erfüllen direkt „Priorität 1: Core Features & Integrati
 #### Phase 3 – Kritische Module migrieren
 
 - [x] `base-window-instance.js` → `src/ts/base-window-instance.ts` (emit: `js/base-window-instance.js`)
-- [ ] `instance-manager.js` → `.ts`
+- [x] `instance-manager.js` → `src/ts/instance-manager.ts` (emit: `js/instance-manager.js`)
 - [ ] `window-manager.js` → `.ts`
 - [x] `action-bus.js` → `src/ts/action-bus.ts` (emit: `js/action-bus.js`)
 - [x] `window-chrome.js` → `src/ts/window-chrome.ts` (emit: `js/window-chrome.js`)

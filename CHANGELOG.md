@@ -17,6 +17,11 @@ All notable changes to this project will be documented in this file.
   - New source: src/ts/base-window-instance.ts → emits to js/base-window-instance.js
   - Base class with typed config, state, events, and lifecycle methods
   - All subclasses (TerminalInstance, TextEditorInstance, FinderInstance) remain compatible
+
+- refactor(ts): migrate InstanceManager to TypeScript
+  - New source: src/ts/instance-manager.ts → emits to js/instance-manager.js
+  - Typed manager with strong instance registry and lifecycle control
+  - Preserves global InstanceManager class and all manager patterns
 - CODEBASE_IMPROVEMENTS.md with organizational tasks
 - TYPESCRIPT_MIGRATION_PLAN.md with detailed migration strategy
 - API Docs: Generated JSDoc and in-app “📖 API Docs” link (index.html)
