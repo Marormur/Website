@@ -69,9 +69,9 @@ Erfolgskriterien: VS Code Autocomplete korrekt, Typecheck max. Warnings
 
 #### Phase 2 – Neue Features in TS
 
-- [ ] `js/window-tabs.ts` (Tab-Leiste, Add/Close, Active-State, Switch, später DnD)
-- [ ] `js/keyboard-shortcuts.ts` (Cmd/Ctrl+N/W/Tab/Shift+Tab/1–9; Kontext „global“ und app-spezifisch)
-- [ ] Build/Bundle sicherstellen (TS → JS, weiterhin Vanilla-Flow)
+- [x] `src/ts/window-tabs.ts` (Tab-Leiste, Add/Close, Active-State, Switch, später DnD)
+- [x] `src/ts/keyboard-shortcuts.ts` (Cmd/Ctrl+N/W/Tab/Shift+Tab/1–9; Kontext „global“ und app-spezifisch)
+- [x] Build/Bundle sicherstellen (TS → JS, weiterhin Vanilla-Flow)
 
 Hinweis: Diese Tasks erfüllen direkt „Priorität 1: Core Features & Integration“ unten.
 
@@ -80,7 +80,7 @@ Hinweis: Diese Tasks erfüllen direkt „Priorität 1: Core Features & Integrati
 - [ ] `base-window-instance.js` → `.ts`
 - [ ] `instance-manager.js` → `.ts`
 - [ ] `window-manager.js` → `.ts`
-- [ ] `action-bus.js` → `.ts`
+- [x] `action-bus.js` → `src/ts/action-bus.ts` (emit: `js/action-bus.js`)
 - [ ] `window-chrome.js` → `.ts`
 - [ ] `api.js` → `.ts`
 - [ ] (danach) `terminal-instance.js`, `text-editor-instance.js`, `theme.js`, `storage.js`
@@ -139,8 +139,8 @@ Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 
 **Dateien**:
 
-- Neu: `js/window-tabs.js` - Tab Management System
-- Neu: `js/keyboard-shortcuts.js` - Shortcut Handler
+- Neu: `src/ts/window-tabs.ts` → emit: `js/window-tabs.js` - Tab Management System
+- Neu: `src/ts/keyboard-shortcuts.ts` → emit: `js/keyboard-shortcuts.js` - Shortcut Handler
 - Update: `js/menu.js` - Window Menü hinzufügen
 - Update: `app.js` - Shortcuts registrieren
 
