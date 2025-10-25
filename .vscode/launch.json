@@ -55,6 +55,32 @@
             }
         },
         {
+            "name": "Chrome: Dev + Tailwind (Start All)",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://127.0.0.1:5173",
+            "webRoot": "${workspaceFolder}",
+            "preLaunchTask": "Dev Environment: Start All",
+            "postDebugTask": "Stop Dev Server"
+        },
+        {
+            "name": "Node: server.js (debug)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/server.js",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Chrome: Open API Docs",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://127.0.0.1:5173/docs/api/index.html",
+            "webRoot": "${workspaceFolder}",
+            "preLaunchTask": "Start Dev Server",
+            "postDebugTask": "Stop Dev Server"
+        },
+        {
             "name": "Firefox: Launch (File Protocol)",
             "type": "firefox",
             "request": "launch",
