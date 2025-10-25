@@ -98,6 +98,24 @@ console.log('Window Configurations loaded');
             programKey: 'programs.default',
             icon: './img/sucher.png',
             closeButtonId: 'close-program-info-modal'
+        },
+        {
+            id: 'terminal-modal',
+            type: 'persistent',
+            programKey: 'programs.terminal',
+            icon: '💻',
+            closeButtonId: 'close-terminal-modal',
+            metadata: {
+                initHandler: function () {
+                    // Initialize terminal module if not already done
+                    if (window.TerminalSystem && !window.TerminalSystem.container) {
+                        const container = document.getElementById('terminal-container');
+                        if (container) {
+                            window.TerminalSystem.init(container);
+                        }
+                    }
+                }
+            }
         }
     ];
 
