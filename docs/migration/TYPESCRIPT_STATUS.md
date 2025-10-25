@@ -76,9 +76,9 @@
 
 - Init-Aufruf in `js/app-init.js` entfernt (delegation an moderne Systeme)
 - Finder „Reload“ in `js/menu.js` bevorzugt jetzt `FinderSystem.navigateTo([], 'github')` mit guarded Legacy-Fallback
-- Massive Legacy-Implementierung in `app.js` entfernt und durch schlanken delegierenden Stub ersetzt
-- `app.js` auf 50 Zeilen reduziert; i18n/translate Guard bleibt erhalten
-- Optionaler nächster Cleanup: Fallback-Aufruf in `menu.js` und der delegierende Stub können später komplett entfernt werden, sobald keine Legacy-Nutzer mehr existieren
+- Massive Legacy-Implementierung in `app.js` entfernt und zunächst durch schlanken delegierenden Stub ersetzt
+- Anschließend Cleanup umgesetzt: Fallback-Aufruf in `js/menu.js` entfernt und der Stub in `app.js` gelöscht
+- `app.js` jetzt reiner Minimal-Wrapper mit i18n/translate Guard (32 Zeilen)
 
 ---
 

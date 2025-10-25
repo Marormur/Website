@@ -107,7 +107,6 @@ function initApp(): void {
         syncTopZIndexWithDOM?: () => void;
         restoreWindowPositions?: () => void;
         restoreOpenModals?: () => void;
-        loadGithubRepos?: () => void;
         initSystemStatusControls?: () => void;
         initDesktop?: () => void;
         initDockMagnification?: () => void;

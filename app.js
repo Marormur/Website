@@ -28,23 +28,5 @@ if (typeof window.translate !== 'function') {
     };
 }
 
-// Legacy Finder loader (deprecated): delegate to modern FinderSystem
-function loadGithubRepos() {
-    try {
-        if (
-            window.FinderSystem &&
-            typeof window.FinderSystem.navigateTo === 'function'
-        ) {
-            const st =
-                window.FinderSystem.getState &&
-                window.FinderSystem.getState();
-            if (st && Array.isArray(st.githubRepos)) st.githubRepos = [];
-            window.FinderSystem.navigateTo([], 'github');
-        }
-    } catch (e) {
-        console.warn('loadGithubRepos delegation failed', e);
-    }
-}
-
 // Note: updateDockIndicators and other helpers are provided by their modules
 // (dock.js, dialog-utils.js, snap-utils.js, program-menu-sync.js, etc.)
