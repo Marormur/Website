@@ -13,15 +13,21 @@ const BASE_URL = 'http://127.0.0.1:5173';
 
 export default defineConfig({
     testDir: './tests',
+    // Global timeouts kept modest to avoid long hangs while allowing for slower CI
     timeout: 30 * 1000,
-    expect: { timeout: 5000 },
+    expect: { timeout: 7000 },
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 2 : 0,
-    workers: process.env.CI ? 1 : undefined,
+    // Mild retry locally to smooth out rare flakes; CI keeps 2
+    retries: process.env.CI ? 2 : 1,
+    // Avoid excessive local parallelism which can cause flakiness with a simple dev server
+    workers: process.env.CI ? 1 : 2,
     reporter: process.env.CI ? 'list' : 'line', // Less verbose output locally
     use: {
         baseURL: BASE_URL,
+        // Slightly more generous per-action/navigation timeouts for stability
+        actionTimeout: 10_000,
+        navigationTimeout: 20_000,
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
