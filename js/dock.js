@@ -320,6 +320,9 @@ if (typeof window !== 'undefined') {
         getDockReservedBottom,
         initDockMagnification,
         initDockDragDrop,
-        getCurrentDockOrder
+        getCurrentDockOrder,
+        loadDockOrder,
+        saveDockOrder,
+        applyDockOrder
     };
 }

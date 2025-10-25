@@ -84,18 +84,14 @@
       "command": "node server.js",
       "isBackground": true,
       "problemMatcher": {
-        // Don't create Problems; we only use background begin/end to signal readiness
         "owner": "dev-server",
         "pattern": {
-          // Regex that never matches (prevents false problem entries)
-          "regexp": "^(?!.*)$"
+          "regexp": "^$"
         },
         "background": {
           "activeOnStart": true,
-          // Start watching immediately
           "beginsPattern": ".",
-          // Match the exact server ready line (with trailing slash)
-          "endsPattern": "Server running at http:\/\/127\\.0\\.0\\.1:5173\/"
+          "endsPattern": "Server running at http://127\\.0\\.0\\.1:5173/"
         }
       },
       "presentation": {
