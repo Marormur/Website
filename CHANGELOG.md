@@ -29,6 +29,16 @@ All notable changes to this project will be documented in this file.
   - Safe window property access via getWindowProp and callWindowMethod helpers
   - Preserves all legacy global function wrappers (setThemePreference, renderApplicationMenu, etc.)
   - No runtime API changes; backward compatibility maintained
+
+- refactor(ts): migrate ThemeSystem to TypeScript
+  - New source: src/ts/theme.ts → emits to js/theme.js
+  - Strongly typed theme preferences (system/light/dark) and system listener fallback
+  - Preserves global ThemeSystem API and legacy wrappers
+
+- refactor(ts): migrate StorageSystem to TypeScript
+  - New source: src/ts/storage.ts → emits to js/storage.js
+  - Typed persistence for finder state, open modals, window positions, and layout reset
+  - Safe global access (window.*) using unknown casts and guards; same runtime behavior
 - CODEBASE_IMPROVEMENTS.md with organizational tasks
 - TYPESCRIPT_MIGRATION_PLAN.md with detailed migration strategy
 - API Docs: Generated JSDoc and in-app “📖 API Docs” link (index.html)
