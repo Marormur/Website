@@ -82,14 +82,39 @@ console.log('MultiInstanceIntegration loaded');
         setupTerminalIntegration() {
             console.log('Setting up Terminal integration...');
 
+            // Create tab manager for terminal
+            const terminalTabManager = new window.WindowTabManager({
+                containerId: 'terminal-tabs-container',
+                instanceManager: window.TerminalInstanceManager,
+                onTabSwitch: (instanceId) => {
+                    // Show the active terminal instance
+                    this.showInstance('terminal', instanceId);
+                },
+                onTabClose: (instanceId) => {
+                    // Instance will be destroyed by tab manager
+                },
+                onNewTab: () => {
+                    // Create a new terminal instance
+                    const count = window.TerminalInstanceManager.getInstanceCount();
+                    window.TerminalInstanceManager.createInstance({
+                        title: `Terminal ${count + 1}`
+                    });
+                }
+            });
+
             // Register keyboard shortcuts for Terminal
             this.registerShortcutsForType('terminal', window.TerminalInstanceManager);
 
             // Store integration info
             this.integrations.set('terminal', {
                 manager: window.TerminalInstanceManager,
-                modalId: 'terminalModal'
+                tabManager: terminalTabManager,
+                modalId: 'terminal-modal',
+                containerId: 'terminal-container'
             });
+
+            // Listen for new instances and add tabs
+            this.setupInstanceListeners('terminal');
         }
 
         /**
@@ -98,14 +123,97 @@ console.log('MultiInstanceIntegration loaded');
         setupTextEditorIntegration() {
             console.log('Setting up TextEditor integration...');
 
+            // Create tab manager for text editor
+            const editorTabManager = new window.WindowTabManager({
+                containerId: 'text-editor-tabs-container',
+                instanceManager: window.TextEditorInstanceManager,
+                onTabSwitch: (instanceId) => {
+                    // Show the active editor instance
+                    this.showInstance('text-editor', instanceId);
+                },
+                onTabClose: (instanceId) => {
+                    // Instance will be destroyed by tab manager
+                },
+                onNewTab: () => {
+                    // Create a new text editor instance
+                    const count = window.TextEditorInstanceManager.getInstanceCount();
+                    window.TextEditorInstanceManager.createInstance({
+                        title: `Editor ${count + 1}`
+                    });
+                }
+            });
+
             // Register keyboard shortcuts for Text Editor
             this.registerShortcutsForType('text-editor', window.TextEditorInstanceManager);
 
             // Store integration info
             this.integrations.set('text-editor', {
                 manager: window.TextEditorInstanceManager,
-                modalId: 'textEditorModal'
+                tabManager: editorTabManager,
+                modalId: 'text-modal',
+                containerId: 'text-editor-container'
             });
+
+            // Listen for new instances and add tabs
+            this.setupInstanceListeners('text-editor');
+        }
+
+        /**
+         * Setup listeners for instance creation/destruction
+         * @param {string} type - Instance type
+         */
+        setupInstanceListeners(type) {
+            const integration = this.integrations.get(type);
+            if (!integration) return;
+
+            const { manager, tabManager, containerId } = integration;
+
+            // Listen for instance creation (via manager)
+            const originalCreate = manager.createInstance.bind(manager);
+            manager.createInstance = (config) => {
+                const instance = originalCreate(config);
+                if (instance) {
+                    // Add tab for this instance
+                    tabManager.addTab(instance);
+                    
+                    // Show/hide instances based on active state
+                    this.updateInstanceVisibility(type);
+                }
+                return instance;
+            };
+        }
+
+        /**
+         * Show a specific instance and hide others
+         * @param {string} type - Instance type
+         * @param {string} instanceId - Instance ID to show
+         */
+        showInstance(type, instanceId) {
+            const integration = this.integrations.get(type);
+            if (!integration) return;
+
+            const instances = integration.manager.getAllInstances();
+            instances.forEach(instance => {
+                if (instance.instanceId === instanceId) {
+                    instance.show();
+                } else {
+                    instance.hide();
+                }
+            });
+        }
+
+        /**
+         * Update visibility of all instances for a type
+         * @param {string} type - Instance type
+         */
+        updateInstanceVisibility(type) {
+            const integration = this.integrations.get(type);
+            if (!integration) return;
+
+            const activeInstance = integration.manager.getActiveInstance();
+            if (activeInstance) {
+                this.showInstance(type, activeInstance.instanceId);
+            }
         }
 
         /**
