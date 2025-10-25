@@ -1,5 +1,7 @@
 # Copilot Instructions - macOS-Style Portfolio Website
 
+**Hinweis:** Wichtige Updates, neue Features, Bugfixes und relevante Änderungen sollten immer auch in die `CHANGELOG.md` eingetragen werden. Dadurch stehen sie Copilot als Informationsquelle zur Verfügung und erleichtern die Nachverfolgung von Änderungen und die Automatisierung von Aufgaben.
+
 ## Architecture Overview
 
 This is a **desktop-metaphor web application** built with vanilla JavaScript, featuring a macOS-inspired UI with windows, modals, dock, and menubar. The codebase recently underwent significant refactoring from monolithic code (~1800 lines in `app.js`) to a modular architecture with specialized systems.
