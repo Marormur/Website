@@ -3,7 +3,8 @@ const { test, expect } = require('@playwright/test');
 test.describe('Multi-Instance Window Tabs', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('http://localhost:5173/');
-        await page.waitForLoadState('networkidle');
+        // Use timeout instead of networkidle for faster, more reliable tests
+        await page.waitForTimeout(2000);
     });
 
     test('should load all multi-instance modules', async ({ page }) => {
