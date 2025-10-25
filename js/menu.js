@@ -92,8 +92,21 @@
                         shortcut: '⌘N',
                         icon: 'finder',
                         action: () => {
-                            // Open a new Finder window
-                            if (window.showTab) window.showTab('finder');
+                            // Open a new Finder window (prefer modern API)
+                            // If a Finder instance manager exists in future, use it; otherwise open the modal
+                            if (window.FinderInstanceManager && typeof window.FinderInstanceManager.createInstance === 'function') {
+                                const count = window.FinderInstanceManager.getInstanceCount?.() || 0;
+                                window.FinderInstanceManager.createInstance({ title: `Finder ${count + 1}` });
+                            } else if (window.WindowManager && typeof window.WindowManager.open === 'function') {
+                                window.WindowManager.open('finder-modal');
+                            } else if (window.API && window.API.window && typeof window.API.window.open === 'function') {
+                                window.API.window.open('finder-modal');
+                            } else if (typeof window.openModal === 'function') {
+                                // Legacy fallback
+                                window.openModal('finder-modal');
+                            } else {
+                                console.warn('Finder new window action not available: no window manager found');
+                            }
                         }
                     },
                     {
