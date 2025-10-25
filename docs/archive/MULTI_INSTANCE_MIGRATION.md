@@ -16,52 +16,54 @@ Dieser Guide zeigt, wie du bestehende Module (Finder, Terminal, TextEditor, etc.
 ### Neue Komponenten
 
 1. **`BaseWindowInstance`** (`js/base-window-instance.js`)
-   - Basis-Klasse für alle Fenster-Instanzen
-   - Lifecycle management (init, show, hide, destroy)
-   - Event system
-   - State management
-   - Serialization/Deserialization
+    - Basis-Klasse für alle Fenster-Instanzen
+    - Lifecycle management (init, show, hide, destroy)
+    - Event system
+    - State management
+    - Serialization/Deserialization
 
 2. **`InstanceManager`** (`js/instance-manager.js`)
-   - Verwaltet mehrere Instanzen eines Typs
-   - Create/Destroy Instanzen
-   - Active instance tracking
-   - Persistierung
+    - Verwaltet mehrere Instanzen eines Typs
+    - Create/Destroy Instanzen
+    - Active instance tracking
+    - Persistierung
 
 3. **`WindowChrome`** (`js/window-chrome.js`)
-   - Wiederverwendbare UI-Komponenten
-   - Titlebar, Toolbar, Statusbar
-   - Einheitliches Look & Feel
+    - Wiederverwendbare UI-Komponenten
+    - Titlebar, Toolbar, Statusbar
+    - Einheitliches Look & Feel
 
 ## 🔄 Migration Schritte
 
 ### Schritt 1: Singleton zu Instanz-Klasse
 
 **Vorher (Singleton Pattern):**
+
 ```javascript
 const TerminalSystem = {
     container: null,
     currentPath: '~',
     commandHistory: [],
-    
+
     init(container) {
         this.container = container;
         // ...
-    }
+    },
 };
 ```
 
 **Nachher (Instance Pattern):**
+
 ```javascript
 class TerminalInstance extends BaseWindowInstance {
     constructor(config) {
         super({ ...config, type: 'terminal' });
-        
+
         // Instance-specific state
         this.currentPath = '~';
         this.commandHistory = [];
     }
-    
+
     render() {
         // Render UI
     }
@@ -71,24 +73,26 @@ class TerminalInstance extends BaseWindowInstance {
 ### Schritt 2: Globalen State in Instanz verschieben
 
 **Vorher:**
+
 ```javascript
 // Globaler State (nur eine Instanz)
 const finderState = {
     currentPath: [],
-    selectedItems: new Set()
+    selectedItems: new Set(),
 };
 ```
 
 **Nachher:**
+
 ```javascript
 class FinderInstance extends BaseWindowInstance {
     constructor(config) {
         super(config);
-        
+
         // Pro-Instanz State
         this.finderState = {
             currentPath: config.initialState?.currentPath || [],
-            selectedItems: new Set()
+            selectedItems: new Set(),
         };
     }
 }
@@ -102,23 +106,23 @@ const TerminalInstanceManager = new InstanceManager({
     type: 'terminal',
     instanceClass: TerminalInstance,
     maxInstances: 0, // Unlimited
-    createContainer: (instanceId) => {
+    createContainer: instanceId => {
         // Create modal/container for this instance
         const modal = document.createElement('div');
         modal.id = `${instanceId}-modal`;
         modal.className = 'modal';
         document.body.appendChild(modal);
         return modal;
-    }
+    },
 });
 
 // Verwendung
 const terminal1 = TerminalInstanceManager.createInstance({
-    title: 'Terminal 1'
+    title: 'Terminal 1',
 });
 
 const terminal2 = TerminalInstanceManager.createInstance({
-    title: 'Terminal 2'
+    title: 'Terminal 2',
 });
 ```
 
@@ -128,24 +132,25 @@ const terminal2 = TerminalInstanceManager.createInstance({
 class TerminalInstance extends BaseWindowInstance {
     render() {
         if (!this.container) return;
-        
+
         // Nutze WindowChrome für einheitliche UI
-        const { frame, titlebar, content, statusbar } = WindowChrome.createWindowFrame({
-            title: this.title,
-            icon: '💻',
-            showClose: true,
-            onClose: () => this.hide(),
-            showStatusBar: true
-        });
-        
+        const { frame, titlebar, content, statusbar } =
+            WindowChrome.createWindowFrame({
+                title: this.title,
+                icon: '💻',
+                showClose: true,
+                onClose: () => this.hide(),
+                showStatusBar: true,
+            });
+
         // Terminal-spezifischer Content
         content.innerHTML = `
             <div class="terminal-output" data-output></div>
             <input type="text" data-input />
         `;
-        
+
         this.container.appendChild(frame);
-        
+
         // Cache elements
         this.outputElement = content.querySelector('[data-output]');
         this.inputElement = content.querySelector('[data-input]');
@@ -161,13 +166,13 @@ class TerminalInstance extends BaseWindowInstance {
         return {
             ...super.serialize(),
             currentPath: this.currentPath,
-            commandHistory: this.commandHistory
+            commandHistory: this.commandHistory,
         };
     }
-    
+
     deserialize(data) {
         super.deserialize(data);
-        
+
         if (data.currentPath) {
             this.currentPath = data.currentPath;
         }
@@ -193,21 +198,25 @@ Siehe `js/terminal-instance.js` für eine vollständige Implementierung.
 ## 🎨 Best Practices
 
 ### 1. State Management
+
 - ✅ Nutze `this.state` aus `BaseWindowInstance`
 - ✅ Update State mit `this.updateState({})`
 - ❌ Vermeide globale Variablen
 
 ### 2. Event Handling
+
 - ✅ Nutze Instance Events: `this.on('event', handler)`
 - ✅ Clean up bei destroy: `this.removeAllEventListeners()`
 - ❌ Vermeide globale Event Listener ohne Cleanup
 
 ### 3. DOM Management
+
 - ✅ Alle DOM-Referenzen in Instance
 - ✅ Cleanup in `destroy()` Methode
 - ❌ Keine Singleton DOM-Referenzen
 
 ### 4. UI Components
+
 - ✅ Nutze `WindowChrome` für Titlebar, Toolbar, Statusbar
 - ✅ Einheitliches Styling über alle Fenster
 - ❌ Vermeide inkonsistente Custom-Implementierungen
@@ -225,11 +234,11 @@ const TerminalSystem = {
         // Delegiere an neue Instance
         if (!this._instance) {
             this._instance = new TerminalInstance({
-                title: 'Terminal'
+                title: 'Terminal',
             });
         }
         this._instance.init(container);
-    }
+    },
 };
 
 // Neue Instance-basierte Nutzung
@@ -240,15 +249,18 @@ terminal.init(container);
 ## 📦 Module zu migrieren
 
 ### Priorität 1 (einfach)
+
 - ✅ Terminal (Beispiel implementiert)
 - ⏳ TextEditor
 - ⏳ Image Viewer
 
 ### Priorität 2 (komplex)
+
 - ⏳ Finder (GitHub Integration, virtuelles Dateisystem)
 - ⏳ Settings
 
 ### Priorität 3 (optional)
+
 - ⏳ Launchpad (könnte singleton bleiben)
 - ⏳ About (könnte singleton bleiben)
 

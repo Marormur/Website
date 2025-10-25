@@ -8,12 +8,20 @@ Das neue Multi-Instance System ermöglicht mehrere Fenster des gleichen Typs gle
 
 ```javascript
 // Mehrere Terminals erstellen
-const term1 = window.TerminalInstanceManager.createInstance({ title: 'Terminal 1' });
-const term2 = window.TerminalInstanceManager.createInstance({ title: 'Terminal 2' });
+const term1 = window.TerminalInstanceManager.createInstance({
+    title: 'Terminal 1',
+});
+const term2 = window.TerminalInstanceManager.createInstance({
+    title: 'Terminal 2',
+});
 
 // Mehrere Text Editoren erstellen
-const editor1 = window.TextEditorInstanceManager.createInstance({ title: 'Document 1' });
-const editor2 = window.TextEditorInstanceManager.createInstance({ title: 'Document 2' });
+const editor1 = window.TextEditorInstanceManager.createInstance({
+    title: 'Document 1',
+});
+const editor2 = window.TextEditorInstanceManager.createInstance({
+    title: 'Document 2',
+});
 ```
 
 ### 2. Demo-Funktionen verwenden
@@ -21,17 +29,18 @@ const editor2 = window.TextEditorInstanceManager.createInstance({ title: 'Docume
 Öffne die Browser-Konsole und probiere:
 
 ```javascript
-demoCreateTerminals()      // Erstelle 3 Terminal-Instanzen
-demoTerminalIsolation()    // Zeige isolierten State
-demoCreateEditors()        // Erstelle 3 Editor-Instanzen
-demoWindowChrome()         // UI-Komponenten Demo
-demoSaveTerminals()        // State speichern
-demoRestoreTerminals()     // State wiederherstellen
+demoCreateTerminals(); // Erstelle 3 Terminal-Instanzen
+demoTerminalIsolation(); // Zeige isolierten State
+demoCreateEditors(); // Erstelle 3 Editor-Instanzen
+demoWindowChrome(); // UI-Komponenten Demo
+demoSaveTerminals(); // State speichern
+demoRestoreTerminals(); // State wiederherstellen
 ```
 
 ### 3. Alle Demos automatisch ausführen
 
 Öffne die Seite mit:
+
 ```
 http://localhost:3000/?demo=true
 ```
@@ -63,14 +72,14 @@ WindowChrome (UI-Komponenten)
 
 ## 🔧 Neue Module
 
-| Modul | Beschreibung | Status |
-|-------|--------------|--------|
+| Modul                     | Beschreibung               | Status    |
+| ------------------------- | -------------------------- | --------- |
 | `base-window-instance.js` | Basis-Klasse für Instanzen | ✅ Fertig |
-| `instance-manager.js` | Manager für Instanzen | ✅ Fertig |
-| `window-chrome.js` | UI-Komponenten | ✅ Fertig |
-| `terminal-instance.js` | Multi-Instance Terminal | ✅ Fertig |
-| `text-editor-instance.js` | Multi-Instance Editor | ✅ Fertig |
-| `multi-instance-demo.js` | Demo & Beispiele | ✅ Fertig |
+| `instance-manager.js`     | Manager für Instanzen      | ✅ Fertig |
+| `window-chrome.js`        | UI-Komponenten             | ✅ Fertig |
+| `terminal-instance.js`    | Multi-Instance Terminal    | ✅ Fertig |
+| `text-editor-instance.js` | Multi-Instance Editor      | ✅ Fertig |
+| `multi-instance-demo.js`  | Demo & Beispiele           | ✅ Fertig |
 
 ## 🧪 Tests
 
@@ -85,16 +94,16 @@ npm run test:e2e -- tests/e2e/multi-instance-basic.spec.js
 ### Terminal mit eigenem State
 
 ```javascript
-const term1 = window.TerminalInstanceManager.createInstance({ 
-    title: 'Dev Terminal' 
+const term1 = window.TerminalInstanceManager.createInstance({
+    title: 'Dev Terminal',
 });
 
 term1.currentPath = '/var/log';
 term1.commandHistory = ['ls', 'tail -f server.log'];
 
 // Zweites Terminal - komplett unabhängig!
-const term2 = window.TerminalInstanceManager.createInstance({ 
-    title: 'Build Terminal' 
+const term2 = window.TerminalInstanceManager.createInstance({
+    title: 'Build Terminal',
 });
 
 term2.currentPath = '/home/user/project';
@@ -108,8 +117,8 @@ const editor = window.TextEditorInstanceManager.createInstance({
     title: 'README.md',
     initialState: {
         content: '# My Project\n\nDescription...',
-        filename: 'README.md'
-    }
+        filename: 'README.md',
+    },
 });
 
 // Content updaten
@@ -128,38 +137,39 @@ const titlebar = window.WindowChrome.createTitlebar({
     title: 'My App',
     icon: '🚀',
     showClose: true,
-    onClose: () => console.log('Closed!')
+    onClose: () => console.log('Closed!'),
 });
 
 // Erstelle eine Toolbar
 const toolbar = window.WindowChrome.createToolbar([
     { label: 'New', action: 'new' },
     { type: 'separator' },
-    { label: 'Save', action: 'save' }
+    { label: 'Save', action: 'save' },
 ]);
 
 // Komplettes Fenster
-const { frame, titlebar, content, statusbar } = window.WindowChrome.createWindowFrame({
-    title: 'Complete Window',
-    icon: '📝',
-    showClose: true,
-    showStatusBar: true,
-    toolbar: [
-        { label: 'File', action: 'file' },
-        { label: 'Edit', action: 'edit' }
-    ]
-});
+const { frame, titlebar, content, statusbar } =
+    window.WindowChrome.createWindowFrame({
+        title: 'Complete Window',
+        icon: '📝',
+        showClose: true,
+        showStatusBar: true,
+        toolbar: [
+            { label: 'File', action: 'file' },
+            { label: 'Edit', action: 'edit' },
+        ],
+    });
 ```
 
 ### Event Handling
 
 ```javascript
-const terminal = window.TerminalInstanceManager.createInstance({ 
-    title: 'Event Demo' 
+const terminal = window.TerminalInstanceManager.createInstance({
+    title: 'Event Demo',
 });
 
 // Lausche auf State-Änderungen
-terminal.on('stateChanged', (data) => {
+terminal.on('stateChanged', data => {
     console.log('State updated:', data.newState);
 });
 
@@ -175,6 +185,7 @@ terminal.updateState({ foo: 'bar' });
 ## 🎨 UI Integration (Zukünftig)
 
 Das System ist bereit für:
+
 - [ ] Window Tabs (wie Browser-Tabs)
 - [ ] Split View / Tiling
 - [ ] Drag & Drop zwischen Instanzen
@@ -186,13 +197,14 @@ Das System ist bereit für:
 ### Neuen Fenstertyp hinzufügen:
 
 1. Erstelle `js/your-app-instance.js`:
+
 ```javascript
 class YourAppInstance extends BaseWindowInstance {
     constructor(config) {
         super({ ...config, type: 'your-app' });
         // Dein State hier
     }
-    
+
     render() {
         // Dein UI hier
     }
@@ -201,7 +213,7 @@ class YourAppInstance extends BaseWindowInstance {
 window.YourAppInstanceManager = new InstanceManager({
     type: 'your-app',
     instanceClass: YourAppInstance,
-    maxInstances: 0
+    maxInstances: 0,
 });
 ```
 
@@ -211,6 +223,7 @@ window.YourAppInstanceManager = new InstanceManager({
 ## 📞 Support
 
 Bei Fragen siehe:
+
 - Migration Guide: [`docs/MULTI_INSTANCE_MIGRATION.md`](./MULTI_INSTANCE_MIGRATION.md)
 - Demo Code: [`js/multi-instance-demo.js`](../js/multi-instance-demo.js)
 - Tests: [`tests/e2e/multi-instance-basic.spec.js`](../tests/e2e/multi-instance-basic.spec.js)

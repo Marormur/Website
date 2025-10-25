@@ -11,20 +11,22 @@ Dieses Refactoring führt drei neue zentrale Systeme ein, um den Code wartbarer,
 Zentrale Verwaltung aller Fenster/Modals im System.
 
 **Funktionen:**
+
 - Fenster-Registrierung mit Metadaten
 - Automatische z-Index Verwaltung
 - Programm-Info Verwaltung
 - Zugriff auf Dialog-Instanzen
 
 **Verwendung:**
+
 ```javascript
 // Fenster registrieren
 WindowManager.register({
     id: 'my-modal',
-    type: 'persistent',  // oder 'transient'
+    type: 'persistent', // oder 'transient'
     programKey: 'programs.myApp',
     icon: './img/icon.png',
-    closeButtonId: 'close-my-modal'
+    closeButtonId: 'close-my-modal',
 });
 
 // Fenster öffnen/schließen
@@ -39,6 +41,7 @@ const info = WindowManager.getProgramInfo('my-modal');
 ```
 
 **Vorteile:**
+
 - ✅ Keine hart-kodierten Arrays mehr
 - ✅ Einfaches Hinzufügen neuer Fenster
 - ✅ Zentrale Metadaten-Verwaltung
@@ -51,11 +54,13 @@ const info = WindowManager.getProgramInfo('my-modal');
 Deklaratives Event-System für UI-Aktionen.
 
 **Funktionen:**
+
 - Automatisches Event-Binding via `data-action`
 - Zentrale Action-Handler
 - Keine manuellen addEventListener mehr
 
 **Verwendung in HTML:**
+
 ```html
 <!-- Fenster schließen -->
 <button data-action="closeWindow" data-window-id="finder-modal">
@@ -68,12 +73,11 @@ Deklaratives Event-System für UI-Aktionen.
 </button>
 
 <!-- Desktop-Item öffnen -->
-<button data-action="openDesktopItem" data-item-id="about">
-    Über Marvin
-</button>
+<button data-action="openDesktopItem" data-item-id="about">Über Marvin</button>
 ```
 
 **Custom Actions registrieren:**
+
 ```javascript
 ActionBus.register('myAction', (params, element) => {
     console.log('Custom action triggered!', params);
@@ -82,6 +86,7 @@ ActionBus.register('myAction', (params, element) => {
 ```
 
 **Eingebaute Actions:**
+
 - `closeWindow` - Schließt ein Fenster
 - `openWindow` - Öffnet ein Fenster
 - `closeTopWindow` - Schließt das oberste Fenster
@@ -92,6 +97,7 @@ ActionBus.register('myAction', (params, element) => {
 - `openDesktopItem` - Desktop-Item öffnen
 
 **Vorteile:**
+
 - ✅ Weniger Boilerplate-Code
 - ✅ Deklarative Event-Bindung
 - ✅ Einfache Erweiterbarkeit
@@ -104,11 +110,13 @@ ActionBus.register('myAction', (params, element) => {
 Saubere Schnittstelle zu allen Modulen.
 
 **Funktionen:**
+
 - Konsistenter Zugriff auf alle Module
 - Automatische Fehlerbehandlung
 - Legacy-Kompatibilität
 
 **Verwendung:**
+
 ```javascript
 // Theme
 API.theme.setPreference('dark');
@@ -137,6 +145,7 @@ const text = API.i18n.translate('key', 'fallback');
 ```
 
 **Vorteile:**
+
 - ✅ Keine vielen Wrapper-Funktionen mehr
 - ✅ Konsistente API
 - ✅ Auto-Completion in IDEs
@@ -149,6 +158,7 @@ const text = API.i18n.translate('key', 'fallback');
 Zentrale Konfigurationsdatei für alle Fenster.
 
 **Verwendung:**
+
 ```javascript
 // Neues Fenster hinzufügen - einfach zur Liste hinzufügen:
 {
@@ -164,6 +174,7 @@ Zentrale Konfigurationsdatei für alle Fenster.
 ```
 
 **Vorteile:**
+
 - ✅ Alle Fenster-Definitionen an einem Ort
 - ✅ Einfaches Hinzufügen neuer Fenster
 - ✅ Klare Struktur
@@ -174,6 +185,7 @@ Zentrale Konfigurationsdatei für alle Fenster.
 ## 🔄 Migration bestehender Code
 
 ### Alt (viele Wrapper-Funktionen):
+
 ```javascript
 function setThemePreference(pref) {
     if (window.ThemeSystem?.setThemePreference) {
@@ -184,20 +196,22 @@ function setThemePreference(pref) {
 ```
 
 ### Neu (zentrale API):
+
 ```javascript
 // Direkt über API-Objekt:
 API.theme.setPreference('dark');
 
 // Oder Legacy-Funktionen (werden automatisch erstellt):
-setThemePreference('dark');  // funktioniert weiterhin!
+setThemePreference('dark'); // funktioniert weiterhin!
 ```
 
 ---
 
 ### Alt (manuelle Event-Handler):
+
 ```javascript
 const closeButton = document.getElementById('close-finder-modal');
-closeButton.addEventListener('click', function(e) {
+closeButton.addEventListener('click', function (e) {
     e.preventDefault();
     window.dialogs['finder-modal'].close();
     saveOpenModals();
@@ -206,6 +220,7 @@ closeButton.addEventListener('click', function(e) {
 ```
 
 ### Neu (deklarativ):
+
 ```html
 <button data-action="closeWindow" data-window-id="finder-modal">
     Schließen
@@ -215,14 +230,20 @@ closeButton.addEventListener('click', function(e) {
 ---
 
 ### Alt (hart-kodierte Modal-IDs):
+
 ```javascript
 var modalIds = [
-    "finder-modal", "projects-modal", "about-modal", 
-    "settings-modal", "text-modal", "image-modal"
+    'finder-modal',
+    'projects-modal',
+    'about-modal',
+    'settings-modal',
+    'text-modal',
+    'image-modal',
 ];
 ```
 
 ### Neu (automatisch aus Registry):
+
 ```javascript
 // In window-configs.js einfach hinzufügen:
 windowConfigurations.push({
@@ -239,6 +260,7 @@ const allWindows = WindowManager.getAllWindowIds();
 ## 📦 Gelöschter/Vereinfachter Code
 
 ### Entfernt aus `app.js`:
+
 - ❌ ~150 Zeilen Wrapper-Funktionen
 - ❌ `programInfoDefinitions` (jetzt in window-configs.js)
 - ❌ Hart-kodierte `modalIds` Arrays
@@ -246,6 +268,7 @@ const allWindows = WindowManager.getAllWindowIds();
 - ❌ Duplizierte z-Index Logik
 
 ### Neu in `app.js`:
+
 - ✅ Kompakte Initialisierung
 - ✅ WindowManager Integration
 - ✅ ActionBus Integration
@@ -256,6 +279,7 @@ const allWindows = WindowManager.getAllWindowIds();
 ## 🚀 Neues Fenster hinzufügen
 
 ### Vorher (5 Schritte):
+
 1. Modal-ID zu `modalIds` Array hinzufügen
 2. ProgramInfo zu `programInfoDefinitions` hinzufügen
 3. Close-Button Handler in `initEventHandlers` hinzufügen
@@ -263,6 +287,7 @@ const allWindows = WindowManager.getAllWindowIds();
 5. Optional: Desktop-Item Config hinzufügen
 
 ### Jetzt (1 Schritt):
+
 ```javascript
 // In window-configs.js:
 {
@@ -281,6 +306,7 @@ Fertig! 🎉
 ## 🔧 Bestehender Code
 
 Alle bestehenden Funktionen bleiben kompatibel:
+
 - `bringDialogToFront(id)` ✅
 - `getTopModal()` ✅
 - `updateProgramLabel(label)` ✅
@@ -301,6 +327,7 @@ Alle bestehenden Funktionen bleiben kompatibel:
 6. **100% Rückwärtskompatibel** - Alter Code funktioniert weiterhin
 
 ### Code-Reduktion:
+
 - **app.js**: ~1800 → ~1600 Zeilen (-200)
 - **Neue Module**: ~800 Zeilen
 - **Netto**: Mehr Funktionalität bei ähnlicher Gesamtgröße
@@ -311,6 +338,7 @@ Alle bestehenden Funktionen bleiben kompatibel:
 ## 🎓 Best Practices
 
 ### Neue Fenster hinzufügen:
+
 ```javascript
 // 1. In window-configs.js registrieren
 // 2. HTML mit data-action Attributen versehen
@@ -318,6 +346,7 @@ Alle bestehenden Funktionen bleiben kompatibel:
 ```
 
 ### Custom Actions:
+
 ```javascript
 // Custom Action registrieren
 ActionBus.register('myCustomAction', (params, element) => {
@@ -326,10 +355,13 @@ ActionBus.register('myCustomAction', (params, element) => {
 });
 
 // In HTML verwenden
-<button data-action="myCustomAction" data-value="test">Click</button>
+<button data-action="myCustomAction" data-value="test">
+    Click
+</button>;
 ```
 
 ### API nutzen:
+
 ```javascript
 // Bevorzugt: Über API-Objekt
 API.window.open('finder-modal');

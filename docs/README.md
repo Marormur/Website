@@ -57,9 +57,7 @@ Simply add to `js/window-configs.js`:
 Instead of manual event handlers, use declarative actions:
 
 ```html
-<button data-action="closeWindow" data-window-id="finder-modal">
-    Close
-</button>
+<button data-action="closeWindow" data-window-id="finder-modal">Close</button>
 ```
 
 ## 🛠️ Tools & Scripts
@@ -99,7 +97,7 @@ API.i18n.translate('key', 'fallback');
 Dark mode is supported via:
 
 ```javascript
-API.theme.setPreference('dark');  // 'dark', 'light', or 'system'
+API.theme.setPreference('dark'); // 'dark', 'light', or 'system'
 ```
 
 ## 📞 Support

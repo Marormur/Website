@@ -65,6 +65,11 @@ console.log('MultiInstanceIntegration loaded');
                 this.setupTextEditorIntegration();
             }
 
+            // Setup Finder integration if available
+            if (window.FinderInstanceManager) {
+                this.setupFinderIntegration();
+            }
+
             // Register managers with session manager
             if (window.SessionManager) {
                 if (window.TerminalInstanceManager) {
@@ -78,6 +83,9 @@ console.log('MultiInstanceIntegration loaded');
                         'text-editor',
                         window.TextEditorInstanceManager,
                     );
+                }
+                if (window.FinderInstanceManager) {
+                    window.SessionManager.registerManager('finder', window.FinderInstanceManager);
                 }
 
                 // Start auto-save
@@ -219,6 +227,63 @@ console.log('MultiInstanceIntegration loaded');
         }
 
         /**
+         * Setup Finder modal integration
+         */
+        setupFinderIntegration() {
+            console.log('Setting up Finder integration...');
+
+            // Create tab manager for finder
+            const finderTabManager = new window.WindowTabManager({
+                containerId: 'finder-tabs-container',
+                instanceManager: window.FinderInstanceManager,
+                onTabSwitch: (instanceId) => {
+                    // Set as active in manager first
+                    window.FinderInstanceManager.setActiveInstance(instanceId);
+                    // Then show/hide instances
+                    this.showInstance('finder', instanceId);
+                },
+                onTabClose: (instanceId) => {
+                    // Instance will be destroyed by tab manager
+                },
+                onNewTab: () => {
+                    // Create a new finder instance
+                    const count = window.FinderInstanceManager.getInstanceCount();
+                    window.FinderInstanceManager.createInstance({
+                        title: `Finder ${count + 1}`
+                    });
+                }
+            });
+
+            // Register keyboard shortcuts for Finder
+            this.registerShortcutsForType('finder', window.FinderInstanceManager);
+
+            // Store integration info
+            this.integrations.set('finder', {
+                manager: window.FinderInstanceManager,
+                tabManager: finderTabManager,
+                modalId: 'finder-modal',
+                containerId: 'finder-container'
+            });
+
+            // Add tabs for any existing instances
+            const existingFinders = window.FinderInstanceManager.getAllInstances();
+            existingFinders.forEach(instance => {
+                finderTabManager.addTab(instance);
+            });
+
+            // Show the active instance if any exist
+            if (existingFinders.length > 0) {
+                const activeInstance = window.FinderInstanceManager.getActiveInstance();
+                if (activeInstance) {
+                    this.showInstance('finder', activeInstance.instanceId);
+                }
+            }
+
+            // Listen for new instances and add tabs
+            this.setupInstanceListeners('finder');
+        }
+
+        /**
          * Setup listeners for instance creation/destruction
          * @param {string} type - Instance type
          */
@@ -305,7 +370,14 @@ console.log('MultiInstanceIntegration loaded');
                 handler: () => {
                     const activeInstance = manager.getActiveInstance();
                     if (activeInstance && activeInstance.isVisible) {
-                        manager.destroyInstance(activeInstance.instanceId);
+                        // Use tab manager's closeTab to properly remove tab UI and destroy instance
+                        const integration = this.integrations.get(type);
+                        if (integration && integration.tabManager) {
+                            integration.tabManager.closeTab(activeInstance.instanceId);
+                        } else {
+                            // Fallback if no tab manager (shouldn't happen in multi-instance integrations)
+                            manager.destroyInstance(activeInstance.instanceId);
+                        }
                     }
                 },
                 description: `Close ${type} instance`,

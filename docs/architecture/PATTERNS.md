@@ -7,6 +7,7 @@ Dieses Dokument beschreibt etablierte Code-Patterns und Best Practices für die 
 ## Module Pattern
 
 ### Singleton Pattern
+
 ```javascript
 (function () {
     'use strict';
@@ -32,6 +33,7 @@ Dieses Dokument beschreibt etablierte Code-Patterns und Best Practices für die 
 ## Logging Pattern
 
 ### Mit Logger-System
+
 ```javascript
 // RICHTIG
 Logger.info('WindowManager', 'Window opened', { id: 'finder-modal' });
@@ -46,11 +48,10 @@ console.error('Error:', error);
 ## Event Handling
 
 ### ActionBus Pattern (deklarativ)
+
 ```html
 <!-- RICHTIG: Deklarativ -->
-<button data-action="closeWindow" data-window-id="finder-modal">
-    Close
-</button>
+<button data-action="closeWindow" data-window-id="finder-modal">Close</button>
 ```
 
 ```javascript
@@ -61,6 +62,7 @@ closeBtn.addEventListener('click', () => {
 ```
 
 ### Custom Actions registrieren
+
 ```javascript
 ActionBus.register('myAction', (params, element) => {
     Logger.debug('MyAction', 'Triggered', params);
@@ -71,6 +73,7 @@ ActionBus.register('myAction', (params, element) => {
 ## Window Management
 
 ### WindowManager Pattern
+
 ```javascript
 // Fenster registrieren in window-configs.js
 {
@@ -89,6 +92,7 @@ WindowManager.close('my-modal');
 ## Multi-Instance Pattern
 
 ### BaseWindowInstance erweitern
+
 ```javascript
 class MyInstance extends BaseWindowInstance {
     constructor(config) {
@@ -110,6 +114,7 @@ class MyInstance extends BaseWindowInstance {
 ## API Access Pattern
 
 ### Unified API
+
 ```javascript
 // RICHTIG
 API.window.open('finder-modal');
@@ -124,6 +129,7 @@ setThemePreference('dark');
 ## Error Handling Pattern
 
 ### Try-Catch mit Logger
+
 ```javascript
 try {
     // Risky operation
@@ -139,6 +145,7 @@ try {
 ## Internationalization Pattern
 
 ### i18n Keys
+
 ```javascript
 // RICHTIG
 const label = translate('programs.finder.label');
@@ -152,11 +159,12 @@ const message = `Network error. Retry ${retry} times.`;
 ## State Management Pattern
 
 ### Instance State
+
 ```javascript
 // Update state
 this.updateState({
     currentPath: '/home',
-    selectedFile: 'document.txt'
+    selectedFile: 'document.txt',
 });
 
 // Get state (immutable)
@@ -166,6 +174,7 @@ const state = this.getState();
 ## Performance Patterns
 
 ### Debouncing
+
 ```javascript
 let debounceTimer;
 function handleInput(value) {
@@ -178,6 +187,7 @@ function handleInput(value) {
 ```
 
 ### Lazy Loading
+
 ```javascript
 // Lazy load heavy modules
 async function loadHeavyModule() {
@@ -191,13 +201,14 @@ async function loadHeavyModule() {
 ## Testing Patterns
 
 ### E2E Tests
+
 ```javascript
 test('should open window', async ({ page }) => {
     await page.goto('http://localhost:3000');
-    
+
     const openButton = page.locator('[data-action="openWindow"]');
     await openButton.click();
-    
+
     const modal = page.locator('#finder-modal');
     await expect(modal).toBeVisible();
 });
@@ -206,17 +217,19 @@ test('should open window', async ({ page }) => {
 ## Anti-Patterns (vermeiden!)
 
 ### ❌ Globale Variablen
+
 ```javascript
 // FALSCH
 var globalData = {};
 
 // RICHTIG
-(function() {
+(function () {
     const localData = {};
 })();
 ```
 
 ### ❌ console.log statt Logger
+
 ```javascript
 // FALSCH
 console.log('Debug message');
@@ -226,6 +239,7 @@ Logger.debug('Module', 'Debug message');
 ```
 
 ### ❌ Direkte DOM-Manipulation
+
 ```javascript
 // FALSCH
 document.getElementById('modal').style.display = 'block';
@@ -235,6 +249,7 @@ WindowManager.open('modal');
 ```
 
 ### ❌ Hard-coded Strings
+
 ```javascript
 // FALSCH
 const title = 'Finder';

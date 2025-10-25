@@ -7,30 +7,33 @@ The multi-instance window tabs system has been successfully implemented, allowin
 ## ✨ Features Implemented
 
 ### 1. Window Tab System (`js/window-tabs.js`)
+
 - **Tab Bar UI**: Browser-like tab interface for each window type
 - **Tab Management**:
-  - Add new tab with "+" button
-  - Close tabs with "×" button
-  - Switch tabs by clicking
-  - Active tab highlighting
-  - Tab title display and updates
+    - Add new tab with "+" button
+    - Close tabs with "×" button
+    - Switch tabs by clicking
+    - Active tab highlighting
+    - Tab title display and updates
 - **Navigation**:
-  - Next/previous tab switching
-  - Jump to specific tab by index
-  - Automatic scrolling for many tabs
+    - Next/previous tab switching
+    - Jump to specific tab by index
+    - Automatic scrolling for many tabs
 
 ### 2. Keyboard Shortcuts (`js/keyboard-shortcuts.js`)
+
 - **Global Shortcut Manager**: Handles all keyboard shortcuts across the application
 - **Registered Shortcuts**:
-  - `Cmd/Ctrl+N`: Create new instance of active window type
-  - `Cmd/Ctrl+W`: Close current instance
-  - `Cmd/Ctrl+Tab`: Switch to next tab
-  - `Cmd/Ctrl+Shift+Tab`: Switch to previous tab
-  - `Cmd/Ctrl+1-9`: Jump directly to tab 1-9
+    - `Cmd/Ctrl+N`: Create new instance of active window type
+    - `Cmd/Ctrl+W`: Close current instance
+    - `Cmd/Ctrl+Tab`: Switch to next tab
+    - `Cmd/Ctrl+Shift+Tab`: Switch to previous tab
+    - `Cmd/Ctrl+1-9`: Jump directly to tab 1-9
 - **Smart Context**: Shortcuts work only when relevant window is active
 - **Input-Aware**: Doesn't interfere with typing in text fields
 
 ### 3. Session Manager (`js/session-manager.js`)
+
 - **Auto-Save**: Automatically saves all instances every 30 seconds to localStorage
 - **Session Restore**: Restores all instances and their state on page reload
 - **Export/Import**: Save and load complete sessions as JSON
@@ -38,12 +41,14 @@ The multi-instance window tabs system has been successfully implemented, allowin
 - **Storage Management**: Handles localStorage quota and cleanup
 
 ### 4. Multi-Instance Integration (`js/multi-instance-integration.js`)
+
 - **Modal Integration**: Connects tab system with Terminal and Text Editor modals
 - **Tab Container Setup**: Creates tab bars in each modal window
 - **Event Wiring**: Connects instance managers with tab managers
 - **Visibility Management**: Shows/hides instances based on active tab
 
 ### 5. Window Menu Enhancement (`js/menu.js`)
+
 - **New Instance**: Menu item to create new instance (Cmd+N)
 - **Instance List**: Shows all open instances with checkmark for active one
 - **Quick Switch**: Click menu item to switch to specific instance
@@ -51,6 +56,7 @@ The multi-instance window tabs system has been successfully implemented, allowin
 - **Keyboard Shortcuts**: Shortcuts displayed in menu (Cmd+1-9)
 
 ### 6. CSS Styling (`src/input.css`)
+
 - **Tab Bar**: Clean, macOS-style tab interface
 - **Dark Mode Support**: Full dark mode compatibility
 - **Hover Effects**: Visual feedback for interactive elements
@@ -62,48 +68,59 @@ The multi-instance window tabs system has been successfully implemented, allowin
 ### Creating Multiple Instances
 
 #### Via Dock/Launcher
+
 1. Click Terminal or Text Editor icon in dock
 2. Click the "+" button in the tab bar to create additional instances
 
 #### Via Keyboard
+
 - Press `Cmd/Ctrl+N` while a Terminal or Text Editor is active
 
 #### Via Window Menu
+
 - Open Window menu from menubar
 - Select "New Terminal" or "New Editor"
 
 ### Switching Between Instances
 
 #### Via Tabs
+
 - Click on any tab to switch to that instance
 
 #### Via Keyboard
+
 - `Cmd/Ctrl+Tab`: Next tab
 - `Cmd/Ctrl+Shift+Tab`: Previous tab
 - `Cmd/Ctrl+1-9`: Jump to specific tab
 
 #### Via Window Menu
+
 - Open Window menu
 - Select the instance you want from the list (active instance has ✓)
 
 ### Closing Instances
 
 #### Via Tab
+
 - Click the "×" button on any tab
 
 #### Via Keyboard
+
 - `Cmd/Ctrl+W`: Close current instance
 
 #### Via Window Menu
+
 - Select "Close All" to close all instances at once
 
 ### Session Management
 
 #### Auto-Save
+
 - Instances are automatically saved every 30 seconds
 - Reload the page to restore all instances
 
 #### Manual Export
+
 ```javascript
 // In browser console
 const session = window.SessionManager.exportSession();
@@ -111,12 +128,14 @@ console.log(session); // Copy this JSON
 ```
 
 #### Manual Import
+
 ```javascript
 // In browser console
 window.SessionManager.importSession(sessionJson);
 ```
 
 #### Templates
+
 ```javascript
 // Save current session as template
 window.SessionManager.saveAsTemplate('my-workflow', 'My dev setup');
@@ -131,7 +150,9 @@ window.SessionManager.getAllTemplates();
 ## 🧪 Testing
 
 ### E2E Tests
+
 Located in `tests/e2e/window-tabs.spec.js`:
+
 - Module loading verification
 - Instance manager availability
 - Tab container presence
@@ -140,24 +161,27 @@ Located in `tests/e2e/window-tabs.spec.js`:
 - Session manager functionality
 
 ### Manual Testing
+
 Use the demo functions in browser console:
+
 ```javascript
 // Create multiple terminals
-demoCreateTerminals()
+demoCreateTerminals();
 
 // Test tab system
-demoTabs()
+demoTabs();
 
 // Test session save/restore
-demoSessionSave()
+demoSessionSave();
 
 // View keyboard shortcuts
-demoKeyboardShortcuts()
+demoKeyboardShortcuts();
 ```
 
 ## 📁 Files Modified/Created
 
 ### Created Files
+
 - `js/window-tabs.js` - Tab management system
 - `js/keyboard-shortcuts.js` - Global keyboard shortcut handler
 - `js/session-manager.js` - Session persistence manager
@@ -165,6 +189,7 @@ demoKeyboardShortcuts()
 - `tests/e2e/window-tabs.spec.js` - E2E tests
 
 ### Modified Files
+
 - `index.html` - Added script tags and tab containers
 - `src/input.css` - Added tab styling
 - `js/menu.js` - Enhanced Window menu with instance management
@@ -174,6 +199,7 @@ demoKeyboardShortcuts()
 ## 🎯 Architecture
 
 ### Component Hierarchy
+
 ```
 MultiInstanceIntegration (main coordinator)
   ├── InstanceManager (per window type)
@@ -185,6 +211,7 @@ MultiInstanceIntegration (main coordinator)
 ```
 
 ### Data Flow
+
 1. User creates instance → InstanceManager.createInstance()
 2. InstanceManager creates instance → Fires event
 3. Integration layer catches event → Calls TabManager.addTab()
@@ -192,6 +219,7 @@ MultiInstanceIntegration (main coordinator)
 5. SessionManager auto-saves → Stores in localStorage
 
 ### Event Communication
+
 - Instances emit events (created, destroyed, stateChanged)
 - TabManager listens to instance events
 - Integration layer coordinates between managers
@@ -200,6 +228,7 @@ MultiInstanceIntegration (main coordinator)
 ## 🔧 Configuration
 
 ### Auto-Save Interval
+
 ```javascript
 // Default: 30 seconds
 window.SessionManager.autoSaveInterval = 60000; // Change to 60 seconds
@@ -208,12 +237,14 @@ window.SessionManager.startAutoSave();
 ```
 
 ### Disable Auto-Save
+
 ```javascript
 window.SessionManager.autoSaveEnabled = false;
 window.SessionManager.stopAutoSave();
 ```
 
 ### Max Instances
+
 ```javascript
 // Set in InstanceManager configuration
 window.TerminalInstanceManager.maxInstances = 10; // Limit to 10 terminals
@@ -230,15 +261,16 @@ window.TerminalInstanceManager.maxInstances = 10; // Limit to 10 terminals
 ## 🎯 Next Steps
 
 From `NEXT_STEPS.md`:
+
 - ✅ Phase 1: UI Integration (COMPLETE)
 - 🔄 Phase 2: Additional Modules (In Progress)
-  - Image Viewer multi-instance
-  - Finder multi-instance
+    - Image Viewer multi-instance
+    - Finder multi-instance
 - ⏳ Phase 3: Advanced Features
-  - Split view / Window tiling
-  - Drag & drop between instances
-  - Instance templates UI
-  - Tab reordering
+    - Split view / Window tiling
+    - Drag & drop between instances
+    - Instance templates UI
+    - Tab reordering
 
 ## 📚 References
 
@@ -270,7 +302,7 @@ window.KeyboardShortcuts.register({
         // Your action
     },
     description: 'My custom shortcut',
-    context: 'global'
+    context: 'global',
 });
 ```
 

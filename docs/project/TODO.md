@@ -11,6 +11,7 @@
 Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs gleichzeitig (z.B. 3 Terminals, 2 Text Editoren). Die Basis-Infrastruktur ist fertig und funktioniert.
 
 ### ✅ Bereits implementiert:
+
 - `BaseWindowInstance` - Basis-Klasse für alle Instanzen
 - `InstanceManager` - Verwaltung mehrerer Instanzen
 - `WindowChrome` - Wiederverwendbare UI-Komponenten
@@ -26,32 +27,33 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ### 🔴 Priorität 1: Core Features & Integration
 
 #### 1.1 UI Integration - Window Management
+
 **Ziel**: Benutzer sollen mehrere Instanzen visuell verwalten können
 
 - [ ] **Window Tabs System** (wie Browser-Tabs)
-  - [ ] Tab-Leiste oberhalb des Fenster-Inhalts
-  - [ ] Tab hinzufügen (+) Button
-  - [ ] Tab schließen (X) Button
-  - [ ] Tab-Wechsel per Klick
-  - [ ] Active Tab Highlighting
-  - [ ] Tab-Reordering per Drag & Drop
-  - [ ] Keyboard Shortcuts (Cmd+1-9 für Tab-Wechsel)
-  
+    - [ ] Tab-Leiste oberhalb des Fenster-Inhalts
+    - [ ] Tab hinzufügen (+) Button
+    - [ ] Tab schließen (X) Button
+    - [ ] Tab-Wechsel per Klick
+    - [ ] Active Tab Highlighting
+    - [ ] Tab-Reordering per Drag & Drop
+    - [ ] Keyboard Shortcuts (Cmd+1-9 für Tab-Wechsel)
 - [ ] **Window Menü in Menubar**
-  - [ ] "Fenster" Menü-Eintrag hinzufügen
-  - [ ] Liste aller offenen Instanzen
-  - [ ] Wechsel zwischen Instanzen
-  - [ ] "Alle schließen" Option
-  - [ ] "Neue Instanz" Shortcuts
+    - [ ] "Fenster" Menü-Eintrag hinzufügen
+    - [ ] Liste aller offenen Instanzen
+    - [ ] Wechsel zwischen Instanzen
+    - [ ] "Alle schließen" Option
+    - [ ] "Neue Instanz" Shortcuts
 
 - [ ] **Keyboard Shortcuts**
-  - [ ] Cmd/Ctrl+N - Neue Instanz des aktiven Typs
-  - [ ] Cmd/Ctrl+W - Aktuelle Instanz schließen
-  - [ ] Cmd/Ctrl+Tab - Nächste Instanz
-  - [ ] Cmd/Ctrl+Shift+Tab - Vorherige Instanz
-  - [ ] Cmd/Ctrl+1-9 - Zu Instanz 1-9 springen
+    - [ ] Cmd/Ctrl+N - Neue Instanz des aktiven Typs
+    - [ ] Cmd/Ctrl+W - Aktuelle Instanz schließen
+    - [ ] Cmd/Ctrl+Tab - Nächste Instanz
+    - [ ] Cmd/Ctrl+Shift+Tab - Vorherige Instanz
+    - [ ] Cmd/Ctrl+1-9 - Zu Instanz 1-9 springen
 
 **Dateien**:
+
 - Neu: `js/window-tabs.js` - Tab Management System
 - Neu: `js/keyboard-shortcuts.js` - Shortcut Handler
 - Update: `js/menu.js` - Window Menü hinzufügen
@@ -62,25 +64,27 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ---
 
 #### 1.2 Modal/Dialog Integration
+
 **Ziel**: Instanzen in bestehende Modals integrieren
 
 - [ ] **Dialog-System erweitern**
-  - [ ] `Dialog.js` für Multi-Instance Support anpassen
-  - [ ] Container für Instanzen in Modals
-  - [ ] Tab-Leiste in Modal-Header integrieren
-  - [ ] Modal resize bei Tab-Wechsel
+    - [ ] `Dialog.js` für Multi-Instance Support anpassen
+    - [ ] Container für Instanzen in Modals
+    - [ ] Tab-Leiste in Modal-Header integrieren
+    - [ ] Modal resize bei Tab-Wechsel
 
 - [ ] **Terminal Modal Update**
-  - [ ] Bestehende Terminal-Logik mit `TerminalInstance` verbinden
-  - [ ] Tab-Support im Terminal-Modal
-  - [ ] Shortcuts im Terminal aktiv halten
+    - [ ] Bestehende Terminal-Logik mit `TerminalInstance` verbinden
+    - [ ] Tab-Support im Terminal-Modal
+    - [ ] Shortcuts im Terminal aktiv halten
 
 - [ ] **TextEditor Modal Update**
-  - [ ] Bestehende TextEditor-Logik mit `TextEditorInstance` verbinden
-  - [ ] Tab-Support im TextEditor-Modal
-  - [ ] Dirty State in Tabs anzeigen (*)
+    - [ ] Bestehende TextEditor-Logik mit `TextEditorInstance` verbinden
+    - [ ] Tab-Support im TextEditor-Modal
+    - [ ] Dirty State in Tabs anzeigen (\*)
 
 **Dateien**:
+
 - Update: `js/dialog.js` - Multi-Instance Support
 - Update: `js/terminal.js` - Instance Integration
 - Update: `js/text-editor.js` - Instance Integration
@@ -91,26 +95,28 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ---
 
 #### 1.3 State Persistierung & Session Management
+
 **Ziel**: Instanzen überleben Page Reload
 
 - [ ] **Auto-Save System**
-  - [ ] Alle Instanzen periodisch speichern (debounced)
-  - [ ] LocalStorage/SessionStorage Integration
-  - [ ] Speicher-Quota Management
+    - [ ] Alle Instanzen periodisch speichern (debounced)
+    - [ ] LocalStorage/SessionStorage Integration
+    - [ ] Speicher-Quota Management
 
 - [ ] **Restore on Load**
-  - [ ] Instanzen beim Seitenload wiederherstellen
-  - [ ] Modal-State wiederherstellen (geöffnet/geschlossen)
-  - [ ] Active Tab wiederherstellen
-  - [ ] Cursor-Position/Scroll-State wiederherstellen
+    - [ ] Instanzen beim Seitenload wiederherstellen
+    - [ ] Modal-State wiederherstellen (geöffnet/geschlossen)
+    - [ ] Active Tab wiederherstellen
+    - [ ] Cursor-Position/Scroll-State wiederherstellen
 
 - [ ] **Session Export/Import**
-  - [ ] "Session speichern" Funktion
-  - [ ] "Session laden" Funktion
-  - [ ] Session als JSON exportieren
-  - [ ] Session-Vorlagen (Templates)
+    - [ ] "Session speichern" Funktion
+    - [ ] "Session laden" Funktion
+    - [ ] Session als JSON exportieren
+    - [ ] Session-Vorlagen (Templates)
 
 **Dateien**:
+
 - Neu: `js/session-manager.js` - Session Management
 - Update: `js/instance-manager.js` - Auto-save Hooks
 - Update: `app.js` - Restore on load
@@ -122,24 +128,26 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ### 🟡 Priorität 2: Weitere Module migrieren
 
 #### 2.1 Finder Multi-Instance
+
 **Ziel**: Mehrere Finder-Fenster gleichzeitig (komplex!)
 
 - [ ] **FinderInstance erstellen**
-  - [ ] Basis-Struktur von `BaseWindowInstance` erben
-  - [ ] Virtuelles Dateisystem pro Instanz
-  - [ ] Navigation State (currentPath, currentView)
-  - [ ] Selection State isolieren
+    - [ ] Basis-Struktur von `BaseWindowInstance` erben
+    - [ ] Virtuelles Dateisystem pro Instanz
+    - [ ] Navigation State (currentPath, currentView)
+    - [ ] Selection State isolieren
 
 - [ ] **GitHub Integration**
-  - [ ] Cache pro Instanz oder shared?
-  - [ ] API-Calls optimieren (Rate Limiting)
-  - [ ] Fehlerbehandlung pro Instanz
+    - [ ] Cache pro Instanz oder shared?
+    - [ ] API-Calls optimieren (Rate Limiting)
+    - [ ] Fehlerbehandlung pro Instanz
 
 - [ ] **Favoriten & Recents**
-  - [ ] Global oder pro Instanz?
-  - [ ] Sync zwischen Instanzen?
+    - [ ] Global oder pro Instanz?
+    - [ ] Sync zwischen Instanzen?
 
 **Dateien**:
+
 - Neu: `js/finder-instance.js`
 - Update: `js/finder.js` - Instance Integration
 
@@ -148,20 +156,22 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ---
 
 #### 2.2 Image Viewer Multi-Instance
+
 **Ziel**: Mehrere Bilder gleichzeitig betrachten
 
 - [ ] **ImageViewerInstance erstellen**
-  - [ ] Basis-Struktur
-  - [ ] Bild-State (currentImage, zoom, rotation)
-  - [ ] Navigation (prev/next)
+    - [ ] Basis-Struktur
+    - [ ] Bild-State (currentImage, zoom, rotation)
+    - [ ] Navigation (prev/next)
 
 - [ ] **Features**
-  - [ ] Zoom & Pan
-  - [ ] Rotation
-  - [ ] Lightbox Mode
-  - [ ] Galerie-Navigation
+    - [ ] Zoom & Pan
+    - [ ] Rotation
+    - [ ] Lightbox Mode
+    - [ ] Galerie-Navigation
 
 **Dateien**:
+
 - Neu: `js/image-viewer-instance.js`
 - Update: `index.html` - Image Viewer Modal
 
@@ -170,18 +180,20 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ---
 
 #### 2.3 Settings - Entscheidung treffen
+
 **Ziel**: Klären, ob Settings Multi-Instance braucht
 
 - [ ] **Analyse**
-  - [ ] Use Cases für mehrere Settings-Fenster?
-  - [ ] Singleton vs. Multi-Instance
-  - [ ] Entscheidung dokumentieren
+    - [ ] Use Cases für mehrere Settings-Fenster?
+    - [ ] Singleton vs. Multi-Instance
+    - [ ] Entscheidung dokumentieren
 
 - [ ] **Optional: Settings Instance**
-  - [ ] Nur wenn sinnvoll
-  - [ ] Verschiedene Settings-Bereiche in Tabs?
+    - [ ] Nur wenn sinnvoll
+    - [ ] Verschiedene Settings-Bereiche in Tabs?
 
 **Dateien**:
+
 - Evtl. neu: `js/settings-instance.js`
 
 **Geschätzter Aufwand**: 2-3 Stunden (oder skip)
@@ -191,20 +203,22 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ### 🟢 Priorität 3: Advanced Features
 
 #### 3.1 Window Tiling & Split View
+
 **Ziel**: Instanzen nebeneinander anzeigen
 
 - [ ] **Split View System**
-  - [ ] Horizontal Split
-  - [ ] Vertical Split
-  - [ ] Resizable Splitter
-  - [ ] Drag & Drop zwischen Splits
+    - [ ] Horizontal Split
+    - [ ] Vertical Split
+    - [ ] Resizable Splitter
+    - [ ] Drag & Drop zwischen Splits
 
 - [ ] **Tiling Layouts**
-  - [ ] Grid Layout (2x2, 3x3)
-  - [ ] Sidebar + Main Layout
-  - [ ] Custom Layouts speichern
+    - [ ] Grid Layout (2x2, 3x3)
+    - [ ] Sidebar + Main Layout
+    - [ ] Custom Layouts speichern
 
 **Dateien**:
+
 - Neu: `js/window-tiling.js`
 - Neu: `js/split-view.js`
 - Update: `src/css/style.css` - Split View Styles
@@ -214,18 +228,20 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ---
 
 #### 3.2 Drag & Drop Improvements
+
 **Ziel**: Content zwischen Instanzen verschieben
 
 - [ ] **Inter-Instance Drag & Drop**
-  - [ ] Text zwischen Editoren
-  - [ ] Dateien zwischen Findern
-  - [ ] Terminal Output kopieren
+    - [ ] Text zwischen Editoren
+    - [ ] Dateien zwischen Findern
+    - [ ] Terminal Output kopieren
 
 - [ ] **Tab Reordering**
-  - [ ] Tabs per Drag & Drop sortieren
-  - [ ] Tabs zwischen Windows verschieben (falls multiple windows)
+    - [ ] Tabs per Drag & Drop sortieren
+    - [ ] Tabs zwischen Windows verschieben (falls multiple windows)
 
 **Dateien**:
+
 - Neu: `js/drag-drop-manager.js`
 - Update: `js/window-tabs.js`
 
@@ -234,20 +250,22 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ---
 
 #### 3.3 Instance Templates & Presets
+
 **Ziel**: Vordefinierte Instanz-Konfigurationen
 
 - [ ] **Template System**
-  - [ ] Templates definieren (z.B. "Dev Setup" = 2 Terminals + 1 Editor)
-  - [ ] Template Galerie
-  - [ ] Custom Templates erstellen
-  - [ ] Templates teilen (Export/Import)
+    - [ ] Templates definieren (z.B. "Dev Setup" = 2 Terminals + 1 Editor)
+    - [ ] Template Galerie
+    - [ ] Custom Templates erstellen
+    - [ ] Templates teilen (Export/Import)
 
 - [ ] **Quick Actions**
-  - [ ] "New from Template"
-  - [ ] Template Shortcuts
-  - [ ] Recent Templates
+    - [ ] "New from Template"
+    - [ ] Template Shortcuts
+    - [ ] Recent Templates
 
 **Dateien**:
+
 - Neu: `js/instance-templates.js`
 - Update: UI für Template-Auswahl
 
@@ -258,23 +276,25 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ### 🔵 Priorität 4: Testing & Quality
 
 #### 4.1 E2E Tests erweitern
+
 **Ziel**: Vollständige Test-Abdeckung
 
 - [ ] **Fix networkidle Timeout**
-  - [ ] `multi-instance.spec.js` zum Laufen bringen
-  - [ ] Timeout-Ursache finden und beheben
+    - [ ] `multi-instance.spec.js` zum Laufen bringen
+    - [ ] Timeout-Ursache finden und beheben
 
 - [ ] **UI Tests**
-  - [ ] Tab-System testen
-  - [ ] Window-Menü testen
-  - [ ] Keyboard Shortcuts testen
+    - [ ] Tab-System testen
+    - [ ] Window-Menü testen
+    - [ ] Keyboard Shortcuts testen
 
 - [ ] **Integration Tests**
-  - [ ] Finder Instance Tests
-  - [ ] Image Viewer Tests
-  - [ ] Session Restore Tests
+    - [ ] Finder Instance Tests
+    - [ ] Image Viewer Tests
+    - [ ] Session Restore Tests
 
 **Dateien**:
+
 - Update: `tests/e2e/multi-instance.spec.js`
 - Neu: `tests/e2e/window-tabs.spec.js`
 - Neu: `tests/e2e/session-management.spec.js`
@@ -284,24 +304,26 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ---
 
 #### 4.2 Performance Optimierung
+
 **Ziel**: System auch mit vielen Instanzen flüssig
 
 - [ ] **Memory Management**
-  - [ ] Profiling mit Chrome DevTools
-  - [ ] Memory Leaks identifizieren
-  - [ ] Cleanup verbessern
+    - [ ] Profiling mit Chrome DevTools
+    - [ ] Memory Leaks identifizieren
+    - [ ] Cleanup verbessern
 
 - [ ] **Lazy Loading**
-  - [ ] Instanzen erst bei Bedarf rendern
-  - [ ] Inaktive Tabs "schlafen legen"
-  - [ ] Virtual Scrolling für lange Listen
+    - [ ] Instanzen erst bei Bedarf rendern
+    - [ ] Inaktive Tabs "schlafen legen"
+    - [ ] Virtual Scrolling für lange Listen
 
 - [ ] **Debouncing & Throttling**
-  - [ ] Input Events optimieren
-  - [ ] Resize Events throttlen
-  - [ ] Auto-save debounce
+    - [ ] Input Events optimieren
+    - [ ] Resize Events throttlen
+    - [ ] Auto-save debounce
 
 **Dateien**:
+
 - Update: Alle Instance-Dateien
 - Neu: `js/performance-monitor.js`
 
@@ -310,24 +332,26 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ---
 
 #### 4.3 Accessibility (a11y)
+
 **Ziel**: System für alle nutzbar machen
 
 - [ ] **Keyboard Navigation**
-  - [ ] Tab-Navigation funktioniert
-  - [ ] Alle Aktionen per Tastatur
-  - [ ] Focus Management
+    - [ ] Tab-Navigation funktioniert
+    - [ ] Alle Aktionen per Tastatur
+    - [ ] Focus Management
 
 - [ ] **Screen Reader Support**
-  - [ ] ARIA Labels überall
-  - [ ] Live Regions für Updates
-  - [ ] Semantisches HTML
+    - [ ] ARIA Labels überall
+    - [ ] Live Regions für Updates
+    - [ ] Semantisches HTML
 
 - [ ] **Visual Indicators**
-  - [ ] Focus-Styles
-  - [ ] Active State
-  - [ ] Loading States
+    - [ ] Focus-Styles
+    - [ ] Active State
+    - [ ] Loading States
 
 **Dateien**:
+
 - Update: Alle UI-Komponenten
 - Neu: `docs/ACCESSIBILITY.md`
 
@@ -338,20 +362,22 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ### 🟣 Priorität 5: Documentation & Polish
 
 #### 5.1 User Documentation
+
 **Ziel**: Benutzer verstehen das Feature
 
 - [ ] **User Guide**
-  - [ ] "Wie öffne ich mehrere Fenster?"
-  - [ ] "Wie wechsle ich zwischen Instanzen?"
-  - [ ] "Wie speichere ich Sessions?"
-  - [ ] Screenshots/GIFs
+    - [ ] "Wie öffne ich mehrere Fenster?"
+    - [ ] "Wie wechsle ich zwischen Instanzen?"
+    - [ ] "Wie speichere ich Sessions?"
+    - [ ] Screenshots/GIFs
 
 - [ ] **Keyboard Shortcuts Cheatsheet**
-  - [ ] Übersicht aller Shortcuts
-  - [ ] Druckbare Version
-  - [ ] In-App Hilfe (F1?)
+    - [ ] Übersicht aller Shortcuts
+    - [ ] Druckbare Version
+    - [ ] In-App Hilfe (F1?)
 
 **Dateien**:
+
 - Neu: `docs/USER_GUIDE_MULTI_INSTANCE.md`
 - Neu: `docs/KEYBOARD_SHORTCUTS.md`
 
@@ -360,19 +386,21 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ---
 
 #### 5.2 Developer Documentation
+
 **Ziel**: Andere Entwickler können beitragen
 
 - [ ] **API Documentation**
-  - [ ] JSDoc für alle Klassen
-  - [ ] API Reference generieren
-  - [ ] Code-Beispiele
+    - [ ] JSDoc für alle Klassen
+    - [ ] API Reference generieren
+    - [ ] Code-Beispiele
 
 - [ ] **Architecture Documentation**
-  - [ ] Diagramme (Mermaid)
-  - [ ] Datenfluss erklären
-  - [ ] Design Decisions dokumentieren
+    - [ ] Diagramme (Mermaid)
+    - [ ] Datenfluss erklären
+    - [ ] Design Decisions dokumentieren
 
 **Dateien**:
+
 - Update: Alle JS-Files (JSDoc)
 - Neu: `docs/API_REFERENCE.md`
 - Neu: `docs/ARCHITECTURE.md`
@@ -382,24 +410,26 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ---
 
 #### 5.3 Visual Polish
+
 **Ziel**: System sieht professionell aus
 
 - [ ] **Animations**
-  - [ ] Tab-Wechsel Animation
-  - [ ] Modal open/close
-  - [ ] Smooth Transitions
+    - [ ] Tab-Wechsel Animation
+    - [ ] Modal open/close
+    - [ ] Smooth Transitions
 
 - [ ] **Dark Mode**
-  - [ ] Alle neuen Komponenten
-  - [ ] Tab-Styles
-  - [ ] Konsistente Farben
+    - [ ] Alle neuen Komponenten
+    - [ ] Tab-Styles
+    - [ ] Konsistente Farben
 
 - [ ] **Icons**
-  - [ ] Tab-Icons
-  - [ ] Action-Icons
-  - [ ] Status-Icons
+    - [ ] Tab-Icons
+    - [ ] Action-Icons
+    - [ ] Status-Icons
 
 **Dateien**:
+
 - Update: `src/css/style.css`
 - Neu: `src/css/window-tabs.css`
 - Update: `js/theme.js`
@@ -411,26 +441,31 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 ## 🎯 Empfohlene Reihenfolge
 
 ### Phase 1: UI Integration (1-2 Wochen)
+
 1. Window Tabs System ✨ (wichtigste Feature!)
 2. Modal Integration
 3. Window Menü
 4. Keyboard Shortcuts
 
 ### Phase 2: State & Sessions (3-5 Tage)
+
 1. Auto-Save System
 2. Session Restore
 3. Export/Import
 
 ### Phase 3: Weitere Module (1-2 Wochen)
+
 1. Image Viewer (einfach) ✅
 2. Finder (komplex) 🔴
 
 ### Phase 4: Advanced Features (Optional)
+
 1. Split View
 2. Drag & Drop
 3. Templates
 
 ### Phase 5: Quality & Docs (1 Woche)
+
 1. Tests erweitern
 2. Performance
 3. Documentation
@@ -452,6 +487,7 @@ Diese Aufgaben bringen schnell sichtbare Ergebnisse:
 ## 🔧 Technische Details für neue Developer
 
 ### Wichtige Dateien verstehen:
+
 ```
 js/
 ├── base-window-instance.js    # Basis-Klasse - HIER starten!
@@ -471,11 +507,11 @@ class MyAppInstance extends BaseWindowInstance {
         super({ ...config, type: 'my-app' });
         // Dein State hier
     }
-    
+
     render() {
         // Dein UI hier
     }
-    
+
     attachEventListeners() {
         // Deine Events hier
     }
@@ -485,15 +521,15 @@ class MyAppInstance extends BaseWindowInstance {
 window.MyAppInstanceManager = new InstanceManager({
     type: 'my-app',
     instanceClass: MyAppInstance,
-    maxInstances: 0 // 0 = unbegrenzt
+    maxInstances: 0, // 0 = unbegrenzt
 });
 
 // 3. In index.html einbinden
-<script src="./js/my-app-instance.js"></script>
+<script src="./js/my-app-instance.js"></script>;
 
 // 4. Fertig! Nutzung:
 const instance = window.MyAppInstanceManager.createInstance({
-    title: 'My App 1'
+    title: 'My App 1',
 });
 ```
 
@@ -507,7 +543,7 @@ const instance = manager.createInstance({ title: 'Title' });
 instance.updateState({ foo: 'bar' });
 
 // Events lauschen
-instance.on('stateChanged', (data) => console.log(data));
+instance.on('stateChanged', data => console.log(data));
 
 // Serialisieren
 const saved = instance.serialize();
@@ -530,7 +566,7 @@ instance.destroy();
 ## Multi-Instance System - Sprint 1
 
 - [ ] Window Tabs System
-- [ ] Modal Integration  
+- [ ] Modal Integration
 - [ ] Window Menü
 - [ ] Keyboard Shortcuts
 - [ ] Auto-Save System
@@ -564,13 +600,14 @@ npm run dev
 
 **Context für neue Chat-Sessions:**
 
-> Das Multi-Instance System ist implementiert. Basis-Klassen (`BaseWindowInstance`, `InstanceManager`, `WindowChrome`) sind fertig. Terminal und TextEditor funktionieren bereits als Multi-Instance. 
+> Das Multi-Instance System ist implementiert. Basis-Klassen (`BaseWindowInstance`, `InstanceManager`, `WindowChrome`) sind fertig. Terminal und TextEditor funktionieren bereits als Multi-Instance.
 >
 > Als Nächstes steht UI-Integration an: Window Tabs, Keyboard Shortcuts, Modal-Integration.
 >
 > Siehe: `TODO_MULTI_INSTANCE.md` für alle Aufgaben.
 
 **Wichtige Dateien zum Verstehen:**
+
 1. `js/base-window-instance.js` - Basis-Klasse
 2. `js/instance-manager.js` - Manager
 3. `docs/MULTI_INSTANCE_MIGRATION.md` - Migration Guide
@@ -599,17 +636,20 @@ npm run dev
 ## 🎯 TL;DR - Was als Nächstes?
 
 ### Sofort starten (Priorität 1):
+
 1. **Window Tabs** - Tabs oberhalb des Inhalts
 2. **Keyboard Shortcuts** - Cmd+N, Cmd+W, etc.
 3. **Modal Integration** - Instanzen in bestehende Modals
 4. **Auto-Save** - State persistieren
 
 ### Danach (Priorität 2):
+
 1. **Finder Instance** - Mehrere Finder-Fenster
 2. **Image Viewer Instance** - Mehrere Bilder
 3. **Tests erweitern** - Vollständige Coverage
 
 ### Optional (Priorität 3):
+
 1. Split View / Tiling
 2. Drag & Drop zwischen Instanzen
 3. Templates & Presets

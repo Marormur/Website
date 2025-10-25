@@ -1,8 +1,9 @@
 # 🎯 Multi-Instance System Guide
 
 **Konsolidierte Dokumentation** - zusammengefasst aus:
+
 - MULTI_INSTANCE_QUICKSTART.md
-- MULTI_INSTANCE_MIGRATION.md  
+- MULTI_INSTANCE_MIGRATION.md
 - MULTI_INSTANCE_COMPLETE.md
 
 ---
@@ -48,7 +49,7 @@ class MyAppInstance extends BaseWindowInstance {
 const MyAppInstanceManager = InstanceManager.createManager('myapp', {
     instanceClass: MyAppInstance,
     defaultTitle: 'My App',
-    maxInstances: 10
+    maxInstances: 10,
 });
 
 window.MyAppInstanceManager = MyAppInstanceManager;
@@ -60,12 +61,12 @@ window.MyAppInstanceManager = MyAppInstanceManager;
 // Instance erstellen
 const instance = MyAppInstanceManager.createInstance({
     title: 'My App 1',
-    initialState: { data: 'Hello' }
+    initialState: { data: 'Hello' },
 });
 
 // Mehrere Instances
 const instance2 = MyAppInstanceManager.createInstance({
-    title: 'My App 2'
+    title: 'My App 2',
 });
 
 // Instance wechseln
@@ -82,6 +83,7 @@ MyAppInstanceManager.destroyInstance(instance.instanceId);
 Basis-Klasse für alle Window-Instanzen.
 
 **Features:**
+
 - **Unique ID** - Jede Instance hat eindeutige ID
 - **Isolated State** - State pro Instance
 - **Lifecycle** - init(), render(), destroy()
@@ -92,6 +94,7 @@ Basis-Klasse für alle Window-Instanzen.
 Verwaltet alle Instances eines Typs.
 
 **Features:**
+
 - **Create/Destroy** - Instance-Lifecycle
 - **Switch** - Zwischen Instances wechseln
 - **Track** - Alle Instances im Blick
@@ -105,7 +108,7 @@ Verwaltet alle Instances eines Typs.
 // State setzen
 instance.updateState({
     currentFile: 'document.txt',
-    modified: true
+    modified: true,
 });
 
 // State lesen
@@ -117,7 +120,7 @@ console.log(state.currentFile);
 
 ```javascript
 // Event-Listener registrieren
-instance.on('stateChanged', (newState) => {
+instance.on('stateChanged', newState => {
     console.log('State updated:', newState);
 });
 
@@ -135,13 +138,14 @@ tabManager.init(containerElement);
 // Tabs automatisch erstellen
 tabManager.addTab({
     instanceId: instance.instanceId,
-    title: instance.title
+    title: instance.title,
 });
 ```
 
 ## Best Practices
 
 ### 1. State Isolation
+
 ```javascript
 // RICHTIG: Jede Instance hat eigenen State
 instance1.updateState({ value: 1 });
@@ -152,6 +156,7 @@ let sharedState = {}; // Anti-Pattern!
 ```
 
 ### 2. Memory Management
+
 ```javascript
 // RICHTIG: Cleanup in destroy()
 destroy() {
@@ -167,6 +172,7 @@ destroy() {
 ```
 
 ### 3. Error Handling
+
 ```javascript
 // RICHTIG: Try-Catch
 try {
@@ -187,7 +193,7 @@ class TerminalInstance extends BaseWindowInstance {
             ...super._initializeState(initialState),
             commandHistory: [],
             currentPath: '/home/user',
-            output: []
+            output: [],
         };
     }
 
@@ -195,7 +201,7 @@ class TerminalInstance extends BaseWindowInstance {
         const output = this.processCommand(cmd);
         this.updateState({
             commandHistory: [...this.state.commandHistory, cmd],
-            output: [...this.state.output, output]
+            output: [...this.state.output, output],
         });
         this.render();
     }
@@ -212,14 +218,14 @@ class TextEditorInstance extends BaseWindowInstance {
             content: '',
             filename: 'untitled.txt',
             modified: false,
-            cursorPosition: { line: 1, col: 1 }
+            cursorPosition: { line: 1, col: 1 },
         };
     }
 
     setContent(newContent) {
         this.updateState({
             content: newContent,
-            modified: true
+            modified: true,
         });
     }
 }
@@ -228,6 +234,7 @@ class TextEditorInstance extends BaseWindowInstance {
 ## Migration von Single-Instance
 
 ### Vorher (Single-Instance)
+
 ```javascript
 // Nur eine Instance möglich
 const terminal = new Terminal();
@@ -235,26 +242,30 @@ terminal.open();
 ```
 
 ### Nachher (Multi-Instance)
+
 ```javascript
 // Beliebig viele Instances
 const term1 = TerminalInstanceManager.createInstance({
-    title: 'Terminal 1'
+    title: 'Terminal 1',
 });
 
 const term2 = TerminalInstanceManager.createInstance({
-    title: 'Terminal 2'
+    title: 'Terminal 2',
 });
 ```
 
 ## Troubleshooting
 
 ### Problem: Instances teilen State
+
 **Lösung:** Prüfen ob `_initializeState()` unique State erstellt
 
 ### Problem: Memory Leaks
+
 **Lösung:** `destroy()` implementieren und Event-Listener entfernen
 
 ### Problem: Instance nicht sichtbar
+
 **Lösung:** `render()` prüfen, Container-Element checken
 
 ## API Referenz
@@ -267,7 +278,7 @@ class BaseWindowInstance {
     type: string;
     title: string;
     state: any;
-    
+
     constructor(config);
     init(container: HTMLElement): void;
     render(): void;
@@ -285,7 +296,7 @@ class BaseWindowInstance {
 ```typescript
 class InstanceManager {
     static createManager(type, config);
-    
+
     createInstance(config): BaseWindowInstance;
     destroyInstance(instanceId): void;
     switchToInstance(instanceId): void;
@@ -297,6 +308,7 @@ class InstanceManager {
 ---
 
 **Siehe auch:**
+
 - [architecture/PATTERNS.md](../architecture/PATTERNS.md) - Code Patterns
 - [guides/QUICKSTART.md](./QUICKSTART.md) - Allgemeiner Quickstart
 - [archive/](../archive/) - Alte Multi-Instance Docs
