@@ -461,11 +461,10 @@
                 }
             });
 
+        // Route toggles through ActionBus
         document.querySelectorAll('[data-system-toggle]').forEach((toggle) => {
-            toggle.addEventListener('click', (event) => {
-                event.stopPropagation();
-                handleSystemToggle(toggle.dataset.systemToggle);
-            });
+            toggle.dataset.action = 'system:toggle';
+            // ActionBus will stop propagation and execute
         });
 
         document.querySelectorAll('[data-system-slider]').forEach((slider) => {
@@ -480,34 +479,19 @@
         });
 
         document.querySelectorAll('[data-system-action]').forEach((btn) => {
-            btn.addEventListener('click', (event) => {
-                event.stopPropagation();
-                handleSystemAction(btn.dataset.systemAction);
-            });
+            btn.dataset.action = 'system:action';
         });
 
         document.querySelectorAll('[data-audio-device]').forEach((btn) => {
-            btn.addEventListener('click', (event) => {
-                event.stopPropagation();
-                if (btn.getAttribute('aria-disabled') === 'true') return;
-                setAudioDevice(btn.dataset.audioDevice);
-            });
+            btn.dataset.action = 'system:setAudioDevice';
         });
 
         document.querySelectorAll('[data-network]').forEach((btn) => {
-            btn.addEventListener('click', (event) => {
-                event.stopPropagation();
-                if (btn.getAttribute('aria-disabled') === 'true') return;
-                setConnectedNetwork(btn.dataset.network);
-            });
+            btn.dataset.action = 'system:setNetwork';
         });
 
         document.querySelectorAll('[data-device]').forEach((btn) => {
-            btn.addEventListener('click', (event) => {
-                event.stopPropagation();
-                if (btn.getAttribute('aria-disabled') === 'true') return;
-                setBluetoothDevice(btn.dataset.device, { syncAudio: true });
-            });
+            btn.dataset.action = 'system:setBluetoothDevice';
         });
 
         updateAllSystemStatusUI();

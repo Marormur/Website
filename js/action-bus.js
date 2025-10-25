@@ -279,6 +279,56 @@ console.log('ActionBus loaded');
             const wf = window;
             wf.FinderSystem?.openItem?.(name, type);
         },
+        // System UI: toggle (e.g., Wi-Fi, Bluetooth)
+        'system:toggle': (params, el) => {
+            const key = params['systemToggle'] || params['toggle'] || params['key'];
+            if (!key) {
+                console.warn('system:toggle: missing systemToggle');
+                return;
+            }
+            if (el && el.getAttribute && el.getAttribute('aria-disabled') === 'true') return;
+            window.SystemUI?.handleSystemToggle?.(key);
+        },
+        // System UI: generic action (e.g., open settings)
+        'system:action': (params, el) => {
+            const action = params['systemAction'] || params['action'];
+            if (!action) {
+                console.warn('system:action: missing systemAction');
+                return;
+            }
+            if (el && el.getAttribute && el.getAttribute('aria-disabled') === 'true') return;
+            window.SystemUI?.handleSystemAction?.(action);
+        },
+        // System UI: set audio device
+        'system:setAudioDevice': (params, el) => {
+            const dev = params['audioDevice'] || params['device'];
+            if (!dev) {
+                console.warn('system:setAudioDevice: missing audioDevice');
+                return;
+            }
+            if (el && el.getAttribute && el.getAttribute('aria-disabled') === 'true') return;
+            window.SystemUI?.setAudioDevice?.(dev);
+        },
+        // System UI: set network
+        'system:setNetwork': (params, el) => {
+            const net = params['network'];
+            if (!net) {
+                console.warn('system:setNetwork: missing network');
+                return;
+            }
+            if (el && el.getAttribute && el.getAttribute('aria-disabled') === 'true') return;
+            window.SystemUI?.setConnectedNetwork?.(net);
+        },
+        // System UI: set bluetooth device
+        'system:setBluetoothDevice': (params, el) => {
+            const dev = params['device'];
+            if (!dev) {
+                console.warn('system:setBluetoothDevice: missing device');
+                return;
+            }
+            if (el && el.getAttribute && el.getAttribute('aria-disabled') === 'true') return;
+            window.SystemUI?.setBluetoothDevice?.(dev, { syncAudio: true });
+        },
     });
     // Globaler Export
     window.ActionBus = ActionBus;
