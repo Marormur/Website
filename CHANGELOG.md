@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- **feat(devex): Phase 0.1 Development Environment Optimization complete** (2025-01-26)
+- **feat(devex): Phase 0.2 Development Workflow improvements** (2025-01-26)
+  - Added TypeScript watch mode: `npm run typecheck:watch`
+  - VS Code task: "TypeScript: Watch" integrated into dev environment
+  - "Dev Environment: Start All" now runs CSS + TypeScript + Server in parallel
+  - Created `.vscode/extensions.json` with 11 recommended extensions
+  - Added pre-push Git hook running E2E basic smoke tests
+  - Updated `.gitignore` to track VS Code workspace files (extensions.json)
+  - **Results**: One-click dev environment, automated quality checks, faster feedback
+
   - Stabilized entire development workflow with systematic fixes
   - All critical terminal errors resolved (E2E tests, validate task, dev server)
   - Development environment now production-ready for feature work
