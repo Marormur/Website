@@ -999,7 +999,7 @@ html.dark #dock .dock-tooltip {
 .launchpad-apps-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 2rem;
+    gap: 1rem;
     padding: 1rem;
     overflow-y: auto;
     flex: 1;
@@ -1093,4 +1093,20 @@ html.dark #dock .dock-tooltip {
 
 .dark .launchpad-empty {
     color: #94a3b8;
+}
+
+/* Launchpad modal specific styling */
+#launchpad-modal {
+    /* Override the default .modal pointer-events: none to enable click-outside-to-close */
+    pointer-events: auto;
+}
+
+.launchpad-modal-inner {
+    background: rgba(255, 255, 255, 0.7);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+}
+
+.dark .launchpad-modal-inner {
+    background: rgba(30, 41, 59, 0.7);
 }

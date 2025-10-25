@@ -264,6 +264,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Add click-outside-to-close functionality for launchpad
+    const launchpadModal = document.getElementById('launchpad-modal');
+    if (launchpadModal) {
+        launchpadModal.addEventListener('click', function (e) {
+            // Check if the click is on the modal background (not on the inner content)
+            if (e.target === launchpadModal) {
+                window.dialogs?.['launchpad-modal']?.close?.();
+            }
+        });
+    }
+
     syncTopZIndexWithDOM();
     restoreWindowPositions();
     restoreOpenModals();

@@ -178,6 +178,14 @@ console.log('ActionBus loaded');
                 return;
             }
 
+            // Close launchpad if it's open (clicking dock icon while launchpad is visible)
+            const launchpadModal = document.getElementById('launchpad-modal');
+            if (launchpadModal && !launchpadModal.classList.contains('hidden')) {
+                if (window.dialogs?.['launchpad-modal']?.close) {
+                    window.dialogs['launchpad-modal'].close();
+                }
+            }
+
             if (window.WindowManager) {
                 window.WindowManager.open(windowId);
             }
