@@ -190,7 +190,8 @@
       },
       "options": {
         "env": {
-          "USE_NODE_SERVER": "1"
+          "USE_NODE_SERVER": "1",
+          "MOCK_GITHUB": "1"
         }
       },
       "dependsOn": ["Start Dev Server"],
@@ -246,6 +247,18 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "label": "Validate: All",
+      "type": "shell",
+      "command": "npm run validate",
+      "group": "build"
+    },
+    {
+      "label": "Validate: All",
+      "type": "shell",
+      "command": "npm run validate",
+      "group": "build"
     }
   ]
 }
