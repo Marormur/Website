@@ -87,7 +87,9 @@ console.log('MultiInstanceIntegration loaded');
                 containerId: 'terminal-tabs-container',
                 instanceManager: window.TerminalInstanceManager,
                 onTabSwitch: (instanceId) => {
-                    // Show the active terminal instance
+                    // Set as active in manager first
+                    window.TerminalInstanceManager.setActiveInstance(instanceId);
+                    // Then show/hide instances
                     this.showInstance('terminal', instanceId);
                 },
                 onTabClose: (instanceId) => {
@@ -113,6 +115,20 @@ console.log('MultiInstanceIntegration loaded');
                 containerId: 'terminal-container'
             });
 
+            // Add tabs for any existing instances
+            const existingTerminals = window.TerminalInstanceManager.getAllInstances();
+            existingTerminals.forEach(instance => {
+                terminalTabManager.addTab(instance);
+            });
+
+            // Show the active instance if any exist
+            if (existingTerminals.length > 0) {
+                const activeInstance = window.TerminalInstanceManager.getActiveInstance();
+                if (activeInstance) {
+                    this.showInstance('terminal', activeInstance.instanceId);
+                }
+            }
+
             // Listen for new instances and add tabs
             this.setupInstanceListeners('terminal');
         }
@@ -128,7 +144,9 @@ console.log('MultiInstanceIntegration loaded');
                 containerId: 'text-editor-tabs-container',
                 instanceManager: window.TextEditorInstanceManager,
                 onTabSwitch: (instanceId) => {
-                    // Show the active editor instance
+                    // Set as active in manager first
+                    window.TextEditorInstanceManager.setActiveInstance(instanceId);
+                    // Then show/hide instances
                     this.showInstance('text-editor', instanceId);
                 },
                 onTabClose: (instanceId) => {
@@ -153,6 +171,20 @@ console.log('MultiInstanceIntegration loaded');
                 modalId: 'text-modal',
                 containerId: 'text-editor-container'
             });
+
+            // Add tabs for any existing instances
+            const existingEditors = window.TextEditorInstanceManager.getAllInstances();
+            existingEditors.forEach(instance => {
+                editorTabManager.addTab(instance);
+            });
+
+            // Show the active instance if any exist
+            if (existingEditors.length > 0) {
+                const activeInstance = window.TextEditorInstanceManager.getActiveInstance();
+                if (activeInstance) {
+                    this.showInstance('text-editor', activeInstance.instanceId);
+                }
+            }
 
             // Listen for new instances and add tabs
             this.setupInstanceListeners('text-editor');
