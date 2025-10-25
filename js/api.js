@@ -38,6 +38,24 @@ console.log('API loaded');
     }
 
     const API = {
+        // Error handling
+        error: createModuleProxy('ErrorHandler', [
+            'enable',
+            'disable',
+            'getLogs',
+            'clearLogs',
+            'exportLogs',
+        ]),
+
+        // Performance monitor
+        performance: createModuleProxy('PerfMonitor', [
+            'enable',
+            'disable',
+            'toggle',
+            'mark',
+            'measure',
+            'report',
+        ]),
         // Theme-System
         theme: createModuleProxy('ThemeSystem', [
             'setThemePreference',

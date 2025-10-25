@@ -37,6 +37,7 @@ export default [
                 CustomEvent: 'readonly',
                 HTMLElement: 'readonly',
                     navigator: 'readonly',
+                    performance: 'readonly',
                     Element: 'readonly',
                     Node: 'readonly',
                     MouseEvent: 'readonly',

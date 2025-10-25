@@ -9,6 +9,7 @@
 ## 📊 Problem-Analyse
 
 ### Aktuelle Situation
+
 - ✅ **Funktionaler Code** - Alles läuft
 - ✅ **Gute Modularisierung** - WindowManager, ActionBus, etc.
 - ⚠️ **17+ Dokumentations-Dateien** im Root + docs/
@@ -28,6 +29,7 @@
 **Problem:** 17 Markdown-Dateien verstreut, viel Redundanz
 
 **Root-Verzeichnis aktuell:**
+
 ```
 readme.md
 CONTRIBUTING.md
@@ -40,6 +42,7 @@ PR_README.md
 ```
 
 **docs/ Verzeichnis aktuell:**
+
 ```
 ARCHITECTURE.md
 DEPLOYMENT.md
@@ -92,6 +95,7 @@ archive/
 ```
 
 **Action Items:**
+
 ```bash
 # 1. Neue Struktur erstellen
 mkdir -p docs/{architecture,guides,migration,project,archive}
@@ -134,6 +138,7 @@ touch docs/project/DECISIONS.md
 **Problem:** 100+ `console.log()` im Code - schwer zu deaktivieren/filtern
 
 **Aktuell:**
+
 ```javascript
 console.log('WindowManager loaded');
 console.log('Terminal already initialized');
@@ -143,6 +148,7 @@ console.log(`Registered ${windowConfigurations.length} windows`);
 **Lösung: Logger-Modul erstellen**
 
 **Neu: `js/logger.js`**
+
 ```javascript
 /**
  * Logging System
@@ -156,7 +162,7 @@ console.log(`Registered ${windowConfigurations.length} windows`);
         WARN: 1,
         INFO: 2,
         DEBUG: 3,
-        TRACE: 4
+        TRACE: 4,
     };
 
     const LOG_COLORS = {
@@ -164,22 +170,26 @@ console.log(`Registered ${windowConfigurations.length} windows`);
         WARN: '#ff9800',
         INFO: '#2196f3',
         DEBUG: '#9c27b0',
-        TRACE: '#607d8b'
+        TRACE: '#607d8b',
     };
 
     class Logger {
         constructor() {
             // Production: nur ERROR und WARN
             // Development: alles
-            this.level = this.isDevelopment() ? LOG_LEVELS.TRACE : LOG_LEVELS.WARN;
+            this.level = this.isDevelopment()
+                ? LOG_LEVELS.TRACE
+                : LOG_LEVELS.WARN;
             this.enabledCategories = new Set(['*']); // * = alle
             this.format = 'compact'; // 'compact' | 'detailed'
         }
 
         isDevelopment() {
-            return location.hostname === 'localhost' || 
-                   location.hostname === '127.0.0.1' ||
-                   location.port !== '';
+            return (
+                location.hostname === 'localhost' ||
+                location.hostname === '127.0.0.1' ||
+                location.port !== ''
+            );
         }
 
         setLevel(level) {
@@ -204,8 +214,10 @@ console.log(`Registered ${windowConfigurations.length} windows`);
         }
 
         isCategoryEnabled(category) {
-            return this.enabledCategories.has('*') || 
-                   this.enabledCategories.has(category);
+            return (
+                this.enabledCategories.has('*') ||
+                this.enabledCategories.has(category)
+            );
         }
 
         _log(level, category, message, ...args) {
@@ -214,7 +226,7 @@ console.log(`Registered ${windowConfigurations.length} windows`);
 
             const color = LOG_COLORS[level];
             const timestamp = new Date().toLocaleTimeString();
-            
+
             if (this.format === 'detailed') {
                 console.log(
                     `%c[${timestamp}] [${level}] [${category}]`,
@@ -291,6 +303,7 @@ console.log(`Registered ${windowConfigurations.length} windows`);
 **Migration-Beispiel:**
 
 **Vorher:**
+
 ```javascript
 // window-manager.js
 console.log('WindowManager loaded');
@@ -298,13 +311,18 @@ console.log(`Registered ${windowConfigurations.length} windows`);
 ```
 
 **Nachher:**
+
 ```javascript
 // window-manager.js
 Logger.info('WindowManager', 'Module loaded');
-Logger.debug('WindowManager', `Registered ${windowConfigurations.length} windows`);
+Logger.debug(
+    'WindowManager',
+    `Registered ${windowConfigurations.length} windows`
+);
 ```
 
 **Nutzung:**
+
 ```javascript
 // Development: Alle Logs
 Logger.setLevel('TRACE');
@@ -323,11 +341,13 @@ Logger.timeEnd('window-init');
 ```
 
 **Action Items:**
+
 1. `js/logger.js` erstellen
 2. In `index.html` **VOR allen anderen Scripts** laden
 3. Schrittweise `console.log` → `Logger.*` migrieren
 
-**Zeitaufwand:** 
+**Zeitaufwand:**
+
 - Logger erstellen: 30 Min
 - Migration: 2-3h (kann parallel zu anderer Arbeit)
 
@@ -347,6 +367,7 @@ npx husky init
 ```
 
 **`.husky/pre-commit`:**
+
 ```bash
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
@@ -355,22 +376,18 @@ npx lint-staged
 ```
 
 **`package.json` erweitern:**
+
 ```json
 {
-  "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "git add"
-    ],
-    "*.{css,md,html}": [
-      "prettier --write",
-      "git add"
-    ]
-  }
+    "lint-staged": {
+        "*.js": ["eslint --fix", "git add"],
+        "*.{css,md,html}": ["prettier --write", "git add"]
+    }
 }
 ```
 
 **Vorteile:**
+
 - ✅ Automatisches ESLint vor jedem Commit
 - ✅ Code-Formatierung erzwingen
 - ✅ Verhindert defekten Code in Repo
@@ -390,37 +407,39 @@ npm install --save-dev prettier
 ```
 
 **`.prettierrc.json`:**
+
 ```json
 {
-  "printWidth": 100,
-  "tabWidth": 4,
-  "useTabs": false,
-  "semi": true,
-  "singleQuote": true,
-  "quoteProps": "as-needed",
-  "trailingComma": "es5",
-  "bracketSpacing": true,
-  "arrowParens": "avoid",
-  "endOfLine": "lf",
-  "overrides": [
-    {
-      "files": "*.json",
-      "options": {
-        "tabWidth": 2
-      }
-    },
-    {
-      "files": "*.md",
-      "options": {
-        "printWidth": 80,
-        "proseWrap": "always"
-      }
-    }
-  ]
+    "printWidth": 100,
+    "tabWidth": 4,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": true,
+    "quoteProps": "as-needed",
+    "trailingComma": "es5",
+    "bracketSpacing": true,
+    "arrowParens": "avoid",
+    "endOfLine": "lf",
+    "overrides": [
+        {
+            "files": "*.json",
+            "options": {
+                "tabWidth": 2
+            }
+        },
+        {
+            "files": "*.md",
+            "options": {
+                "printWidth": 80,
+                "proseWrap": "always"
+            }
+        }
+    ]
 }
 ```
 
 **`.prettierignore`:**
+
 ```ignore
 node_modules/
 dist/
@@ -431,12 +450,13 @@ package-lock.json
 ```
 
 **NPM Scripts:**
+
 ```json
 {
-  "scripts": {
-    "format": "prettier --write \"**/*.{js,css,html,md,json}\"",
-    "format:check": "prettier --check \"**/*.{js,css,html,md,json}\""
-  }
+    "scripts": {
+        "format": "prettier --write \"**/*.{js,css,html,md,json}\"",
+        "format:check": "prettier --check \"**/*.{js,css,html,md,json}\""
+    }
 }
 ```
 
@@ -450,75 +470,75 @@ package-lock.json
 **Problem:** Noch zu locker, keine TS-Vorbereitung
 
 **`.eslintrc.json` erweitern:**
+
 ```json
 {
-  "env": {
-    "browser": true,
-    "es2021": true,
-    "node": true
-  },
-  "extends": [
-    "eslint:recommended"
-  ],
-  "parserOptions": {
-    "ecmaVersion": "latest",
-    "sourceType": "script"
-  },
-  "globals": {
-    "Dialog": "readonly",
-    "WindowManager": "readonly",
-    "ActionBus": "readonly",
-    "API": "readonly",
-    "Logger": "readonly"
-  },
-  "rules": {
-    // Fehler verhindern
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
-    "no-undef": "error",
-    "no-redeclare": "error",
-    "no-use-before-define": ["error", { "functions": false }],
-    
-    // Code-Style
-    "semi": ["warn", "always"],
-    "quotes": ["warn", "single", { "avoidEscape": true }],
-    "indent": ["warn", 4, { "SwitchCase": 1 }],
-    "comma-dangle": ["warn", "es5"],
-    
-    // Best Practices
-    "eqeqeq": ["error", "always"],
-    "no-var": "warn",
-    "prefer-const": "warn",
-    "no-console": "off",
-    
-    // TypeScript-Vorbereitung
-    "no-implicit-globals": "error",
-    "strict": ["error", "function"]
-  },
-  "overrides": [
-    {
-      "files": ["*.ts"],
-      "parser": "@typescript-eslint/parser",
-      "plugins": ["@typescript-eslint"],
-      "extends": [
-        "eslint:recommended",
-        "plugin:@typescript-eslint/recommended"
-      ],
-      "rules": {
-        "@typescript-eslint/no-explicit-any": "warn",
-        "@typescript-eslint/explicit-function-return-type": "warn"
-      }
-    }
-  ]
+    "env": {
+        "browser": true,
+        "es2021": true,
+        "node": true
+    },
+    "extends": ["eslint:recommended"],
+    "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "script"
+    },
+    "globals": {
+        "Dialog": "readonly",
+        "WindowManager": "readonly",
+        "ActionBus": "readonly",
+        "API": "readonly",
+        "Logger": "readonly"
+    },
+    "rules": {
+        // Fehler verhindern
+        "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+        "no-undef": "error",
+        "no-redeclare": "error",
+        "no-use-before-define": ["error", { "functions": false }],
+
+        // Code-Style
+        "semi": ["warn", "always"],
+        "quotes": ["warn", "single", { "avoidEscape": true }],
+        "indent": ["warn", 4, { "SwitchCase": 1 }],
+        "comma-dangle": ["warn", "es5"],
+
+        // Best Practices
+        "eqeqeq": ["error", "always"],
+        "no-var": "warn",
+        "prefer-const": "warn",
+        "no-console": "off",
+
+        // TypeScript-Vorbereitung
+        "no-implicit-globals": "error",
+        "strict": ["error", "function"]
+    },
+    "overrides": [
+        {
+            "files": ["*.ts"],
+            "parser": "@typescript-eslint/parser",
+            "plugins": ["@typescript-eslint"],
+            "extends": [
+                "eslint:recommended",
+                "plugin:@typescript-eslint/recommended"
+            ],
+            "rules": {
+                "@typescript-eslint/no-explicit-any": "warn",
+                "@typescript-eslint/explicit-function-return-type": "warn"
+            }
+        }
+    ]
 }
 ```
 
 **NPM Script:**
+
 ```json
 {
-  "scripts": {
-    "lint": "eslint js/**/*.js app.js i18n.js",
-    "lint:fix": "eslint --fix js/**/*.js app.js i18n.js"
-  }
+    "scripts": {
+        "lint": "eslint js/**/*.js app.js i18n.js",
+        "lint:fix": "eslint --fix js/**/*.js app.js i18n.js"
+    }
 }
 ```
 
@@ -532,89 +552,91 @@ package-lock.json
 **Problem:** Keine umfassende CI-Pipeline
 
 **Neu: `.github/workflows/ci.yml`**
+
 ```yaml
 name: Continuous Integration
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
 
 jobs:
-  quality:
-    name: Code Quality
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Lint Code
-        run: npm run lint
-      
-      - name: Format Check
-        run: npm run format:check
-      
-      - name: Build CSS
-        run: npm run build:css
-  
-  test:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    needs: quality
-    strategy:
-      matrix:
-        browser: [chromium, firefox, webkit]
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Install Playwright
-        run: npx playwright install --with-deps ${{ matrix.browser }}
-      
-      - name: Run E2E Tests
-        run: npx playwright test --project=${{ matrix.browser }}
-      
-      - name: Upload test results
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-${{ matrix.browser }}
-          path: test-results/
-          retention-days: 7
+    quality:
+        name: Code Quality
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
 
-  security:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      
-      - name: Audit dependencies
-        run: npm audit --audit-level=moderate
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Lint Code
+              run: npm run lint
+
+            - name: Format Check
+              run: npm run format:check
+
+            - name: Build CSS
+              run: npm run build:css
+
+    test:
+        name: E2E Tests
+        runs-on: ubuntu-latest
+        needs: quality
+        strategy:
+            matrix:
+                browser: [chromium, firefox, webkit]
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Install Playwright
+              run: npx playwright install --with-deps ${{ matrix.browser }}
+
+            - name: Run E2E Tests
+              run: npx playwright test --project=${{ matrix.browser }}
+
+            - name: Upload test results
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-results-${{ matrix.browser }}
+                  path: test-results/
+                  retention-days: 7
+
+    security:
+        name: Security Audit
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+
+            - name: Audit dependencies
+              run: npm audit --audit-level=moderate
 ```
 
 **Vorteile:**
+
 - ✅ Automatisches Linting bei jedem Push
 - ✅ Tests auf allen Browsern
 - ✅ Security-Checks
@@ -631,41 +653,42 @@ jobs:
 **Lösung: Source Maps aktivieren**
 
 **`tailwind.config.js` erweitern:**
+
 ```javascript
 module.exports = {
-  // ... existing config
-  
-  // Development
-  mode: process.env.NODE_ENV || 'development',
-  
-  // Source Maps in CSS
-  plugins: [
-    require('autoprefixer')
-  ]
+    // ... existing config
+
+    // Development
+    mode: process.env.NODE_ENV || 'development',
+
+    // Source Maps in CSS
+    plugins: [require('autoprefixer')],
 };
 ```
 
 **`package.json` Scripts:**
+
 ```json
 {
-  "scripts": {
-    "build:css": "NODE_ENV=production npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
-    "build:css:dev": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
-    "watch:css": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch"
-  }
+    "scripts": {
+        "build:css": "NODE_ENV=production npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
+        "build:css:dev": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
+        "watch:css": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch"
+    }
 }
 ```
 
 **Für TypeScript (vorbereiten):**
 
 **`tsconfig.json`:**
+
 ```json
 {
-  "compilerOptions": {
-    "sourceMap": true,
-    "inlineSourceMap": false,
-    "inlineSources": true
-  }
+    "compilerOptions": {
+        "sourceMap": true,
+        "inlineSourceMap": false,
+        "inlineSources": true
+    }
 }
 ```
 
@@ -674,6 +697,20 @@ module.exports = {
 ---
 
 ### Priorität 3: Nächsten 2 Wochen (8-10 Stunden)
+
+Status-Update (2025-10-25):
+
+- Implementiert: `js/error-handler.js` (globales Error-Capturing, lokale Persistenz, Export)
+- Implementiert: `js/perf-monitor.js` (mark/measure/report, Auto-Metriken, Toggle via localStorage)
+- Eingebunden in `index.html` direkt nach `logger.js`
+- Über `API` erreichbar:
+    - `API.error.enable() | disable() | getLogs() | clearLogs() | exportLogs()`
+    - `API.performance.enable() | disable() | mark(name) | measure(name, start, end) | report()`
+
+Tipps:
+
+- Performance-Monitor automatisch aktiv im Dev (localhost); dauerhaft aktivieren: `localStorage.setItem('app.perfMonitor.enabled', 'true')`
+- Errors finden sich in `localStorage['app.errorLogs']` (max 100 Einträge) und in der Konsole via `Logger`
 
 #### 3.1 Code-Kommentare & JSDoc vervollständigen
 
@@ -684,11 +721,11 @@ module.exports = {
 ```javascript
 /**
  * Opens a window by ID
- * 
+ *
  * @param {string} windowId - The ID of the window to open
  * @returns {boolean} True if window was opened successfully
  * @throws {Error} If window ID is invalid
- * 
+ *
  * @example
  * WindowManager.open('finder-modal');
  */
@@ -698,16 +735,18 @@ static open(windowId) {
 ```
 
 **Tools nutzen:**
+
 ```bash
 npm install --save-dev jsdoc jsdoc-to-markdown
 ```
 
 **NPM Script:**
+
 ```json
 {
-  "scripts": {
-    "docs:generate": "jsdoc -c jsdoc.json -r js/ -d docs/api"
-  }
+    "scripts": {
+        "docs:generate": "jsdoc -c jsdoc.json -r js/ -d docs/api"
+    }
 }
 ```
 
@@ -736,6 +775,7 @@ npx npm-check-updates -u
 ```
 
 **Regelmäßig:**
+
 - Playwright: monatlich updaten
 - Tailwind: quartalsweise
 - Node.js: bei LTS-Releases
@@ -751,6 +791,7 @@ npx npm-check-updates -u
 **Lösung: Error Handler Modul**
 
 **Neu: `js/error-handler.js`**
+
 ```javascript
 /**
  * Global Error Handler
@@ -768,23 +809,24 @@ npx npm-check-updates -u
 
         init() {
             // Global Error Handler
-            window.addEventListener('error', (event) => {
+            window.addEventListener('error', event => {
                 this.handleError({
                     type: 'runtime',
                     message: event.message,
                     filename: event.filename,
                     lineno: event.lineno,
                     colno: event.colno,
-                    error: event.error
+                    error: event.error,
                 });
             });
 
             // Promise Rejection Handler
-            window.addEventListener('unhandledrejection', (event) => {
+            window.addEventListener('unhandledrejection', event => {
                 this.handleError({
                     type: 'promise',
-                    message: event.reason?.message || 'Unhandled Promise Rejection',
-                    error: event.reason
+                    message:
+                        event.reason?.message || 'Unhandled Promise Rejection',
+                    error: event.reason,
                 });
             });
         }
@@ -800,7 +842,7 @@ npx npm-check-updates -u
             // Store error
             this.errors.push({
                 ...errorInfo,
-                timestamp: Date.now()
+                timestamp: Date.now(),
             });
 
             // Limit stored errors
@@ -822,10 +864,10 @@ npx npm-check-updates -u
             const criticalPatterns = [
                 /Cannot read property/i,
                 /undefined is not/i,
-                /null is not/i
+                /null is not/i,
             ];
 
-            return criticalPatterns.some(pattern => 
+            return criticalPatterns.some(pattern =>
                 pattern.test(errorInfo.message)
             );
         }
@@ -833,7 +875,7 @@ npx npm-check-updates -u
         showErrorNotification(errorInfo) {
             // User-freundliche Fehlermeldung
             const message = this.getUserFriendlyMessage(errorInfo);
-            
+
             // TODO: Integration mit Notification-System
             console.warn('User notification:', message);
         }
@@ -841,13 +883,15 @@ npx npm-check-updates -u
         getUserFriendlyMessage(errorInfo) {
             // Technische Fehler in User-freundliche Messages übersetzen
             const messages = {
-                'TypeError': 'Ein technischer Fehler ist aufgetreten.',
-                'ReferenceError': 'Ein Modul konnte nicht geladen werden.',
-                'NetworkError': 'Netzwerkverbindung fehlgeschlagen.'
+                TypeError: 'Ein technischer Fehler ist aufgetreten.',
+                ReferenceError: 'Ein Modul konnte nicht geladen werden.',
+                NetworkError: 'Netzwerkverbindung fehlgeschlagen.',
             };
 
-            return messages[errorInfo.error?.name] || 
-                   'Ein unerwarteter Fehler ist aufgetreten.';
+            return (
+                messages[errorInfo.error?.name] ||
+                'Ein unerwarteter Fehler ist aufgetreten.'
+            );
         }
 
         getErrors(limit = 10) {
@@ -880,6 +924,7 @@ npx npm-check-updates -u
 **Lösung: Performance Observer**
 
 **Neu: `js/performance-monitor.js`**
+
 ```javascript
 /**
  * Performance Monitoring
@@ -899,13 +944,13 @@ npx npm-check-updates -u
             this.observeLCP();
             this.observeFID();
             this.observeCLS();
-            
+
             // Custom Metrics
             this.measurePageLoad();
         }
 
         observeLCP() {
-            new PerformanceObserver((entryList) => {
+            new PerformanceObserver(entryList => {
                 const entries = entryList.getEntries();
                 const lastEntry = entries[entries.length - 1];
                 this.metrics.lcp = lastEntry.renderTime || lastEntry.loadTime;
@@ -914,7 +959,7 @@ npx npm-check-updates -u
         }
 
         observeFID() {
-            new PerformanceObserver((entryList) => {
+            new PerformanceObserver(entryList => {
                 const entries = entryList.getEntries();
                 entries.forEach(entry => {
                     this.metrics.fid = entry.processingStart - entry.startTime;
@@ -925,7 +970,7 @@ npx npm-check-updates -u
 
         observeCLS() {
             let clsValue = 0;
-            new PerformanceObserver((entryList) => {
+            new PerformanceObserver(entryList => {
                 for (const entry of entryList.getEntries()) {
                     if (!entry.hadRecentInput) {
                         clsValue += entry.value;
@@ -939,9 +984,11 @@ npx npm-check-updates -u
         measurePageLoad() {
             window.addEventListener('load', () => {
                 const perfData = performance.getEntriesByType('navigation')[0];
-                this.metrics.pageLoad = perfData.loadEventEnd - perfData.fetchStart;
-                this.metrics.domReady = perfData.domContentLoadedEventEnd - perfData.fetchStart;
-                
+                this.metrics.pageLoad =
+                    perfData.loadEventEnd - perfData.fetchStart;
+                this.metrics.domReady =
+                    perfData.domContentLoadedEventEnd - perfData.fetchStart;
+
                 Logger?.info('Performance', 'Page Load Metrics', this.metrics);
             });
         }
@@ -981,17 +1028,18 @@ npx storybook@latest init
 ```
 
 **Beispiel: `stories/WindowChrome.stories.js`**
+
 ```javascript
 export default {
     title: 'Components/WindowChrome',
-    component: 'WindowChrome'
+    component: 'WindowChrome',
 };
 
 export const Titlebar = () => {
     const titlebar = WindowChrome.createTitlebar({
         title: 'Finder',
         icon: './img/finder.png',
-        showClose: true
+        showClose: true,
     });
     return titlebar;
 };
@@ -1028,6 +1076,7 @@ npm install --save-dev @playwright/test playwright-visual-regression
 ## 📋 Action Plan - Empfohlene Reihenfolge
 
 ### Woche 1: Foundation
+
 1. ✅ **Documentation Cleanup** (2h)
 2. ✅ **Logger System** (3h)
 3. ✅ **Prettier Setup** (1h)
@@ -1035,6 +1084,7 @@ npm install --save-dev @playwright/test playwright-visual-regression
 **Total:** ~6 Stunden
 
 ### Woche 2: Automation
+
 4. ✅ **Husky + Pre-Commit Hooks** (1h)
 5. ✅ **ESLint erweitern** (2h)
 6. ✅ **GitHub Actions CI** (1h)
@@ -1043,12 +1093,14 @@ npm install --save-dev @playwright/test playwright-visual-regression
 **Total:** ~4,5 Stunden
 
 ### Woche 3: Quality
+
 8. ✅ **JSDoc vervollständigen** (6h)
 9. ✅ **Error Handler** (3h)
 
 **Total:** ~9 Stunden
 
 ### Woche 4: Monitoring
+
 10. ✅ **Dependency Audit** (2h)
 11. ✅ **Performance Monitor** (3h)
 
@@ -1080,6 +1132,7 @@ git commit -m "chore: organize codebase - prettier, docs cleanup, logger"
 ```
 
 **Sofortiger Nutzen:**
+
 - ✅ Code ist konsistent formatiert
 - ✅ Weniger verwirrende Docs
 - ✅ Professionelles Logging ab sofort
@@ -1090,16 +1143,16 @@ git commit -m "chore: organize codebase - prettier, docs cleanup, logger"
 
 Diese Verbesserungen helfen der TS-Migration:
 
-| Verbesserung | Nutzen für TS-Migration |
-|--------------|-------------------------|
-| **Doc Cleanup** | Klare Struktur für TS-Dokumentation |
-| **Logger** | Type-safe logging, debug während Migration |
-| **Prettier** | Konsistente Formatierung JS + TS |
-| **Pre-Commit** | Verhindert defekte TS-Commits |
-| **ESLint** | TS-Linting bereits vorbereitet |
-| **JSDoc** | Vorlage für TS-Type-Definitionen |
-| **Error Handler** | Fängt TS-Runtime-Errors |
-| **Source Maps** | TS-Debugging vereinfacht |
+| Verbesserung      | Nutzen für TS-Migration                    |
+| ----------------- | ------------------------------------------ |
+| **Doc Cleanup**   | Klare Struktur für TS-Dokumentation        |
+| **Logger**        | Type-safe logging, debug während Migration |
+| **Prettier**      | Konsistente Formatierung JS + TS           |
+| **Pre-Commit**    | Verhindert defekte TS-Commits              |
+| **ESLint**        | TS-Linting bereits vorbereitet             |
+| **JSDoc**         | Vorlage für TS-Type-Definitionen           |
+| **Error Handler** | Fängt TS-Runtime-Errors                    |
+| **Source Maps**   | TS-Debugging vereinfacht                   |
 
 ---
 
@@ -1108,6 +1161,7 @@ Diese Verbesserungen helfen der TS-Migration:
 **Gesamt-Zeitaufwand:** ~25 Stunden über 4 Wochen
 
 **Return on Investment:**
+
 - ✅ **TypeScript-Migration 30% schneller** (bessere Tooling)
 - ✅ **50% weniger Bugs** (Linting, Pre-Commit)
 - ✅ **Debugging 3× schneller** (Logger, Error Handler, Source Maps)
@@ -1121,6 +1175,7 @@ Diese Verbesserungen helfen der TS-Migration:
 ## ✅ Empfehlung
 
 **Start mit Quick Wins:**
+
 1. Documentation Cleanup (2h)
 2. Logger System (3h)
 3. Prettier (1h)
