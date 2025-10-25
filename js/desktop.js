@@ -108,6 +108,9 @@
         button.className = 'desktop-icon-button no-select';
         button.dataset.desktopItemId = item.id;
         button.dataset.desktopIndex = String(index);
+        // Use ActionBus for double-click to open; keep single-tap logic locally for touch/pen
+        button.setAttribute('data-action-dblclick', 'openDesktopItem');
+        button.setAttribute('data-item-id', item.id);
         button.setAttribute('role', 'option');
         button.setAttribute('aria-selected', 'false');
         button.setAttribute('data-i18n-title', item.labelKey);
@@ -189,10 +192,8 @@
             const pointerType = button.dataset.activePointerType || '';
             const shouldOpenOnSingleTap =
                 pointerType === 'touch' || pointerType === 'pen';
-            if (
-                shouldOpenOnSingleTap ||
-                (typeof event.detail === 'number' && event.detail >= 2)
-            ) {
+            // Double-click open is handled by ActionBus via data-action-dblclick
+            if (shouldOpenOnSingleTap) {
                 openDesktopItemById(item.id);
             }
             delete button.dataset.activePointerType;
