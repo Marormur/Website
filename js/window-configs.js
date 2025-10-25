@@ -24,6 +24,7 @@ console.log('Window Configurations loaded');
             icon: './img/launchpad.png',
             closeButtonId: 'close-launchpad-modal',
             metadata: {
+                skipMenubarUpdate: true, // Don't update menubar when launchpad is focused
                 initHandler: function () {
                     // Initialize Launchpad module if not already done
                     if (window.LaunchpadSystem && !window.LaunchpadSystem.container) {
