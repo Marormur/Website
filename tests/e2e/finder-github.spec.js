@@ -4,7 +4,8 @@ const { mockGithubRepoImageFlow } = require("./utils");
 
 async function openFinder(page) {
     await page.getByRole("img", { name: "Finder Icon" }).click();
-    await expect(page.getByRole("button", { name: "Finder" })).toBeVisible();
+    // Wait for Finder modal to be visible (avoid ambiguous selector between menubar and tab)
+    await expect(page.locator("#finder-modal")).not.toHaveClass(/hidden/);
 }
 
 async function openFinderGithub(page) {

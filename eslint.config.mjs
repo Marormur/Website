@@ -147,7 +147,7 @@ export default [
         },
     },
 
-    // Test-Dateien (ES6 Modules)
+    // Test-Dateien (ES6 Modules with Node.js globals)
     {
         files: ['tests/**/*.js', 'playwright.config.js', 'postcss.config.js'],
         languageOptions: {
@@ -161,6 +161,14 @@ export default [
                 navigator: 'readonly',
                 DataTransfer: 'readonly',
                 DragEvent: 'readonly',
+                
+                // Node.js (für require in Tests)
+                require: 'readonly',
+                module: 'readonly',
+                __dirname: 'readonly',
+                __filename: 'readonly',
+                process: 'readonly',
+                global: 'readonly',
             },
         },
         rules: {
