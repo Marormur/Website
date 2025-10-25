@@ -1,15 +1,15 @@
 # TypeScript Migration - Status & Nächste Schritte
 
-**Stand: 25. Oktober 2025, 20:30 Uhr**
+**Stand: 25. Oktober 2025**
 
 ---
 
 ## 🎯 Executive Summary
 
-### Aktueller Fortschritt: **~85% abgeschlossen**
+### Aktueller Fortschritt: **~88-90% abgeschlossen**
 
 - ✅ **Phase 0-3**: Komplett (Setup, Types, Core Modules)
-- 🟡 **Phase 4**: 10 von 12 Tasks (83%)
+- 🟡 **Phase 4**: 11 von 12 Tasks (~92%)
 - ⏳ **Phase 5**: Noch nicht begonnen (Testing & Quality)
 - ⏳ **Phase 6**: Noch nicht begonnen (Deployment & Docs)
 
@@ -41,7 +41,7 @@
 
 ## 📊 Phase 4 Status: Legacy Refactoring
 
-### ✅ Abgeschlossene Extraktionen (10/12):
+### ✅ Abgeschlossene Extraktionen (11/12):
 
 | Modul              | Zeilen | Status                                          |
 | ------------------ | ------ | ----------------------------------------------- |
@@ -60,51 +60,25 @@
 
 - Start: **1308 Zeilen**
 - Nach Extraktionen: **1024 Zeilen** (-284 Zeilen, -21.7%)
-- Aktuell (mit Comments): **1109 Zeilen**
+- Aktuell: **50 Zeilen** (Minimaler Legacy-Wrapper; ~-96% vs. Start)
 
-### 🔴 Verbleibende Tasks (2/12):
+### 🔴 Verbleibende Tasks (1/12):
 
-#### 1. **loadGithubRepos Legacy-Funktion** (KRITISCH)
-
-- **Umfang**: 977 Zeilen (Zeile 129-1106)
-- **Anteil**: ~88% des gesamten app.js Code!
-- **Status**: Wird noch in 2 Stellen aufgerufen:
-    - `js/app-init.js` Zeile 98: `funcs.loadGithubRepos?.()`
-    - `js/menu.js` Zeilen 138-139: Finder "Reload" Button
-
-**Optionen:**
-
-**Option A: Deprecate & Remove** ⭐ **EMPFOHLEN**
-
-- ✅ Funktion ist bereits durch `finder.js` ersetzt
-- ✅ Finder-System nutzt moderne Architektur
-- ✅ Würde app.js auf ~130 Zeilen reduzieren (-88%)
-- ⏱️ Aufwand: 2-3 Stunden
-- ⚠️ Risiko: Prüfen ob alte HTML-Seite (`projekte.html`) noch gebraucht wird
-
-**Option B: Migrieren zu TypeScript**
-
-- Zu `src/ts/legacy-finder.ts` verschieben
-- Als separate Module laden
-- Aufrufe in app-init.js und menu.js anpassen
-- ⏱️ Aufwand: 4-6 Stunden
-- ⚠️ Erhält toten Code
-
-**Empfehlung:**
-
-```
-1. Prüfen ob projekte.html noch verwendet wird (wahrscheinlich nicht)
-2. loadGithubRepos komplett entfernen
-3. Aufrufe in app-init.js und menu.js entfernen/kommentieren
-4. app.js bleibt mit ~130 Zeilen minimaler Wrapper
-5. Ggf. später komplett durch TypeScript Bootstrap ersetzen
-```
-
-#### 2. **Event-Listener auf ActionBus migrieren**
+#### 1. **Event-Listener auf ActionBus migrieren**
 
 - Verbleibende manuelle `addEventListener` Calls finden
 - Auf deklaratives `data-action` System umstellen
 - ⏱️ Aufwand: 1-2 Stunden
+
+---
+
+## ✅ Abgeschlossen in dieser Session: loadGithubRepos Legacy-Funktion
+
+- Init-Aufruf in `js/app-init.js` entfernt (delegation an moderne Systeme)
+- Finder „Reload“ in `js/menu.js` bevorzugt jetzt `FinderSystem.navigateTo([], 'github')` mit guarded Legacy-Fallback
+- Massive Legacy-Implementierung in `app.js` entfernt und durch schlanken delegierenden Stub ersetzt
+- `app.js` auf 50 Zeilen reduziert; i18n/translate Guard bleibt erhalten
+- Optionaler nächster Cleanup: Fallback-Aufruf in `menu.js` und der delegierende Stub können später komplett entfernt werden, sobald keine Legacy-Nutzer mehr existieren
 
 ---
 
