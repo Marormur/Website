@@ -207,7 +207,7 @@ console.log('MultiInstanceIntegration loaded');
                 if (instance) {
                     // Add tab for this instance
                     tabManager.addTab(instance);
-                    
+
                     // Show/hide instances based on active state
                     this.updateInstanceVisibility(type);
                 }
@@ -291,9 +291,9 @@ console.log('MultiInstanceIntegration loaded');
                 handler: () => {
                     const instances = manager.getAllInstances();
                     const activeInstance = manager.getActiveInstance();
-                    
+
                     if (instances.length <= 1 || !activeInstance) return;
-                    
+
                     const currentIndex = instances.findIndex(i => i.instanceId === activeInstance.instanceId);
                     const nextIndex = (currentIndex + 1) % instances.length;
                     manager.setActiveInstance(instances[nextIndex].instanceId);
@@ -310,9 +310,9 @@ console.log('MultiInstanceIntegration loaded');
                 handler: () => {
                     const instances = manager.getAllInstances();
                     const activeInstance = manager.getActiveInstance();
-                    
+
                     if (instances.length <= 1 || !activeInstance) return;
-                    
+
                     const currentIndex = instances.findIndex(i => i.instanceId === activeInstance.instanceId);
                     const prevIndex = (currentIndex - 1 + instances.length) % instances.length;
                     manager.setActiveInstance(instances[prevIndex].instanceId);

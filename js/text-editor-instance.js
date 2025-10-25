@@ -586,14 +586,14 @@ console.log('TextEditorInstance loaded');
                     console.error('Text editor container not found');
                     return null;
                 }
-                
+
                 const container = document.createElement('div');
                 container.id = `${instanceId}-container`;
                 container.className = 'text-editor-instance-container h-full';
-                
+
                 // Initially hidden (will be shown by integration layer)
                 container.classList.add('hidden');
-                
+
                 editorModalContainer.appendChild(container);
                 return container;
             }

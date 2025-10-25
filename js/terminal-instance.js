@@ -621,14 +621,14 @@ console.log('TerminalInstance loaded');
                     console.error('Terminal container not found');
                     return null;
                 }
-                
+
                 const container = document.createElement('div');
                 container.id = `${instanceId}-container`;
                 container.className = 'terminal-instance-container h-full';
-                
+
                 // Initially hidden (will be shown by integration layer)
                 container.classList.add('hidden');
-                
+
                 terminalModalContainer.appendChild(container);
                 return container;
             }

@@ -31,11 +31,27 @@
     "translate": "readonly"
   },
   "rules": {
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_"
+      }
+    ],
     "no-console": "off",
-    "semi": ["warn", "always"],
-    "quotes": ["warn", "single", { "avoidEscape": true }],
+    "semi": [
+      "warn",
+      "always"
+    ],
+    "quotes": [
+      "warn",
+      "single",
+      {
+        "avoidEscape": true
+      }
+    ],
     "prefer-const": "warn",
-    "no-var": "warn"
+    "no-var": "warn",
+    "no-trailing-spaces": "off",
+    "indent": "off"
   }
 }
