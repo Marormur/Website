@@ -1,13 +1,16 @@
 console.log('FinderInstance loaded');
 
 /**
- * FinderInstance - Multi-Instance fähige Finder-Implementierung
+ * FinderInstance - Multi-Instance fähiger Finder-Implementierung
  * 
  * Ermöglicht mehrere Finder-Fenster mit isolierten States
  * Zeigt, wie das Finder-Modul für Multi-Instance umgebaut werden kann
  */
 (function () {
     'use strict';
+
+    // Constants
+    const ROOT_FOLDER_NAME = 'Computer';
 
     /**
      * Single Finder Instance
@@ -57,45 +60,47 @@ console.log('FinderInstance loaded');
          * @private
          */
         _createVirtualFileSystem() {
-            return {
-                Computer: {
-                    type: 'folder',
-                    icon: '💻',
-                    children: {
-                        Documents: {
-                            type: 'folder',
-                            icon: '📄',
-                            children: {
-                                'README.md': {
-                                    type: 'file',
-                                    icon: '📝',
-                                    content: '# Willkommen im Finder\n\nDies ist ein virtuelles Dateisystem.',
-                                    size: 1024
-                                }
+            const rootFolder = {
+                type: 'folder',
+                icon: '💻',
+                children: {
+                    Documents: {
+                        type: 'folder',
+                        icon: '📄',
+                        children: {
+                            'README.md': {
+                                type: 'file',
+                                icon: '📝',
+                                content: '# Willkommen im Finder\n\nDies ist ein virtuelles Dateisystem.',
+                                size: 1024
                             }
-                        },
-                        Downloads: {
-                            type: 'folder',
-                            icon: '⬇️',
-                            children: {}
-                        },
-                        Pictures: {
-                            type: 'folder',
-                            icon: '🖼️',
-                            children: {}
-                        },
-                        Music: {
-                            type: 'folder',
-                            icon: '🎵',
-                            children: {}
-                        },
-                        Videos: {
-                            type: 'folder',
-                            icon: '🎬',
-                            children: {}
                         }
+                    },
+                    Downloads: {
+                        type: 'folder',
+                        icon: '⬇️',
+                        children: {}
+                    },
+                    Pictures: {
+                        type: 'folder',
+                        icon: '🖼️',
+                        children: {}
+                    },
+                    Music: {
+                        type: 'folder',
+                        icon: '🎵',
+                        children: {}
+                    },
+                    Videos: {
+                        type: 'folder',
+                        icon: '🎬',
+                        children: {}
                     }
                 }
+            };
+
+            return {
+                [ROOT_FOLDER_NAME]: rootFolder
             };
         }
 
@@ -396,8 +401,8 @@ console.log('FinderInstance loaded');
 
             // Path parts
             this.currentPath.forEach((part, index) => {
-                // Skip "Computer" if we're in computer view and it's the first part
-                if (index === 0 && this.currentView === 'computer' && part === 'Computer') {
+                // Skip root folder name if we're in computer view and it's the first part
+                if (index === 0 && this.currentView === 'computer' && part === ROOT_FOLDER_NAME) {
                     return;
                 }
 

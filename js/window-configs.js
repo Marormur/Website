@@ -86,13 +86,13 @@ console.log('Window Configurations loaded');
             closeButtonId: 'close-text-modal',
             metadata: {
                 initHandler: function () {
-                    // Create first Text Editor instance when modal opens if none exist
+                    // Primary: Create first Text Editor instance when modal opens if none exist
                     if (window.TextEditorInstanceManager && !window.TextEditorInstanceManager.hasInstances()) {
                         window.TextEditorInstanceManager.createInstance({
                             title: 'Editor'
                         });
                     }
-                    // Fallback: Initialize old text editor module if not already done
+                    // Fallback: Initialize old text editor module if instance manager not available
                     else if (window.TextEditorSystem && !window.TextEditorSystem.container) {
                         const container = document.getElementById('text-editor-container');
                         if (container) {
@@ -124,13 +124,13 @@ console.log('Window Configurations loaded');
             closeButtonId: 'close-terminal-modal',
             metadata: {
                 initHandler: function () {
-                    // Create first Terminal instance when modal opens if none exist
+                    // Primary: Create first Terminal instance when modal opens if none exist
                     if (window.TerminalInstanceManager && !window.TerminalInstanceManager.hasInstances()) {
                         window.TerminalInstanceManager.createInstance({
                             title: 'Terminal'
                         });
                     }
-                    // Fallback: Initialize old terminal module if not already done
+                    // Fallback: Initialize old terminal module if instance manager not available
                     else if (window.TerminalSystem && !window.TerminalSystem.container) {
                         const container = document.getElementById('terminal-container');
                         if (container) {
