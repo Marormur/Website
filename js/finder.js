@@ -84,13 +84,16 @@ console.log('Finder.js loaded');
     const GITHUB_CACHE_NS = 'finderGithubCacheV1:';
 
     function getGithubHeaders() {
+        if (window.GitHubAPI && typeof window.GitHubAPI.getHeaders === 'function') {
+            return window.GitHubAPI.getHeaders();
+        }
         const headers = { Accept: 'application/vnd.github.v3+json' };
         try {
             const token = localStorage.getItem('githubToken');
             if (token && token.trim()) {
                 headers['Authorization'] = `token ${token.trim()}`;
             }
-        } catch (_) {
+        } catch {
             /* ignore */
         }
         return headers;
@@ -103,7 +106,7 @@ console.log('Finder.js loaded');
             return typeof constants.GITHUB_CACHE_DURATION === 'number'
                 ? constants.GITHUB_CACHE_DURATION
                 : dflt;
-        } catch (_) {
+        } catch {
             return dflt;
         }
     }
@@ -112,15 +115,22 @@ console.log('Finder.js loaded');
         return `${GITHUB_CACHE_NS}contents:${repo}:${subPath}`;
     }
     function writeCache(kind, repo, subPath, data) {
+        if (window.GitHubAPI && typeof window.GitHubAPI.writeCache === 'function') {
+            window.GitHubAPI.writeCache(kind, repo, subPath, data);
+            return;
+        }
         const key = makeCacheKey(kind, repo, subPath);
         try {
             const payload = { t: Date.now(), d: data };
             localStorage.setItem(key, JSON.stringify(payload));
-        } catch (_) {
+        } catch {
             /* ignore */
         }
     }
     function readCache(kind, repo, subPath) {
+        if (window.GitHubAPI && typeof window.GitHubAPI.readCache === 'function') {
+            return window.GitHubAPI.readCache(kind, repo, subPath);
+        }
         const key = makeCacheKey(kind, repo, subPath);
         try {
             const raw = localStorage.getItem(key);
@@ -131,7 +141,7 @@ console.log('Finder.js loaded');
             if (typeof parsed.t !== 'number' || Date.now() - parsed.t > ttl)
                 return null;
             return Array.isArray(parsed.d) ? parsed.d : null;
-        } catch (_) {
+        } catch {
             return null;
         }
     }
@@ -343,23 +353,17 @@ console.log('Finder.js loaded');
                 !finderState.githubError
             ) {
                 finderState.githubLoading = true;
-                fetch(
-                    `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`,
-                    {
-                        headers: getGithubHeaders(),
-                    },
-                )
-                    .then((r) => {
-                        if (!r.ok) {
-                            // Spezifische Rate-Limit-Behandlung
-                            if (r.status === 403) {
-                                finderState.githubError = true;
-                                return Promise.reject(r);
-                            }
-                            return Promise.reject(r);
-                        }
-                        return r.json();
+                (window.GitHubAPI && window.GitHubAPI.fetchUserRepos
+                    ? window.GitHubAPI.fetchUserRepos(GITHUB_USERNAME, {
+                        per_page: 100,
+                        sort: 'updated',
                     })
+                    : fetch(
+                        `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`,
+                        {
+                            headers: getGithubHeaders(),
+                        },
+                    ).then((r) => (r.ok ? r.json() : Promise.reject(r))))
                     .then((repos) => {
                         const list = (Array.isArray(repos) ? repos : []).map(
                             (r) => ({
@@ -383,7 +387,10 @@ console.log('Finder.js loaded');
                         writeCache('repos', '', '', list);
                         finderState.githubError = false;
                     })
-                    .catch(() => {
+                    .catch((err) => {
+                        if (err && err.status === 403) {
+                            finderState.githubError = true;
+                        }
                         finderState.githubError = true;
                     })
                     .finally(() => {
@@ -467,22 +474,20 @@ console.log('Finder.js loaded');
             const pathPart = subPath
                 ? `/${encodeURIComponent(subPath).replace(/%2F/g, '/')}`
                 : '';
-            fetch(
-                `https://api.github.com/repos/${GITHUB_USERNAME}/${encodeURIComponent(repo)}/contents${pathPart}`,
-                {
-                    headers: getGithubHeaders(),
-                },
-            )
-                .then((r) => {
-                    if (!r.ok) {
-                        if (r.status === 403) {
-                            finderState.githubError = true;
-                            return Promise.reject(r);
-                        }
-                        return Promise.reject(r);
-                    }
-                    return r.json();
-                })
+            (window.GitHubAPI && window.GitHubAPI.fetchRepoContents
+                ? window.GitHubAPI.fetchRepoContents(
+                    GITHUB_USERNAME,
+                    repo,
+                    subPath,
+                )
+                : fetch(
+                    `https://api.github.com/repos/${GITHUB_USERNAME}/${encodeURIComponent(
+                        repo,
+                    )}/contents${pathPart}`,
+                    {
+                        headers: getGithubHeaders(),
+                    },
+                ).then((r) => (r.ok ? r.json() : Promise.reject(r))))
                 .then((items) => {
                     const mapped = (Array.isArray(items) ? items : [items]).map(
                         (it) => {
@@ -503,7 +508,10 @@ console.log('Finder.js loaded');
                     writeCache('contents', repo, subPath, mapped);
                     finderState.githubError = false;
                 })
-                .catch(() => {
+                .catch((err) => {
+                    if (err && err.status === 403) {
+                        finderState.githubError = true;
+                    }
                     // Auf Cache zurückfallen, falls vorhanden
                     const fallback = readCache('contents', repo, subPath) || [];
                     githubContentCache.set(cacheKey, fallback);
@@ -901,15 +909,14 @@ console.log('Finder.js loaded');
             return;
         }
         if (entry.url) {
-            fetch(entry.url, {
-                headers: { Accept: 'application/vnd.github.v3+json' },
+            const p = window.GitHubAPI && window.GitHubAPI.fetchJSON
+                ? window.GitHubAPI.fetchJSON(entry.url)
+                : fetch(entry.url, { headers: { Accept: 'application/vnd.github.v3+json' } }).then((r) => (r.ok ? r.json() : Promise.reject(r)));
+            p.then((data) => {
+                if (data && typeof data.download_url === 'string') {
+                    finalize(data.download_url);
+                }
             })
-                .then((r) => (r.ok ? r.json() : Promise.reject(r)))
-                .then((data) => {
-                    if (data && typeof data.download_url === 'string') {
-                        finalize(data.download_url);
-                    }
-                })
                 .catch(() => {
                     /* silently ignore */
                 });
@@ -935,30 +942,29 @@ console.log('Finder.js loaded');
                 });
             }
             if (entry.url) {
-                return fetch(entry.url, {
-                    headers: { Accept: 'application/vnd.github.v3+json' },
-                })
-                    .then((r) => (r.ok ? r.json() : Promise.reject(r)))
-                    .then((data) => {
-                        if (data && typeof data.download_url === 'string') {
-                            return fetch(data.download_url).then((r) => {
-                                if (!r.ok) throw new Error('Download failed');
-                                return r.text();
-                            });
-                        }
-                        if (
-                            data &&
+                const p = window.GitHubAPI && window.GitHubAPI.fetchJSON
+                    ? window.GitHubAPI.fetchJSON(entry.url)
+                    : fetch(entry.url, { headers: { Accept: 'application/vnd.github.v3+json' } }).then((r) => (r.ok ? r.json() : Promise.reject(r)));
+                return p.then((data) => {
+                    if (data && typeof data.download_url === 'string') {
+                        return fetch(data.download_url).then((r) => {
+                            if (!r.ok) throw new Error('Download failed');
+                            return r.text();
+                        });
+                    }
+                    if (
+                        data &&
                             data.encoding === 'base64' &&
                             typeof data.content === 'string'
-                        ) {
-                            try {
-                                return atob(data.content.replace(/\s/g, ''));
-                            } catch (_) {
-                                throw new Error('Decode error');
-                            }
+                    ) {
+                        try {
+                            return atob(data.content.replace(/\s/g, ''));
+                        } catch (_) {
+                            throw new Error('Decode error');
                         }
-                        throw new Error('No content');
-                    });
+                    }
+                    throw new Error('No content');
+                });
             }
             return Promise.reject(new Error('No source'));
         };
