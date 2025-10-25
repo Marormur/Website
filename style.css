@@ -1096,10 +1096,15 @@ html.dark #dock .dock-tooltip {
 }
 
 /* Launchpad modal specific styling */
+#launchpad-modal {
+    /* Override the default .modal pointer-events: none to enable click-outside-to-close */
+    pointer-events: auto;
+}
+
 .launchpad-modal-inner {
     background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
 }
 
 .dark .launchpad-modal-inner {
