@@ -14,16 +14,21 @@ async function gotoHome(page, baseURL) {
 
 // Wait for application readiness signaled by app-init.js
 async function waitForAppReady(page, timeout = 15000) {
+    // Optional: enable GitHub API mocks for smoke tests to avoid rate limits/flakiness
+    await ensureGithubMocksIfRequested(page);
     // First ensure DOMContentLoaded at least
     try {
         await page.waitForLoadState('domcontentloaded', { timeout: Math.min(timeout, 5000) });
-    } catch (_) {
+    } catch {
         /* ignore */
     }
-    await page.waitForFunction(() => {
-        // Prefer a strict boolean check
-        return typeof window !== 'undefined' && window.__APP_READY === true;
-    }, { timeout });
+    await page.waitForFunction(
+        () => {
+            // Prefer a strict boolean check
+            return typeof window !== 'undefined' && window.__APP_READY === true;
+        },
+        { timeout }
+    );
 }
 
 // Apple menu helpers
@@ -100,9 +105,7 @@ async function expectMenuItem(page, sectionLabel, itemLabel) {
             timeout: 5000,
         });
     }
-    await expect(
-        page.getByRole('menuitem', { name: new RegExp('^' + itemLabel) }),
-    ).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: new RegExp('^' + itemLabel) })).toBeVisible();
 }
 
 async function bringModalToFront(page, modalId) {
@@ -118,8 +121,8 @@ async function getProgramLabel(page) {
 async function getDockOrder(page) {
     return await page.evaluate(() =>
         Array.from(document.querySelectorAll('#dock .dock-tray .dock-item'))
-            .map((it) => it.getAttribute('data-window-id'))
-            .filter((v) => v !== null),
+            .map(it => it.getAttribute('data-window-id'))
+            .filter(v => v !== null)
     );
 }
 
@@ -143,8 +146,8 @@ async function dragAfter(page, sourceId, targetId) {
                             clientX: opts.clientX || 0,
                             clientY: opts.clientY || 0,
                         },
-                        opts,
-                    ),
+                        opts
+                    )
                 );
                 el.dispatchEvent(ev);
             };
@@ -163,9 +166,10 @@ async function dragAfter(page, sourceId, targetId) {
             fire('drop', tgt, { clientX: overX, clientY: overY });
             fire('dragend', src);
         },
-        { srcSel, tgtSel },
+        { srcSel, tgtSel }
     );
-    await page.waitForTimeout(250);
+    // Intentional small delay to allow DOM reorder event propagation in drag/drop flows
+    await page.waitForTimeout(150);
 }
 
 async function dragBefore(page, sourceId, targetId) {
@@ -188,8 +192,8 @@ async function dragBefore(page, sourceId, targetId) {
                             clientX: opts.clientX || 0,
                             clientY: opts.clientY || 0,
                         },
-                        opts,
-                    ),
+                        opts
+                    )
                 );
                 el.dispatchEvent(ev);
             };
@@ -200,10 +204,7 @@ async function dragBefore(page, sourceId, targetId) {
             });
 
             const tgtRect = tgt.getBoundingClientRect();
-            const overX = Math.min(
-                window.innerWidth - 1,
-                Math.floor(tgtRect.left + 2),
-            );
+            const overX = Math.min(window.innerWidth - 1, Math.floor(tgtRect.left + 2));
             const overY = Math.floor(tgtRect.top + tgtRect.height / 2);
             const overEl = document.elementFromPoint(overX, overY) || tgt;
             fire('dragover', overEl, { clientX: overX, clientY: overY });
@@ -211,9 +212,10 @@ async function dragBefore(page, sourceId, targetId) {
             fire('drop', tgt, { clientX: overX, clientY: overY });
             fire('dragend', src);
         },
-        { srcSel, tgtSel },
+        { srcSel, tgtSel }
     );
-    await page.waitForTimeout(250);
+    // Intentional small delay to allow DOM reorder event propagation in drag/drop flows
+    await page.waitForTimeout(150);
 }
 
 function expectOrderContains(order, beforeId, afterId) {
@@ -226,14 +228,12 @@ function expectOrderContains(order, beforeId, afterId) {
 
 // Finder / GitHub API mocks
 async function mockGithubRepoImageFlow(page, baseURL) {
-    const reposPattern =
-        /https:\/\/api\.github\.com\/users\/Marormur\/repos.*/i;
-    const contentsRootPattern =
-        /https:\/\/api\.github\.com\/repos\/Marormur\/Website\/contents$/i;
+    const reposPattern = /https:\/\/api\.github\.com\/users\/Marormur\/repos.*/i;
+    const contentsRootPattern = /https:\/\/api\.github\.com\/repos\/Marormur\/Website\/contents$/i;
     const contentsImgPattern =
         /https:\/\/api\.github\.com\/repos\/Marormur\/Website\/contents\/img$/i;
 
-    await page.route(reposPattern, async (route) => {
+    await page.route(reposPattern, async route => {
         const body = [
             {
                 name: 'Website',
@@ -248,7 +248,7 @@ async function mockGithubRepoImageFlow(page, baseURL) {
         });
     });
 
-    await page.route(contentsRootPattern, async (route) => {
+    await page.route(contentsRootPattern, async route => {
         const body = [
             { name: 'img', path: 'img', type: 'dir' },
             { name: 'README.md', path: 'README.md', type: 'file', size: 10 },
@@ -260,7 +260,7 @@ async function mockGithubRepoImageFlow(page, baseURL) {
         });
     });
 
-    await page.route(contentsImgPattern, async (route) => {
+    await page.route(contentsImgPattern, async route => {
         const body = [
             {
                 name: 'wallpaper.png',
@@ -276,6 +276,29 @@ async function mockGithubRepoImageFlow(page, baseURL) {
             body: JSON.stringify(body),
         });
     });
+}
+
+// Enable GitHub API mocks automatically when MOCK_GITHUB env flag is set.
+// This helps stabilize smoke tests that touch Finder "github" view without hitting the network.
+async function ensureGithubMocksIfRequested(page) {
+    const flag = (process.env.MOCK_GITHUB || '').toLowerCase();
+    if (flag === '1' || flag === 'true' || flag === 'yes') {
+        try {
+            // Derive base URL (origin) from the current page context
+            const currentUrl = page.url();
+            let origin;
+            try {
+                origin = new URL(currentUrl).origin;
+            } catch {
+                // Fallback to the configured dev server
+                origin = 'http://127.0.0.1:5173';
+            }
+            await mockGithubRepoImageFlow(page, origin);
+        } catch (e) {
+            // Non-fatal; tests can proceed without mocks
+            console.warn('GitHub API mock setup failed:', e && e.message ? e.message : e);
+        }
+    }
 }
 
 module.exports = {
@@ -300,4 +323,5 @@ module.exports = {
     expectOrderContains,
     // Finder / GitHub mocks
     mockGithubRepoImageFlow,
+    ensureGithubMocksIfRequested,
 };
