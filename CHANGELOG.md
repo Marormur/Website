@@ -49,6 +49,11 @@ All notable changes to this project will be documented in this file.
   - New source: src/ts/text-editor-instance.ts → emits to js/text-editor-instance.js
   - Typed editor state, toolbar actions, find/replace, wrap mode; preserved InstanceManager wiring
   - Global API preserved: window.TextEditorInstance, window.TextEditorInstanceManager
+
+- refactor(ts): migrate WindowManager to TypeScript
+  - New source: src/ts/window-manager.ts → emits to js/window-manager.js
+  - Typed window registry, z-index sync, dialog instance tracking, and program metadata
+  - Preserves global WindowManager API and legacy window.topZIndex property
 - CODEBASE_IMPROVEMENTS.md with organizational tasks
 - TYPESCRIPT_MIGRATION_PLAN.md with detailed migration strategy
 - API Docs: Generated JSDoc and in-app “📖 API Docs” link (index.html)

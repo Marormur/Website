@@ -87,6 +87,7 @@ Hinweis: Diese Tasks erfüllen direkt „Priorität 1: Core Features & Integrati
 - [x] `storage.js` → `src/ts/storage.ts` (emit: `js/storage.js`)
 - [x] `terminal-instance.js` → `src/ts/terminal-instance.ts` (emit: `js/terminal-instance.js`)
 - [x] `text-editor-instance.js` → `src/ts/text-editor-instance.ts` (emit: `js/text-editor-instance.js`)
+- [x] `window-manager.js` → `src/ts/window-manager.ts` (emit: `js/window-manager.js`)
 
 Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 

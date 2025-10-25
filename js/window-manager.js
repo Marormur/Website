@@ -1,167 +1,81 @@
 /**
- * WindowManager - Central registry for windows/modals with z-index management and program metadata.
- *
- * Responsibilities:
- * - Register window configs (persistent/transient)
- * - Track dialog instances and z-index ordering
- * - Provide program info via i18n keys
- *
- * Usage:
- *   WindowManager.register({ id: 'finder-modal', type: 'persistent', programKey: 'programs.finder' })
- *   WindowManager.open('finder-modal')
- *
- * Notes: This is legacy JS; types are documented via JSDoc for editor hints.
+ * WindowManager - Central registry for windows/modals with z-index and program metadata (TypeScript).
+ * Mirrors js/window-manager.js behavior while adding types and preserving global API.
  */
-console.log('WindowManager loaded');
-
-/**
- * WindowManager - Zentrale Verwaltung für alle Fenster/Modals
- *
- * Vorteile:
- * - Neue Fenster können sich selbst registrieren
- * - Alle Fenster-Metadaten an einem Ort
- * - Keine hart-kodierten Arrays mehr
- * - Einfache Erweiterbarkeit für neue Features
- */
-(function () {
+(() => {
     'use strict';
-
-    const windowRegistry = new Map();
-    const baseZIndex = 1000;
-    let topZIndex = 1000;
-
-    // Window-Konfiguration
-    /**
-     * @typedef {Object} WindowConfigOptions
-     * @property {string} id
-     * @property {('persistent'|'transient')} [type]
-     * @property {string} [programKey]
-     * @property {string} [icon]
-     * @property {string|null} [closeButtonId]
-     * @property {Object} [metadata]
-     */
     class WindowConfig {
         constructor(options) {
             this.id = options.id;
-            this.type = options.type || 'persistent'; // 'persistent' oder 'transient'
+            this.type = options.type || 'persistent';
             this.programKey = options.programKey || 'programs.default';
             this.icon = options.icon || './img/sucher.png';
-            this.closeButtonId = options.closeButtonId || null;
+            this.closeButtonId = options.closeButtonId ?? null;
             this.dialogInstance = null;
             this.metadata = options.metadata || {};
         }
-
         isTransient() {
             return this.type === 'transient';
         }
-
         getProgramInfo() {
-            const i18n = window.appI18n;
+            const w = window;
+            const i18n = w['appI18n'] || undefined;
             const translate = i18n?.translate || ((key) => key);
-
             const aboutFields = ['name', 'tagline', 'version', 'copyright'];
             const info = {
                 modalId: this.id,
                 programLabel: translate(`${this.programKey}.label`),
                 infoLabel: translate(`${this.programKey}.infoLabel`),
-                fallbackInfoModalId:
-                    this.metadata.fallbackInfoModalId || 'program-info-modal',
+                fallbackInfoModalId: this.metadata.fallbackInfoModalId || 'program-info-modal',
                 icon: this.icon,
                 about: {},
             };
-
             aboutFields.forEach((field) => {
-                info.about[field] = translate(
-                    `${this.programKey}.about.${field}`,
-                );
+                info.about[field] = translate(`${this.programKey}.about.${field}`);
             });
-
             return info;
         }
     }
-
+    const windowRegistry = new Map();
+    const baseZIndex = 1000;
+    let topZIndex = 1000;
     const WindowManager = {
-        /**
-         * Registriert ein neues Fenster im System
-         * @param {WindowConfigOptions} config
-         * @returns {WindowConfig}
-         */
         register(config) {
             const windowConfig = new WindowConfig(config);
             windowRegistry.set(config.id, windowConfig);
             return windowConfig;
         },
-
-        /**
-         * Registriert mehrere Fenster auf einmal
-         * @param {WindowConfigOptions[]} configs
-         */
         registerAll(configs) {
-            configs.forEach((config) => this.register(config));
+            configs.forEach((c) => this.register(c));
         },
-
-        /**
-         * Gibt die Konfiguration eines Fensters zurück
-         * @param {string} windowId
-         * @returns {WindowConfig|null}
-         */
         getConfig(windowId) {
             return windowRegistry.get(windowId) || null;
         },
-
-        /**
-         * Gibt alle registrierten Fenster-IDs zurück
-         * @returns {string[]}
-         */
         getAllWindowIds() {
             return Array.from(windowRegistry.keys());
         },
-
-        /**
-         * Gibt alle persistenten Fenster zurück
-         * @returns {string[]}
-         */
         getPersistentWindowIds() {
             return this.getAllWindowIds().filter((id) => {
                 const config = this.getConfig(id);
-                return config && !config.isTransient();
+                return !!config && !config.isTransient();
             });
         },
-
-        /**
-         * Gibt alle transienten Fenster zurück
-         * @returns {string[]}
-         */
         getTransientWindowIds() {
             return this.getAllWindowIds().filter((id) => {
                 const config = this.getConfig(id);
-                return config && config.isTransient();
+                return !!config && config.isTransient();
             });
         },
-
-        /**
-         * Setzt die Dialog-Instanz für ein Fenster
-         * @param {string} windowId
-         * @param {any} instance
-         */
         setDialogInstance(windowId, instance) {
             const config = this.getConfig(windowId);
             if (config) {
                 config.dialogInstance = instance;
             }
         },
-
-        /**
-         * Gibt die Dialog-Instanz eines Fensters zurück
-         */
         getDialogInstance(windowId) {
             const config = this.getConfig(windowId);
-            return config?.dialogInstance || null;
+            return (config && config.dialogInstance) || null;
         },
-
-        /**
-         * Gibt alle Dialog-Instanzen zurück
-         */
         getAllDialogInstances() {
             const dialogs = {};
             windowRegistry.forEach((config, id) => {
@@ -171,66 +85,51 @@ console.log('WindowManager loaded');
             });
             return dialogs;
         },
-
-        /**
-         * Gibt das oberste sichtbare Fenster zurück
-         */
         getTopWindow() {
             let topModal = null;
             let highestZ = 0;
-
             this.getAllWindowIds().forEach((id) => {
                 const modal = document.getElementById(id);
                 if (modal && !modal.classList.contains('hidden')) {
-                    const zIndex =
-                        parseInt(getComputedStyle(modal).zIndex, 10) || 0;
+                    const zIndex = parseInt(getComputedStyle(modal).zIndex, 10) || 0;
                     if (zIndex > highestZ) {
                         highestZ = zIndex;
                         topModal = modal;
                     }
                 }
             });
-
             return topModal;
         },
-
-        /**
-         * Bringt ein Fenster in den Vordergrund
-         */
         bringToFront(windowId) {
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.bringToFront === 'function') {
                 instance.bringToFront();
-            } else {
+            }
+            else {
                 console.warn(`Keine Dialog-Instanz für ${windowId} gefunden.`);
             }
         },
-
-        /**
-         * Öffnet ein Fenster
-         */
         open(windowId) {
-            // Run per-window init handler once if provided
             const config = this.getConfig(windowId);
-            if (
-                config &&
-                config.metadata &&
-                typeof config.metadata.initHandler === 'function'
-            ) {
+            if (config && config.metadata && typeof config.metadata.initHandler === 'function') {
                 try {
-                    if (!config.metadata.__initialized) {
-                        config.metadata.initHandler();
-                        config.metadata.__initialized = true;
+                    const md = config.metadata;
+                    if (!md.__initialized) {
+                        if (typeof md.initHandler === 'function') {
+                            md.initHandler();
+                        }
+                        md.__initialized = true;
                     }
-                } catch (e) {
+                }
+                catch (e) {
                     console.warn(`Init handler for ${windowId} threw:`, e);
                 }
             }
-
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.open === 'function') {
                 instance.open();
-            } else {
+            }
+            else {
                 const modal = document.getElementById(windowId);
                 if (modal) {
                     modal.classList.remove('hidden');
@@ -238,84 +137,56 @@ console.log('WindowManager loaded');
                 }
             }
         },
-
-        /**
-         * Schließt ein Fenster
-         */
         close(windowId) {
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.close === 'function') {
                 instance.close();
-            } else {
+            }
+            else {
                 const modal = document.getElementById(windowId);
-                if (modal) {
+                if (modal)
                     modal.classList.add('hidden');
-                }
             }
         },
-
-        /**
-         * Z-Index Management
-         */
         getNextZIndex() {
             topZIndex++;
             return topZIndex;
         },
-
         syncZIndexWithDOM() {
             let maxZ = baseZIndex;
-
             this.getAllWindowIds().forEach((id) => {
                 const modal = document.getElementById(id);
-                if (!modal) return;
-
-                const modalZ = parseInt(
-                    window.getComputedStyle(modal).zIndex,
-                    10,
-                );
-                if (!Number.isNaN(modalZ)) {
+                if (!modal)
+                    return;
+                const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
+                if (!Number.isNaN(modalZ))
                     maxZ = Math.max(maxZ, modalZ);
-                }
-
                 const windowEl = this.getDialogWindowElement(modal);
                 if (windowEl) {
-                    const contentZ = parseInt(
-                        window.getComputedStyle(windowEl).zIndex,
-                        10,
-                    );
-                    if (!Number.isNaN(contentZ)) {
+                    const contentZ = parseInt(window.getComputedStyle(windowEl).zIndex, 10);
+                    if (!Number.isNaN(contentZ))
                         maxZ = Math.max(maxZ, contentZ);
-                    }
                 }
             });
-
             topZIndex = maxZ;
             return maxZ;
         },
-
         getDialogWindowElement(modal) {
-            if (!modal) return null;
+            if (!modal)
+                return null;
             return modal.querySelector('.autopointer') || modal;
         },
-
-        /**
-         * Gibt Program-Info für ein Fenster zurück
-         */
         getProgramInfo(windowId) {
             const config = this.getConfig(windowId);
-            if (config) {
+            if (config)
                 return config.getProgramInfo();
-            }
-
-            // Fallback für nicht-registrierte Fenster
             return this.getDefaultProgramInfo();
         },
-
         getDefaultProgramInfo() {
-            const i18n = window.appI18n;
+            const w = window;
+            const i18n = w['appI18n'] || undefined;
             const translate = i18n?.translate || ((key) => key);
             const programKey = 'programs.default';
-
             return {
                 modalId: null,
                 programLabel: translate(`${programKey}.label`),
@@ -330,25 +201,17 @@ console.log('WindowManager loaded');
                 },
             };
         },
-
-        // Expose internal state für Migration
         get topZIndex() {
             return topZIndex;
         },
-
         set topZIndex(value) {
             topZIndex = value;
         },
-
         get baseZIndex() {
             return baseZIndex;
         },
     };
-
-    // Globaler Export
     window.WindowManager = WindowManager;
-
-    // Legacy-Kompatibilität
     Object.defineProperty(window, 'topZIndex', {
         get: () => WindowManager.topZIndex,
         set: (value) => {
@@ -356,3 +219,4 @@ console.log('WindowManager loaded');
         },
     });
 })();
+//# sourceMappingURL=window-manager.js.map
