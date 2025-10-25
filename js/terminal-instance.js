@@ -98,6 +98,16 @@ console.log('TerminalInstance loaded');
             this.inputElement = this.container.querySelector(
                 '[data-terminal-input]',
             );
+
+            // Show initial welcome and focus input
+            try {
+                this.showWelcomeMessage();
+            } catch {
+                /* noop */
+            }
+            if (this.inputElement && typeof this.inputElement.focus === 'function') {
+                this.inputElement.focus();
+            }
         }
 
         /**
@@ -552,7 +562,26 @@ console.log('TerminalInstance loaded');
          * @returns {Object|null}
          */
         resolvePath(path) {
-            return this.fileSystem[path] || null;
+            if (!path) return null;
+
+            // Normalize first
+            const normalizedPath = this.normalizePath(path);
+
+            // Home dir
+            if (normalizedPath === '~') return this.fileSystem['~'];
+
+            // Walk the virtual filesystem starting at home
+            let current = this.fileSystem['~'];
+            const parts = normalizedPath
+                .replace(/^~\/?/, '')
+                .split('/')
+                .filter((p) => p);
+
+            for (const part of parts) {
+                if (!current.contents || !current.contents[part]) return null;
+                current = current.contents[part];
+            }
+            return current;
         }
 
         /**
@@ -571,7 +600,8 @@ console.log('TerminalInstance loaded');
             if (path.startsWith('~')) {
                 workingPath = path;
             } else if (path.startsWith('/')) {
-                workingPath = path;
+                // Treat leading slash as home-relative root
+                workingPath = '~' + path;
             } else {
                 // Relative path - combine with current path
                 if (this.currentPath === '~') {

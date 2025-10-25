@@ -57,8 +57,8 @@ function initModalIds() {
 
 const appI18n = window.appI18n || {
     translate: (key) => key,
-    applyTranslations: () => {},
-    setLanguagePreference: () => {},
+    applyTranslations: () => { },
+    setLanguagePreference: () => { },
     getLanguagePreference: () => 'system',
     getActiveLanguage: () => 'en',
 };
@@ -317,8 +317,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Initialize terminal module
-    if (window.TerminalSystem) {
+    // Initialize terminal module (legacy) only when multi‑instance is not available
+    // Prevents duplicate inputs causing E2E strict-mode locator conflicts
+    if (!window.TerminalInstanceManager && window.TerminalSystem) {
         const terminalContainer = document.getElementById('terminal-container');
         if (terminalContainer) {
             window.TerminalSystem.init(terminalContainer);

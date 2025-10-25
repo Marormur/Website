@@ -27,11 +27,11 @@ console.log('ActionBus loaded');
     const eventDelegates = [];
 
     const ActionBus = {
-    /**
-     * Registriert einen Action-Handler
-     * @param {string} actionName - Name der Action
-     * @param {Function} handler - Handler-Funktion (params, element) => void
-     */
+        /**
+         * Registriert einen Action-Handler
+         * @param {string} actionName - Name der Action
+         * @param {Function} handler - Handler-Funktion (params, element) => void
+         */
         register(actionName, handler) {
             if (!actionName || typeof handler !== 'function') {
                 console.error('Invalid action registration:', actionName);

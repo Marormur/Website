@@ -144,7 +144,7 @@ console.log('Window Configurations loaded');
                     // Fallback: Initialize old terminal module if instance manager not available
                     else if (window.TerminalSystem && !window.TerminalSystem.container) {
                         const container =
-                                document.getElementById('terminal-container');
+                            document.getElementById('terminal-container');
                         if (container) {
                             window.TerminalSystem.init(container);
                         }

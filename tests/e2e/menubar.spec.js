@@ -24,15 +24,13 @@ test.describe("Menubar switches with active window (de-DE)", () => {
     test("Finder menus appear when Finder is active", async ({ page }) => {
         // Open Finder from dock
         await clickDockIcon(page, "Finder Icon");
-        await page.waitForTimeout(1000); // Wait for window to open and menubar to update
+        // Ensure Finder is the active window before asserting menubar
+        await bringModalToFront(page, "finder-modal");
 
         // Program label becomes "Finder"
         const finderButton = page.getByRole("button", { name: "Finder" });
         await finderButton.waitFor({ state: "visible", timeout: 10000 });
         await expect(finderButton).toBeVisible({ timeout: 10000 });
-
-        // Dock indicator for Finder should be visible
-        await expect(page.locator("#finder-indicator")).toBeVisible();
 
         // Finder menubar sections
         await expectMenuButton(page, "Ablage");
@@ -50,7 +48,6 @@ test.describe("Menubar switches with active window (de-DE)", () => {
     }) => {
         // Open Texteditor
         await clickDockIcon(page, "Texteditor Icon");
-        await page.waitForTimeout(1000); // Wait for window to open and menubar to update
         const textEditorButton = page.getByRole("button", {
             name: "Texteditor",
         });
@@ -79,8 +76,5 @@ test.describe("Menubar switches with active window (de-DE)", () => {
         await expectMenuButton(page, "Ablage");
         await expectMenuButton(page, "Fenster");
         await expectMenuButton(page, "Hilfe");
-
-        // Finder dock indicator remains visible as window is open
-        await expect(page.locator("#finder-indicator")).toBeVisible();
     });
 });

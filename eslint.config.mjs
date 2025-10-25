@@ -17,7 +17,7 @@ export default [
     // JavaScript Dateien
     {
         files: ['**/*.js'],
-            ignores: ['tests/**/*.spec.js', 'playwright.config.js', 'postcss.config.js'],
+        ignores: ['tests/**/*.spec.js', 'playwright.config.js', 'postcss.config.js'],
         languageOptions: {
             ecmaVersion: 'latest',
             sourceType: 'script',
@@ -36,37 +36,37 @@ export default [
                 Event: 'readonly',
                 CustomEvent: 'readonly',
                 HTMLElement: 'readonly',
-                    navigator: 'readonly',
-                    performance: 'readonly',
-                    Element: 'readonly',
-                    Node: 'readonly',
-                    MouseEvent: 'readonly',
-                    KeyboardEvent: 'readonly',
-                    DOMParser: 'readonly',
-                    FileReader: 'readonly',
-                    Blob: 'readonly',
-                    URL: 'readonly',
-                    atob: 'readonly',
-                    btoa: 'readonly',
-                    getComputedStyle: 'readonly',
-                    requestAnimationFrame: 'readonly',
-                    cancelAnimationFrame: 'readonly',
-                    AbortController: 'readonly',
-                    MutationObserver: 'readonly',
-                    TextDecoder: 'readonly',
-                    TextEncoder: 'readonly',
-                    alert: 'readonly',
-                    confirm: 'readonly',
-                    prompt: 'readonly',
-                    sessionStorage: 'readonly',
-                
+                navigator: 'readonly',
+                performance: 'readonly',
+                Element: 'readonly',
+                Node: 'readonly',
+                MouseEvent: 'readonly',
+                KeyboardEvent: 'readonly',
+                DOMParser: 'readonly',
+                FileReader: 'readonly',
+                Blob: 'readonly',
+                URL: 'readonly',
+                atob: 'readonly',
+                btoa: 'readonly',
+                getComputedStyle: 'readonly',
+                requestAnimationFrame: 'readonly',
+                cancelAnimationFrame: 'readonly',
+                AbortController: 'readonly',
+                MutationObserver: 'readonly',
+                TextDecoder: 'readonly',
+                TextEncoder: 'readonly',
+                alert: 'readonly',
+                confirm: 'readonly',
+                prompt: 'readonly',
+                sessionStorage: 'readonly',
+
                 // Node.js
                 __dirname: 'readonly',
                 __filename: 'readonly',
                 module: 'readonly',
                 require: 'readonly',
                 process: 'readonly',
-                
+
                 // App Globals
                 Dialog: 'readonly',
                 WindowManager: 'readonly',
@@ -88,90 +88,90 @@ export default [
                 ContextMenuSystem: 'readonly',
                 appI18n: 'readonly',
                 translate: 'readonly',
-                
-                    // Legacy app.js globals (werden sukzessive entfernt)
-                    topZIndex: 'writable',
-                    hideMenuDropdowns: 'readonly',
-                    saveOpenModals: 'readonly',
-                    updateDockIndicators: 'readonly',
-                    updateProgramLabelByTopModal: 'readonly',
-                    saveWindowPositions: 'readonly',
-                    getMenuBarBottom: 'readonly',
-                    getDockReservedBottom: 'readonly',
-                    hideSnapPreview: 'readonly',
-                    showSnapPreview: 'readonly',
-                    computeSnapMetrics: 'readonly',
-                    clampWindowToMenuBar: 'readonly',
-                    restoreWindowPositions: 'readonly',
-                    restoreOpenModals: 'readonly',
-                    initSystemStatusControls: 'readonly',
-                    initDesktop: 'readonly',
-                    initDockMagnification: 'readonly',
-                    renderApplicationMenu: 'readonly',
-                    updateAllSystemStatusUI: 'readonly',
-                    handleMenuActionActivation: 'readonly',
-                    readFinderState: 'readonly',
-                    writeFinderState: 'readonly',
-                    clearFinderState: 'readonly',
-                    showTab: 'readonly',
-                    postToTextEditor: 'readonly',
-                    setThemePreference: 'readonly',
-                    getThemePreference: 'readonly',
+
+                // Legacy app.js globals (werden sukzessive entfernt)
+                topZIndex: 'writable',
+                hideMenuDropdowns: 'readonly',
+                saveOpenModals: 'readonly',
+                updateDockIndicators: 'readonly',
+                updateProgramLabelByTopModal: 'readonly',
+                saveWindowPositions: 'readonly',
+                getMenuBarBottom: 'readonly',
+                getDockReservedBottom: 'readonly',
+                hideSnapPreview: 'readonly',
+                showSnapPreview: 'readonly',
+                computeSnapMetrics: 'readonly',
+                clampWindowToMenuBar: 'readonly',
+                restoreWindowPositions: 'readonly',
+                restoreOpenModals: 'readonly',
+                initSystemStatusControls: 'readonly',
+                initDesktop: 'readonly',
+                initDockMagnification: 'readonly',
+                renderApplicationMenu: 'readonly',
+                updateAllSystemStatusUI: 'readonly',
+                handleMenuActionActivation: 'readonly',
+                readFinderState: 'readonly',
+                writeFinderState: 'readonly',
+                clearFinderState: 'readonly',
+                showTab: 'readonly',
+                postToTextEditor: 'readonly',
+                setThemePreference: 'readonly',
+                getThemePreference: 'readonly',
             },
         },
         rules: {
             // Fehler verhindern
-                'no-unused-vars': ['warn', { 
-                    argsIgnorePattern: '^_',
-                    varsIgnorePattern: '^_',
-                }],
-                'no-undef': 'warn', // Warn statt error wegen Legacy-Code
-                'no-redeclare': 'warn', // Warn wegen Kompatibilitätsfunktionen
-                'no-use-before-define': 'off', // Häufiges Muster in Legacy-Code
-            
+            'no-unused-vars': ['warn', {
+                argsIgnorePattern: '^_',
+                varsIgnorePattern: '^_',
+            }],
+            'no-undef': 'warn', // Warn statt error wegen Legacy-Code
+            'no-redeclare': 'warn', // Warn wegen Kompatibilitätsfunktionen
+            'no-use-before-define': 'off', // Häufiges Muster in Legacy-Code
+
             // Code-Style
             'no-console': 'off',
             'semi': ['warn', 'always'],
             'quotes': ['warn', 'single', { avoidEscape: true }],
             'indent': ['warn', 4, { SwitchCase: 1 }],
             'comma-dangle': ['warn', 'only-multiline'],
-            
+
             // Best Practices
-                'eqeqeq': ['warn', 'always'], // Warn statt error für schrittweise Migration
+            'eqeqeq': ['warn', 'always'], // Warn statt error für schrittweise Migration
             'no-var': 'warn',
             'prefer-const': 'warn',
-            
-                // TypeScript-Vorbereitung (gelockert für Legacy-Code)
-                'no-implicit-globals': 'off', // Legacy-Code nutzt globale Funktionen
-                'strict': 'off', // Viele Legacy-Dateien haben kein 'use strict'
+
+            // TypeScript-Vorbereitung (gelockert für Legacy-Code)
+            'no-implicit-globals': 'off', // Legacy-Code nutzt globale Funktionen
+            'strict': 'off', // Viele Legacy-Dateien haben kein 'use strict'
         },
     },
-    
-        // Test-Dateien (ES6 Modules)
-        {
-            files: ['tests/**/*.js', 'playwright.config.js', 'postcss.config.js'],
-            languageOptions: {
-                ecmaVersion: 'latest',
-                sourceType: 'module',
-                globals: {
-                    // Browser
-                    window: 'readonly',
-                    document: 'readonly',
-                    console: 'readonly',
-                    navigator: 'readonly',
-                    DataTransfer: 'readonly',
-                    DragEvent: 'readonly',
-                },
-            },
-            rules: {
-                'no-unused-vars': ['warn', { 
-                    argsIgnorePattern: '^_',
-                    varsIgnorePattern: '^_',
-                }],
-                'no-undef': 'warn',
+
+    // Test-Dateien (ES6 Modules)
+    {
+        files: ['tests/**/*.js', 'playwright.config.js', 'postcss.config.js'],
+        languageOptions: {
+            ecmaVersion: 'latest',
+            sourceType: 'module',
+            globals: {
+                // Browser
+                window: 'readonly',
+                document: 'readonly',
+                console: 'readonly',
+                navigator: 'readonly',
+                DataTransfer: 'readonly',
+                DragEvent: 'readonly',
             },
         },
-    
+        rules: {
+            'no-unused-vars': ['warn', {
+                argsIgnorePattern: '^_',
+                varsIgnorePattern: '^_',
+            }],
+            'no-undef': 'warn',
+        },
+    },
+
     // TypeScript Dateien
     {
         files: ['**/*.ts'],
@@ -192,7 +192,7 @@ export default [
             '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
         },
     },
-    
+
     // Ignorierte Dateien
     {
         ignores: [
