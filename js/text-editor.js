@@ -968,7 +968,7 @@
                     this.editor.focus();
                 } else {
                     const message = this.resolveTranslation('textEditor.findReplace.noMatch').text || 'No match found';
-                    alert(message);
+                    this.showToast(message, 'info');
                 }
             }
         },
@@ -1018,13 +1018,43 @@
                 this.editor.dispatchEvent(new Event('input', { bubbles: true }));
                 
                 const message = this.resolveTranslation('textEditor.findReplace.replacedCount', { count }).text || `Replaced ${count} occurrence(s)`;
-                alert(message);
+                this.showToast(message, 'success');
             } else {
                 const message = this.resolveTranslation('textEditor.findReplace.noMatch').text || 'No match found';
-                alert(message);
+                this.showToast(message, 'info');
             }
             
             this.focusEditor();
+        },
+
+        /**
+         * Show toast notification
+         * @param {string} message - Message to display
+         * @param {string} type - Toast type: 'info', 'success', 'error'
+         * @param {number} duration - Display duration in ms (default: 3000)
+         */
+        showToast(message, type = 'info', duration = 3000) {
+            const toast = document.createElement('div');
+            toast.className = `text-editor-toast text-editor-toast-${type}`;
+            toast.textContent = message;
+            
+            // Add to container
+            if (!this.toastContainer) {
+                this.toastContainer = document.createElement('div');
+                this.toastContainer.className = 'text-editor-toast-container';
+                this.container.appendChild(this.toastContainer);
+            }
+            
+            this.toastContainer.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Auto-remove
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
         },
 
         /**
@@ -1044,6 +1074,7 @@
             this.findReplacePanel = null;
             this.findInput = null;
             this.replaceInput = null;
+            this.toastContainer = null;
         }
     };
 
