@@ -1,30 +1,38 @@
 console.log('WindowChrome loaded');
 
 /**
- * WindowChrome - Wiederverwendbare UI-Komponenten für Fenster
+ * WindowChrome - Reusable UI components for windows
  *
- * Bündelt gemeinsame UI-Elemente:
- * - Titlebar mit Icon, Titel und Buttons
- * - Toolbar pattern
- * - Status bar
+ * Provides standard UI elements for window instances:
+ * - Titlebar with icon, title, and control buttons (close, minimize, maximize)
+ * - Toolbar pattern with buttons and separators
+ * - Status bar (left/right content)
  * - Resize handles
+ *
+ * @example
+ * const titlebar = WindowChrome.createTitlebar({
+ *   title: 'My Window',
+ *   icon: './img/icon.png',
+ *   showClose: true,
+ *   onClose: () => instance.close()
+ * });
  */
 (function () {
     'use strict';
 
     const WindowChrome = {
         /**
-         * Create a standard titlebar
-         * @param {Object} config
+         * Create a standard titlebar with icon, title, and control buttons
+         * @param {Object} config - Titlebar configuration
          * @param {string} config.title - Window title
-         * @param {string} config.icon - Icon URL or emoji
-         * @param {boolean} config.showClose - Show close button
-         * @param {boolean} config.showMinimize - Show minimize button
-         * @param {boolean} config.showMaximize - Show maximize button
-         * @param {Function} config.onClose - Close callback
-         * @param {Function} config.onMinimize - Minimize callback
-         * @param {Function} config.onMaximize - Maximize callback
-         * @returns {HTMLElement}
+         * @param {string} [config.icon] - Icon URL or emoji
+         * @param {boolean} [config.showClose=true] - Show close button
+         * @param {boolean} [config.showMinimize=false] - Show minimize button
+         * @param {boolean} [config.showMaximize=false] - Show maximize button
+         * @param {Function} [config.onClose] - Close callback
+         * @param {Function} [config.onMinimize] - Minimize callback
+         * @param {Function} [config.onMaximize] - Maximize callback
+         * @returns {HTMLElement} Titlebar element
          */
         createTitlebar(config) {
             const titlebar = document.createElement('div');
@@ -107,9 +115,13 @@ console.log('WindowChrome loaded');
         },
 
         /**
-         * Create a toolbar
+         * Create a toolbar with buttons and separators
          * @param {Array<Object>} buttons - Button configurations
-         * @returns {HTMLElement}
+         * @param {string} buttons[].label - Button label
+         * @param {string} [buttons[].icon] - Button icon (emoji or text)
+         * @param {Function} [buttons[].onClick] - Click handler
+         * @param {string} [buttons[].type] - 'separator' for dividers
+         * @returns {HTMLElement} Toolbar element
          */
         createToolbar(buttons) {
             const toolbar = document.createElement('div');
@@ -133,11 +145,11 @@ console.log('WindowChrome loaded');
         },
 
         /**
-         * Create a status bar
-         * @param {Object} config
-         * @param {string} config.leftContent - Left side content
-         * @param {string} config.rightContent - Right side content
-         * @returns {HTMLElement}
+         * Create a status bar with left and right content areas
+         * @param {Object} config - Status bar configuration
+         * @param {string} [config.leftContent=''] - Left side content
+         * @param {string} [config.rightContent=''] - Right side content
+         * @returns {HTMLElement} Status bar element
          */
         createStatusBar(config) {
             const statusBar = document.createElement('div');
@@ -159,9 +171,9 @@ console.log('WindowChrome loaded');
         },
 
         /**
-         * Update titlebar title
-         * @param {HTMLElement} titlebar
-         * @param {string} newTitle
+         * Update the title text in an existing titlebar
+         * @param {HTMLElement} titlebar - Titlebar element created by createTitlebar
+         * @param {string} newTitle - New title text
          */
         updateTitle(titlebar, newTitle) {
             const titleEl = titlebar.querySelector(
@@ -173,10 +185,10 @@ console.log('WindowChrome loaded');
         },
 
         /**
-         * Update status bar content
-         * @param {HTMLElement} statusBar
-         * @param {string} side - 'left' or 'right'
-         * @param {string} content
+         * Update status bar content on left or right side
+         * @param {HTMLElement} statusBar - Status bar element created by createStatusBar
+         * @param {('left'|'right')} side - Which side to update
+         * @param {string} content - New content text
          */
         updateStatusBar(statusBar, side, content) {
             const target = statusBar.querySelector(`.statusbar-${side}`);
@@ -186,8 +198,12 @@ console.log('WindowChrome loaded');
         },
 
         /**
-         * Create control button (close, minimize, maximize)
+         * Create a control button (close, minimize, maximize)
          * @private
+         * @param {string} type - Button type ('close', 'minimize', 'maximize')
+         * @param {string} symbol - Button symbol (text or HTML)
+         * @param {Function} [callback] - Click callback
+         * @returns {HTMLElement} Button element
          */
         _createControlButton(type, symbol, callback) {
             const btn = document.createElement('button');
@@ -220,8 +236,15 @@ console.log('WindowChrome loaded');
         },
 
         /**
-         * Create toolbar button
+         * Create a toolbar button
          * @private
+         * @param {Object} config - Button configuration
+         * @param {string} [config.label] - Button label text
+         * @param {string} [config.icon] - Button icon (emoji or HTML)
+         * @param {string} [config.title] - Tooltip text
+         * @param {string} [config.action] - Action bus action name
+         * @param {Function} [config.onClick] - Click handler
+         * @returns {HTMLElement} Button element
          */
         _createToolbarButton(config) {
             const btn = document.createElement('button');
@@ -251,9 +274,19 @@ console.log('WindowChrome loaded');
         },
 
         /**
-         * Create a complete window frame
-         * @param {Object} config
-         * @returns {Object} - { frame, titlebar, content, statusbar }
+         * Create a complete window frame with titlebar, optional toolbar, content area, and optional statusbar
+         * @param {Object} config - Window frame configuration
+         * @param {string} [config.title='Untitled'] - Window title
+         * @param {string} [config.icon] - Title icon
+         * @param {boolean} [config.showClose] - Show close button
+         * @param {boolean} [config.showMinimize] - Show minimize button
+         * @param {boolean} [config.showMaximize] - Show maximize button
+         * @param {Function} [config.onClose] - Close callback
+         * @param {Function} [config.onMinimize] - Minimize callback
+         * @param {Function} [config.onMaximize] - Maximize callback
+         * @param {Array<Object>} [config.toolbar] - Toolbar buttons
+         * @param {Object} [config.statusbar] - Status bar config (leftContent, rightContent)
+         * @returns {Object} Object with {frame, titlebar, content, statusbar}
          */
         createWindowFrame(config) {
             const frame = document.createElement('div');
