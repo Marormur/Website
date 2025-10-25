@@ -350,6 +350,67 @@
         ];
     }
 
+    function buildTerminalMenuDefinition(context) {
+        return [
+            {
+                id: 'file',
+                label: () => translate('menu.sections.file'),
+                items: [
+                    {
+                        id: 'terminal-new-window',
+                        label: () => translate('menu.terminal.newWindow'),
+                        shortcut: '⌘N',
+                        icon: 'terminal',
+                        action: () => {
+                            // Create new terminal instance
+                            if (window.TerminalInstanceManager && window.TerminalInstanceManager.createInstance) {
+                                window.TerminalInstanceManager.createInstance();
+                            }
+                        }
+                    },
+                    {
+                        type: 'separator'
+                    },
+                    {
+                        id: 'terminal-close',
+                        label: () => translate('menu.terminal.close'),
+                        shortcut: '⌘W',
+                        disabled: () => !(context && context.dialog),
+                        icon: 'close',
+                        action: () => closeContextWindow(context)
+                    }
+                ]
+            },
+            {
+                id: 'edit',
+                label: () => translate('menu.sections.edit'),
+                items: [
+                    {
+                        id: 'terminal-clear',
+                        label: () => translate('menu.terminal.clear'),
+                        shortcut: '⌘K',
+                        icon: 'clear',
+                        action: () => {
+                            // Send clear command to active terminal
+                            if (context && context.instanceId && window.TerminalInstanceManager) {
+                                const instance = window.TerminalInstanceManager.getInstance(context.instanceId);
+                                if (instance && instance.clearOutput) {
+                                    instance.clearOutput();
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            createWindowMenuSection(context),
+            createHelpMenuSection(context, {
+                itemKey: 'menu.terminal.help',
+                infoModalId: 'terminal-modal',
+                itemIcon: 'help'
+            })
+        ];
+    }
+
     // ============================================================================
     // HELPER MENU SECTIONS
     // ============================================================================
@@ -452,7 +513,8 @@
         "text-modal": buildTextEditorMenuDefinition,
         "image-modal": buildImageViewerMenuDefinition,
         "about-modal": buildAboutMenuDefinition,
-        "program-info-modal": buildProgramInfoMenuDefinition
+        "program-info-modal": buildProgramInfoMenuDefinition,
+        "terminal-modal": buildTerminalMenuDefinition
     };
 
     let currentMenuModalId = null;

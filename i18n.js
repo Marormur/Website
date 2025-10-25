@@ -226,10 +226,10 @@
                     }
                 },
                 finder: {
-                    label: 'Finder',
-                    infoLabel: 'Über Finder',
+                    label: 'Sucher',
+                    infoLabel: 'Über Sucher',
                     about: {
-                        name: 'Finder',
+                        name: 'Sucher',
                         tagline: 'Der innovative Desktop-Dateimanager.',
                         version: 'Version 2.0',
                         copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
@@ -360,10 +360,10 @@
                     help: 'Hilfe'
                 },
                 finder: {
-                    newWindow: 'Neues Finder-Fenster',
-                    reload: 'Finder neu laden',
+                    newWindow: 'Neues Sucher-Fenster',
+                    reload: 'Sucher neu laden',
                     close: 'Fenster schließen',
-                    help: 'Finder-Hilfe anzeigen'
+                    help: 'Sucher-Hilfe anzeigen'
                 },
                 settings: {
                     close: 'Fenster schließen',
@@ -387,6 +387,12 @@
                     saveImage: 'Bild sichern …',
                     close: 'Fenster schließen',
                     help: 'Bildbetrachter-Hilfe anzeigen'
+                },
+                terminal: {
+                    newWindow: 'Neues Terminal-Fenster',
+                    clear: 'Terminal löschen',
+                    close: 'Fenster schließen',
+                    help: 'Terminal-Hilfe anzeigen'
                 },
                 about: {
                     close: 'Fenster schließen',
@@ -848,6 +854,12 @@
                     saveImage: 'Save image…',
                     close: 'Close window',
                     help: 'Show image viewer help'
+                },
+                terminal: {
+                    newWindow: 'New Terminal window',
+                    clear: 'Clear Terminal',
+                    close: 'Close window',
+                    help: 'Show Terminal help'
                 },
                 about: {
                     close: 'Close window',
