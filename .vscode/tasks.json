@@ -101,7 +101,7 @@
     {
       "label": "Start Dev Server",
       "type": "shell",
-      "command": "node server.js",
+      "command": "if (Test-NetConnection -ComputerName 127.0.0.1 -Port 5173 -InformationLevel Quiet) { Write-Host 'Server running at http://127.0.0.1:5173/'; } else { node server.js }",
       "isBackground": true,
       "problemMatcher": {
         "owner": "dev-server",
@@ -183,7 +183,7 @@
     {
       "label": "E2E: Test (basic smoke)",
       "type": "shell",
-      "command": "npx playwright test tests/e2e/*basic.spec.js",
+      "command": "npm run test:e2e:quick",
       "problemMatcher": [],
       "group": {
         "kind": "test"
@@ -213,7 +213,7 @@
     {
       "label": "Start Dev Server (No Watch)",
       "type": "shell",
-      "command": "node server.js",
+      "command": "if (Test-NetConnection -ComputerName 127.0.0.1 -Port 5173 -InformationLevel Quiet) { Write-Host 'Server running at http://127.0.0.1:5173/'; } else { node server.js }",
       "isBackground": true,
       "options": {
         "env": {
