@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+- feat: extract updateDockIndicators to dock.js module
+  - Moved dock indicator update logic from app.js to DockSystem.updateDockIndicators
+  - Legacy global alias window.updateDockIndicators preserved for backward compatibility
+  - Reduced app.js by 27 lines (from 1051 to 1024 lines)
+  - **Total Phase 4 reduction: app.js down from 1308 to 1024 lines (-284 lines, -21.7%)**
+
+- feat(ts): extract Dialog Utilities to dedicated module
+  - New source: src/ts/dialog-utils.ts → emits to js/dialog-utils.js
+  - Centralized z-index management: syncTopZIndexWithDOM, bringDialogToFront, bringAllWindowsToFront
+  - Load order: dialog-utils.js before dialog.js (dialog depends on these functions)
+  - Removed ~80 lines of dialog utility functions from app.js
+  - Preserves guarded global API for backward compatibility
+
+- feat(ts): extract App Initialization to dedicated module
+  - New source: src/ts/app-init.ts → emits to js/app-init.js
+  - Centralized DOMContentLoaded handler, modal initialization, and subsystem bootstrap
+  - Load order: app-init.js before app.js (auto-attaches to DOMContentLoaded)
+  - Removed ~177 lines from app.js (DOMContentLoaded block, initModalIds function, modal ID variables)
+  - **app.js reduced from 1308 lines to 1051 lines (-257 lines total this iteration)**
+  - No behavior changes; all initialization logic preserved
+
 - Logger system for centralized logging
 - refactor(ts): migrate ActionBus to TypeScript with strict types and legacy global API preserved
   - New source: src/ts/action-bus.ts → emits to js/action-bus.js
@@ -54,6 +75,42 @@ All notable changes to this project will be documented in this file.
   - New source: src/ts/window-manager.ts → emits to js/window-manager.js
   - Typed window registry, z-index sync, dialog instance tracking, and program metadata
   - Preserves global WindowManager API and legacy window.topZIndex property
+  
+ - feat(ts): extract GitHub API to dedicated module
+   - New source: src/ts/github-api.ts → emits to js/github-api.js
+   - Centralized GitHub headers, caching, and fetch helpers (repos, contents, generic fetchJSON)
+   - Finder now delegates GitHub calls to GitHubAPI while preserving existing UI/state behavior
+   - Added script include before Finder to ensure load order
+
+  - feat(ts): extract Program label/menu sync to dedicated module
+    - New source: src/ts/program-menu-sync.ts → emits to js/program-menu-sync.js
+    - Provides updateProgramLabelByTopModal and openProgramInfoFromMenu with WindowManager-aware behavior
+    - Adds guarded listeners for languagePreferenceChange/themePreferenceChange to avoid duplicates
+    - index.html now loads program-menu-sync.js before app.js; app.js defers to modular globals when present
+
+  - feat(ts): extract Program actions (editor & image viewer)
+    - New source: src/ts/program-actions.ts → emits to js/program-actions.js
+    - Exposes sendTextEditorMenuAction, getImageViewerState, openActiveImageInNewTab, downloadActiveImage
+    - Loads before menu.js to support menu definitions that query image viewer state and actions
+
+  - feat(ts): extract Image Viewer UI utils
+    - New source: src/ts/image-viewer-utils.ts → emits to js/image-viewer-utils.js
+    - Exposes setImagePlaceholder and updateImageInfo; re-applies placeholder on language changes
+    - index.html loads before app.js; app.js delegates to these globals when present
+
+- refactor(app): safe cleanup pass for legacy duplication
+  - Removed duplicate menubar wiring and obsolete helpers from app.js
+  - Delegated program info and actions to program-menu-sync.js and program-actions.js
+  - Converted global utilities (getMenuBarBottom, clampWindowToMenuBar, computeSnapMetrics, show/hideSnapPreview, updateDockIndicators) to guarded window.* assignments
+  - Avoided redeclarations of appI18n/translate by guarding global initialization
+  - No functional changes; E2E smoke tests pass
+
+- feat(ts): extract Snap & Window utilities to dedicated module
+  - New source: src/ts/snap-utils.ts → emits to js/snap-utils.js
+  - Centralizes getMenuBarBottom, clampWindowToMenuBar, computeSnapMetrics, show/hideSnapPreview, hideSnapPreview
+  - Loads before dialog.js in index.html to support window drag/snap behavior
+  - Removed redundant legacy guards from app.js; behavior unchanged
+
 - CODEBASE_IMPROVEMENTS.md with organizational tasks
 - TYPESCRIPT_MIGRATION_PLAN.md with detailed migration strategy
 - API Docs: Generated JSDoc and in-app “📖 API Docs” link (index.html)

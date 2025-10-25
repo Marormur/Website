@@ -370,6 +370,36 @@ function initDockDragDrop() {
     tray.addEventListener('dragend', onDragEnd);
 }
 
+/**
+ * Updates dock indicators to show which windows are open or minimized
+ * Shows a dot indicator below dock icons for open/minimized windows
+ */
+function updateDockIndicators() {
+    // Define which modals are connected to which indicators
+    const indicatorMappings = [
+        { modalId: 'finder-modal', indicatorId: 'finder-indicator' },
+        { modalId: 'projects-modal', indicatorId: 'projects-indicator' },
+        { modalId: 'settings-modal', indicatorId: 'settings-indicator' },
+        { modalId: 'text-modal', indicatorId: 'text-indicator' },
+        { modalId: 'image-modal', indicatorId: 'image-indicator' },
+    ];
+    
+    indicatorMappings.forEach((mapping) => {
+        const modal = document.getElementById(mapping.modalId);
+        const indicator = document.getElementById(mapping.indicatorId);
+        if (modal && indicator) {
+            // Show dot when window is visible OR minimized
+            const minimized =
+                modal.dataset && modal.dataset.minimized === 'true';
+            if (!modal.classList.contains('hidden') || minimized) {
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+    });
+}
+
 // ============================================================================
 // Global Export
 // ============================================================================
@@ -378,9 +408,15 @@ if (typeof window !== 'undefined') {
         getDockReservedBottom,
         initDockMagnification,
         initDockDragDrop,
+        updateDockIndicators,
         getCurrentDockOrder,
         loadDockOrder,
         saveDockOrder,
         applyDockOrder,
     };
+    
+    // Legacy global alias for backward compatibility
+    if (typeof window.updateDockIndicators !== 'function') {
+        window.updateDockIndicators = updateDockIndicators;
+    }
 }

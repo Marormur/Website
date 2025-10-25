@@ -79,7 +79,7 @@ Hinweis: Diese Tasks erfüllen direkt „Priorität 1: Core Features & Integrati
 
 - [x] `base-window-instance.js` → `src/ts/base-window-instance.ts` (emit: `js/base-window-instance.js`)
 - [x] `instance-manager.js` → `src/ts/instance-manager.ts` (emit: `js/instance-manager.js`)
-- [ ] `window-manager.js` → `.ts`
+- [x] `window-manager.js` → `src/ts/window-manager.ts` (emit: `js/window-manager.js`)
 - [x] `action-bus.js` → `src/ts/action-bus.ts` (emit: `js/action-bus.js`)
 - [x] `window-chrome.js` → `src/ts/window-chrome.ts` (emit: `js/window-chrome.js`)
 - [x] `api.js` → `src/ts/api.ts` (emit: `js/api.js`)
@@ -87,14 +87,22 @@ Hinweis: Diese Tasks erfüllen direkt „Priorität 1: Core Features & Integrati
 - [x] `storage.js` → `src/ts/storage.ts` (emit: `js/storage.js`)
 - [x] `terminal-instance.js` → `src/ts/terminal-instance.ts` (emit: `js/terminal-instance.js`)
 - [x] `text-editor-instance.js` → `src/ts/text-editor-instance.ts` (emit: `js/text-editor-instance.js`)
-- [x] `window-manager.js` → `src/ts/window-manager.ts` (emit: `js/window-manager.js`)
 
 Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 
 #### Phase 4 – Legacy-Refactoring
 
-- [ ] GitHub-API extrahieren (`js/github-api.ts`) und in `finder.js`/Legacy verwenden
-- [ ] `app.js` schrittweise modularisieren und zu `app.ts` migrieren
+- [x] GitHub-API extrahieren (`src/ts/github-api.ts` → emit: `js/github-api.js`) und in `finder.js`/Legacy verwenden
+- [x] Menubar-Helfer modularisieren (`src/ts/menubar-utils.ts` → emit: `js/menubar-utils.js`) und vor `menu.js` laden
+- [x] Program-Label & Menü-Sync extrahieren (`src/ts/program-menu-sync.ts` → emit: `js/program-menu-sync.js`) und vor `app.js` laden; `app.js` delegiert an modulare Globals
+- [x] Program Actions (Texteditor/Image Viewer) extrahieren (`src/ts/program-actions.ts` → emit: `js/program-actions.js`), vor `menu.js` laden
+- [x] Image Viewer UI Utils extrahieren (`src/ts/image-viewer-utils.ts` → emit: `js/image-viewer-utils.js`), vor `app.js` laden
+- [x] Safe Cleanup in `app.js`: Legacy-Duplikate entfernt, Delegation an Module, globale Helfer als guarded `window.*`
+- [x] Snap & Window Utils extrahieren (`src/ts/snap-utils.ts` → emit: `js/snap-utils.js`), vor `dialog.js` laden; `app.js` legacy guards entfernt
+- [x] Dialog Utilities extrahieren (`src/ts/dialog-utils.ts` → emit: `js/dialog-utils.js`), vor `dialog.js` laden; `syncTopZIndexWithDOM`, `bringDialogToFront`, `bringAllWindowsToFront` aus `app.js` entfernt
+- [x] App Initialization extrahieren (`src/ts/app-init.ts` → emit: `js/app-init.js`), vor `app.js` laden; DOMContentLoaded Block & initModalIds aus `app.js` entfernt; **app.js reduziert von 1308 auf 1051 Zeilen (-257 Zeilen)**
+- [x] Dock Indicators extrahiert zu `dock.js`; `updateDockIndicators` aus `app.js` entfernt; **app.js reduziert von 1051 auf 1024 Zeilen (-27 Zeilen)**
+- [ ] `app.js` schrittweise modularisieren und zu `app.ts` migrieren (verbleibend: 1024 Zeilen, davon ~979 Zeilen in `loadGithubRepos` Legacy-Funktion)
 - [ ] Globale Event-Listener auf ActionBus migrieren (wo noch Legacy)
 
 #### Phase 5 – Testing & Quality

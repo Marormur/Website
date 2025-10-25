@@ -27,54 +27,30 @@ console.log('App.js loaded v3');
 
 // ===== App.js Konfiguration =====
 
-// Modal-IDs werden jetzt vom WindowManager verwaltet
-// Legacy-Support für bestehenden Code
-var modalIds = null;
-var transientModalIds = null;
+// Modal-IDs und App-Initialisierung werden jetzt von app-init.js verwaltet
 
-// Initialisierung nach DOMContentLoaded
-function initModalIds() {
-    if (window.WindowManager) {
-        modalIds = window.WindowManager.getAllWindowIds();
-        const transientIds = window.WindowManager.getTransientWindowIds();
-        transientModalIds = new Set(transientIds);
-    } else {
-        // Fallback
-        modalIds = window.APP_CONSTANTS?.MODAL_IDS || [
-            'finder-modal',
-            'projects-modal',
-            'about-modal',
-            'settings-modal',
-            'text-modal',
-            'image-modal',
-            'program-info-modal',
-        ];
-        transientModalIds =
-            window.APP_CONSTANTS?.TRANSIENT_MODAL_IDS ||
-            new Set(['program-info-modal']);
-    }
+// Ensure appI18n exists on window for translations
+if (!window.appI18n) {
+    window.appI18n = {
+        translate: (key) => key,
+        applyTranslations: () => {},
+        setLanguagePreference: () => {},
+        getLanguagePreference: () => 'system',
+        getActiveLanguage: () => 'en',
+    };
 }
 
-const appI18n = window.appI18n || {
-    translate: (key) => key,
-    applyTranslations: () => { },
-    setLanguagePreference: () => { },
-    getLanguagePreference: () => 'system',
-    getActiveLanguage: () => 'en',
-};
-
-// Leichtgewichtige Übersetzungs-Hilfsfunktion (nutzt window.appI18n)
-function translate(key, fallback) {
-    if (!window.appI18n || typeof appI18n.translate !== 'function') {
-        return fallback || key;
-    }
-    const result = appI18n.translate(key);
-    if (result === key && fallback) return fallback;
-    return result;
-}
-// Stelle sicher, dass die Funktion auch als globale Eigenschaft (window.translate) erreichbar ist
-if (typeof window !== 'undefined') {
-    window.translate = translate;
+// Lightweight translate helper exposed globally
+if (typeof window.translate !== 'function') {
+    window.translate = function (key, fallback) {
+        const i18n = window.appI18n;
+        if (!i18n || typeof i18n.translate !== 'function') {
+            return fallback || key;
+        }
+        const result = i18n.translate(key);
+        if (result === key && fallback) return fallback;
+        return result;
+    };
 }
 
 // ============================================================================
@@ -82,429 +58,36 @@ if (typeof window !== 'undefined') {
 // Legacy-Support für bestehenden Code
 // ============================================================================
 
-function resolveProgramInfo(modalId) {
-    if (window.WindowManager) {
-        return window.WindowManager.getProgramInfo(modalId);
-    }
-    // Fallback für alte Implementierung
-    return {
-        modalId: modalId || null,
-        programLabel: translate('programs.default.label'),
-        infoLabel: translate('programs.default.infoLabel'),
-        fallbackInfoModalId: 'program-info-modal',
-        icon: './img/sucher.png',
-        about: {},
-    };
-}
+// resolveProgramInfo handled by program-menu-sync.js
 
-let currentProgramInfo = resolveProgramInfo(null);
-const currentMenuModalId = null;
+// Legacy currentProgramInfo/currentMenuModalId handled in program-menu-sync/menu.js
 
 // ============================================================================
 // menuDefinitions, menuActionIdCounter, menuActionHandlers sind jetzt in menu.js
 // System status (WiFi, Bluetooth, etc.) ist jetzt in system.js
 // ============================================================================
 
-function syncTopZIndexWithDOM() {
-    if (
-        window.WindowManager &&
-        typeof window.WindowManager.syncZIndexWithDOM === 'function'
-    ) {
-        window.WindowManager.syncZIndexWithDOM();
-        return;
-    }
+// syncTopZIndexWithDOM, bringDialogToFront, bringAllWindowsToFront provided by dialog-utils.js
 
-    // Fallback für alte Implementierung
-    let maxZ = 1000;
-    if (modalIds) {
-        modalIds.forEach((id) => {
-            const modal = document.getElementById(id);
-            if (!modal) return;
-            const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
-            if (!Number.isNaN(modalZ)) {
-                maxZ = Math.max(maxZ, modalZ);
-            }
-        });
-    }
-    if (window.topZIndex !== undefined) {
-        window.topZIndex = maxZ;
-    }
-}
-// Expose globally for use by storage module
-window.syncTopZIndexWithDOM = syncTopZIndexWithDOM;
-
-function getMenuBarBottom() {
-    const header = document.querySelector('body > header');
-    if (!header) {
-        return 0;
-    }
-    const rect = header.getBoundingClientRect();
-    return rect.bottom;
-}
+// getMenuBarBottom, clampWindowToMenuBar, computeSnapMetrics, show/hideSnapPreview provided by snap-utils.js
 
 // ============================================================================
 // Dock-Funktionen sind jetzt in dock.js
 // Aliase werden bereits oben definiert
 // ============================================================================
 
-function clampWindowToMenuBar(target) {
-    if (!target) return;
-    const minTop = getMenuBarBottom();
-    if (minTop <= 0) return;
-    const computed = window.getComputedStyle(target);
-    if (computed.position === 'static') {
-        target.style.position = 'fixed';
-    }
-    const currentTop = parseFloat(target.style.top);
-    const numericTop = Number.isNaN(currentTop)
-        ? parseFloat(computed.top)
-        : currentTop;
-    if (!Number.isNaN(numericTop) && numericTop < minTop) {
-        target.style.top = `${minTop}px`;
-    } else if (Number.isNaN(numericTop)) {
-        const rect = target.getBoundingClientRect();
-        if (rect.top < minTop) {
-            if (!target.style.left) {
-                target.style.left = `${rect.left}px`;
-            }
-            target.style.top = `${minTop}px`;
-        }
-    }
-}
-// Expose globally for use by storage module
-window.clampWindowToMenuBar = clampWindowToMenuBar;
-
-function computeSnapMetrics(side) {
-    if (side !== 'left' && side !== 'right') return null;
-    const minTop = Math.round(getMenuBarBottom());
-    const viewportWidth = Math.max(window.innerWidth || 0, 0);
-    const viewportHeight = Math.max(window.innerHeight || 0, 0);
-    if (viewportWidth <= 0 || viewportHeight <= 0) return null;
-    const minWidth = Math.min(320, viewportWidth);
-    const halfWidth = Math.round(viewportWidth / 2);
-    const width = Math.max(Math.min(halfWidth, viewportWidth), minWidth);
-    const left = side === 'left' ? 0 : Math.max(0, viewportWidth - width);
-    const top = minTop;
-    const dockReserve = getDockReservedBottom();
-    const height = Math.max(0, viewportHeight - top - dockReserve);
-    return { left, top, width, height };
-}
-
-let snapPreviewElement = null;
-
-function ensureSnapPreviewElement() {
-    if (snapPreviewElement && snapPreviewElement.isConnected) {
-        return snapPreviewElement;
-    }
-    if (!document || !document.body) {
-        return null;
-    }
-    snapPreviewElement = document.getElementById('snap-preview-overlay');
-    if (!snapPreviewElement) {
-        snapPreviewElement = document.createElement('div');
-        snapPreviewElement.id = 'snap-preview-overlay';
-        snapPreviewElement.setAttribute('aria-hidden', 'true');
-        document.body.appendChild(snapPreviewElement);
-    }
-    return snapPreviewElement;
-}
-
-function showSnapPreview(side) {
-    const metrics = computeSnapMetrics(side);
-    if (!metrics) {
-        hideSnapPreview();
-        return;
-    }
-    const el = ensureSnapPreviewElement();
-    if (!el) return;
-    el.style.left = `${metrics.left}px`;
-    el.style.top = `${metrics.top}px`;
-    el.style.width = `${metrics.width}px`;
-    el.style.height = `${metrics.height}px`;
-    el.setAttribute('data-side', side);
-    el.classList.add('snap-preview-visible');
-}
-
-function hideSnapPreview() {
-    if (!snapPreviewElement || !snapPreviewElement.isConnected) {
-        return;
-    }
-    snapPreviewElement.classList.remove('snap-preview-visible');
-    snapPreviewElement.removeAttribute('data-side');
-}
-
-// ============================================================================
-// initDockMagnification ist jetzt in dock.js
-// Alias wird bereits oben definiert
-// ============================================================================
-
-document.addEventListener('DOMContentLoaded', function () {
-    // Modal-IDs initialisieren
-    initModalIds();
-
-    // ActionBus initialisieren
-    if (window.ActionBus) {
-        window.ActionBus.init();
-    }
-
-    // Wenn auf einen sichtbaren Modalcontainer geklickt wird, hole das Fenster in den Vordergrund
-    document.querySelectorAll('.modal').forEach((modal) => {
-        modal.addEventListener('click', function (e) {
-            // Verhindere, dass Klicks auf interaktive Elemente im Modal den Fokuswechsel stören.
-            if (e.target === modal || modal.contains(e.target)) {
-                hideMenuDropdowns();
-                bringDialogToFront(modal.id);
-                updateProgramLabelByTopModal();
-            }
-        });
-    });
-
-    // Dialog-Instanzen erstellen und im WindowManager registrieren
-    window.dialogs = {};
-    if (modalIds && Array.isArray(modalIds)) {
-        modalIds.forEach((id) => {
-            const modal = document.getElementById(id);
-            if (!modal) return;
-            const dialogInstance = new Dialog(id);
-            window.dialogs[id] = dialogInstance;
-
-            // Im WindowManager registrieren
-            if (window.WindowManager) {
-                window.WindowManager.setDialogInstance(id, dialogInstance);
-            }
-        });
-    }
-
-    // Add click-outside-to-close functionality for launchpad
-    const launchpadModal = document.getElementById('launchpad-modal');
-    if (launchpadModal) {
-        launchpadModal.addEventListener('click', function (e) {
-            // Check if the click is on the modal background (not on the inner content)
-            if (e.target === launchpadModal) {
-                window.dialogs?.['launchpad-modal']?.close?.();
-            }
-        });
-    }
-
-    syncTopZIndexWithDOM();
-    restoreWindowPositions();
-    restoreOpenModals();
-    loadGithubRepos(); // Temporarily disabled for debugging
-    initEventHandlers();
-    initSystemStatusControls();
-    initDesktop();
-
-    // Finder initialisieren nach Dialog-Setup
-    if (window.FinderSystem && typeof window.FinderSystem.init === 'function') {
-        window.FinderSystem.init();
-    }
-
-    // Initialize settings module
-    if (window.SettingsSystem) {
-        const settingsContainer = document.getElementById('settings-container');
-        if (settingsContainer) {
-            window.SettingsSystem.init(settingsContainer);
-        }
-    }
-
-    // Initialize text editor module
-    if (window.TextEditorSystem) {
-        const textEditorContainer = document.getElementById(
-            'text-editor-container',
-        );
-        if (textEditorContainer) {
-            window.TextEditorSystem.init(textEditorContainer);
-        }
-    }
-
-    // Initialize terminal module (legacy) only when multi‑instance is not available
-    // Prevents duplicate inputs causing E2E strict-mode locator conflicts
-    if (!window.TerminalInstanceManager && window.TerminalSystem) {
-        const terminalContainer = document.getElementById('terminal-container');
-        if (terminalContainer) {
-            window.TerminalSystem.init(terminalContainer);
-        }
-    }
-
-    initDockMagnification();
-    if (
-        window.DockSystem &&
-        typeof window.DockSystem.initDockDragDrop === 'function'
-    ) {
-        window.DockSystem.initDockDragDrop();
-    }
-});
-
-function bringDialogToFront(dialogId) {
-    if (window.dialogs[dialogId]) {
-        window.dialogs[dialogId].bringToFront();
-    } else {
-        console.error('Kein Dialog mit der ID ' + dialogId + ' gefunden.');
-    }
-}
+// DOMContentLoaded initialization and modal setup handled by app-init.js
 
 // Zentrale Funktion zum Aktualisieren des Program-Menütexts
-function updateProgramLabel(newLabel) {
-    const programLabel = document.getElementById('program-label');
-    if (programLabel) {
-        programLabel.innerText = newLabel;
-    }
-}
+// updateProgramLabel handled by program-menu-sync.js
 
 // Funktion, um das aktuell oberste Modal zu ermitteln
-function getTopModal() {
-    if (
-        window.WindowManager &&
-        typeof window.WindowManager.getTopWindow === 'function'
-    ) {
-        return window.WindowManager.getTopWindow();
-    }
+// getTopModal handled by program-menu-sync.js
 
-    // Fallback für alte Implementierung
-    let topModal = null;
-    let highestZ = 0;
-    if (modalIds) {
-        modalIds.forEach((id) => {
-            const modal = document.getElementById(id);
-            if (modal && !modal.classList.contains('hidden')) {
-                const zIndex =
-                    parseInt(getComputedStyle(modal).zIndex, 10) || 0;
-                if (zIndex > highestZ) {
-                    highestZ = zIndex;
-                    topModal = modal;
-                }
-            }
-        });
-    }
-    return topModal;
-}
+// getProgramInfo/updateProgramInfoMenu/renderProgramInfo handled by program-menu-sync.js
 
-function getProgramInfo(modalId) {
-    return resolveProgramInfo(modalId);
-}
+// openProgramInfoDialog handled by program-menu-sync.js
 
-function updateProgramInfoMenu(info) {
-    const infoLink = document.getElementById('about-program');
-    if (!infoLink) return;
-    const fallbackInfo = resolveProgramInfo(null);
-    infoLink.innerText = info.infoLabel || fallbackInfo.infoLabel;
-    if (info.fallbackInfoModalId) {
-        infoLink.dataset.fallbackInfoModalId = info.fallbackInfoModalId;
-    } else {
-        delete infoLink.dataset.fallbackInfoModalId;
-    }
-}
-
-function renderProgramInfo(info) {
-    const modal = document.getElementById('program-info-modal');
-    if (!modal) return;
-    modal.dataset.infoTarget = info.modalId || '';
-    const fallbackInfo = resolveProgramInfo(null);
-    const about = info.about || fallbackInfo.about || {};
-    const iconEl = modal.querySelector('#program-info-icon');
-    if (iconEl) {
-        if (info.icon) {
-            iconEl.src = info.icon;
-            iconEl.alt = about.name || info.programLabel || 'Programm';
-            iconEl.classList.remove('hidden');
-        } else {
-            iconEl.classList.add('hidden');
-        }
-    }
-    const nameEl = modal.querySelector('#program-info-name');
-    if (nameEl) {
-        nameEl.textContent =
-            about.name || info.programLabel || fallbackInfo.programLabel;
-    }
-    const taglineEl = modal.querySelector('#program-info-tagline');
-    if (taglineEl) {
-        const tagline = about.tagline || '';
-        taglineEl.textContent = tagline;
-        taglineEl.classList.toggle('hidden', !tagline);
-    }
-    const versionEl = modal.querySelector('#program-info-version');
-    if (versionEl) {
-        const version = about.version || '';
-        versionEl.textContent = version;
-        versionEl.classList.toggle('hidden', !version);
-    }
-    const copyrightEl = modal.querySelector('#program-info-copyright');
-    if (copyrightEl) {
-        const copyright = about.copyright || '';
-        copyrightEl.textContent = copyright;
-        copyrightEl.classList.toggle('hidden', !copyright);
-    }
-}
-
-function openProgramInfoDialog(event, infoOverride) {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    hideMenuDropdowns();
-    const info = infoOverride || currentProgramInfo || getProgramInfo(null);
-    currentProgramInfo = info;
-    const infoEvent = new CustomEvent('programInfoRequested', {
-        detail: {
-            modalId: info.modalId,
-            info,
-        },
-        cancelable: true,
-    });
-    const dispatchResult = window.dispatchEvent(infoEvent);
-    if (!dispatchResult) {
-        return;
-    }
-    const fallbackId = info.fallbackInfoModalId;
-    if (!fallbackId) {
-        return;
-    }
-    if (fallbackId === 'program-info-modal') {
-        renderProgramInfo(info);
-    }
-    const dialogInstance = window.dialogs && window.dialogs[fallbackId];
-    if (dialogInstance && typeof dialogInstance.open === 'function') {
-        dialogInstance.open();
-    } else {
-        const modalElement = document.getElementById(fallbackId);
-        if (modalElement) {
-            modalElement.classList.remove('hidden');
-            bringDialogToFront(fallbackId);
-            updateProgramLabelByTopModal();
-        } else {
-            console.warn(
-                `Kein Fallback-Info-Dialog für ${fallbackId} gefunden.`,
-            );
-        }
-    }
-}
-
-function createMenuContext(modalId) {
-    const resolvedId = modalId || null;
-    const dialog =
-        resolvedId && window.dialogs ? window.dialogs[resolvedId] : null;
-    return {
-        modalId: resolvedId,
-        dialog,
-        info: resolveProgramInfo(resolvedId),
-    };
-}
-
-function registerMenuAction(handler) {
-    // Diese Funktion ist jetzt in menu.js, wird aber hier noch als Fallback benötigt
-    if (window.MenuSystem && window.MenuSystem.registerMenuAction) {
-        return window.MenuSystem.registerMenuAction(handler);
-    }
-    return null;
-}
-
-function normalizeMenuItems(items, context) {
-    // Diese Funktion ist jetzt in menu.js
-    if (window.MenuSystem && window.MenuSystem.normalizeMenuItems) {
-        return window.MenuSystem.normalizeMenuItems(items, context);
-    }
-    return [];
-}
 
 // ============================================================================
 // renderApplicationMenu und handleMenuActionActivation sind VOLLSTÄNDIG in menu.js
@@ -524,317 +107,19 @@ function normalizeMenuItems(items, context) {
 // wurden nach menu.js verschoben.
 // ============================================================================
 
-function closeContextWindow(context) {
-    const dialog = context && context.dialog;
-    if (dialog && typeof dialog.close === 'function') {
-        dialog.close();
-    } else if (context && context.modalId) {
-        const modal = document.getElementById(context.modalId);
-        if (modal && !modal.classList.contains('hidden')) {
-            modal.classList.add('hidden');
-            saveOpenModals();
-            updateDockIndicators();
-            updateProgramLabelByTopModal();
-        }
-    }
-}
+// openProgramInfoFromMenu is provided by program-menu-sync.js
 
-function hasAnyVisibleDialog() {
-    if (!window.dialogs) return false;
-    return Object.values(window.dialogs).some(
-        (dialog) =>
-            dialog &&
-            dialog.modal &&
-            !dialog.modal.classList.contains('hidden'),
-    );
-}
+// sendTextEditorMenuAction is provided by program-actions.js
 
-function bringAllWindowsToFront() {
-    if (!window.dialogs || !modalIds || !Array.isArray(modalIds)) return;
-    modalIds.forEach((id) => {
-        const dialog = window.dialogs[id];
-        if (
-            dialog &&
-            dialog.modal &&
-            !dialog.modal.classList.contains('hidden') &&
-            typeof dialog.bringToFront === 'function'
-        ) {
-            dialog.bringToFront();
-        }
-    });
-}
+// getImageViewerState provided by program-actions.js
 
-function openProgramInfoFromMenu(targetModalId) {
-    const info = resolveProgramInfo(targetModalId || null);
-    openProgramInfoDialog(null, info);
-}
+// openActiveImageInNewTab is provided by program-actions.js
 
-function sendTextEditorMenuAction(command) {
-    if (!command) return;
-    postToTextEditor({
-        type: 'textEditor:menuAction',
-        command,
-    });
-}
+// downloadActiveImage is provided by program-actions.js
 
-function getImageViewerState() {
-    const viewer = document.getElementById('image-viewer');
-    if (!viewer) {
-        return { hasImage: false, src: '' };
-    }
-    const hidden = viewer.classList.contains('hidden');
-    const src = viewer.getAttribute('src') || viewer.src || '';
-    const hasImage = Boolean(src && src.trim() && !hidden);
-    return { hasImage, src };
-}
+// updateProgramLabelByTopModal provided by program-menu-sync.js
 
-function openActiveImageInNewTab() {
-    const state = getImageViewerState();
-    if (!state.hasImage || !state.src) return;
-    window.open(state.src, '_blank', 'noopener');
-}
-
-function downloadActiveImage() {
-    const state = getImageViewerState();
-    if (!state.hasImage || !state.src) return;
-    const link = document.createElement('a');
-    link.href = state.src;
-    let fileName = 'bild';
-    try {
-        const url = new URL(state.src, window.location.href);
-        fileName = url.pathname.split('/').pop() || fileName;
-    } catch (err) {
-        fileName = 'bild';
-    }
-    link.download = fileName || 'bild';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function updateProgramLabelByTopModal() {
-    const topModal = getTopModal();
-
-    // Skip menubar update for modals with skipMenubarUpdate flag
-    if (topModal && window.WindowManager) {
-        const config = window.WindowManager.getConfig(topModal.id);
-        if (config && config.metadata && config.metadata.skipMenubarUpdate) {
-            // Find the next non-skipped modal
-            const allModals = Array.from(
-                document.querySelectorAll('.modal:not(.hidden)'),
-            );
-            const sortedModals = allModals.sort((a, b) => {
-                const zIndexA = parseInt(getComputedStyle(a).zIndex, 10) || 0;
-                const zIndexB = parseInt(getComputedStyle(b).zIndex, 10) || 0;
-                return zIndexB - zIndexA;
-            });
-
-            let nextModal = null;
-            for (const modal of sortedModals) {
-                const modalConfig = window.WindowManager.getConfig(modal.id);
-                if (
-                    !modalConfig ||
-                    !modalConfig.metadata ||
-                    !modalConfig.metadata.skipMenubarUpdate
-                ) {
-                    nextModal = modal;
-                    break;
-                }
-            }
-
-            if (nextModal) {
-                const info = getProgramInfo(nextModal.id);
-                currentProgramInfo = info;
-                updateProgramLabel(info.programLabel);
-                updateProgramInfoMenu(info);
-                renderApplicationMenu(nextModal.id);
-                return info;
-            }
-        }
-    }
-
-    let info;
-    if (
-        topModal &&
-        topModal.id === 'program-info-modal' &&
-        currentProgramInfo &&
-        currentProgramInfo.modalId
-    ) {
-        info = resolveProgramInfo(currentProgramInfo.modalId);
-        currentProgramInfo = info;
-    } else {
-        info = getProgramInfo(topModal ? topModal.id : null);
-        currentProgramInfo = info;
-    }
-    updateProgramLabel(info.programLabel);
-    updateProgramInfoMenu(info);
-    renderApplicationMenu(topModal ? topModal.id : null);
-    return info;
-}
-// Expose globally for use by storage module
-window.updateProgramLabelByTopModal = updateProgramLabelByTopModal;
-
-window.addEventListener('languagePreferenceChange', () => {
-    const info = updateProgramLabelByTopModal();
-    const programInfoModal = document.getElementById('program-info-modal');
-    if (programInfoModal && !programInfoModal.classList.contains('hidden')) {
-        const targetId =
-            programInfoModal.dataset.infoTarget ||
-            (info ? info.modalId : null) ||
-            null;
-        const infoForDialog = resolveProgramInfo(targetId);
-        renderProgramInfo(infoForDialog);
-        // Wenn der Programminfo-Dialog das aktive Programm repräsentiert, synchronisieren wir den aktuellen Zustand
-        if (info && info.modalId === infoForDialog.modalId) {
-            currentProgramInfo = infoForDialog;
-        }
-    }
-    // System status UI is now handled by SystemUI module
-    updateAllSystemStatusUI();
-});
-
-window.addEventListener('themePreferenceChange', () => {
-    // System UI module will handle dark mode state updates
-    updateAllSystemStatusUI();
-});
-
-function hideMenuDropdowns() {
-    document.querySelectorAll('.menu-dropdown').forEach((dropdown) => {
-        if (!dropdown.classList.contains('hidden')) {
-            dropdown.classList.add('hidden');
-        }
-    });
-    document
-        .querySelectorAll('[data-menubar-trigger-button="true"]')
-        .forEach((button) => {
-            button.setAttribute('aria-expanded', 'false');
-        });
-    document
-        .querySelectorAll('[data-system-menu-trigger]')
-        .forEach((button) => {
-            button.setAttribute('aria-expanded', 'false');
-        });
-}
-// Expose globally for use by SystemUI module
-window.hideMenuDropdowns = hideMenuDropdowns;
-
-// Close menus only when clicking outside of menubar triggers and dropdowns
-function handleDocumentClickToCloseMenus(event) {
-    // Guard against immediate re-closing right after we opened via trigger
-    if (
-        window.__lastMenuInteractionAt &&
-        Date.now() - window.__lastMenuInteractionAt < 200
-    ) {
-        return;
-    }
-    const target = event.target instanceof Element ? event.target : null;
-    if (!target) return;
-    // If the click is inside a menubar trigger or an open dropdown, do nothing
-    if (
-        target.closest('.menubar-trigger') ||
-        target.closest('.menu-dropdown')
-    ) {
-        return;
-    }
-    hideMenuDropdowns();
-}
-
-function isAnyDropdownOpen() {
-    return Boolean(document.querySelector('.menu-dropdown:not(.hidden)'));
-}
-
-function toggleMenuDropdown(trigger, options = {}) {
-    if (!trigger) return;
-    const menuId = trigger.getAttribute('aria-controls');
-    if (!menuId) return;
-    const menu = document.getElementById(menuId);
-    if (!menu) return;
-    const forceOpen = Boolean(options.forceOpen);
-    const wasOpen = !menu.classList.contains('hidden');
-    const shouldOpen = forceOpen || !wasOpen;
-    hideMenuDropdowns();
-    if (shouldOpen) {
-        menu.classList.remove('hidden');
-        trigger.setAttribute('aria-expanded', 'true');
-    }
-}
-
-function bindDropdownTrigger(trigger, options = {}) {
-    if (!trigger) return;
-    const hoverRequiresExisting =
-        options.hoverRequiresOpen !== undefined
-            ? options.hoverRequiresOpen
-            : true;
-    let clickJustOccurred = false;
-
-    trigger.addEventListener('click', (event) => {
-        event.stopPropagation();
-        clickJustOccurred = true;
-        // Note the time of this interaction so the document closer ignores it
-        const now = Date.now();
-        window.__lastMenuInteractionAt = now;
-        // Toggle behavior: if already open and not immediately after focus, close; otherwise open
-        const menuId = trigger.getAttribute('aria-controls');
-        const menu = menuId ? document.getElementById(menuId) : null;
-        const isOpen = menu ? !menu.classList.contains('hidden') : false;
-        const sinceFocus = now - (window.__lastMenuFocusAt || 0);
-        if (isOpen && sinceFocus > 200) {
-            hideMenuDropdowns();
-            trigger.setAttribute('aria-expanded', 'false');
-        } else {
-            // Force open to avoid focus->click race on first interaction
-            toggleMenuDropdown(trigger, { forceOpen: true });
-        }
-        // Reset flag after a short delay to allow hover to work again
-        setTimeout(() => {
-            clickJustOccurred = false;
-        }, 200);
-    });
-    trigger.addEventListener('mouseenter', () => {
-        // Ignore mouseenter if click just occurred to prevent immediate close
-        if (clickJustOccurred) {
-            return;
-        }
-        window.__lastMenuInteractionAt = Date.now();
-        if (hoverRequiresExisting && !isAnyDropdownOpen()) {
-            return;
-        }
-        toggleMenuDropdown(trigger, { forceOpen: true });
-    });
-    trigger.addEventListener('focus', () => {
-        const now = Date.now();
-        window.__lastMenuInteractionAt = now;
-        window.__lastMenuFocusAt = now;
-        toggleMenuDropdown(trigger, { forceOpen: true });
-    });
-}
-// Expose globally for use by SystemUI module
-window.bindDropdownTrigger = bindDropdownTrigger;
-
-// Zentrale Event-Handler für Menü und Dropdowns
-function initEventHandlers() {
-    const appleMenuTrigger = document.getElementById('apple-menu-trigger');
-    const programLabel = document.getElementById('program-label');
-
-    bindDropdownTrigger(appleMenuTrigger, { hoverRequiresOpen: true });
-    bindDropdownTrigger(programLabel, { hoverRequiresOpen: true });
-
-    document.addEventListener('click', handleMenuActionActivation);
-    document.addEventListener('click', handleDocumentClickToCloseMenus);
-    // Also close on pointerdown for snappier UX; inside-trigger/menu is guarded
-    document.addEventListener('pointerdown', handleDocumentClickToCloseMenus, {
-        capture: true,
-    });
-
-    // Close any open dropdown with Escape for accessibility
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            hideMenuDropdowns();
-        }
-    });
-
-    // Einzelne Button-Handler entfallen: werden nun über ActionBus (data-action) behandelt
-}
+// Menubar wiring moved to menubar-utils.js
 
 // ============================================================================
 // Persistence functions are now in storage.js (window.StorageSystem)
@@ -1102,6 +387,14 @@ function loadGithubRepos() {
 
     let imagePlaceholderState = null;
     const setImagePlaceholder = (messageKey, params) => {
+        if (
+            window.ImageViewerUtils &&
+            typeof window.ImageViewerUtils.setPlaceholder === 'function'
+        ) {
+            window.ImageViewerUtils.setPlaceholder(messageKey, params);
+            imagePlaceholderState = { key: messageKey, params };
+            return;
+        }
         if (!imagePlaceholder) return;
         if (typeof messageKey !== 'string' || messageKey.length === 0) {
             imagePlaceholder.removeAttribute('data-i18n');
@@ -1138,6 +431,13 @@ function loadGithubRepos() {
     });
 
     const updateImageInfo = ({ repo, path, dimensions, size }) => {
+        if (
+            window.ImageViewerUtils &&
+            typeof window.ImageViewerUtils.updateInfo === 'function'
+        ) {
+            window.ImageViewerUtils.updateInfo({ repo, path, dimensions, size });
+            return;
+        }
         if (!imageInfo) return;
         const parts = [];
         if (repo) parts.push(repo);
@@ -1803,74 +1103,6 @@ function loadGithubRepos() {
         });
 }
 
-// Hilfsfunktionen für das Laden des Parent-Dialogs
-function loaded(node) {
-    const dialogId = recursiveParentSearch(node);
-    if (!dialogId) return null;
-    if (window.dialogs && window.dialogs[dialogId]) {
-        return window.dialogs[dialogId];
-    }
-    const dialog = new Dialog(dialogId);
-    if (!window.dialogs) {
-        window.dialogs = {};
-    }
-    window.dialogs[dialogId] = dialog;
-    return dialog;
-}
-
-function recursiveParentSearch(node) {
-    if (node.classList != undefined && node.classList.contains('modal')) {
-        return node.id.toString();
-    } else if (node.parentNode == null) return null;
-    else return recursiveParentSearch(node.parentNode);
-}
-
-function updateDockIndicators() {
-    // Definiere hier, welche Modale mit welchen Indikatoren verbunden werden sollen.
-    const indicatorMappings = [
-        { modalId: 'finder-modal', indicatorId: 'finder-indicator' },
-        { modalId: 'projects-modal', indicatorId: 'projects-indicator' },
-        { modalId: 'settings-modal', indicatorId: 'settings-indicator' },
-        { modalId: 'text-modal', indicatorId: 'text-indicator' },
-        { modalId: 'image-modal', indicatorId: 'image-indicator' },
-    ];
-    indicatorMappings.forEach((mapping) => {
-        const modal = document.getElementById(mapping.modalId);
-        const indicator = document.getElementById(mapping.indicatorId);
-        if (modal && indicator) {
-            // Dot anzeigen, wenn Fenster sichtbar ODER minimiert ist
-            const minimized =
-                modal.dataset && modal.dataset.minimized === 'true';
-            if (!modal.classList.contains('hidden') || minimized) {
-                indicator.classList.remove('hidden');
-            } else {
-                indicator.classList.add('hidden');
-            }
-        }
-    });
-}
-// Expose globally for use by storage module
-window.updateDockIndicators = updateDockIndicators;
-
-// Blendet alle Sektionen der Einstellungen aus und zeigt nur die gewünschte an
-function showSettingsSection(section) {
-    const allSections = [
-        'settings-general',
-        'settings-display',
-        'settings-about',
-        'settings-network',
-        'settings-battery',
-    ];
-    allSections.forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.classList.add('hidden');
-        }
-    });
-    const target = document.getElementById(`settings-${section}`);
-    if (target) {
-        target.classList.remove('hidden');
-    }
-}
+// updateDockIndicators provided by dock.js
 
 // Dialog-Klasse wurde nach js/dialog.js extrahiert und steht global als window.Dialog zur Verfügung.
