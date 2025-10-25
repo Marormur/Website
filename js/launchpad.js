@@ -81,13 +81,13 @@ console.log('Launchpad loaded');
 
         // Get all registered windows
         const windowIds = global.WindowManager.getAllWindowIds();
-        
+
         allApps = [];
-        
+
         windowIds.forEach(windowId => {
             const config = global.WindowManager.getConfig(windowId);
             const programInfo = global.WindowManager.getProgramInfo(windowId);
-            
+
             // Skip transient windows like program-info-modal
             if (config && config.type === 'transient') {
                 return;
@@ -121,7 +121,7 @@ console.log('Launchpad loaded');
         if (!query) {
             filteredApps = [...allApps];
         } else {
-            filteredApps = allApps.filter(app => 
+            filteredApps = allApps.filter(app =>
                 app.name.toLowerCase().includes(query)
             );
         }
@@ -156,12 +156,26 @@ console.log('Launchpad loaded');
             const iconContainer = document.createElement('div');
             iconContainer.className = 'launchpad-app-icon';
 
-            const icon = document.createElement('img');
-            icon.src = app.icon;
-            icon.alt = app.name;
-            icon.draggable = false;
-
-            iconContainer.appendChild(icon);
+            // Render icon: image path or emoji
+            const isImagePath = typeof app.icon === 'string' && /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(app.icon);
+            if (isImagePath || (typeof app.icon === 'string' && (app.icon.startsWith('./') || app.icon.startsWith('http')))) {
+                const icon = document.createElement('img');
+                icon.src = app.icon;
+                icon.alt = app.name;
+                icon.draggable = false;
+                iconContainer.appendChild(icon);
+            } else if (typeof app.icon === 'string' && app.icon.trim().length) {
+                const emoji = document.createElement('div');
+                emoji.className = 'launchpad-app-emoji';
+                emoji.textContent = app.icon;
+                iconContainer.appendChild(emoji);
+            } else {
+                const fallback = document.createElement('img');
+                fallback.src = './img/sucher.png';
+                fallback.alt = app.name;
+                fallback.draggable = false;
+                iconContainer.appendChild(fallback);
+            }
 
             const label = document.createElement('span');
             label.className = 'launchpad-app-label';
@@ -194,20 +208,22 @@ console.log('Launchpad loaded');
         }
 
         // Open the selected app
-        if (global.WindowManager) {
-            const dialog = global.dialogs && global.dialogs[windowId];
-            if (dialog && typeof dialog.open === 'function') {
-                dialog.open();
-            } else {
-                const modalElement = document.getElementById(windowId);
-                if (modalElement) {
-                    modalElement.classList.remove('hidden');
-                    if (typeof global.bringDialogToFront === 'function') {
-                        global.bringDialogToFront(windowId);
-                    }
-                    if (typeof global.updateProgramLabelByTopModal === 'function') {
-                        global.updateProgramLabelByTopModal();
-                    }
+        if (global.WindowManager && typeof global.WindowManager.open === 'function') {
+            global.WindowManager.open(windowId);
+            return;
+        }
+        const dialog = global.dialogs && global.dialogs[windowId];
+        if (dialog && typeof dialog.open === 'function') {
+            dialog.open();
+        } else {
+            const modalElement = document.getElementById(windowId);
+            if (modalElement) {
+                modalElement.classList.remove('hidden');
+                if (typeof global.bringDialogToFront === 'function') {
+                    global.bringDialogToFront(windowId);
+                }
+                if (typeof global.updateProgramLabelByTopModal === 'function') {
+                    global.updateProgramLabelByTopModal();
                 }
             }
         }
