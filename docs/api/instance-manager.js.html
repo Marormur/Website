@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>JSDoc: Source: instance-manager.js</title>
+
+        <script src="scripts/prettify/prettify.js"></script>
+        <script src="scripts/prettify/lang-css.js"></script>
+        <!--[if lt IE 9]>
+            <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+        <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css" />
+        <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css" />
+    </head>
+
+    <body>
+        <div id="main">
+            <h1 class="page-title">Source: instance-manager.js</h1>
+
+            <section>
+                <article>
+                    <pre
+                        class="prettyprint source linenums"
+                    ><code>console.log('InstanceManager loaded');
+
+/**
+ * InstanceManager - Verwaltet mehrere Instanzen eines Fenstertyps
+ *
+ * Ermöglicht:
+ * - Mehrere Finder, Terminal, TextEditor Fenster gleichzeitig
+ * - Zentrale Instance-Verwaltung
+ * - Lifecycle-Management
+ * - Persistierung und Wiederherstellung
+ */
+(function () {
+    'use strict';
+
+    /**
+     * Manages multiple instances of a window type
+     */
+    class InstanceManager {
+        /**
+         * @param {Object} config
+         * @param {string} config.type - Window type (e.g., 'finder', 'terminal')
+         * @param {Class} config.instanceClass - Class to instantiate
+         * @param {number} config.maxInstances - Maximum number of instances (0 = unlimited)
+         * @param {Function} config.createContainer - Function to create DOM container
+         */
+        constructor(config) {
+            this.type = config.type;
+            this.instanceClass = config.instanceClass;
+            this.maxInstances = config.maxInstances || 0;
+            this.createContainer =
+                config.createContainer ||
+                this._defaultCreateContainer.bind(this);
+
+            this.instances = new Map();
+            this.activeInstanceId = null;
+            this.instanceCounter = 0;
+        }
+
+        /**
+         * Create a new instance
+         * @param {Object} config - Instance configuration
+         * @returns {BaseWindowInstance|null}
+         */
+        createInstance(config = {}) {
+            // Check max instances limit
+            if (
+                this.maxInstances > 0 &amp;&amp;
+                this.instances.size >= this.maxInstances
+            ) {
+                console.warn(
+                    `Maximum instances (${this.maxInstances}) reached for ${this.type}`,
+                );
+                return null;
+            }
+
+            this.instanceCounter++;
+            const instanceId =
+                config.id || `${this.type}-${this.instanceCounter}`;
+
+            // Create DOM container
+            const container = this.createContainer(instanceId);
+            if (!container) {
+                console.error('Failed to create container for instance');
+                return null;
+            }
+
+            // Create instance
+            const instanceConfig = {
+                id: instanceId,
+                type: this.type,
+                title: config.title || `${this.type} ${this.instanceCounter}`,
+                initialState: config.initialState || {},
+                metadata: config.metadata || {},
+            };
+
+            const instance = new this.instanceClass(instanceConfig);
+
+            // Initialize instance
+            try {
+                instance.init(container);
+                this.instances.set(instanceId, instance);
+                this.activeInstanceId = instanceId;
+
+                // Setup instance event listeners
+                this._setupInstanceEvents(instance);
+
+                console.log(`Created instance: ${instanceId}`);
+                return instance;
+            } catch (error) {
+                console.error('Failed to initialize instance:', error);
+                container.remove();
+                return null;
+            }
+        }
+
+        /**
+         * Get instance by ID
+         * @param {string} instanceId
+         * @returns {BaseWindowInstance|null}
+         */
+        getInstance(instanceId) {
+            return this.instances.get(instanceId) || null;
+        }
+
+        /**
+         * Get active instance
+         * @returns {BaseWindowInstance|null}
+         */
+        getActiveInstance() {
+            return this.activeInstanceId
+                ? this.instances.get(this.activeInstanceId)
+                : null;
+        }
+
+        /**
+         * Set active instance
+         * @param {string} instanceId
+         */
+        setActiveInstance(instanceId) {
+            if (this.instances.has(instanceId)) {
+                const previousId = this.activeInstanceId;
+                this.activeInstanceId = instanceId;
+
+                // Blur previous instance
+                if (previousId &amp;&amp; previousId !== instanceId) {
+                    const previousInstance = this.instances.get(previousId);
+                    if (previousInstance) {
+                        previousInstance.blur();
+                    }
+                }
+
+                // Focus new instance
+                const instance = this.instances.get(instanceId);
+                if (instance) {
+                    instance.focus();
+                }
+            }
+        }
+
+        /**
+         * Get all instances
+         * @returns {Array&lt;BaseWindowInstance>}
+         */
+        getAllInstances() {
+            return Array.from(this.instances.values());
+        }
+
+        /**
+         * Get all instance IDs
+         * @returns {Array&lt;string>}
+         */
+        getAllInstanceIds() {
+            return Array.from(this.instances.keys());
+        }
+
+        /**
+         * Destroy an instance
+         * @param {string} instanceId
+         */
+        destroyInstance(instanceId) {
+            const instance = this.instances.get(instanceId);
+            if (!instance) {
+                console.warn(`Instance ${instanceId} not found`);
+                return;
+            }
+
+            instance.destroy();
+            this.instances.delete(instanceId);
+
+            // Update active instance if needed
+            if (this.activeInstanceId === instanceId) {
+                const remainingIds = this.getAllInstanceIds();
+                this.activeInstanceId =
+                    remainingIds.length > 0
+                        ? remainingIds[remainingIds.length - 1]
+                        : null;
+            }
+
+            console.log(`Destroyed instance: ${instanceId}`);
+        }
+
+        /**
+         * Destroy all instances
+         */
+        destroyAllInstances() {
+            this.instances.forEach((instance, id) => {
+                instance.destroy();
+            });
+            this.instances.clear();
+            this.activeInstanceId = null;
+        }
+
+        /**
+         * Check if type has any instances
+         * @returns {boolean}
+         */
+        hasInstances() {
+            return this.instances.size > 0;
+        }
+
+        /**
+         * Get instance count
+         * @returns {number}
+         */
+        getInstanceCount() {
+            return this.instances.size;
+        }
+
+        /**
+         * Serialize all instances for persistence
+         * @returns {Array&lt;Object>}
+         */
+        serializeAll() {
+            return this.getAllInstances().map((instance) =>
+                instance.serialize(),
+            );
+        }
+
+        /**
+         * Restore instances from serialized data
+         * @param {Array&lt;Object>} data
+         */
+        deserializeAll(data) {
+            if (!Array.isArray(data)) return;
+
+            data.forEach((instanceData) => {
+                const instance = this.createInstance({
+                    id: instanceData.instanceId,
+                    title: instanceData.title,
+                    metadata: instanceData.metadata,
+                });
+
+                if (instance &amp;&amp; instanceData.state) {
+                    instance.deserialize(instanceData);
+                }
+            });
+        }
+
+        /**
+         * Default container creation
+         * @private
+         */
+        _defaultCreateContainer(instanceId) {
+            const container = document.createElement('div');
+            container.id = `${instanceId}-container`;
+            container.className = 'instance-container';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        /**
+         * Setup event listeners for an instance
+         * @private
+         */
+        _setupInstanceEvents(instance) {
+            instance.on('focused', () => {
+                this.setActiveInstance(instance.instanceId);
+            });
+
+            instance.on('destroyed', () => {
+                this.instances.delete(instance.instanceId);
+            });
+        }
+    }
+
+    // Export to global scope
+    window.InstanceManager = InstanceManager;
+})();
+</code></pre>
+                </article>
+            </section>
+        </div>
+
+        <nav>
+            <h2><a href="index.html">Home</a></h2>
+            <h3>Classes</h3>
+            <ul>
+                <li><a href="BaseWindowInstance.html">BaseWindowInstance</a></li>
+                <li><a href="InstanceManager.html">InstanceManager</a></li>
+                <li><a href="KeyboardShortcutManager.html">KeyboardShortcutManager</a></li>
+                <li><a href="MultiInstanceIntegration.html">MultiInstanceIntegration</a></li>
+                <li><a href="SessionManager.html">SessionManager</a></li>
+                <li><a href="TerminalInstance.html">TerminalInstance</a></li>
+                <li><a href="TextEditorInstance.html">TextEditorInstance</a></li>
+                <li><a href="WindowTabManager.html">WindowTabManager</a></li>
+            </ul>
+            <h3>Global</h3>
+            <ul>
+                <li><a href="global.html#ensureSvgNamespace">ensureSvgNamespace</a></li>
+                <li><a href="global.html#getDockReservedBottom">getDockReservedBottom</a></li>
+                <li><a href="global.html#getMenuIconSvg">getMenuIconSvg</a></li>
+                <li><a href="global.html#getThemePreference">getThemePreference</a></li>
+                <li><a href="global.html#initDockMagnification">initDockMagnification</a></li>
+                <li><a href="global.html#renderIconIntoElement">renderIconIntoElement</a></li>
+                <li><a href="global.html#setThemePreference">setThemePreference</a></li>
+                <li>
+                    <a href="global.html#updateThemeFromPreference">updateThemeFromPreference</a>
+                </li>
+            </ul>
+        </nav>
+
+        <br class="clear" />
+
+        <footer>
+            Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on
+            Sat Oct 25 2025 15:58:29 GMT+0200 (Central European Summer Time)
+        </footer>
+
+        <script>
+            prettyPrint();
+        </script>
+        <script src="scripts/linenumber.js"></script>
+    </body>
+</html>

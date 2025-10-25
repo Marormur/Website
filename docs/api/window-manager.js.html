@@ -1,4 +1,25 @@
-/**
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>JSDoc: Source: window-manager.js</title>
+
+        <script src="scripts/prettify/prettify.js"></script>
+        <script src="scripts/prettify/lang-css.js"></script>
+        <!--[if lt IE 9]>
+            <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+        <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css" />
+        <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css" />
+    </head>
+
+    <body>
+        <div id="main">
+            <h1 class="page-title">Source: window-manager.js</h1>
+
+            <section>
+                <article>
+                    <pre class="prettyprint source linenums"><code>/**
  * WindowManager - Central registry for windows/modals with z-index management and program metadata.
  *
  * Responsibilities:
@@ -124,7 +145,7 @@ console.log('WindowManager loaded');
         getPersistentWindowIds() {
             return this.getAllWindowIds().filter((id) => {
                 const config = this.getConfig(id);
-                return config && !config.isTransient();
+                return config &amp;&amp; !config.isTransient();
             });
         },
 
@@ -135,7 +156,7 @@ console.log('WindowManager loaded');
         getTransientWindowIds() {
             return this.getAllWindowIds().filter((id) => {
                 const config = this.getConfig(id);
-                return config && config.isTransient();
+                return config &amp;&amp; config.isTransient();
             });
         },
 
@@ -181,7 +202,7 @@ console.log('WindowManager loaded');
 
             this.getAllWindowIds().forEach((id) => {
                 const modal = document.getElementById(id);
-                if (modal && !modal.classList.contains('hidden')) {
+                if (modal &amp;&amp; !modal.classList.contains('hidden')) {
                     const zIndex =
                         parseInt(getComputedStyle(modal).zIndex, 10) || 0;
                     if (zIndex > highestZ) {
@@ -199,7 +220,7 @@ console.log('WindowManager loaded');
          */
         bringToFront(windowId) {
             const instance = this.getDialogInstance(windowId);
-            if (instance && typeof instance.bringToFront === 'function') {
+            if (instance &amp;&amp; typeof instance.bringToFront === 'function') {
                 instance.bringToFront();
             } else {
                 console.warn(`Keine Dialog-Instanz für ${windowId} gefunden.`);
@@ -213,8 +234,8 @@ console.log('WindowManager loaded');
             // Run per-window init handler once if provided
             const config = this.getConfig(windowId);
             if (
-                config &&
-                config.metadata &&
+                config &amp;&amp;
+                config.metadata &amp;&amp;
                 typeof config.metadata.initHandler === 'function'
             ) {
                 try {
@@ -228,7 +249,7 @@ console.log('WindowManager loaded');
             }
 
             const instance = this.getDialogInstance(windowId);
-            if (instance && typeof instance.open === 'function') {
+            if (instance &amp;&amp; typeof instance.open === 'function') {
                 instance.open();
             } else {
                 const modal = document.getElementById(windowId);
@@ -244,7 +265,7 @@ console.log('WindowManager loaded');
          */
         close(windowId) {
             const instance = this.getDialogInstance(windowId);
-            if (instance && typeof instance.close === 'function') {
+            if (instance &amp;&amp; typeof instance.close === 'function') {
                 instance.close();
             } else {
                 const modal = document.getElementById(windowId);
@@ -356,3 +377,49 @@ console.log('WindowManager loaded');
         },
     });
 })();
+</code></pre>
+                </article>
+            </section>
+        </div>
+
+        <nav>
+            <h2><a href="index.html">Home</a></h2>
+            <h3>Classes</h3>
+            <ul>
+                <li><a href="BaseWindowInstance.html">BaseWindowInstance</a></li>
+                <li><a href="InstanceManager.html">InstanceManager</a></li>
+                <li><a href="KeyboardShortcutManager.html">KeyboardShortcutManager</a></li>
+                <li><a href="MultiInstanceIntegration.html">MultiInstanceIntegration</a></li>
+                <li><a href="SessionManager.html">SessionManager</a></li>
+                <li><a href="TerminalInstance.html">TerminalInstance</a></li>
+                <li><a href="TextEditorInstance.html">TextEditorInstance</a></li>
+                <li><a href="WindowTabManager.html">WindowTabManager</a></li>
+            </ul>
+            <h3>Global</h3>
+            <ul>
+                <li><a href="global.html#ensureSvgNamespace">ensureSvgNamespace</a></li>
+                <li><a href="global.html#getDockReservedBottom">getDockReservedBottom</a></li>
+                <li><a href="global.html#getMenuIconSvg">getMenuIconSvg</a></li>
+                <li><a href="global.html#getThemePreference">getThemePreference</a></li>
+                <li><a href="global.html#initDockMagnification">initDockMagnification</a></li>
+                <li><a href="global.html#renderIconIntoElement">renderIconIntoElement</a></li>
+                <li><a href="global.html#setThemePreference">setThemePreference</a></li>
+                <li>
+                    <a href="global.html#updateThemeFromPreference">updateThemeFromPreference</a>
+                </li>
+            </ul>
+        </nav>
+
+        <br class="clear" />
+
+        <footer>
+            Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on
+            Sat Oct 25 2025 15:58:29 GMT+0200 (Central European Summer Time)
+        </footer>
+
+        <script>
+            prettyPrint();
+        </script>
+        <script src="scripts/linenumber.js"></script>
+    </body>
+</html>
