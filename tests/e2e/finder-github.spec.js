@@ -24,7 +24,40 @@ test.describe('Finder GitHub integration', () => {
         await expect(projectsModal).toHaveClass(/hidden/);
     });
 
-    test('Open Website/img/wallpaper.png in image viewer', async ({ page }) => {
+    test('Open Website/img/wallpaper.png in image viewer', async ({ page, baseURL }) => {
+        // Mock GitHub API to avoid rate limits and ensure deterministic content
+        const reposPattern = /https:\/\/api\.github\.com\/users\/Marormur\/repos.*/i;
+        const contentsRootPattern = /https:\/\/api\.github\.com\/repos\/Marormur\/Website\/contents$/i;
+        const contentsImgPattern = /https:\/\/api\.github\.com\/repos\/Marormur\/Website\/contents\/img$/i;
+
+        await page.route(reposPattern, async (route) => {
+            const body = [
+                { name: 'Website', description: 'Portfolio Website', private: false }
+            ];
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+        });
+
+        await page.route(contentsRootPattern, async (route) => {
+            const body = [
+                { name: 'img', path: 'img', type: 'dir' },
+                { name: 'README.md', path: 'README.md', type: 'file', size: 10 }
+            ];
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+        });
+
+        await page.route(contentsImgPattern, async (route) => {
+            const body = [
+                {
+                    name: 'wallpaper.png',
+                    path: 'img/wallpaper.png',
+                    type: 'file',
+                    size: 12345,
+                    download_url: baseURL.replace(/\/$/, '') + '/img/wallpaper.png'
+                }
+            ];
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+        });
+
         await openFinder(page);
         await openFinderGithub(page);
         // Guard against GitHub API issues: wait for either repo row or error/empty messages
