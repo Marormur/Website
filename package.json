@@ -16,6 +16,7 @@
     "test:e2e:all-browsers": "cross-env CI=1 playwright test",
     "test:e2e:quick": "playwright test --grep basic --project=chromium",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck:watch": "tsc --noEmit -p tsconfig.json --watch",
     "type:coverage": "type-coverage --at-least 90 --detail",
     "build:ts": "tsc -p tsconfig.tsbuild.json && npm run build:ts:fix-exports",
     "build:ts:fix-exports": "node scripts/fix-ts-exports.js",
