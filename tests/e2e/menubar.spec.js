@@ -1,11 +1,11 @@
 // End-to-end tests for menubar switching logic between Finder and Texteditor
 const { test, expect } = require("@playwright/test");
+const { waitForAppReady } = require("./utils");
 const {
     clickDockIcon,
     expectMenuButton,
     expectMenuItem,
     bringModalToFront,
-    getProgramLabel,
 } = require("./utils");
 
 test.describe("Menubar switches with active window (de-DE)", () => {
@@ -13,12 +13,7 @@ test.describe("Menubar switches with active window (de-DE)", () => {
 
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + "/index.html");
-        // Wait for page to load
-        await page.waitForLoadState("load");
-        // Wait for dock to be ready
-        await page.waitForSelector("#dock .dock-tray .dock-item", {
-            timeout: 10000,
-        });
+        await waitForAppReady(page);
     });
 
     test("Finder menus appear when Finder is active", async ({ page }) => {

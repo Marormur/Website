@@ -2,10 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- **perf(tests): optimize E2E test execution speed by 70%** (2025-10-25)
+  - Local tests now run only on Chromium instead of all 3 browsers (Chromium/Firefox/WebKit)
+  - CI still tests all browsers for full coverage via `CI=1` environment variable
+  - Added `test:e2e:quick` script for rapid smoke testing (~5s for 15 basic tests)
+  - Added `test:e2e:chromium` for explicit Chromium-only runs
+  - Added `test:e2e:all-browsers` to force all-browser testing locally
+  - Changed reporter to `line` format locally for cleaner output (CI uses `list`)
+  - **Performance improvement**: 85 tests complete in ~13s locally (down from ~39s)
+  - **Quick mode**: 15 basic tests in ~5s (down from ~15s)
+
+### Fixed
+- **fix(app-init): add window.__APP_READY signal for E2E test stability** (2025-10-25)
+  - Added `window.__APP_READY = true` at the end of `initApp()` in `src/ts/app-init.ts`
+  - Tests were timing out waiting for this signal which was never set
+  - Ensures reliable test initialization across all test suites
+
 - test(e2e): stabilize multi-instance suite using appReady
   - Updated tests to wait for window.__APP_READY instead of networkidle
   - Fixed "respects max instances limit" by using a minimal TestInstance subclass
   - Full multi-instance suite now passes across Chromium, Firefox, and WebKit (60/60)
+
+- test(e2e): standardize readiness across specs with appReady
+  - Replaced initial waits in Finder/Window Tabs, Launchpad, Terminal, Menubar, Visual Check
+  - Migrated basic suites to use waitForAppReady in beforeEach
+  - Documented the pattern in docs/QUICKSTART.md
 
 - chore(eol): enforce cross-platform line endings and normalize repository
   - Add .gitattributes with text=auto to use CRLF on Windows checkouts and LF on UNIX
@@ -108,7 +132,7 @@ All notable changes to this project will be documented in this file.
   - New source: src/ts/window-manager.ts → emits to js/window-manager.js
   - Typed window registry, z-index sync, dialog instance tracking, and program metadata
   - Preserves global WindowManager API and legacy window.topZIndex property
-  
+
  - feat(ts): extract GitHub API to dedicated module
    - New source: src/ts/github-api.ts → emits to js/github-api.js
    - Centralized GitHub headers, caching, and fetch helpers (repos, contents, generic fetchJSON)

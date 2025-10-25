@@ -50,8 +50,8 @@ console.log('TerminalInstance (TS) loaded');
                     </div>
                     <div class="terminal-input-line flex items-center px-4 py-2 border-t border-gray-700">
                         <span class="terminal-prompt text-blue-400">guest@marvin:${this.currentPath}$</span>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             class="flex-1 ml-2 bg-transparent outline-none text-green-400 terminal-input"
                             autocomplete="off"
                             spellcheck="false"

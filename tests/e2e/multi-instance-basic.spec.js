@@ -4,8 +4,14 @@
  */
 
 import { test, expect } from "@playwright/test";
+import utils from "./utils.js";
 
 test.describe("Multi-Instance System - Basic", () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto("/");
+        await utils.waitForAppReady(page);
+    });
+
     test("page loads and modules are available", async ({ page }) => {
         // Listen for console errors
         const consoleErrors = [];
@@ -15,8 +21,7 @@ test.describe("Multi-Instance System - Basic", () => {
             }
         });
 
-        await page.goto("/");
-        await page.waitForTimeout(2000); // Einfaches Warten statt networkidle
+    // Navigation handled in beforeEach
 
         // Check console errors
         console.log("Console errors:", consoleErrors);
@@ -49,8 +54,6 @@ test.describe("Multi-Instance System - Basic", () => {
     });
 
     test("can create a terminal instance", async ({ page }) => {
-        await page.goto("/");
-        await page.waitForTimeout(2000);
 
         const result = await page.evaluate(() => {
             try {
@@ -81,8 +84,6 @@ test.describe("Multi-Instance System - Basic", () => {
     });
 
     test("can create a text editor instance", async ({ page }) => {
-        await page.goto("/");
-        await page.waitForTimeout(2000);
 
         const result = await page.evaluate(() => {
             try {

@@ -177,6 +177,18 @@ export default [
                 varsIgnorePattern: '^_',
             }],
             'no-undef': 'warn',
+            // Gently steer tests away from flaky waits
+            'no-restricted-syntax': [
+                'warn',
+                {
+                    selector: "CallExpression[callee.property.name='waitForLoadState'] Literal[value='networkidle']",
+                    message: "Avoid 'networkidle' in tests; prefer waitForAppReady(page) from tests/e2e/utils.js.",
+                },
+                {
+                    selector: "CallExpression[callee.property.name='waitForTimeout']",
+                    message: "Avoid fixed timeouts in tests; prefer explicit UI waits (selectors, counts, visibility). If intentional, document with an inline comment and consider a shorter delay.",
+                },
+            ],
         },
     },
 

@@ -4,8 +4,14 @@
  */
 
 import { test, expect } from '@playwright/test';
+import utils from './utils.js';
 
 test.describe('Finder Multi-Instance System - Basic', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/');
+        await utils.waitForAppReady(page);
+    });
+
     test('page loads and Finder modules are available', async ({ page }) => {
         // Listen for console errors
         const consoleErrors = [];
@@ -15,8 +21,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
             }
         });
 
-        await page.goto('/');
-        await page.waitForTimeout(2000); // Simple wait instead of networkidle
+    // Navigation handled in beforeEach
 
         // Check console errors
         console.log('Console errors:', consoleErrors);
@@ -38,8 +43,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
     });
 
     test('can create a finder instance', async ({ page }) => {
-        await page.goto('/');
-        await page.waitForTimeout(2000);
+    // Navigation handled in beforeEach
 
         const result = await page.evaluate(() => {
             try {
@@ -67,8 +71,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
     });
 
     test('can create multiple finder instances with isolated state', async ({ page }) => {
-        await page.goto('/');
-        await page.waitForTimeout(2000);
+    // Navigation handled in beforeEach
 
         const result = await page.evaluate(() => {
             try {
@@ -110,8 +113,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
     });
 
     test('can switch between finder instances', async ({ page }) => {
-        await page.goto('/');
-        await page.waitForTimeout(2000);
+    // Navigation handled in beforeEach
 
         const result = await page.evaluate(() => {
             try {

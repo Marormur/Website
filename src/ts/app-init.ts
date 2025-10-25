@@ -202,6 +202,9 @@ function initApp(): void {
     if (win.DockSystem && typeof win.DockSystem.initDockDragDrop === 'function') {
         win.DockSystem.initDockDragDrop();
     }
+
+    // Signal that the app is ready for E2E tests
+    (window as Window & { __APP_READY?: boolean }).__APP_READY = true;
 }
 
 // ============================================================================

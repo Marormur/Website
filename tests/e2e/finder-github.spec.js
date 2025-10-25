@@ -1,5 +1,6 @@
 // E2E tests for Finder GitHub integration (inline browsing)
 const { test, expect } = require("@playwright/test");
+const { waitForAppReady } = require("./utils");
 const { mockGithubRepoImageFlow } = require("./utils");
 
 async function openFinder(page) {
@@ -15,6 +16,7 @@ async function openFinderGithub(page) {
 test.describe("Finder GitHub integration", () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + "/index.html");
+        await waitForAppReady(page);
     });
 
     test("Clicking GitHub in Finder does not open Projects window", async ({

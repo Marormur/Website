@@ -1,13 +1,13 @@
 // @ts-check
 const { test, expect } = require("@playwright/test");
+const { waitForAppReady } = require("./e2e/utils");
 
 test("visual check: homepage in Firefox vs Chrome", async ({
     page,
     browserName,
 }) => {
     await page.goto("/");
-    // Wait for page to be ready - using 'load' instead of 'networkidle' due to continuous GitHub API calls
-    await page.waitForLoadState("load");
+    await waitForAppReady(page);
 
     // Wait for critical elements
     await page.waitForSelector(".menubar", { state: "attached" });

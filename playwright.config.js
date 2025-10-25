@@ -19,28 +19,36 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
     workers: process.env.CI ? 1 : undefined,
-    reporter: "list",
+    reporter: process.env.CI ? "list" : "line", // Less verbose output locally
     use: {
         baseURL: BASE_URL,
         trace: "on-first-retry",
         screenshot: "only-on-failure",
         video: "retain-on-failure",
     },
-    projects: [
-        // Run tests in all major desktop browsers to catch cross-browser regressions
-        {
-            name: "chromium",
-            use: { ...devices["Desktop Chrome"] },
-        },
-        {
-            name: "firefox",
-            use: { ...devices["Desktop Firefox"] },
-        },
-        {
-            name: "webkit",
-            use: { ...devices["Desktop Safari"] },
-        },
-    ],
+    projects: process.env.CI
+        ? [
+              // CI: Run all browsers to catch cross-browser regressions
+              {
+                  name: "chromium",
+                  use: { ...devices["Desktop Chrome"] },
+              },
+              {
+                  name: "firefox",
+                  use: { ...devices["Desktop Firefox"] },
+              },
+              {
+                  name: "webkit",
+                  use: { ...devices["Desktop Safari"] },
+              },
+          ]
+        : [
+              // Local: Only Chromium for faster feedback
+              {
+                  name: "chromium",
+                  use: { ...devices["Desktop Chrome"] },
+              },
+          ],
     // Always start the Node server on port 5173 for tests
     // In CI, we need a fresh server; locally, we can reuse an existing one
     webServer: {

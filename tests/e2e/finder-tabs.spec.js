@@ -1,10 +1,11 @@
 // E2E tests for Finder multi-instance tabs
 const { test, expect } = require("@playwright/test");
+const { waitForAppReady } = require("./utils");
 
 test.describe("Finder Multi-Instance Tabs", () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + "/index.html");
-        await page.waitForTimeout(1000); // Allow system to initialize
+        await waitForAppReady(page);
     });
 
     test("Finder opens with initial tab", async ({ page }) => {

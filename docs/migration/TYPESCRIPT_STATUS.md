@@ -87,11 +87,41 @@
 
 ---
 
-## 🧪 Phase 5 – Vorbereitung gestartet
+## 🧪 Phase 5 – Testing & Quality (In Progress)
 
-- App‑Ready‑Signal eingeführt: `window.__APP_READY = true` und `window.dispatchEvent(new CustomEvent('appReady'))` am Ende von `initApp()`
-    - Tests können statt `networkidle` gezielt auf `appReady` warten
-    - Ziel: Flakiness in Multi‑Instance‑E2E reduzieren
+### ✅ Abgeschlossen:
+
+1. **ActionBus Migration** (Phase 4 Abschluss)
+    - Alle Standard-UI-Aktionen migriert (close/open/minimize/maximize)
+    - Verbleibende addEventListener sind System-Events & spezialisierte Interaktionen
+2. **App-Ready Signal**
+    - `window.__APP_READY = true` + `appReady` CustomEvent
+    - E2E-Tests nutzen `waitForAppReady(page)` statt `networkidle`
+    - Reduziert Test-Flakiness signifikant
+3. **Type-Coverage Tooling**
+    - Package installiert: `type-coverage`
+    - NPM Script: `npm run type:coverage --at-least 90 --detail`
+    - **Baseline ermittelt: 76.53%** (Ziel: 90%, Gap: +13.5%)
+
+### ⏳ In Arbeit:
+
+- TypeScript Integration E2E Test (Item 3)
+- tsconfig Strictness erhöhen (Item 4)
+- Ambient Types vereinheitlichen (Item 5)
+
+### 📊 Type Coverage Details:
+
+```
+Aktuell: 76.53% (16,847 / 22,011 Typen)
+Ziel:    90%
+Gap:     +13.5 Prozentpunkte
+```
+
+**Hauptquellen untypisierter Code:**
+
+- `js/text-editor.js` - 600+ untypisierte Property-Zugriffe
+- Legacy JS-Files noch nicht nach TS migriert
+- DOM-Manipulationen ohne explizite Type-Assertions
 
 ---
 

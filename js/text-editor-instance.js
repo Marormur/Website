@@ -44,11 +44,11 @@ console.log('TextEditorInstance (TS) loaded');
                         <div class="toolbar-separator"></div>
                         <button type="button" class="text-editor-btn" data-action="find" title="Suchen & Ersetzen">🔍</button>
                         <button type="button" class="text-editor-btn" data-action="toggleWrap" title="Zeilenumbruch">⏎</button>
-                        <input type="file" class="text-file-input" 
-                            accept=".txt,.md,.markdown,.html,.css,.js,.json,.yml,.yaml,.xml" 
+                        <input type="file" class="text-file-input"
+                            accept=".txt,.md,.markdown,.html,.css,.js,.json,.yml,.yaml,.xml"
                             style="display:none">
                     </div>
-                    
+
                     <!-- Find/Replace Panel (hidden by default) -->
                     <div class="find-replace-panel" style="background: ${isDark ? '#1f2937' : '#f5f5f5'}; padding: 8px 12px; border-bottom: 1px solid ${isDark ? '#374151' : '#d1d5db'}; display: none; gap: 8px; align-items: center;">
                         <input type="text" class="find-input" placeholder="Suchen..." style="padding: 4px 8px; border: 1px solid ${isDark ? '#475569' : '#d1d5db'}; border-radius: 4px; background: ${isDark ? '#111827' : '#ffffff'}; color: inherit;">
@@ -58,17 +58,17 @@ console.log('TextEditorInstance (TS) loaded');
                         <button type="button" class="text-editor-btn" data-action="replaceAll">Alle ersetzen</button>
                         <button type="button" class="text-editor-btn" data-action="closeFindReplace">✕</button>
                     </div>
-                    
+
                     <!-- Status Bar for filename -->
                     <div class="text-file-status" style="padding: 6px 12px; border-bottom: 1px solid ${isDark ? '#374151' : '#d1d5db'}; background: ${isDark ? '#1f2937' : '#f5f5f5'}; font-size: 13px; opacity: 0.85; display: none;"></div>
-                    
+
                     <!-- Editor Textarea -->
-                    <textarea class="text-editor-textarea flex-1 w-full resize-none p-4 border-0 outline-none" 
-                        spellcheck="false" 
+                    <textarea class="text-editor-textarea flex-1 w-full resize-none p-4 border-0 outline-none"
+                        spellcheck="false"
                         wrap="off"
                         style="background: ${isDark ? '#111827' : '#ffffff'}; color: inherit; font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Courier New', monospace; font-size: 14px; line-height: 1.6; tab-size: 4;"
                         placeholder="Text eingeben..."></textarea>
-                    
+
                     <!-- Status Bar -->
                     <div class="text-editor-statusbar flex-none" style="background: ${isDark ? '#1f2937' : '#f5f5f5'}; padding: 6px 12px; border-top: 1px solid ${isDark ? '#374151' : '#d1d5db'}; font-size: 12px; opacity: 0.75; display: flex; justify-content: space-between;">
                         <span class="word-count-display">Wörter: 0 | Zeichen: 0</span>

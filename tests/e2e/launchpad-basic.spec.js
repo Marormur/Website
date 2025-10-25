@@ -1,14 +1,10 @@
 import { test, expect } from "@playwright/test";
+import utils from "./utils.js";
 
 test.describe("Launchpad Basic Functionality", () => {
     test.beforeEach(async ({ page }) => {
         await page.goto("/");
-        // Wait for page to be ready - using 'load' instead of 'networkidle' due to continuous GitHub API calls
-        await page.waitForLoadState("load");
-        // Wait for dock to be visible
-        await page.waitForSelector("#dock .dock-tray .dock-item", {
-            timeout: 10000,
-        });
+        await utils.waitForAppReady(page);
     });
 
     test("should open launchpad when clicking dock icon", async ({ page }) => {

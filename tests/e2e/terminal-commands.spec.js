@@ -1,15 +1,13 @@
 // Terminal command and path handling tests
 const { test, expect } = require("@playwright/test");
+const { waitForAppReady } = require("./utils");
 
 test.describe("Terminal - Command and Path Handling", () => {
     test.beforeEach(async ({ page, baseURL }) => {
-        await page.goto(baseURL + "/index.html");
-        await page.waitForLoadState("load");
+    await page.goto(baseURL + "/index.html");
+    await waitForAppReady(page);
 
-        // Wait for dock to be ready
-        await page.waitForSelector("#dock .dock-tray .dock-item", {
-            timeout: 10000,
-        });
+        // Dock should be ready by now; proceed to open Terminal
 
         // Open Terminal - use more specific selector for dock item only
         const terminalDockItem = page.locator(

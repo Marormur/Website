@@ -1,10 +1,10 @@
 const { test, expect } = require("@playwright/test");
+const { waitForAppReady } = require("./utils");
 
 test.describe("Multi-Instance Window Tabs", () => {
     test.beforeEach(async ({ page }) => {
         await page.goto("http://localhost:5173/");
-        // Use timeout instead of networkidle for faster, more reliable tests
-        await page.waitForTimeout(2000);
+        await waitForAppReady(page);
     });
 
     test("should load all multi-instance modules", async ({ page }) => {
