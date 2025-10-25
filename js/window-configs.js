@@ -15,7 +15,17 @@ console.log('Window Configurations loaded');
             type: 'persistent',
             programKey: 'programs.finder',
             icon: './img/sucher.png',
-            closeButtonId: 'close-finder-modal'
+            closeButtonId: 'close-finder-modal',
+            metadata: {
+                initHandler: function () {
+                    // Create first Finder instance when modal opens if none exist
+                    if (window.FinderInstanceManager && !window.FinderInstanceManager.hasInstances()) {
+                        window.FinderInstanceManager.createInstance({
+                            title: 'Finder'
+                        });
+                    }
+                }
+            }
         },
         {
             id: 'launchpad-modal',
@@ -76,8 +86,14 @@ console.log('Window Configurations loaded');
             closeButtonId: 'close-text-modal',
             metadata: {
                 initHandler: function () {
-                    // Initialize text editor module if not already done
-                    if (window.TextEditorSystem && !window.TextEditorSystem.container) {
+                    // Create first Text Editor instance when modal opens if none exist
+                    if (window.TextEditorInstanceManager && !window.TextEditorInstanceManager.hasInstances()) {
+                        window.TextEditorInstanceManager.createInstance({
+                            title: 'Editor'
+                        });
+                    }
+                    // Fallback: Initialize old text editor module if not already done
+                    else if (window.TextEditorSystem && !window.TextEditorSystem.container) {
                         const container = document.getElementById('text-editor-container');
                         if (container) {
                             window.TextEditorSystem.init(container);
@@ -108,8 +124,14 @@ console.log('Window Configurations loaded');
             closeButtonId: 'close-terminal-modal',
             metadata: {
                 initHandler: function () {
-                    // Initialize terminal module if not already done
-                    if (window.TerminalSystem && !window.TerminalSystem.container) {
+                    // Create first Terminal instance when modal opens if none exist
+                    if (window.TerminalInstanceManager && !window.TerminalInstanceManager.hasInstances()) {
+                        window.TerminalInstanceManager.createInstance({
+                            title: 'Terminal'
+                        });
+                    }
+                    // Fallback: Initialize old terminal module if not already done
+                    else if (window.TerminalSystem && !window.TerminalSystem.container) {
                         const container = document.getElementById('terminal-container');
                         if (container) {
                             window.TerminalSystem.init(container);
