@@ -72,6 +72,7 @@
         const inDesktop = !!(target && target.closest && target.closest('#desktop'));
         const inDockItem = !!(target && target.closest && target.closest('#dock .dock-item'));
         const inImageModal = !!(target && target.closest && target.closest('#image-modal'));
+        const inFinderModal = !!(target && target.closest && target.closest('#finder-modal'));
 
         // Dock item: offer "Open", "Quit", and "Options"
         if (inDockItem) {
@@ -139,6 +140,111 @@
                 });
                 items.push({ type: 'separator' });
             }
+        }
+
+        // Finder: offer file/folder specific actions
+        if (inFinderModal) {
+            const finderItem = target.closest('.finder-list-item, .finder-grid-item');
+            
+            // Context menu on a file or folder
+            if (finderItem) {
+                const itemName = finderItem.getAttribute('data-item-name');
+                const itemType = finderItem.getAttribute('data-item-type');
+                
+                if (itemName && itemType) {
+                    items.push({
+                        id: 'finder-open-item',
+                        label: i18n.translate('context.finder.openItem') || 'Öffnen',
+                        action: () => {
+                            if (window.FinderSystem && typeof window.FinderSystem.openItem === 'function') {
+                                window.FinderSystem.openItem(itemName, itemType);
+                            }
+                        }
+                    });
+                    items.push({ type: 'separator' });
+                    items.push({
+                        id: 'finder-get-info',
+                        label: i18n.translate('context.finder.getInfo') || 'Informationen',
+                        action: () => {
+                            // Placeholder for get info - could open a modal with file details
+                            console.log('Get info for:', itemName, itemType);
+                        }
+                    });
+                    return items;
+                }
+            }
+            
+            // Context menu in empty space of Finder
+            items.push({
+                id: 'finder-refresh',
+                label: i18n.translate('context.finder.refresh') || 'Aktualisieren',
+                action: () => {
+                    if (window.FinderSystem && typeof window.FinderSystem.navigateTo === 'function') {
+                        const state = window.FinderSystem.getState();
+                        if (state) {
+                            window.FinderSystem.navigateTo(state.currentPath, state.currentView);
+                        }
+                    }
+                }
+            });
+            items.push({ type: 'separator' });
+            
+            // View mode options
+            const currentViewMode = window.FinderSystem && window.FinderSystem.getState ? window.FinderSystem.getState().viewMode : 'list';
+            if (currentViewMode !== 'list') {
+                items.push({
+                    id: 'finder-view-list',
+                    label: i18n.translate('context.finder.viewList') || 'Als Liste',
+                    action: () => {
+                        if (window.FinderSystem && typeof window.FinderSystem.setViewMode === 'function') {
+                            window.FinderSystem.setViewMode('list');
+                        }
+                    }
+                });
+            }
+            if (currentViewMode !== 'grid') {
+                items.push({
+                    id: 'finder-view-grid',
+                    label: i18n.translate('context.finder.viewGrid') || 'Als Raster',
+                    action: () => {
+                        if (window.FinderSystem && typeof window.FinderSystem.setViewMode === 'function') {
+                            window.FinderSystem.setViewMode('grid');
+                        }
+                    }
+                });
+            }
+            items.push({ type: 'separator' });
+            
+            // Sort options
+            items.push({
+                id: 'finder-sort-name',
+                label: i18n.translate('context.finder.sortByName') || 'Nach Name sortieren',
+                action: () => {
+                    if (window.FinderSystem && typeof window.FinderSystem.setSortBy === 'function') {
+                        window.FinderSystem.setSortBy('name');
+                    }
+                }
+            });
+            items.push({
+                id: 'finder-sort-date',
+                label: i18n.translate('context.finder.sortByDate') || 'Nach Datum sortieren',
+                action: () => {
+                    if (window.FinderSystem && typeof window.FinderSystem.setSortBy === 'function') {
+                        window.FinderSystem.setSortBy('date');
+                    }
+                }
+            });
+            items.push({
+                id: 'finder-sort-size',
+                label: i18n.translate('context.finder.sortBySize') || 'Nach Größe sortieren',
+                action: () => {
+                    if (window.FinderSystem && typeof window.FinderSystem.setSortBy === 'function') {
+                        window.FinderSystem.setSortBy('size');
+                    }
+                }
+            });
+            
+            return items;
         }
 
         // Desktop: show a slightly different primary set

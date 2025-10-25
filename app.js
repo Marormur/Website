@@ -293,6 +293,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Initialize terminal module
+    if (window.TerminalSystem) {
+        const terminalContainer = document.getElementById('terminal-container');
+        if (terminalContainer) {
+            window.TerminalSystem.init(terminalContainer);
+        }
+    }
+
     initDockMagnification();
     
     // Initialize drag & drop for dock icons

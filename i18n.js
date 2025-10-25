@@ -27,6 +27,17 @@
                 image: {
                     openInTab: 'Bild in neuem Tab öffnen',
                     save: 'Bild sichern …'
+                },
+                finder: {
+                    openItem: 'Öffnen',
+                    getInfo: 'Informationen',
+                    refresh: 'Aktualisieren',
+                    newFolder: 'Neuer Ordner',
+                    viewList: 'Als Liste',
+                    viewGrid: 'Als Raster',
+                    sortByName: 'Nach Name sortieren',
+                    sortByDate: 'Nach Datum sortieren',
+                    sortBySize: 'Nach Größe sortieren'
                 }
             },
             common: {
@@ -53,14 +64,16 @@
                 text: 'Texteditor',
                 image: 'Bildbetrachter',
                 settings: 'Systemeinstellungen',
-                about: 'Über Marvin'
+                about: 'Über Marvin',
+                terminal: 'Terminal'
             },
             dock: {
                 finder: 'Sucher',
                 projects: 'GitHub Projekte',
                 text: 'Texteditor',
                 image: 'Bildbetrachter',
-                settings: 'Systemeinstellungen'
+                settings: 'Systemeinstellungen',
+                terminal: 'Terminal'
             },
             menubar: {
                 appleMenu: {
@@ -160,6 +173,9 @@
                 },
                 programInfo: {
                     title: 'Über dieses Programm'
+                },
+                terminal: {
+                    title: 'Terminal'
                 }
             },
             finder: {
@@ -266,6 +282,16 @@
                     about: {
                         name: 'Über Marvin',
                         tagline: 'Erfahre mehr über Marvin Temmen.',
+                        version: 'Version 1.0',
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
+                    }
+                },
+                terminal: {
+                    label: 'Terminal',
+                    infoLabel: 'Über Terminal',
+                    about: {
+                        name: 'Terminal',
+                        tagline: 'Kommandozeilenschnittstelle für das Portfolio.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
                     }
@@ -434,6 +460,17 @@
                 image: {
                     openInTab: 'Open image in new tab',
                     save: 'Save image…'
+                },
+                finder: {
+                    openItem: 'Open',
+                    getInfo: 'Get Info',
+                    refresh: 'Refresh',
+                    newFolder: 'New Folder',
+                    viewList: 'View as List',
+                    viewGrid: 'View as Grid',
+                    sortByName: 'Sort by Name',
+                    sortByDate: 'Sort by Date',
+                    sortBySize: 'Sort by Size'
                 }
             },
             common: {
@@ -459,13 +496,15 @@
                 text: 'Text editor',
                 image: 'Image viewer',
                 settings: 'System settings',
-                about: 'About Marvin'
+                about: 'About Marvin',
+                terminal: 'Terminal'
             },
             dock: {
                 finder: 'Finder',
                 text: 'Text editor',
                 image: 'Image viewer',
-                settings: 'System settings'
+                settings: 'System settings',
+                terminal: 'Terminal'
             },
             menubar: {
                 appleMenu: {
@@ -562,6 +601,9 @@
                 },
                 programInfo: {
                     title: 'About this app'
+                },
+                terminal: {
+                    title: 'Terminal'
                 }
             },
             programs: {
@@ -621,6 +663,16 @@
                     about: {
                         name: 'About Marvin',
                         tagline: 'Learn more about Marvin Temmen.',
+                        version: 'Version 1.0',
+                        copyright: '© Marvin Temmen. All rights reserved.'
+                    }
+                },
+                terminal: {
+                    label: 'Terminal',
+                    infoLabel: 'About Terminal',
+                    about: {
+                        name: 'Terminal',
+                        tagline: 'Command-line interface for the portfolio.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. All rights reserved.'
                     }
