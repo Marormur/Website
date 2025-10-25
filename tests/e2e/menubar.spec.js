@@ -1,41 +1,6 @@
 // End-to-end tests for menubar switching logic between Finder and Texteditor
 const { test, expect } = require('@playwright/test');
-
-// Helper: open Dock app by visible image alt text
-async function clickDockIcon(page, altText) {
-    await page.getByRole('img', { name: altText }).click();
-}
-
-// Helper: ensure a menubar button is visible
-async function expectMenuButton(page, label) {
-    await expect(page.getByRole('button', { name: label })).toBeVisible();
-}
-
-// Helper: open a menubar section and verify a menuitem exists
-async function expectMenuItem(page, sectionLabel, itemLabel) {
-    const section = page.getByRole('button', { name: sectionLabel });
-    // Prefer focus to open the dropdown (our binding opens on focus)
-    await section.focus();
-    // Wait for the dropdown associated with this section to be visible
-    const menuId = await section.getAttribute('aria-controls');
-    if (menuId) {
-        await page.waitForSelector(`#${menuId}:not(.hidden)`, { timeout: 5000 });
-    } else {
-        await page.waitForSelector('.menu-dropdown:not(.hidden)', { timeout: 5000 });
-    }
-    await expect(page.getByRole('menuitem', { name: new RegExp('^' + itemLabel) })).toBeVisible();
-}
-
-// Helper: bring a modal to front by clicking its draggable header
-async function bringModalToFront(page, modalId) {
-    const header = page.locator(`#${modalId} .draggable-header`).first();
-    await header.click({ position: { x: 10, y: 10 } });
-}
-
-// Helper: get program label text
-async function getProgramLabel(page) {
-    return (await page.locator('#program-label').textContent()).trim();
-}
+const { clickDockIcon, expectMenuButton, expectMenuItem, bringModalToFront, getProgramLabel } = require('./utils');
 
 test.describe('Menubar switches with active window (de-DE)', () => {
     test.use({ locale: 'de-DE' });
