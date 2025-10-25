@@ -25,7 +25,7 @@
         tab.appendChild(close);
         return tab;
     }
-    function renderTabs(container, manager, options, onSelect, onClose) {
+    function renderTabs(container, manager, options, onSelect, onClose, onNew) {
         container.innerHTML = '';
         const bar = document.createElement('div');
         bar.className = 'window-tabs flex items-center gap-1 px-2 pt-2 select-none';
@@ -58,8 +58,13 @@
             addBtn.textContent = '+';
             addBtn.title = 'Neue Instanz';
             addBtn.addEventListener('click', () => {
-                const title = options.onCreateInstanceTitle?.();
-                manager.createInstance({ title });
+                if (onNew) {
+                    onNew();
+                }
+                else {
+                    const title = options.onCreateInstanceTitle?.();
+                    manager.createInstance({ title });
+                }
                 // refresh will be triggered by wrapper
             });
             bar.appendChild(addBtn);
@@ -118,6 +123,71 @@
             return createController(manager, mountEl, options);
         }
     };
+    // Adapter expected by legacy integration code: WindowTabManager
+    class WindowTabManager {
+        constructor(config) {
+            this.controller = null;
+            this.manager = config.instanceManager;
+            this.opts = {
+                containerId: config.containerId,
+                onTabSwitch: config.onTabSwitch,
+                onTabClose: config.onTabClose,
+                onNewTab: config.onNewTab,
+                onAllTabsClosed: config.onAllTabsClosed,
+            };
+            const mount = document.getElementById(config.containerId);
+            if (mount) {
+                // Build controller with custom handlers
+                const refreshWithHooks = () => {
+                    renderTabs(mount, this.manager, { addButton: true }, (id) => {
+                        this.manager.setActiveInstance(id);
+                        this.opts.onTabSwitch?.(id);
+                    }, (id) => {
+                        this.opts.onTabClose?.(id);
+                        this.manager.destroyInstance(id);
+                        if (this.manager.getAllInstances().length === 0) {
+                            this.opts.onAllTabsClosed?.();
+                        }
+                    }, () => {
+                        if (this.opts.onNewTab) {
+                            this.opts.onNewTab();
+                        }
+                        else {
+                            const next = (this.manager.getInstanceCount?.() || this.manager.getAllInstances().length) + 1;
+                            this.manager.createInstance({ title: `Instance ${next}` });
+                        }
+                    });
+                };
+                this.controller = {
+                    el: mount,
+                    refresh: refreshWithHooks,
+                    destroy() { mount.innerHTML = ''; },
+                    setTitle: (instanceId, title) => {
+                        const inst = this.manager.getInstance(instanceId);
+                        if (inst) {
+                            inst.title = title;
+                        }
+                        refreshWithHooks();
+                    }
+                };
+                // initial render
+                this.controller.refresh();
+            }
+        }
+        addTab(_instance) {
+            // Our rendering reflects manager state; just refresh
+            this.controller?.refresh();
+        }
+        closeTab(instanceId) {
+            this.opts.onTabClose?.(instanceId);
+            this.manager.destroyInstance(instanceId);
+            if (this.manager.getAllInstances().length === 0) {
+                this.opts.onAllTabsClosed?.();
+            }
+            this.controller?.refresh();
+        }
+    }
     window.WindowTabs = WindowTabs;
+    window.WindowTabManager = WindowTabManager;
 })();
 //# sourceMappingURL=window-tabs.js.map

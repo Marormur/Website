@@ -8,6 +8,8 @@
     focus?: () => void;
     blur?: () => void;
     destroy?: () => void;
+    show?: () => void;
+    hide?: () => void;
   };
 
   type InstanceConfig = {
@@ -26,6 +28,7 @@
     setActiveInstance(id: string): void;
     createInstance(config?: Partial<InstanceConfig>): Instance | null;
     destroyInstance(id: string): void;
+    getInstanceCount?: () => number;
   };
 
   interface WindowTabsOptions {
@@ -70,17 +73,24 @@
     return tab;
   }
 
-  function renderTabs(container: HTMLElement, manager: Manager, options: WindowTabsOptions, onSelect: (id: string) => void, onClose: (id: string) => void): void {
+  function renderTabs(
+    container: HTMLElement,
+    manager: Manager,
+    options: WindowTabsOptions,
+    onSelect: (id: string) => void,
+    onClose: (id: string) => void,
+    onNew?: () => void
+  ): void {
     container.innerHTML = '';
 
     const bar = document.createElement('div');
     bar.className = 'window-tabs flex items-center gap-1 px-2 pt-2 select-none';
 
-  const instances = manager.getAllInstances();
+    const instances = manager.getAllInstances();
     const active = manager.getActiveInstance();
     const activeId = active?.instanceId ?? null;
 
-  instances.forEach((inst: Instance) => {
+    instances.forEach((inst: Instance) => {
       const tab = createTabEl(inst, inst.instanceId === activeId);
       tab.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
@@ -106,8 +116,12 @@
       addBtn.textContent = '+';
       addBtn.title = 'Neue Instanz';
       addBtn.addEventListener('click', () => {
-        const title = options.onCreateInstanceTitle?.();
-        manager.createInstance({ title });
+        if (onNew) {
+          onNew();
+        } else {
+          const title = options.onCreateInstanceTitle?.();
+          manager.createInstance({ title });
+        }
         // refresh will be triggered by wrapper
       });
       bar.appendChild(addBtn);
@@ -126,8 +140,8 @@
     const destroyOrig = manager.destroyInstance.bind(manager);
     const setActiveOrig = manager.setActiveInstance.bind(manager);
 
-  type MutableManager = Manager & { [key: string]: unknown };
-  (manager as MutableManager).createInstance = (cfg?: Partial<InstanceConfig>) => {
+    type MutableManager = Manager & { [key: string]: unknown };
+    (manager as MutableManager).createInstance = (cfg?: Partial<InstanceConfig>) => {
       const inst = createOrig(cfg);
       onChange();
       return inst;
@@ -179,5 +193,88 @@
     }
   };
 
+  // Adapter expected by legacy integration code: WindowTabManager
+  class WindowTabManager {
+    private manager: Manager;
+    private controller: WindowTabsController | null = null;
+    private opts: {
+      containerId: string;
+      onTabSwitch?: (id: string) => void;
+      onTabClose?: (id: string) => void;
+      onNewTab?: () => void;
+      onAllTabsClosed?: () => void;
+    };
+
+    constructor(config: { containerId: string; instanceManager: Manager; onTabSwitch?: (id: string) => void; onTabClose?: (id: string) => void; onNewTab?: () => void; onAllTabsClosed?: () => void; }) {
+      this.manager = config.instanceManager;
+      this.opts = {
+        containerId: config.containerId,
+        onTabSwitch: config.onTabSwitch,
+        onTabClose: config.onTabClose,
+        onNewTab: config.onNewTab,
+        onAllTabsClosed: config.onAllTabsClosed,
+      };
+      const mount = document.getElementById(config.containerId);
+      if (mount) {
+        // Build controller with custom handlers
+        const refreshWithHooks = () => {
+          renderTabs(
+            mount,
+            this.manager,
+            { addButton: true },
+            (id) => {
+              this.manager.setActiveInstance(id);
+              this.opts.onTabSwitch?.(id);
+            },
+            (id) => {
+              this.opts.onTabClose?.(id);
+              this.manager.destroyInstance(id);
+              if (this.manager.getAllInstances().length === 0) {
+                this.opts.onAllTabsClosed?.();
+              }
+            },
+            () => {
+              if (this.opts.onNewTab) {
+                this.opts.onNewTab();
+              } else {
+                const next = (this.manager.getInstanceCount?.() || this.manager.getAllInstances().length) + 1;
+                this.manager.createInstance({ title: `Instance ${next}` });
+              }
+            }
+          );
+        };
+
+        this.controller = {
+          el: mount,
+          refresh: refreshWithHooks,
+          destroy() { mount.innerHTML = ''; },
+          setTitle: (instanceId: string, title: string) => {
+            const inst = this.manager.getInstance(instanceId);
+            if (inst) { inst.title = title; }
+            refreshWithHooks();
+          }
+        } as unknown as WindowTabsController;
+
+        // initial render
+        this.controller.refresh();
+      }
+    }
+
+    addTab(_instance: Instance): void {
+      // Our rendering reflects manager state; just refresh
+      this.controller?.refresh();
+    }
+
+    closeTab(instanceId: string): void {
+      this.opts.onTabClose?.(instanceId);
+      this.manager.destroyInstance(instanceId);
+      if (this.manager.getAllInstances().length === 0) {
+        this.opts.onAllTabsClosed?.();
+      }
+      this.controller?.refresh();
+    }
+  }
+
   (window as unknown as { [k: string]: unknown }).WindowTabs = WindowTabs;
+  (window as unknown as { [k: string]: unknown }).WindowTabManager = WindowTabManager;
 })();
