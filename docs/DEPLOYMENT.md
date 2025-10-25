@@ -28,9 +28,10 @@ npm run test:e2e
 
 ## 📝 Wichtig
 
-- `dist/output.css` wird von Tailwind generiert und sollte im Git committed werden
+- `dist/output.css` wird automatisch von GitHub Actions gebaut - **NICHT** ins Git committen
+- Lokal: Nutze `npm run watch:css` während der Entwicklung (oder VS Code Task "Tailwind CSS: Watch")
 - Die `.nojekyll` Datei sorgt dafür, dass GitHub Pages alle Dateien ausliefert
-- CSS‑Änderungen immer in `src/input.css` oder `style.css` machen, nicht in `dist/output.css`
+- CSS‑Änderungen immer in `src/input.css` oder `src/css/*.css` machen, nie in `dist/output.css`
 
 ## 🔧 GitHub Pages Setup
 
@@ -40,9 +41,14 @@ npm run test:e2e
 
 ## 🐛 Troubleshooting
 
-**Problem:** CSS wird nicht geladen
-- Lösung: `npm run build:css` lokal ausführen und committen
-- GitHub Actions führt das automatisch aus, aber für lokale Tests wichtig
+**Problem:** CSS wird nicht geladen (lokal)
+- Lösung: Stelle sicher, dass der Task "Tailwind CSS: Watch" läuft
+- Oder führe einmalig `npm run build:css` aus
+- `dist/output.css` sollte lokal existieren (aber nicht committed werden)
+
+**Problem:** CSS wird nicht geladen (auf GitHub Pages)
+- GitHub Actions baut CSS automatisch - prüfe ob der Build-Job erfolgreich war
+- Schaue in Actions → Deploy to GitHub Pages → Build-Step
 
 **Problem:** Seite zeigt 404
 - Prüfe ob GitHub Pages aktiviert ist (Settings → Pages)
