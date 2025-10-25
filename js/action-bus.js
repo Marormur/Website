@@ -329,6 +329,43 @@ console.log('ActionBus loaded');
             if (el && el.getAttribute && el.getAttribute('aria-disabled') === 'true') return;
             window.SystemUI?.setBluetoothDevice?.(dev, { syncAudio: true });
         },
+        // Window controls: minimize/maximize/close for the containing modal
+        'window:close': (_params, el) => {
+            const modal = el?.closest?.('.modal');
+            const id = modal?.id;
+            if (id) {
+                const inst = window.WindowManager?.getDialogInstance?.(id);
+                if (inst?.close) return inst.close();
+                modal.classList.add('hidden');
+                window.updateProgramLabelByTopModal?.();
+                window.updateDockIndicators?.();
+            } else {
+                // Fallback: close top window
+                const g = window;
+                const maybeTop = g.WindowManager?.getTopWindow?.();
+                if (maybeTop && maybeTop.id) g.WindowManager?.close?.(maybeTop.id);
+            }
+        },
+        'window:minimize': (_params, el) => {
+            const modal = el?.closest?.('.modal');
+            const id = modal?.id;
+            if (id) {
+                const inst = window.WindowManager?.getDialogInstance?.(id);
+                if (inst?.minimize) return inst.minimize();
+                if (modal.dataset) modal.dataset.minimized = 'true';
+                modal.classList.add('hidden');
+                window.updateDockIndicators?.();
+                window.updateProgramLabelByTopModal?.();
+            }
+        },
+        'window:maximize': (_params, el) => {
+            const modal = el?.closest?.('.modal');
+            const id = modal?.id;
+            if (id) {
+                const inst = window.WindowManager?.getDialogInstance?.(id);
+                if (inst?.toggleMaximize) return inst.toggleMaximize();
+            }
+        },
     });
     // Globaler Export
     window.ActionBus = ActionBus;

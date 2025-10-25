@@ -8,6 +8,17 @@ console.log('WindowChrome loaded');
         btn.innerHTML = symbol;
         btn.style.cssText =
             'width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s;';
+        // Add ActionBus wiring where feasible
+        try {
+            if (type === 'close') {
+                // Prefer instance callback, but expose default ActionBus close
+                btn.setAttribute('data-action', 'window:close');
+            } else if (type === 'minimize') {
+                btn.setAttribute('data-action', 'window:minimize');
+            } else if (type === 'maximize') {
+                btn.setAttribute('data-action', 'window:maximize');
+            }
+        } catch (_) { /* noop */ }
         btn.addEventListener('mouseenter', () => {
             if (type === 'close') {
                 btn.style.backgroundColor = '#ef4444';
