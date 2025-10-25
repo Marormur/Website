@@ -342,7 +342,14 @@ console.log('MultiInstanceIntegration loaded');
                 handler: () => {
                     const activeInstance = manager.getActiveInstance();
                     if (activeInstance && activeInstance.isVisible) {
-                        manager.destroyInstance(activeInstance.instanceId);
+                        // Use tab manager's closeTab to properly remove tab UI and destroy instance
+                        const integration = this.integrations.get(type);
+                        if (integration && integration.tabManager) {
+                            integration.tabManager.closeTab(activeInstance.instanceId);
+                        } else {
+                            // Fallback if no tab manager (shouldn't happen in multi-instance integrations)
+                            manager.destroyInstance(activeInstance.instanceId);
+                        }
                     }
                 },
                 description: `Close ${type} instance`,
