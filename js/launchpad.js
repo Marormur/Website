@@ -33,6 +33,12 @@ console.log('Launchpad loaded');
             return;
         }
 
+        // Prevent re-initialization
+        if (container) {
+            console.warn('LaunchpadSystem: Already initialized');
+            return;
+        }
+
         container = containerElement;
         render();
         loadApps();
@@ -251,7 +257,10 @@ console.log('Launchpad loaded');
     global.LaunchpadSystem = {
         init,
         refresh,
-        clearSearch
+        clearSearch,
+        get container() {
+            return container;
+        }
     };
 
 })(window);
