@@ -264,6 +264,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Add click-outside-to-close functionality for launchpad
+    const launchpadModal = document.getElementById('launchpad-modal');
+    if (launchpadModal) {
+        launchpadModal.addEventListener('click', function (e) {
+            // Check if the click is on the modal background (not on the inner content)
+            if (e.target === launchpadModal) {
+                window.dialogs?.['launchpad-modal']?.close?.();
+            }
+        });
+    }
+
     syncTopZIndexWithDOM();
     restoreWindowPositions();
     restoreOpenModals();
@@ -568,6 +579,39 @@ function downloadActiveImage() {
 
 function updateProgramLabelByTopModal() {
     const topModal = getTopModal();
+    
+    // Skip menubar update for modals with skipMenubarUpdate flag
+    if (topModal && window.WindowManager) {
+        const config = window.WindowManager.getConfig(topModal.id);
+        if (config && config.metadata && config.metadata.skipMenubarUpdate) {
+            // Find the next non-skipped modal
+            const allModals = Array.from(document.querySelectorAll('.modal:not(.hidden)'));
+            const sortedModals = allModals.sort((a, b) => {
+                const zIndexA = parseInt(getComputedStyle(a).zIndex, 10) || 0;
+                const zIndexB = parseInt(getComputedStyle(b).zIndex, 10) || 0;
+                return zIndexB - zIndexA;
+            });
+            
+            let nextModal = null;
+            for (const modal of sortedModals) {
+                const modalConfig = window.WindowManager.getConfig(modal.id);
+                if (!modalConfig || !modalConfig.metadata || !modalConfig.metadata.skipMenubarUpdate) {
+                    nextModal = modal;
+                    break;
+                }
+            }
+            
+            if (nextModal) {
+                const info = getProgramInfo(nextModal.id);
+                currentProgramInfo = info;
+                updateProgramLabel(info.programLabel);
+                updateProgramInfoMenu(info);
+                renderApplicationMenu(nextModal.id);
+                return info;
+            }
+        }
+    }
+    
     let info;
     if (topModal && topModal.id === "program-info-modal" && currentProgramInfo && currentProgramInfo.modalId) {
         info = resolveProgramInfo(currentProgramInfo.modalId);

@@ -18,6 +18,25 @@ console.log('Window Configurations loaded');
             closeButtonId: 'close-finder-modal'
         },
         {
+            id: 'launchpad-modal',
+            type: 'persistent',
+            programKey: 'programs.launchpad',
+            icon: './img/launchpad.png',
+            closeButtonId: 'close-launchpad-modal',
+            metadata: {
+                skipMenubarUpdate: true, // Don't update menubar when launchpad is focused
+                initHandler: function () {
+                    // Initialize Launchpad module if not already done
+                    if (window.LaunchpadSystem && !window.LaunchpadSystem.container) {
+                        const container = document.getElementById('launchpad-container');
+                        if (container) {
+                            window.LaunchpadSystem.init(container);
+                        }
+                    }
+                }
+            }
+        },
+        {
             id: 'projects-modal',
             type: 'persistent',
             programKey: 'programs.projects',
