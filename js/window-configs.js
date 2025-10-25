@@ -104,7 +104,7 @@ console.log('Window Configurations loaded');
             id: 'terminal-modal',
             type: 'persistent',
             programKey: 'programs.terminal',
-            icon: '💻',
+            icon: './img/terminal.png',
             closeButtonId: 'close-terminal-modal',
             metadata: {
                 initHandler: function () {
