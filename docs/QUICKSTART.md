@@ -1,4 +1,41 @@
-# 🎯 Schnellstart: Neue Architektur
+# 🎯 Schnellstart
+
+Schnell lauffähig werden und die wichtigsten Konzepte der neuen Architektur nutzen.
+
+## Lokales Setup
+
+Option A – VS Code Tasks (empfohlen):
+
+1. Öffne den Befehlspaletten-Eintrag "Tasks: Run Task" → "Dev Environment: Start All"
+    - Startet: Tailwind Watch, TypeScript Watch, Dev Server
+2. Öffne http://127.0.0.1:5173
+
+Option B – Manuell in Terminals:
+
+1. CSS Watch
+
+```bash
+npm run watch:css
+```
+
+2. TypeScript Watch (nur wenn du TS-Quellcode änderst)
+
+```bash
+npm run typecheck:watch
+```
+
+3. Dev Server
+
+```bash
+npm run dev
+```
+
+4. Öffne http://127.0.0.1:5173
+
+Hinweise:
+
+- Der Dev-Server nutzt SSE für Live-Reload.
+- Der Port 5173 wird wiederverwendet; das Start-Task ist idempotent (kein Crash, wenn bereits aktiv).
 
 ## Was wurde gemacht?
 
@@ -103,7 +140,24 @@ console.log(WindowManager.getTopWindow());
 console.log(WindowManager.getConfig('finder-modal'));
 ```
 
-## E2E-Tests: Stabil mit appReady arbeiten
+## Tests ausführen
+
+Schnelle Smoke-Tests (Chromium, GitHub-API gemockt):
+
+```bash
+# optional lokal
+$env:MOCK_GITHUB='1'; npm run test:e2e:quick
+```
+
+Vollständige E2E (alle Tests, lokal standardmäßig nur Chromium):
+
+```bash
+npm run test:e2e:chromium
+# alle Browser wie in CI
+$env:CI='1'; npm run test:e2e:all-browsers
+```
+
+Empfohlene Test-Wartebedingung: `appReady`
 
 Die App setzt am Ende der Initialisierung ein Flag und feuert ein Event:
 
@@ -140,7 +194,11 @@ test.beforeEach(async ({ page, baseURL }) => {
 
 Das macht die Suite robuster gegenüber laufenden Netzwerkaktivitäten (z. B. GitHub API) und reduziert Flakiness.
 
-## Nächste Schritte
+Tipp: Für Smoke-Runs `MOCK_GITHUB=1` setzen, um die GitHub-API zu mocken (siehe `tests/e2e/utils.js`).
+
+## Troubleshooting & Nächste Schritte
+
+Falls etwas klemmt (Port belegt, Tests flakey, TypeScript-Fehler), siehe `docs/TROUBLESHOOTING.md`.
 
 1. ✅ System testen
 2. ✅ Neue Fenster mit neuem System hinzufügen

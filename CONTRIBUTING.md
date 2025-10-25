@@ -33,19 +33,21 @@ Thank you for your interest in contributing! This document provides guidelines f
     npm install
     ```
 
-3. Start development server:
+3. Start development environment (VS Code):
+    - Tasks: "Dev Environment: Start All" (Tailwind Watch, TS Watch, Dev Server)
+
+    Oder manuell:
 
     ```bash
+    # Terminal 1
+    npm run watch:css
+    # Terminal 2 (optional bei TS-Änderungen)
+    npm run typecheck:watch
+    # Terminal 3
     npm run dev
     ```
 
-4. In another terminal, watch CSS changes:
-
-    ```bash
-    npm run watch:css
-    ```
-
-5. Open http://localhost:5500 in your browser
+4. Open http://127.0.0.1:5173 in your browser
 
 ## 🔄 Development Workflow
 
@@ -69,10 +71,13 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 2. Make your changes following the code style guidelines
 
-3. Test your changes:
+3. Test your changes (quick smoke first):
 
     ```bash
-    npm run test:e2e
+    # Quick smoke on Chromium (GitHub API mocked)
+    $env:MOCK_GITHUB='1'; npm run test:e2e:quick
+    # Full suite on Chromium
+    npm run test:e2e:chromium
     ```
 
 4. Build CSS:
@@ -123,7 +128,7 @@ Quick TypeScript workflow:
 
 ```bash
 npm run typecheck         # Check types
-npm run type:coverage     # Measure coverage
+npm run type:report       # Measure & detail coverage
 npm run build:ts          # Build TypeScript to JavaScript
 ```
 
