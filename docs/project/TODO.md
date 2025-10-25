@@ -147,7 +147,206 @@ Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 
 ## 📝 TODO - Nächste Schritte
 
-### 🔴 Priorität 1: Core Features & Integration
+> **⚠️ WICHTIG:** Bevor wir mit neuen Features beginnen, müssen wir die Entwicklungsumgebung stabilisieren!  
+> Mehrere Terminals zeigen Fehler - diese müssen zuerst behoben werden.
+
+---
+
+## 🔧 Priorität 0: Development Environment Optimization (JETZT!)
+
+**Ziel**: Stabile Entwicklungsbasis schaffen, bevor neue Features entwickelt werden
+
+### 0.1 Stabilität herstellen ⚠️ **KRITISCH**
+
+**Aktuelle Probleme:**
+
+- ❌ E2E Basic Smoke Tests failing (Exit Code 1)
+- ❌ Validate Task failing (Exit Code 1)
+- ❌ Dev Server crashed (Exit Code 1)
+
+**Tasks:**
+
+- [ ] **Terminal-Fehler analysieren & beheben**
+    - [ ] E2E basic smoke tests debuggen
+        - Logs prüfen: `get_task_output` für "E2E: Test (basic smoke)"
+        - Fehlerursache identifizieren
+        - Tests reparieren oder als flaky markieren
+    - [ ] Validate task Fehler fixen
+        - Welcher Schritt schlägt fehl? (typecheck/lint/build/tests)
+        - Logs analysieren und Problem beheben
+    - [ ] Dev server crash untersuchen
+        - Server-Logs prüfen
+        - Port-Konflikte ausschließen
+        - Neustart mit sauberer Umgebung testen
+
+- [ ] **CI/CD grün bekommen**
+    - [ ] GitHub Actions Status prüfen
+    - [ ] Alle Workflow-Fehler beheben
+    - [ ] Type coverage warnings klären (falls vorhanden)
+
+**Dateien:**
+
+- `tests/e2e/*basic.spec.js` - Failing tests
+- `package.json` - validate script
+- `server.js` - Dev server
+- `.github/workflows/*.yml` - CI/CD
+
+**Geschätzter Aufwand**: 2-4 Stunden (KRITISCH!)
+
+---
+
+### 0.2 Development Workflow verbessern
+
+**Ziel**: Schnellere Entwicklungszyklen, weniger Frustration
+
+- [ ] **Hot Reload optimieren**
+    - [ ] TypeScript watch mode testen
+        - `npm run typecheck:watch` hinzufügen (falls nicht vorhanden)
+        - Watch-Performance prüfen
+    - [ ] CSS watch validieren
+        - Bereits vorhanden als Task "Tailwind CSS: Watch"
+        - Funktioniert es zuverlässig?
+    - [ ] Browser-Auto-Reload einrichten
+        - Live Server mit WebSocket reload
+        - Oder: Vite/Browsersync evaluieren
+
+- [ ] **VS Code Integration verbessern**
+    - [ ] Debug-Konfiguration erstellen
+        - `.vscode/launch.json` für Browser-Debugging
+        - Attach to Chrome/Firefox
+        - Source Maps konfigurieren
+    - [ ] Task-Optimierung
+        - "Dev Environment: Start All" validieren
+        - Weitere nützliche Tasks hinzufügen
+    - [ ] Extensions dokumentieren
+        - Empfohlene Extensions in `.vscode/extensions.json`
+        - TypeScript, ESLint, Playwright, Tailwind CSS IntelliSense
+
+- [ ] **Git Hooks einrichten**
+    - [ ] Husky installieren
+        ```bash
+        npm install --save-dev husky lint-staged
+        npx husky init
+        ```
+    - [ ] Pre-commit Hook
+        - `lint-staged` konfigurieren
+        - Nur geänderte Dateien: `lint` + `typecheck`
+    - [ ] Pre-push Hook
+        - `npm run test:e2e:basic` ausführen
+        - Verhindert broken code im Remote
+
+**Dateien:**
+
+- Neu: `.vscode/launch.json` - Debug config
+- Neu: `.vscode/extensions.json` - Empfohlene Extensions
+- Update: `package.json` - Husky scripts
+- Neu: `.husky/pre-commit` - Pre-commit hook
+- Neu: `.husky/pre-push` - Pre-push hook
+- Neu: `.lintstagedrc.json` - lint-staged config
+
+**Geschätzter Aufwand**: 3-5 Stunden
+
+---
+
+### 0.3 Testing stabilisieren
+
+**Ziel**: Zuverlässige, schnelle Tests
+
+- [ ] **Test-Strategie klären**
+    - [ ] Warum failten basic smoke tests?
+        - Logs analysieren
+        - Flaky tests identifizieren
+        - Timeouts anpassen falls nötig
+    - [ ] Test-Coverage messen
+        - `npm run test:coverage` evaluieren
+        - Baseline dokumentieren
+    - [ ] Test-Dokumentation
+        - Was testet welche Suite?
+        - Wann basic vs. full E2E?
+
+- [ ] **Test-Performance optimieren**
+    - [ ] Parallele Execution prüfen
+        - Playwright workers optimal nutzen
+        - Zu viele workers = instabil
+    - [ ] Fixtures für schnellere Tests
+        - Wiederverwendbare Setup/Teardown
+        - Mock-Daten für GitHub API
+
+**Dateien:**
+
+- Update: `playwright.config.js` - Workers, timeouts
+- Update: `tests/e2e/utils.js` - Shared fixtures
+- Neu: `docs/TESTING.md` - Test strategy guide
+
+**Geschätzter Aufwand**: 2-3 Stunden
+
+---
+
+### 0.4 Dokumentation aktualisieren
+
+**Ziel**: Neue Contributors finden sich schnell zurecht
+
+- [ ] **QUICKSTART.md überarbeiten**
+    - [ ] Aktuelle Setup-Schritte validieren
+        - Funktioniert `npm install` → `npm run dev`?
+        - Fehlende Dependencies?
+    - [ ] Troubleshooting Section hinzufügen
+        - "Dev server startet nicht"
+        - "Tests failen"
+        - "TypeScript Errors"
+    - [ ] Common Errors & Solutions
+        - Port bereits belegt
+        - Node version mismatch
+        - GitHub API rate limit
+
+- [ ] **CONTRIBUTING.md erweitern**
+    - [ ] Development Workflow dokumentieren
+        - Branch-Strategie (develop → feature/\*)
+        - Commit-Conventions (conventional commits)
+        - PR-Prozess
+    - [ ] Debugging Guide
+        - VS Code debugger nutzen
+        - Browser DevTools
+        - Network issues
+    - [ ] Testing Best Practices
+        - Wann welche Test-Suite?
+        - Test schreiben für neue Features
+        - Mock-Strategien
+
+**Dateien:**
+
+- Update: `docs/QUICKSTART.md` - Setup + Troubleshooting
+- Update: `CONTRIBUTING.md` - Workflow + Debugging
+- Neu: `docs/TROUBLESHOOTING.md` - Detaillierte Lösungen
+
+**Geschätzter Aufwand**: 1-2 Stunden
+
+---
+
+### 📊 Zusammenfassung: Priorität 0
+
+**Warum zuerst?**
+
+- ✅ **Stabilität** - Keine Entwicklung auf "wackeligem Fundament"
+- ✅ **Effizienz** - Bessere Tools = schnellere Feature-Entwicklung
+- ✅ **Qualität** - Git Hooks fangen Fehler früh ab
+- ✅ **Onboarding** - Neue Contributors produktiv in <30min
+
+**Gesamtaufwand**: ~8-14 Stunden (1-2 Wochen bei 5-10h/Woche)
+
+**Erfolgskriterien:**
+
+- ✅ Alle Terminals zeigen grüne Status
+- ✅ E2E Tests passing (zumindest basic suite)
+- ✅ Dev server läuft stabil
+- ✅ Hot reload funktioniert
+- ✅ Git hooks verhindern broken commits
+
+---
+
+## 🔴 Priorität 1: Core Features & Integration
+
+**⚠️ Erst starten, wenn Priorität 0 abgeschlossen ist!**
 
 #### 1.1 UI Integration - Window Management
 
@@ -561,14 +760,42 @@ Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 
 ---
 
-## 🎯 Empfohlene Reihenfolge
+## 🎯 Empfohlene Reihenfolge (AKTUALISIERT!)
+
+### Phase 0: Development Environment (1-2 Wochen) ⚠️ **JETZT!**
+
+**Warum zuerst?** Stabile Basis ist Voraussetzung für effiziente Feature-Entwicklung!
+
+1. **Stabilität herstellen** (KRITISCH, 2-4h)
+    - Terminal-Fehler beheben
+    - CI/CD grün bekommen
+2. **Workflow verbessern** (3-5h)
+    - Hot reload optimieren
+    - VS Code Integration
+    - Git Hooks einrichten
+3. **Testing stabilisieren** (2-3h)
+    - Flaky tests fixen
+    - Test-Performance
+4. **Dokumentation** (1-2h)
+    - QUICKSTART.md
+    - Troubleshooting Guide
+
+**Total: ~8-14 Stunden**
+
+---
 
 ### Phase 1: UI Integration (1-2 Wochen)
+
+**Erst nach Phase 0!**
 
 1. Window Tabs System ✨ (wichtigste Feature!)
 2. Modal Integration
 3. Window Menü
 4. Keyboard Shortcuts
+
+**Total: ~15-20 Stunden**
+
+---
 
 ### Phase 2: State & Sessions (3-5 Tage)
 
@@ -576,10 +803,18 @@ Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 2. Session Restore
 3. Export/Import
 
+**Total: ~6-8 Stunden**
+
+---
+
 ### Phase 3: Weitere Module (1-2 Wochen)
 
 1. Image Viewer (einfach) ✅
 2. Finder (komplex) 🔴
+
+**Total: ~12-15 Stunden**
+
+---
 
 ### Phase 4: Advanced Features (Optional)
 
@@ -587,17 +822,32 @@ Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 2. Drag & Drop
 3. Templates
 
+**Total: ~15-20 Stunden**
+
+---
+
 ### Phase 5: Quality & Docs (1 Woche)
 
 1. Tests erweitern
 2. Performance
 3. Documentation
 
+**Total: ~10-15 Stunden**
+
 ---
 
 ## 📌 Quick Wins (für schnelle Erfolge)
 
-Diese Aufgaben bringen schnell sichtbare Ergebnisse:
+**⚠️ Erst DevEx-Quick-Wins, dann Feature-Quick-Wins!**
+
+### DevEx Quick Wins (Phase 0):
+
+1. ✅ **Dev server fix** (30min-1h) - Sofort produktiver
+2. ✅ **Git pre-commit hook** (30min) - Verhindert broken commits
+3. ✅ **VS Code Debug config** (30min) - Besseres Debugging
+4. ✅ **Basic smoke tests fix** (1-2h) - Grüne Tests = Motivation
+
+### Feature Quick Wins (Nach Phase 0):
 
 1. ✅ **Window Menü** (2-3h) - Sofort nützlich
 2. ✅ **Cmd+N Shortcut** (1h) - Sehr praktisch
@@ -723,11 +973,19 @@ npm run dev
 
 **Context für neue Chat-Sessions:**
 
+> **WICHTIG:** Development Environment muss zuerst stabilisiert werden!
+>
+> Aktuelle Probleme:
+>
+> - E2E basic smoke tests failing
+> - Validate task failing
+> - Dev server crashed
+>
+> **Erste Priorität:** Phase 0 (DevEx Optimization) abschließen, bevor Features entwickelt werden.
+>
 > Das Multi-Instance System ist implementiert. Basis-Klassen (`BaseWindowInstance`, `InstanceManager`, `WindowChrome`) sind fertig. Terminal und TextEditor funktionieren bereits als Multi-Instance.
 >
-> Als Nächstes steht UI-Integration an: Window Tabs, Keyboard Shortcuts, Modal-Integration.
->
-> Siehe: `TODO_MULTI_INSTANCE.md` für alle Aufgaben.
+> Siehe: `docs/project/TODO.md` für alle Aufgaben.
 
 **Wichtige Dateien zum Verstehen:**
 
@@ -737,7 +995,7 @@ npm run dev
 4. `docs/MULTI_INSTANCE_QUICKSTART.md` - Quick Start
 
 **Erste Aufgabe für neue Session:**
-→ Window Tabs System implementieren (`js/window-tabs.js`)
+→ ⚠️ **Phase 0: Terminal-Fehler analysieren und beheben** (Priorität 0.1)
 
 ---
 
@@ -758,12 +1016,38 @@ npm run dev
 
 ## 🎯 TL;DR - Was als Nächstes?
 
-### Sofort starten (Priorität 1):
+### ⚠️ SOFORT STARTEN (Priorität 0 - DevEx):
+
+**Warum?** Entwicklung auf instabiler Basis ist ineffizient und frustrierend!
+
+1. **Terminal-Fehler beheben** (2-4h) 🔴 KRITISCH
+    - E2E basic smoke tests debuggen
+    - Validate task fixen
+    - Dev server zum Laufen bringen
+2. **Development Workflow** (3-5h)
+    - Hot reload optimieren
+    - VS Code Debug config
+    - Git Hooks (pre-commit, pre-push)
+3. **Testing stabilisieren** (2-3h)
+    - Flaky tests identifizieren
+    - Test-Performance
+4. **Docs aktualisieren** (1-2h)
+    - Troubleshooting Guide
+
+**Geschätzter Zeitaufwand für Prio 0**: ~8-14 Stunden (1-2 Wochen)
+
+---
+
+### Erst danach (Priorität 1 - Features):
 
 1. **Window Tabs** - Tabs oberhalb des Inhalts
 2. **Keyboard Shortcuts** - Cmd+N, Cmd+W, etc.
 3. **Modal Integration** - Instanzen in bestehende Modals
 4. **Auto-Save** - State persistieren
+
+**Geschätzter Zeitaufwand für Prio 1**: ~15-20 Stunden (2-3 Wochen)
+
+---
 
 ### Danach (Priorität 2):
 
@@ -771,13 +1055,20 @@ npm run dev
 2. **Image Viewer Instance** - Mehrere Bilder
 3. **Tests erweitern** - Vollständige Coverage
 
+**Geschätzter Zeitaufwand für Prio 2**: ~12-15 Stunden (1-2 Wochen)
+
+---
+
 ### Optional (Priorität 3):
 
 1. Split View / Tiling
 2. Drag & Drop zwischen Instanzen
 3. Templates & Presets
 
-**Geschätzter Zeitaufwand für Prio 1**: ~2-3 Wochen  
-**Geschätzter Zeitaufwand gesamt**: ~6-8 Wochen
+**Geschätzter Zeitaufwand für Prio 3**: ~15-20 Stunden
 
-🚀 **Los geht's!**
+---
+
+**Gesamtaufwand**: ~50-70 Stunden (6-10 Wochen bei 8-10h/Woche)
+
+🚀 **Los geht's - aber erst DevEx, dann Features!**
