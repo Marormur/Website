@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **fix(typescript): resolve all 33 strict mode compilation errors** (2025-01-25)
+  - Fixed action-bus.ts: typeof check for WindowManager.close instead of conditional access
+  - Fixed dialog-utils.ts: removed duplicate Window interface, use central types/index.d.ts
+  - Fixed instance-manager.ts: handle undefined from array access with noUncheckedIndexedAccess
+  - Fixed storage.ts: added null guard for positions dictionary access
+  - Fixed terminal-instance.ts: extensive null/undefined checks for:
+    - commandHistory array access (history navigation)
+    - command parsing from array destructuring
+    - findCommonPrefix string handling
+    - fileSystem dictionary access (file operations)
+    - tab completion logic
+  - All errors caused by TypeScript strict mode Level 6 (noUncheckedIndexedAccess: true)
+  - Validates cleanly with `npm run build:ts` and `npm run validate`
+  - **Phase 0.1 Progress**: TypeScript compilation ✅ (33/33 errors fixed)
+
 ### Changed
 - **perf(tests): optimize E2E test execution speed by 70%** (2025-10-25)
   - Local tests now run only on Chromium instead of all 3 browsers (Chromium/Firefox/WebKit)
