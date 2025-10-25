@@ -366,7 +366,7 @@
         const dialog = context && context.dialog;
         const hasDialog = Boolean(dialog && typeof dialog.close === 'function');
 
-        return [
+        const items = [
             {
                 id: 'window-minimize',
                 label: () => translate('menu.window.minimize'),
@@ -390,7 +390,18 @@
                         dialog.toggleMaximize();
                     }
                 }
-            },
+            }
+        ];
+
+        // Add multi-instance items if available
+        const multiInstanceItems = getMultiInstanceMenuItems(context);
+        if (multiInstanceItems.length > 0) {
+            items.push({ type: 'separator' });
+            items.push(...multiInstanceItems);
+        }
+
+        // Standard window items
+        items.push(
             {
                 type: 'separator'
             },
@@ -414,7 +425,86 @@
                 icon: 'close',
                 action: () => closeContextWindow(context)
             }
-        ];
+        );
+
+        return items;
+    }
+
+    /**
+     * Get multi-instance menu items for the current window
+     */
+    function getMultiInstanceMenuItems(context) {
+        const items = [];
+
+        // Check if multi-instance integration is available
+        if (!window.MultiInstanceIntegration) {
+            return items;
+        }
+
+        // Get the appropriate manager based on modal ID
+        let manager = null;
+        let type = null;
+
+        if (context.modalId === 'terminal-modal' && window.TerminalInstanceManager) {
+            manager = window.TerminalInstanceManager;
+            type = 'terminal';
+        } else if (context.modalId === 'text-modal' && window.TextEditorInstanceManager) {
+            manager = window.TextEditorInstanceManager;
+            type = 'text-editor';
+        }
+
+        if (!manager) {
+            return items;
+        }
+
+        // New Instance item
+        items.push({
+            id: 'window-new-instance',
+            label: () => `New ${type === 'terminal' ? 'Terminal' : 'Editor'}`,
+            shortcut: '⌘N',
+            icon: 'new',
+            action: () => {
+                const count = manager.getInstanceCount();
+                manager.createInstance({
+                    title: `${type === 'terminal' ? 'Terminal' : 'Editor'} ${count + 1}`
+                });
+            }
+        });
+
+        // List all instances if there are multiple
+        const instances = manager.getAllInstances();
+        if (instances.length > 1) {
+            items.push({ type: 'separator' });
+
+            instances.forEach((instance, index) => {
+                const isActive = manager.getActiveInstance()?.instanceId === instance.instanceId;
+                items.push({
+                    id: `window-instance-${instance.instanceId}`,
+                    label: () => `${isActive ? '✓ ' : '  '}${instance.title}`,
+                    shortcut: index < 9 ? `⌘${index + 1}` : undefined,
+                    action: () => {
+                        manager.setActiveInstance(instance.instanceId);
+                    }
+                });
+            });
+
+            // Close All Instances
+            items.push(
+                { type: 'separator' },
+                {
+                    id: 'window-close-all',
+                    label: () => 'Close All',
+                    icon: 'close',
+                    action: () => {
+                        if (confirm(`Close all ${instances.length} ${type} instances?`)) {
+                            manager.destroyAllInstances();
+                        }
+                    }
+                }
+            );
+        }
+
+        return items;
     }
 
     function createHelpMenuSection(context, overrides = {}) {
