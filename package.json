@@ -10,7 +10,10 @@
     "pw:install": "playwright install",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "lint": "echo 'Linting skipped - ESLint not installed. Run: npm install --save-dev eslint'",
+    "format:check": "echo 'Format check skipped - Prettier not installed'",
+    "validate": "npm run build:css && npm run lint"
   },
   "repository": {
     "type": "git",
