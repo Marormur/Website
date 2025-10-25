@@ -92,6 +92,27 @@ console.log('MultiInstanceIntegration loaded');
                 window.SessionManager.startAutoSave();
             }
 
+            // Provide a precise context resolver to KeyboardShortcuts
+            if (window.KeyboardShortcuts && typeof window.KeyboardShortcuts.setContextResolver === 'function') {
+                window.KeyboardShortcuts.setContextResolver(() => {
+                    try {
+                        const wm = window.WindowManager;
+                        const top = wm && typeof wm.getTopWindow === 'function' ? wm.getTopWindow() : null;
+                        const topId = top?.id || '';
+                        // Find matching integration by modalId
+                        let match = 'global';
+                        this.integrations.forEach((val, key) => {
+                            if (val && val.modalId === topId) {
+                                match = key;
+                            }
+                        });
+                        return match;
+                    } catch {
+                        return 'global';
+                    }
+                });
+            }
+
             this.isInitialized = true;
             console.log('MultiInstanceIntegration: Setup complete');
         }
@@ -114,7 +135,7 @@ console.log('MultiInstanceIntegration loaded');
                     // Then show/hide instances
                     this.showInstance('terminal', instanceId);
                 },
-                onTabClose: (instanceId) => {
+                onTabClose: (_instanceId) => {
                     // Instance will be destroyed by tab manager
                 },
                 onNewTab: () => {
@@ -179,7 +200,7 @@ console.log('MultiInstanceIntegration loaded');
                     // Then show/hide instances
                     this.showInstance('text-editor', instanceId);
                 },
-                onTabClose: (instanceId) => {
+                onTabClose: (_instanceId) => {
                     // Instance will be destroyed by tab manager
                 },
                 onNewTab: () => {
@@ -242,7 +263,7 @@ console.log('MultiInstanceIntegration loaded');
                     // Then show/hide instances
                     this.showInstance('finder', instanceId);
                 },
-                onTabClose: (instanceId) => {
+                onTabClose: (_instanceId) => {
                     // Instance will be destroyed by tab manager
                 },
                 onNewTab: () => {
@@ -251,6 +272,15 @@ console.log('MultiInstanceIntegration loaded');
                     window.FinderInstanceManager.createInstance({
                         title: `Finder ${count + 1}`
                     });
+                },
+                // Close the Finder modal if the last tab was closed
+                onAllTabsClosed: () => {
+                    if (window.API?.window?.close) {
+                        window.API.window.close('finder-modal');
+                    } else {
+                        const modal = document.getElementById('finder-modal');
+                        if (modal) modal.classList.add('hidden');
+                    }
                 }
             });
 
@@ -291,7 +321,7 @@ console.log('MultiInstanceIntegration loaded');
             const integration = this.integrations.get(type);
             if (!integration) return;
 
-            const { manager, tabManager, containerId } = integration;
+            const { manager, tabManager, containerId: _containerId } = integration;
 
             // Listen for instance creation (via manager)
             const originalCreate = manager.createInstance.bind(manager);

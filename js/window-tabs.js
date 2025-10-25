@@ -25,9 +25,13 @@ console.log('WindowTabs loaded');
         constructor(config) {
             this.containerId = config.containerId;
             this.instanceManager = config.instanceManager;
-            this.onTabSwitch = config.onTabSwitch || (() => {});
-            this.onTabClose = config.onTabClose || (() => {});
-            this.onNewTab = config.onNewTab || (() => {});
+            this.onTabSwitch = config.onTabSwitch || (() => { });
+            this.onTabClose = config.onTabClose || (() => { });
+            this.onNewTab = config.onNewTab || (() => { });
+            // Optional: called when all tabs have been closed
+            this.onAllTabsClosed = config.onAllTabsClosed || null;
+            // Whether to hide the tab bar when there is 0 or 1 tab
+            this.hideSingleTab = config.hideSingleTab !== false; // default true
 
             this.tabBarElement = null;
             this.tabsContainer = null;
@@ -73,6 +77,9 @@ console.log('WindowTabs loaded');
             this.tabBarElement.appendChild(this.newTabButton);
 
             container.appendChild(this.tabBarElement);
+
+            // Initial visibility when there are no tabs yet
+            this.updateTabBarVisibility();
         }
 
         /**
@@ -130,6 +137,9 @@ console.log('WindowTabs loaded');
             // Make this tab active
             this.setActiveTab(instance.instanceId);
 
+            // Update tab bar visibility
+            this.updateTabBarVisibility();
+
             // Listen for instance title changes
             instance.on('stateChanged', (data) => {
                 // Check if tab still exists in DOM before querying
@@ -160,6 +170,9 @@ console.log('WindowTabs loaded');
             if (tab) {
                 tab.remove();
             }
+
+            // Update tab bar visibility after removal
+            this.updateTabBarVisibility();
         }
 
         /**
@@ -255,6 +268,16 @@ console.log('WindowTabs loaded');
                     const lastInstance =
                         remainingInstances[remainingInstances.length - 1];
                     this.switchToTab(lastInstance.instanceId);
+                } else {
+                    // No instances left: optionally notify and hide tab bar
+                    if (typeof this.onAllTabsClosed === 'function') {
+                        try {
+                            this.onAllTabsClosed();
+                        } catch (e) {
+                            console.warn('onAllTabsClosed handler threw:', e);
+                        }
+                    }
+                    this.updateTabBarVisibility();
                 }
             }
         }
@@ -350,6 +373,22 @@ console.log('WindowTabs loaded');
             }
             this.tabsContainer = null;
             this.newTabButton = null;
+        }
+
+        /**
+         * Update tab bar visibility depending on number of tabs
+         */
+        updateTabBarVisibility() {
+            if (!this.tabBarElement || !this.hideSingleTab) return;
+            const tabCount = this.tabsContainer
+                ? this.tabsContainer.querySelectorAll('.window-tab').length
+                : 0;
+            // Hide when 0 or 1 tabs, show otherwise
+            if (tabCount <= 1) {
+                this.tabBarElement.classList.add('hidden');
+            } else {
+                this.tabBarElement.classList.remove('hidden');
+            }
         }
     }
 

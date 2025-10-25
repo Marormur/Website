@@ -21,6 +21,9 @@ console.log('KeyboardShortcuts loaded');
             this.shortcuts = new Map();
             this.enabled = true;
             this.isInitialized = false;
+            // Optional: resolve current context dynamically (e.g., which modal is active)
+            /** @type {(() => string)|null} */
+            this.contextResolver = null;
 
             // Shortcuts that should work even when typing in input fields
             this.inputFieldAllowlist = [
@@ -132,6 +135,15 @@ console.log('KeyboardShortcuts loaded');
 
             const shortcut = this.shortcuts.get(shortcutId);
             if (shortcut) {
+                // Context filtering: only run when the active context matches
+                const currentContext = this.getCurrentContext();
+                const shortcutContext = shortcut.context || 'global';
+                if (
+                    shortcutContext !== 'global' &&
+                    shortcutContext !== currentContext
+                ) {
+                    return; // different context, ignore
+                }
                 e.preventDefault();
                 e.stopPropagation();
 
@@ -144,6 +156,59 @@ console.log('KeyboardShortcuts loaded');
                     );
                 }
             }
+        }
+
+        /**
+         * Set a resolver function that returns the current context string
+         * @param {() => string} resolver
+         */
+        setContextResolver(resolver) {
+            if (typeof resolver === 'function') {
+                this.contextResolver = resolver;
+            }
+        }
+
+        /**
+         * Determine the current context.
+         * Tries custom resolver; falls back to active modal via WindowManager/MultiInstanceIntegration.
+         * @returns {string} context key like 'terminal' | 'text-editor' | 'finder' | 'global'
+         */
+        getCurrentContext() {
+            // 1) Custom resolver (set by integrations)
+            if (typeof this.contextResolver === 'function') {
+                try {
+                    const ctx = this.contextResolver();
+                    if (ctx) return ctx;
+                } catch {
+                    /* noop */
+                }
+            }
+
+            // 2) Derive from top window (WindowManager + MultiInstanceIntegration)
+            try {
+                const wm = window.WindowManager;
+                const top = wm && typeof wm.getTopWindow === 'function' ? wm.getTopWindow() : null;
+                const topId = top?.id || '';
+
+                // Use MultiInstanceIntegration map if available
+                const mi = window.MultiInstanceIntegration;
+                if (mi && mi.integrations && typeof mi.integrations.forEach === 'function') {
+                    let found = null;
+                    mi.integrations.forEach((val, key) => {
+                        if (!found && val && val.modalId === topId) found = key;
+                    });
+                    if (found) return found;
+                }
+
+                // Fallback heuristic based on known modal IDs
+                if (topId === 'terminal-modal') return 'terminal';
+                if (topId === 'text-modal') return 'text-editor';
+                if (topId === 'finder-modal') return 'finder';
+            } catch {
+                /* noop */
+            }
+
+            return 'global';
         }
 
         /**

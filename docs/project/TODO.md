@@ -22,6 +22,91 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 
 ---
 
+## 🧩 Paralleler Track: TypeScript Migration (integriert)
+
+> Ziel: Inkrementelle Migration zu TypeScript ohne Breaking Changes. Dieser Abschnitt fasst den separaten Migrationsplan zusammen und macht ihn hier im Projekt-TODO direkt bearbeitbar. Details siehe `docs/migration/TYPESCRIPT.md`.
+
+### 🗺️ Roadmap (Kurzfassung)
+
+- Phase 0: Setup (TypeScript-Tooling ohne Code-Änderungen)
+- Phase 1: Type-Definitionen (.d.ts) für bestehende Module
+- Phase 2: Neue Features in TS entwickeln (Tabs, Shortcuts)
+- Phase 3: Kritische Module migrieren (Core-Systeme)
+- Phase 4: Legacy-Refactoring (`app.js` → modular/TS)
+- Phase 5: Testing & Quality (Type-Coverage, E2E)
+- Phase 6: Deployment & Doku
+
+### ✅ Verknüpfung mit Prio-1 (UI Integration)
+
+- Window Tabs System und Keyboard Shortcuts werden direkt in TypeScript umgesetzt (Phase 2) und binden sich an die Multi-Instance-Basis an.
+
+### 📌 Checklisten pro Phase
+
+#### Phase 0 – Setup (ohne Code-Änderungen)
+
+- [ ] TypeScript-Dependencies installieren (dev): `typescript`, `@types/node`
+- [ ] ESLint-TS: `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin`
+- [ ] `tsconfig.json` prüfen/ergänzen (noEmit für Typecheck, JS/TS gemischt erlauben)
+- [ ] NPM Scripts: `typecheck` hinzufügen, `validate` um `typecheck` erweitern
+- [ ] VS Code Settings: Workspace-TS aktivieren (`.vscode/settings.json`)
+- [ ] CI: Typecheck-Job in GitHub Actions (Pages-Deploy Workflow)
+
+Erfolgskriterien: `npm run typecheck` grün, keine Build-/Test-Regressionen
+
+#### Phase 1 – Type-Definitionen (.d.ts)
+
+- [ ] Verzeichnis `types/` anlegen
+- [ ] `types/window-manager.d.ts`
+- [ ] `types/action-bus.d.ts`
+- [ ] `types/instance-manager.d.ts`
+- [ ] `types/base-window-instance.d.ts`
+- [ ] `types/window-chrome.d.ts`
+- [ ] `types/api.d.ts`
+- [ ] `types/theme.d.ts`, `types/i18n.d.ts`, `types/storage.d.ts`
+- [ ] `types/dialog.d.ts`, `types/finder.d.ts`, `types/terminal.d.ts`, `types/text-editor.d.ts`
+
+Erfolgskriterien: VS Code Autocomplete korrekt, Typecheck max. Warnings
+
+#### Phase 2 – Neue Features in TS
+
+- [ ] `js/window-tabs.ts` (Tab-Leiste, Add/Close, Active-State, Switch, später DnD)
+- [ ] `js/keyboard-shortcuts.ts` (Cmd/Ctrl+N/W/Tab/Shift+Tab/1–9; Kontext „global“ und app-spezifisch)
+- [ ] Build/Bundle sicherstellen (TS → JS, weiterhin Vanilla-Flow)
+
+Hinweis: Diese Tasks erfüllen direkt „Priorität 1: Core Features & Integration“ unten.
+
+#### Phase 3 – Kritische Module migrieren
+
+- [ ] `base-window-instance.js` → `.ts`
+- [ ] `instance-manager.js` → `.ts`
+- [ ] `window-manager.js` → `.ts`
+- [ ] `action-bus.js` → `.ts`
+- [ ] `window-chrome.js` → `.ts`
+- [ ] `api.js` → `.ts`
+- [ ] (danach) `terminal-instance.js`, `text-editor-instance.js`, `theme.js`, `storage.js`
+
+Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
+
+#### Phase 4 – Legacy-Refactoring
+
+- [ ] GitHub-API extrahieren (`js/github-api.ts`) und in `finder.js`/Legacy verwenden
+- [ ] `app.js` schrittweise modularisieren und zu `app.ts` migrieren
+- [ ] Globale Event-Listener auf ActionBus migrieren (wo noch Legacy)
+
+#### Phase 5 – Testing & Quality
+
+- [ ] E2E: `tests/e2e/typescript-integration.spec.ts`
+- [ ] Type-Coverage Tool einführen (`type-coverage`), Ziel >90% (später >95%)
+- [ ] Performance-Check (kein signifikanter Regress)
+
+#### Phase 6 – Deployment & Doku
+
+- [ ] GitHub Actions: Typecheck Schritt vor Build/CSS/Deploy
+- [ ] README, ARCHITECTURE, CONTRIBUTING auf TS aktualisieren
+- [ ] `docs/TYPESCRIPT_GUIDELINES.md` & Migration Summary ergänzen
+
+---
+
 ## 📝 TODO - Nächste Schritte
 
 ### 🔴 Priorität 1: Core Features & Integration

@@ -23,19 +23,44 @@
             labelKey: 'desktop.github',
             fallbackLabel: 'GitHub Projekte',
             onOpen: () => {
-                // Öffne Finder und navigiere zur GitHub-Root-Ansicht
-                if (typeof window.showTab === 'function') {
-                    window.showTab('finder');
+                // Öffne Finder-Modal (neues Fenster-System)
+                if (window.API?.window?.open) {
+                    window.API.window.open('finder-modal');
+                } else {
+                    const modal = document.getElementById('finder-modal');
+                    if (modal) modal.classList.remove('hidden');
                 }
+
+                // Multi-Instance bevorzugt
+                if (window.FinderInstanceManager) {
+                    // Stelle sicher, dass mindestens eine Instanz existiert
+                    if (!window.FinderInstanceManager.hasInstances()) {
+                        window.FinderInstanceManager.createInstance({ title: 'Finder' });
+                    }
+                    const active = window.FinderInstanceManager.getActiveInstance() || window.FinderInstanceManager.getAllInstances()[0];
+                    if (active && typeof active.switchView === 'function') {
+                        active.switchView('github');
+                        // Bringe die Instanz in den Vordergrund
+                        window.FinderInstanceManager.setActiveInstance(active.instanceId);
+                        if (window.MultiInstanceIntegration?.showInstance) {
+                            window.MultiInstanceIntegration.showInstance('finder', active.instanceId);
+                        } else if (typeof active.show === 'function') {
+                            active.show();
+                        }
+                    }
+                    return true;
+                }
+
+                // Fallback auf Legacy FinderSystem
                 if (
                     window.FinderSystem &&
                     typeof window.FinderSystem.navigateTo === 'function'
                 ) {
-                    // Root-Pfad, explizit View 'github'
                     window.FinderSystem.navigateTo([], 'github');
+                    return true;
                 }
-                // Menü und Dock-Indikatoren werden innerhalb der Dialog-/App-Logik bereits aktualisiert
-                return true;
+
+                return false;
             },
         },
     ];
@@ -209,7 +234,7 @@
                 if (typeof btn.focus === 'function') {
                     try {
                         btn.focus({ preventScroll: true });
-                    } catch (err) {
+                    } catch {
                         btn.focus();
                     }
                 }
@@ -235,7 +260,7 @@
             if (typeof nextButton.focus === 'function') {
                 try {
                     nextButton.focus({ preventScroll: true });
-                } catch (err) {
+                } catch {
                     nextButton.focus();
                 }
             }
@@ -245,7 +270,7 @@
     function clearDesktopSelection(options = {}) {
         const { blur = false } = options;
         const hadSelection =
-            desktopSelectedIds.size > 0 || desktopSelectedItemId != null;
+            desktopSelectedIds.size > 0 || desktopSelectedItemId !== null;
         desktopSelectedIds.clear();
         desktopLastFocusedIndex = -1;
         desktopSelectedItemId = null;

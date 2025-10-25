@@ -33,6 +33,8 @@ console.log('FinderInstance loaded');
             this.githubRepos = [];
             this.githubLoading = false;
             this.githubError = false;
+            this.githubErrorMessage = '';
+            this.lastGithubItemsMap = new Map();
             this.favorites = new Set();
             this.recentFiles = [];
 
@@ -138,12 +140,12 @@ console.log('FinderInstance loaded');
                                 data-i18n="finder.sidebar.favorites">
                                 Favoriten
                             </div>
-                            <button data-finder-sidebar-computer data-action="finder:switchView" data-finder-view="computer"
+                            <button id="finder-sidebar-computer" data-finder-sidebar-computer data-action="finder:switchView" data-finder-view="computer"
                                 class="finder-sidebar-item finder-sidebar-active">
                                 <span class="finder-sidebar-icon">💻</span>
                                 <span data-i18n="finder.sidebar.computer">Computer</span>
                             </button>
-                            <button data-finder-sidebar-recent data-action="finder:switchView" data-finder-view="recent"
+                            <button id="finder-sidebar-recent" data-finder-sidebar-recent data-action="finder:switchView" data-finder-view="recent"
                                 class="finder-sidebar-item">
                                 <span class="finder-sidebar-icon">🕒</span>
                                 <span data-i18n="finder.sidebar.recent">Zuletzt geöffnet</span>
@@ -154,12 +156,12 @@ console.log('FinderInstance loaded');
                                 data-i18n="finder.sidebar.locations">
                                 Orte
                             </div>
-                            <button data-finder-sidebar-github data-action="finder:switchView" data-finder-view="github"
+                            <button id="finder-sidebar-github" data-finder-sidebar-github data-action="finder:switchView" data-finder-view="github"
                                 class="finder-sidebar-item">
                                 <span class="finder-sidebar-icon">📂</span>
                                 <span data-i18n="finder.sidebar.github">GitHub Projekte</span>
                             </button>
-                            <button data-finder-sidebar-favorites data-action="finder:switchView"
+                            <button id="finder-sidebar-favorites" data-finder-sidebar-favorites data-action="finder:switchView"
                                 data-finder-view="favorites" class="finder-sidebar-item">
                                 <span class="finder-sidebar-icon">⭐</span>
                                 <span data-i18n="finder.sidebar.starred">Mit Stern</span>
@@ -170,7 +172,7 @@ console.log('FinderInstance loaded');
                     <!-- Main Content Area -->
                     <div class="flex-1 flex flex-col min-h-0">
                         <!-- Toolbar -->
-                        <div data-finder-toolbar
+                        <div id="finder-toolbar" data-finder-toolbar
                             class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
                             <button data-action="finder:navigateUp" class="finder-toolbar-btn" title="Zurück"
                                 data-i18n-title="finder.toolbar.back">
@@ -185,7 +187,7 @@ console.log('FinderInstance loaded');
                                 </svg>
                             </button>
                             <div class="flex-1 mx-2">
-                                <div data-finder-breadcrumbs
+                                <div id="finder-path-breadcrumbs" data-finder-breadcrumbs
                                     class="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                                     <!-- Breadcrumbs werden dynamisch generiert -->
                                 </div>
@@ -204,13 +206,13 @@ console.log('FinderInstance loaded');
                                     </svg>
                                 </button>
                             </div>
-                            <input data-finder-search type="text" placeholder="Suchen"
+                            <input id="finder-search-input" data-finder-search type="text" placeholder="Suchen"
                                 data-i18n-placeholder="finder.toolbar.search"
                                 class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </div>
 
                         <!-- Content Area -->
-                        <div data-finder-content class="flex-1 overflow-auto bg-white dark:bg-gray-800 p-4">
+                        <div id="finder-content-area" data-finder-content class="flex-1 overflow-auto bg-white dark:bg-gray-800 p-4">
                             <!-- Content wird dynamisch generiert -->
                         </div>
                     </div>
@@ -407,7 +409,7 @@ console.log('FinderInstance loaded');
                 }
 
                 const pathUpToHere = this.currentPath.slice(0, index + 1);
-                parts.push(`<span class="finder-breadcrumb-separator">›</span>`);
+                parts.push('<span class="finder-breadcrumb-separator">›</span>');
                 parts.push(`<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join('/')}">${part}</button>`);
             });
 
@@ -419,6 +421,12 @@ console.log('FinderInstance loaded');
          */
         renderContent() {
             if (!this.domRefs.contentArea) return;
+
+            // Special handling for GitHub view (async loading)
+            if (this.currentView === 'github') {
+                this.renderGithubContent();
+                return;
+            }
 
             const items = this.getCurrentItems();
 
@@ -494,10 +502,8 @@ console.log('FinderInstance loaded');
          * Get GitHub items (placeholder - simplified from finder.js)
          */
         getGithubItems() {
-            // Simplified: just show loading state
-            return [
-                { name: 'GitHub-Integration aktiv', type: 'info', icon: '📂', size: 0 }
-            ];
+            // Fallback (should be handled by renderGithubContent)
+            return [];
         }
 
         /**
@@ -619,6 +625,168 @@ console.log('FinderInstance loaded');
                 this.addToRecent(name);
                 // Emit event for file opening (can be handled by parent)
                 this.emit('fileOpened', { name, path: [...this.currentPath, name].join('/') });
+
+                // If in GitHub view and image file, open image viewer
+                if (this.currentView === 'github') {
+                    const item = this.lastGithubItemsMap.get(name);
+                    const isImage = /\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(name);
+                    if (item && isImage && item.download_url) {
+                        this.openImageViewer({ src: item.download_url, name });
+                    }
+                }
+            }
+        }
+
+        /**
+         * Render GitHub view with async fetching and caching
+         */
+        async renderGithubContent() {
+            const el = this.domRefs.contentArea;
+            if (!el) return;
+
+            // Root (list repos)
+            if (this.currentPath.length === 0) {
+                // Loading placeholder
+                el.innerHTML = '<div class="finder-empty-state">Lade Repositories…</div>';
+                const repos = await this.fetchGithubRepos();
+                this.lastGithubItemsMap.clear();
+                const items = (repos || []).map((repo) => ({
+                    name: repo.name,
+                    type: 'folder',
+                    icon: '📦',
+                }));
+                items.forEach((it) => this.lastGithubItemsMap.set(it.name, it));
+                if (this.githubError && items.length === 0) {
+                    el.innerHTML = '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">⚠️</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
+                } else if (items.length === 0) {
+                    el.innerHTML = '<div class="finder-empty-state text-center">Keine öffentlichen Repositories gefunden</div>';
+                } else {
+                    this.renderListView(items);
+                }
+                return;
+            }
+
+            // Repo and subpaths
+            const repo = this.currentPath[0];
+            const subPathParts = this.currentPath.slice(1);
+            const subPath = subPathParts.join('/');
+
+            el.innerHTML = '<div class="finder-empty-state">Lade Inhalte…</div>';
+            const contents = await this.fetchGithubContents(repo, subPath);
+            this.lastGithubItemsMap.clear();
+            const items = (contents || []).map((entry) => {
+                const isDir = entry.type === 'dir';
+                return {
+                    name: entry.name,
+                    type: isDir ? 'folder' : 'file',
+                    icon: isDir ? '📁' : '📄',
+                    size: entry.size || 0,
+                    download_url: entry.download_url || null,
+                };
+            });
+            items.forEach((it) => this.lastGithubItemsMap.set(it.name, it));
+            if (this.githubError && items.length === 0) {
+                el.innerHTML = '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">⚠️</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
+            } else if (items.length === 0) {
+                el.innerHTML = '<div class="finder-empty-state text-center">Dieser Ordner ist leer</div>';
+            } else {
+                this.renderListView(items);
+            }
+        }
+
+        /**
+         * Fetch GitHub repos for configured user
+         */
+        async fetchGithubRepos() {
+            const GITHUB_USERNAME = 'Marormur';
+            try {
+                // Simple in-memory cache per instance
+                if (Array.isArray(this.githubRepos) && this.githubRepos.length) {
+                    return this.githubRepos;
+                }
+                const res = await fetch(
+                    `https://api.github.com/users/${GITHUB_USERNAME}/repos`,
+                    { headers: { Accept: 'application/vnd.github.v3+json' } },
+                );
+                if (!res.ok) throw new Error('GitHub repos fetch failed');
+                const data = await res.json();
+                this.githubRepos = data || [];
+                this.githubError = false;
+                this.githubErrorMessage = '';
+                return this.githubRepos;
+            } catch (e) {
+                console.warn('GitHub repos error:', e);
+                this.githubError = true;
+                this.githubErrorMessage = 'Repositories could not be loaded';
+                return [];
+            }
+        }
+
+        /**
+         * Fetch contents (files/folders) for a given repo and subPath
+         */
+        async fetchGithubContents(repo, subPath = '') {
+            try {
+                const key = `${repo}:${subPath}`;
+                if (this.githubContentCache.has(key)) {
+                    return this.githubContentCache.get(key);
+                }
+                const base = `https://api.github.com/repos/Marormur/${repo}/contents`;
+                const url = subPath ? `${base}/${this._encodeGithubPath(subPath)}` : base;
+                const res = await fetch(url, {
+                    headers: { Accept: 'application/vnd.github.v3+json' },
+                });
+                if (!res.ok) throw new Error('GitHub contents fetch failed');
+                const data = await res.json();
+                this.githubContentCache.set(key, data || []);
+                this.githubError = false;
+                this.githubErrorMessage = '';
+                return data;
+            } catch (e) {
+                console.warn('GitHub contents error:', e);
+                this.githubError = true;
+                this.githubErrorMessage = 'Repositories could not be loaded';
+                return [];
+            }
+        }
+
+        /**
+         * Encode a GitHub path by encoding segments but keeping '/'
+         */
+        _encodeGithubPath(subPath) {
+            if (!subPath) return '';
+            return subPath
+                .split('/')
+                .filter(Boolean)
+                .map((seg) => encodeURIComponent(seg))
+                .join('/');
+        }
+
+        /**
+         * Open image viewer modal with given src
+         */
+        openImageViewer({ src, name }) {
+            try {
+                const img = document.getElementById('image-viewer');
+                const info = document.getElementById('image-info');
+                const placeholder = document.getElementById('image-placeholder');
+                if (info) {
+                    info.textContent = name || '';
+                    info.classList.remove('hidden');
+                }
+                if (placeholder) placeholder.classList.add('hidden');
+                if (img) {
+                    img.src = src;
+                    img.classList.remove('hidden');
+                }
+                if (window.API?.window?.open) {
+                    window.API.window.open('image-modal');
+                } else {
+                    const modal = document.getElementById('image-modal');
+                    if (modal) modal.classList.remove('hidden');
+                }
+            } catch (e) {
+                console.warn('Failed to open image viewer:', e);
             }
         }
 
@@ -766,14 +934,15 @@ console.log('FinderInstance loaded');
                     console.error('Finder container not found');
                     return null;
                 }
-                
+
                 const container = document.createElement('div');
                 container.id = `${instanceId}-container`;
-                container.className = 'finder-instance-container h-full';
-                
+                // Make this container a flex column so the rendered content's flex-1 can expand
+                container.className = 'finder-instance-container h-full flex flex-col min-h-0';
+
                 // Initially hidden (will be shown by integration layer)
                 container.classList.add('hidden');
-                
+
                 finderModalContainer.appendChild(container);
                 return container;
             }
