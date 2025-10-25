@@ -12,7 +12,7 @@
             }
             this.windowEl = (
                 window.StorageSystem?.getDialogWindowElement ||
-                ((modal) => modal?.querySelector('.autopointer') || modal)
+                (modal => modal?.querySelector('.autopointer') || modal)
             )(this.modal);
             this.lastDragPointerX = null;
             this.init();
@@ -21,15 +21,13 @@
             // Initialisiert Drag & Drop und Resizing
             this.makeDraggable();
             this.makeResizable();
-            const closeButton = this.modal.querySelector(
-                '.draggable-header button[id^="close-"]',
-            );
+            const closeButton = this.modal.querySelector('.draggable-header button[id^="close-"]');
             if (closeButton) {
                 closeButton.style.cursor = 'pointer';
                 closeButton.dataset.dialogAction = 'close';
                 if (!closeButton.dataset.dialogBoundClose) {
                     closeButton.dataset.dialogBoundClose = 'true';
-                    closeButton.addEventListener('click', (e) => {
+                    closeButton.addEventListener('click', e => {
                         e.preventDefault();
                         e.stopPropagation();
                         this.close();
@@ -38,16 +36,16 @@
             }
             // Verkabele macOS-ähnliche Titelbar-Buttons (Gelb = Minimize, Grün = Maximize)
             const minimizeEl = this.modal.querySelector(
-                '.draggable-header .bg-yellow-500.rounded-full',
+                '.draggable-header .bg-yellow-500.rounded-full'
             );
             const maximizeEl = this.modal.querySelector(
-                '.draggable-header .bg-green-500.rounded-full',
+                '.draggable-header .bg-green-500.rounded-full'
             );
             if (minimizeEl) {
                 minimizeEl.style.cursor = 'pointer';
                 minimizeEl.title = minimizeEl.title || 'Minimieren';
                 minimizeEl.dataset.dialogAction = 'minimize';
-                minimizeEl.addEventListener('click', (e) => {
+                minimizeEl.addEventListener('click', e => {
                     e.stopPropagation();
                     this.minimize();
                 });
@@ -56,7 +54,7 @@
                 maximizeEl.style.cursor = 'pointer';
                 maximizeEl.title = maximizeEl.title || 'Maximieren';
                 maximizeEl.dataset.dialogAction = 'maximize';
-                maximizeEl.addEventListener('click', (e) => {
+                maximizeEl.addEventListener('click', e => {
                     e.stopPropagation();
                     this.toggleMaximize();
                 });
@@ -103,12 +101,9 @@
                 // Zurücksetzen auf vorherige Größe/Position
                 if (ds.prevLeft !== undefined) target.style.left = ds.prevLeft;
                 if (ds.prevTop !== undefined) target.style.top = ds.prevTop;
-                if (ds.prevWidth !== undefined)
-                    target.style.width = ds.prevWidth;
-                if (ds.prevHeight !== undefined)
-                    target.style.height = ds.prevHeight;
-                if (ds.prevPosition !== undefined)
-                    target.style.position = ds.prevPosition;
+                if (ds.prevWidth !== undefined) target.style.width = ds.prevWidth;
+                if (ds.prevHeight !== undefined) target.style.height = ds.prevHeight;
+                if (ds.prevPosition !== undefined) target.style.position = ds.prevPosition;
                 delete this.modal.dataset.maximized;
                 delete this.modal.dataset.prevLeft;
                 delete this.modal.dataset.prevTop;
@@ -121,15 +116,11 @@
             }
             // Speichere aktuelle Größe/Position
             const computed = window.getComputedStyle(target);
-            this.modal.dataset.prevLeft =
-                target.style.left || computed.left || '';
+            this.modal.dataset.prevLeft = target.style.left || computed.left || '';
             this.modal.dataset.prevTop = target.style.top || computed.top || '';
-            this.modal.dataset.prevWidth =
-                target.style.width || computed.width || '';
-            this.modal.dataset.prevHeight =
-                target.style.height || computed.height || '';
-            this.modal.dataset.prevPosition =
-                target.style.position || computed.position || '';
+            this.modal.dataset.prevWidth = target.style.width || computed.width || '';
+            this.modal.dataset.prevHeight = target.style.height || computed.height || '';
+            this.modal.dataset.prevPosition = target.style.position || computed.position || '';
             // Auf maximierte Größe setzen (unterhalb der Menüleiste)
             const minTop = Math.round(getMenuBarBottom());
             target.style.position = 'fixed';
@@ -141,10 +132,7 @@
             // Dock-Reserve berücksichtigen
             try {
                 const __dockReserve = getDockReservedBottom();
-                const __maxHeight = Math.max(
-                    0,
-                    (window.innerHeight || 0) - minTop - __dockReserve,
-                );
+                const __maxHeight = Math.max(0, (window.innerHeight || 0) - minTop - __dockReserve);
                 target.style.height = `${__maxHeight}px`;
             } catch (e) {
                 /* noop */
@@ -165,13 +153,10 @@
                 ds.prevSnapLeft = target.style.left || computed.left || '';
                 ds.prevSnapTop = target.style.top || computed.top || '';
                 ds.prevSnapWidth = target.style.width || computed.width || '';
-                ds.prevSnapHeight =
-                    target.style.height || computed.height || '';
-                ds.prevSnapPosition =
-                    target.style.position || computed.position || '';
+                ds.prevSnapHeight = target.style.height || computed.height || '';
+                ds.prevSnapPosition = target.style.position || computed.position || '';
                 ds.prevSnapRight = target.style.right || computed.right || '';
-                ds.prevSnapBottom =
-                    target.style.bottom || computed.bottom || '';
+                ds.prevSnapBottom = target.style.bottom || computed.bottom || '';
             }
             const metrics = computeSnapMetrics(side);
             if (!metrics) {
@@ -250,13 +235,8 @@
             const threshold = Math.max(3, Math.min(14, viewportWidth * 0.0035));
             const rect = target.getBoundingClientRect();
             const pointerDistLeft =
-                typeof pointerX === 'number'
-                    ? Math.max(0, pointerX)
-                    : Math.abs(rect.left);
-            if (
-                Math.abs(rect.left) <= threshold ||
-                pointerDistLeft <= threshold
-            ) {
+                typeof pointerX === 'number' ? Math.max(0, pointerX) : Math.abs(rect.left);
+            if (Math.abs(rect.left) <= threshold || pointerDistLeft <= threshold) {
                 return 'left';
             }
             const distRight = viewportWidth - rect.right;
@@ -264,10 +244,7 @@
                 typeof pointerX === 'number'
                     ? Math.max(0, viewportWidth - pointerX)
                     : Math.abs(distRight);
-            if (
-                Math.abs(distRight) <= threshold ||
-                pointerDistRight <= threshold
-            ) {
+            if (Math.abs(distRight) <= threshold || pointerDistRight <= threshold) {
                 return 'right';
             }
             return null;
@@ -298,22 +275,16 @@
             header.style.cursor = 'move';
             let offsetX = 0,
                 offsetY = 0;
-            header.addEventListener('mousedown', (e) => {
+            header.addEventListener('mousedown', e => {
                 this.refocus();
                 // Wenn auf einen Steuerungs-Button geklickt wird (schließen/minimieren/maximieren), kein Drag starten
                 if (e.target.closest('button[id^="close-"]')) return;
                 if (e.target.closest('[data-dialog-action]')) return;
                 // Beim maximierten Fenster kein Drag
-                if (
-                    this.modal.dataset &&
-                    this.modal.dataset.maximized === 'true'
-                )
-                    return;
+                if (this.modal.dataset && this.modal.dataset.maximized === 'true') return;
                 const pointerX = e.clientX;
                 const pointerY = e.clientY;
-                const initialSnapSide = this.modal.dataset
-                    ? this.modal.dataset.snapped
-                    : null;
+                const initialSnapSide = this.modal.dataset ? this.modal.dataset.snapped : null;
                 let rect = target.getBoundingClientRect();
                 let localOffsetX = pointerX - rect.left;
                 let localOffsetY = pointerY - rect.top;
@@ -330,13 +301,9 @@
                     localOffsetX = pointerX - rect.left;
                     localOffsetY = pointerY - rect.top;
                 }
-                const computedPosition =
-                    window.getComputedStyle(target).position;
+                const computedPosition = window.getComputedStyle(target).position;
                 // Beim ersten Drag die aktuelle Position einfrieren, damit es nicht springt.
-                if (
-                    computedPosition === 'static' ||
-                    computedPosition === 'relative'
-                ) {
+                if (computedPosition === 'static' || computedPosition === 'relative') {
                     target.style.position = 'fixed';
                 } else if (!target.style.position) {
                     target.style.position = computedPosition;
@@ -374,10 +341,7 @@
                     hideSnapPreview();
                     if (shouldSave) {
                         if (moved) {
-                            this.applySnapAfterDrag(
-                                target,
-                                this.lastDragPointerX,
-                            );
+                            this.applySnapAfterDrag(target, this.lastDragPointerX);
                         } else if (initialSnapSide) {
                             this.snapTo(initialSnapSide, { silent: true });
                         }
@@ -385,7 +349,7 @@
                     }
                     this.lastDragPointerX = null;
                 };
-                const mouseMoveHandler = (e) => {
+                const mouseMoveHandler = e => {
                     moved = true;
                     window.requestAnimationFrame(() => {
                         const newLeft = e.clientX - offsetX;
@@ -394,10 +358,7 @@
                         target.style.left = newLeft + 'px';
                         target.style.top = Math.max(minTop, newTop) + 'px';
                         this.lastDragPointerX = e.clientX;
-                        const candidate = this.getSnapCandidate(
-                            target,
-                            this.lastDragPointerX,
-                        );
+                        const candidate = this.getSnapCandidate(target, this.lastDragPointerX);
                         if (candidate) {
                             showSnapPreview(candidate);
                         } else {
@@ -423,7 +384,7 @@
             if (!target) return;
 
             const existingHandles = target.querySelectorAll('.resizer');
-            existingHandles.forEach((handle) => handle.remove());
+            existingHandles.forEach(handle => handle.remove());
 
             const computedPosition = window.getComputedStyle(target).position;
             if (!computedPosition || computedPosition === 'static') {
@@ -433,21 +394,17 @@
             const ensureFixedPosition = () => {
                 const computed = window.getComputedStyle(target);
                 const rect = target.getBoundingClientRect();
-                if (
-                    computed.position === 'static' ||
-                    computed.position === 'relative'
-                ) {
+                if (computed.position === 'static' || computed.position === 'relative') {
                     target.style.position = 'fixed';
                     target.style.left = rect.left + 'px';
                     target.style.top = rect.top + 'px';
                 } else {
-                    if (!target.style.left)
-                        target.style.left = rect.left + 'px';
+                    if (!target.style.left) target.style.left = rect.left + 'px';
                     if (!target.style.top) target.style.top = rect.top + 'px';
                 }
             };
 
-            const createHandle = (handle) => {
+            const createHandle = handle => {
                 const resizer = document.createElement('div');
                 resizer.classList.add('resizer', `resizer-${handle.name}`);
                 resizer.style.position = 'absolute';
@@ -459,7 +416,7 @@
                 Object.assign(resizer.style, handle.style);
                 target.appendChild(resizer);
 
-                const startResize = (event) => {
+                const startResize = event => {
                     event.preventDefault();
                     event.stopPropagation();
                     this.refocus();
@@ -536,31 +493,23 @@
                             }
 
                             const minTop = getMenuBarBottom();
-                            if (
-                                handle.directions.includes('n') &&
-                                newTop < minTop
-                            ) {
+                            if (handle.directions.includes('n') && newTop < minTop) {
                                 const overshoot = minTop - newTop;
                                 newTop = minTop;
-                                newHeight = Math.max(
-                                    minHeight,
-                                    newHeight - overshoot,
-                                );
+                                newHeight = Math.max(minHeight, newHeight - overshoot);
                             }
 
                             if (
                                 handle.directions.includes('w') ||
                                 handle.directions.includes('e')
                             ) {
-                                target.style.width =
-                                    Math.max(minWidth, newWidth) + 'px';
+                                target.style.width = Math.max(minWidth, newWidth) + 'px';
                             }
                             if (
                                 handle.directions.includes('s') ||
                                 handle.directions.includes('n')
                             ) {
-                                target.style.height =
-                                    Math.max(minHeight, newHeight) + 'px';
+                                target.style.height = Math.max(minHeight, newHeight) + 'px';
                             }
                             if (handle.directions.includes('w')) {
                                 target.style.left = newLeft + 'px';
@@ -575,24 +524,18 @@
                         if (!resizing) return;
                         resizing = false;
                         overlay.remove();
-                        overlay.removeEventListener(
-                            'mousemove',
-                            overlayMouseMove,
-                        );
+                        overlay.removeEventListener('mousemove', overlayMouseMove);
                         overlay.removeEventListener('mouseup', overlayMouseUp);
-                        window.removeEventListener(
-                            'mousemove',
-                            windowMouseMove,
-                        );
+                        window.removeEventListener('mousemove', windowMouseMove);
                         window.removeEventListener('mouseup', windowMouseUp);
                         window.removeEventListener('blur', onBlur);
                         clampWindowToMenuBar(target);
                         saveWindowPositions();
                     };
 
-                    const overlayMouseMove = (moveEvent) =>
+                    const overlayMouseMove = moveEvent =>
                         applySize(moveEvent.clientX, moveEvent.clientY);
-                    const windowMouseMove = (moveEvent) =>
+                    const windowMouseMove = moveEvent =>
                         applySize(moveEvent.clientX, moveEvent.clientY);
                     const overlayMouseUp = () => stopResize();
                     const windowMouseUp = () => stopResize();
@@ -740,11 +683,11 @@
                                 this.refocus();
                             });
                         };
-                        ['mousedown', 'click', 'touchstart'].forEach((evt) => {
+                        ['mousedown', 'click', 'touchstart'].forEach(evt => {
                             cw.document.addEventListener(evt, handler);
                         });
                     } else if (cw) {
-                        ['mousedown', 'click', 'touchstart'].forEach((evt) => {
+                        ['mousedown', 'click', 'touchstart'].forEach(evt => {
                             cw.addEventListener(evt, () => {
                                 requestAnimationFrame(() => {
                                     this.refocus();
@@ -753,10 +696,7 @@
                         });
                     }
                 } catch (err) {
-                    console.error(
-                        'Could not attach mousedown event in iframe:',
-                        err,
-                    );
+                    console.error('Could not attach mousedown event in iframe:', err);
                 }
             });
         }
