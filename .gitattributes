@@ -1,0 +1,17 @@
+# Normalize line endings cross-platform
+# Store LF in the repository; checkout CRLF on Windows when appropriate
+* text=auto
+
+# Keep UNIX line endings for shell scripts to avoid shebang issues
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+
+# Treat common binary assets as binary (no EOL conversion)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary

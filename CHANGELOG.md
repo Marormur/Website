@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+- test(e2e): stabilize multi-instance suite using appReady
+  - Updated tests to wait for window.__APP_READY instead of networkidle
+  - Fixed "respects max instances limit" by using a minimal TestInstance subclass
+  - Full multi-instance suite now passes across Chromium, Firefox, and WebKit (60/60)
+
+- chore(eol): enforce cross-platform line endings and normalize repository
+  - Add .gitattributes with text=auto to use CRLF on Windows checkouts and LF on UNIX
+  - Add workspace settings to use OS-default EOL in VS Code (files.eol = auto)
+  - Stop forcing LF globally in .editorconfig; keep LF only for shell scripts
+  - Ran git renormalize to update existing files' line endings
+
 - refactor(desktop): use ActionBus for double-click open on desktop icons
   - Adds data-action-dblclick="openDesktopItem" to desktop icon buttons
   - Keeps single-tap open for touch/pen locally; selection logic unchanged
