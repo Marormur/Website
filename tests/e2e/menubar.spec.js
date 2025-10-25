@@ -14,7 +14,15 @@ async function expectMenuButton(page, label) {
 // Helper: open a menubar section and verify a menuitem exists
 async function expectMenuItem(page, sectionLabel, itemLabel) {
     const section = page.getByRole('button', { name: sectionLabel });
-    await section.click();
+    // Prefer focus to open the dropdown (our binding opens on focus)
+    await section.focus();
+    // Wait for the dropdown associated with this section to be visible
+    const menuId = await section.getAttribute('aria-controls');
+    if (menuId) {
+        await page.waitForSelector(`#${menuId}:not(.hidden)`, { timeout: 5000 });
+    } else {
+        await page.waitForSelector('.menu-dropdown:not(.hidden)', { timeout: 5000 });
+    }
     await expect(page.getByRole('menuitem', { name: new RegExp('^' + itemLabel) })).toBeVisible();
 }
 

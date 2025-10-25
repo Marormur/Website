@@ -6,14 +6,21 @@ test.use({ locale: 'en-US' });
 
 async function gotoHome(page, baseURL) {
     await page.goto(baseURL + '/index.html');
+    await page.waitForLoadState('load');
+    await page.waitForSelector('#dock .dock-tray .dock-item', { timeout: 10000 });
 }
 
 async function openAppleMenu(page) {
     const trigger = page.locator('#apple-menu-trigger');
+    await trigger.waitFor({ state: 'visible', timeout: 10000 });
     await trigger.click();
-    await page.waitForTimeout(100); // Give dropdown time to appear
-    // Wait for dropdown to appear
-    await page.waitForSelector('#apple-menu-dropdown', { state: 'visible', timeout: 5000 });
+    // Wait for dropdown to appear; retry once if it didn't open on first click
+    try {
+        await page.waitForSelector('#apple-menu-dropdown', { state: 'visible', timeout: 1500 });
+    } catch {
+        await trigger.click();
+        await page.waitForSelector('#apple-menu-dropdown', { state: 'visible', timeout: 5000 });
+    }
 }
 
 async function closeAppleMenuIfOpen(page) {

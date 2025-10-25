@@ -42,24 +42,27 @@
                 <div class="flex dialog-content settings-panel rounded-b-xl overflow-hidden h-full">
                     <!-- Linke Seitenleiste -->
                     <div class="w-48 bg-gray-100 dark:bg-gray-700 p-4 space-y-1 overflow-auto">
-                        <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
+                        <button type="button" class="w-full text-left cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
                             data-action="settings:showSection"
                             data-section="general"
+                            data-settings-page="general"
                             data-i18n="settingsPage.nav.general">
                             👤 Allgemein
-                        </div>
-                        <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
+                        </button>
+                        <button type="button" class="w-full text-left cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
                             data-action="settings:showSection"
                             data-section="display"
+                            data-settings-page="display"
                             data-i18n="settingsPage.nav.display">
                             🖥️ Darstellung
-                        </div>
-                        <div class="cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
+                        </button>
+                        <button type="button" class="w-full text-left cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
                             data-action="settings:showSection"
                             data-section="language"
+                            data-settings-page="language"
                             data-i18n="settingsPage.nav.language">
                             🌐 Sprache
-                        </div>
+                        </button>
                     </div>
                     <!-- Rechte Hauptansicht -->
                     <div class="flex-1 p-6 overflow-auto text-gray-800 dark:text-gray-200">

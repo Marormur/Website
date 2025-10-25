@@ -5,12 +5,20 @@ test.use({ locale: 'en-US' });
 
 async function gotoHome(page, baseURL) {
     await page.goto(baseURL + '/index.html');
+    await page.waitForLoadState('load');
+    await page.waitForSelector('#dock .dock-tray .dock-item', { timeout: 10000 });
 }
 
 async function openAppleMenu(page) {
-    await page.locator('#apple-menu-trigger').click();
-    await page.waitForTimeout(100); // Give dropdown time to appear
-    await page.waitForSelector('#apple-menu-dropdown', { state: 'visible', timeout: 5000 });
+    const trigger = page.locator('#apple-menu-trigger');
+    await trigger.waitFor({ state: 'visible', timeout: 10000 });
+    await trigger.click();
+    try {
+        await page.waitForSelector('#apple-menu-dropdown', { state: 'visible', timeout: 1500 });
+    } catch {
+        await trigger.click();
+        await page.waitForSelector('#apple-menu-dropdown', { state: 'visible', timeout: 5000 });
+    }
 }
 
 async function openSettings(page) {

@@ -273,6 +273,30 @@ function initDockDragDrop() {
     const onDrop = (e) => {
         if (!draggedItem) return;
         e.preventDefault();
+        const phDidNotMove = placeholder && placeholder.isConnected && (
+            placeholder.previousSibling === draggedItem || placeholder.nextSibling === draggedItem
+        );
+        // If placeholder didn't move (or is missing), compute target via drop position
+        if (!placeholder || !placeholder.isConnected || phDidNotMove) {
+            const x = e.clientX;
+            const items = Array.from(tray.querySelectorAll('.dock-item')).filter(it => it !== draggedItem);
+            let inserted = false;
+            for (const it of items) {
+                const r = it.getBoundingClientRect();
+                if (x < r.left + r.width / 2) {
+                    tray.insertBefore(draggedItem, it);
+                    inserted = true;
+                    break;
+                }
+            }
+            if (!inserted) {
+                tray.appendChild(draggedItem);
+            }
+            const order = getCurrentDockOrder();
+            saveDockOrder(order);
+            cleanup();
+            return;
+        }
         finalizeDrop();
     };
 

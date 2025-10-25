@@ -672,6 +672,10 @@ video {
   margin: auto;
 }
 
+.m-7 {
+  margin: 1.75rem;
+}
+
 .mx-2 {
   margin-left: 0.5rem;
   margin-right: 0.5rem;
@@ -1468,6 +1472,18 @@ video {
 
 .duration-300 {
   transition-duration: 300ms;
+}
+
+.\[t\:\FFFD\FFFD\FFFD\] {
+  t: ���;
+}
+
+.\[u\:\FFFD\48BDq\FFFD\FFFD\FFFD\FFFD\FFFD\FFFD\1C\FFFD 7\/\>\FFFD\4DF\FFFD\FFFDo\?\FFFD\FFFD\] {
+  u: �䢽q�������7/>�ӟ��o?��;
+}
+
+.\[zw\:\FFFDZ\FFFD\7\FFFD\FFFD\FFFD\16\] {
+  zw: �Z����;
 }
 
 /* Custom styles to preserve existing design */
