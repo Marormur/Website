@@ -316,19 +316,39 @@
                     italic: 'Kursiv',
                     underline: 'Unterstrichen',
                     strikeThrough: 'Durchgestrichen',
-                    unorderedList: 'Ungeordnete Liste',
-                    orderedList: 'Geordnete Liste',
-                    undo: 'Undo',
-                    redo: 'Redo',
+                    heading1: 'Überschrift 1',
+                    heading2: 'Überschrift 2',
+                    heading3: 'Überschrift 3',
+                    unorderedList: 'Aufzählungsliste',
+                    orderedList: 'Nummerierte Liste',
+                    alignLeft: 'Linksbündig',
+                    alignCenter: 'Zentriert',
+                    alignRight: 'Rechtsbündig',
+                    insertLink: 'Link einfügen',
+                    findReplace: 'Suchen & Ersetzen',
+                    undo: 'Rückgängig',
+                    redo: 'Wiederholen',
                     clear: 'Neu',
                     open: 'Öffnen',
                     save: 'Speichern'
+                },
+                findReplace: {
+                    find: 'Suchen...',
+                    replace: 'Ersetzen...',
+                    next: 'Weiter',
+                    replaceOne: 'Ersetzen',
+                    replaceAll: 'Alle ersetzen',
+                    close: 'Schließen',
+                    noMatch: 'Keine Übereinstimmung gefunden',
+                    replacedCount: '{count} Vorkommen ersetzt'
                 },
                 status: {
                     loading: 'Lade Datei …',
                     loadingWithLabel: '{label} (lädt …)',
                     loadError: 'Datei konnte nicht geladen werden.',
-                    rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.'
+                    rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                    wordCount: 'Wörter: {words} | Zeichen: {chars}',
+                    position: 'Zeile {line}, Spalte {col}'
                 }
             },
             menu: {
@@ -757,19 +777,39 @@
                     italic: 'Italic',
                     underline: 'Underline',
                     strikeThrough: 'Strikethrough',
-                    unorderedList: 'Bulleted list',
+                    heading1: 'Heading 1',
+                    heading2: 'Heading 2',
+                    heading3: 'Heading 3',
+                    unorderedList: 'Bullet list',
                     orderedList: 'Numbered list',
+                    alignLeft: 'Align left',
+                    alignCenter: 'Center',
+                    alignRight: 'Align right',
+                    insertLink: 'Insert link',
+                    findReplace: 'Find & Replace',
                     undo: 'Undo',
                     redo: 'Redo',
                     clear: 'New',
                     open: 'Open',
                     save: 'Save'
                 },
+                findReplace: {
+                    find: 'Find...',
+                    replace: 'Replace...',
+                    next: 'Next',
+                    replaceOne: 'Replace',
+                    replaceAll: 'Replace all',
+                    close: 'Close',
+                    noMatch: 'No match found',
+                    replacedCount: 'Replaced {count} occurrence(s)'
+                },
                 status: {
                     loading: 'Loading file…',
                     loadingWithLabel: '{label} (loading…)',
                     loadError: 'The file could not be loaded.',
-                    rateLimit: 'GitHub rate limit was reached. Please try again later.'
+                    rateLimit: 'GitHub rate limit was reached. Please try again later.',
+                    wordCount: 'Words: {words} | Characters: {chars}',
+                    position: 'Line {line}, Col {col}'
                 }
             },
             menu: {
