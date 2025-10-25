@@ -21,25 +21,29 @@ Thank you for your interest in contributing! This document provides guidelines f
 ### Setup
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/Marormur/Website.git
-   cd Website
-   ```
+
+    ```bash
+    git clone https://github.com/Marormur/Website.git
+    cd Website
+    ```
 
 2. Install dependencies:
-   ```bash
-   npm install
-   ```
+
+    ```bash
+    npm install
+    ```
 
 3. Start development server:
-   ```bash
-   npm run dev
-   ```
+
+    ```bash
+    npm run dev
+    ```
 
 4. In another terminal, watch CSS changes:
-   ```bash
-   npm run watch:css
-   ```
+
+    ```bash
+    npm run watch:css
+    ```
 
 5. Open http://localhost:5500 in your browser
 
@@ -48,37 +52,40 @@ Thank you for your interest in contributing! This document provides guidelines f
 ### File Organization
 
 - **Source Files**: `src/` directory
-  - `src/css/` - CSS source files
-  - `src/input.css` - Tailwind CSS input
+    - `src/css/` - CSS source files
+    - `src/input.css` - Tailwind CSS input
 - **JavaScript Modules**: `js/` directory
-  - Core modules (window-manager, action-bus, api, etc.)
+    - Core modules (window-manager, action-bus, api, etc.)
 - **Documentation**: `docs/` directory
 - **Tests**: `tests/` directory
 
 ### Making Changes
 
 1. Create a new branch:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+
+    ```bash
+    git checkout -b feature/your-feature-name
+    ```
 
 2. Make your changes following the code style guidelines
 
 3. Test your changes:
-   ```bash
-   npm run test:e2e
-   ```
+
+    ```bash
+    npm run test:e2e
+    ```
 
 4. Build CSS:
-   ```bash
-   npm run build:css
-   ```
+
+    ```bash
+    npm run build:css
+    ```
 
 5. Commit your changes:
-   ```bash
-   git add .
-   git commit -m "feat: description of your changes"
-   ```
+    ```bash
+    git add .
+    git commit -m "feat: description of your changes"
+    ```
 
 ## 📝 Code Style
 
@@ -103,6 +110,23 @@ Thank you for your interest in contributing! This document provides guidelines f
 - Use `src/css/style.css` for custom CSS that can't be achieved with Tailwind
 - Use CSS variables for theming (defined in `:root`)
 
+### TypeScript
+
+This project uses TypeScript for improved type safety. See [docs/TYPESCRIPT_GUIDELINES.md](./docs/TYPESCRIPT_GUIDELINES.md) for:
+
+- Best practices and patterns
+- Migration guide for converting JS to TS
+- Type coverage targets and enforcement
+- Common issues and troubleshooting
+
+Quick TypeScript workflow:
+
+```bash
+npm run typecheck         # Check types
+npm run type:coverage     # Measure coverage
+npm run build:ts          # Build TypeScript to JavaScript
+```
+
 ### Module System
 
 When adding new functionality:
@@ -115,24 +139,25 @@ When adding new functionality:
 ### Example: Adding a New Window
 
 1. Add window configuration to `js/window-configs.js`:
-   ```javascript
-   {
-       id: 'calculator-modal',
-       type: 'persistent',
-       programKey: 'programs.calculator',
-       icon: './img/calculator.png',
-       closeButtonId: 'close-calculator-modal'
-   }
-   ```
+
+    ```javascript
+    {
+        id: 'calculator-modal',
+        type: 'persistent',
+        programKey: 'programs.calculator',
+        icon: './img/calculator.png',
+        closeButtonId: 'close-calculator-modal'
+    }
+    ```
 
 2. Add HTML modal structure to `index.html`
 
 3. Use `data-action` attributes for interactions:
-   ```html
-   <button data-action="closeWindow" data-window-id="calculator-modal">
-       Close
-   </button>
-   ```
+    ```html
+    <button data-action="closeWindow" data-window-id="calculator-modal">
+        Close
+    </button>
+    ```
 
 ### Example: Adding a Custom Action
 
@@ -146,7 +171,7 @@ ActionBus.register('myAction', (params, element) => {
 // Use in HTML
 <button data-action="myAction" data-custom-param="value">
     Click me
-</button>
+</button>;
 ```
 
 ## 🧪 Testing
@@ -175,10 +200,13 @@ npm run test:e2e:headed
 - Follow existing test patterns
 
 Example test structure:
+
 ```javascript
 test('should open window when clicking icon', async ({ page }) => {
     await page.goto('/');
-    await page.click('[data-action="openWindow"][data-window-id="finder-modal"]');
+    await page.click(
+        '[data-action="openWindow"][data-window-id="finder-modal"]'
+    );
     await expect(page.locator('#finder-modal')).toBeVisible();
 });
 ```
@@ -191,9 +219,9 @@ test('should open window when clicking icon', async ({ page }) => {
 4. **Build CSS** (`npm run build:css`)
 5. **Update README** if adding major features
 6. **Create Pull Request** with clear description:
-   - What changes were made
-   - Why they were made
-   - How to test them
+    - What changes were made
+    - Why they were made
+    - How to test them
 
 ### PR Title Format
 
