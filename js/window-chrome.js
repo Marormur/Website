@@ -38,7 +38,7 @@ console.log('WindowChrome loaded');
             if (config.icon) {
                 const iconEl = document.createElement('span');
                 iconEl.className = 'window-icon';
-                
+
                 if (config.icon.startsWith('http') || config.icon.startsWith('./') || config.icon.startsWith('/')) {
                     const img = document.createElement('img');
                     img.src = config.icon;
@@ -50,7 +50,7 @@ console.log('WindowChrome loaded');
                     iconEl.textContent = config.icon;
                     iconEl.style.fontSize = '16px';
                 }
-                
+
                 leftSide.appendChild(iconEl);
             }
 
@@ -170,7 +170,7 @@ console.log('WindowChrome loaded');
             btn.className = `window-control-btn window-${type}-btn`;
             btn.innerHTML = symbol;
             btn.style.cssText = 'width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s;';
-            
+
             // Hover styles
             btn.addEventListener('mouseenter', () => {
                 if (type === 'close') {
@@ -180,7 +180,7 @@ console.log('WindowChrome loaded');
                     btn.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
                 }
             });
-            
+
             btn.addEventListener('mouseleave', () => {
                 btn.style.backgroundColor = 'transparent';
                 btn.style.color = '';
@@ -201,7 +201,7 @@ console.log('WindowChrome loaded');
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'toolbar-btn px-2 py-1 text-sm rounded hover:bg-gray-200 dark:hover:bg-gray-800 transition';
-            
+
             if (config.icon) {
                 btn.innerHTML = config.icon;
             } else if (config.label) {

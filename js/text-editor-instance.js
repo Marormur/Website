@@ -29,7 +29,7 @@ console.log('TextEditorInstance loaded');
             this.findReplacePanel = null;
             this.findInput = null;
             this.replaceInput = null;
-            
+
             // Editor state
             this.wrapMode = 'off';
             this.currentRemoteFile = null;
@@ -117,7 +117,7 @@ console.log('TextEditorInstance loaded');
         _applyButtonStyles() {
             const isDark = document.documentElement.classList.contains('dark');
             const buttons = this.container.querySelectorAll('.text-editor-btn');
-            
+
             buttons.forEach(btn => {
                 btn.style.cssText = `
                     padding: 6px 12px;
@@ -189,7 +189,7 @@ console.log('TextEditorInstance loaded');
             // Initial update
             this._updateWordCount();
             this._updateCursorPosition();
-            
+
             // Load wrap preference
             this._loadWrapPreference();
         }
@@ -370,7 +370,7 @@ console.log('TextEditorInstance loaded');
             this.wrapMode = this.wrapMode === 'soft' ? 'off' : 'soft';
             this.editor.wrap = this.wrapMode;
             this.editor.style.whiteSpace = this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
-            
+
             try {
                 localStorage.setItem(`textEditorWrapMode_${this.instanceId}`, this.wrapMode);
             } catch (e) {
@@ -579,7 +579,7 @@ console.log('TextEditorInstance loaded');
             type: 'text-editor',
             instanceClass: TextEditorInstance,
             maxInstances: 0, // Unlimited
-            createContainer: function(instanceId) {
+            createContainer: function (instanceId) {
                 const container = document.createElement('div');
                 container.id = `${instanceId}-container`;
                 container.className = 'text-editor-instance-container h-full';

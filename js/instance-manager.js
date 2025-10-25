@@ -28,7 +28,7 @@ console.log('InstanceManager loaded');
             this.instanceClass = config.instanceClass;
             this.maxInstances = config.maxInstances || 0;
             this.createContainer = config.createContainer || this._defaultCreateContainer.bind(this);
-            
+
             this.instances = new Map();
             this.activeInstanceId = null;
             this.instanceCounter = 0;
@@ -66,7 +66,7 @@ console.log('InstanceManager loaded');
             };
 
             const instance = new this.instanceClass(instanceConfig);
-            
+
             // Initialize instance
             try {
                 instance.init(container);

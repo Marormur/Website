@@ -19,54 +19,54 @@ function logDemo(title, description) {
 
 logDemo('📟 Terminal Instances', 'Erstelle mehrere Terminal-Instanzen');
 
-window.demoCreateTerminals = function() {
+window.demoCreateTerminals = function () {
     console.group('Creating Terminals...');
-    
-    const term1 = window.TerminalInstanceManager.createInstance({ 
-        title: 'Terminal 1 - Main' 
+
+    const term1 = window.TerminalInstanceManager.createInstance({
+        title: 'Terminal 1 - Main'
     });
     console.log('✓ Terminal 1:', term1.instanceId);
-    
-    const term2 = window.TerminalInstanceManager.createInstance({ 
-        title: 'Terminal 2 - Dev' 
+
+    const term2 = window.TerminalInstanceManager.createInstance({
+        title: 'Terminal 2 - Dev'
     });
     console.log('✓ Terminal 2:', term2.instanceId);
-    
-    const term3 = window.TerminalInstanceManager.createInstance({ 
-        title: 'Terminal 3 - Logs' 
+
+    const term3 = window.TerminalInstanceManager.createInstance({
+        title: 'Terminal 3 - Logs'
     });
     console.log('✓ Terminal 3:', term3.instanceId);
-    
+
     console.log(`Total terminals: ${window.TerminalInstanceManager.getInstanceCount()}`);
     console.groupEnd();
-    
+
     return { term1, term2, term3 };
 };
 
-window.demoTerminalIsolation = function() {
+window.demoTerminalIsolation = function () {
     console.group('Terminal Isolation Demo...');
-    
+
     const terminals = window.demoCreateTerminals();
-    
+
     // Jedes Terminal hat seinen eigenen State
     terminals.term1.currentPath = '/home/user';
     terminals.term1.commandHistory.push('ls', 'pwd');
-    
+
     terminals.term2.currentPath = '/var/log';
     terminals.term2.commandHistory.push('tail -f server.log');
-    
+
     terminals.term3.currentPath = '/etc';
     terminals.term3.commandHistory.push('cat config.yaml');
-    
+
     console.log('Terminal 1 path:', terminals.term1.currentPath);
     console.log('Terminal 1 history:', terminals.term1.commandHistory);
-    
+
     console.log('Terminal 2 path:', terminals.term2.currentPath);
     console.log('Terminal 2 history:', terminals.term2.commandHistory);
-    
+
     console.log('Terminal 3 path:', terminals.term3.currentPath);
     console.log('Terminal 3 history:', terminals.term3.commandHistory);
-    
+
     console.log('%c✓ Alle Terminals haben isolierten State!', 'color: #00ff00');
     console.groupEnd();
 };
@@ -77,10 +77,10 @@ window.demoTerminalIsolation = function() {
 
 logDemo('📝 Text Editor Instances', 'Erstelle mehrere Editor-Instanzen');
 
-window.demoCreateEditors = function() {
+window.demoCreateEditors = function () {
     console.group('Creating Text Editors...');
-    
-    const editor1 = window.TextEditorInstanceManager.createInstance({ 
+
+    const editor1 = window.TextEditorInstanceManager.createInstance({
         title: 'README.md',
         initialState: {
             content: '# My Project\n\nThis is a test document.',
@@ -88,8 +88,8 @@ window.demoCreateEditors = function() {
         }
     });
     console.log('✓ Editor 1:', editor1.instanceId);
-    
-    const editor2 = window.TextEditorInstanceManager.createInstance({ 
+
+    const editor2 = window.TextEditorInstanceManager.createInstance({
         title: 'notes.txt',
         initialState: {
             content: 'Meeting notes:\n- Point 1\n- Point 2',
@@ -97,27 +97,27 @@ window.demoCreateEditors = function() {
         }
     });
     console.log('✓ Editor 2:', editor2.instanceId);
-    
-    const editor3 = window.TextEditorInstanceManager.createInstance({ 
-        title: 'Untitled' 
+
+    const editor3 = window.TextEditorInstanceManager.createInstance({
+        title: 'Untitled'
     });
     console.log('✓ Editor 3:', editor3.instanceId);
-    
+
     console.log(`Total editors: ${window.TextEditorInstanceManager.getInstanceCount()}`);
     console.groupEnd();
-    
+
     return { editor1, editor2, editor3 };
 };
 
-window.demoEditorContent = function() {
+window.demoEditorContent = function () {
     console.group('Editor Content Demo...');
-    
+
     const editors = window.demoCreateEditors();
-    
+
     console.log('Editor 1 content:', editors.editor1.state.content);
     console.log('Editor 2 content:', editors.editor2.state.content);
     console.log('Editor 3 content:', editors.editor3.state.content);
-    
+
     console.log('%c✓ Jeder Editor hat eigenen Content!', 'color: #00ff00');
     console.groupEnd();
 };
@@ -128,39 +128,39 @@ window.demoEditorContent = function() {
 
 logDemo('💾 State Persistence', 'Speichern und Wiederherstellen von Instanzen');
 
-window.demoSaveTerminals = function() {
+window.demoSaveTerminals = function () {
     console.group('Save Terminal State...');
-    
+
     // Erstelle Terminals mit State
     const terminals = window.demoCreateTerminals();
     terminals.term1.currentPath = '/home';
     terminals.term1.commandHistory = ['ls', 'pwd', 'cd documents'];
-    
+
     // Speichern
     const savedState = window.TerminalInstanceManager.serializeAll();
     localStorage.setItem('demo_terminals', JSON.stringify(savedState));
-    
+
     console.log('Saved state:', savedState);
     console.log('%c✓ Terminals gespeichert in localStorage!', 'color: #00ff00');
     console.groupEnd();
 };
 
-window.demoRestoreTerminals = function() {
+window.demoRestoreTerminals = function () {
     console.group('Restore Terminal State...');
-    
+
     // Alle Instanzen löschen
     window.TerminalInstanceManager.destroyAllInstances();
     console.log('All instances destroyed');
-    
+
     // Aus localStorage wiederherstellen
     const savedState = JSON.parse(localStorage.getItem('demo_terminals') || '[]');
     window.TerminalInstanceManager.deserializeAll(savedState);
-    
+
     const restored = window.TerminalInstanceManager.getAllInstances();
     console.log(`Restored ${restored.length} terminals`);
     console.log('First terminal path:', restored[0]?.currentPath);
     console.log('First terminal history:', restored[0]?.commandHistory);
-    
+
     console.log('%c✓ Terminals wiederhergestellt!', 'color: #00ff00');
     console.groupEnd();
 };
@@ -171,9 +171,9 @@ window.demoRestoreTerminals = function() {
 
 logDemo('🎨 WindowChrome Components', 'Wiederverwendbare UI-Komponenten');
 
-window.demoWindowChrome = function() {
+window.demoWindowChrome = function () {
     console.group('WindowChrome Demo...');
-    
+
     // Titlebar
     const titlebar = window.WindowChrome.createTitlebar({
         title: 'My Window',
@@ -182,7 +182,7 @@ window.demoWindowChrome = function() {
         onClose: () => console.log('Close clicked!')
     });
     console.log('Titlebar:', titlebar);
-    
+
     // Toolbar
     const toolbar = window.WindowChrome.createToolbar([
         { label: 'New', action: 'new' },
@@ -191,14 +191,14 @@ window.demoWindowChrome = function() {
         { label: 'Open', action: 'open' }
     ]);
     console.log('Toolbar:', toolbar);
-    
+
     // Status Bar
     const statusBar = window.WindowChrome.createStatusBar({
         leftContent: 'Ready',
         rightContent: 'Line 1, Col 1'
     });
     console.log('StatusBar:', statusBar);
-    
+
     // Complete Frame
     const frame = window.WindowChrome.createWindowFrame({
         title: 'Complete Window',
@@ -211,7 +211,7 @@ window.demoWindowChrome = function() {
         ]
     });
     console.log('Complete Frame:', frame);
-    
+
     console.log('%c✓ WindowChrome Komponenten erstellt!', 'color: #00ff00');
     console.groupEnd();
 };
@@ -222,44 +222,44 @@ window.demoWindowChrome = function() {
 
 logDemo('⚙️ Instance Manager Features', 'Erweiterte Manager-Funktionen');
 
-window.demoMaxInstances = function() {
+window.demoMaxInstances = function () {
     console.group('Max Instances Demo...');
-    
+
     // Erstelle einen Manager mit Limit
     const limitedManager = new window.InstanceManager({
         type: 'demo',
         instanceClass: window.BaseWindowInstance,
         maxInstances: 2
     });
-    
+
     const instance1 = limitedManager.createInstance({ title: 'Instance 1' });
     console.log('Created:', instance1?.instanceId);
-    
+
     const instance2 = limitedManager.createInstance({ title: 'Instance 2' });
     console.log('Created:', instance2?.instanceId);
-    
+
     const instance3 = limitedManager.createInstance({ title: 'Instance 3' });
     console.log('Created:', instance3?.instanceId, '(should be null)');
-    
+
     console.log(`Total: ${limitedManager.getInstanceCount()} / 2`);
     console.log('%c✓ Max instances Limit funktioniert!', 'color: #00ff00');
     console.groupEnd();
 };
 
-window.demoActiveInstance = function() {
+window.demoActiveInstance = function () {
     console.group('Active Instance Tracking...');
-    
+
     const terminals = window.demoCreateTerminals();
-    
+
     console.log('Active instance:', window.TerminalInstanceManager.getActiveInstance()?.instanceId);
-    
+
     // Wechsle active instance
     window.TerminalInstanceManager.setActiveInstance(terminals.term1.instanceId);
     console.log('Switched to:', window.TerminalInstanceManager.getActiveInstance()?.instanceId);
-    
+
     window.TerminalInstanceManager.setActiveInstance(terminals.term2.instanceId);
     console.log('Switched to:', window.TerminalInstanceManager.getActiveInstance()?.instanceId);
-    
+
     console.log('%c✓ Active instance tracking funktioniert!', 'color: #00ff00');
     console.groupEnd();
 };
@@ -270,31 +270,31 @@ window.demoActiveInstance = function() {
 
 logDemo('📡 Event System', 'Instance Event Handling');
 
-window.demoEvents = function() {
+window.demoEvents = function () {
     console.group('Event System Demo...');
-    
-    const terminal = window.TerminalInstanceManager.createInstance({ 
-        title: 'Event Demo Terminal' 
+
+    const terminal = window.TerminalInstanceManager.createInstance({
+        title: 'Event Demo Terminal'
     });
-    
+
     // Event Listener hinzufügen
     terminal.on('stateChanged', (data) => {
         console.log('State changed:', data.newState);
     });
-    
+
     terminal.on('focused', () => {
         console.log('Terminal focused!');
     });
-    
+
     terminal.on('blurred', () => {
         console.log('Terminal blurred!');
     });
-    
+
     // Events auslösen
     terminal.updateState({ foo: 'bar' });
     terminal.focus();
     terminal.blur();
-    
+
     console.log('%c✓ Event System funktioniert!', 'color: #00ff00');
     console.groupEnd();
 };

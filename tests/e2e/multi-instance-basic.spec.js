@@ -54,9 +54,9 @@ test.describe('Multi-Instance System - Basic', () => {
             try {
                 const manager = window.TerminalInstanceManager;
                 if (!manager) return { error: 'TerminalInstanceManager not found' };
-                
+
                 const terminal = manager.createInstance({ title: 'Test Terminal' });
-                
+
                 return {
                     success: terminal !== null,
                     instanceId: terminal?.instanceId,
@@ -69,7 +69,7 @@ test.describe('Multi-Instance System - Basic', () => {
         });
 
         console.log('Terminal instance result:', result);
-        
+
         expect(result.success).toBe(true);
         expect(result.type).toBe('terminal');
         expect(result.title).toBe('Test Terminal');
@@ -83,9 +83,9 @@ test.describe('Multi-Instance System - Basic', () => {
             try {
                 const manager = window.TextEditorInstanceManager;
                 if (!manager) return { error: 'TextEditorInstanceManager not found' };
-                
+
                 const editor = manager.createInstance({ title: 'Test Editor' });
-                
+
                 return {
                     success: editor !== null,
                     instanceId: editor?.instanceId,
@@ -98,7 +98,7 @@ test.describe('Multi-Instance System - Basic', () => {
         });
 
         console.log('TextEditor instance result:', result);
-        
+
         expect(result.success).toBe(true);
         expect(result.type).toBe('text-editor');
         expect(result.title).toBe('Test Editor');

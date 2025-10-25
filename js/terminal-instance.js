@@ -26,7 +26,7 @@ console.log('TerminalInstance loaded');
             this.commandHistory = [];
             this.historyIndex = -1;
             this.currentPath = '~';
-            
+
             // Virtual file system (per instance!)
             this.fileSystem = {
                 '~': {
@@ -40,9 +40,9 @@ console.log('TerminalInstance loaded');
                             }
                         },
                         'Downloads': { type: 'directory', contents: {} },
-                        'welcome.txt': { 
-                            type: 'file', 
-                            content: 'Willkommen auf Marvins Portfolio-Website!\n\nGib "help" ein, um eine Liste verfügbarer Befehle zu sehen.' 
+                        'welcome.txt': {
+                            type: 'file',
+                            content: 'Willkommen auf Marvins Portfolio-Website!\n\nGib "help" ein, um eine Liste verfügbarer Befehle zu sehen.'
                         }
                     }
                 }
@@ -86,7 +86,7 @@ console.log('TerminalInstance loaded');
                     </div>
                 </div>
             `;
-            
+
             this.container.innerHTML = html;
             this.outputElement = this.container.querySelector('[data-terminal-output]');
             this.inputElement = this.container.querySelector('[data-terminal-input]');
@@ -145,7 +145,7 @@ console.log('TerminalInstance loaded');
             this.addOutput(`guest@marvin:${this.currentPath}$ ${command}`, 'command');
 
             const [cmd, ...args] = command.split(' ');
-            
+
             const commands = {
                 help: () => this.showHelp(),
                 clear: () => this.clearOutput(),
@@ -175,17 +175,17 @@ console.log('TerminalInstance loaded');
 
             const line = document.createElement('div');
             line.className = `terminal-line terminal-${type}`;
-            
+
             const colorMap = {
                 command: 'text-blue-400',
                 output: 'text-green-400',
                 error: 'text-red-400',
                 info: 'text-yellow-400'
             };
-            
+
             line.className += ` ${colorMap[type] || 'text-green-400'}`;
             line.textContent = text;
-            
+
             this.outputElement.appendChild(line);
             this.outputElement.scrollTop = this.outputElement.scrollHeight;
         }
@@ -215,7 +215,7 @@ console.log('TerminalInstance loaded');
                 '  date      - Zeige Datum/Zeit',
                 '  whoami    - Zeige Benutzername'
             ];
-            
+
             helpText.forEach(line => this.addOutput(line, 'info'));
         }
 
@@ -261,7 +261,7 @@ console.log('TerminalInstance loaded');
 
             // Simple path resolution (could be improved)
             let newPath = path === '..' ? this.parentPath(this.currentPath) : path;
-            
+
             if (!this.resolvePath(newPath)) {
                 this.addOutput(`Verzeichnis nicht gefunden: ${path}`, 'error');
                 return;
@@ -358,12 +358,12 @@ console.log('TerminalInstance loaded');
          */
         deserialize(data) {
             super.deserialize(data);
-            
+
             if (data.currentPath) {
                 this.currentPath = data.currentPath;
                 this.updatePrompt();
             }
-            
+
             if (data.commandHistory) {
                 this.commandHistory = data.commandHistory;
                 this.historyIndex = this.commandHistory.length;
@@ -394,7 +394,7 @@ console.log('TerminalInstance loaded');
             type: 'terminal',
             instanceClass: TerminalInstance,
             maxInstances: 0, // Unlimited
-            createContainer: function(instanceId) {
+            createContainer: function (instanceId) {
                 // This would create the modal/dialog container
                 // For now, return a simple div
                 const container = document.createElement('div');

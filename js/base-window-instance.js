@@ -115,12 +115,12 @@ console.log('BaseWindowInstance loaded');
         destroy() {
             this.emit('beforeDestroy');
             this.removeAllEventListeners();
-            
+
             if (this.container) {
                 this.container.innerHTML = '';
                 this.container = null;
             }
-            
+
             this.windowElement = null;
             this.isInitialized = false;
             this.emit('destroyed');
@@ -214,7 +214,7 @@ console.log('BaseWindowInstance loaded');
          */
         off(eventName, callback) {
             if (!this.eventListeners.has(eventName)) return;
-            
+
             const listeners = this.eventListeners.get(eventName);
             const index = listeners.indexOf(callback);
             if (index > -1) {
