@@ -270,10 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
         launchpadModal.addEventListener('click', function (e) {
             // Check if the click is on the modal background (not on the inner content)
             if (e.target === launchpadModal) {
-                const launchpadDialog = window.dialogs['launchpad-modal'];
-                if (launchpadDialog && typeof launchpadDialog.close === 'function') {
-                    launchpadDialog.close();
-                }
+                window.dialogs?.['launchpad-modal']?.close?.();
             }
         });
     }

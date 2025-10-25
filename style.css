@@ -999,7 +999,7 @@ html.dark #dock .dock-tooltip {
 .launchpad-apps-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 2rem;
+    gap: 1rem;
     padding: 1rem;
     overflow-y: auto;
     flex: 1;
@@ -1097,11 +1097,11 @@ html.dark #dock .dock-tooltip {
 
 /* Launchpad modal specific styling */
 .launchpad-modal-inner {
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
 }
 
 .dark .launchpad-modal-inner {
-    background: rgba(30, 41, 59, 0.85);
+    background: rgba(30, 41, 59, 0.7);
 }
