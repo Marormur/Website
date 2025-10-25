@@ -632,6 +632,16 @@
                         copyright: '© Marvin Temmen. All rights reserved.'
                     }
                 },
+                finder: {
+                    label: 'Finder',
+                    infoLabel: 'About Finder',
+                    about: {
+                        name: 'Finder',
+                        tagline: 'The innovative desktop file manager.',
+                        version: 'Version 2.0',
+                        copyright: '© Marvin Temmen. All rights reserved.'
+                    }
+                },
                 projects: {
                     label: 'GitHub Projects',
                     infoLabel: 'About GitHub Projects',
