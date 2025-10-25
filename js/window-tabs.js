@@ -1,397 +1,123 @@
-console.log('WindowTabs loaded');
-
-/**
- * WindowTabs - Tab-based UI for managing multiple window instances
- *
- * Provides browser-like tab interface for switching between multiple instances
- * of the same window type (e.g., multiple terminals, text editors)
- */
 (function () {
     'use strict';
-
-    /**
-     * Tab Manager for a window type
-     * Manages tabs for instances of a specific type
-     */
-    class WindowTabManager {
-        /**
-         * @param {Object} config
-         * @param {string} config.containerId - ID of the tab bar container element
-         * @param {InstanceManager} config.instanceManager - Associated instance manager
-         * @param {Function} config.onTabSwitch - Callback when tab is switched
-         * @param {Function} config.onTabClose - Callback when tab is closed
-         * @param {Function} config.onNewTab - Callback when new tab is requested
-         */
-        constructor(config) {
-            this.containerId = config.containerId;
-            this.instanceManager = config.instanceManager;
-            this.onTabSwitch = config.onTabSwitch || (() => { });
-            this.onTabClose = config.onTabClose || (() => { });
-            this.onNewTab = config.onNewTab || (() => { });
-            // Optional: called when all tabs have been closed
-            this.onAllTabsClosed = config.onAllTabsClosed || null;
-            // Whether to hide the tab bar when there is 0 or 1 tab
-            this.hideSingleTab = config.hideSingleTab !== false; // default true
-
-            this.tabBarElement = null;
-            this.tabsContainer = null;
-            this.newTabButton = null;
-
-            this.init();
-        }
-
-        /**
-         * Initialize tab bar UI
-         */
-        init() {
-            const container = document.getElementById(this.containerId);
-            if (!container) {
-                console.warn(`Tab container ${this.containerId} not found`);
-                return;
-            }
-
-            // Create tab bar structure
-            this.tabBarElement = document.createElement('div');
-            this.tabBarElement.className =
-                'window-tab-bar flex items-center bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700';
-            this.tabBarElement.setAttribute('role', 'tablist');
-
-            // Tabs container (scrollable)
-            this.tabsContainer = document.createElement('div');
-            this.tabsContainer.className =
-                'window-tabs-container flex-1 flex items-center overflow-x-auto';
-
-            // New tab button
-            this.newTabButton = document.createElement('button');
-            this.newTabButton.className =
-                'new-tab-button px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors';
-            this.newTabButton.innerHTML = '<span class="text-lg">+</span>';
-            this.newTabButton.setAttribute('aria-label', 'New tab');
-            this.newTabButton.title = 'New tab (⌘N)';
-
-            this.newTabButton.addEventListener('click', () => {
-                this.onNewTab();
-            });
-
-            this.tabBarElement.appendChild(this.tabsContainer);
-            this.tabBarElement.appendChild(this.newTabButton);
-
-            container.appendChild(this.tabBarElement);
-
-            // Initial visibility when there are no tabs yet
-            this.updateTabBarVisibility();
-        }
-
-        /**
-         * Create a tab element for an instance
-         * @param {BaseWindowInstance} instance
-         * @returns {HTMLElement}
-         */
-        createTab(instance) {
-            const tab = document.createElement('div');
-            tab.className =
-                'window-tab flex items-center gap-2 px-4 py-2 border-r border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors min-w-[120px] max-w-[200px]';
-            tab.dataset.instanceId = instance.instanceId;
-            tab.setAttribute('role', 'tab');
-            tab.setAttribute('aria-selected', 'false');
-
-            // Tab title
-            const title = document.createElement('span');
-            title.className = 'tab-title flex-1 truncate text-sm';
-            title.textContent = instance.title;
-
-            // Close button
-            const closeBtn = document.createElement('button');
-            closeBtn.className =
-                'tab-close-btn text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 text-lg leading-none';
-            closeBtn.innerHTML = '×';
-            closeBtn.setAttribute('aria-label', 'Close tab');
-            closeBtn.title = 'Close tab (⌘W)';
-
-            closeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.closeTab(instance.instanceId);
-            });
-
-            // Tab click to switch
-            tab.addEventListener('click', () => {
-                this.switchToTab(instance.instanceId);
-            });
-
-            tab.appendChild(title);
-            tab.appendChild(closeBtn);
-
-            return tab;
-        }
-
-        /**
-         * Add tab for an instance
-         * @param {BaseWindowInstance} instance
-         */
-        addTab(instance) {
-            if (!this.tabsContainer) return;
-
-            const tab = this.createTab(instance);
-            this.tabsContainer.appendChild(tab);
-
-            // Make this tab active
-            this.setActiveTab(instance.instanceId);
-
-            // Update tab bar visibility
-            this.updateTabBarVisibility();
-
-            // Listen for instance title changes
-            instance.on('stateChanged', (data) => {
-                // Check if tab still exists in DOM before querying
-                const tabTitleEl =
-                    tab && tab.isConnected
-                        ? tab.querySelector('.tab-title')
-                        : null;
-                if (
-                    data.newState &&
-                    tabTitleEl &&
-                    instance.title !== tabTitleEl.textContent
-                ) {
-                    this.updateTabTitle(instance.instanceId, instance.title);
-                }
-            });
-        }
-
-        /**
-         * Remove tab for an instance
-         * @param {string} instanceId
-         */
-        removeTab(instanceId) {
-            if (!this.tabsContainer) return;
-
-            const tab = this.tabsContainer.querySelector(
-                `[data-instance-id="${instanceId}"]`,
-            );
-            if (tab) {
-                tab.remove();
-            }
-
-            // Update tab bar visibility after removal
-            this.updateTabBarVisibility();
-        }
-
-        /**
-         * Update tab title
-         * @param {string} instanceId
-         * @param {string} newTitle
-         */
-        updateTabTitle(instanceId, newTitle) {
-            if (!this.tabsContainer) return;
-
-            const tab = this.tabsContainer.querySelector(
-                `[data-instance-id="${instanceId}"]`,
-            );
-            if (tab) {
-                const titleElement = tab.querySelector('.tab-title');
-                if (titleElement) {
-                    titleElement.textContent = newTitle;
-                }
-            }
-        }
-
-        /**
-         * Set active tab
-         * @param {string} instanceId
-         */
-        setActiveTab(instanceId) {
-            if (!this.tabsContainer) return;
-
-            // Remove active class from all tabs
-            const allTabs = this.tabsContainer.querySelectorAll('.window-tab');
-            allTabs.forEach((tab) => {
-                tab.classList.remove(
-                    'bg-white',
-                    'dark:bg-gray-900',
-                    'border-b-2',
-                    'border-blue-500',
-                );
-                tab.setAttribute('aria-selected', 'false');
-            });
-
-            // Add active class to selected tab
-            const activeTab = this.tabsContainer.querySelector(
-                `[data-instance-id="${instanceId}"]`,
-            );
-            if (activeTab) {
-                activeTab.classList.add(
-                    'bg-white',
-                    'dark:bg-gray-900',
-                    'border-b-2',
-                    'border-blue-500',
-                );
-                activeTab.setAttribute('aria-selected', 'true');
-
-                // Scroll into view if needed
-                activeTab.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest',
-                    inline: 'center',
-                });
-            }
-        }
-
-        /**
-         * Switch to a tab
-         * @param {string} instanceId
-         */
-        switchToTab(instanceId) {
-            this.setActiveTab(instanceId);
-            this.instanceManager.setActiveInstance(instanceId);
-            this.onTabSwitch(instanceId);
-        }
-
-        /**
-         * Close a tab
-         * @param {string} instanceId
-         */
-        closeTab(instanceId) {
-            const instance = this.instanceManager.getInstance(instanceId);
-            if (instance) {
-                // Call the close callback first
-                this.onTabClose(instanceId);
-
-                // Remove the tab from UI
-                this.removeTab(instanceId);
-
-                // Destroy the instance
-                this.instanceManager.destroyInstance(instanceId);
-
-                // Switch to the last remaining tab if any
-                const remainingInstances =
-                    this.instanceManager.getAllInstances();
-                if (remainingInstances.length > 0) {
-                    const lastInstance =
-                        remainingInstances[remainingInstances.length - 1];
-                    this.switchToTab(lastInstance.instanceId);
-                } else {
-                    // No instances left: optionally notify and hide tab bar
-                    if (typeof this.onAllTabsClosed === 'function') {
-                        try {
-                            this.onAllTabsClosed();
-                        } catch (e) {
-                            console.warn('onAllTabsClosed handler threw:', e);
-                        }
-                    }
-                    this.updateTabBarVisibility();
-                }
-            }
-        }
-
-        /**
-         * Get all tab elements
-         * @returns {NodeList}
-         */
-        getAllTabs() {
-            return this.tabsContainer
-                ? this.tabsContainer.querySelectorAll('.window-tab')
-                : [];
-        }
-
-        /**
-         * Get tab at index
-         * @param {number} index
-         * @returns {HTMLElement|null}
-         */
-        getTabAtIndex(index) {
-            const tabs = this.getAllTabs();
-            return tabs[index] || null;
-        }
-
-        /**
-         * Switch to tab by index
-         * @param {number} index
-         */
-        switchToTabByIndex(index) {
-            const tab = this.getTabAtIndex(index);
-            if (tab) {
-                const instanceId = tab.dataset.instanceId;
-                this.switchToTab(instanceId);
-            }
-        }
-
-        /**
-         * Switch to next tab
-         */
-        switchToNextTab() {
-            const tabs = Array.from(this.getAllTabs());
-            const activeTab = this.tabsContainer.querySelector(
-                '.window-tab[aria-selected="true"]',
-            );
-
-            if (!activeTab || tabs.length === 0) return;
-
-            const currentIndex = tabs.indexOf(activeTab);
-            const nextIndex = (currentIndex + 1) % tabs.length;
-            const nextTab = tabs[nextIndex];
-
-            if (nextTab) {
-                this.switchToTab(nextTab.dataset.instanceId);
-            }
-        }
-
-        /**
-         * Switch to previous tab
-         */
-        switchToPreviousTab() {
-            const tabs = Array.from(this.getAllTabs());
-            const activeTab = this.tabsContainer.querySelector(
-                '.window-tab[aria-selected="true"]',
-            );
-
-            if (!activeTab || tabs.length === 0) return;
-
-            const currentIndex = tabs.indexOf(activeTab);
-            const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-            const prevTab = tabs[prevIndex];
-
-            if (prevTab) {
-                this.switchToTab(prevTab.dataset.instanceId);
-            }
-        }
-
-        /**
-         * Clear all tabs
-         */
-        clearAllTabs() {
-            if (this.tabsContainer) {
-                this.tabsContainer.innerHTML = '';
-            }
-        }
-
-        /**
-         * Destroy tab manager
-         */
-        destroy() {
-            if (this.tabBarElement) {
-                this.tabBarElement.remove();
-                this.tabBarElement = null;
-            }
-            this.tabsContainer = null;
-            this.newTabButton = null;
-        }
-
-        /**
-         * Update tab bar visibility depending on number of tabs
-         */
-        updateTabBarVisibility() {
-            if (!this.tabBarElement || !this.hideSingleTab) return;
-            const tabCount = this.tabsContainer
-                ? this.tabsContainer.querySelectorAll('.window-tab').length
-                : 0;
-            // Hide when 0 or 1 tabs, show otherwise
-            if (tabCount <= 1) {
-                this.tabBarElement.classList.add('hidden');
-            } else {
-                this.tabBarElement.classList.remove('hidden');
-            }
-        }
+    // (reserved) helper could be added later to skip shortcuts in inputs
+    function createTabEl(instance, isActive) {
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = [
+            'wt-tab',
+            'px-3 py-1 text-sm rounded-t-md border border-b-0',
+            'transition-colors whitespace-nowrap flex items-center gap-2',
+            isActive
+                ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700'
+                : 'bg-gray-200/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800'
+        ].join(' ');
+        tab.dataset.instanceId = instance.instanceId;
+        const title = document.createElement('span');
+        title.className = 'wt-tab-title';
+        title.textContent = instance.title || instance.instanceId;
+        tab.appendChild(title);
+        const close = document.createElement('span');
+        close.className = 'wt-tab-close ml-1 text-xs opacity-70 hover:opacity-100';
+        close.textContent = '×';
+        close.setAttribute('aria-label', 'Tab schließen');
+        close.title = 'Tab schließen';
+        tab.appendChild(close);
+        return tab;
     }
-
-    // Export to global scope
-    window.WindowTabManager = WindowTabManager;
+    function renderTabs(container, manager, options, onSelect, onClose) {
+        container.innerHTML = '';
+        const bar = document.createElement('div');
+        bar.className = 'window-tabs flex items-center gap-1 px-2 pt-2 select-none';
+        const instances = manager.getAllInstances();
+        const active = manager.getActiveInstance();
+        const activeId = active?.instanceId ?? null;
+        instances.forEach((inst) => {
+            const tab = createTabEl(inst, inst.instanceId === activeId);
+            tab.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target.closest('.wt-tab-close')) {
+                    onClose(inst.instanceId);
+                }
+                else {
+                    onSelect(inst.instanceId);
+                }
+            });
+            // Middle-click closes on supported devices
+            tab.addEventListener('auxclick', (e) => {
+                if (e.button === 1) {
+                    onClose(inst.instanceId);
+                }
+            });
+            bar.appendChild(tab);
+        });
+        if (options.addButton !== false) {
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'wt-add px-2 py-1 text-sm rounded-md border bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700';
+            addBtn.textContent = '+';
+            addBtn.title = 'Neue Instanz';
+            addBtn.addEventListener('click', () => {
+                const title = options.onCreateInstanceTitle?.();
+                manager.createInstance({ title });
+                // refresh will be triggered by wrapper
+            });
+            bar.appendChild(addBtn);
+        }
+        container.appendChild(bar);
+        // Bottom border under tabs
+        const underline = document.createElement('div');
+        underline.className = 'h-px bg-gray-300 dark:bg-gray-700';
+        container.appendChild(underline);
+    }
+    function wrapManager(manager, onChange) {
+        const createOrig = manager.createInstance.bind(manager);
+        const destroyOrig = manager.destroyInstance.bind(manager);
+        const setActiveOrig = manager.setActiveInstance.bind(manager);
+        manager.createInstance = (cfg) => {
+            const inst = createOrig(cfg);
+            onChange();
+            return inst;
+        };
+        manager.destroyInstance = (id) => {
+            destroyOrig(id);
+            onChange();
+        };
+        manager.setActiveInstance = (id) => {
+            setActiveOrig(id);
+            onChange();
+        };
+        return manager;
+    }
+    function createController(manager, mountEl, options = {}) {
+        const wrapped = wrapManager(manager, () => controller.refresh());
+        const controller = {
+            el: mountEl,
+            refresh() {
+                renderTabs(mountEl, wrapped, options, (id) => wrapped.setActiveInstance(id), (id) => wrapped.destroyInstance(id));
+            },
+            destroy() {
+                mountEl.innerHTML = '';
+            },
+            setTitle(instanceId, title) {
+                const inst = wrapped.getInstance(instanceId);
+                if (inst) {
+                    inst.title = title;
+                    this.refresh();
+                }
+            }
+        };
+        controller.refresh();
+        return controller;
+    }
+    const WindowTabs = {
+        /**
+         * Create a window tabs bar bound to a specific InstanceManager.
+         */
+        create(manager, mountEl, options) {
+            return createController(manager, mountEl, options);
+        }
+    };
+    window.WindowTabs = WindowTabs;
 })();
+//# sourceMappingURL=window-tabs.js.map

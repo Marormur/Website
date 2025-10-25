@@ -32,6 +32,9 @@ jobs:
       
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Build TypeScript
+        run: npm run build:ts
       
       - name: Build Tailwind CSS
         run: npm run build:css

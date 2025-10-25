@@ -13,11 +13,12 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build:ts": "tsc -p tsconfig.tsbuild.json",
     "lint": "eslint js/**/*.js app.js i18n.js",
     "lint:fix": "eslint --fix js/**/*.js app.js i18n.js",
     "format": "prettier --write \"**/*.{js,css,html,md,json}\"",
     "format:check": "prettier --check \"**/*.{js,css,html,md,json}\"",
-    "validate": "npm run typecheck && npm run lint && npm run build:css && npm run test:e2e",
+    "validate": "npm run typecheck && npm run build:ts && npm run lint && npm run build:css && npm run test:e2e",
     "docs:clean": "rimraf docs/api",
     "docs:generate": "jsdoc -c jsdoc.json -r js/ -d docs/api",
     "prepare": "husky"
