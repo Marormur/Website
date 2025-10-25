@@ -5,17 +5,13 @@
  * - Runs tests in Chromium by default
  */
 
-const { defineConfig, devices } = require("@playwright/test");
+import { defineConfig, devices } from "@playwright/test";
 
-// Decide how to provide a web server for tests:
-// - In local dev with VS Code Live Server on :3000, we reuse it (default)
-// - In CI (or when USE_NODE_SERVER=1), we start our own Node server on :5173
-const useNodeServer = !!process.env.CI || process.env.USE_NODE_SERVER === "1";
-const BASE_URL = useNodeServer
-    ? "http://127.0.0.1:5173"
-    : "http://127.0.0.1:3000";
+// Always use the Node server on port 5173 for tests
+// The webServer config below will start it automatically if not running
+const BASE_URL = "http://127.0.0.1:5173";
 
-module.exports = defineConfig({
+export default defineConfig({
     testDir: "./tests",
     timeout: 30 * 1000,
     expect: { timeout: 5000 },
@@ -45,17 +41,12 @@ module.exports = defineConfig({
             use: { ...devices["Desktop Safari"] },
         },
     ],
-    webServer: useNodeServer
-        ? {
-              command: "node server.js",
-              url: "http://127.0.0.1:5173",
-              reuseExistingServer: !process.env.CI,
-              timeout: 60 * 1000,
-          }
-        : {
-              command: 'echo "Using VS Code Live Server on port 3000"',
-              url: "http://127.0.0.1:3000",
-              reuseExistingServer: true,
-              timeout: 30 * 1000,
-          },
+    // Always start the Node server on port 5173 for tests
+    // In CI, we need a fresh server; locally, we can reuse an existing one
+    webServer: {
+        command: "node server.js",
+        url: "http://127.0.0.1:5173",
+        reuseExistingServer: !process.env.CI,
+        timeout: 60 * 1000,
+    },
 });
