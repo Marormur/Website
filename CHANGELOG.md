@@ -22,6 +22,13 @@ All notable changes to this project will be documented in this file.
   - New source: src/ts/instance-manager.ts → emits to js/instance-manager.js
   - Typed manager with strong instance registry and lifecycle control
   - Preserves global InstanceManager class and all manager patterns
+
+- refactor(ts): migrate API module to TypeScript
+  - New source: src/ts/api.ts → emits to js/api.js
+  - Central unified API wrapper with typed module proxies
+  - Safe window property access via getWindowProp and callWindowMethod helpers
+  - Preserves all legacy global function wrappers (setThemePreference, renderApplicationMenu, etc.)
+  - No runtime API changes; backward compatibility maintained
 - CODEBASE_IMPROVEMENTS.md with organizational tasks
 - TYPESCRIPT_MIGRATION_PLAN.md with detailed migration strategy
 - API Docs: Generated JSDoc and in-app “📖 API Docs” link (index.html)

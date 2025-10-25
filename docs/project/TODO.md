@@ -82,7 +82,7 @@ Hinweis: Diese Tasks erfüllen direkt „Priorität 1: Core Features & Integrati
 - [ ] `window-manager.js` → `.ts`
 - [x] `action-bus.js` → `src/ts/action-bus.ts` (emit: `js/action-bus.js`)
 - [x] `window-chrome.js` → `src/ts/window-chrome.ts` (emit: `js/window-chrome.js`)
-- [ ] `api.js` → `.ts`
+- [x] `api.js` → `src/ts/api.ts` (emit: `js/api.js`)
 - [ ] (danach) `terminal-instance.js`, `text-editor-instance.js`, `theme.js`, `storage.js`
 
 Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün

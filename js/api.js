@@ -1,31 +1,23 @@
 console.log('API loaded');
-
-/**
- * API - Zentrale Schnittstelle zu allen Modulen
- *
- * Vorteile:
- * - Keine vielen einzelnen Wrapper-Funktionen mehr
- * - Konsistenter Zugriff auf alle Module
- * - Einfache Fehlerbehandlung
- * - Auto-Completion in modernen IDEs
- *
- * Verwendung:
- * API.theme.setPreference('dark')
- * API.window.open('finder-modal')
- * API.dock.getMagnification()
- */
 (function () {
     'use strict';
-
-    /**
-     * Safe Module Proxy - ruft Modul-Funktionen nur auf wenn sie existieren
-     */
+    // Helper to safely access window properties
+    function getWindowProp(propName) {
+        return window[propName];
+    }
+    // Helper to call a method on a window property
+    function callWindowMethod(objName, methodName, ...args) {
+        const obj = getWindowProp(objName);
+        if (obj && typeof obj[methodName] === 'function') {
+            return obj[methodName](...args);
+        }
+        return undefined;
+    }
     function createModuleProxy(moduleName, methods) {
         const proxy = {};
-
         methods.forEach((method) => {
             proxy[method] = function (...args) {
-                const module = window[moduleName];
+                const module = getWindowProp(moduleName);
                 if (module && typeof module[method] === 'function') {
                     return module[method](...args);
                 }
@@ -33,12 +25,9 @@ console.log('API loaded');
                 return undefined;
             };
         });
-
         return proxy;
     }
-
     const API = {
-        // Error handling
         error: createModuleProxy('ErrorHandler', [
             'enable',
             'disable',
@@ -46,8 +35,6 @@ console.log('API loaded');
             'clearLogs',
             'exportLogs',
         ]),
-
-        // Performance monitor
         performance: createModuleProxy('PerfMonitor', [
             'enable',
             'disable',
@@ -56,29 +43,22 @@ console.log('API loaded');
             'measure',
             'report',
         ]),
-        // Theme-System
         theme: createModuleProxy('ThemeSystem', [
             'setThemePreference',
             'getThemePreference',
             'applyTheme',
             'initTheme',
         ]),
-
-        // Icon-System
         icon: createModuleProxy('IconSystem', [
             'ensureSvgNamespace',
             'getMenuIconSvg',
             'renderIconIntoElement',
         ]),
-
-        // Dock-System
         dock: createModuleProxy('DockSystem', [
             'getDockReservedBottom',
             'initDockMagnification',
             'updateDockIndicators',
         ]),
-
-        // Menu-System
         menu: createModuleProxy('MenuSystem', [
             'renderApplicationMenu',
             'handleMenuActionActivation',
@@ -87,14 +67,10 @@ console.log('API loaded');
             'toggleMenuDropdown',
             'isAnyDropdownOpen',
         ]),
-
-        // Desktop-System
         desktop: createModuleProxy('DesktopSystem', [
             'initDesktop',
             'openDesktopItemById',
         ]),
-
-        // System-UI (WiFi, Bluetooth, etc.)
         system: createModuleProxy('SystemUI', [
             'initSystemStatusControls',
             'updateAllSystemStatusUI',
@@ -103,8 +79,6 @@ console.log('API loaded');
             'setBluetoothDevice',
             'setAudioDevice',
         ]),
-
-        // Storage & Persistence
         storage: createModuleProxy('StorageSystem', [
             'readFinderState',
             'writeFinderState',
@@ -116,127 +90,93 @@ console.log('API loaded');
             'resetWindowLayout',
             'getDialogWindowElement',
         ]),
-
-        // Finder
-        finder: createModuleProxy('FinderSystem', [
-            'init',
-            'openFinder',
-            'closeFinder',
-        ]),
-
-        // Text Editor
+        finder: createModuleProxy('FinderSystem', ['init', 'openFinder', 'closeFinder']),
         textEditor: {
-            init: (container) => window.TextEditorSystem?.init(container),
-            loadRemoteFile: (payload) =>
-                window.TextEditorSystem?.loadRemoteFile(payload),
-            showLoading: (payload) =>
-                window.TextEditorSystem?.showLoading(payload),
-            showLoadError: (payload) =>
-                window.TextEditorSystem?.showLoadError(payload),
-            clearEditor: () => window.TextEditorSystem?.clearEditor(),
-            saveFile: () => window.TextEditorSystem?.saveFile(),
-            openFile: () => window.TextEditorSystem?.openFile(),
-            handleMenuAction: (action) =>
-                window.TextEditorSystem?.handleMenuAction(action),
+            init: (container) => callWindowMethod('TextEditorSystem', 'init', container),
+            loadRemoteFile: (payload) => callWindowMethod('TextEditorSystem', 'loadRemoteFile', payload),
+            showLoading: (payload) => callWindowMethod('TextEditorSystem', 'showLoading', payload),
+            showLoadError: (payload) => callWindowMethod('TextEditorSystem', 'showLoadError', payload),
+            clearEditor: () => callWindowMethod('TextEditorSystem', 'clearEditor'),
+            saveFile: () => callWindowMethod('TextEditorSystem', 'saveFile'),
+            openFile: () => callWindowMethod('TextEditorSystem', 'openFile'),
+            handleMenuAction: (action) => callWindowMethod('TextEditorSystem', 'handleMenuAction', action),
         },
-
-        // Settings
         settings: {
-            init: (container) => window.SettingsSystem?.init(container),
-            showSection: (section) =>
-                window.SettingsSystem?.showSection(section),
-            syncThemePreference: () =>
-                window.SettingsSystem?.syncThemePreference(),
-            syncLanguagePreference: () =>
-                window.SettingsSystem?.syncLanguagePreference(),
+            init: (container) => callWindowMethod('SettingsSystem', 'init', container),
+            showSection: (section) => callWindowMethod('SettingsSystem', 'showSection', section),
+            syncThemePreference: () => callWindowMethod('SettingsSystem', 'syncThemePreference'),
+            syncLanguagePreference: () => callWindowMethod('SettingsSystem', 'syncLanguagePreference'),
         },
-
-        // Window-Manager
         window: {
-            register: (config) => window.WindowManager?.register(config),
-            registerAll: (configs) =>
-                window.WindowManager?.registerAll(configs),
-            getConfig: (id) => window.WindowManager?.getConfig(id),
-            open: (id) => window.WindowManager?.open(id),
-            close: (id) => window.WindowManager?.close(id),
-            bringToFront: (id) => window.WindowManager?.bringToFront(id),
-            getTopWindow: () => window.WindowManager?.getTopWindow(),
-            getProgramInfo: (id) => window.WindowManager?.getProgramInfo(id),
-            getAllWindowIds: () =>
-                window.WindowManager?.getAllWindowIds() || [],
-            getPersistentWindowIds: () =>
-                window.WindowManager?.getPersistentWindowIds() || [],
-            getDialogInstance: (id) =>
-                window.WindowManager?.getDialogInstance(id),
-            syncZIndexWithDOM: () => window.WindowManager?.syncZIndexWithDOM(),
+            register: (config) => callWindowMethod('WindowManager', 'register', config),
+            registerAll: (configs) => callWindowMethod('WindowManager', 'registerAll', configs),
+            getConfig: (id) => callWindowMethod('WindowManager', 'getConfig', id),
+            open: (id) => callWindowMethod('WindowManager', 'open', id),
+            close: (id) => callWindowMethod('WindowManager', 'close', id),
+            bringToFront: (id) => callWindowMethod('WindowManager', 'bringToFront', id),
+            getTopWindow: () => callWindowMethod('WindowManager', 'getTopWindow'),
+            getProgramInfo: (id) => callWindowMethod('WindowManager', 'getProgramInfo', id),
+            getAllWindowIds: () => callWindowMethod('WindowManager', 'getAllWindowIds') || [],
+            getPersistentWindowIds: () => callWindowMethod('WindowManager', 'getPersistentWindowIds') || [],
+            getDialogInstance: (id) => callWindowMethod('WindowManager', 'getDialogInstance', id),
+            syncZIndexWithDOM: () => callWindowMethod('WindowManager', 'syncZIndexWithDOM'),
         },
-
-        // Action-Bus
         action: {
-            register: (name, handler) =>
-                window.ActionBus?.register(name, handler),
-            registerAll: (actions) => window.ActionBus?.registerAll(actions),
-            execute: (name, params, element) =>
-                window.ActionBus?.execute(name, params, element),
+            register: (name, handler) => callWindowMethod('ActionBus', 'register', name, handler),
+            registerAll: (actions) => callWindowMethod('ActionBus', 'registerAll', actions),
+            execute: (name, params, element) => callWindowMethod('ActionBus', 'execute', name, params, element),
         },
-
-        // I18n
         i18n: {
             translate: (key, fallback) => {
-                if (window.appI18n?.translate) {
-                    const result = window.appI18n.translate(key);
+                const appI18n = getWindowProp('appI18n');
+                if (appI18n && typeof appI18n['translate'] === 'function') {
+                    const result = appI18n['translate'](key);
                     return result === key && fallback ? fallback : result;
                 }
                 return fallback || key;
             },
-            setLanguagePreference: (lang) =>
-                window.appI18n?.setLanguagePreference(lang),
-            getLanguagePreference: () =>
-                window.appI18n?.getLanguagePreference() || 'system',
-            getActiveLanguage: () =>
-                window.appI18n?.getActiveLanguage() || 'en',
-            applyTranslations: () => window.appI18n?.applyTranslations(),
+            setLanguagePreference: (lang) => callWindowMethod('appI18n', 'setLanguagePreference', lang),
+            getLanguagePreference: () => callWindowMethod('appI18n', 'getLanguagePreference') || 'system',
+            getActiveLanguage: () => callWindowMethod('appI18n', 'getActiveLanguage') || 'en',
+            applyTranslations: () => callWindowMethod('appI18n', 'applyTranslations'),
         },
-
-        // Helper-Funktionen die in app.js bleiben
         helpers: {
             getMenuBarBottom: () => {
                 const header = document.querySelector('body > header');
-                if (!header) return 0;
+                if (!header)
+                    return 0;
                 return header.getBoundingClientRect().bottom;
             },
-
             clampWindowToMenuBar: (target) => {
-                if (window.clampWindowToMenuBar) {
-                    return window.clampWindowToMenuBar(target);
+                const fn = getWindowProp('clampWindowToMenuBar');
+                if (typeof fn === 'function') {
+                    return fn(target);
                 }
+                return undefined;
             },
-
             computeSnapMetrics: (side) => {
-                if (window.computeSnapMetrics) {
-                    return window.computeSnapMetrics(side);
+                const fn = getWindowProp('computeSnapMetrics');
+                if (typeof fn === 'function') {
+                    return fn(side);
                 }
+                return undefined;
             },
-
             showSnapPreview: (side) => {
-                if (window.showSnapPreview) {
-                    window.showSnapPreview(side);
+                const fn = getWindowProp('showSnapPreview');
+                if (typeof fn === 'function') {
+                    fn(side);
                 }
             },
-
             hideSnapPreview: () => {
-                if (window.hideSnapPreview) {
-                    window.hideSnapPreview();
+                const fn = getWindowProp('hideSnapPreview');
+                if (typeof fn === 'function') {
+                    fn();
                 }
             },
         },
     };
-
-    // Globaler Export
     window.API = API;
-
-    // Legacy-Kompatibilität - erstelle globale Funktionen die API verwenden
-    // Damit alter Code weiter funktioniert
+    // Legacy compatibility wrappers
     const createLegacyWrapper = (apiPath) => {
         return function (...args) {
             const parts = apiPath.split('.');
@@ -254,69 +194,38 @@ console.log('API loaded');
             return fn;
         };
     };
-
+    const w = window;
     // Theme
-    window.setThemePreference = createLegacyWrapper('theme.setThemePreference');
-    window.getThemePreference = createLegacyWrapper('theme.getThemePreference');
-
+    w.setThemePreference = createLegacyWrapper('theme.setThemePreference');
+    w.getThemePreference = createLegacyWrapper('theme.getThemePreference');
     // Icon
-    window.ensureSvgNamespace = createLegacyWrapper('icon.ensureSvgNamespace');
-    window.getMenuIconSvg = createLegacyWrapper('icon.getMenuIconSvg');
-    window.renderIconIntoElement = createLegacyWrapper(
-        'icon.renderIconIntoElement',
-    );
-
+    w.ensureSvgNamespace = createLegacyWrapper('icon.ensureSvgNamespace');
+    w.getMenuIconSvg = createLegacyWrapper('icon.getMenuIconSvg');
+    w.renderIconIntoElement = createLegacyWrapper('icon.renderIconIntoElement');
     // Dock
-    window.getDockReservedBottom = createLegacyWrapper(
-        'dock.getDockReservedBottom',
-    );
-    window.initDockMagnification = createLegacyWrapper(
-        'dock.initDockMagnification',
-    );
-
+    w.getDockReservedBottom = createLegacyWrapper('dock.getDockReservedBottom');
+    w.initDockMagnification = createLegacyWrapper('dock.initDockMagnification');
     // Menu
-    window.renderApplicationMenu = createLegacyWrapper(
-        'menu.renderApplicationMenu',
-    );
-    window.handleMenuActionActivation = createLegacyWrapper(
-        'menu.handleMenuActionActivation',
-    );
-
+    w.renderApplicationMenu = createLegacyWrapper('menu.renderApplicationMenu');
+    w.handleMenuActionActivation = createLegacyWrapper('menu.handleMenuActionActivation');
     // Desktop
-    window.initDesktop = createLegacyWrapper('desktop.initDesktop');
-    window.openDesktopItemById = createLegacyWrapper(
-        'desktop.openDesktopItemById',
-    );
-
+    w.initDesktop = createLegacyWrapper('desktop.initDesktop');
+    w.openDesktopItemById = createLegacyWrapper('desktop.openDesktopItemById');
     // System
-    window.initSystemStatusControls = createLegacyWrapper(
-        'system.initSystemStatusControls',
-    );
-    window.updateAllSystemStatusUI = createLegacyWrapper(
-        'system.updateAllSystemStatusUI',
-    );
-    window.handleSystemToggle = createLegacyWrapper(
-        'system.handleSystemToggle',
-    );
-    window.setConnectedNetwork = createLegacyWrapper(
-        'system.setConnectedNetwork',
-    );
-    window.setBluetoothDevice = createLegacyWrapper(
-        'system.setBluetoothDevice',
-    );
-    window.setAudioDevice = createLegacyWrapper('system.setAudioDevice');
-
+    w.initSystemStatusControls = createLegacyWrapper('system.initSystemStatusControls');
+    w.updateAllSystemStatusUI = createLegacyWrapper('system.updateAllSystemStatusUI');
+    w.handleSystemToggle = createLegacyWrapper('system.handleSystemToggle');
+    w.setConnectedNetwork = createLegacyWrapper('system.setConnectedNetwork');
+    w.setBluetoothDevice = createLegacyWrapper('system.setBluetoothDevice');
+    w.setAudioDevice = createLegacyWrapper('system.setAudioDevice');
     // Storage
-    window.readFinderState = createLegacyWrapper('storage.readFinderState');
-    window.writeFinderState = createLegacyWrapper('storage.writeFinderState');
-    window.clearFinderState = createLegacyWrapper('storage.clearFinderState');
-    window.saveOpenModals = createLegacyWrapper('storage.saveOpenModals');
-    window.restoreOpenModals = createLegacyWrapper('storage.restoreOpenModals');
-    window.saveWindowPositions = createLegacyWrapper(
-        'storage.saveWindowPositions',
-    );
-    window.restoreWindowPositions = createLegacyWrapper(
-        'storage.restoreWindowPositions',
-    );
-    window.resetWindowLayout = createLegacyWrapper('storage.resetWindowLayout');
+    w.readFinderState = createLegacyWrapper('storage.readFinderState');
+    w.writeFinderState = createLegacyWrapper('storage.writeFinderState');
+    w.clearFinderState = createLegacyWrapper('storage.clearFinderState');
+    w.saveOpenModals = createLegacyWrapper('storage.saveOpenModals');
+    w.restoreOpenModals = createLegacyWrapper('storage.restoreOpenModals');
+    w.saveWindowPositions = createLegacyWrapper('storage.saveWindowPositions');
+    w.restoreWindowPositions = createLegacyWrapper('storage.restoreWindowPositions');
+    w.resetWindowLayout = createLegacyWrapper('storage.resetWindowLayout');
 })();
+//# sourceMappingURL=api.js.map
