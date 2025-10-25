@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+- refactor(desktop): use ActionBus for double-click open on desktop icons
+  - Adds data-action-dblclick="openDesktopItem" to desktop icon buttons
+  - Keeps single-tap open for touch/pen locally; selection logic unchanged
+
 - chore: deprecate legacy loadGithubRepos in app.js
   - Removed init-time usage; menu reload now uses FinderSystem directly
   - Kept a guarded no-op function that delegates to FinderSystem and returns early
