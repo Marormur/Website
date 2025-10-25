@@ -102,7 +102,12 @@ Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 - [x] Dialog Utilities extrahieren (`src/ts/dialog-utils.ts` → emit: `js/dialog-utils.js`), vor `dialog.js` laden; `syncTopZIndexWithDOM`, `bringDialogToFront`, `bringAllWindowsToFront` aus `app.js` entfernt
 - [x] App Initialization extrahieren (`src/ts/app-init.ts` → emit: `js/app-init.js`), vor `app.js` laden; DOMContentLoaded Block & initModalIds aus `app.js` entfernt; **app.js reduziert von 1308 auf 1051 Zeilen (-257 Zeilen)**
 - [x] Dock Indicators extrahiert zu `dock.js`; `updateDockIndicators` aus `app.js` entfernt; **app.js reduziert von 1051 auf 1024 Zeilen (-27 Zeilen)**
-- [ ] `app.js` schrittweise modularisieren und zu `app.ts` migrieren (verbleibend: 1024 Zeilen, davon ~979 Zeilen in `loadGithubRepos` Legacy-Funktion)
+- [x] **CRITICAL BUG FIX**: TypeScript `exports` Problem behoben - `scripts/fix-ts-exports.js` erstellt, Build-Automation implementiert; Terminal-Modal zu MODAL_IDS hinzugefügt (war fehlend); 201 E2E-Tests jetzt passing ✅
+- [ ] **NEXT: loadGithubRepos Legacy-Funktion behandeln** (977 Zeilen, 88% von app.js!)
+    - Option A: Deprecate & entfernen (bereits durch `finder.js` ersetzt)
+    - Option B: Zu `src/ts/legacy-finder.ts` migrieren und importieren
+    - Aufrufe in `app-init.js` und `menu.js` anpassen
+    - Geschätzt: 2-3h (Option A) oder 4-6h (Option B)
 - [ ] Globale Event-Listener auf ActionBus migrieren (wo noch Legacy)
 
 #### Phase 5 – Testing & Quality
