@@ -1,17 +1,7 @@
 const { test, expect } = require('@playwright/test');
+const { gotoHome, openAppleMenu } = require('./utils');
 
-// Open the Apple menu and return the locator for the menu
-async function openAppleMenu(page) {
-    const trigger = page.locator('#apple-menu-trigger');
-    await trigger.click();
-    return page.locator('#apple-menu-dropdown');
-}
-
-// Helper: navigate to index using configured baseURL
-async function gotoHome(page, baseURL) {
-    // Keep consistent with existing tests that use baseURL + '/index.html'
-    await page.goto(baseURL + '/index.html');
-}
+// shared helpers imported from ./utils
 
 // System language should follow the browser locale when set to 'system'
 test.describe('i18n: system language detection', () => {
@@ -20,8 +10,6 @@ test.describe('i18n: system language detection', () => {
 
         test('uses German when browser locale is de-DE', async ({ page, baseURL }) => {
             await gotoHome(page, baseURL);
-            // Wait for page to load
-            await page.waitForLoadState('load');
 
             // Open Apple menu and verify the label of the settings entry is German
             await openAppleMenu(page);
