@@ -59,6 +59,11 @@ console.log('MultiInstanceIntegration loaded');
                 this.setupTextEditorIntegration();
             }
 
+            // Setup Finder integration if available
+            if (window.FinderInstanceManager) {
+                this.setupFinderIntegration();
+            }
+
             // Register managers with session manager
             if (window.SessionManager) {
                 if (window.TerminalInstanceManager) {
@@ -66,6 +71,9 @@ console.log('MultiInstanceIntegration loaded');
                 }
                 if (window.TextEditorInstanceManager) {
                     window.SessionManager.registerManager('text-editor', window.TextEditorInstanceManager);
+                }
+                if (window.FinderInstanceManager) {
+                    window.SessionManager.registerManager('finder', window.FinderInstanceManager);
                 }
 
                 // Start auto-save
@@ -188,6 +196,63 @@ console.log('MultiInstanceIntegration loaded');
 
             // Listen for new instances and add tabs
             this.setupInstanceListeners('text-editor');
+        }
+
+        /**
+         * Setup Finder modal integration
+         */
+        setupFinderIntegration() {
+            console.log('Setting up Finder integration...');
+
+            // Create tab manager for finder
+            const finderTabManager = new window.WindowTabManager({
+                containerId: 'finder-tabs-container',
+                instanceManager: window.FinderInstanceManager,
+                onTabSwitch: (instanceId) => {
+                    // Set as active in manager first
+                    window.FinderInstanceManager.setActiveInstance(instanceId);
+                    // Then show/hide instances
+                    this.showInstance('finder', instanceId);
+                },
+                onTabClose: (instanceId) => {
+                    // Instance will be destroyed by tab manager
+                },
+                onNewTab: () => {
+                    // Create a new finder instance
+                    const count = window.FinderInstanceManager.getInstanceCount();
+                    window.FinderInstanceManager.createInstance({
+                        title: `Finder ${count + 1}`
+                    });
+                }
+            });
+
+            // Register keyboard shortcuts for Finder
+            this.registerShortcutsForType('finder', window.FinderInstanceManager);
+
+            // Store integration info
+            this.integrations.set('finder', {
+                manager: window.FinderInstanceManager,
+                tabManager: finderTabManager,
+                modalId: 'finder-modal',
+                containerId: 'finder-container'
+            });
+
+            // Add tabs for any existing instances
+            const existingFinders = window.FinderInstanceManager.getAllInstances();
+            existingFinders.forEach(instance => {
+                finderTabManager.addTab(instance);
+            });
+
+            // Show the active instance if any exist
+            if (existingFinders.length > 0) {
+                const activeInstance = window.FinderInstanceManager.getActiveInstance();
+                if (activeInstance) {
+                    this.showInstance('finder', activeInstance.instanceId);
+                }
+            }
+
+            // Listen for new instances and add tabs
+            this.setupInstanceListeners('finder');
         }
 
         /**
