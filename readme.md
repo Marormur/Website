@@ -4,12 +4,13 @@ Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale un
 
 ## Features
 
-- Desktop‑UI mit Fenstern, Modalen und Programm‑Info
-- Projekte‑Browser: Listet GitHub‑Repos von „Marormur" und zeigt Dateien an
-- Integrierter Texteditor (für Text-/Code‑Dateien) und Bildbetrachter
-- Dark Mode: Systembasiert oder manuell wählbar, Speicherung in `localStorage`
-- Mehrsprachigkeit (Deutsch/Englisch) inkl. Sprachpräferenz
-- Persistenz von Fenster‑Layout und Finder‑Zustand (Repo/Path)
+- **Desktop‑UI** mit Fenstern, Modalen und Programm‑Info
+- **🆕 Multi-Instance Support** - Mehrere Fenster des gleichen Typs gleichzeitig (z.B. 3 Terminals!)
+- **Projekte‑Browser**: Listet GitHub‑Repos von „Marormur" und zeigt Dateien an
+- **Integrierter Texteditor** (für Text-/Code‑Dateien) und Bildbetrachter
+- **Dark Mode**: Systembasiert oder manuell wählbar, Speicherung in `localStorage`
+- **Mehrsprachigkeit** (Deutsch/Englisch) inkl. Sprachpräferenz
+- **Persistenz** von Fenster‑Layout und Finder‑Zustand (Repo/Path)
 
 ## Projektstruktur
 
@@ -20,10 +21,15 @@ Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale un
 │   ├── css/          #   - CSS Quelldateien (style.css, dialog.css)
 │   └── input.css     #   - Tailwind CSS Input
 ├── js/               # ⚙️ JavaScript Module
-│   ├── window-manager.js  # Zentrale Fensterverwaltung
-│   ├── action-bus.js      # Deklaratives Event-System
-│   ├── api.js             # Saubere Modul-Schnittstelle
-│   └── ...               # Weitere Module (theme, dock, finder, etc.)
+│   ├── window-manager.js      # Zentrale Fensterverwaltung
+│   ├── action-bus.js          # Deklaratives Event-System
+│   ├── api.js                 # Saubere Modul-Schnittstelle
+│   ├── base-window-instance.js # 🆕 Multi-Instance Basis-Klasse
+│   ├── instance-manager.js    # 🆕 Instance Manager
+│   ├── window-chrome.js       # 🆕 Wiederverwendbare UI-Komponenten
+│   ├── terminal-instance.js   # 🆕 Multi-Instance Terminal
+│   ├── text-editor-instance.js # 🆕 Multi-Instance Editor
+│   └── ...                    # Weitere Module (theme, dock, finder, etc.)
 ├── img/              # 🖼️ Assets (Icons, Wallpaper, Profile)
 ├── tests/            # 🧪 E2E Tests (Playwright)
 ├── dist/             # 📦 Build Output (output.css)
@@ -101,7 +107,27 @@ npm run test:e2e
 
 # Tests mit UI
 npm run test:e2e:ui
+
+# Multi-Instance Tests
+npm run test:e2e -- tests/e2e/multi-instance-basic.spec.js
 ```
+
+### Multi-Instance System
+
+Das neue Multi-Instance System ermöglicht mehrere Fenster des gleichen Typs:
+
+```javascript
+// Browser Console (F12)
+demoCreateTerminals()  // Erstelle 3 Terminal-Instanzen
+demoCreateEditors()    // Erstelle 3 Editor-Instanzen
+```
+
+Oder: http://localhost:3000/?demo=true
+
+**Dokumentation**:
+- [Multi-Instance Quick Start](./docs/MULTI_INSTANCE_QUICKSTART.md)
+- [Migration Guide](./docs/MULTI_INSTANCE_MIGRATION.md)
+- [TODO & Next Steps](./TODO_MULTI_INSTANCE.md)
 
 ### Beitragen
 
