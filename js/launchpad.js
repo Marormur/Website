@@ -253,6 +253,13 @@ console.log('Launchpad loaded');
         renderApps();
     }
 
+    // Listen for language changes and refresh apps
+    global.addEventListener('languagePreferenceChange', () => {
+        if (container) {
+            loadApps();
+        }
+    });
+
     // Export
     global.LaunchpadSystem = {
         init,
