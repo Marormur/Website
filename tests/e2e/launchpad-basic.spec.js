@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Launchpad Basic Functionality', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('http://localhost:3000');
+        await page.goto('/');
         // Wait for page to be ready
         await page.waitForLoadState('networkidle');
     });
