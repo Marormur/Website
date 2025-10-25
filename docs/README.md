@@ -4,18 +4,24 @@ Welcome to the documentation for Marvin's Portfolio Website!
 
 ## 🚀 Quick Start
 
-- **[QUICKSTART.md](./QUICKSTART.md)** - Get started with the new architecture in 5 minutes
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - How to deploy and run locally
+- **[guides/QUICKSTART.md](./guides/QUICKSTART.md)** - Get started in 5 minutes
+- **[guides/DEPLOYMENT.md](./guides/DEPLOYMENT.md)** - How to deploy and run locally
 
 ## 🏗️ Architecture & Design
 
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete architecture overview
-- **[REFACTORING.md](./REFACTORING.md)** - Detailed refactoring documentation
-- **[FINDER_README.md](./FINDER_README.md)** - Finder/GitHub integration documentation
+- **[architecture/OVERVIEW.md](./architecture/OVERVIEW.md)** - Complete architecture overview
+- **[architecture/REFACTORING.md](./architecture/REFACTORING.md)** - Refactoring documentation
+- **[architecture/PATTERNS.md](./architecture/PATTERNS.md)** - Code patterns & best practices
+- **[guides/FINDER.md](./guides/FINDER.md)** - Finder/GitHub integration
 
-## 🔄 Migration Guides
+## 🔄 Migration & Planning
 
-- **[HTML_MIGRATION.html](./HTML_MIGRATION.html)** - Examples for migrating to data-action attributes
+- **[migration/TYPESCRIPT.md](./migration/TYPESCRIPT.md)** - TypeScript migration plan
+- **[migration/HTML_MIGRATION.html](./migration/HTML_MIGRATION.html)** - Data-action migration examples
+- **[project/TODO.md](./project/TODO.md)** - Current tasks and priorities
+- **[project/ROADMAP.md](./project/ROADMAP.md)** - Long-term project roadmap
+- **[project/DECISIONS.md](./project/DECISIONS.md)** - Architecture decision records
+- **[project/IMPROVEMENTS.md](./project/IMPROVEMENTS.md)** - Codebase improvements guide
 
 ## 📖 Development Guide
 
