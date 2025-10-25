@@ -158,7 +158,8 @@ console.log('Launchpad loaded');
             const appButton = document.createElement('button');
             appButton.className = 'launchpad-app-button';
             appButton.setAttribute('data-window-id', app.id);
-            appButton.setAttribute('data-action', 'openWindow');
+            // Use ActionBus to open the app and close Launchpad
+            appButton.setAttribute('data-action', 'launchpadOpenWindow');
             appButton.title = app.name;
 
             const iconContainer = document.createElement('div');
@@ -198,10 +199,7 @@ console.log('Launchpad loaded');
             appButton.appendChild(iconContainer);
             appButton.appendChild(label);
 
-            // Click handler
-            appButton.addEventListener('click', () => {
-                openApp(app.id);
-            });
+            // No explicit click handler; ActionBus will handle via data-action
 
             appsGrid.appendChild(appButton);
         });
@@ -276,6 +274,14 @@ console.log('Launchpad loaded');
     });
 
     // Export
+    // Register ActionBus action to open window and close launchpad
+    if (global.ActionBus && typeof global.ActionBus.register === 'function') {
+        global.ActionBus.register('launchpadOpenWindow', (params) => {
+            const id = params?.windowId || params?.windowid || params?.window || params?.id;
+            if (id) openApp(id);
+        });
+    }
+
     global.LaunchpadSystem = {
         init,
         refresh,
