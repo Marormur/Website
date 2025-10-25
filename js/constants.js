@@ -25,6 +25,7 @@ const MODAL_IDS = [
     'about-modal',
     'settings-modal',
     'text-modal',
+    'terminal-modal',
     'image-modal',
     'program-info-modal',
 ];
