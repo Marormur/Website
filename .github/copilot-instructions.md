@@ -189,6 +189,18 @@ API.theme.setThemePreference('dark');
 
 ## Development Workflow
 
+### TypeScript & JavaScript
+
+This project uses **TypeScript with strict mode** alongside existing JavaScript files:
+
+- **New features**: Write in TypeScript (`src/ts/*.ts`)
+- **Legacy code**: JavaScript files in `js/` are being gradually migrated
+- **Build process**: `npm run build:ts` compiles TS → JS, with automatic export fixing
+- **Type checking**: Always run `npm run typecheck` before committing
+- **Watch mode**: Use `npm run typecheck:watch` during development
+
+**When editing existing JavaScript files**: You're working with legacy code that will be migrated to TypeScript. Maintain existing patterns but consider if migration to TS would be appropriate for larger changes.
+
 ### Git workflow & commit cadence
 
 - Prefer small, atomic commits with clear messages (conventional commits recommended, e.g., `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`, `build:`).
@@ -201,46 +213,60 @@ API.theme.setThemePreference('dark');
 
 ```bash
 npm run build:css          # Build Tailwind CSS (required first time)
+npm run build:ts           # Build TypeScript to JavaScript
 npm run watch:css          # Watch CSS changes (run in separate terminal)
+npm run typecheck:watch    # Watch TypeScript errors (run in separate terminal)
 npm run dev                # Start dev server on http://127.0.0.1:5173
 ```
 
-**Note**: VS Code tasks automate this - "Dev Environment: Start All" task runs both watch:css and dev server.
+**Note**: VS Code tasks automate this - "Dev Environment: Start All" task runs CSS watch, TypeScript watch, and dev server in parallel.
 
 ### Testing
 
-E2E tests use Playwright across Chromium, Firefox, and WebKit:
+E2E tests use **Playwright** for browser automation across Chromium, Firefox, and WebKit:
 
 ```bash
 npm run pw:install         # Install browsers (once)
-npm run test:e2e           # Run all E2E tests (headless)
+npm run test:e2e           # Run all E2E tests (headless, Chromium only locally)
+npm run test:e2e:quick     # Quick smoke tests (~5s, Chromium only)
 npm run test:e2e:headed    # Run with browser visible
 npm run test:e2e:ui        # Run with Playwright UI
+npm run test:e2e:chromium  # Explicit Chromium-only run
+npm run test:e2e:all-browsers # Force all browsers (Chromium/Firefox/WebKit)
 ```
 
 Tests are in `tests/e2e/*.spec.js`.
 
+**Important Testing Guidelines:**
+
+1. **Always test new features with Playwright** - Don't just manually verify in browser
+2. **Use Playwright tools directly** - Available via `mcp_playwright_*` tools for browser automation
+3. **Prefer explicit waits** - Use `page.waitForSelector()` or wait for `window.__APP_READY` instead of arbitrary timeouts
+4. **Mock GitHub API for stability** - Use `MOCK_GITHUB=1` env var to avoid rate limiting in tests
+5. **Test isolation** - Each test should be independent and clean up after itself
+
 #### Test Strategy Differences
 
-**`multi-instance-basic.spec.js`** - Simple, fast tests without network dependencies:
+**`*-basic.spec.js`** - Simple, fast smoke tests:
 
-- Uses `page.waitForTimeout(2000)` instead of `networkidle`
+- Uses `window.__APP_READY` signal instead of `networkidle`
 - Suitable for CI environments with flaky networks
 - Tests basic module availability and instance creation
-- Runs faster but less comprehensive
+- Runs faster (~5s for 15 tests)
+- **Use for**: Quick verification during development
 
-**`multi-instance.spec.js`** - Comprehensive tests with full page load:
+**Full test suites** - Comprehensive tests:
 
-- Uses `page.waitForLoadState('networkidle')` for complete initialization
 - Tests complex interactions and state isolation
-- More realistic but slower
-- May fail if GitHub API is rate-limited
+- More realistic but slower (~13s for 85 tests locally)
+- May fail if GitHub API is rate-limited (use `MOCK_GITHUB=1`)
+- **Use for**: Pre-commit validation and CI
 
 **When to use which**:
 
-- Use `-basic` tests for quick smoke tests and CI
-- Use full tests for thorough validation before releases
-- Both should pass for production readiness
+- Use quick tests (`npm run test:e2e:quick`) during development
+- Use full tests before pushing to ensure comprehensive coverage
+- CI runs all browsers; local defaults to Chromium only for speed
 
 #### Test Environment
 
@@ -249,6 +275,16 @@ Test patterns use `utils.js` for shared setup. Server configuration:
 - **Dev and Tests**: Always run on `http://127.0.0.1:5173` via `node server.js`
 - `playwright.config.js` starts the Node server automatically if not running
 - Tests expect GitHub username "Marormur" - if changing username, update test mocks in `tests/e2e/utils.js`
+- **Mocking**: Set `MOCK_GITHUB=1` to enable GitHub API mocks (avoids rate limiting)
+
+**Playwright Testing Best Practices:**
+
+- **Write tests for all new features** - Use Playwright tools (`mcp_playwright_*`) to automate browser interactions
+- **Test edge cases** - Multi-instance limits, keyboard shortcuts, window management
+- **Use descriptive test names** - `test('should create multiple terminal instances', ...)`
+- **Clean up state** - Close windows/instances created during tests
+- **Check for console errors** - Tests should verify no JavaScript errors occurred
+- **Use page object pattern** - Share common selectors and actions in `utils.js`
 
 ### Deployment
 
@@ -345,6 +381,10 @@ Dialogs auto-register with WindowManager. Z-index managed automatically on focus
 
 8. **Changing GitHub username**: Remember to update not just `js/finder.js`, but also test mocks in `tests/e2e/utils.js` to avoid test failures.
 
+9. **TypeScript errors**: Always run `npm run typecheck` before committing. Strict mode catches runtime bugs early (null/undefined access, array bounds).
+
+10. **Testing manually only**: Don't skip E2E tests - use `mcp_playwright_*` tools to write automated tests for new features before pushing.
+
 ## Configuration for Forking
 
 If you're forking this project for your own portfolio:
@@ -365,6 +405,8 @@ If you're forking this project for your own portfolio:
 - `docs/architecture/PATTERNS.md` - Design patterns and best practices
 - `docs/architecture/REFACTORING.md` - Migration guide from old to new architecture
 - `docs/QUICKSTART.md` - Quick start guide for developers
+- `docs/TYPESCRIPT_GUIDELINES.md` - TypeScript usage, strict mode, and migration patterns
+- `docs/TESTING.md` - Testing strategy, environment variables, and troubleshooting
 - `docs/archive/MULTI_INSTANCE_QUICKSTART.md` - Multi-instance system guide with examples (archived)
 - `docs/guides/DEPLOYMENT.md` - GitHub Pages deployment setup
 - `js/window-configs.js` - All window definitions (single source of truth)
