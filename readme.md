@@ -13,26 +13,46 @@ Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale un
 
 ## Projektstruktur
 
-- `index.html` – Einstieg, Desktop‑Oberfläche, Modale (Projekte, Texteditor, Bildanzeige, Einstellungen)
-- `app.js` – Fenster-/Dialoglogik, Theme‑Handling, GitHub‑Integration, Finder‑Ansicht
-- `i18n.js` – Übersetzungen (DE/EN), Sprachumschaltung und -präferenz
-- `style.css`, `dialog.css` – ergänzende Styles
-- Texteditor – inline gerendert (kein IFrame), Themensync und lokale Datei öffnen/speichern
-- `image`/`img` – Assets (Profilbild, App‑Icons, Wallpaper)
-- Einstellungen – inline gerendert über `SettingsSystem` (Darstellung/Theme, Sprache)
-- `projekte.html` – alternative, einfache Repos‑Übersicht (Kartenansicht)
+```
+/
+├── docs/              # 📚 Dokumentation (Architecture, Refactoring, Quick Start)
+├── src/               # 📝 Source Files
+│   ├── css/          #   - CSS Quelldateien (style.css, dialog.css)
+│   └── input.css     #   - Tailwind CSS Input
+├── js/               # ⚙️ JavaScript Module
+│   ├── window-manager.js  # Zentrale Fensterverwaltung
+│   ├── action-bus.js      # Deklaratives Event-System
+│   ├── api.js             # Saubere Modul-Schnittstelle
+│   └── ...               # Weitere Module (theme, dock, finder, etc.)
+├── img/              # 🖼️ Assets (Icons, Wallpaper, Profile)
+├── tests/            # 🧪 E2E Tests (Playwright)
+├── dist/             # 📦 Build Output (output.css)
+├── index.html        # 🏠 Hauptseite
+├── app.js            # 🚀 Haupt-Applikationslogik
+└── i18n.js           # 🌍 Internationalisierung (DE/EN)
+```
+
+Detaillierte Architektur-Dokumentation: [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
 
 ## Schnellstart
 
-Da es sich um statische Dateien handelt, ist kein Build nötig.
+```bash
+# Dependencies installieren
+npm install
 
-Option A – Direkt im Browser öffnen:
-- `index.html` doppelklicken. Hinweis: API‑Aufrufe (GitHub) funktionieren i. d. R. auch über `file://`, je nach Browserrichtlinien ist jedoch ein lokaler Server stabiler.
+# CSS bauen
+npm run build:css
 
-Option B – Lokaler Server (empfohlen):
-- VS Code „Live Server“ Erweiterung verwenden; oder
-- Python: `python -m http.server 5500` und dann `http://localhost:5500/` öffnen; oder
-- Node: `npx serve` im Projektordner und die ausgegebene URL aufrufen.
+# Development Server starten
+npm run dev
+```
+
+Dann Browser öffnen: http://localhost:5500/
+
+**Alternative:** `index.html` direkt im Browser öffnen (lokaler Server empfohlen für GitHub API)
+
+Für detaillierte Anweisungen: [docs/QUICKSTART.md](./docs/QUICKSTART.md)
+
 
 ## Bedienung
 
@@ -50,15 +70,50 @@ Option B – Lokaler Server (empfohlen):
 
 ## Konfiguration & Anpassung
 
-- GitHub‑Nutzername ändern: in `app.js` (Funktion `loadGithubRepos`) und in `projekte.html` die Variable `username` anpassen.
-- Branding: Bilder in `img/` austauschen (`profil.jpg`, Icons, Wallpaper).
-- Sprachen: Texte in `i18n.js` pflegen; Standard‑Sprache via Präferenz steuern.
-- Styling: Tailwind per CLI‑Build (`src/input.css` → `dist/output.css`), zusätzliche Regeln in `style.css`/`dialog.css`.
+- **GitHub‑Nutzername**: in `app.js` (Funktion `loadGithubRepos`) und in `projekte.html`
+- **Branding**: Bilder in `img/` austauschen (`profil.jpg`, Icons, Wallpaper)
+- **Sprachen**: Texte in `i18n.js` pflegen
+- **Styling**: Tailwind per CLI‑Build (`src/input.css` → `dist/output.css`), zusätzliche Regeln in `src/css/style.css`
+
+## Entwicklung
+
+### Neue Fenster hinzufügen
+
+Einfach in `js/window-configs.js` registrieren:
+
+```javascript
+{
+    id: 'my-window-modal',
+    type: 'persistent',
+    programKey: 'programs.myApp',
+    icon: './img/myapp.png',
+    closeButtonId: 'close-my-window-modal'
+}
+```
+
+Siehe [docs/REFACTORING.md](./docs/REFACTORING.md) für Details.
+
+### Testing
+
+```bash
+# E2E Tests ausführen
+npm run test:e2e
+
+# Tests mit UI
+npm run test:e2e:ui
+```
+
+### Beitragen
+
+Siehe [CONTRIBUTING.md](./CONTRIBUTING.md) für Contribution Guidelines.
 
 ## Deployment
 
-- Als statische Seite auf GitHub Pages, Netlify oder Vercel deployen.
-- Einstiegspunkt ist `index.html` im Projekt‑Root.
+Als statische Seite auf GitHub Pages, Netlify oder Vercel deployen.
+
+Siehe [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) für Details.
+
+**Live Demo:** https://marormur.github.io/Website/
 
 ## Hinweise
 
