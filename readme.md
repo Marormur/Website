@@ -5,7 +5,7 @@ Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale un
 ## Features
 
 - Desktop‑UI mit Fenstern, Modalen und Programm‑Info
-- Projekte‑Browser: Listet GitHub‑Repos von „Marormur“ und zeigt Dateien an
+- Projekte‑Browser: Listet GitHub‑Repos von „Marormur" und zeigt Dateien an
 - Integrierter Texteditor (für Text-/Code‑Dateien) und Bildbetrachter
 - Dark Mode: Systembasiert oder manuell wählbar, Speicherung in `localStorage`
 - Mehrsprachigkeit (Deutsch/Englisch) inkl. Sprachpräferenz
@@ -57,7 +57,7 @@ Für detaillierte Anweisungen: [docs/QUICKSTART.md](./docs/QUICKSTART.md)
 ## Bedienung
 
 - Kopfzeile: Profilmenü (Über, Layout zurücksetzen, Einstellungen, LinkedIn)
-- Desktop‑Icon „Projekte“: öffnet den Finder‑ähnlichen Browser für Repositories und Dateien
+- Desktop‑Icon „Projekte": öffnet den Finder‑ähnlichen Browser für Repositories und Dateien
 - Textdateien: Öffnen im integrierten Editor (eigener Tab/Modal)
 - Bilddateien: Vorschau im Bildbetrachter mit Infos
 - Einstellungen: Theme (System/Hell/Dunkel) und Sprache (System/DE/EN)
@@ -73,7 +73,7 @@ Für detaillierte Anweisungen: [docs/QUICKSTART.md](./docs/QUICKSTART.md)
 - **GitHub‑Nutzername**: in `app.js` (Funktion `loadGithubRepos`) und in `projekte.html`
 - **Branding**: Bilder in `img/` austauschen (`profil.jpg`, Icons, Wallpaper)
 - **Sprachen**: Texte in `i18n.js` pflegen
-- **Styling**: Tailwind per CLI‑Build (`src/input.css` → `dist/output.css`), zusätzliche Regeln in `src/css/style.css`
+- **Styling**: Tailwind per CLI‑Build (`src/input.css` → `dist/output.css`), zusätzliche Regeln in `src/css/style.css` und `src/css/dialog.css`
 
 ## Entwicklung
 
@@ -123,4 +123,3 @@ Siehe [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) für Details.
 —
 
 Erstellt von Marvin Temmen. Feedback und Ideen sind willkommen!
-
