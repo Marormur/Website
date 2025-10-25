@@ -173,6 +173,19 @@ console.log('WindowManager loaded');
          * Öffnet ein Fenster
          */
         open(windowId) {
+            // Run per-window init handler once if provided
+            const config = this.getConfig(windowId);
+            if (config && config.metadata && typeof config.metadata.initHandler === 'function') {
+                try {
+                    if (!config.metadata.__initialized) {
+                        config.metadata.initHandler();
+                        config.metadata.__initialized = true;
+                    }
+                } catch (e) {
+                    console.warn(`Init handler for ${windowId} threw:`, e);
+                }
+            }
+
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.open === 'function') {
                 instance.open();

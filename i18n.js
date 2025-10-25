@@ -22,6 +22,17 @@
                 image: {
                     openInTab: 'Bild in neuem Tab öffnen',
                     save: 'Bild sichern …'
+                },
+                finder: {
+                    openItem: 'Öffnen',
+                    getInfo: 'Informationen',
+                    refresh: 'Aktualisieren',
+                    newFolder: 'Neuer Ordner',
+                    viewList: 'Als Liste',
+                    viewGrid: 'Als Raster',
+                    sortByName: 'Nach Name sortieren',
+                    sortByDate: 'Nach Datum sortieren',
+                    sortBySize: 'Nach Größe sortieren'
                 }
             },
             common: {
@@ -48,14 +59,18 @@
                 text: 'Texteditor',
                 image: 'Bildbetrachter',
                 settings: 'Systemeinstellungen',
-                about: 'Über Marvin'
+                about: 'Über Marvin',
+                launchpad: 'Launchpad',
+                terminal: 'Terminal'
             },
             dock: {
                 finder: 'Sucher',
                 projects: 'GitHub Projekte',
                 text: 'Texteditor',
                 image: 'Bildbetrachter',
-                settings: 'Systemeinstellungen'
+                settings: 'Systemeinstellungen',
+                launchpad: 'Apps',
+                terminal: 'Terminal'
             },
             menubar: {
                 appleMenu: {
@@ -155,6 +170,13 @@
                 },
                 programInfo: {
                     title: 'Über dieses Programm'
+                },
+                launchpad: {
+                    title: 'Launchpad',
+                    searchPlaceholder: 'Programme suchen'
+                },
+                terminal: {
+                    title: 'Terminal'
                 }
             },
             finder: {
@@ -170,27 +192,25 @@
                 sidebar: {
                     favorites: 'Favoriten',
                     computer: 'Computer',
-                    recent: 'Zuletzt geöffnet',
+                    recent: 'Zuletzt verwendet',
                     locations: 'Orte',
                     github: 'GitHub Projekte',
-                    starred: 'Mit Stern'
+                    starred: 'Markiert'
                 },
-                // Platzhalter und Meldungen
                 back: 'Zurück',
                 imageViewer: 'Bildbetrachter',
                 textEditor: 'Texteditor',
-                loadingFiles: 'Lade Dateien …',
+                loadingFiles: 'Dateien werden geladen …',
                 filesLoadError: 'Dateien konnten nicht geladen werden. Bitte versuche es später erneut.',
-                emptyDirectory: 'Keine Dateien in diesem Verzeichnis gefunden.',
-                empty: 'Dieser Ordner ist leer',
+                emptyDirectory: 'Keine Dateien in diesem Verzeichnis.',
                 noRepositories: 'Keine öffentlichen Repositories gefunden.',
                 repositoriesError: 'Repos konnten nicht geladen werden. Bitte versuche es später erneut.',
                 repoDescriptionMissing: 'Keine Beschreibung verfügbar.',
                 repoUnnamed: 'Unbenanntes Repository',
-                loadingImage: 'Lade {name} …',
+                loadingImage: '{name} wird geladen …',
                 imageLoadError: 'Bild konnte nicht geladen werden.',
-                imageLoadErrorRetry: 'Bild konnte nicht geladen werden. Bitte versuche es später erneut.',
-                fileLoadError: 'Datei konnte nicht geladen werden. Bitte versuche es später erneut.',
+                imageLoadErrorRetry: 'Das Bild konnte nicht geladen werden. Bitte versuche es später erneut.',
+                fileLoadError: 'Die Datei konnte nicht geladen werden.',
                 rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
                 pathNotFound: 'Der ausgewählte Pfad ist nicht mehr verfügbar.'
             },
@@ -261,6 +281,26 @@
                     about: {
                         name: 'Über Marvin',
                         tagline: 'Erfahre mehr über Marvin Temmen.',
+                        version: 'Version 1.0',
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
+                    }
+                },
+                launchpad: {
+                    label: 'Launchpad',
+                    infoLabel: 'Über Launchpad',
+                    about: {
+                        name: 'Launchpad',
+                        tagline: 'Starte alle deine Programme.',
+                        version: 'Version 1.0',
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
+                    }
+                },
+                terminal: {
+                    label: 'Terminal',
+                    infoLabel: 'Über Terminal',
+                    about: {
+                        name: 'Terminal',
+                        tagline: 'Kommandozeilenschnittstelle für das Portfolio.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
                     }
@@ -444,6 +484,17 @@
                 image: {
                     openInTab: 'Open image in new tab',
                     save: 'Save image…'
+                },
+                finder: {
+                    openItem: 'Open',
+                    getInfo: 'Get Info',
+                    refresh: 'Refresh',
+                    newFolder: 'New Folder',
+                    viewList: 'View as List',
+                    viewGrid: 'View as Grid',
+                    sortByName: 'Sort by Name',
+                    sortByDate: 'Sort by Date',
+                    sortBySize: 'Sort by Size'
                 }
             },
             common: {
@@ -464,18 +515,24 @@
                 }
             },
             desktop: {
+                finder: 'Finder',
                 projects: 'Projects',
                 github: 'GitHub Projects',
                 text: 'Text editor',
                 image: 'Image viewer',
                 settings: 'System settings',
-                about: 'About Marvin'
+                about: 'About Marvin',
+                launchpad: 'Launchpad',
+                terminal: 'Terminal'
             },
             dock: {
                 finder: 'Finder',
+                projects: 'GitHub Projects',
                 text: 'Text editor',
                 image: 'Image viewer',
-                settings: 'System settings'
+                settings: 'System settings',
+                launchpad: 'Apps',
+                terminal: 'Terminal'
             },
             menubar: {
                 appleMenu: {
@@ -570,8 +627,18 @@
                     title: 'Image viewer',
                     placeholder: 'Open an image file from Finder to preview it.'
                 },
+                finder: {
+                    title: 'Finder'
+                },
                 programInfo: {
                     title: 'About this app'
+                },
+                launchpad: {
+                    title: 'Launchpad',
+                    searchPlaceholder: 'Search apps'
+                },
+                terminal: {
+                    title: 'Terminal'
                 }
             },
             programs: {
@@ -582,6 +649,16 @@
                         name: 'Finder',
                         tagline: 'Your personal file manager.',
                         version: 'Version 1.0',
+                        copyright: '© Marvin Temmen. All rights reserved.'
+                    }
+                },
+                finder: {
+                    label: 'Finder',
+                    infoLabel: 'About Finder',
+                    about: {
+                        name: 'Finder',
+                        tagline: 'The innovative desktop file manager.',
+                        version: 'Version 2.0',
                         copyright: '© Marvin Temmen. All rights reserved.'
                     }
                 },
@@ -631,6 +708,26 @@
                     about: {
                         name: 'About Marvin',
                         tagline: 'Learn more about Marvin Temmen.',
+                        version: 'Version 1.0',
+                        copyright: '© Marvin Temmen. All rights reserved.'
+                    }
+                },
+                launchpad: {
+                    label: 'Launchpad',
+                    infoLabel: 'About Launchpad',
+                    about: {
+                        name: 'Launchpad',
+                        tagline: 'Launch all your apps.',
+                        version: 'Version 1.0',
+                        copyright: '© Marvin Temmen. All rights reserved.'
+                    }
+                },
+                terminal: {
+                    label: 'Terminal',
+                    infoLabel: 'About Terminal',
+                    about: {
+                        name: 'Terminal',
+                        tagline: 'Command-line interface for the portfolio.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. All rights reserved.'
                     }
