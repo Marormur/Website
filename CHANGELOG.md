@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
   - New source: src/ts/window-chrome.ts → emits to js/window-chrome.js
   - Strongly typed configs for titlebar/toolbar/statusbar/window frame
   - Preserves global WindowChrome API and DOM structure
+
+- refactor(ts): migrate BaseWindowInstance to TypeScript
+  - New source: src/ts/base-window-instance.ts → emits to js/base-window-instance.js
+  - Base class with typed config, state, events, and lifecycle methods
+  - All subclasses (TerminalInstance, TextEditorInstance, FinderInstance) remain compatible
 - CODEBASE_IMPROVEMENTS.md with organizational tasks
 - TYPESCRIPT_MIGRATION_PLAN.md with detailed migration strategy
 - API Docs: Generated JSDoc and in-app “📖 API Docs” link (index.html)
