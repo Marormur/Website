@@ -1,6 +1,8 @@
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
 
 /* Custom styles to preserve existing design */
 body {
@@ -14,16 +16,15 @@ body {
 /* Window Tabs Styling */
 .window-tab-bar {
     height: 40px;
+    -webkit-user-select: none;
+    /* Safari/iOS support */
     user-select: none;
-}
-
-.window-tabs-container {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
 }
 
 .window-tabs-container::-webkit-scrollbar {
     height: 4px;
+    width: 4px;
+    /* ensure thin vertical scrollbar in WebKit-based browsers */
 }
 
 .window-tabs-container::-webkit-scrollbar-track {
@@ -86,4 +87,13 @@ body {
 
 .instance-container.active {
     display: block;
+}
+
+/* Firefox-only: apply thin scrollbar when supported */
+@supports (scrollbar-width: thin) {
+    .window-tabs-container {
+        /* stylelint-disable-next-line property-no-unsupported-browser-features */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+    }
 }
