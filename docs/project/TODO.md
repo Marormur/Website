@@ -85,7 +85,8 @@ Hinweis: Diese Tasks erfüllen direkt „Priorität 1: Core Features & Integrati
 - [x] `api.js` → `src/ts/api.ts` (emit: `js/api.js`)
 - [x] `theme.js` → `src/ts/theme.ts` (emit: `js/theme.js`)
 - [x] `storage.js` → `src/ts/storage.ts` (emit: `js/storage.js`)
-- [ ] (danach) `terminal-instance.js`, `text-editor-instance.js`
+- [x] `terminal-instance.js` → `src/ts/terminal-instance.ts` (emit: `js/terminal-instance.js`)
+- [x] `text-editor-instance.js` → `src/ts/text-editor-instance.ts` (emit: `js/text-editor-instance.js`)
 
 Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 

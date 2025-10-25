@@ -39,6 +39,16 @@ All notable changes to this project will be documented in this file.
   - New source: src/ts/storage.ts → emits to js/storage.js
   - Typed persistence for finder state, open modals, window positions, and layout reset
   - Safe global access (window.*) using unknown casts and guards; same runtime behavior
+
+- refactor(ts): migrate TerminalInstance to TypeScript
+  - New source: src/ts/terminal-instance.ts → emits to js/terminal-instance.js
+  - Typed virtual file system, commands, and DOM interactions; preserved InstanceManager wiring
+  - Global API preserved: window.TerminalInstance, window.TerminalInstanceManager
+
+- refactor(ts): migrate TextEditorInstance to TypeScript
+  - New source: src/ts/text-editor-instance.ts → emits to js/text-editor-instance.js
+  - Typed editor state, toolbar actions, find/replace, wrap mode; preserved InstanceManager wiring
+  - Global API preserved: window.TextEditorInstance, window.TextEditorInstanceManager
 - CODEBASE_IMPROVEMENTS.md with organizational tasks
 - TYPESCRIPT_MIGRATION_PLAN.md with detailed migration strategy
 - API Docs: Generated JSDoc and in-app “📖 API Docs” link (index.html)
