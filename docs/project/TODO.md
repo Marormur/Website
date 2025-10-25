@@ -44,26 +44,26 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 
 #### Phase 0 – Setup (ohne Code-Änderungen)
 
-- [ ] TypeScript-Dependencies installieren (dev): `typescript`, `@types/node`
-- [ ] ESLint-TS: `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin`
-- [ ] `tsconfig.json` prüfen/ergänzen (noEmit für Typecheck, JS/TS gemischt erlauben)
-- [ ] NPM Scripts: `typecheck` hinzufügen, `validate` um `typecheck` erweitern
-- [ ] VS Code Settings: Workspace-TS aktivieren (`.vscode/settings.json`)
-- [ ] CI: Typecheck-Job in GitHub Actions (Pages-Deploy Workflow)
+- [x] TypeScript-Dependencies installieren (dev): `typescript`, `@types/node`
+- [x] ESLint-TS: `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin`
+- [x] `tsconfig.json` prüfen/ergänzen (noEmit für Typecheck, JS/TS gemischt erlauben)
+- [x] NPM Scripts: `typecheck` hinzufügen, `validate` um `typecheck` erweitern
+- [x] VS Code Settings: Workspace-TS aktivieren (`.vscode/settings.json`)
+- [x] CI: Typecheck-Job in GitHub Actions (Pages-Deploy Workflow)
 
 Erfolgskriterien: `npm run typecheck` grün, keine Build-/Test-Regressionen
 
 #### Phase 1 – Type-Definitionen (.d.ts)
 
-- [ ] Verzeichnis `types/` anlegen
-- [ ] `types/window-manager.d.ts`
-- [ ] `types/action-bus.d.ts`
-- [ ] `types/instance-manager.d.ts`
-- [ ] `types/base-window-instance.d.ts`
-- [ ] `types/window-chrome.d.ts`
-- [ ] `types/api.d.ts`
-- [ ] `types/theme.d.ts`, `types/i18n.d.ts`, `types/storage.d.ts`
-- [ ] `types/dialog.d.ts`, `types/finder.d.ts`, `types/terminal.d.ts`, `types/text-editor.d.ts`
+- [x] Verzeichnis `types/` anlegen
+- [x] `types/window-manager.d.ts`
+- [x] `types/action-bus.d.ts`
+- [x] `types/instance-manager.d.ts`
+- [x] `types/base-window-instance.d.ts`
+- [x] `types/window-chrome.d.ts`
+- [x] `types/api.d.ts`
+- [x] `types/theme.d.ts`, `types/i18n.d.ts`, `types/storage.d.ts`
+- [x] `types/dialog.d.ts`, `types/finder.d.ts`, `types/terminal.d.ts`, `types/text-editor.d.ts`
 
 Erfolgskriterien: VS Code Autocomplete korrekt, Typecheck max. Warnings
 

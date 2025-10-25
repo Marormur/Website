@@ -187,6 +187,14 @@ API.theme.setThemePreference('dark');
 
 ## Development Workflow
 
+### Git workflow & commit cadence
+
+- Prefer small, atomic commits with clear messages (conventional commits recommended, e.g., `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`, `build:`).
+- Commit after each logically complete step (e.g., add types for one module, then commit; wire a shortcut, then commit).
+- Push frequently to the working branch (develop or a feature branch) to keep CI running early and often.
+- When editing multiple files in a burst, split into separate commits by concern (config, types, code, tests, docs).
+- Before pushing, run: `npm run typecheck`, `npm run lint`, and optionally the basic E2E suite.
+
 ### Build & Run
 
 ```bash
