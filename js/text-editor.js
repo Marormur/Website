@@ -308,6 +308,8 @@
                 const content = e.target.result;
                 if (this.editor) {
                     this.editor.value = content;
+                    this.updateWordCount();
+                    this.updateCursorPosition();
                 }
                 this.currentRemoteFile = { fileName: file.name };
                 this.updateDocumentTitle();
@@ -331,6 +333,8 @@
                 const saved = localStorage.getItem('textEditorContent');
                 if (saved) {
                     this.editor.value = saved;
+                    this.updateWordCount();
+                    this.updateCursorPosition();
                 }
             } catch (err) {
                 console.warn('Could not load saved content:', err);
@@ -362,6 +366,8 @@
             if (!this.editor) return;
 
             this.editor.value = '';
+            this.updateWordCount();
+            this.updateCursorPosition();
             localStorage.removeItem('textEditorContent');
             this.currentRemoteFile = null;
             this.updateDocumentTitle();
@@ -650,6 +656,8 @@
 
             if (this.editor) {
                 this.editor.value = payload.content;
+                this.updateWordCount();
+                this.updateCursorPosition();
             }
 
             this.currentRemoteFile = payload;
