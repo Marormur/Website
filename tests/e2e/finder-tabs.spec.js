@@ -28,7 +28,7 @@ test.describe("Finder Multi-Instance Tabs", () => {
         // Verify tab container exists and has one tab
         const tabContainer = page.locator("#finder-tabs-container");
         await expect(tabContainer).toBeVisible();
-        
+
         const tabs = page.locator("#finder-tabs-container .wt-tab");
         await expect(tabs).toHaveCount(1);
     });
@@ -127,7 +127,7 @@ test.describe("Finder Multi-Instance Tabs", () => {
         // Click close button on second tab (active tab)
         const secondTabClose = tabs.nth(1).locator(".wt-tab-close");
         await secondTabClose.click();
-        
+
         // Wait longer for the tab to actually close and UI to update
         await page.waitForTimeout(500);
 
@@ -138,7 +138,7 @@ test.describe("Finder Multi-Instance Tabs", () => {
         });
 
         expect(finalCount).toBe(1);
-        
+
         // Verify only one tab remains in the DOM (may need to wait for re-render)
         await page.waitForTimeout(200);
         tabs = page.locator("#finder-tabs-container .wt-tab");

@@ -12,6 +12,20 @@ async function gotoHome(page, baseURL) {
     });
 }
 
+// Wait for application readiness signaled by app-init.js
+async function waitForAppReady(page, timeout = 15000) {
+    // First ensure DOMContentLoaded at least
+    try {
+        await page.waitForLoadState('domcontentloaded', { timeout: Math.min(timeout, 5000) });
+    } catch (_) {
+        /* ignore */
+    }
+    await page.waitForFunction(() => {
+        // Prefer a strict boolean check
+        return typeof window !== 'undefined' && window.__APP_READY === true;
+    }, { timeout });
+}
+
 // Apple menu helpers
 async function openAppleMenu(page) {
     const trigger = page.locator('#apple-menu-trigger');
@@ -267,6 +281,7 @@ async function mockGithubRepoImageFlow(page, baseURL) {
 module.exports = {
     // Navigation / Settings / Apple menu
     gotoHome,
+    waitForAppReady,
     openAppleMenu,
     closeAppleMenuIfOpen,
     openSettingsViaAppleMenu,

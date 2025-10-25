@@ -9,7 +9,10 @@ import { test, expect } from "@playwright/test";
 test.describe("Multi-Instance Window System", () => {
     test.beforeEach(async ({ page }) => {
         await page.goto("/");
-        await page.waitForLoadState("networkidle");
+        await page.waitForLoadState("domcontentloaded");
+        await page.waitForFunction(() => window.__APP_READY === true, {
+            timeout: 15000,
+        });
     });
 
     test("BaseWindowInstance class is available", async ({ page }) => {
@@ -61,7 +64,10 @@ test.describe("Multi-Instance Window System", () => {
 test.describe("Terminal Multi-Instance", () => {
     test.beforeEach(async ({ page }) => {
         await page.goto("/");
-        await page.waitForLoadState("networkidle");
+        await page.waitForLoadState("domcontentloaded");
+        await page.waitForFunction(() => window.__APP_READY === true, {
+            timeout: 15000,
+        });
     });
 
     test("can create multiple terminal instances", async ({ page }) => {
@@ -182,7 +188,10 @@ test.describe("Terminal Multi-Instance", () => {
 test.describe("TextEditor Multi-Instance", () => {
     test.beforeEach(async ({ page }) => {
         await page.goto("/");
-        await page.waitForLoadState("networkidle");
+        await page.waitForLoadState("domcontentloaded");
+        await page.waitForFunction(() => window.__APP_READY === true, {
+            timeout: 15000,
+        });
     });
 
     test("can create multiple text editor instances", async ({ page }) => {
@@ -290,7 +299,10 @@ test.describe("TextEditor Multi-Instance", () => {
 test.describe("WindowChrome Components", () => {
     test.beforeEach(async ({ page }) => {
         await page.goto("/");
-        await page.waitForLoadState("networkidle");
+        await page.waitForLoadState("domcontentloaded");
+        await page.waitForFunction(() => window.__APP_READY === true, {
+            timeout: 15000,
+        });
     });
 
     test("can create titlebar", async ({ page }) => {
@@ -377,31 +389,36 @@ test.describe("WindowChrome Components", () => {
 test.describe("Instance Manager Features", () => {
     test.beforeEach(async ({ page }) => {
         await page.goto("/");
-        await page.waitForLoadState("networkidle");
+        await page.waitForLoadState("domcontentloaded");
+        await page.waitForFunction(() => window.__APP_READY === true, {
+            timeout: 15000,
+        });
     });
 
     test("respects max instances limit", async ({ page }) => {
         const result = await page.evaluate(() => {
-            // Create a limited instance manager
+            // Provide a minimal subclass that implements render to avoid BaseWindowInstance error
+            class TestInstance extends window.BaseWindowInstance {
+                render() {
+                    this.windowElement = document.createElement('div');
+                    this.windowElement.textContent = this.title;
+                    if (this.container) this.container.appendChild(this.windowElement);
+                }
+            }
+
             const limitedManager = new window.InstanceManager({
-                type: "test",
-                instanceClass: window.BaseWindowInstance,
+                type: 'test',
+                instanceClass: TestInstance,
                 maxInstances: 2,
             });
 
-            const instance1 = limitedManager.createInstance({
-                title: "Test 1",
-            });
-            const instance2 = limitedManager.createInstance({
-                title: "Test 2",
-            });
-            const instance3 = limitedManager.createInstance({
-                title: "Test 3",
-            });
+            const _i1 = limitedManager.createInstance({ title: 'Test 1' });
+            const _i2 = limitedManager.createInstance({ title: 'Test 2' });
+            const i3 = limitedManager.createInstance({ title: 'Test 3' });
 
             return {
                 count: limitedManager.getInstanceCount(),
-                instance3Created: instance3 !== null,
+                instance3Created: i3 !== null,
             };
         });
 

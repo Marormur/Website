@@ -1,10 +1,10 @@
 /**
  * Dialog Utilities Module
  * Provides window/dialog z-index management and focus control functions.
- * 
+ *
  * This module centralizes dialog utility functions that were previously scattered
  * in app.js, providing typed interfaces for better maintainability.
- * 
+ *
  * @module dialog-utils
  */
 
@@ -55,7 +55,7 @@ function getModalIds(): string[] {
 /**
  * Synchronize the global topZIndex counter with the actual DOM z-index values.
  * Scans all registered modals and updates the topZIndex to match the highest z-index found.
- * 
+ *
  * Delegates to WindowManager.syncZIndexWithDOM if available, otherwise uses fallback implementation.
  */
 function syncTopZIndexWithDOM(): void {
@@ -71,7 +71,7 @@ function syncTopZIndexWithDOM(): void {
     // Fallback implementation
     let maxZ = 1000;
     const modalIds = getModalIds();
-    
+
     modalIds.forEach((id) => {
         const modal = document.getElementById(id);
         if (!modal) return;
@@ -80,7 +80,7 @@ function syncTopZIndexWithDOM(): void {
             maxZ = Math.max(maxZ, modalZ);
         }
     });
-    
+
     if (window.topZIndex !== undefined) {
         window.topZIndex = maxZ;
     }
@@ -89,7 +89,7 @@ function syncTopZIndexWithDOM(): void {
 /**
  * Bring a specific dialog/window to front by calling its bringToFront method.
  * This is the recommended way to change window focus programmatically.
- * 
+ *
  * @param dialogId - The ID of the dialog element to bring to front
  */
 function bringDialogToFront(dialogId: string): void {
@@ -108,7 +108,7 @@ function bringDialogToFront(dialogId: string): void {
 function bringAllWindowsToFront(): void {
     const modalIds = getModalIds();
     if (!window.dialogs || !modalIds || !Array.isArray(modalIds)) return;
-    
+
     modalIds.forEach((id) => {
         const dialog = window.dialogs?.[id];
         if (

@@ -161,7 +161,7 @@ export default [
                 navigator: 'readonly',
                 DataTransfer: 'readonly',
                 DragEvent: 'readonly',
-                
+
                 // Node.js (für require in Tests)
                 require: 'readonly',
                 module: 'readonly',

@@ -383,7 +383,7 @@ function updateDockIndicators() {
         { modalId: 'text-modal', indicatorId: 'text-indicator' },
         { modalId: 'image-modal', indicatorId: 'image-indicator' },
     ];
-    
+
     indicatorMappings.forEach((mapping) => {
         const modal = document.getElementById(mapping.modalId);
         const indicator = document.getElementById(mapping.indicatorId);
@@ -414,7 +414,7 @@ if (typeof window !== 'undefined') {
         saveDockOrder,
         applyDockOrder,
     };
-    
+
     // Legacy global alias for backward compatibility
     if (typeof window.updateDockIndicators !== 'function') {
         window.updateDockIndicators = updateDockIndicators;

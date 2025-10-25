@@ -53,9 +53,9 @@ console.log('Launchpad loaded');
         container.innerHTML = `
             <div class="launchpad-container">
                 <div class="launchpad-search">
-                    <input 
-                        id="launchpad-search-input" 
-                        type="text" 
+                    <input
+                        id="launchpad-search-input"
+                        type="text"
                         placeholder="${translate('modals.launchpad.searchPlaceholder', 'Search apps')}"
                         class="launchpad-search-input"
                     />

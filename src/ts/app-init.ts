@@ -1,10 +1,10 @@
 /**
  * Application Initialization Module
  * Handles DOMContentLoaded setup and modal initialization.
- * 
+ *
  * This module centralizes application bootstrap logic that was previously
  * in the DOMContentLoaded handler in app.js.
- * 
+ *
  * @module app-init
  */
 
@@ -68,7 +68,7 @@ interface GlobalModules {
  */
 function initModalIds(): { modalIds: string[]; transientModalIds: Set<string> } {
     const win = window as Window & { WindowManager?: IWindowManager; APP_CONSTANTS?: { MODAL_IDS?: string[]; TRANSIENT_MODAL_IDS?: Set<string> } };
-    
+
     if (win.WindowManager) {
         const modalIds = win.WindowManager.getAllWindowIds?.() || [];
         const transientIds = win.WindowManager.getTransientWindowIds?.() || [];
@@ -212,7 +212,7 @@ function initApp(): void {
     if (typeof window.initApp !== 'function') {
         window.initApp = initApp;
     }
-    
+
     // Auto-attach to DOMContentLoaded
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initApp);
