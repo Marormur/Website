@@ -370,8 +370,8 @@
                     help: 'Hilfe',
                 },
                 finder: {
-                    newWindow: 'Neues Sucher-Fenster',
-                    reload: 'Sucher neu laden',
+                    newWindow: 'Neues Finder-Fenster',
+                    reload: 'Finder neu laden',
                     close: 'Fenster schließen',
                     help: 'Sucher-Hilfe anzeigen',
                 },
