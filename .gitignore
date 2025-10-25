@@ -20,7 +20,8 @@ test-results/
 playwright-report/
 
 # Build outputs
-# Note: dist/output.css is committed for GitHub Pages deployment
+# Tailwind CSS output is built by GitHub Actions during deployment
+dist/output.css
 
 # Logs
 *.log

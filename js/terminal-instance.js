@@ -111,6 +111,9 @@ console.log('TerminalInstance loaded');
                     }
                     this.inputElement.value = '';
                     this.inputElement.focus();
+                } else if (e.key === 'Tab') {
+                    e.preventDefault();
+                    this.handleTabCompletion();
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     if (this.historyIndex > 0) {
@@ -138,6 +141,116 @@ console.log('TerminalInstance loaded');
         }
 
         /**
+         * Handle tab completion
+         */
+        handleTabCompletion() {
+            if (!this.inputElement) return;
+
+            const input = this.inputElement.value;
+            const [partialCmd, ...args] = input.split(' ');
+
+            // Liste aller verfügbaren Befehle
+            const availableCommands = ['help', 'clear', 'ls', 'pwd', 'cd', 'cat', 'echo', 'date', 'whoami'];
+
+            // Wenn noch kein Leerzeichen eingegeben wurde, vervollständige den Befehl
+            if (args.length === 0) {
+                const matches = availableCommands.filter(cmd => cmd.startsWith(partialCmd));
+
+                if (matches.length === 1) {
+                    // Exakte Übereinstimmung gefunden - vervollständige
+                    this.inputElement.value = matches[0] + ' ';
+                } else if (matches.length > 1) {
+                    // Mehrere Übereinstimmungen - zeige Optionen
+                    this.addOutput(`guest@marvin:${this.currentPath}$ ${input}`, 'command');
+                    this.addOutput(matches.join('  '), 'info');
+
+                    // Finde gemeinsamen Präfix
+                    const commonPrefix = this.findCommonPrefix(matches);
+                    if (commonPrefix.length > partialCmd.length) {
+                        this.inputElement.value = commonPrefix;
+                    }
+                }
+            } else {
+                // Vervollständige Datei-/Verzeichnisnamen für cd und cat
+                if (partialCmd === 'cd' || partialCmd === 'cat') {
+                    this.completePathArgument(partialCmd, args[0] || '');
+                }
+            }
+        }
+
+        /**
+         * Find common prefix among strings
+         * @param {Array<string>} strings
+         * @returns {string}
+         */
+        findCommonPrefix(strings) {
+            if (!strings.length) return '';
+            if (strings.length === 1) return strings[0];
+
+            let prefix = strings[0];
+            for (let i = 1; i < strings.length; i++) {
+                while (strings[i].indexOf(prefix) !== 0) {
+                    prefix = prefix.substring(0, prefix.length - 1);
+                    if (!prefix) return '';
+                }
+            }
+            return prefix;
+        }
+
+        /**
+         * Complete path argument (for cd, cat commands)
+         * @param {string} cmd - The command (cd or cat)
+         * @param {string} partial - Partial path/filename
+         */
+        completePathArgument(cmd, partial) {
+            const currentDir = this.resolvePath(this.currentPath);
+            if (!currentDir || currentDir.type !== 'directory') return;
+
+            const items = Object.keys(currentDir.contents);
+
+            // Filter basierend auf Befehlstyp
+            let matches;
+            if (cmd === 'cd') {
+                // Nur Verzeichnisse für cd
+                matches = items.filter(item =>
+                    currentDir.contents[item].type === 'directory' &&
+                    item.startsWith(partial)
+                );
+            } else if (cmd === 'cat') {
+                // Nur Dateien für cat
+                matches = items.filter(item =>
+                    currentDir.contents[item].type === 'file' &&
+                    item.startsWith(partial)
+                );
+            } else {
+                // Alles
+                matches = items.filter(item => item.startsWith(partial));
+            }
+
+            if (matches.length === 1) {
+                // Exakte Übereinstimmung - vervollständige
+                this.inputElement.value = `${cmd} ${matches[0]}`;
+            } else if (matches.length > 1) {
+                // Mehrere Übereinstimmungen - zeige Optionen
+                this.addOutput(`guest@marvin:${this.currentPath}$ ${this.inputElement.value}`, 'command');
+
+                // Zeige mit Icon-Präfix (wie ls)
+                const formatted = matches.map(item => {
+                    const itemObj = currentDir.contents[item];
+                    const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
+                    return prefix + item;
+                });
+                this.addOutput(formatted.join('  '), 'info');
+
+                // Finde gemeinsamen Präfix
+                const commonPrefix = this.findCommonPrefix(matches);
+                if (commonPrefix.length > partial.length) {
+                    this.inputElement.value = `${cmd} ${commonPrefix}`;
+                }
+            }
+        }
+
+        /**
          * Execute a command
          * @param {string} command
          */
@@ -149,7 +262,7 @@ console.log('TerminalInstance loaded');
             const commands = {
                 help: () => this.showHelp(),
                 clear: () => this.clearOutput(),
-                ls: () => this.listDirectory(),
+                ls: () => this.listDirectory(args[0]),
                 pwd: () => this.printWorkingDirectory(),
                 cd: () => this.changeDirectory(args[0]),
                 cat: () => this.catFile(args[0]),
@@ -205,15 +318,27 @@ console.log('TerminalInstance loaded');
         showHelp() {
             const helpText = [
                 'Verfügbare Befehle:',
-                '  help      - Zeige diese Hilfe',
-                '  clear     - Lösche Ausgabe',
-                '  ls        - Liste Dateien',
-                '  pwd       - Zeige aktuelles Verzeichnis',
-                '  cd <dir>  - Wechsle Verzeichnis',
-                '  cat <file>- Zeige Dateiinhalt',
-                '  echo <text> - Gebe Text aus',
-                '  date      - Zeige Datum/Zeit',
-                '  whoami    - Zeige Benutzername'
+                '  help         - Zeige diese Hilfe',
+                '  clear        - Lösche Ausgabe',
+                '  ls [path]    - Liste Dateien (optional mit Pfad)',
+                '  pwd          - Zeige aktuelles Verzeichnis',
+                '  cd <dir>     - Wechsle Verzeichnis (., .., ~, relative/absolute Pfade)',
+                '  cat <file>   - Zeige Dateiinhalt (auch mit Pfad: cat ./file oder cat dir/file)',
+                '  echo <text>  - Gebe Text aus',
+                '  date         - Zeige Datum/Zeit',
+                '  whoami       - Zeige Benutzername',
+                '',
+                'Pfad-Beispiele:',
+                '  .            - Aktuelles Verzeichnis',
+                '  ..           - Übergeordnetes Verzeichnis',
+                '  ~            - Home-Verzeichnis',
+                '  ./file       - Datei im aktuellen Verzeichnis',
+                '  ../file      - Datei im übergeordneten Verzeichnis',
+                '  dir/subdir   - Unterverzeichnis (relativ)',
+                '',
+                'Tipps:',
+                '  ↑/↓          - Durchsuche Befehlshistorie',
+                '  Tab          - Vervollständige Befehle und Pfade'
             ];
 
             helpText.forEach(line => this.addOutput(line, 'info'));
@@ -221,20 +346,29 @@ console.log('TerminalInstance loaded');
 
         /**
          * List directory
+         * @param {string} path - Optional path to list (defaults to current directory)
          */
-        listDirectory() {
-            const currentDir = this.resolvePath(this.currentPath);
-            if (!currentDir || currentDir.type !== 'directory') {
-                this.addOutput('Verzeichnis nicht gefunden', 'error');
+        listDirectory(path) {
+            // Resolve the path to list
+            const targetPath = path ? this.normalizePath(path) : this.currentPath;
+            const targetDir = this.resolvePath(targetPath);
+
+            if (!targetDir) {
+                this.addOutput(`Verzeichnis nicht gefunden: ${path || targetPath}`, 'error');
                 return;
             }
 
-            const items = Object.keys(currentDir.contents);
+            if (targetDir.type !== 'directory') {
+                this.addOutput(`${path || targetPath} ist kein Verzeichnis`, 'error');
+                return;
+            }
+
+            const items = Object.keys(targetDir.contents);
             if (items.length === 0) {
                 this.addOutput('(leer)', 'output');
             } else {
                 items.forEach(item => {
-                    const itemObj = currentDir.contents[item];
+                    const itemObj = targetDir.contents[item];
                     const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
                     this.addOutput(prefix + item, 'output');
                 });
@@ -259,11 +393,17 @@ console.log('TerminalInstance loaded');
                 return;
             }
 
-            // Simple path resolution (could be improved)
-            let newPath = path === '..' ? this.parentPath(this.currentPath) : path;
+            // Normalize and resolve path
+            const newPath = this.normalizePath(path);
 
             if (!this.resolvePath(newPath)) {
                 this.addOutput(`Verzeichnis nicht gefunden: ${path}`, 'error');
+                return;
+            }
+
+            const targetDir = this.resolvePath(newPath);
+            if (targetDir.type !== 'directory') {
+                this.addOutput(`${path} ist kein Verzeichnis`, 'error');
                 return;
             }
 
@@ -282,15 +422,41 @@ console.log('TerminalInstance loaded');
                 return;
             }
 
-            const currentDir = this.resolvePath(this.currentPath);
-            const file = currentDir?.contents[filename];
+            // Check if it's a path (contains /) or just a filename
+            let filePath, fileName;
+            if (filename.includes('/')) {
+                // It's a path - resolve it
+                const normalizedPath = this.normalizePath(filename);
+                const pathParts = normalizedPath.split('/').filter(p => p !== '');
+                fileName = pathParts.pop();
+                const dirPath = pathParts.length > 0 ? pathParts.join('/') : '~';
 
-            if (!file) {
-                this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
-            } else if (file.type !== 'file') {
-                this.addOutput(`${filename} ist keine Datei`, 'error');
+                const dir = this.resolvePath(dirPath);
+                if (!dir) {
+                    this.addOutput(`Verzeichnis nicht gefunden: ${dirPath}`, 'error');
+                    return;
+                }
+
+                const file = dir.contents?.[fileName];
+                if (!file) {
+                    this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
+                } else if (file.type !== 'file') {
+                    this.addOutput(`${filename} ist keine Datei`, 'error');
+                } else {
+                    this.addOutput(file.content, 'output');
+                }
             } else {
-                this.addOutput(file.content, 'output');
+                // Just a filename in current directory
+                const currentDir = this.resolvePath(this.currentPath);
+                const file = currentDir?.contents?.[filename];
+
+                if (!file) {
+                    this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
+                } else if (file.type !== 'file') {
+                    this.addOutput(`${filename} ist keine Datei`, 'error');
+                } else {
+                    this.addOutput(file.content, 'output');
+                }
             }
         }
 
@@ -326,6 +492,60 @@ console.log('TerminalInstance loaded');
          */
         resolvePath(path) {
             return this.fileSystem[path] || null;
+        }
+
+        /**
+         * Normalize path (resolve ., .., ./, etc.)
+         * @param {string} path
+         * @returns {string}
+         */
+        normalizePath(path) {
+            // Handle special cases
+            if (!path || path === '~') return '~';
+            if (path === '.') return this.currentPath;
+            if (path === './') return this.currentPath;
+
+            // Absolute path (starts with ~ or /)
+            let workingPath;
+            if (path.startsWith('~')) {
+                workingPath = path;
+            } else if (path.startsWith('/')) {
+                workingPath = path;
+            } else {
+                // Relative path - combine with current path
+                if (this.currentPath === '~') {
+                    workingPath = `~/${path}`;
+                } else {
+                    workingPath = `${this.currentPath}/${path}`;
+                }
+            }
+
+            // Split into parts and resolve . and ..
+            const parts = workingPath.split('/').filter(p => p !== '' && p !== '.');
+            const resolved = [];
+
+            for (const part of parts) {
+                if (part === '..') {
+                    // Go up one directory (but not above ~)
+                    if (resolved.length > 0 && resolved[resolved.length - 1] !== '~') {
+                        resolved.pop();
+                    }
+                } else {
+                    resolved.push(part);
+                }
+            }
+
+            // Build final path
+            if (resolved.length === 0 || (resolved.length === 1 && resolved[0] === '~')) {
+                return '~';
+            }
+
+            // Ensure path starts with ~ if it's a home-relative path
+            if (resolved[0] !== '~') {
+                resolved.unshift('~');
+            }
+
+            return resolved.join('/');
         }
 
         /**

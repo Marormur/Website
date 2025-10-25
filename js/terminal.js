@@ -50,14 +50,14 @@ console.log('Terminal System loaded');
         render: function () {
             const html = `
                 <div class="terminal-wrapper h-full flex flex-col bg-gray-900 text-green-400 font-mono text-sm">
-                    <div id="terminal-output" class="flex-1 overflow-y-auto p-4 space-y-1">
+                    <div id="terminal-output" class="terminal-output flex-1 overflow-y-auto p-4 space-y-1">
                     </div>
                     <div class="terminal-input-line flex items-center px-4 py-2 border-t border-gray-700">
                         <span class="terminal-prompt text-blue-400">guest@marvin:${this.currentPath}$</span>
                         <input 
                             type="text" 
                             id="terminal-input" 
-                            class="flex-1 ml-2 bg-transparent outline-none text-green-400"
+                            class="terminal-input flex-1 ml-2 bg-transparent outline-none text-green-400"
                             autocomplete="off"
                             spellcheck="false"
                             aria-label="Terminal input"
@@ -130,7 +130,7 @@ console.log('Terminal System loaded');
             if (!this.outputElement) return;
 
             const line = document.createElement('div');
-            line.className = className;
+            line.className = `terminal-line ${className}`;
             line.textContent = text;
             this.outputElement.appendChild(line);
 
@@ -225,7 +225,12 @@ console.log('Terminal System loaded');
         },
 
         cmdLs: function (args) {
-            const targetPath = args[0] || this.currentPath;
+            // Normalize path if provided
+            let targetPath = args[0] || this.currentPath;
+            if (args[0]) {
+                targetPath = this.normalizePath(args[0]);
+            }
+
             const dir = this.resolvePath(targetPath);
 
             if (!dir) {
@@ -257,41 +262,22 @@ console.log('Terminal System loaded');
                 return;
             }
 
-            const targetPath = args[0];
-            // Handle current directory no-op
-            if (targetPath === '.' || targetPath === './') {
-                return;
-            }
-            const dir = this.resolvePath(targetPath);
+            // Normalize the path first
+            const normalizedPath = this.normalizePath(args[0]);
+            const dir = this.resolvePath(normalizedPath);
 
             if (!dir) {
-                this.addOutput(`cd: ${targetPath}: Datei oder Verzeichnis nicht gefunden`, 'text-red-400');
+                this.addOutput(`cd: ${args[0]}: Datei oder Verzeichnis nicht gefunden`, 'text-red-400');
                 return;
             }
 
             if (dir.type !== 'directory') {
-                this.addOutput(`cd: ${targetPath}: Ist kein Verzeichnis`, 'text-red-400');
+                this.addOutput(`cd: ${args[0]}: Ist kein Verzeichnis`, 'text-red-400');
                 return;
             }
 
-            // Update current path
-            if (targetPath === '..') {
-                const parts = this.currentPath.split('/').filter(p => p);
-                if (parts.length > 0) {
-                    parts.pop();
-                    this.currentPath = parts.length > 0 ? '/' + parts.join('/') : '~';
-                }
-            } else if (targetPath.startsWith('/')) {
-                this.currentPath = targetPath;
-            } else if (targetPath.startsWith('~')) {
-                this.currentPath = targetPath;
-            } else {
-                if (this.currentPath === '~') {
-                    this.currentPath = `~/${targetPath}`;
-                } else {
-                    this.currentPath = `${this.currentPath}/${targetPath}`;
-                }
-            }
+            // Update current path to the normalized path
+            this.currentPath = normalizedPath;
         },
 
         cmdCat: function (args) {
@@ -300,7 +286,10 @@ console.log('Terminal System loaded');
                 return;
             }
 
-            const file = this.resolvePath(args[0]);
+            // Normalize path before resolving
+            const normalizedPath = this.normalizePath(args[0]);
+            const file = this.resolvePath(normalizedPath);
+
             if (!file) {
                 this.addOutput(`cat: ${args[0]}: Datei oder Verzeichnis nicht gefunden`, 'text-red-400');
                 return;
@@ -389,47 +378,17 @@ console.log('Terminal System loaded');
         resolvePath: function (path) {
             if (!path) return null;
 
-            let targetPath = path;
+            // Normalize the path first
+            const normalizedPath = this.normalizePath(path);
 
             // Handle home directory
-            if (targetPath === '~' || targetPath === '') {
+            if (normalizedPath === '~') {
                 return this.fileSystem['~'];
-            }
-
-            // Handle parent directory
-            if (targetPath === '..') {
-                const parts = this.currentPath.split('/').filter(p => p && p !== '~');
-                if (parts.length === 0) {
-                    return this.fileSystem['~'];
-                }
-                parts.pop();
-                targetPath = parts.length > 0 ? '~/' + parts.join('/') : '~';
-            }
-
-            // Handle absolute paths
-            if (targetPath.startsWith('~')) {
-                targetPath = targetPath.substring(1);
-                if (targetPath.startsWith('/')) {
-                    targetPath = targetPath.substring(1);
-                }
-            } else if (!targetPath.startsWith('/')) {
-                // Relative path
-                if (this.currentPath === '~') {
-                    targetPath = targetPath;
-                } else {
-                    const current = this.currentPath.replace('~/', '');
-                    targetPath = current + '/' + targetPath;
-                }
             }
 
             // Navigate through file system
             let current = this.fileSystem['~'];
-
-            if (!targetPath || targetPath === '~') {
-                return current;
-            }
-
-            const parts = targetPath.split('/').filter(p => p);
+            const parts = normalizedPath.replace(/^~\/?/, '').split('/').filter(p => p);
 
             for (const part of parts) {
                 if (!current.contents || !current.contents[part]) {
@@ -439,6 +398,58 @@ console.log('Terminal System loaded');
             }
 
             return current;
+        },
+
+        /**
+         * Normalize path (resolve ., .., ./, etc.)
+         */
+        normalizePath: function (path) {
+            // Handle special cases
+            if (!path || path === '~') return '~';
+            if (path === '.') return this.currentPath;
+            if (path === './') return this.currentPath;
+
+            // Absolute path (starts with ~ or /)
+            let workingPath;
+            if (path.startsWith('~')) {
+                workingPath = path;
+            } else if (path.startsWith('/')) {
+                workingPath = '~' + path;
+            } else {
+                // Relative path - combine with current path
+                if (this.currentPath === '~') {
+                    workingPath = `~/${path}`;
+                } else {
+                    workingPath = `${this.currentPath}/${path}`;
+                }
+            }
+
+            // Split into parts and resolve . and ..
+            const parts = workingPath.split('/').filter(p => p !== '' && p !== '.');
+            const resolved = [];
+
+            for (const part of parts) {
+                if (part === '..') {
+                    // Go up one directory (but not above ~)
+                    if (resolved.length > 0 && resolved[resolved.length - 1] !== '~') {
+                        resolved.pop();
+                    }
+                } else {
+                    resolved.push(part);
+                }
+            }
+
+            // Build final path
+            if (resolved.length === 0 || (resolved.length === 1 && resolved[0] === '~')) {
+                return '~';
+            }
+
+            // Ensure path starts with ~ if it's a home-relative path
+            if (resolved[0] !== '~') {
+                resolved.unshift('~');
+            }
+
+            return resolved.join('/');
         }
     };
 
