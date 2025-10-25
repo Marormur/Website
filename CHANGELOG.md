@@ -7,6 +7,11 @@ All notable changes to this project will be documented in this file.
   - New source: src/ts/action-bus.ts → emits to js/action-bus.js
   - Removed explicit any casts; added typed helpers for Window and FinderSystem
   - No runtime API changes; data-action flows remain fully compatible
+
+- refactor(ts): migrate WindowChrome to TypeScript
+  - New source: src/ts/window-chrome.ts → emits to js/window-chrome.js
+  - Strongly typed configs for titlebar/toolbar/statusbar/window frame
+  - Preserves global WindowChrome API and DOM structure
 - CODEBASE_IMPROVEMENTS.md with organizational tasks
 - TYPESCRIPT_MIGRATION_PLAN.md with detailed migration strategy
 - API Docs: Generated JSDoc and in-app “📖 API Docs” link (index.html)
