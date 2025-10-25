@@ -17,6 +17,8 @@
     "test:e2e:quick": "playwright test --grep basic --project=chromium",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "typecheck:watch": "tsc --noEmit -p tsconfig.json --watch",
+    "type:report": "type-coverage --detail",
+    "type:baseline": "type-coverage --at-least 81",
     "type:coverage": "type-coverage --at-least 90 --detail",
     "build:ts": "tsc -p tsconfig.tsbuild.json && npm run build:ts:fix-exports",
     "build:ts:fix-exports": "node scripts/fix-ts-exports.js",
@@ -24,7 +26,7 @@
     "lint:fix": "eslint --fix js/**/*.js app.js i18n.js",
     "format": "prettier --write \"**/*.{js,css,html,md,json}\"",
     "format:check": "prettier --check \"**/*.{js,css,html,md,json}\"",
-    "validate": "npm run typecheck && npm run build:ts && npm run lint && npm run build:css && npm run test:e2e",
+    "validate": "npm run typecheck && npm run type:baseline && npm run build:ts && npm run lint && npm run build:css && npm run test:e2e",
     "docs:clean": "rimraf docs/api",
     "docs:generate": "jsdoc -c jsdoc.json -r js/ -d docs/api",
     "prepare": "husky"
