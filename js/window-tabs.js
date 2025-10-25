@@ -127,7 +127,9 @@ console.log('WindowTabs loaded');
 
             // Listen for instance title changes
             instance.on('stateChanged', (data) => {
-                if (data.newState && instance.title !== tab.querySelector('.tab-title').textContent) {
+                // Check if tab still exists in DOM before querying
+                const tabTitleEl = tab && tab.isConnected ? tab.querySelector('.tab-title') : null;
+                if (data.newState && tabTitleEl && instance.title !== tabTitleEl.textContent) {
                     this.updateTabTitle(instance.instanceId, instance.title);
                 }
             });

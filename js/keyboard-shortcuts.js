@@ -21,6 +21,13 @@ console.log('KeyboardShortcuts loaded');
             this.shortcuts = new Map();
             this.enabled = true;
             this.isInitialized = false;
+            
+            // Shortcuts that should work even when typing in input fields
+            this.inputFieldAllowlist = [
+                'ctrl+w',      // Close tab
+                'ctrl+tab',    // Next tab
+                'ctrl+shift+tab' // Previous tab
+            ];
         }
 
         /**
@@ -98,10 +105,15 @@ console.log('KeyboardShortcuts loaded');
         handleKeyDown(e) {
             // Don't handle shortcuts when typing in input fields (unless explicitly allowed)
             if (this.isInputElement(e.target) && !e.target.dataset.allowShortcuts) {
-                // Allow Cmd+W to close even in input fields
-                if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'w') {
-                    // Continue to process this shortcut
-                } else {
+                // Check if this shortcut is in the allowlist for input fields
+                const shortcutId = this.getShortcutId({
+                    key: this.normalizeKey(e.key),
+                    ctrl: e.metaKey || e.ctrlKey,
+                    shift: e.shiftKey,
+                    alt: e.altKey
+                });
+                
+                if (!this.inputFieldAllowlist.includes(shortcutId)) {
                     return;
                 }
             }

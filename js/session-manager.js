@@ -105,7 +105,16 @@ console.log('SessionManager loaded');
                     this.lastSaveTime = Date.now();
                     console.log(`SessionManager: Saved ${totalInstances} instances across ${Object.keys(sessions).length} types`);
                 } catch (error) {
-                    console.error('SessionManager: Failed to save sessions:', error);
+                    // Provide specific error messages based on error type
+                    if (error.name === 'QuotaExceededError') {
+                        console.error('SessionManager: Storage quota exceeded. Cannot save sessions. Consider clearing old data or reducing instance count.');
+                    } else if (error.name === 'SecurityError') {
+                        console.error('SessionManager: localStorage access denied. Sessions cannot be saved (private browsing mode?).');
+                    } else if (error instanceof TypeError) {
+                        console.error('SessionManager: Failed to serialize session data. Some instance state may not be JSON-serializable.');
+                    } else {
+                        console.error('SessionManager: Failed to save sessions:', error.message || error);
+                    }
                     this.handleStorageError(error);
                 }
             } else {
