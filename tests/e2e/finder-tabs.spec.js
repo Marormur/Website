@@ -1,17 +1,17 @@
 // E2E tests for Finder multi-instance tabs
-const { test, expect } = require("@playwright/test");
-const { waitForAppReady } = require("./utils");
+const { test, expect } = require('@playwright/test');
+const { waitForAppReady } = require('./utils');
 
-test.describe("Finder Multi-Instance Tabs", () => {
+test.describe('Finder Multi-Instance Tabs', () => {
     test.beforeEach(async ({ page, baseURL }) => {
-        await page.goto(baseURL + "/index.html");
+        await page.goto(baseURL + '/index.html');
         await waitForAppReady(page);
     });
 
-    test("Finder opens with initial tab", async ({ page }) => {
+    test('Finder opens with initial tab', async ({ page }) => {
         // Open Finder
-        await page.getByRole("img", { name: "Finder Icon" }).click();
-        await expect(page.locator("#finder-modal")).not.toHaveClass(/hidden/);
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
 
         // Check that FinderInstanceManager exists and has one instance
         const finderInfo = await page.evaluate(() => {
@@ -27,20 +27,20 @@ test.describe("Finder Multi-Instance Tabs", () => {
         expect(finderInfo.hasActive).toBe(true);
 
         // Verify tab container exists and has one tab
-        const tabContainer = page.locator("#finder-tabs-container");
+        const tabContainer = page.locator('#finder-tabs-container');
         await expect(tabContainer).toBeVisible();
 
-        const tabs = page.locator("#finder-tabs-container .wt-tab");
+        const tabs = page.locator('#finder-tabs-container .wt-tab');
         await expect(tabs).toHaveCount(1);
     });
 
-    test("Can create multiple Finder instances via + button", async ({ page }) => {
+    test('Can create multiple Finder instances via + button', async ({ page }) => {
         // Open Finder
-        await page.getByRole("img", { name: "Finder Icon" }).click();
-        await expect(page.locator("#finder-modal")).not.toHaveClass(/hidden/);
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
 
         // Click the + button to create a new tab
-        const addButton = page.locator("#finder-tabs-container .wt-add");
+        const addButton = page.locator('#finder-tabs-container .wt-add');
         await expect(addButton).toBeVisible();
         await addButton.click();
 
@@ -48,7 +48,7 @@ test.describe("Finder Multi-Instance Tabs", () => {
         await page.waitForTimeout(300);
 
         // Verify two tabs exist
-        const tabs = page.locator("#finder-tabs-container .wt-tab");
+        const tabs = page.locator('#finder-tabs-container .wt-tab');
         await expect(tabs).toHaveCount(2);
 
         // Verify instance count in manager
@@ -65,18 +65,18 @@ test.describe("Finder Multi-Instance Tabs", () => {
         expect(finderInfo.allIds.length).toBe(2);
     });
 
-    test("Can switch between Finder tabs", async ({ page }) => {
+    test('Can switch between Finder tabs', async ({ page }) => {
         // Open Finder
-        await page.getByRole("img", { name: "Finder Icon" }).click();
-        await expect(page.locator("#finder-modal")).not.toHaveClass(/hidden/);
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
 
         // Create a second tab
-        const addButton = page.locator("#finder-tabs-container .wt-add");
+        const addButton = page.locator('#finder-tabs-container .wt-add');
         await addButton.click();
         await page.waitForTimeout(300);
 
         // Get the two tab buttons
-        const tabs = page.locator("#finder-tabs-container .wt-tab");
+        const tabs = page.locator('#finder-tabs-container .wt-tab');
         await expect(tabs).toHaveCount(2);
 
         const firstTab = tabs.nth(0);
@@ -104,18 +104,18 @@ test.describe("Finder Multi-Instance Tabs", () => {
         expect(activeInfo.isFirstActive).toBe(true);
     });
 
-    test("Can close Finder tab via close button", async ({ page }) => {
+    test('Can close Finder tab via close button', async ({ page }) => {
         // Open Finder
-        await page.getByRole("img", { name: "Finder Icon" }).click();
-        await expect(page.locator("#finder-modal")).not.toHaveClass(/hidden/);
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
 
         // Create a second tab
-        const addButton = page.locator("#finder-tabs-container .wt-add");
+        const addButton = page.locator('#finder-tabs-container .wt-add');
         await addButton.click();
         await page.waitForTimeout(300);
 
         // Verify two tabs
-        let tabs = page.locator("#finder-tabs-container .wt-tab");
+        let tabs = page.locator('#finder-tabs-container .wt-tab');
         await expect(tabs).toHaveCount(2);
 
         // Get initial instance count
@@ -126,7 +126,7 @@ test.describe("Finder Multi-Instance Tabs", () => {
         expect(initialCount).toBe(2);
 
         // Click close button on second tab (active tab)
-        const secondTabClose = tabs.nth(1).locator(".wt-tab-close");
+        const secondTabClose = tabs.nth(1).locator('.wt-tab-close');
         await secondTabClose.click();
 
         // Wait longer for the tab to actually close and UI to update
@@ -142,57 +142,57 @@ test.describe("Finder Multi-Instance Tabs", () => {
 
         // Verify only one tab remains in the DOM (may need to wait for re-render)
         await page.waitForTimeout(200);
-        tabs = page.locator("#finder-tabs-container .wt-tab");
+        tabs = page.locator('#finder-tabs-container .wt-tab');
         await expect(tabs).toHaveCount(1);
     });
 
-    test("Closing last Finder tab closes the modal", async ({ page }) => {
+    test('Closing last Finder tab closes the modal', async ({ page }) => {
         // Open Finder
-        await page.getByRole("img", { name: "Finder Icon" }).click();
-        await expect(page.locator("#finder-modal")).not.toHaveClass(/hidden/);
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
 
         // Close the single tab
-        const tabs = page.locator("#finder-tabs-container .wt-tab");
-        const closeButton = tabs.first().locator(".wt-tab-close");
+        const tabs = page.locator('#finder-tabs-container .wt-tab');
+        const closeButton = tabs.first().locator('.wt-tab-close');
         await closeButton.click();
         await page.waitForTimeout(300);
 
         // Verify Finder modal is hidden
-        await expect(page.locator("#finder-modal")).toHaveClass(/hidden/);
+        await expect(page.locator('#finder-modal')).toHaveClass(/hidden/);
     });
 
-    test("Finder tabs have correct title display", async ({ page }) => {
+    test('Finder tabs have correct title display', async ({ page }) => {
         // Open Finder
-        await page.getByRole("img", { name: "Finder Icon" }).click();
-        await expect(page.locator("#finder-modal")).not.toHaveClass(/hidden/);
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
 
         // Check first tab title
-        const firstTab = page.locator("#finder-tabs-container .wt-tab").first();
-        const firstTabTitle = firstTab.locator(".wt-tab-title");
-        await expect(firstTabTitle).toContainText("Finder");
+        const firstTab = page.locator('#finder-tabs-container .wt-tab').first();
+        const firstTabTitle = firstTab.locator('.wt-tab-title');
+        await expect(firstTabTitle).toContainText('Finder');
 
         // Create second tab
-        const addButton = page.locator("#finder-tabs-container .wt-add");
+        const addButton = page.locator('#finder-tabs-container .wt-add');
         await addButton.click();
         await page.waitForTimeout(300);
 
         // Check second tab title
-        const secondTab = page.locator("#finder-tabs-container .wt-tab").nth(1);
-        const secondTabTitle = secondTab.locator(".wt-tab-title");
-        await expect(secondTabTitle).toContainText("Finder");
+        const secondTab = page.locator('#finder-tabs-container .wt-tab').nth(1);
+        const secondTabTitle = secondTab.locator('.wt-tab-title');
+        await expect(secondTabTitle).toContainText('Finder');
     });
 
-    test("Finder instances maintain independent navigation state", async ({ page }) => {
+    test('Finder instances maintain independent navigation state', async ({ page }) => {
         // Open Finder
-        await page.getByRole("img", { name: "Finder Icon" }).click();
-        await expect(page.locator("#finder-modal")).not.toHaveClass(/hidden/);
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
 
         // Navigate first instance to GitHub
-        await page.locator("#finder-sidebar-github").click();
+        await page.locator('#finder-sidebar-github').click();
         await page.waitForTimeout(500);
 
         // Create second tab (should start at default view)
-        const addButton = page.locator("#finder-tabs-container .wt-add");
+        const addButton = page.locator('#finder-tabs-container .wt-add');
         await addButton.click();
         await page.waitForTimeout(300);
 
@@ -211,60 +211,60 @@ test.describe("Finder Multi-Instance Tabs", () => {
         expect(instanceStates.length).toBe(2);
     });
 
-    test("Keyboard shortcut Ctrl+W closes active Finder tab", async ({ page }) => {
+    test('Keyboard shortcut Ctrl+W closes active Finder tab', async ({ page }) => {
         // Open Finder
-        await page.getByRole("img", { name: "Finder Icon" }).click();
-        await expect(page.locator("#finder-modal")).not.toHaveClass(/hidden/);
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
 
         // Create a second tab
-        const addButton = page.locator("#finder-tabs-container .wt-add");
+        const addButton = page.locator('#finder-tabs-container .wt-add');
         await addButton.click();
         await page.waitForTimeout(300);
 
         // Verify two tabs
-        let tabs = page.locator("#finder-tabs-container .wt-tab");
+        let tabs = page.locator('#finder-tabs-container .wt-tab');
         await expect(tabs).toHaveCount(2);
 
         // Press Ctrl+W (or Cmd+W on Mac)
-        await page.keyboard.press("Control+KeyW");
+        await page.keyboard.press('Control+KeyW');
         await page.waitForTimeout(300);
 
         // Verify one tab remains
-        tabs = page.locator("#finder-tabs-container .wt-tab");
+        tabs = page.locator('#finder-tabs-container .wt-tab');
         await expect(tabs).toHaveCount(1);
     });
 
-    test("Keyboard shortcut Ctrl+N creates new Finder tab", async ({ page }) => {
+    test('Keyboard shortcut Ctrl+N creates new Finder tab', async ({ page }) => {
         // Open Finder
-        await page.getByRole("img", { name: "Finder Icon" }).click();
-        await expect(page.locator("#finder-modal")).not.toHaveClass(/hidden/);
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
 
         // Press Ctrl+N
-        await page.keyboard.press("Control+KeyN");
+        await page.keyboard.press('Control+KeyN');
         await page.waitForTimeout(300);
 
         // Verify two tabs exist
-        const tabs = page.locator("#finder-tabs-container .wt-tab");
+        const tabs = page.locator('#finder-tabs-container .wt-tab');
         await expect(tabs).toHaveCount(2);
     });
 
-    test("Keyboard shortcut Ctrl+Tab switches to next tab", async ({ page }) => {
+    test('Keyboard shortcut Ctrl+Tab switches to next tab', async ({ page }) => {
         // Open Finder
-        await page.getByRole("img", { name: "Finder Icon" }).click();
-        await expect(page.locator("#finder-modal")).not.toHaveClass(/hidden/);
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
 
         // Create second tab
-        const addButton = page.locator("#finder-tabs-container .wt-add");
+        const addButton = page.locator('#finder-tabs-container .wt-add');
         await addButton.click();
         await page.waitForTimeout(300);
 
         // Click first tab to make it active
-        const tabs = page.locator("#finder-tabs-container .wt-tab");
+        const tabs = page.locator('#finder-tabs-container .wt-tab');
         await tabs.nth(0).click();
         await page.waitForTimeout(200);
 
         // Press Ctrl+Tab to switch to next
-        await page.keyboard.press("Control+Tab");
+        await page.keyboard.press('Control+Tab');
         await page.waitForTimeout(300);
 
         // Verify second tab is now active

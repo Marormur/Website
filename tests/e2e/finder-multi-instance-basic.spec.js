@@ -21,7 +21,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
             }
         });
 
-    // Navigation handled in beforeEach
+        // Navigation handled in beforeEach
 
         // Check console errors
         console.log('Console errors:', consoleErrors);
@@ -31,7 +31,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
             return {
                 FinderInstance: typeof window.FinderInstance,
                 FinderInstanceManager: window.FinderInstanceManager !== undefined,
-                FinderSystem: window.FinderSystem !== undefined
+                FinderSystem: window.FinderSystem !== undefined,
             };
         });
 
@@ -43,7 +43,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
     });
 
     test('can create a finder instance', async ({ page }) => {
-    // Navigation handled in beforeEach
+        // Navigation handled in beforeEach
 
         const result = await page.evaluate(() => {
             try {
@@ -56,7 +56,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
                     success: finder !== null,
                     instanceId: finder?.instanceId,
                     type: finder?.type,
-                    title: finder?.title
+                    title: finder?.title,
                 };
             } catch (error) {
                 return { error: error.message };
@@ -71,7 +71,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
     });
 
     test('can create multiple finder instances with isolated state', async ({ page }) => {
-    // Navigation handled in beforeEach
+        // Navigation handled in beforeEach
 
         const result = await page.evaluate(() => {
             try {
@@ -96,7 +96,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
                     count: manager.getInstanceCount(),
                     finder1Path: finder1.currentPath.join('/'),
                     finder2Path: finder2.currentPath.join('/'),
-                    isolated: finder1.currentPath.join('/') !== finder2.currentPath.join('/')
+                    isolated: finder1.currentPath.join('/') !== finder2.currentPath.join('/'),
                 };
             } catch (error) {
                 return { error: error.message };
@@ -113,7 +113,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
     });
 
     test('can switch between finder instances', async ({ page }) => {
-    // Navigation handled in beforeEach
+        // Navigation handled in beforeEach
 
         const result = await page.evaluate(() => {
             try {
@@ -139,7 +139,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
                     success: true,
                     initialActiveId: initialActive?.instanceId,
                     newActiveId: newActive?.instanceId,
-                    switched: initialActive?.instanceId !== newActive?.instanceId
+                    switched: initialActive?.instanceId !== newActive?.instanceId,
                 };
             } catch (error) {
                 return { error: error.message };
@@ -184,7 +184,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
                     finder1View: finder1.currentView,
                     finder2View: finder2.currentView,
                     viewModesIsolated: finder1.viewMode !== finder2.viewMode,
-                    viewsIsolated: finder1.currentView !== finder2.currentView
+                    viewsIsolated: finder1.currentView !== finder2.currentView,
                 };
             } catch (error) {
                 return { error: error.message };

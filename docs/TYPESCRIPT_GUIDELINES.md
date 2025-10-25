@@ -1,8 +1,8 @@
 # TypeScript Guidelines
 
-**Project:** macOS-Style Portfolio Website  
-**Last Updated:** October 25, 2025  
-**TypeScript Version:** 5.x  
+**Project:** macOS-Style Portfolio Website
+**Last Updated:** October 25, 2025
+**TypeScript Version:** 5.x
 **Strict Mode:** ✅ Enabled
 
 ---
@@ -694,6 +694,6 @@ ESLint warns about `/// <reference path="..." />` but these are correct for ambi
 - Consult `types/index.d.ts` for Window interface patterns
 - Run `npm run typecheck` to validate changes
 
-**Last Updated:** October 25, 2025  
-**TypeScript Version:** 5.x  
+**Last Updated:** October 25, 2025
+**TypeScript Version:** 5.x
 **Project Strictness Level:** 6/6 (Paranoid Mode) 🎯

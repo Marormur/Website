@@ -1,8 +1,8 @@
 # 🚀 TypeScript Migration Plan
 
-**Projekt:** macOS-Style Portfolio Website  
-**Status:** ✅ Phase 0-5 Abgeschlossen | ⏳ Phase 6 Optional  
-**Ziel:** Inkrementelle Migration zu TypeScript mit Zero Breaking Changes  
+**Projekt:** macOS-Style Portfolio Website
+**Status:** ✅ Phase 0-5 Abgeschlossen | ⏳ Phase 6 Optional
+**Ziel:** Inkrementelle Migration zu TypeScript mit Zero Breaking Changes
 **Zeitrahmen:** 6-8 Wochen (bei 5-10h/Woche)
 
 ---
@@ -1848,6 +1848,6 @@ Bei Fragen oder Problemen während der Migration:
 
 ---
 
-**Erstellt:** Oktober 2025  
-**Autor:** GitHub Copilot  
+**Erstellt:** Oktober 2025
+**Autor:** GitHub Copilot
 **Status:** 📋 Bereit zur Umsetzung

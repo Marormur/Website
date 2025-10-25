@@ -160,7 +160,7 @@ console.log('TerminalInstance (TS) loaded');
 
       const input = this.inputElement.value;
       const [partialCmd, ...args] = input.split(' ');
-      
+
       // noUncheckedIndexedAccess: array destructuring may return undefined
       if (partialCmd === undefined) return;
 
@@ -195,12 +195,12 @@ console.log('TerminalInstance (TS) loaded');
       const firstString = strings[0];
       if (strings.length === 1) return firstString ?? '';
       if (firstString === undefined) return '';
-      
+
       let prefix: string = firstString;
       for (let i = 1; i < strings.length; i++) {
         const currentString = strings[i];
         if (currentString === undefined) continue;
-        
+
         while (currentString.indexOf(prefix) !== 0) {
           prefix = prefix.substring(0, prefix.length - 1);
           if (!prefix) return '';
@@ -247,10 +247,10 @@ console.log('TerminalInstance (TS) loaded');
     executeCommand(command: string): void {
       this.addOutput(`guest@marvin:${this.currentPath}$ ${command}`, 'command');
       const [cmd, ...args] = command.split(' ');
-      
+
       // noUncheckedIndexedAccess: array destructuring may return undefined
       if (cmd === undefined) return;
-      
+
       const commands: Record<string, () => void> = {
         help: () => this.showHelp(),
         clear: () => this.clearOutput(),
@@ -262,7 +262,7 @@ console.log('TerminalInstance (TS) loaded');
         date: () => this.showDate(),
         whoami: () => this.addOutput('guest', 'output'),
       };
-      
+
       const commandFn = commands[cmd];
       if (commandFn !== undefined) {
         commandFn();
@@ -414,12 +414,12 @@ console.log('TerminalInstance (TS) loaded');
     resolvePath(path: string | undefined | null): FSNode | null {
       if (!path) return null;
       const normalizedPath = this.normalizePath(path);
-      
+
       // noUncheckedIndexedAccess: dictionary access may return undefined
       const homeNode = this.fileSystem['~'];
       if (normalizedPath === '~') return homeNode ?? null;
       if (homeNode === undefined) return null;
-      
+
       let current: FSNode = homeNode;
       const parts = normalizedPath
         .replace(/^~\/?/, '')

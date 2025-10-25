@@ -121,29 +121,32 @@ export default [
         },
         rules: {
             // Fehler verhindern
-            'no-unused-vars': ['warn', {
-                argsIgnorePattern: '^_',
-                varsIgnorePattern: '^_',
-            }],
+            'no-unused-vars': [
+                'warn',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                },
+            ],
             'no-undef': 'warn', // Warn statt error wegen Legacy-Code
             'no-redeclare': 'warn', // Warn wegen Kompatibilitätsfunktionen
             'no-use-before-define': 'off', // Häufiges Muster in Legacy-Code
 
             // Code-Style
             'no-console': 'off',
-            'semi': ['warn', 'always'],
-            'quotes': ['warn', 'single', { avoidEscape: true }],
-            'indent': ['warn', 4, { SwitchCase: 1 }],
+            semi: ['warn', 'always'],
+            quotes: ['warn', 'single', { avoidEscape: true }],
+            indent: ['warn', 4, { SwitchCase: 1 }],
             'comma-dangle': ['warn', 'only-multiline'],
 
             // Best Practices
-            'eqeqeq': ['warn', 'always'], // Warn statt error für schrittweise Migration
+            eqeqeq: ['warn', 'always'], // Warn statt error für schrittweise Migration
             'no-var': 'warn',
             'prefer-const': 'warn',
 
             // TypeScript-Vorbereitung (gelockert für Legacy-Code)
             'no-implicit-globals': 'off', // Legacy-Code nutzt globale Funktionen
-            'strict': 'off', // Viele Legacy-Dateien haben kein 'use strict'
+            strict: 'off', // Viele Legacy-Dateien haben kein 'use strict'
         },
     },
 
@@ -172,21 +175,27 @@ export default [
             },
         },
         rules: {
-            'no-unused-vars': ['warn', {
-                argsIgnorePattern: '^_',
-                varsIgnorePattern: '^_',
-            }],
+            'no-unused-vars': [
+                'warn',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                },
+            ],
             'no-undef': 'warn',
             // Gently steer tests away from flaky waits
             'no-restricted-syntax': [
                 'warn',
                 {
-                    selector: "CallExpression[callee.property.name='waitForLoadState'] Literal[value='networkidle']",
-                    message: "Avoid 'networkidle' in tests; prefer waitForAppReady(page) from tests/e2e/utils.js.",
+                    selector:
+                        "CallExpression[callee.property.name='waitForLoadState'] Literal[value='networkidle']",
+                    message:
+                        "Avoid 'networkidle' in tests; prefer waitForAppReady(page) from tests/e2e/utils.js.",
                 },
                 {
                     selector: "CallExpression[callee.property.name='waitForTimeout']",
-                    message: "Avoid fixed timeouts in tests; prefer explicit UI waits (selectors, counts, visibility). If intentional, document with an inline comment and consider a shorter delay.",
+                    message:
+                        'Avoid fixed timeouts in tests; prefer explicit UI waits (selectors, counts, visibility). If intentional, document with an inline comment and consider a shorter delay.',
                 },
             ],
         },

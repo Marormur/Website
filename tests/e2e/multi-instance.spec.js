@@ -4,79 +4,74 @@
  * Tests für das neue Multi-Instance Window System
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test';
 
-test.describe("Multi-Instance Window System", () => {
+test.describe('Multi-Instance Window System', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto("/");
-        await page.waitForLoadState("domcontentloaded");
+        await page.goto('/');
+        await page.waitForLoadState('domcontentloaded');
         await page.waitForFunction(() => window.__APP_READY === true, {
             timeout: 15000,
         });
     });
 
-    test("BaseWindowInstance class is available", async ({ page }) => {
+    test('BaseWindowInstance class is available', async ({ page }) => {
         const hasBaseWindowInstance = await page.evaluate(() => {
-            return typeof window.BaseWindowInstance === "function";
+            return typeof window.BaseWindowInstance === 'function';
         });
 
         expect(hasBaseWindowInstance).toBe(true);
     });
 
-    test("InstanceManager class is available", async ({ page }) => {
+    test('InstanceManager class is available', async ({ page }) => {
         const hasInstanceManager = await page.evaluate(() => {
-            return typeof window.InstanceManager === "function";
+            return typeof window.InstanceManager === 'function';
         });
 
         expect(hasInstanceManager).toBe(true);
     });
 
-    test("WindowChrome is available", async ({ page }) => {
+    test('WindowChrome is available', async ({ page }) => {
         const hasWindowChrome = await page.evaluate(() => {
-            return typeof window.WindowChrome === "object";
+            return typeof window.WindowChrome === 'object';
         });
 
         expect(hasWindowChrome).toBe(true);
     });
 
-    test("TerminalInstanceManager is initialized", async ({ page }) => {
+    test('TerminalInstanceManager is initialized', async ({ page }) => {
         const hasTerminalInstanceManager = await page.evaluate(() => {
-            return (
-                window.TerminalInstanceManager instanceof window.InstanceManager
-            );
+            return window.TerminalInstanceManager instanceof window.InstanceManager;
         });
 
         expect(hasTerminalInstanceManager).toBe(true);
     });
 
-    test("TextEditorInstanceManager is initialized", async ({ page }) => {
+    test('TextEditorInstanceManager is initialized', async ({ page }) => {
         const hasTextEditorInstanceManager = await page.evaluate(() => {
-            return (
-                window.TextEditorInstanceManager instanceof
-                window.InstanceManager
-            );
+            return window.TextEditorInstanceManager instanceof window.InstanceManager;
         });
 
         expect(hasTextEditorInstanceManager).toBe(true);
     });
 });
 
-test.describe("Terminal Multi-Instance", () => {
+test.describe('Terminal Multi-Instance', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto("/");
-        await page.waitForLoadState("domcontentloaded");
+        await page.goto('/');
+        await page.waitForLoadState('domcontentloaded');
         await page.waitForFunction(() => window.__APP_READY === true, {
             timeout: 15000,
         });
     });
 
-    test("can create multiple terminal instances", async ({ page }) => {
+    test('can create multiple terminal instances', async ({ page }) => {
         const result = await page.evaluate(() => {
             const manager = window.TerminalInstanceManager;
 
             // Create two terminal instances
-            const terminal1 = manager.createInstance({ title: "Terminal 1" });
-            const terminal2 = manager.createInstance({ title: "Terminal 2" });
+            const terminal1 = manager.createInstance({ title: 'Terminal 1' });
+            const terminal2 = manager.createInstance({ title: 'Terminal 2' });
 
             return {
                 instanceCount: manager.getInstanceCount(),
@@ -94,16 +89,16 @@ test.describe("Terminal Multi-Instance", () => {
         expect(result.areDifferent).toBe(true);
     });
 
-    test("terminal instances have isolated state", async ({ page }) => {
+    test('terminal instances have isolated state', async ({ page }) => {
         const result = await page.evaluate(() => {
             const manager = window.TerminalInstanceManager;
 
-            const terminal1 = manager.createInstance({ title: "Terminal 1" });
-            const terminal2 = manager.createInstance({ title: "Terminal 2" });
+            const terminal1 = manager.createInstance({ title: 'Terminal 1' });
+            const terminal2 = manager.createInstance({ title: 'Terminal 2' });
 
             // Each should have its own command history
-            terminal1.commandHistory.push("ls");
-            terminal2.commandHistory.push("pwd");
+            terminal1.commandHistory.push('ls');
+            terminal2.commandHistory.push('pwd');
 
             return {
                 terminal1History: terminal1.commandHistory,
@@ -116,16 +111,16 @@ test.describe("Terminal Multi-Instance", () => {
         });
 
         expect(result.areIsolated).toBe(true);
-        expect(result.terminal1History).toEqual(["ls"]);
-        expect(result.terminal2History).toEqual(["pwd"]);
+        expect(result.terminal1History).toEqual(['ls']);
+        expect(result.terminal2History).toEqual(['pwd']);
     });
 
-    test("can destroy terminal instance", async ({ page }) => {
+    test('can destroy terminal instance', async ({ page }) => {
         const result = await page.evaluate(() => {
             const manager = window.TerminalInstanceManager;
 
-            const terminal1 = manager.createInstance({ title: "Terminal 1" });
-            const terminal2 = manager.createInstance({ title: "Terminal 2" });
+            const terminal1 = manager.createInstance({ title: 'Terminal 1' });
+            const terminal2 = manager.createInstance({ title: 'Terminal 2' });
             const terminal1Id = terminal1.instanceId;
 
             const countBefore = manager.getInstanceCount();
@@ -148,22 +143,20 @@ test.describe("Terminal Multi-Instance", () => {
         expect(result.stillExists).toBe(false);
     });
 
-    test("terminal instance can serialize and deserialize", async ({
-        page,
-    }) => {
+    test('terminal instance can serialize and deserialize', async ({ page }) => {
         const result = await page.evaluate(() => {
             const manager = window.TerminalInstanceManager;
 
-            const terminal = manager.createInstance({ title: "Terminal Test" });
-            terminal.currentPath = "/home/user";
-            terminal.commandHistory = ["ls", "pwd", "cd documents"];
+            const terminal = manager.createInstance({ title: 'Terminal Test' });
+            terminal.currentPath = '/home/user';
+            terminal.commandHistory = ['ls', 'pwd', 'cd documents'];
 
             // Serialize
             const serialized = terminal.serialize();
 
             // Create new instance and deserialize
             const terminal2 = manager.createInstance({
-                title: "Terminal Test 2",
+                title: 'Terminal Test 2',
             });
             terminal2.deserialize(serialized);
 
@@ -180,26 +173,26 @@ test.describe("Terminal Multi-Instance", () => {
         });
 
         expect(result.matches).toBe(true);
-        expect(result.restoredPath).toBe("/home/user");
-        expect(result.restoredHistory).toEqual(["ls", "pwd", "cd documents"]);
+        expect(result.restoredPath).toBe('/home/user');
+        expect(result.restoredHistory).toEqual(['ls', 'pwd', 'cd documents']);
     });
 });
 
-test.describe("TextEditor Multi-Instance", () => {
+test.describe('TextEditor Multi-Instance', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto("/");
-        await page.waitForLoadState("domcontentloaded");
+        await page.goto('/');
+        await page.waitForLoadState('domcontentloaded');
         await page.waitForFunction(() => window.__APP_READY === true, {
             timeout: 15000,
         });
     });
 
-    test("can create multiple text editor instances", async ({ page }) => {
+    test('can create multiple text editor instances', async ({ page }) => {
         const result = await page.evaluate(() => {
             const manager = window.TextEditorInstanceManager;
 
-            const editor1 = manager.createInstance({ title: "Document 1" });
-            const editor2 = manager.createInstance({ title: "Document 2" });
+            const editor1 = manager.createInstance({ title: 'Document 1' });
+            const editor2 = manager.createInstance({ title: 'Document 2' });
 
             return {
                 instanceCount: manager.getInstanceCount(),
@@ -215,18 +208,18 @@ test.describe("TextEditor Multi-Instance", () => {
         expect(result.areDifferent).toBe(true);
     });
 
-    test("text editor instances have isolated content", async ({ page }) => {
+    test('text editor instances have isolated content', async ({ page }) => {
         const result = await page.evaluate(() => {
             const manager = window.TextEditorInstanceManager;
 
             const editor1 = manager.createInstance({
-                title: "Document 1",
-                initialState: { content: "Content for document 1" },
+                title: 'Document 1',
+                initialState: { content: 'Content for document 1' },
             });
 
             const editor2 = manager.createInstance({
-                title: "Document 2",
-                initialState: { content: "Content for document 2" },
+                title: 'Document 2',
+                initialState: { content: 'Content for document 2' },
             });
 
             return {
@@ -237,18 +230,16 @@ test.describe("TextEditor Multi-Instance", () => {
         });
 
         expect(result.areIsolated).toBe(true);
-        expect(result.content1).toBe("Content for document 1");
-        expect(result.content2).toBe("Content for document 2");
+        expect(result.content1).toBe('Content for document 1');
+        expect(result.content2).toBe('Content for document 2');
     });
 
-    test("text editor can track dirty state independently", async ({
-        page,
-    }) => {
+    test('text editor can track dirty state independently', async ({ page }) => {
         const result = await page.evaluate(() => {
             const manager = window.TextEditorInstanceManager;
 
-            const editor1 = manager.createInstance({ title: "Doc 1" });
-            const editor2 = manager.createInstance({ title: "Doc 2" });
+            const editor1 = manager.createInstance({ title: 'Doc 1' });
+            const editor2 = manager.createInstance({ title: 'Doc 2' });
 
             // Mark editor1 as dirty
             editor1.isDirty = true;
@@ -265,27 +256,27 @@ test.describe("TextEditor Multi-Instance", () => {
         expect(result.editor2Dirty).toBe(false);
     });
 
-    test("text editor instance can serialize content", async ({ page }) => {
+    test('text editor instance can serialize content', async ({ page }) => {
         const result = await page.evaluate(() => {
             const manager = window.TextEditorInstanceManager;
 
             const editor = manager.createInstance({
-                title: "Test Document",
+                title: 'Test Document',
                 initialState: {
-                    content: "Hello World!",
-                    filename: "test.txt",
+                    content: 'Hello World!',
+                    filename: 'test.txt',
                 },
             });
 
-            editor.currentFilename = "test.txt";
+            editor.currentFilename = 'test.txt';
 
             const serialized = editor.serialize();
 
             return {
-                hasContent: serialized.state.content === "Hello World!",
-                hasFilename: serialized.state.filename === "test.txt",
-                hasTitle: serialized.title === "Test Document",
-                hasType: serialized.type === "text-editor",
+                hasContent: serialized.state.content === 'Hello World!',
+                hasFilename: serialized.state.filename === 'test.txt',
+                hasTitle: serialized.title === 'Test Document',
+                hasType: serialized.type === 'text-editor',
             };
         });
 
@@ -296,49 +287,47 @@ test.describe("TextEditor Multi-Instance", () => {
     });
 });
 
-test.describe("WindowChrome Components", () => {
+test.describe('WindowChrome Components', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto("/");
-        await page.waitForLoadState("domcontentloaded");
+        await page.goto('/');
+        await page.waitForLoadState('domcontentloaded');
         await page.waitForFunction(() => window.__APP_READY === true, {
             timeout: 15000,
         });
     });
 
-    test("can create titlebar", async ({ page }) => {
+    test('can create titlebar', async ({ page }) => {
         const result = await page.evaluate(() => {
             const titlebar = window.WindowChrome.createTitlebar({
-                title: "Test Window",
-                icon: "💻",
+                title: 'Test Window',
+                icon: '💻',
                 showClose: true,
             });
 
             return {
                 hasElement: titlebar instanceof HTMLElement,
-                hasTitle: titlebar.textContent.includes("Test Window"),
+                hasTitle: titlebar.textContent.includes('Test Window'),
                 className: titlebar.className,
             };
         });
 
         expect(result.hasElement).toBe(true);
         expect(result.hasTitle).toBe(true);
-        expect(result.className).toContain("window-titlebar");
+        expect(result.className).toContain('window-titlebar');
     });
 
-    test("can create toolbar", async ({ page }) => {
+    test('can create toolbar', async ({ page }) => {
         const result = await page.evaluate(() => {
             const toolbar = window.WindowChrome.createToolbar([
-                { label: "New", action: "new" },
-                { type: "separator" },
-                { label: "Save", action: "save" },
+                { label: 'New', action: 'new' },
+                { type: 'separator' },
+                { label: 'Save', action: 'save' },
             ]);
 
             return {
                 hasElement: toolbar instanceof HTMLElement,
-                hasButtons:
-                    toolbar.querySelectorAll(".toolbar-btn").length === 2,
-                hasSeparator:
-                    toolbar.querySelector(".toolbar-separator") !== null,
+                hasButtons: toolbar.querySelectorAll('.toolbar-btn').length === 2,
+                hasSeparator: toolbar.querySelector('.toolbar-separator') !== null,
             };
         });
 
@@ -347,17 +336,17 @@ test.describe("WindowChrome Components", () => {
         expect(result.hasSeparator).toBe(true);
     });
 
-    test("can create status bar", async ({ page }) => {
+    test('can create status bar', async ({ page }) => {
         const result = await page.evaluate(() => {
             const statusBar = window.WindowChrome.createStatusBar({
-                leftContent: "Ready",
-                rightContent: "Line 1, Col 1",
+                leftContent: 'Ready',
+                rightContent: 'Line 1, Col 1',
             });
 
             return {
                 hasElement: statusBar instanceof HTMLElement,
-                hasLeft: statusBar.textContent.includes("Ready"),
-                hasRight: statusBar.textContent.includes("Line 1, Col 1"),
+                hasLeft: statusBar.textContent.includes('Ready'),
+                hasRight: statusBar.textContent.includes('Line 1, Col 1'),
             };
         });
 
@@ -366,18 +355,18 @@ test.describe("WindowChrome Components", () => {
         expect(result.hasRight).toBe(true);
     });
 
-    test("can update titlebar title", async ({ page }) => {
+    test('can update titlebar title', async ({ page }) => {
         const result = await page.evaluate(() => {
             const titlebar = window.WindowChrome.createTitlebar({
-                title: "Original Title",
-                icon: "💻",
+                title: 'Original Title',
+                icon: '💻',
             });
 
-            window.WindowChrome.updateTitle(titlebar, "Updated Title");
+            window.WindowChrome.updateTitle(titlebar, 'Updated Title');
 
             return {
-                hasUpdated: titlebar.textContent.includes("Updated Title"),
-                noOriginal: !titlebar.textContent.includes("Original Title"),
+                hasUpdated: titlebar.textContent.includes('Updated Title'),
+                noOriginal: !titlebar.textContent.includes('Original Title'),
             };
         });
 
@@ -386,16 +375,16 @@ test.describe("WindowChrome Components", () => {
     });
 });
 
-test.describe("Instance Manager Features", () => {
+test.describe('Instance Manager Features', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto("/");
-        await page.waitForLoadState("domcontentloaded");
+        await page.goto('/');
+        await page.waitForLoadState('domcontentloaded');
         await page.waitForFunction(() => window.__APP_READY === true, {
             timeout: 15000,
         });
     });
 
-    test("respects max instances limit", async ({ page }) => {
+    test('respects max instances limit', async ({ page }) => {
         const result = await page.evaluate(() => {
             // Provide a minimal subclass that implements render to avoid BaseWindowInstance error
             class TestInstance extends window.BaseWindowInstance {
@@ -426,12 +415,12 @@ test.describe("Instance Manager Features", () => {
         expect(result.instance3Created).toBe(false);
     });
 
-    test("tracks active instance", async ({ page }) => {
+    test('tracks active instance', async ({ page }) => {
         const result = await page.evaluate(() => {
             const manager = window.TerminalInstanceManager;
 
-            const terminal1 = manager.createInstance({ title: "Terminal 1" });
-            const terminal2 = manager.createInstance({ title: "Terminal 2" });
+            const terminal1 = manager.createInstance({ title: 'Terminal 1' });
+            const terminal2 = manager.createInstance({ title: 'Terminal 2' });
 
             // Terminal 2 should be active (last created)
             const activeAfterCreate = manager.getActiveInstance();
@@ -443,10 +432,8 @@ test.describe("Instance Manager Features", () => {
             return {
                 activeAfterCreateId: activeAfterCreate?.instanceId,
                 activeAfterSetId: activeAfterSet?.instanceId,
-                isTerminal2:
-                    activeAfterCreate?.instanceId === terminal2.instanceId,
-                isTerminal1:
-                    activeAfterSet?.instanceId === terminal1.instanceId,
+                isTerminal2: activeAfterCreate?.instanceId === terminal2.instanceId,
+                isTerminal1: activeAfterSet?.instanceId === terminal1.instanceId,
             };
         });
 
@@ -454,7 +441,7 @@ test.describe("Instance Manager Features", () => {
         expect(result.isTerminal1).toBe(true);
     });
 
-    test("can serialize and deserialize all instances", async ({ page }) => {
+    test('can serialize and deserialize all instances', async ({ page }) => {
         const result = await page.evaluate(() => {
             const manager = window.TerminalInstanceManager;
 
@@ -462,11 +449,11 @@ test.describe("Instance Manager Features", () => {
             manager.destroyAllInstances();
 
             // Create instances
-            const term1 = manager.createInstance({ title: "Terminal 1" });
-            const term2 = manager.createInstance({ title: "Terminal 2" });
+            const term1 = manager.createInstance({ title: 'Terminal 1' });
+            const term2 = manager.createInstance({ title: 'Terminal 2' });
 
-            term1.currentPath = "/home";
-            term2.currentPath = "/var";
+            term1.currentPath = '/home';
+            term2.currentPath = '/var';
 
             // Serialize all
             const serialized = manager.serializeAll();
@@ -489,7 +476,7 @@ test.describe("Instance Manager Features", () => {
 
         expect(result.serializedCount).toBe(2);
         expect(result.restoredCount).toBe(2);
-        expect(["/home", "/var"]).toContain(result.instance0Path);
-        expect(["/home", "/var"]).toContain(result.instance1Path);
+        expect(['/home', '/var']).toContain(result.instance0Path);
+        expect(['/home', '/var']).toContain(result.instance1Path);
     });
 });
