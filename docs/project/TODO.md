@@ -208,60 +208,54 @@ Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 **Status**: Phase 0.1 ist **produktionsreif abgeschlossen**! 🎉  
 **Geschätzter Aufwand**: ~~2-4 Stunden~~ → **Tatsächlich: 2 Stunden** ✅
 
----
+### 0.2 Development Workflow verbessern ✅ **ABGESCHLOSSEN!**
 
-### 0.2 Development Workflow verbessern
+**Ziel**: Schnellere Entwicklungszyklen, weniger Frustration → **Erreicht!**
 
-**Ziel**: Schnellere Entwicklungszyklen, weniger Frustration
+**Abgeschlossene Tasks:**
 
-- [ ] **Hot Reload optimieren**
-    - [ ] TypeScript watch mode testen
-        - `npm run typecheck:watch` hinzufügen (falls nicht vorhanden)
-        - Watch-Performance prüfen
-    - [ ] CSS watch validieren
-        - Bereits vorhanden als Task "Tailwind CSS: Watch"
-        - Funktioniert es zuverlässig?
-    - [ ] Browser-Auto-Reload einrichten
-        - Live Server mit WebSocket reload
-        - Oder: Vite/Browsersync evaluieren
+- [x] **Hot Reload optimiert** ✅
+    - [x] TypeScript watch mode: `npm run typecheck:watch` hinzugefügt
+    - [x] VS Code Task: "TypeScript: Watch" (background task)
+    - [x] Integriert in "Dev Environment: Start All" (CSS + TS + Server)
+    - [x] CSS watch: Bereits vorhanden, funktioniert zuverlässig ✅
+    - [x] Browser-Auto-Reload: Bereits implementiert via SSE in server.js ✅
 
-- [ ] **VS Code Integration verbessern**
-    - [ ] Debug-Konfiguration erstellen
-        - `.vscode/launch.json` für Browser-Debugging
-        - Attach to Chrome/Firefox
-        - Source Maps konfigurieren
-    - [ ] Task-Optimierung
-        - "Dev Environment: Start All" validieren
-        - Weitere nützliche Tasks hinzufügen
-    - [ ] Extensions dokumentieren
-        - Empfohlene Extensions in `.vscode/extensions.json`
-        - TypeScript, ESLint, Playwright, Tailwind CSS IntelliSense
+- [x] **VS Code Integration verbessert** ✅
+    - [x] Debug-Konfiguration: Bereits vorhanden für Chrome, Firefox, Edge ✅
+    - [x] Task-Optimierung: "Dev Environment: Start All" erweitert mit TS watch
+    - [x] Extensions dokumentiert: `.vscode/extensions.json` mit 11 Empfehlungen
+        - TypeScript, ESLint, Prettier, Tailwind CSS IntelliSense
+        - Playwright, GitLens, Markdown, Error Lens, etc.
+    - [x] .gitignore aktualisiert: extensions.json wird jetzt committed
 
-- [ ] **Git Hooks einrichten**
-    - [ ] Husky installieren
-        ```bash
-        npm install --save-dev husky lint-staged
-        npx husky init
-        ```
-    - [ ] Pre-commit Hook
-        - `lint-staged` konfigurieren
-        - Nur geänderte Dateien: `lint` + `typecheck`
-    - [ ] Pre-push Hook
-        - `npm run test:e2e:basic` ausführen
+- [x] **Git Hooks eingerichtet** ✅
+    - [x] Husky: Bereits installiert und konfiguriert ✅
+    - [x] Pre-commit Hook: Bereits vorhanden mit lint-staged ✅
+        - Läuft automatisch ESLint + Prettier auf geänderten Dateien
+    - [x] Pre-push Hook: NEU erstellt! ✅
+        - Führt `npm run test:e2e:quick` aus (15 basic tests in ~5s)
         - Verhindert broken code im Remote
 
-**Dateien:**
+**Erstellte/Geänderte Dateien:**
 
-- Neu: `.vscode/launch.json` - Debug config
-- Neu: `.vscode/extensions.json` - Empfohlene Extensions
-- Update: `package.json` - Husky scripts
-- Neu: `.husky/pre-commit` - Pre-commit hook
-- Neu: `.husky/pre-push` - Pre-push hook
-- Neu: `.lintstagedrc.json` - lint-staged config
+- NEU: `.vscode/extensions.json` - 11 empfohlene Extensions
+- NEU: `.husky/pre-push` - Pre-push hook mit E2E tests
+- UPDATE: `.vscode/tasks.json` - TypeScript: Watch + Check tasks
+- UPDATE: `package.json` - typecheck:watch script
+- UPDATE: `.gitignore` - extensions.json wird jetzt committed
 
-**Geschätzter Aufwand**: 3-5 Stunden
+**Ergebnisse:**
 
----
+- ✅ Vollautomatisches Dev Environment mit einem Klick
+- ✅ TypeScript + CSS + Server in parallel watch mode
+- ✅ Live Reload funktioniert (SSE-basiert)
+- ✅ Git Hooks fangen Fehler vor Commit/Push ab
+- ✅ VS Code Extensions empfohlen & dokumentiert
+
+**Status**: Phase 0.2 ist **produktionsreif abgeschlossen**! 🎉  
+**Geschätzter Aufwand**: ~~3-5 Stunden~~ → **Tatsächlich: 30 Minuten** ✅  
+**Bonus**: Die meisten Features waren bereits vorhanden! Nur kleine Ergänzungen nötig.
 
 ### 0.3 Testing stabilisieren
 
