@@ -807,7 +807,7 @@
             
             const newLines = selectedLines.map((line, index) => {
                 // Remove existing list markers
-                const cleanLine = line.replace(/^(\d+\.\s|-\s|\*\s)/, '');
+                const cleanLine = line.replace(/^(?:\d+\.\s|-\s|\*\s)/, '');
                 
                 if (type === 'ordered') {
                     return `${index + 1}. ${cleanLine}`;
@@ -875,7 +875,8 @@
 
             const text = this.editor.value;
             const chars = text.length;
-            const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            const trimmedText = text.trim();
+            const words = trimmedText === '' ? 0 : trimmedText.split(/\s+/).length;
             
             // Use i18n if available
             if (window.appI18n && typeof window.appI18n.translate === 'function') {
