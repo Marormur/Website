@@ -10,3 +10,80 @@ body {
     margin: 0;
     padding: 0;
 }
+
+/* Window Tabs Styling */
+.window-tab-bar {
+    height: 40px;
+    user-select: none;
+}
+
+.window-tabs-container {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.window-tabs-container::-webkit-scrollbar {
+    height: 4px;
+}
+
+.window-tabs-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.window-tabs-container::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 2px;
+}
+
+.window-tabs-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.7);
+}
+
+.window-tab {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.window-tab:hover {
+    background-color: rgba(229, 231, 235, 0.5);
+}
+
+.dark .window-tab:hover {
+    background-color: rgba(55, 65, 81, 0.5);
+}
+
+.window-tab[aria-selected="true"] {
+    background-color: white;
+    border-bottom: 2px solid #3b82f6;
+}
+
+.dark .window-tab[aria-selected="true"] {
+    background-color: #1f2937;
+}
+
+.tab-close-btn {
+    opacity: 0.6;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+.tab-close-btn:hover {
+    opacity: 1;
+}
+
+.new-tab-button {
+    flex-shrink: 0;
+}
+
+.new-tab-button:hover {
+    transform: scale(1.05);
+}
+
+/* Instance container */
+.instance-container {
+    display: none;
+}
+
+.instance-container.active {
+    display: block;
+}
