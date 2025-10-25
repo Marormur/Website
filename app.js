@@ -313,6 +313,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     initDockMagnification();
+    if (window.DockSystem && typeof window.DockSystem.initDockDragDrop === 'function') {
+        window.DockSystem.initDockDragDrop();
+    }
 });
 
 function bringDialogToFront(dialogId) {

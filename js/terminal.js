@@ -20,9 +20,11 @@ console.log('Terminal System loaded');
                 type: 'directory',
                 contents: {
                     'Desktop': { type: 'directory', contents: {} },
-                    'Documents': { type: 'directory', contents: {
-                        'readme.txt': { type: 'file', content: 'Willkommen im Terminal!' }
-                    }},
+                    'Documents': {
+                        type: 'directory', contents: {
+                            'readme.txt': { type: 'file', content: 'Willkommen im Terminal!' }
+                        }
+                    },
                     'Downloads': { type: 'directory', contents: {} },
                     'welcome.txt': { type: 'file', content: 'Willkommen auf Marvins Portfolio-Website!\n\nGib "help" ein, um eine Liste verfügbarer Befehle zu sehen.' }
                 }
@@ -126,12 +128,12 @@ console.log('Terminal System loaded');
 
         addOutput: function (text, className = '') {
             if (!this.outputElement) return;
-            
+
             const line = document.createElement('div');
             line.className = className;
             line.textContent = text;
             this.outputElement.appendChild(line);
-            
+
             // Auto-scroll to bottom
             this.outputElement.scrollTop = this.outputElement.scrollHeight;
         },
@@ -142,7 +144,7 @@ console.log('Terminal System loaded');
 
         executeCommand: function (commandLine) {
             this.addPromptLine(commandLine);
-            
+
             const parts = commandLine.trim().split(/\s+/);
             const command = parts[0].toLowerCase();
             const args = parts.slice(1);
@@ -225,7 +227,7 @@ console.log('Terminal System loaded');
         cmdLs: function (args) {
             const targetPath = args[0] || this.currentPath;
             const dir = this.resolvePath(targetPath);
-            
+
             if (!dir) {
                 this.addOutput(`ls: ${targetPath}: Datei oder Verzeichnis nicht gefunden`, 'text-red-400');
                 return;
@@ -268,7 +270,7 @@ console.log('Terminal System loaded');
             }
 
             if (dir.type !== 'directory') {
-                this.addOutput(`cd: ${targetPath}: Ist keine Datei`, 'text-red-400');
+                this.addOutput(`cd: ${targetPath}: Ist kein Verzeichnis`, 'text-red-400');
                 return;
             }
 
@@ -388,7 +390,7 @@ console.log('Terminal System loaded');
             if (!path) return null;
 
             let targetPath = path;
-            
+
             // Handle home directory
             if (targetPath === '~' || targetPath === '') {
                 return this.fileSystem['~'];
@@ -422,13 +424,13 @@ console.log('Terminal System loaded');
 
             // Navigate through file system
             let current = this.fileSystem['~'];
-            
+
             if (!targetPath || targetPath === '~') {
                 return current;
             }
 
             const parts = targetPath.split('/').filter(p => p);
-            
+
             for (const part of parts) {
                 if (!current.contents || !current.contents[part]) {
                     return null;
