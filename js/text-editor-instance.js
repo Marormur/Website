@@ -2,7 +2,7 @@ console.log('TextEditorInstance loaded');
 
 /**
  * TextEditorInstance - Multi-Instance fähiger Text Editor
- * 
+ *
  * Basiert auf BaseWindowInstance
  * Ermöglicht mehrere Text Editor Fenster gleichzeitig
  */
@@ -16,7 +16,7 @@ console.log('TextEditorInstance loaded');
         constructor(config) {
             super({
                 ...config,
-                type: 'text-editor'
+                type: 'text-editor',
             });
 
             // Editor-specific properties
@@ -47,7 +47,10 @@ console.log('TextEditorInstance loaded');
                 content: initialState.content || '',
                 filename: initialState.filename || 'Untitled.txt',
                 wrapMode: initialState.wrapMode || 'off',
-                cursorPosition: initialState.cursorPosition || { line: 1, col: 1 }
+                cursorPosition: initialState.cursorPosition || {
+                    line: 1,
+                    col: 1,
+                },
             };
         }
 
@@ -118,7 +121,7 @@ console.log('TextEditorInstance loaded');
             const isDark = document.documentElement.classList.contains('dark');
             const buttons = this.container.querySelectorAll('.text-editor-btn');
 
-            buttons.forEach(btn => {
+            buttons.forEach((btn) => {
                 btn.style.cssText = `
                     padding: 6px 12px;
                     font-size: 13px;
@@ -132,8 +135,9 @@ console.log('TextEditorInstance loaded');
             });
 
             // Separator style
-            const separators = this.container.querySelectorAll('.toolbar-separator');
-            separators.forEach(sep => {
+            const separators =
+                this.container.querySelectorAll('.toolbar-separator');
+            separators.forEach((sep) => {
                 sep.style.cssText = `
                     width: 1px;
                     height: 20px;
@@ -153,11 +157,18 @@ console.log('TextEditorInstance loaded');
             // Cache elements
             this.editor = this.container.querySelector('.text-editor-textarea');
             this.statusBar = this.container.querySelector('.text-file-status');
-            this.saveButton = this.container.querySelector('[data-action="save"]');
+            this.saveButton = this.container.querySelector(
+                '[data-action="save"]',
+            );
             this.fileInput = this.container.querySelector('.text-file-input');
-            this.wordCountDisplay = this.container.querySelector('.word-count-display');
-            this.lineColDisplay = this.container.querySelector('.line-col-display');
-            this.findReplacePanel = this.container.querySelector('.find-replace-panel');
+            this.wordCountDisplay = this.container.querySelector(
+                '.word-count-display',
+            );
+            this.lineColDisplay =
+                this.container.querySelector('.line-col-display');
+            this.findReplacePanel = this.container.querySelector(
+                '.find-replace-panel',
+            );
             this.findInput = this.container.querySelector('.find-input');
             this.replaceInput = this.container.querySelector('.replace-input');
 
@@ -168,9 +179,15 @@ console.log('TextEditorInstance loaded');
 
             // Editor events
             this.editor.addEventListener('input', () => this._handleInput());
-            this.editor.addEventListener('click', () => this._updateCursorPosition());
-            this.editor.addEventListener('keyup', () => this._updateCursorPosition());
-            this.editor.addEventListener('select', () => this._updateCursorPosition());
+            this.editor.addEventListener('click', () =>
+                this._updateCursorPosition(),
+            );
+            this.editor.addEventListener('keyup', () =>
+                this._updateCursorPosition(),
+            );
+            this.editor.addEventListener('select', () =>
+                this._updateCursorPosition(),
+            );
 
             // Toolbar actions
             this.container.addEventListener('click', (e) => {
@@ -183,7 +200,9 @@ console.log('TextEditorInstance loaded');
 
             // File input
             if (this.fileInput) {
-                this.fileInput.addEventListener('change', (e) => this._handleFileOpen(e));
+                this.fileInput.addEventListener('change', (e) =>
+                    this._handleFileOpen(e),
+                );
             }
 
             // Initial update
@@ -211,7 +230,7 @@ console.log('TextEditorInstance loaded');
                 findNext: () => this.findNext(),
                 replaceOne: () => this.replaceOne(),
                 replaceAll: () => this.replaceAll(),
-                closeFindReplace: () => this.closeFindReplace()
+                closeFindReplace: () => this.closeFindReplace(),
             };
 
             if (actions[action]) {
@@ -282,7 +301,12 @@ console.log('TextEditorInstance loaded');
          * Clear content
          */
         clearContent() {
-            if (this.isDirty && !confirm('Ungespeicherte Änderungen gehen verloren. Fortfahren?')) {
+            if (
+                this.isDirty &&
+                !confirm(
+                    'Ungespeicherte Änderungen gehen verloren. Fortfahren?',
+                )
+            ) {
                 return;
             }
 
@@ -318,7 +342,10 @@ console.log('TextEditorInstance loaded');
                 this.editor.value = e.target.result;
                 this.currentFilename = file.name;
                 this.isDirty = false;
-                this.updateState({ content: e.target.result, filename: file.name });
+                this.updateState({
+                    content: e.target.result,
+                    filename: file.name,
+                });
                 this._updateWordCount();
                 this._updateSaveButton();
                 this._showStatusBar(`Geöffnet: ${file.name}`);
@@ -369,16 +396,24 @@ console.log('TextEditorInstance loaded');
         toggleWrapMode() {
             this.wrapMode = this.wrapMode === 'soft' ? 'off' : 'soft';
             this.editor.wrap = this.wrapMode;
-            this.editor.style.whiteSpace = this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
+            this.editor.style.whiteSpace =
+                this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
 
             try {
-                localStorage.setItem(`textEditorWrapMode_${this.instanceId}`, this.wrapMode);
+                localStorage.setItem(
+                    `textEditorWrapMode_${this.instanceId}`,
+                    this.wrapMode,
+                );
             } catch (e) {
                 console.warn('Could not save wrap mode', e);
             }
 
             this.updateState({ wrapMode: this.wrapMode });
-            this._showStatusBar(this.wrapMode === 'soft' ? 'Zeilenumbruch aktiviert' : 'Zeilenumbruch deaktiviert');
+            this._showStatusBar(
+                this.wrapMode === 'soft'
+                    ? 'Zeilenumbruch aktiviert'
+                    : 'Zeilenumbruch deaktiviert',
+            );
         }
 
         /**
@@ -387,11 +422,14 @@ console.log('TextEditorInstance loaded');
          */
         _loadWrapPreference() {
             try {
-                const saved = localStorage.getItem(`textEditorWrapMode_${this.instanceId}`);
+                const saved = localStorage.getItem(
+                    `textEditorWrapMode_${this.instanceId}`,
+                );
                 if (saved) {
                     this.wrapMode = saved;
                     this.editor.wrap = this.wrapMode;
-                    this.editor.style.whiteSpace = this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
+                    this.editor.style.whiteSpace =
+                        this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
                 }
             } catch (e) {
                 console.warn('Could not load wrap mode', e);
@@ -444,7 +482,10 @@ console.log('TextEditorInstance loaded');
                 // Wrap around to beginning
                 const firstIndex = content.indexOf(searchText);
                 if (firstIndex !== -1) {
-                    this.editor.setSelectionRange(firstIndex, firstIndex + searchText.length);
+                    this.editor.setSelectionRange(
+                        firstIndex,
+                        firstIndex + searchText.length,
+                    );
                     this.editor.focus();
                 } else {
                     this._showStatusBar('Nicht gefunden');
@@ -484,8 +525,12 @@ console.log('TextEditorInstance loaded');
             const replaceText = this.replaceInput.value;
             if (!searchText) return;
 
-            const newContent = this.editor.value.split(searchText).join(replaceText);
-            const count = (this.editor.value.match(new RegExp(searchText, 'g')) || []).length;
+            const newContent = this.editor.value
+                .split(searchText)
+                .join(replaceText);
+            const count = (
+                this.editor.value.match(new RegExp(searchText, 'g')) || []
+            ).length;
 
             this.editor.value = newContent;
             this._handleInput();
@@ -536,7 +581,7 @@ console.log('TextEditorInstance loaded');
                 content: this.editor?.value || '',
                 filename: this.currentFilename,
                 wrapMode: this.wrapMode,
-                isDirty: this.isDirty
+                isDirty: this.isDirty,
             };
         }
 
@@ -559,7 +604,8 @@ console.log('TextEditorInstance loaded');
                 this.wrapMode = data.wrapMode;
                 if (this.editor) {
                     this.editor.wrap = this.wrapMode;
-                    this.editor.style.whiteSpace = this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
+                    this.editor.style.whiteSpace =
+                        this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
                 }
             }
 
@@ -581,7 +627,9 @@ console.log('TextEditorInstance loaded');
             maxInstances: 0, // Unlimited
             createContainer: function (instanceId) {
                 // Create container and append to text editor modal container
-                const editorModalContainer = document.getElementById('text-editor-container');
+                const editorModalContainer = document.getElementById(
+                    'text-editor-container',
+                );
                 if (!editorModalContainer) {
                     console.error('Text editor container not found');
                     return null;
@@ -596,8 +644,7 @@ console.log('TextEditorInstance loaded');
 
                 editorModalContainer.appendChild(container);
                 return container;
-            }
+            },
         });
     }
-
 })();

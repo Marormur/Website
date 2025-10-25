@@ -2,7 +2,7 @@ console.log('WindowManager loaded');
 
 /**
  * WindowManager - Zentrale Verwaltung für alle Fenster/Modals
- * 
+ *
  * Vorteile:
  * - Neue Fenster können sich selbst registrieren
  * - Alle Fenster-Metadaten an einem Ort
@@ -13,7 +13,7 @@ console.log('WindowManager loaded');
     'use strict';
 
     const windowRegistry = new Map();
-    let baseZIndex = 1000;
+    const baseZIndex = 1000;
     let topZIndex = 1000;
 
     // Window-Konfiguration
@@ -41,13 +41,16 @@ console.log('WindowManager loaded');
                 modalId: this.id,
                 programLabel: translate(`${this.programKey}.label`),
                 infoLabel: translate(`${this.programKey}.infoLabel`),
-                fallbackInfoModalId: this.metadata.fallbackInfoModalId || 'program-info-modal',
+                fallbackInfoModalId:
+                    this.metadata.fallbackInfoModalId || 'program-info-modal',
                 icon: this.icon,
-                about: {}
+                about: {},
             };
 
             aboutFields.forEach((field) => {
-                info.about[field] = translate(`${this.programKey}.about.${field}`);
+                info.about[field] = translate(
+                    `${this.programKey}.about.${field}`,
+                );
             });
 
             return info;
@@ -68,7 +71,7 @@ console.log('WindowManager loaded');
          * Registriert mehrere Fenster auf einmal
          */
         registerAll(configs) {
-            configs.forEach(config => this.register(config));
+            configs.forEach((config) => this.register(config));
         },
 
         /**
@@ -89,7 +92,7 @@ console.log('WindowManager loaded');
          * Gibt alle persistenten Fenster zurück
          */
         getPersistentWindowIds() {
-            return this.getAllWindowIds().filter(id => {
+            return this.getAllWindowIds().filter((id) => {
                 const config = this.getConfig(id);
                 return config && !config.isTransient();
             });
@@ -99,7 +102,7 @@ console.log('WindowManager loaded');
          * Gibt alle transienten Fenster zurück
          */
         getTransientWindowIds() {
-            return this.getAllWindowIds().filter(id => {
+            return this.getAllWindowIds().filter((id) => {
                 const config = this.getConfig(id);
                 return config && config.isTransient();
             });
@@ -143,10 +146,11 @@ console.log('WindowManager loaded');
             let topModal = null;
             let highestZ = 0;
 
-            this.getAllWindowIds().forEach(id => {
+            this.getAllWindowIds().forEach((id) => {
                 const modal = document.getElementById(id);
-                if (modal && !modal.classList.contains("hidden")) {
-                    const zIndex = parseInt(getComputedStyle(modal).zIndex, 10) || 0;
+                if (modal && !modal.classList.contains('hidden')) {
+                    const zIndex =
+                        parseInt(getComputedStyle(modal).zIndex, 10) || 0;
                     if (zIndex > highestZ) {
                         highestZ = zIndex;
                         topModal = modal;
@@ -175,7 +179,11 @@ console.log('WindowManager loaded');
         open(windowId) {
             // Run per-window init handler once if provided
             const config = this.getConfig(windowId);
-            if (config && config.metadata && typeof config.metadata.initHandler === 'function') {
+            if (
+                config &&
+                config.metadata &&
+                typeof config.metadata.initHandler === 'function'
+            ) {
                 try {
                     if (!config.metadata.__initialized) {
                         config.metadata.initHandler();
@@ -224,18 +232,24 @@ console.log('WindowManager loaded');
         syncZIndexWithDOM() {
             let maxZ = baseZIndex;
 
-            this.getAllWindowIds().forEach(id => {
+            this.getAllWindowIds().forEach((id) => {
                 const modal = document.getElementById(id);
                 if (!modal) return;
 
-                const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
+                const modalZ = parseInt(
+                    window.getComputedStyle(modal).zIndex,
+                    10,
+                );
                 if (!Number.isNaN(modalZ)) {
                     maxZ = Math.max(maxZ, modalZ);
                 }
 
                 const windowEl = this.getDialogWindowElement(modal);
                 if (windowEl) {
-                    const contentZ = parseInt(window.getComputedStyle(windowEl).zIndex, 10);
+                    const contentZ = parseInt(
+                        window.getComputedStyle(windowEl).zIndex,
+                        10,
+                    );
                     if (!Number.isNaN(contentZ)) {
                         maxZ = Math.max(maxZ, contentZ);
                     }
@@ -279,8 +293,8 @@ console.log('WindowManager loaded');
                     name: translate(`${programKey}.about.name`),
                     tagline: translate(`${programKey}.about.tagline`),
                     version: translate(`${programKey}.about.version`),
-                    copyright: translate(`${programKey}.about.copyright`)
-                }
+                    copyright: translate(`${programKey}.about.copyright`),
+                },
             };
         },
 
@@ -295,7 +309,7 @@ console.log('WindowManager loaded');
 
         get baseZIndex() {
             return baseZIndex;
-        }
+        },
     };
 
     // Globaler Export
@@ -304,7 +318,8 @@ console.log('WindowManager loaded');
     // Legacy-Kompatibilität
     Object.defineProperty(window, 'topZIndex', {
         get: () => WindowManager.topZIndex,
-        set: (value) => { WindowManager.topZIndex = value; }
+        set: (value) => {
+            WindowManager.topZIndex = value;
+        },
     });
-
 })();

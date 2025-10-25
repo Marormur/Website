@@ -20,16 +20,16 @@ const WINDOW_POSITIONS_KEY = 'windowPositions';
 // Modal Management
 // ============================================================================
 const MODAL_IDS = [
-    "finder-modal",
-    "projects-modal",
-    "about-modal",
-    "settings-modal",
-    "text-modal",
-    "image-modal",
-    "program-info-modal"
+    'finder-modal',
+    'projects-modal',
+    'about-modal',
+    'settings-modal',
+    'text-modal',
+    'image-modal',
+    'program-info-modal',
 ];
 
-const TRANSIENT_MODAL_IDS = new Set(["program-info-modal"]);
+const TRANSIENT_MODAL_IDS = new Set(['program-info-modal']);
 
 // ============================================================================
 // Z-Index Management
@@ -110,6 +110,6 @@ if (typeof window !== 'undefined') {
         GITHUB_CACHE_DURATION,
         GITHUB_API_BASE,
         SNAP_THRESHOLD,
-        SNAP_SIDES
+        SNAP_SIDES,
     };
 }

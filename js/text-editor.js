@@ -21,12 +21,16 @@
          * @param {HTMLElement|string} containerOrId - Container element or ID
          */
         init(containerOrId) {
-            const container = typeof containerOrId === 'string'
-                ? document.getElementById(containerOrId)
-                : containerOrId;
+            const container =
+                typeof containerOrId === 'string'
+                    ? document.getElementById(containerOrId)
+                    : containerOrId;
 
             if (!container) {
-                console.error('Text editor container not found:', containerOrId);
+                console.error(
+                    'Text editor container not found:',
+                    containerOrId,
+                );
                 return;
             }
 
@@ -105,7 +109,10 @@
             this.updateCSSVariables();
 
             // Apply i18n translations
-            if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
+            if (
+                window.appI18n &&
+                typeof window.appI18n.applyTranslations === 'function'
+            ) {
                 window.appI18n.applyTranslations(this.container);
             }
         },
@@ -118,18 +125,42 @@
 
             const isDark = document.documentElement.classList.contains('dark');
 
-            this.container.style.setProperty('--editor-body-bg', isDark ? '#0f172a' : '#fafafa');
-            this.container.style.setProperty('--editor-text', isDark ? '#e5e7eb' : '#111827');
-            this.container.style.setProperty('--editor-toolbar-bg', isDark ? '#1f2937' : '#f5f5f5');
-            this.container.style.setProperty('--editor-toolbar-border', isDark ? '#374151' : '#d1d5db');
-            this.container.style.setProperty('--editor-toolbar-button-bg', isDark ? '#111827' : '#ffffff');
-            this.container.style.setProperty('--editor-toolbar-button-hover', isDark ? '#1f2937' : '#e5e7eb');
-            this.container.style.setProperty('--editor-toolbar-button-border', isDark ? '#475569' : '#d1d5db');
-            this.container.style.setProperty('--editor-surface-bg', isDark ? '#111827' : '#ffffff');
+            this.container.style.setProperty(
+                '--editor-body-bg',
+                isDark ? '#0f172a' : '#fafafa',
+            );
+            this.container.style.setProperty(
+                '--editor-text',
+                isDark ? '#e5e7eb' : '#111827',
+            );
+            this.container.style.setProperty(
+                '--editor-toolbar-bg',
+                isDark ? '#1f2937' : '#f5f5f5',
+            );
+            this.container.style.setProperty(
+                '--editor-toolbar-border',
+                isDark ? '#374151' : '#d1d5db',
+            );
+            this.container.style.setProperty(
+                '--editor-toolbar-button-bg',
+                isDark ? '#111827' : '#ffffff',
+            );
+            this.container.style.setProperty(
+                '--editor-toolbar-button-hover',
+                isDark ? '#1f2937' : '#e5e7eb',
+            );
+            this.container.style.setProperty(
+                '--editor-toolbar-button-border',
+                isDark ? '#475569' : '#d1d5db',
+            );
+            this.container.style.setProperty(
+                '--editor-surface-bg',
+                isDark ? '#111827' : '#ffffff',
+            );
 
             // Apply button styles
             const buttons = this.container.querySelectorAll('.text-editor-btn');
-            buttons.forEach(btn => {
+            buttons.forEach((btn) => {
                 btn.style.margin = '0';
                 btn.style.padding = '6px 12px';
                 btn.style.fontSize = '14px';
@@ -151,9 +182,14 @@
             this.statusBar = this.container.querySelector('#text-file-status');
             this.saveButton = this.container.querySelector('#text-save-button');
             this.fileInput = this.container.querySelector('#text-file-input');
-            this.wordCountDisplay = this.container.querySelector('#word-count-display');
-            this.lineColDisplay = this.container.querySelector('#line-col-display');
-            this.findReplacePanel = this.container.querySelector('#find-replace-panel');
+            this.wordCountDisplay = this.container.querySelector(
+                '#word-count-display',
+            );
+            this.lineColDisplay =
+                this.container.querySelector('#line-col-display');
+            this.findReplacePanel = this.container.querySelector(
+                '#find-replace-panel',
+            );
             this.findInput = this.container.querySelector('#find-input');
             this.replaceInput = this.container.querySelector('#replace-input');
         },
@@ -177,7 +213,8 @@
             const normalized = mode === 'soft' ? 'soft' : 'off';
             this.wrapMode = normalized;
             this.editor.wrap = normalized;
-            this.editor.style.whiteSpace = normalized === 'soft' ? 'pre-wrap' : 'pre';
+            this.editor.style.whiteSpace =
+                normalized === 'soft' ? 'pre-wrap' : 'pre';
 
             try {
                 localStorage.setItem('textEditorWrapMode', normalized);
@@ -192,7 +229,11 @@
         toggleWrapMode() {
             const next = this.wrapMode === 'soft' ? 'off' : 'soft';
             this.applyWrapMode(next);
-            this.setStatusPlain(next === 'soft' ? 'Zeilenumbruch aktiviert' : 'Zeilenumbruch deaktiviert');
+            this.setStatusPlain(
+                next === 'soft'
+                    ? 'Zeilenumbruch aktiviert'
+                    : 'Zeilenumbruch deaktiviert',
+            );
             this.focusEditor();
         },
 
@@ -228,7 +269,7 @@
             });
             themeObserver.observe(document.documentElement, {
                 attributes: true,
-                attributeFilter: ['class']
+                attributeFilter: ['class'],
             });
 
             // Listen for language changes
@@ -263,7 +304,8 @@
                 'textEditor:bold': () => this.wrapSelection('**', '**'),
                 'textEditor:italic': () => this.wrapSelection('*', '*'),
                 'textEditor:underline': () => this.wrapSelection('<u>', '</u>'),
-                'textEditor:strikethrough': () => this.wrapSelection('~~', '~~'),
+                'textEditor:strikethrough': () =>
+                    this.wrapSelection('~~', '~~'),
                 'textEditor:heading1': () => this.insertHeading(1),
                 'textEditor:heading2': () => this.insertHeading(2),
                 'textEditor:heading3': () => this.insertHeading(3),
@@ -277,7 +319,7 @@
                 'textEditor:findNext': () => this.findNext(),
                 'textEditor:replaceOne': () => this.replaceOne(),
                 'textEditor:replaceAll': () => this.replaceAll(),
-                'textEditor:closeFindReplace': () => this.closeFindReplace()
+                'textEditor:closeFindReplace': () => this.closeFindReplace(),
             });
         },
 
@@ -290,7 +332,10 @@
             try {
                 localStorage.setItem('textEditorContent', this.editor.value);
             } catch (err) {
-                console.warn('Could not save editor content to localStorage:', err);
+                console.warn(
+                    'Could not save editor content to localStorage:',
+                    err,
+                );
             }
 
             this.syncSaveButtonState();
@@ -392,13 +437,19 @@
             if (!this.editor) return;
 
             const content = this.editor.value;
-            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const blob = new Blob([content], {
+                type: 'text/plain;charset=utf-8',
+            });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
 
             const firstLine = content.split('\n')[0] || 'text';
-            const sanitized = firstLine.trim().substring(0, 20).replace(/[^a-zA-Z0-9-_]/g, '') || 'text';
+            const sanitized =
+                firstLine
+                    .trim()
+                    .substring(0, 20)
+                    .replace(/[^a-zA-Z0-9-_]/g, '') || 'text';
             a.download = `${sanitized}.txt`;
 
             document.body.appendChild(a);
@@ -429,9 +480,13 @@
         handlePaste() {
             this.focusEditor();
 
-            if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
-                navigator.clipboard.readText()
-                    .then(text => {
+            if (
+                navigator.clipboard &&
+                typeof navigator.clipboard.readText === 'function'
+            ) {
+                navigator.clipboard
+                    .readText()
+                    .then((text) => {
                         if (text && this.editor) {
                             this.insertTextAtCursor(text);
                         }
@@ -461,12 +516,14 @@
         insertTextAtCursor(text) {
             if (!this.editor || typeof text !== 'string') return;
 
-            const start = typeof this.editor.selectionStart === 'number'
-                ? this.editor.selectionStart
-                : this.editor.value.length;
-            const end = typeof this.editor.selectionEnd === 'number'
-                ? this.editor.selectionEnd
-                : start;
+            const start =
+                typeof this.editor.selectionStart === 'number'
+                    ? this.editor.selectionStart
+                    : this.editor.value.length;
+            const end =
+                typeof this.editor.selectionEnd === 'number'
+                    ? this.editor.selectionEnd
+                    : start;
 
             this.editor.setRangeText(text, start, end, 'end');
             this.editor.dispatchEvent(new Event('input', { bubbles: true }));
@@ -476,13 +533,15 @@
          * Update document title
          */
         updateDocumentTitle() {
-            const titleKey = this.currentRemoteFile && this.currentRemoteFile.fileName
-                ? 'textEditor.documentTitleWithFile'
-                : 'textEditor.documentTitle';
+            const titleKey =
+                this.currentRemoteFile && this.currentRemoteFile.fileName
+                    ? 'textEditor.documentTitleWithFile'
+                    : 'textEditor.documentTitle';
 
-            const params = this.currentRemoteFile && this.currentRemoteFile.fileName
-                ? { fileName: this.currentRemoteFile.fileName }
-                : undefined;
+            const params =
+                this.currentRemoteFile && this.currentRemoteFile.fileName
+                    ? { fileName: this.currentRemoteFile.fileName }
+                    : undefined;
 
             const { text } = this.resolveTranslation(titleKey, params);
             document.title = text;
@@ -523,7 +582,11 @@
          * @param {Object} params - Translation parameters
          */
         setStatusLocalized(key, params) {
-            this.statusState = { type: 'i18n', key, params: params || undefined };
+            this.statusState = {
+                type: 'i18n',
+                key,
+                params: params || undefined,
+            };
             this.applyStatusState();
         },
 
@@ -552,19 +615,28 @@
             if (this.statusState.type === 'i18n') {
                 const { text, translated } = this.resolveTranslation(
                     this.statusState.key,
-                    this.statusState.params
+                    this.statusState.params,
                 );
                 this.statusBar.textContent = text;
 
                 if (translated) {
-                    this.statusBar.setAttribute('data-i18n', this.statusState.key);
+                    this.statusBar.setAttribute(
+                        'data-i18n',
+                        this.statusState.key,
+                    );
                     if (this.statusState.params) {
-                        this.statusBar.setAttribute('data-i18n-params', JSON.stringify(this.statusState.params));
+                        this.statusBar.setAttribute(
+                            'data-i18n-params',
+                            JSON.stringify(this.statusState.params),
+                        );
                     } else {
                         this.statusBar.removeAttribute('data-i18n-params');
                     }
 
-                    if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
+                    if (
+                        window.appI18n &&
+                        typeof window.appI18n.applyTranslations === 'function'
+                    ) {
                         window.appI18n.applyTranslations(this.statusBar);
                     }
                 } else {
@@ -600,11 +672,15 @@
                     const label = p && p.label ? p.label : '';
                     return label ? `${label} (lädt …)` : 'Lade Datei …';
                 },
-                'textEditor.status.loadError': () => 'Datei konnte nicht geladen werden.',
-                'textEditor.status.rateLimit': () => 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                'textEditor.status.loadError': () =>
+                    'Datei konnte nicht geladen werden.',
+                'textEditor.status.rateLimit': () =>
+                    'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
                 'textEditor.status.wordCount': (p) => {
-                    const words = p && typeof p.words === 'number' ? p.words : 0;
-                    const chars = p && typeof p.chars === 'number' ? p.chars : 0;
+                    const words =
+                        p && typeof p.words === 'number' ? p.words : 0;
+                    const chars =
+                        p && typeof p.chars === 'number' ? p.chars : 0;
                     return `Words: ${words} | Characters: ${chars}`;
                 },
                 'textEditor.status.position': (p) => {
@@ -614,13 +690,17 @@
                 },
                 'textEditor.findReplace.noMatch': () => 'No match found',
                 'textEditor.findReplace.replacedCount': (p) => {
-                    const count = p && typeof p.count === 'number' ? p.count : 0;
+                    const count =
+                        p && typeof p.count === 'number' ? p.count : 0;
                     return `Replaced ${count} occurrence(s)`;
-                }
+                },
             };
 
             try {
-                if (window.appI18n && typeof window.appI18n.translate === 'function') {
+                if (
+                    window.appI18n &&
+                    typeof window.appI18n.translate === 'function'
+                ) {
                     const translated = window.appI18n.translate(key, params);
                     if (translated && translated !== key) {
                         return { text: translated, translated: true };
@@ -685,7 +765,9 @@
         showLoading(payload = {}) {
             const label = this.formatFileLabel(payload);
             if (label) {
-                this.setStatusLocalized('textEditor.status.loadingWithLabel', { label });
+                this.setStatusLocalized('textEditor.status.loadingWithLabel', {
+                    label,
+                });
             } else {
                 this.setStatusLocalized('textEditor.status.loading');
             }
@@ -701,8 +783,11 @@
          */
         showLoadError(payload = {}) {
             const label = this.formatFileLabel(payload);
-            const fallback = this.resolveTranslation('textEditor.status.loadError');
-            const message = payload && payload.message ? payload.message : fallback.text;
+            const fallback = this.resolveTranslation(
+                'textEditor.status.loadError',
+            );
+            const message =
+                payload && payload.message ? payload.message : fallback.text;
 
             if (label) {
                 this.setStatusPlain(`${label} — ${message}`);
@@ -728,7 +813,7 @@
                 'edit:copy': 'textEditor:copy',
                 'edit:paste': 'textEditor:paste',
                 'edit:selectAll': 'textEditor:selectAll',
-                'view:toggleWrap': 'textEditor:toggleWrap'
+                'view:toggleWrap': 'textEditor:toggleWrap',
             };
 
             const mappedAction = actionMap[action];
@@ -768,27 +853,28 @@
 
             const start = this.editor.selectionStart;
             const text = this.editor.value;
-            
+
             // Find the start of the current line
-            let lineStart = text.lastIndexOf('\n', start - 1) + 1;
+            const lineStart = text.lastIndexOf('\n', start - 1) + 1;
             let lineEnd = text.indexOf('\n', start);
             if (lineEnd === -1) lineEnd = text.length;
-            
+
             const currentLine = text.substring(lineStart, lineEnd);
             const prefix = '#'.repeat(level) + ' ';
-            
+
             // Check if line already starts with heading markers
             const headingMatch = currentLine.match(/^#+\s/);
             let newLine;
-            
+
             if (headingMatch) {
                 // Replace existing heading
-                newLine = prefix + currentLine.substring(headingMatch[0].length);
+                newLine =
+                    prefix + currentLine.substring(headingMatch[0].length);
             } else {
                 // Add new heading
                 newLine = prefix + currentLine;
             }
-            
+
             this.editor.setRangeText(newLine, lineStart, lineEnd, 'end');
             this.editor.dispatchEvent(new Event('input', { bubbles: true }));
             this.focusEditor();
@@ -804,26 +890,28 @@
             const start = this.editor.selectionStart;
             const end = this.editor.selectionEnd;
             const text = this.editor.value;
-            
+
             // Find the start and end of affected lines
-            let lineStart = text.lastIndexOf('\n', start - 1) + 1;
+            const lineStart = text.lastIndexOf('\n', start - 1) + 1;
             let lineEnd = text.indexOf('\n', end);
             if (lineEnd === -1) lineEnd = text.length;
-            
-            const selectedLines = text.substring(lineStart, lineEnd).split('\n');
+
+            const selectedLines = text
+                .substring(lineStart, lineEnd)
+                .split('\n');
             const prefix = type === 'ordered' ? '1. ' : '- ';
-            
+
             const newLines = selectedLines.map((line, index) => {
                 // Remove existing list markers
                 const cleanLine = line.replace(/^(?:\d+\.\s|-\s|\*\s)/, '');
-                
+
                 if (type === 'ordered') {
                     return `${index + 1}. ${cleanLine}`;
                 } else {
                     return `- ${cleanLine}`;
                 }
             });
-            
+
             const newText = newLines.join('\n');
             this.editor.setRangeText(newText, lineStart, lineEnd, 'end');
             this.editor.dispatchEvent(new Event('input', { bubbles: true }));
@@ -840,15 +928,15 @@
             const start = this.editor.selectionStart;
             const end = this.editor.selectionEnd;
             const text = this.editor.value;
-            
+
             // Find the start and end of affected lines
-            let lineStart = text.lastIndexOf('\n', start - 1) + 1;
+            const lineStart = text.lastIndexOf('\n', start - 1) + 1;
             let lineEnd = text.indexOf('\n', end);
             if (lineEnd === -1) lineEnd = text.length;
-            
+
             const selectedText = text.substring(lineStart, lineEnd);
             const alignedText = `<div style="text-align: ${alignment};">\n${selectedText}\n</div>`;
-            
+
             this.editor.setRangeText(alignedText, lineStart, lineEnd, 'end');
             this.editor.dispatchEvent(new Event('input', { bubbles: true }));
             this.focusEditor();
@@ -863,16 +951,24 @@
             const start = this.editor.selectionStart;
             const end = this.editor.selectionEnd;
             const selectedText = this.editor.value.substring(start, end);
-            
-            const urlLabel = this.resolveTranslation('textEditor.insertLink.enterUrl').text || 'Enter URL:';
-            this.showInputModal(urlLabel, 'https://example.com', 'https://').then(url => {
+
+            const urlLabel =
+                this.resolveTranslation('textEditor.insertLink.enterUrl')
+                    .text || 'Enter URL:';
+            this.showInputModal(
+                urlLabel,
+                'https://example.com',
+                'https://',
+            ).then((url) => {
                 if (!url) return;
-                
+
                 const linkText = selectedText || 'link text';
                 const markdown = `[${linkText}](${url})`;
-                
+
                 this.editor.setRangeText(markdown, start, end, 'end');
-                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+                this.editor.dispatchEvent(
+                    new Event('input', { bubbles: true }),
+                );
                 this.focusEditor();
             });
         },
@@ -886,17 +982,27 @@
             const text = this.editor.value;
             const chars = text.length;
             const trimmedText = text.trim();
-            const words = trimmedText === '' ? 0 : trimmedText.split(/\s+/).length;
-            
+            const words =
+                trimmedText === '' ? 0 : trimmedText.split(/\s+/).length;
+
             // Use i18n if available
-            if (window.appI18n && typeof window.appI18n.translate === 'function') {
-                const translated = window.appI18n.translate('textEditor.status.wordCount', { words, chars });
-                if (translated && translated !== 'textEditor.status.wordCount') {
+            if (
+                window.appI18n &&
+                typeof window.appI18n.translate === 'function'
+            ) {
+                const translated = window.appI18n.translate(
+                    'textEditor.status.wordCount',
+                    { words, chars },
+                );
+                if (
+                    translated &&
+                    translated !== 'textEditor.status.wordCount'
+                ) {
                     this.wordCountDisplay.textContent = translated;
                     return;
                 }
             }
-            
+
             // Fallback to English
             this.wordCountDisplay.textContent = `Words: ${words} | Characters: ${chars}`;
         },
@@ -909,21 +1015,27 @@
 
             const text = this.editor.value;
             const pos = this.editor.selectionStart;
-            
+
             const textBeforeCursor = text.substring(0, pos);
             const lines = textBeforeCursor.split('\n');
             const line = lines.length;
             const col = lines[lines.length - 1].length + 1;
-            
+
             // Use i18n if available
-            if (window.appI18n && typeof window.appI18n.translate === 'function') {
-                const translated = window.appI18n.translate('textEditor.status.position', { line, col });
+            if (
+                window.appI18n &&
+                typeof window.appI18n.translate === 'function'
+            ) {
+                const translated = window.appI18n.translate(
+                    'textEditor.status.position',
+                    { line, col },
+                );
                 if (translated && translated !== 'textEditor.status.position') {
                     this.lineColDisplay.textContent = translated;
                     return;
                 }
             }
-            
+
             // Fallback to English
             this.lineColDisplay.textContent = `Line ${line}, Col ${col}`;
         },
@@ -966,7 +1078,7 @@
             const text = this.editor.value;
             const start = this.editor.selectionEnd;
             const index = text.indexOf(searchText, start);
-            
+
             if (index !== -1) {
                 this.editor.setSelectionRange(index, index + searchText.length);
                 this.editor.focus();
@@ -974,10 +1086,16 @@
                 // Wrap around to beginning
                 const firstIndex = text.indexOf(searchText);
                 if (firstIndex !== -1) {
-                    this.editor.setSelectionRange(firstIndex, firstIndex + searchText.length);
+                    this.editor.setSelectionRange(
+                        firstIndex,
+                        firstIndex + searchText.length,
+                    );
                     this.editor.focus();
                 } else {
-                    const message = this.resolveTranslation('textEditor.findReplace.noMatch').text || 'No match found';
+                    const message =
+                        this.resolveTranslation(
+                            'textEditor.findReplace.noMatch',
+                        ).text || 'No match found';
                     this.showToast(message, 'info');
                 }
             }
@@ -991,16 +1109,18 @@
 
             const searchText = this.findInput.value;
             const replaceText = this.replaceInput.value;
-            
+
             if (!searchText) return;
 
             const start = this.editor.selectionStart;
             const end = this.editor.selectionEnd;
             const selectedText = this.editor.value.substring(start, end);
-            
+
             if (selectedText === searchText) {
                 this.editor.setRangeText(replaceText, start, end, 'end');
-                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+                this.editor.dispatchEvent(
+                    new Event('input', { bubbles: true }),
+                );
                 this.findNext(); // Find next occurrence
             } else {
                 this.findNext(); // Find first occurrence
@@ -1015,25 +1135,33 @@
 
             const searchText = this.findInput.value;
             const replaceText = this.replaceInput.value;
-            
+
             if (!searchText) return;
 
             const text = this.editor.value;
             const parts = text.split(searchText);
             const count = parts.length - 1;
-            
+
             if (count > 0) {
                 const newText = parts.join(replaceText);
                 this.editor.value = newText;
-                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
-                
-                const message = this.resolveTranslation('textEditor.findReplace.replacedCount', { count }).text || `Replaced ${count} occurrence(s)`;
+                this.editor.dispatchEvent(
+                    new Event('input', { bubbles: true }),
+                );
+
+                const message =
+                    this.resolveTranslation(
+                        'textEditor.findReplace.replacedCount',
+                        { count },
+                    ).text || `Replaced ${count} occurrence(s)`;
                 this.showToast(message, 'success');
             } else {
-                const message = this.resolveTranslation('textEditor.findReplace.noMatch').text || 'No match found';
+                const message =
+                    this.resolveTranslation('textEditor.findReplace.noMatch')
+                        .text || 'No match found';
                 this.showToast(message, 'info');
             }
-            
+
             this.focusEditor();
         },
 
@@ -1047,19 +1175,19 @@
             const toast = document.createElement('div');
             toast.className = `text-editor-toast text-editor-toast-${type}`;
             toast.textContent = message;
-            
+
             // Add to container
             if (!this.toastContainer) {
                 this.toastContainer = document.createElement('div');
                 this.toastContainer.className = 'text-editor-toast-container';
                 this.container.appendChild(this.toastContainer);
             }
-            
+
             this.toastContainer.appendChild(toast);
-            
+
             // Trigger animation
             setTimeout(() => toast.classList.add('show'), 10);
-            
+
             // Auto-remove
             setTimeout(() => {
                 toast.classList.remove('show');
@@ -1078,7 +1206,7 @@
             return new Promise((resolve) => {
                 const modal = document.createElement('div');
                 modal.className = 'text-editor-modal-overlay';
-                
+
                 modal.innerHTML = `
                     <div class="text-editor-modal">
                         <div class="text-editor-modal-header">
@@ -1093,35 +1221,39 @@
                         </div>
                     </div>
                 `;
-                
+
                 document.body.appendChild(modal);
-                
+
                 const input = modal.querySelector('.text-editor-modal-input');
-                const cancelBtn = modal.querySelector('.text-editor-modal-btn-cancel');
-                const confirmBtn = modal.querySelector('.text-editor-modal-btn-confirm');
-                
+                const cancelBtn = modal.querySelector(
+                    '.text-editor-modal-btn-cancel',
+                );
+                const confirmBtn = modal.querySelector(
+                    '.text-editor-modal-btn-confirm',
+                );
+
                 // Focus input and select text
                 setTimeout(() => {
                     input.focus();
                     input.select();
                 }, 50);
-                
+
                 const cleanup = () => {
                     modal.classList.add('closing');
                     setTimeout(() => modal.remove(), 200);
                 };
-                
+
                 const handleConfirm = () => {
                     const value = input.value.trim();
                     cleanup();
                     resolve(value || null);
                 };
-                
+
                 const handleCancel = () => {
                     cleanup();
                     resolve(null);
                 };
-                
+
                 // Event listeners
                 confirmBtn.addEventListener('click', handleConfirm);
                 cancelBtn.addEventListener('click', handleCancel);
@@ -1134,14 +1266,14 @@
                         handleCancel();
                     }
                 });
-                
+
                 // Click outside to close
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) {
                         handleCancel();
                     }
                 });
-                
+
                 // Trigger animation
                 setTimeout(() => modal.classList.add('show'), 10);
             });
@@ -1165,7 +1297,7 @@
             this.findInput = null;
             this.replaceInput = null;
             this.toastContainer = null;
-        }
+        },
     };
 
     // Export to global scope

@@ -6,8 +6,8 @@
 
 /* Custom styles to preserve existing design */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    background: url("../img/wallpaper.png") no-repeat center center fixed !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    background: url('../img/wallpaper.png') no-repeat center center fixed !important;
     background-size: cover !important;
     margin: 0;
     padding: 0;
@@ -53,12 +53,12 @@ body {
     background-color: rgba(55, 65, 81, 0.5);
 }
 
-.window-tab[aria-selected="true"] {
+.window-tab[aria-selected='true'] {
     background-color: white;
     border-bottom: 2px solid #3b82f6;
 }
 
-.dark .window-tab[aria-selected="true"] {
+.dark .window-tab[aria-selected='true'] {
     background-color: #1f2937;
 }
 

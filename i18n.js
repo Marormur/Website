@@ -21,7 +21,7 @@
                 about: 'Über Marvin',
                 image: {
                     openInTab: 'Bild in neuem Tab öffnen',
-                    save: 'Bild sichern …'
+                    save: 'Bild sichern …',
                 },
                 finder: {
                     openItem: 'Öffnen',
@@ -32,25 +32,25 @@
                     viewGrid: 'Als Raster',
                     sortByName: 'Nach Name sortieren',
                     sortByDate: 'Nach Datum sortieren',
-                    sortBySize: 'Nach Größe sortieren'
-                }
+                    sortBySize: 'Nach Größe sortieren',
+                },
             },
             common: {
                 close: 'Schließen',
                 system: 'System',
                 german: 'Deutsch',
-                english: 'Englisch'
+                english: 'Englisch',
             },
             header: {
                 profile: {
                     about: 'Über Marvin',
                     resetLayout: 'Fenster zurücksetzen',
                     settings: 'Systemeinstellungen',
-                    linkedin: 'LinkedIn'
+                    linkedin: 'LinkedIn',
                 },
                 program: {
-                    close: 'Programm schließen'
-                }
+                    close: 'Programm schließen',
+                },
             },
             desktop: {
                 finder: 'Sucher',
@@ -61,7 +61,7 @@
                 settings: 'Systemeinstellungen',
                 about: 'Über Marvin',
                 launchpad: 'Launchpad',
-                terminal: 'Terminal'
+                terminal: 'Terminal',
             },
             dock: {
                 finder: 'Sucher',
@@ -70,11 +70,11 @@
                 image: 'Bildbetrachter',
                 settings: 'Systemeinstellungen',
                 launchpad: 'Apps',
-                terminal: 'Terminal'
+                terminal: 'Terminal',
             },
             menubar: {
                 appleMenu: {
-                    label: 'Apple-Menü'
+                    label: 'Apple-Menü',
                 },
                 applicationMenus: 'Anwendungsmenüs',
                 controlCenter: {
@@ -82,7 +82,7 @@
                     quickActions: 'Schnellaktionen',
                     quickActionsAria: 'Schnellaktionen',
                     brightness: 'Helligkeit',
-                    volume: 'Lautstärke'
+                    volume: 'Lautstärke',
                 },
                 toggles: {
                     wifi: 'WLAN',
@@ -90,16 +90,16 @@
                     bluetooth: 'Bluetooth',
                     bluetoothStatus: 'Bluetooth-Status',
                     focus: 'Fokus',
-                    darkMode: 'Dark Mode'
+                    darkMode: 'Dark Mode',
                 },
                 wifi: {
-                    preferredNetworks: 'Bevorzugte Netzwerke'
+                    preferredNetworks: 'Bevorzugte Netzwerke',
                 },
                 bluetooth: {
                     devices: 'Geräte',
                     airpods: 'Marvins AirPods Pro',
                     keyboard: 'Magic Keyboard',
-                    speaker: 'HomeSpeaker'
+                    speaker: 'HomeSpeaker',
                 },
                 sound: {
                     label: 'Ton',
@@ -107,13 +107,13 @@
                     devices: {
                         speakers: 'MacBook Lautsprecher',
                         airpods: 'Marvins AirPods Pro',
-                        display: 'Samsung Monitor'
-                    }
+                        display: 'Samsung Monitor',
+                    },
                 },
                 networks: {
                     home: 'HomeLAN',
                     office: 'Office',
-                    hotspot: 'Marvin iPhone'
+                    hotspot: 'Marvin iPhone',
                 },
                 state: {
                     on: 'Ein',
@@ -123,25 +123,26 @@
                     ready: 'Bereit',
                     notConnected: 'Nicht verbunden',
                     hotspot: 'Persönlicher Hotspot',
-                    automatic: 'Automatisch'
+                    automatic: 'Automatisch',
                 },
                 actions: {
                     networkSettings: 'Netzwerkeinstellungen …',
                     bluetoothSettings: 'Bluetooth-Einstellungen …',
                     soundSettings: 'Ton-Einstellungen …',
                     spotlight: 'Spotlight',
-                    siri: 'Siri'
+                    siri: 'Siri',
                 },
                 battery: {
                     label: 'Batteriestatus',
-                    fullLabel: 'Batterie vollständig geladen'
-                }
+                    fullLabel: 'Batterie vollständig geladen',
+                },
             },
             modals: {
                 projects: {
                     title: 'Projekte',
                     repositories: 'Repositories',
-                    placeholder: 'Wähle ein Repository aus, um dessen Dateien zu sehen.'
+                    placeholder:
+                        'Wähle ein Repository aus, um dessen Dateien zu sehen.',
                 },
                 about: {
                     title: 'Über Marvin',
@@ -153,31 +154,32 @@
                     employerLabel: 'Arbeitgeber',
                     employerValue: 'WinWorker',
                     moreButton: 'Mehr Infos …',
-                    copyright: '© 2025 Marvin T. — Alle Rechte vorbehalten.'
+                    copyright: '© 2025 Marvin T. — Alle Rechte vorbehalten.',
                 },
                 settings: {
-                    title: 'Systemeinstellungen'
+                    title: 'Systemeinstellungen',
                 },
                 text: {
-                    title: 'Texteditor'
+                    title: 'Texteditor',
                 },
                 image: {
                     title: 'Bildbetrachter',
-                    placeholder: 'Öffne eine Bilddatei aus dem Sucher, um die Vorschau zu sehen.'
+                    placeholder:
+                        'Öffne eine Bilddatei aus dem Sucher, um die Vorschau zu sehen.',
                 },
                 finder: {
-                    title: 'Sucher'
+                    title: 'Sucher',
                 },
                 programInfo: {
-                    title: 'Über dieses Programm'
+                    title: 'Über dieses Programm',
                 },
                 launchpad: {
                     title: 'Launchpad',
-                    searchPlaceholder: 'Programme suchen'
+                    searchPlaceholder: 'Programme suchen',
                 },
                 terminal: {
-                    title: 'Terminal'
-                }
+                    title: 'Terminal',
+                },
             },
             finder: {
                 // Toolbar
@@ -186,7 +188,7 @@
                     forward: 'Vorwärts',
                     listView: 'Listenansicht',
                     gridView: 'Rasteransicht',
-                    search: 'Suchen'
+                    search: 'Suchen',
                 },
                 // Sidebar
                 sidebar: {
@@ -195,24 +197,28 @@
                     recent: 'Zuletzt verwendet',
                     locations: 'Orte',
                     github: 'GitHub Projekte',
-                    starred: 'Markiert'
+                    starred: 'Markiert',
                 },
                 back: 'Zurück',
                 imageViewer: 'Bildbetrachter',
                 textEditor: 'Texteditor',
                 loadingFiles: 'Dateien werden geladen …',
-                filesLoadError: 'Dateien konnten nicht geladen werden. Bitte versuche es später erneut.',
+                filesLoadError:
+                    'Dateien konnten nicht geladen werden. Bitte versuche es später erneut.',
                 emptyDirectory: 'Keine Dateien in diesem Verzeichnis.',
                 noRepositories: 'Keine öffentlichen Repositories gefunden.',
-                repositoriesError: 'Repos konnten nicht geladen werden. Bitte versuche es später erneut.',
+                repositoriesError:
+                    'Repos konnten nicht geladen werden. Bitte versuche es später erneut.',
                 repoDescriptionMissing: 'Keine Beschreibung verfügbar.',
                 repoUnnamed: 'Unbenanntes Repository',
                 loadingImage: '{name} wird geladen …',
                 imageLoadError: 'Bild konnte nicht geladen werden.',
-                imageLoadErrorRetry: 'Das Bild konnte nicht geladen werden. Bitte versuche es später erneut.',
+                imageLoadErrorRetry:
+                    'Das Bild konnte nicht geladen werden. Bitte versuche es später erneut.',
                 fileLoadError: 'Die Datei konnte nicht geladen werden.',
-                rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
-                pathNotFound: 'Der ausgewählte Pfad ist nicht mehr verfügbar.'
+                rateLimit:
+                    'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                pathNotFound: 'Der ausgewählte Pfad ist nicht mehr verfügbar.',
             },
             programs: {
                 default: {
@@ -222,8 +228,8 @@
                         name: 'Sucher',
                         tagline: 'Dein persönlicher Dateimanager.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
-                    }
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+                    },
                 },
                 finder: {
                     label: 'Sucher',
@@ -232,8 +238,8 @@
                         name: 'Sucher',
                         tagline: 'Der innovative Desktop-Dateimanager.',
                         version: 'Version 2.0',
-                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
-                    }
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+                    },
                 },
                 projects: {
                     label: 'GitHub Projekte',
@@ -242,18 +248,19 @@
                         name: 'GitHub Projekte',
                         tagline: 'Durchsuche deine GitHub-Repositories.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
-                    }
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+                    },
                 },
                 settings: {
                     label: 'Systemeinstellungen',
                     infoLabel: 'Über Systemeinstellungen',
                     about: {
                         name: 'Systemeinstellungen',
-                        tagline: 'Konfiguriere Erscheinungsbild, Accounts und mehr.',
+                        tagline:
+                            'Konfiguriere Erscheinungsbild, Accounts und mehr.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
-                    }
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+                    },
                 },
                 text: {
                     label: 'Texteditor',
@@ -262,18 +269,19 @@
                         name: 'Texteditor',
                         tagline: 'Leichtgewichtiger Editor für deine Notizen.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
-                    }
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+                    },
                 },
                 image: {
                     label: 'Bildanzeige',
                     infoLabel: 'Über Bildanzeige',
                     about: {
                         name: 'Bildanzeige',
-                        tagline: 'Betrachte Screenshots und Fotos mit Vorschau.',
+                        tagline:
+                            'Betrachte Screenshots und Fotos mit Vorschau.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
-                    }
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+                    },
                 },
                 about: {
                     label: 'Über Marvin',
@@ -282,8 +290,8 @@
                         name: 'Über Marvin',
                         tagline: 'Erfahre mehr über Marvin Temmen.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
-                    }
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+                    },
                 },
                 launchpad: {
                     label: 'Launchpad',
@@ -292,19 +300,20 @@
                         name: 'Launchpad',
                         tagline: 'Starte alle deine Programme.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
-                    }
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+                    },
                 },
                 terminal: {
                     label: 'Terminal',
                     infoLabel: 'Über Terminal',
                     about: {
                         name: 'Terminal',
-                        tagline: 'Kommandozeilenschnittstelle für das Portfolio.',
+                        tagline:
+                            'Kommandozeilenschnittstelle für das Portfolio.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.'
-                    }
-                }
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+                    },
+                },
             },
             // Hinweis: Zusätzliche Finder-Schlüssel sind mit dem oberen finder-Block zusammengeführt
             textEditor: {
@@ -330,7 +339,7 @@
                     redo: 'Wiederholen',
                     clear: 'Neu',
                     open: 'Öffnen',
-                    save: 'Speichern'
+                    save: 'Speichern',
                 },
                 findReplace: {
                     find: 'Suchen...',
@@ -340,16 +349,17 @@
                     replaceAll: 'Alle ersetzen',
                     close: 'Schließen',
                     noMatch: 'Keine Übereinstimmung gefunden',
-                    replacedCount: '{count} Vorkommen ersetzt'
+                    replacedCount: '{count} Vorkommen ersetzt',
                 },
                 status: {
                     loading: 'Lade Datei …',
                     loadingWithLabel: '{label} (lädt …)',
                     loadError: 'Datei konnte nicht geladen werden.',
-                    rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                    rateLimit:
+                        'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
                     wordCount: 'Wörter: {words} | Zeichen: {chars}',
-                    position: 'Zeile {line}, Spalte {col}'
-                }
+                    position: 'Zeile {line}, Spalte {col}',
+                },
             },
             menu: {
                 sections: {
@@ -357,17 +367,17 @@
                     edit: 'Bearbeiten',
                     view: 'Darstellung',
                     window: 'Fenster',
-                    help: 'Hilfe'
+                    help: 'Hilfe',
                 },
                 finder: {
                     newWindow: 'Neues Sucher-Fenster',
                     reload: 'Sucher neu laden',
                     close: 'Fenster schließen',
-                    help: 'Sucher-Hilfe anzeigen'
+                    help: 'Sucher-Hilfe anzeigen',
                 },
                 settings: {
                     close: 'Fenster schließen',
-                    help: 'Einstellungs-Hilfe anzeigen'
+                    help: 'Einstellungs-Hilfe anzeigen',
                 },
                 text: {
                     newFile: 'Neu',
@@ -380,43 +390,43 @@
                     paste: 'Einfügen',
                     selectAll: 'Alles auswählen',
                     toggleWrap: 'Zeilenumbruch umschalten',
-                    help: 'Texteditor-Hilfe anzeigen'
+                    help: 'Texteditor-Hilfe anzeigen',
                 },
                 image: {
                     openInTab: 'Bild in neuem Tab öffnen',
                     saveImage: 'Bild sichern …',
                     close: 'Fenster schließen',
-                    help: 'Bildbetrachter-Hilfe anzeigen'
+                    help: 'Bildbetrachter-Hilfe anzeigen',
                 },
                 terminal: {
                     newWindow: 'Neues Terminal-Fenster',
                     clear: 'Terminal löschen',
                     close: 'Fenster schließen',
-                    help: 'Terminal-Hilfe anzeigen'
+                    help: 'Terminal-Hilfe anzeigen',
                 },
                 about: {
                     close: 'Fenster schließen',
-                    help: 'Über Marvin'
+                    help: 'Über Marvin',
                 },
                 programInfo: {
-                    close: 'Fenster schließen'
+                    close: 'Fenster schließen',
                 },
                 window: {
                     minimize: 'Minimieren',
                     zoom: 'Zoomen',
                     bringToFront: 'Alle nach vorne bringen',
-                    close: 'Fenster schließen'
+                    close: 'Fenster schließen',
                 },
                 help: {
-                    showHelp: 'Programmhilfe anzeigen'
-                }
+                    showHelp: 'Programmhilfe anzeigen',
+                },
             },
             settingsPage: {
                 title: 'Einstellungen',
                 nav: {
                     general: '👤 Allgemein',
                     display: '🖥️ Darstellung',
-                    language: '🌐 Sprache'
+                    language: '🌐 Sprache',
                 },
                 general: {
                     title: 'Allgemein',
@@ -428,54 +438,60 @@
                     jobValue: 'Softwareentwickler',
                     employerLabel: 'Arbeitgeber',
                     employerValue: 'WinWorker',
-                    copyright: '© 2025 Marvin T. — Alle Rechte vorbehalten.'
+                    copyright: '© 2025 Marvin T. — Alle Rechte vorbehalten.',
                 },
                 display: {
                     title: 'Darstellungsoptionen',
-                    description: 'Passe an, wie der Desktop mit hellem und dunklem Design umgeht.',
+                    description:
+                        'Passe an, wie der Desktop mit hellem und dunklem Design umgeht.',
                     legend: 'Darkmode',
                     options: {
                         system: {
                             label: 'System',
-                            description: 'Folgt den aktuellen Systemeinstellungen.'
+                            description:
+                                'Folgt den aktuellen Systemeinstellungen.',
                         },
                         light: {
                             label: 'Hell',
-                            description: 'Bleibt immer im hellen Erscheinungsbild.'
+                            description:
+                                'Bleibt immer im hellen Erscheinungsbild.',
                         },
                         dark: {
                             label: 'Dunkel',
-                            description: 'Bleibt immer im dunklen Erscheinungsbild.'
-                        }
-                    }
+                            description:
+                                'Bleibt immer im dunklen Erscheinungsbild.',
+                        },
+                    },
                 },
                 language: {
                     title: 'Sprache',
-                    description: 'Wähle, in welcher Sprache die Oberfläche angezeigt wird.',
+                    description:
+                        'Wähle, in welcher Sprache die Oberfläche angezeigt wird.',
                     legend: 'Bevorzugte Sprache',
                     options: {
                         system: {
                             label: 'System',
-                            description: 'Verwendet automatisch die Sprache deines Systems.'
+                            description:
+                                'Verwendet automatisch die Sprache deines Systems.',
                         },
                         de: {
                             label: 'Deutsch',
-                            description: 'Zeigt Inhalte immer auf Deutsch.'
+                            description: 'Zeigt Inhalte immer auf Deutsch.',
                         },
                         en: {
                             label: 'Englisch',
-                            description: 'Zeigt Inhalte immer auf Englisch.'
-                        }
-                    }
-                }
+                            description: 'Zeigt Inhalte immer auf Englisch.',
+                        },
+                    },
+                },
             },
             projectsPage: {
                 title: 'Meine GitHub Projekte',
                 empty: 'Keine öffentlichen Repositories gefunden.',
                 repoUnnamed: 'Unbenanntes Repository',
                 noDescription: 'Keine Beschreibung verfügbar.',
-                error: 'Repos konnten nicht geladen werden. Bitte versuche es später erneut.'
-            }
+                error: 'Repos konnten nicht geladen werden. Bitte versuche es später erneut.',
+            },
         },
         en: {
             context: {
@@ -489,7 +505,7 @@
                 about: 'About Marvin',
                 image: {
                     openInTab: 'Open image in new tab',
-                    save: 'Save image…'
+                    save: 'Save image…',
                 },
                 finder: {
                     openItem: 'Open',
@@ -500,25 +516,25 @@
                     viewGrid: 'View as Grid',
                     sortByName: 'Sort by Name',
                     sortByDate: 'Sort by Date',
-                    sortBySize: 'Sort by Size'
-                }
+                    sortBySize: 'Sort by Size',
+                },
             },
             common: {
                 close: 'Close',
                 system: 'System',
                 german: 'German',
-                english: 'English'
+                english: 'English',
             },
             header: {
                 profile: {
                     about: 'About Marvin',
                     resetLayout: 'Reset windows',
                     settings: 'System settings',
-                    linkedin: 'LinkedIn'
+                    linkedin: 'LinkedIn',
                 },
                 program: {
-                    close: 'Close program'
-                }
+                    close: 'Close program',
+                },
             },
             desktop: {
                 finder: 'Finder',
@@ -529,7 +545,7 @@
                 settings: 'System settings',
                 about: 'About Marvin',
                 launchpad: 'Launchpad',
-                terminal: 'Terminal'
+                terminal: 'Terminal',
             },
             dock: {
                 finder: 'Finder',
@@ -538,11 +554,11 @@
                 image: 'Image viewer',
                 settings: 'System settings',
                 launchpad: 'Apps',
-                terminal: 'Terminal'
+                terminal: 'Terminal',
             },
             menubar: {
                 appleMenu: {
-                    label: 'Apple menu'
+                    label: 'Apple menu',
                 },
                 applicationMenus: 'Application menus',
                 controlCenter: {
@@ -550,7 +566,7 @@
                     quickActions: 'Quick Actions',
                     quickActionsAria: 'Quick Actions',
                     brightness: 'Brightness',
-                    volume: 'Volume'
+                    volume: 'Volume',
                 },
                 toggles: {
                     wifi: 'Wi-Fi',
@@ -558,16 +574,16 @@
                     bluetooth: 'Bluetooth',
                     bluetoothStatus: 'Bluetooth status',
                     focus: 'Focus mode',
-                    darkMode: 'Dark mode'
+                    darkMode: 'Dark mode',
                 },
                 wifi: {
-                    preferredNetworks: 'Preferred networks'
+                    preferredNetworks: 'Preferred networks',
                 },
                 bluetooth: {
                     devices: 'Devices',
                     airpods: "Marvin's AirPods Pro",
                     keyboard: 'Magic Keyboard',
-                    speaker: 'HomeSpeaker'
+                    speaker: 'HomeSpeaker',
                 },
                 sound: {
                     label: 'Sound',
@@ -575,13 +591,13 @@
                     devices: {
                         speakers: 'MacBook speakers',
                         airpods: "Marvin's AirPods Pro",
-                        display: 'External display'
-                    }
+                        display: 'External display',
+                    },
                 },
                 networks: {
                     home: 'HomeLAN',
                     office: 'Office',
-                    hotspot: "Marvin's iPhone"
+                    hotspot: "Marvin's iPhone",
                 },
                 state: {
                     on: 'On',
@@ -591,25 +607,25 @@
                     ready: 'Ready',
                     notConnected: 'Not connected',
                     hotspot: 'Personal hotspot',
-                    automatic: 'Automatic'
+                    automatic: 'Automatic',
                 },
                 actions: {
                     networkSettings: 'Network settings…',
                     bluetoothSettings: 'Bluetooth settings…',
                     soundSettings: 'Sound settings…',
                     spotlight: 'Spotlight',
-                    siri: 'Siri'
+                    siri: 'Siri',
                 },
                 battery: {
                     label: 'Battery status',
-                    fullLabel: 'Battery fully charged'
-                }
+                    fullLabel: 'Battery fully charged',
+                },
             },
             modals: {
                 projects: {
                     title: 'Projects',
                     repositories: 'Repositories',
-                    placeholder: 'Select a repository to browse its files.'
+                    placeholder: 'Select a repository to browse its files.',
                 },
                 about: {
                     title: 'About Marvin',
@@ -621,31 +637,32 @@
                     employerLabel: 'Employer',
                     employerValue: 'WinWorker',
                     moreButton: 'More details…',
-                    copyright: '© 2025 Marvin T. — All rights reserved.'
+                    copyright: '© 2025 Marvin T. — All rights reserved.',
                 },
                 settings: {
-                    title: 'System settings'
+                    title: 'System settings',
                 },
                 text: {
-                    title: 'Text editor'
+                    title: 'Text editor',
                 },
                 image: {
                     title: 'Image viewer',
-                    placeholder: 'Open an image file from Finder to preview it.'
+                    placeholder:
+                        'Open an image file from Finder to preview it.',
                 },
                 finder: {
-                    title: 'Finder'
+                    title: 'Finder',
                 },
                 programInfo: {
-                    title: 'About this app'
+                    title: 'About this app',
                 },
                 launchpad: {
                     title: 'Launchpad',
-                    searchPlaceholder: 'Search apps'
+                    searchPlaceholder: 'Search apps',
                 },
                 terminal: {
-                    title: 'Terminal'
-                }
+                    title: 'Terminal',
+                },
             },
             programs: {
                 default: {
@@ -655,8 +672,8 @@
                         name: 'Finder',
                         tagline: 'Your personal file manager.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. All rights reserved.'
-                    }
+                        copyright: '© Marvin Temmen. All rights reserved.',
+                    },
                 },
                 finder: {
                     label: 'Finder',
@@ -665,8 +682,8 @@
                         name: 'Finder',
                         tagline: 'The innovative desktop file manager.',
                         version: 'Version 2.0',
-                        copyright: '© Marvin Temmen. All rights reserved.'
-                    }
+                        copyright: '© Marvin Temmen. All rights reserved.',
+                    },
                 },
                 projects: {
                     label: 'GitHub Projects',
@@ -675,8 +692,8 @@
                         name: 'GitHub Projects',
                         tagline: 'Browse your GitHub repositories.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. All rights reserved.'
-                    }
+                        copyright: '© Marvin Temmen. All rights reserved.',
+                    },
                 },
                 settings: {
                     label: 'System settings',
@@ -685,8 +702,8 @@
                         name: 'System settings',
                         tagline: 'Configure appearance, accounts, and more.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. All rights reserved.'
-                    }
+                        copyright: '© Marvin Temmen. All rights reserved.',
+                    },
                 },
                 text: {
                     label: 'Text editor',
@@ -695,8 +712,8 @@
                         name: 'Text editor',
                         tagline: 'Lightweight editor for your notes.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. All rights reserved.'
-                    }
+                        copyright: '© Marvin Temmen. All rights reserved.',
+                    },
                 },
                 image: {
                     label: 'Image viewer',
@@ -705,8 +722,8 @@
                         name: 'Image viewer',
                         tagline: 'Preview screenshots and photos with ease.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. All rights reserved.'
-                    }
+                        copyright: '© Marvin Temmen. All rights reserved.',
+                    },
                 },
                 about: {
                     label: 'About Marvin',
@@ -715,8 +732,8 @@
                         name: 'About Marvin',
                         tagline: 'Learn more about Marvin Temmen.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. All rights reserved.'
-                    }
+                        copyright: '© Marvin Temmen. All rights reserved.',
+                    },
                 },
                 launchpad: {
                     label: 'Launchpad',
@@ -725,8 +742,8 @@
                         name: 'Launchpad',
                         tagline: 'Launch all your apps.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. All rights reserved.'
-                    }
+                        copyright: '© Marvin Temmen. All rights reserved.',
+                    },
                 },
                 terminal: {
                     label: 'Terminal',
@@ -735,9 +752,9 @@
                         name: 'Terminal',
                         tagline: 'Command-line interface for the portfolio.',
                         version: 'Version 1.0',
-                        copyright: '© Marvin Temmen. All rights reserved.'
-                    }
-                }
+                        copyright: '© Marvin Temmen. All rights reserved.',
+                    },
+                },
             },
             finder: {
                 // Toolbar
@@ -746,7 +763,7 @@
                     forward: 'Forward',
                     listView: 'List view',
                     gridView: 'Grid view',
-                    search: 'Search'
+                    search: 'Search',
                 },
                 // Sidebar
                 sidebar: {
@@ -755,24 +772,28 @@
                     recent: 'Recent',
                     locations: 'Locations',
                     github: 'GitHub Projects',
-                    starred: 'Starred'
+                    starred: 'Starred',
                 },
                 back: 'Back',
                 imageViewer: 'Image viewer',
                 textEditor: 'Text editor',
                 loadingFiles: 'Loading files…',
-                filesLoadError: 'Files could not be loaded. Please try again later.',
+                filesLoadError:
+                    'Files could not be loaded. Please try again later.',
                 emptyDirectory: 'No files found in this directory.',
                 noRepositories: 'No public repositories found.',
-                repositoriesError: 'Repositories could not be loaded. Please try again later.',
+                repositoriesError:
+                    'Repositories could not be loaded. Please try again later.',
                 repoDescriptionMissing: 'No description available.',
                 repoUnnamed: 'Untitled repository',
                 loadingImage: 'Loading {name}…',
                 imageLoadError: 'Could not load the image.',
-                imageLoadErrorRetry: 'The image could not be loaded. Please try again later.',
-                fileLoadError: 'The file could not be loaded. Please try again later.',
+                imageLoadErrorRetry:
+                    'The image could not be loaded. Please try again later.',
+                fileLoadError:
+                    'The file could not be loaded. Please try again later.',
                 rateLimit: 'GitHub rate limit reached. Please try again later.',
-                pathNotFound: 'The selected path is no longer available.'
+                pathNotFound: 'The selected path is no longer available.',
             },
             textEditor: {
                 title: 'Text editor',
@@ -797,7 +818,7 @@
                     redo: 'Redo',
                     clear: 'New',
                     open: 'Open',
-                    save: 'Save'
+                    save: 'Save',
                 },
                 findReplace: {
                     find: 'Find...',
@@ -807,16 +828,17 @@
                     replaceAll: 'Replace all',
                     close: 'Close',
                     noMatch: 'No match found',
-                    replacedCount: 'Replaced {count} occurrence(s)'
+                    replacedCount: 'Replaced {count} occurrence(s)',
                 },
                 status: {
                     loading: 'Loading file…',
                     loadingWithLabel: '{label} (loading…)',
                     loadError: 'The file could not be loaded.',
-                    rateLimit: 'GitHub rate limit was reached. Please try again later.',
+                    rateLimit:
+                        'GitHub rate limit was reached. Please try again later.',
                     wordCount: 'Words: {words} | Characters: {chars}',
-                    position: 'Line {line}, Col {col}'
-                }
+                    position: 'Line {line}, Col {col}',
+                },
             },
             menu: {
                 sections: {
@@ -824,17 +846,17 @@
                     edit: 'Edit',
                     view: 'View',
                     window: 'Window',
-                    help: 'Help'
+                    help: 'Help',
                 },
                 finder: {
                     newWindow: 'New Finder Window',
                     reload: 'Reload Finder',
                     close: 'Close window',
-                    help: 'Show Finder help'
+                    help: 'Show Finder help',
                 },
                 settings: {
                     close: 'Close window',
-                    help: 'Show settings help'
+                    help: 'Show settings help',
                 },
                 text: {
                     newFile: 'New',
@@ -847,43 +869,43 @@
                     paste: 'Paste',
                     selectAll: 'Select all',
                     toggleWrap: 'Toggle line wrap',
-                    help: 'Show text editor help'
+                    help: 'Show text editor help',
                 },
                 image: {
                     openInTab: 'Open image in new tab',
                     saveImage: 'Save image…',
                     close: 'Close window',
-                    help: 'Show image viewer help'
+                    help: 'Show image viewer help',
                 },
                 terminal: {
                     newWindow: 'New Terminal window',
                     clear: 'Clear Terminal',
                     close: 'Close window',
-                    help: 'Show Terminal help'
+                    help: 'Show Terminal help',
                 },
                 about: {
                     close: 'Close window',
-                    help: 'About Marvin'
+                    help: 'About Marvin',
                 },
                 programInfo: {
-                    close: 'Close window'
+                    close: 'Close window',
                 },
                 window: {
                     minimize: 'Minimize',
                     zoom: 'Zoom',
                     bringToFront: 'Bring all to front',
-                    close: 'Close window'
+                    close: 'Close window',
                 },
                 help: {
-                    showHelp: 'Show app help'
-                }
+                    showHelp: 'Show app help',
+                },
             },
             settingsPage: {
                 title: 'Settings',
                 nav: {
                     general: '👤 General',
                     display: '🖥️ Appearance',
-                    language: '🌐 Language'
+                    language: '🌐 Language',
                 },
                 general: {
                     title: 'General',
@@ -895,26 +917,27 @@
                     jobValue: 'Software engineer',
                     employerLabel: 'Employer',
                     employerValue: 'WinWorker',
-                    copyright: '© 2025 Marvin T. — All rights reserved.'
+                    copyright: '© 2025 Marvin T. — All rights reserved.',
                 },
                 display: {
                     title: 'Appearance options',
-                    description: 'Adjust how the desktop handles light and dark mode.',
+                    description:
+                        'Adjust how the desktop handles light and dark mode.',
                     legend: 'Dark mode',
                     options: {
                         system: {
                             label: 'System',
-                            description: 'Follows the current system setting.'
+                            description: 'Follows the current system setting.',
                         },
                         light: {
                             label: 'Light',
-                            description: 'Always stays in light appearance.'
+                            description: 'Always stays in light appearance.',
                         },
                         dark: {
                             label: 'Dark',
-                            description: 'Always stays in dark appearance.'
-                        }
-                    }
+                            description: 'Always stays in dark appearance.',
+                        },
+                    },
                 },
                 language: {
                     title: 'Language',
@@ -923,27 +946,28 @@
                     options: {
                         system: {
                             label: 'System',
-                            description: 'Automatically uses your system language.'
+                            description:
+                                'Automatically uses your system language.',
                         },
                         de: {
                             label: 'German',
-                            description: 'Always display content in German.'
+                            description: 'Always display content in German.',
                         },
                         en: {
                             label: 'English',
-                            description: 'Always display content in English.'
-                        }
-                    }
-                }
+                            description: 'Always display content in English.',
+                        },
+                    },
+                },
             },
             projectsPage: {
                 title: 'My GitHub projects',
                 empty: 'No public repositories found.',
                 repoUnnamed: 'Untitled repository',
                 noDescription: 'No description available.',
-                error: 'Repositories could not be loaded. Please try again later.'
-            }
-        }
+                error: 'Repositories could not be loaded. Please try again later.',
+            },
+        },
     };
 
     function normalizeLanguage(input) {
@@ -986,7 +1010,9 @@
         return FALLBACK_LANGUAGE;
     }
 
-    let languagePreference = parsePreference(localStorage.getItem(LANGUAGE_PREFERENCE_KEY));
+    let languagePreference = parsePreference(
+        localStorage.getItem(LANGUAGE_PREFERENCE_KEY),
+    );
 
     function resolveActiveLanguage(pref) {
         if (pref === 'system') {
@@ -1012,7 +1038,9 @@
         }
         return template.replace(/\{([^}]+)\}/g, (match, token) => {
             const key = token.trim();
-            return Object.prototype.hasOwnProperty.call(params, key) ? params[key] : match;
+            return Object.prototype.hasOwnProperty.call(params, key)
+                ? params[key]
+                : match;
         });
     }
 
@@ -1020,7 +1048,11 @@
         const segments = key.split('.');
         let current = translations[lang];
         for (const segment of segments) {
-            if (!current || typeof current !== 'object' || !(segment in current)) {
+            if (
+                !current ||
+                typeof current !== 'object' ||
+                !(segment in current)
+            ) {
                 return undefined;
             }
             current = current[segment];
@@ -1070,9 +1102,10 @@
         if (htmlKey) {
             element.innerHTML = translate(htmlKey, params);
         }
-        Array.from(element.attributes).forEach(attr => {
+        Array.from(element.attributes).forEach((attr) => {
             if (!attr.name.startsWith('data-i18n-')) return;
-            if (attr.name === 'data-i18n' || attr.name === 'data-i18n-html') return;
+            if (attr.name === 'data-i18n' || attr.name === 'data-i18n-html')
+                return;
             const targetAttr = attr.name.substring('data-i18n-'.length);
             if (!targetAttr) return;
             element.setAttribute(targetAttr, translate(attr.value, params));
@@ -1092,8 +1125,8 @@
         const event = new CustomEvent('languagePreferenceChange', {
             detail: {
                 preference: languagePreference,
-                language: activeLanguage
-            }
+                language: activeLanguage,
+            },
         });
         window.dispatchEvent(event);
     }
@@ -1143,7 +1176,9 @@
     setDocumentLanguage(activeLanguage);
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => applyTranslations(document));
+        document.addEventListener('DOMContentLoaded', () =>
+            applyTranslations(document),
+        );
     } else {
         applyTranslations(document);
     }
@@ -1156,6 +1191,6 @@
         getActiveLanguage: () => activeLanguage,
         translations,
         supportedLanguages: SUPPORTED_LANGUAGES.slice(),
-        languageOptions: LANGUAGE_OPTIONS.slice()
+        languageOptions: LANGUAGE_OPTIONS.slice(),
     };
 })();

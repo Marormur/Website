@@ -2,7 +2,7 @@ console.log('WindowTabs loaded');
 
 /**
  * WindowTabs - Tab-based UI for managing multiple window instances
- * 
+ *
  * Provides browser-like tab interface for switching between multiple instances
  * of the same window type (e.g., multiple terminals, text editors)
  */
@@ -25,9 +25,9 @@ console.log('WindowTabs loaded');
         constructor(config) {
             this.containerId = config.containerId;
             this.instanceManager = config.instanceManager;
-            this.onTabSwitch = config.onTabSwitch || (() => { });
-            this.onTabClose = config.onTabClose || (() => { });
-            this.onNewTab = config.onNewTab || (() => { });
+            this.onTabSwitch = config.onTabSwitch || (() => {});
+            this.onTabClose = config.onTabClose || (() => {});
+            this.onNewTab = config.onNewTab || (() => {});
 
             this.tabBarElement = null;
             this.tabsContainer = null;
@@ -48,16 +48,19 @@ console.log('WindowTabs loaded');
 
             // Create tab bar structure
             this.tabBarElement = document.createElement('div');
-            this.tabBarElement.className = 'window-tab-bar flex items-center bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700';
+            this.tabBarElement.className =
+                'window-tab-bar flex items-center bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700';
             this.tabBarElement.setAttribute('role', 'tablist');
 
             // Tabs container (scrollable)
             this.tabsContainer = document.createElement('div');
-            this.tabsContainer.className = 'window-tabs-container flex-1 flex items-center overflow-x-auto';
+            this.tabsContainer.className =
+                'window-tabs-container flex-1 flex items-center overflow-x-auto';
 
             // New tab button
             this.newTabButton = document.createElement('button');
-            this.newTabButton.className = 'new-tab-button px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors';
+            this.newTabButton.className =
+                'new-tab-button px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors';
             this.newTabButton.innerHTML = '<span class="text-lg">+</span>';
             this.newTabButton.setAttribute('aria-label', 'New tab');
             this.newTabButton.title = 'New tab (⌘N)';
@@ -79,7 +82,8 @@ console.log('WindowTabs loaded');
          */
         createTab(instance) {
             const tab = document.createElement('div');
-            tab.className = 'window-tab flex items-center gap-2 px-4 py-2 border-r border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors min-w-[120px] max-w-[200px]';
+            tab.className =
+                'window-tab flex items-center gap-2 px-4 py-2 border-r border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors min-w-[120px] max-w-[200px]';
             tab.dataset.instanceId = instance.instanceId;
             tab.setAttribute('role', 'tab');
             tab.setAttribute('aria-selected', 'false');
@@ -91,7 +95,8 @@ console.log('WindowTabs loaded');
 
             // Close button
             const closeBtn = document.createElement('button');
-            closeBtn.className = 'tab-close-btn text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 text-lg leading-none';
+            closeBtn.className =
+                'tab-close-btn text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 text-lg leading-none';
             closeBtn.innerHTML = '×';
             closeBtn.setAttribute('aria-label', 'Close tab');
             closeBtn.title = 'Close tab (⌘W)';
@@ -128,8 +133,15 @@ console.log('WindowTabs loaded');
             // Listen for instance title changes
             instance.on('stateChanged', (data) => {
                 // Check if tab still exists in DOM before querying
-                const tabTitleEl = tab && tab.isConnected ? tab.querySelector('.tab-title') : null;
-                if (data.newState && tabTitleEl && instance.title !== tabTitleEl.textContent) {
+                const tabTitleEl =
+                    tab && tab.isConnected
+                        ? tab.querySelector('.tab-title')
+                        : null;
+                if (
+                    data.newState &&
+                    tabTitleEl &&
+                    instance.title !== tabTitleEl.textContent
+                ) {
                     this.updateTabTitle(instance.instanceId, instance.title);
                 }
             });
@@ -142,7 +154,9 @@ console.log('WindowTabs loaded');
         removeTab(instanceId) {
             if (!this.tabsContainer) return;
 
-            const tab = this.tabsContainer.querySelector(`[data-instance-id="${instanceId}"]`);
+            const tab = this.tabsContainer.querySelector(
+                `[data-instance-id="${instanceId}"]`,
+            );
             if (tab) {
                 tab.remove();
             }
@@ -156,7 +170,9 @@ console.log('WindowTabs loaded');
         updateTabTitle(instanceId, newTitle) {
             if (!this.tabsContainer) return;
 
-            const tab = this.tabsContainer.querySelector(`[data-instance-id="${instanceId}"]`);
+            const tab = this.tabsContainer.querySelector(
+                `[data-instance-id="${instanceId}"]`,
+            );
             if (tab) {
                 const titleElement = tab.querySelector('.tab-title');
                 if (titleElement) {
@@ -174,19 +190,35 @@ console.log('WindowTabs loaded');
 
             // Remove active class from all tabs
             const allTabs = this.tabsContainer.querySelectorAll('.window-tab');
-            allTabs.forEach(tab => {
-                tab.classList.remove('bg-white', 'dark:bg-gray-900', 'border-b-2', 'border-blue-500');
+            allTabs.forEach((tab) => {
+                tab.classList.remove(
+                    'bg-white',
+                    'dark:bg-gray-900',
+                    'border-b-2',
+                    'border-blue-500',
+                );
                 tab.setAttribute('aria-selected', 'false');
             });
 
             // Add active class to selected tab
-            const activeTab = this.tabsContainer.querySelector(`[data-instance-id="${instanceId}"]`);
+            const activeTab = this.tabsContainer.querySelector(
+                `[data-instance-id="${instanceId}"]`,
+            );
             if (activeTab) {
-                activeTab.classList.add('bg-white', 'dark:bg-gray-900', 'border-b-2', 'border-blue-500');
+                activeTab.classList.add(
+                    'bg-white',
+                    'dark:bg-gray-900',
+                    'border-b-2',
+                    'border-blue-500',
+                );
                 activeTab.setAttribute('aria-selected', 'true');
 
                 // Scroll into view if needed
-                activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                activeTab.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                    inline: 'center',
+                });
             }
         }
 
@@ -217,9 +249,11 @@ console.log('WindowTabs loaded');
                 this.instanceManager.destroyInstance(instanceId);
 
                 // Switch to the last remaining tab if any
-                const remainingInstances = this.instanceManager.getAllInstances();
+                const remainingInstances =
+                    this.instanceManager.getAllInstances();
                 if (remainingInstances.length > 0) {
-                    const lastInstance = remainingInstances[remainingInstances.length - 1];
+                    const lastInstance =
+                        remainingInstances[remainingInstances.length - 1];
                     this.switchToTab(lastInstance.instanceId);
                 }
             }
@@ -230,7 +264,9 @@ console.log('WindowTabs loaded');
          * @returns {NodeList}
          */
         getAllTabs() {
-            return this.tabsContainer ? this.tabsContainer.querySelectorAll('.window-tab') : [];
+            return this.tabsContainer
+                ? this.tabsContainer.querySelectorAll('.window-tab')
+                : [];
         }
 
         /**
@@ -260,7 +296,9 @@ console.log('WindowTabs loaded');
          */
         switchToNextTab() {
             const tabs = Array.from(this.getAllTabs());
-            const activeTab = this.tabsContainer.querySelector('.window-tab[aria-selected="true"]');
+            const activeTab = this.tabsContainer.querySelector(
+                '.window-tab[aria-selected="true"]',
+            );
 
             if (!activeTab || tabs.length === 0) return;
 
@@ -278,7 +316,9 @@ console.log('WindowTabs loaded');
          */
         switchToPreviousTab() {
             const tabs = Array.from(this.getAllTabs());
-            const activeTab = this.tabsContainer.querySelector('.window-tab[aria-selected="true"]');
+            const activeTab = this.tabsContainer.querySelector(
+                '.window-tab[aria-selected="true"]',
+            );
 
             if (!activeTab || tabs.length === 0) return;
 
@@ -315,5 +355,4 @@ console.log('WindowTabs loaded');
 
     // Export to global scope
     window.WindowTabManager = WindowTabManager;
-
 })();

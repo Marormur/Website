@@ -2,7 +2,7 @@ console.log('WindowChrome loaded');
 
 /**
  * WindowChrome - Wiederverwendbare UI-Komponenten für Fenster
- * 
+ *
  * Bündelt gemeinsame UI-Elemente:
  * - Titlebar mit Icon, Titel und Buttons
  * - Toolbar pattern
@@ -28,8 +28,10 @@ console.log('WindowChrome loaded');
          */
         createTitlebar(config) {
             const titlebar = document.createElement('div');
-            titlebar.className = 'window-titlebar flex items-center justify-between px-3 py-2 bg-gray-200 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700';
-            titlebar.style.cssText = 'height: 32px; cursor: move; user-select: none;';
+            titlebar.className =
+                'window-titlebar flex items-center justify-between px-3 py-2 bg-gray-200 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700';
+            titlebar.style.cssText =
+                'height: 32px; cursor: move; user-select: none;';
 
             // Left side: Icon + Title
             const leftSide = document.createElement('div');
@@ -39,11 +41,16 @@ console.log('WindowChrome loaded');
                 const iconEl = document.createElement('span');
                 iconEl.className = 'window-icon';
 
-                if (config.icon.startsWith('http') || config.icon.startsWith('./') || config.icon.startsWith('/')) {
+                if (
+                    config.icon.startsWith('http') ||
+                    config.icon.startsWith('./') ||
+                    config.icon.startsWith('/')
+                ) {
                     const img = document.createElement('img');
                     img.src = config.icon;
                     img.alt = '';
-                    img.style.cssText = 'width: 16px; height: 16px; object-fit: contain;';
+                    img.style.cssText =
+                        'width: 16px; height: 16px; object-fit: contain;';
                     iconEl.appendChild(img);
                 } else {
                     // Emoji
@@ -55,7 +62,8 @@ console.log('WindowChrome loaded');
             }
 
             const titleEl = document.createElement('span');
-            titleEl.className = 'window-title font-medium text-sm text-gray-800 dark:text-gray-200';
+            titleEl.className =
+                'window-title font-medium text-sm text-gray-800 dark:text-gray-200';
             titleEl.textContent = config.title || 'Untitled';
             titleEl.dataset.titleTarget = 'true'; // For easy title updates
             leftSide.appendChild(titleEl);
@@ -67,17 +75,29 @@ console.log('WindowChrome loaded');
             rightSide.className = 'flex items-center gap-1';
 
             if (config.showMinimize) {
-                const minBtn = this._createControlButton('minimize', '−', config.onMinimize);
+                const minBtn = this._createControlButton(
+                    'minimize',
+                    '−',
+                    config.onMinimize,
+                );
                 rightSide.appendChild(minBtn);
             }
 
             if (config.showMaximize) {
-                const maxBtn = this._createControlButton('maximize', '□', config.onMaximize);
+                const maxBtn = this._createControlButton(
+                    'maximize',
+                    '□',
+                    config.onMaximize,
+                );
                 rightSide.appendChild(maxBtn);
             }
 
             if (config.showClose !== false) {
-                const closeBtn = this._createControlButton('close', '×', config.onClose);
+                const closeBtn = this._createControlButton(
+                    'close',
+                    '×',
+                    config.onClose,
+                );
                 rightSide.appendChild(closeBtn);
             }
 
@@ -93,13 +113,15 @@ console.log('WindowChrome loaded');
          */
         createToolbar(buttons) {
             const toolbar = document.createElement('div');
-            toolbar.className = 'window-toolbar flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-900 border-b border-gray-300 dark:border-gray-700';
+            toolbar.className =
+                'window-toolbar flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-900 border-b border-gray-300 dark:border-gray-700';
 
-            buttons.forEach(btnConfig => {
+            buttons.forEach((btnConfig) => {
                 if (btnConfig.type === 'separator') {
                     const separator = document.createElement('div');
                     separator.className = 'toolbar-separator';
-                    separator.style.cssText = 'width: 1px; height: 20px; background: currentColor; opacity: 0.2;';
+                    separator.style.cssText =
+                        'width: 1px; height: 20px; background: currentColor; opacity: 0.2;';
                     toolbar.appendChild(separator);
                 } else {
                     const btn = this._createToolbarButton(btnConfig);
@@ -119,7 +141,8 @@ console.log('WindowChrome loaded');
          */
         createStatusBar(config) {
             const statusBar = document.createElement('div');
-            statusBar.className = 'window-statusbar flex items-center justify-between px-3 py-1 bg-gray-100 dark:bg-gray-900 border-t border-gray-300 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400';
+            statusBar.className =
+                'window-statusbar flex items-center justify-between px-3 py-1 bg-gray-100 dark:bg-gray-900 border-t border-gray-300 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400';
             statusBar.style.cssText = 'height: 24px;';
 
             const leftEl = document.createElement('span');
@@ -141,7 +164,9 @@ console.log('WindowChrome loaded');
          * @param {string} newTitle
          */
         updateTitle(titlebar, newTitle) {
-            const titleEl = titlebar.querySelector('[data-title-target="true"]');
+            const titleEl = titlebar.querySelector(
+                '[data-title-target="true"]',
+            );
             if (titleEl) {
                 titleEl.textContent = newTitle;
             }
@@ -169,7 +194,8 @@ console.log('WindowChrome loaded');
             btn.type = 'button';
             btn.className = `window-control-btn window-${type}-btn`;
             btn.innerHTML = symbol;
-            btn.style.cssText = 'width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s;';
+            btn.style.cssText =
+                'width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s;';
 
             // Hover styles
             btn.addEventListener('mouseenter', () => {
@@ -200,7 +226,8 @@ console.log('WindowChrome loaded');
         _createToolbarButton(config) {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'toolbar-btn px-2 py-1 text-sm rounded hover:bg-gray-200 dark:hover:bg-gray-800 transition';
+            btn.className =
+                'toolbar-btn px-2 py-1 text-sm rounded hover:bg-gray-200 dark:hover:bg-gray-800 transition';
 
             if (config.icon) {
                 btn.innerHTML = config.icon;
@@ -230,7 +257,8 @@ console.log('WindowChrome loaded');
          */
         createWindowFrame(config) {
             const frame = document.createElement('div');
-            frame.className = 'window-frame flex flex-col h-full bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden';
+            frame.className =
+                'window-frame flex flex-col h-full bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden';
 
             const titlebar = this.createTitlebar({
                 title: config.title || 'Untitled',
@@ -240,7 +268,7 @@ console.log('WindowChrome loaded');
                 showMaximize: config.showMaximize,
                 onClose: config.onClose,
                 onMinimize: config.onMinimize,
-                onMaximize: config.onMaximize
+                onMaximize: config.onMaximize,
             });
             frame.appendChild(titlebar);
 
@@ -257,16 +285,15 @@ console.log('WindowChrome loaded');
             if (config.showStatusBar) {
                 statusbar = this.createStatusBar({
                     leftContent: config.statusBarLeft || '',
-                    rightContent: config.statusBarRight || ''
+                    rightContent: config.statusBarRight || '',
                 });
                 frame.appendChild(statusbar);
             }
 
             return { frame, titlebar, content, statusbar };
-        }
+        },
     };
 
     // Export to global scope
     window.WindowChrome = WindowChrome;
-
 })();

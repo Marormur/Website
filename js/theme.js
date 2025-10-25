@@ -8,9 +8,15 @@
 // ============================================================================
 
 const systemDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
-const validThemePreferences = window.APP_CONSTANTS?.VALID_THEME_PREFERENCES || ['system', 'light', 'dark'];
+const validThemePreferences = window.APP_CONSTANTS?.VALID_THEME_PREFERENCES || [
+    'system',
+    'light',
+    'dark',
+];
 
-let themePreference = localStorage.getItem(window.APP_CONSTANTS?.THEME_PREFERENCE_KEY || 'themePreference');
+let themePreference = localStorage.getItem(
+    window.APP_CONSTANTS?.THEME_PREFERENCE_KEY || 'themePreference',
+);
 if (!validThemePreferences.includes(themePreference)) {
     themePreference = 'system';
 }
@@ -19,7 +25,8 @@ if (!validThemePreferences.includes(themePreference)) {
  * Aktualisiert das Theme basierend auf der aktuellen Präferenz
  */
 function updateThemeFromPreference() {
-    const useDark = themePreference === 'dark' ||
+    const useDark =
+        themePreference === 'dark' ||
         (themePreference === 'system' && systemDarkQuery.matches);
     document.documentElement.classList.toggle('dark', useDark);
 }
@@ -34,14 +41,16 @@ function setThemePreference(pref) {
     themePreference = pref;
     localStorage.setItem(
         window.APP_CONSTANTS?.THEME_PREFERENCE_KEY || 'themePreference',
-        pref
+        pref,
     );
     updateThemeFromPreference();
 
     // Dispatch Event für andere Module
-    window.dispatchEvent(new CustomEvent('themePreferenceChange', {
-        detail: { preference: pref }
-    }));
+    window.dispatchEvent(
+        new CustomEvent('themePreferenceChange', {
+            detail: { preference: pref },
+        }),
+    );
 }
 
 /**
@@ -73,7 +82,7 @@ if (typeof window !== 'undefined') {
     window.ThemeSystem = {
         setThemePreference,
         getThemePreference,
-        updateThemeFromPreference
+        updateThemeFromPreference,
     };
 
     // Abwärtskompatibilität

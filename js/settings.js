@@ -15,9 +15,10 @@
          * @param {HTMLElement|string} containerOrId - Container element or ID
          */
         init(containerOrId) {
-            const container = typeof containerOrId === 'string'
-                ? document.getElementById(containerOrId)
-                : containerOrId;
+            const container =
+                typeof containerOrId === 'string'
+                    ? document.getElementById(containerOrId)
+                    : containerOrId;
 
             if (!container) {
                 console.error('Settings container not found:', containerOrId);
@@ -181,7 +182,10 @@
             `;
 
             // Apply i18n translations
-            if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
+            if (
+                window.appI18n &&
+                typeof window.appI18n.applyTranslations === 'function'
+            ) {
                 window.appI18n.applyTranslations(this.container);
             }
         },
@@ -193,8 +197,10 @@
             if (!this.container) return;
 
             // Theme preference change listeners
-            const themeRadios = this.container.querySelectorAll('input[name="theme-mode"]');
-            themeRadios.forEach(radio => {
+            const themeRadios = this.container.querySelectorAll(
+                'input[name="theme-mode"]',
+            );
+            themeRadios.forEach((radio) => {
                 radio.addEventListener('change', () => {
                     if (!radio.checked) return;
                     this.handleThemeChange(radio.value);
@@ -202,8 +208,10 @@
             });
 
             // Language preference change listeners
-            const languageRadios = this.container.querySelectorAll('input[name="language-preference"]');
-            languageRadios.forEach(radio => {
+            const languageRadios = this.container.querySelectorAll(
+                'input[name="language-preference"]',
+            );
+            languageRadios.forEach((radio) => {
                 radio.addEventListener('change', () => {
                     if (!radio.checked) return;
                     this.handleLanguageChange(radio.value);
@@ -237,9 +245,16 @@
          * @param {string} value - Theme preference value (system|light|dark)
          */
         handleThemeChange(value) {
-            if (window.API && window.API.theme && typeof window.API.theme.setThemePreference === 'function') {
+            if (
+                window.API &&
+                window.API.theme &&
+                typeof window.API.theme.setThemePreference === 'function'
+            ) {
                 window.API.theme.setThemePreference(value);
-            } else if (window.ThemeSystem && typeof window.ThemeSystem.setThemePreference === 'function') {
+            } else if (
+                window.ThemeSystem &&
+                typeof window.ThemeSystem.setThemePreference === 'function'
+            ) {
                 window.ThemeSystem.setThemePreference(value);
             } else if (typeof setThemePreference === 'function') {
                 setThemePreference(value);
@@ -251,9 +266,16 @@
          * @param {string} value - Language preference value (system|de|en)
          */
         handleLanguageChange(value) {
-            if (window.API && window.API.i18n && typeof window.API.i18n.setLanguagePreference === 'function') {
+            if (
+                window.API &&
+                window.API.i18n &&
+                typeof window.API.i18n.setLanguagePreference === 'function'
+            ) {
                 window.API.i18n.setLanguagePreference(value);
-            } else if (window.appI18n && typeof window.appI18n.setLanguagePreference === 'function') {
+            } else if (
+                window.appI18n &&
+                typeof window.appI18n.setLanguagePreference === 'function'
+            ) {
                 window.appI18n.setLanguagePreference(value);
             }
         },
@@ -265,17 +287,26 @@
             if (!this.container) return;
 
             let preference = 'system';
-            if (window.API && window.API.theme && typeof window.API.theme.getThemePreference === 'function') {
+            if (
+                window.API &&
+                window.API.theme &&
+                typeof window.API.theme.getThemePreference === 'function'
+            ) {
                 preference = window.API.theme.getThemePreference();
-            } else if (window.ThemeSystem && typeof window.ThemeSystem.getThemePreference === 'function') {
+            } else if (
+                window.ThemeSystem &&
+                typeof window.ThemeSystem.getThemePreference === 'function'
+            ) {
                 preference = window.ThemeSystem.getThemePreference();
             } else if (typeof getThemePreference === 'function') {
                 preference = getThemePreference();
             }
 
-            const themeRadios = this.container.querySelectorAll('input[name="theme-mode"]');
-            themeRadios.forEach(radio => {
-                radio.checked = (radio.value === preference);
+            const themeRadios = this.container.querySelectorAll(
+                'input[name="theme-mode"]',
+            );
+            themeRadios.forEach((radio) => {
+                radio.checked = radio.value === preference;
             });
         },
 
@@ -286,15 +317,24 @@
             if (!this.container) return;
 
             let preference = 'system';
-            if (window.API && window.API.i18n && typeof window.API.i18n.getLanguagePreference === 'function') {
+            if (
+                window.API &&
+                window.API.i18n &&
+                typeof window.API.i18n.getLanguagePreference === 'function'
+            ) {
                 preference = window.API.i18n.getLanguagePreference();
-            } else if (window.appI18n && typeof window.appI18n.getLanguagePreference === 'function') {
+            } else if (
+                window.appI18n &&
+                typeof window.appI18n.getLanguagePreference === 'function'
+            ) {
                 preference = window.appI18n.getLanguagePreference();
             }
 
-            const languageRadios = this.container.querySelectorAll('input[name="language-preference"]');
-            languageRadios.forEach(radio => {
-                radio.checked = (radio.value === preference);
+            const languageRadios = this.container.querySelectorAll(
+                'input[name="language-preference"]',
+            );
+            languageRadios.forEach((radio) => {
+                radio.checked = radio.value === preference;
             });
         },
 
@@ -308,8 +348,12 @@
             this.currentSection = section;
 
             // Hide all sections
-            const sections = ['settings-general', 'settings-display', 'settings-language'];
-            sections.forEach(id => {
+            const sections = [
+                'settings-general',
+                'settings-display',
+                'settings-language',
+            ];
+            sections.forEach((id) => {
                 const el = this.container.querySelector(`#${id}`);
                 if (el) {
                     el.classList.add('hidden');
@@ -323,13 +367,27 @@
             }
 
             // Update nav highlighting
-            const navItems = this.container.querySelectorAll('[data-action="settings:showSection"]');
-            navItems.forEach(item => {
+            const navItems = this.container.querySelectorAll(
+                '[data-action="settings:showSection"]',
+            );
+            navItems.forEach((item) => {
                 const itemSection = item.dataset.section;
                 if (itemSection === section) {
-                    item.classList.add('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-gray-100', 'font-medium');
+                    item.classList.add(
+                        'bg-white',
+                        'dark:bg-gray-600',
+                        'text-gray-900',
+                        'dark:text-gray-100',
+                        'font-medium',
+                    );
                 } else {
-                    item.classList.remove('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-gray-100', 'font-medium');
+                    item.classList.remove(
+                        'bg-white',
+                        'dark:bg-gray-600',
+                        'text-gray-900',
+                        'dark:text-gray-100',
+                        'font-medium',
+                    );
                 }
             });
         },
@@ -342,7 +400,7 @@
                 this.container.innerHTML = '';
                 this.container = null;
             }
-        }
+        },
     };
 
     // Export to global scope

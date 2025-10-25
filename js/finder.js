@@ -2,7 +2,7 @@ console.log('Finder.js loaded');
 
 /**
  * Finder System - Vollwertiger Dateimanager
- * 
+ *
  * Features:
  * - Virtuelle Ordnerstruktur (Computer, Downloads, Dokumente, etc.)
  * - Integration mit GitHub-Projekten
@@ -30,33 +30,34 @@ console.log('Finder.js loaded');
                         'README.md': {
                             type: 'file',
                             icon: '📝',
-                            content: '# Willkommen im Finder\n\nDies ist ein virtuelles Dateisystem.',
-                            size: 1024
-                        }
-                    }
+                            content:
+                                '# Willkommen im Finder\n\nDies ist ein virtuelles Dateisystem.',
+                            size: 1024,
+                        },
+                    },
                 },
                 Downloads: {
                     type: 'folder',
                     icon: '⬇️',
-                    children: {}
+                    children: {},
                 },
                 Pictures: {
                     type: 'folder',
                     icon: '🖼️',
-                    children: {}
+                    children: {},
                 },
                 Music: {
                     type: 'folder',
                     icon: '🎵',
-                    children: {}
+                    children: {},
                 },
                 Videos: {
                     type: 'folder',
                     icon: '🎬',
-                    children: {}
-                }
-            }
-        }
+                    children: {},
+                },
+            },
+        },
     };
 
     // ============================================================================
@@ -74,7 +75,7 @@ console.log('Finder.js loaded');
         githubLoading: false,
         githubError: false,
         favorites: new Set(),
-        recentFiles: []
+        recentFiles: [],
     };
 
     // GitHub Integration (lightweight, embedded in Finder)
@@ -83,13 +84,15 @@ console.log('Finder.js loaded');
     const GITHUB_CACHE_NS = 'finderGithubCacheV1:';
 
     function getGithubHeaders() {
-        const headers = { 'Accept': 'application/vnd.github.v3+json' };
+        const headers = { Accept: 'application/vnd.github.v3+json' };
         try {
             const token = localStorage.getItem('githubToken');
             if (token && token.trim()) {
                 headers['Authorization'] = `token ${token.trim()}`;
             }
-        } catch (_) { /* ignore */ }
+        } catch (_) {
+            /* ignore */
+        }
         return headers;
     }
 
@@ -97,8 +100,12 @@ console.log('Finder.js loaded');
         const dflt = 5 * 60 * 1000;
         try {
             const constants = window.APP_CONSTANTS || {};
-            return typeof constants.GITHUB_CACHE_DURATION === 'number' ? constants.GITHUB_CACHE_DURATION : dflt;
-        } catch (_) { return dflt; }
+            return typeof constants.GITHUB_CACHE_DURATION === 'number'
+                ? constants.GITHUB_CACHE_DURATION
+                : dflt;
+        } catch (_) {
+            return dflt;
+        }
     }
     function makeCacheKey(kind, repo = '', subPath = '') {
         if (kind === 'repos') return GITHUB_CACHE_NS + 'repos';
@@ -109,7 +116,9 @@ console.log('Finder.js loaded');
         try {
             const payload = { t: Date.now(), d: data };
             localStorage.setItem(key, JSON.stringify(payload));
-        } catch (_) { /* ignore */ }
+        } catch (_) {
+            /* ignore */
+        }
     }
     function readCache(kind, repo, subPath) {
         const key = makeCacheKey(kind, repo, subPath);
@@ -119,9 +128,12 @@ console.log('Finder.js loaded');
             const parsed = JSON.parse(raw);
             if (!parsed || typeof parsed !== 'object') return null;
             const ttl = getCacheTtl();
-            if (typeof parsed.t !== 'number' || (Date.now() - parsed.t) > ttl) return null;
+            if (typeof parsed.t !== 'number' || Date.now() - parsed.t > ttl)
+                return null;
             return Array.isArray(parsed.d) ? parsed.d : null;
-        } catch (_) { return null; }
+        } catch (_) {
+            return null;
+        }
     }
 
     // ============================================================================
@@ -136,12 +148,14 @@ console.log('Finder.js loaded');
         domRefs = {
             sidebarComputer: document.getElementById('finder-sidebar-computer'),
             sidebarGithub: document.getElementById('finder-sidebar-github'),
-            sidebarFavorites: document.getElementById('finder-sidebar-favorites'),
+            sidebarFavorites: document.getElementById(
+                'finder-sidebar-favorites',
+            ),
             sidebarRecent: document.getElementById('finder-sidebar-recent'),
             breadcrumbs: document.getElementById('finder-path-breadcrumbs'),
             contentArea: document.getElementById('finder-content-area'),
             toolbar: document.getElementById('finder-toolbar'),
-            searchInput: document.getElementById('finder-search-input')
+            searchInput: document.getElementById('finder-search-input'),
         };
 
         return domRefs;
@@ -189,23 +203,34 @@ console.log('Finder.js loaded');
         if (!refs) return;
 
         // Entferne alle aktiven Markierungen
-        [refs.sidebarComputer, refs.sidebarGithub, refs.sidebarFavorites, refs.sidebarRecent].forEach(el => {
+        [
+            refs.sidebarComputer,
+            refs.sidebarGithub,
+            refs.sidebarFavorites,
+            refs.sidebarRecent,
+        ].forEach((el) => {
             if (el) el.classList.remove('finder-sidebar-active');
         });
 
         // Markiere aktuelle Ansicht
         switch (finderState.currentView) {
             case 'computer':
-                if (refs.sidebarComputer) refs.sidebarComputer.classList.add('finder-sidebar-active');
+                if (refs.sidebarComputer)
+                    refs.sidebarComputer.classList.add('finder-sidebar-active');
                 break;
             case 'github':
-                if (refs.sidebarGithub) refs.sidebarGithub.classList.add('finder-sidebar-active');
+                if (refs.sidebarGithub)
+                    refs.sidebarGithub.classList.add('finder-sidebar-active');
                 break;
             case 'favorites':
-                if (refs.sidebarFavorites) refs.sidebarFavorites.classList.add('finder-sidebar-active');
+                if (refs.sidebarFavorites)
+                    refs.sidebarFavorites.classList.add(
+                        'finder-sidebar-active',
+                    );
                 break;
             case 'recent':
-                if (refs.sidebarRecent) refs.sidebarRecent.classList.add('finder-sidebar-active');
+                if (refs.sidebarRecent)
+                    refs.sidebarRecent.classList.add('finder-sidebar-active');
                 break;
         }
     }
@@ -237,18 +262,26 @@ console.log('Finder.js loaded');
                 break;
         }
 
-        parts.push(`<button class="finder-breadcrumb-item" data-action="finder:goRoot">${viewLabel}</button>`);
+        parts.push(
+            `<button class="finder-breadcrumb-item" data-action="finder:goRoot">${viewLabel}</button>`,
+        );
 
         // Pfad-Teile (überspringe ersten Teil wenn er gleich dem View-Label ist)
         finderState.currentPath.forEach((part, index) => {
             // Überspringe "Computer" wenn wir in der Computer-Ansicht sind und es der erste Pfad-Teil ist
-            if (index === 0 && finderState.currentView === 'computer' && part === 'Computer') {
+            if (
+                index === 0 &&
+                finderState.currentView === 'computer' &&
+                part === 'Computer'
+            ) {
                 return; // Überspringe diesen Teil
             }
 
             const pathUpToHere = finderState.currentPath.slice(0, index + 1);
-            parts.push(`<span class="finder-breadcrumb-separator">›</span>`);
-            parts.push(`<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join('/')}">${part}</button>`);
+            parts.push('<span class="finder-breadcrumb-separator">›</span>');
+            parts.push(
+                `<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join('/')}">${part}</button>`,
+            );
         });
 
         refs.breadcrumbs.innerHTML = parts.join('');
@@ -289,7 +322,7 @@ console.log('Finder.js loaded');
             type: item.type,
             icon: item.icon || (item.type === 'folder' ? '📁' : '📄'),
             size: item.size || 0,
-            modified: item.modified || new Date().toISOString()
+            modified: item.modified || new Date().toISOString(),
         }));
     }
 
@@ -304,12 +337,19 @@ console.log('Finder.js loaded');
                     return cachedRepos;
                 }
             }
-            if (!finderState.githubRepos.length && !finderState.githubLoading && !finderState.githubError) {
+            if (
+                !finderState.githubRepos.length &&
+                !finderState.githubLoading &&
+                !finderState.githubError
+            ) {
                 finderState.githubLoading = true;
-                fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`, {
-                    headers: getGithubHeaders()
-                })
-                    .then(r => {
+                fetch(
+                    `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`,
+                    {
+                        headers: getGithubHeaders(),
+                    },
+                )
+                    .then((r) => {
                         if (!r.ok) {
                             // Spezifische Rate-Limit-Behandlung
                             if (r.status === 403) {
@@ -320,15 +360,25 @@ console.log('Finder.js loaded');
                         }
                         return r.json();
                     })
-                    .then(repos => {
-                        const list = (Array.isArray(repos) ? repos : []).map(r => ({
-                            name: r.name || (window.translate ? window.translate('finder.repoUnnamed') : 'Unbenanntes Repository'),
-                            type: 'folder',
-                            icon: '📂',
-                            size: 0,
-                            modified: r.updated_at || r.pushed_at || r.created_at || new Date().toISOString(),
-                            html_url: r.html_url
-                        }));
+                    .then((repos) => {
+                        const list = (Array.isArray(repos) ? repos : []).map(
+                            (r) => ({
+                                name:
+                                    r.name ||
+                                    (window.translate
+                                        ? window.translate('finder.repoUnnamed')
+                                        : 'Unbenanntes Repository'),
+                                type: 'folder',
+                                icon: '📂',
+                                size: 0,
+                                modified:
+                                    r.updated_at ||
+                                    r.pushed_at ||
+                                    r.created_at ||
+                                    new Date().toISOString(),
+                                html_url: r.html_url,
+                            }),
+                        );
                         finderState.githubRepos = repos || [];
                         writeCache('repos', '', '', list);
                         finderState.githubError = false;
@@ -343,7 +393,14 @@ console.log('Finder.js loaded');
             }
             if (finderState.githubLoading) {
                 return [
-                    { name: (window.translate ? window.translate('finder.loadingFiles') : 'Lade Dateien …'), type: 'info', icon: '⏳', size: 0 }
+                    {
+                        name: window.translate
+                            ? window.translate('finder.loadingFiles')
+                            : 'Lade Dateien …',
+                        type: 'info',
+                        icon: '⏳',
+                        size: 0,
+                    },
                 ];
             }
             if (finderState.githubError) {
@@ -353,21 +410,43 @@ console.log('Finder.js loaded');
                     return cachedRepos;
                 }
                 return [
-                    { name: (window.translate ? window.translate('finder.rateLimit') : 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.'), type: 'info', icon: '⚠️', size: 0 }
+                    {
+                        name: window.translate
+                            ? window.translate('finder.rateLimit')
+                            : 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                        type: 'info',
+                        icon: '⚠️',
+                        size: 0,
+                    },
                 ];
             }
             if (!finderState.githubRepos.length) {
                 return [
-                    { name: (window.translate ? window.translate('finder.noRepositories') : 'Keine öffentlichen Repositories gefunden.'), type: 'info', icon: 'ℹ️', size: 0 }
+                    {
+                        name: window.translate
+                            ? window.translate('finder.noRepositories')
+                            : 'Keine öffentlichen Repositories gefunden.',
+                        type: 'info',
+                        icon: 'ℹ️',
+                        size: 0,
+                    },
                 ];
             }
-            return finderState.githubRepos.map(r => ({
-                name: r.name || (window.translate ? window.translate('finder.repoUnnamed') : 'Unbenanntes Repository'),
+            return finderState.githubRepos.map((r) => ({
+                name:
+                    r.name ||
+                    (window.translate
+                        ? window.translate('finder.repoUnnamed')
+                        : 'Unbenanntes Repository'),
                 type: 'folder',
                 icon: '📂',
                 size: 0,
-                modified: r.updated_at || r.pushed_at || r.created_at || new Date().toISOString(),
-                html_url: r.html_url
+                modified:
+                    r.updated_at ||
+                    r.pushed_at ||
+                    r.created_at ||
+                    new Date().toISOString(),
+                html_url: r.html_url,
             }));
         }
 
@@ -385,11 +464,16 @@ console.log('Finder.js loaded');
         }
         if (!cached && !finderState.githubLoading && !finderState.githubError) {
             finderState.githubLoading = true;
-            const pathPart = subPath ? `/${encodeURIComponent(subPath).replace(/%2F/g, '/')}` : '';
-            fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${encodeURIComponent(repo)}/contents${pathPart}`, {
-                headers: getGithubHeaders()
-            })
-                .then(r => {
+            const pathPart = subPath
+                ? `/${encodeURIComponent(subPath).replace(/%2F/g, '/')}`
+                : '';
+            fetch(
+                `https://api.github.com/repos/${GITHUB_USERNAME}/${encodeURIComponent(repo)}/contents${pathPart}`,
+                {
+                    headers: getGithubHeaders(),
+                },
+            )
+                .then((r) => {
                     if (!r.ok) {
                         if (r.status === 403) {
                             finderState.githubError = true;
@@ -399,20 +483,22 @@ console.log('Finder.js loaded');
                     }
                     return r.json();
                 })
-                .then(items => {
-                    const mapped = (Array.isArray(items) ? items : [items]).map(it => {
-                        const isDir = it.type === 'dir';
-                        return {
-                            name: it.name,
-                            type: isDir ? 'folder' : 'file',
-                            icon: isDir ? '📁' : '📄',
-                            size: it.size || 0,
-                            modified: '',
-                            url: it.url,
-                            html_url: it.html_url,
-                            download_url: it.download_url
-                        };
-                    });
+                .then((items) => {
+                    const mapped = (Array.isArray(items) ? items : [items]).map(
+                        (it) => {
+                            const isDir = it.type === 'dir';
+                            return {
+                                name: it.name,
+                                type: isDir ? 'folder' : 'file',
+                                icon: isDir ? '📁' : '📄',
+                                size: it.size || 0,
+                                modified: '',
+                                url: it.url,
+                                html_url: it.html_url,
+                                download_url: it.download_url,
+                            };
+                        },
+                    );
                     githubContentCache.set(cacheKey, mapped);
                     writeCache('contents', repo, subPath, mapped);
                     finderState.githubError = false;
@@ -430,7 +516,14 @@ console.log('Finder.js loaded');
         }
         if (finderState.githubLoading && !cached) {
             return [
-                { name: (window.translate ? window.translate('finder.loadingFiles') : 'Lade Dateien …'), type: 'info', icon: '⏳', size: 0 }
+                {
+                    name: window.translate
+                        ? window.translate('finder.loadingFiles')
+                        : 'Lade Dateien …',
+                    type: 'info',
+                    icon: '⏳',
+                    size: 0,
+                },
             ];
         }
         if (finderState.githubError && !cached) {
@@ -439,34 +532,48 @@ console.log('Finder.js loaded');
                 return fallback;
             }
             return [
-                { name: (window.translate ? window.translate('finder.rateLimit') : 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.'), type: 'info', icon: '⚠️', size: 0 }
+                {
+                    name: window.translate
+                        ? window.translate('finder.rateLimit')
+                        : 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                    type: 'info',
+                    icon: '⚠️',
+                    size: 0,
+                },
             ];
         }
         const list = Array.isArray(cached) ? cached : [];
         if (!list.length) {
             return [
-                { name: (window.translate ? window.translate('finder.emptyDirectory') : 'Keine Dateien in diesem Verzeichnis gefunden.'), type: 'info', icon: '📁', size: 0 }
+                {
+                    name: window.translate
+                        ? window.translate('finder.emptyDirectory')
+                        : 'Keine Dateien in diesem Verzeichnis gefunden.',
+                    type: 'info',
+                    icon: '📁',
+                    size: 0,
+                },
             ];
         }
         return list;
     }
 
     function getFavoriteItems() {
-        return Array.from(finderState.favorites).map(path => ({
+        return Array.from(finderState.favorites).map((path) => ({
             name: path.split('/').pop(),
             type: 'favorite',
             icon: '⭐',
-            path
+            path,
         }));
     }
 
     function getRecentItems() {
-        return finderState.recentFiles.map(file => ({
+        return finderState.recentFiles.map((file) => ({
             name: file.name,
             type: 'recent',
             icon: file.icon || '📄',
             path: file.path,
-            modified: file.modified
+            modified: file.modified,
         }));
     }
 
@@ -521,7 +628,8 @@ console.log('Finder.js loaded');
                     comparison = (a.size || 0) - (b.size || 0);
                     break;
                 case 'date':
-                    comparison = new Date(b.modified || 0) - new Date(a.modified || 0);
+                    comparison =
+                        new Date(b.modified || 0) - new Date(a.modified || 0);
                     break;
                 case 'type':
                     comparison = (a.type || '').localeCompare(b.type || '');
@@ -548,7 +656,9 @@ console.log('Finder.js loaded');
                     </tr>
                 </thead>
                 <tbody>
-                    ${items.map(item => `
+                    ${items
+        .map(
+            (item) => `
                         <tr class="finder-list-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                             <td>
                                 <span class="finder-item-icon">${item.icon}</span>
@@ -557,7 +667,9 @@ console.log('Finder.js loaded');
                             <td>${formatSize(item.size)}</td>
                             <td>${formatDate(item.modified)}</td>
                         </tr>
-                    `).join('')}
+                    `,
+        )
+        .join('')}
                 </tbody>
             </table>
         `;
@@ -571,12 +683,16 @@ console.log('Finder.js loaded');
 
         const html = `
             <div class="finder-grid-container">
-                ${items.map(item => `
+                ${items
+        .map(
+            (item) => `
                     <div class="finder-grid-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                         <div class="finder-grid-icon">${item.icon}</div>
                         <div class="finder-grid-name">${item.name}</div>
                     </div>
-                `).join('')}
+                `,
+        )
+        .join('')}
             </div>
         `;
 
@@ -597,7 +713,7 @@ console.log('Finder.js loaded');
             navigateToFolder(name);
         } else if (type === 'action') {
             const items = getCurrentItems();
-            const item = items.find(i => i.name === name);
+            const item = items.find((i) => i.name === name);
             if (item && item.action) {
                 item.action();
             }
@@ -613,7 +729,7 @@ console.log('Finder.js loaded');
         // GitHub-spezifische Datei-Öffnung (inline)
         if (finderState.currentView === 'github') {
             const items = getCurrentItems();
-            const entry = items.find(i => i && i.name === name);
+            const entry = items.find((i) => i && i.name === name);
             const isImage = isImageFile(name);
             const isText = isProbablyTextFile(name);
             if (entry && (isImage || isText)) {
@@ -647,27 +763,89 @@ console.log('Finder.js loaded');
 
     // Dateityp-Erkennung analog zu app.js
     const textFileExtensions = [
-        '.txt', '.md', '.markdown', '.mdx', '.json', '.jsonc', '.csv', '.tsv', '.yaml', '.yml',
-        '.xml', '.html', '.htm', '.css', '.scss', '.sass', '.less',
-        '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.vue',
-        '.c', '.h', '.cpp', '.hpp', '.cc', '.cxx', '.hh', '.ino',
-        '.java', '.kt', '.kts', '.swift', '.cs', '.py', '.rb', '.php', '.rs', '.go',
-        '.sh', '.bash', '.zsh', '.fish', '.ps1', '.bat', '.cmd',
-        '.ini', '.cfg', '.conf', '.config', '.env', '.gitignore', '.gitattributes',
-        '.log', '.sql'
+        '.txt',
+        '.md',
+        '.markdown',
+        '.mdx',
+        '.json',
+        '.jsonc',
+        '.csv',
+        '.tsv',
+        '.yaml',
+        '.yml',
+        '.xml',
+        '.html',
+        '.htm',
+        '.css',
+        '.scss',
+        '.sass',
+        '.less',
+        '.js',
+        '.mjs',
+        '.cjs',
+        '.ts',
+        '.tsx',
+        '.jsx',
+        '.vue',
+        '.c',
+        '.h',
+        '.cpp',
+        '.hpp',
+        '.cc',
+        '.cxx',
+        '.hh',
+        '.ino',
+        '.java',
+        '.kt',
+        '.kts',
+        '.swift',
+        '.cs',
+        '.py',
+        '.rb',
+        '.php',
+        '.rs',
+        '.go',
+        '.sh',
+        '.bash',
+        '.zsh',
+        '.fish',
+        '.ps1',
+        '.bat',
+        '.cmd',
+        '.ini',
+        '.cfg',
+        '.conf',
+        '.config',
+        '.env',
+        '.gitignore',
+        '.gitattributes',
+        '.log',
+        '.sql',
     ];
     const imageFileExtensions = [
-        '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg', '.tiff', '.tif', '.heic', '.heif', '.avif'
+        '.png',
+        '.jpg',
+        '.jpeg',
+        '.gif',
+        '.webp',
+        '.bmp',
+        '.ico',
+        '.svg',
+        '.tiff',
+        '.tif',
+        '.heic',
+        '.heif',
+        '.avif',
     ];
     function isProbablyTextFile(filename) {
         if (!filename) return false;
         const lower = String(filename).toLowerCase();
-        return textFileExtensions.some(ext => lower.endsWith(ext));
+        return textFileExtensions.some((ext) => lower.endsWith(ext));
     }
     function isImageFile(filename) {
         if (!filename) return false;
         const lower = String(filename).toLowerCase();
-        return imageFileExtensions.some(ext => lower.endsWith(ext));
+        return imageFileExtensions.some((ext) => lower.endsWith(ext));
     }
 
     function ensureImageViewerOpen() {
@@ -709,7 +887,8 @@ console.log('Finder.js loaded');
             img.onload = () => {
                 if (placeholder) placeholder.classList.add('hidden');
                 img.classList.remove('hidden');
-                if (dlg && typeof dlg.bringToFront === 'function') dlg.bringToFront();
+                if (dlg && typeof dlg.bringToFront === 'function')
+                    dlg.bringToFront();
             };
             img.onerror = () => {
                 if (placeholder) placeholder.classList.remove('hidden');
@@ -722,14 +901,18 @@ console.log('Finder.js loaded');
             return;
         }
         if (entry.url) {
-            fetch(entry.url, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
-                .then(r => r.ok ? r.json() : Promise.reject(r))
-                .then(data => {
+            fetch(entry.url, {
+                headers: { Accept: 'application/vnd.github.v3+json' },
+            })
+                .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+                .then((data) => {
                     if (data && typeof data.download_url === 'string') {
                         finalize(data.download_url);
                     }
                 })
-                .catch(() => { /* silently ignore */ });
+                .catch(() => {
+                    /* silently ignore */
+                });
         }
     }
 
@@ -746,22 +929,28 @@ console.log('Finder.js loaded');
 
         const fetchText = () => {
             if (entry.download_url) {
-                return fetch(entry.download_url).then(r => {
+                return fetch(entry.download_url).then((r) => {
                     if (!r.ok) throw new Error('Download failed');
                     return r.text();
                 });
             }
             if (entry.url) {
-                return fetch(entry.url, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
-                    .then(r => r.ok ? r.json() : Promise.reject(r))
-                    .then(data => {
+                return fetch(entry.url, {
+                    headers: { Accept: 'application/vnd.github.v3+json' },
+                })
+                    .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+                    .then((data) => {
                         if (data && typeof data.download_url === 'string') {
-                            return fetch(data.download_url).then(r => {
+                            return fetch(data.download_url).then((r) => {
                                 if (!r.ok) throw new Error('Download failed');
                                 return r.text();
                             });
                         }
-                        if (data && data.encoding === 'base64' && typeof data.content === 'string') {
+                        if (
+                            data &&
+                            data.encoding === 'base64' &&
+                            typeof data.content === 'string'
+                        ) {
                             try {
                                 return atob(data.content.replace(/\s/g, ''));
                             } catch (_) {
@@ -774,21 +963,34 @@ console.log('Finder.js loaded');
             return Promise.reject(new Error('No source'));
         };
         fetchText()
-            .then(content => {
+            .then((content) => {
                 // Load remote file via direct API call
                 if (window.API && window.API.textEditor) {
-                    window.API.textEditor.loadRemoteFile(Object.assign({}, payloadBase, { content }));
+                    window.API.textEditor.loadRemoteFile(
+                        Object.assign({}, payloadBase, { content }),
+                    );
                 } else if (window.TextEditorSystem) {
-                    window.TextEditorSystem.loadRemoteFile(Object.assign({}, payloadBase, { content }));
+                    window.TextEditorSystem.loadRemoteFile(
+                        Object.assign({}, payloadBase, { content }),
+                    );
                 }
-                if (dlg && typeof dlg.bringToFront === 'function') dlg.bringToFront();
+                if (dlg && typeof dlg.bringToFront === 'function')
+                    dlg.bringToFront();
             })
             .catch(() => {
                 // Show error via direct API call
                 if (window.API && window.API.textEditor) {
-                    window.API.textEditor.showLoadError(Object.assign({}, payloadBase, { message: 'Fehler beim Laden' }));
+                    window.API.textEditor.showLoadError(
+                        Object.assign({}, payloadBase, {
+                            message: 'Fehler beim Laden',
+                        }),
+                    );
                 } else if (window.TextEditorSystem) {
-                    window.TextEditorSystem.showLoadError(Object.assign({}, payloadBase, { message: 'Fehler beim Laden' }));
+                    window.TextEditorSystem.showLoadError(
+                        Object.assign({}, payloadBase, {
+                            message: 'Fehler beim Laden',
+                        }),
+                    );
                 }
             });
     }
@@ -806,13 +1008,14 @@ console.log('Finder.js loaded');
         return date.toLocaleDateString('de-DE', {
             day: '2-digit',
             month: '2-digit',
-            year: 'numeric'
+            year: 'numeric',
         });
     }
 
     function setSortBy(field) {
         if (finderState.sortBy === field) {
-            finderState.sortOrder = finderState.sortOrder === 'asc' ? 'desc' : 'asc';
+            finderState.sortOrder =
+                finderState.sortOrder === 'asc' ? 'desc' : 'asc';
         } else {
             finderState.sortBy = field;
             finderState.sortOrder = 'asc';
@@ -832,7 +1035,7 @@ console.log('Finder.js loaded');
             name,
             path: fullPath,
             icon: '📄',
-            modified: new Date().toISOString()
+            modified: new Date().toISOString(),
         });
 
         // Limit auf 20 Items
@@ -862,7 +1065,7 @@ console.log('Finder.js loaded');
                 sortBy: finderState.sortBy,
                 sortOrder: finderState.sortOrder,
                 favorites: Array.from(finderState.favorites),
-                recentFiles: finderState.recentFiles
+                recentFiles: finderState.recentFiles,
             };
             localStorage.setItem('finderAdvancedState', JSON.stringify(state));
         } catch (e) {
@@ -898,7 +1101,10 @@ console.log('Finder.js loaded');
         navigateTo(finderState.currentPath, finderState.currentView);
 
         // i18n-Übersetzungen anwenden
-        if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
+        if (
+            window.appI18n &&
+            typeof window.appI18n.applyTranslations === 'function'
+        ) {
             const finderModal = document.getElementById('finder-modal');
             if (finderModal) {
                 window.appI18n.applyTranslations(finderModal);
@@ -919,10 +1125,9 @@ console.log('Finder.js loaded');
         setSortBy,
         setViewMode,
         toggleFavorite,
-        getState: () => finderState
+        getState: () => finderState,
     };
 
     // Init wird von app.js nach Dialog-Initialisierung aufgerufen
     // Keine automatische Initialisierung hier
-
 })();

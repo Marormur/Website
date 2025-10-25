@@ -2,7 +2,7 @@ console.log('InstanceManager loaded');
 
 /**
  * InstanceManager - Verwaltet mehrere Instanzen eines Fenstertyps
- * 
+ *
  * Ermöglicht:
  * - Mehrere Finder, Terminal, TextEditor Fenster gleichzeitig
  * - Zentrale Instance-Verwaltung
@@ -27,7 +27,9 @@ console.log('InstanceManager loaded');
             this.type = config.type;
             this.instanceClass = config.instanceClass;
             this.maxInstances = config.maxInstances || 0;
-            this.createContainer = config.createContainer || this._defaultCreateContainer.bind(this);
+            this.createContainer =
+                config.createContainer ||
+                this._defaultCreateContainer.bind(this);
 
             this.instances = new Map();
             this.activeInstanceId = null;
@@ -41,13 +43,19 @@ console.log('InstanceManager loaded');
          */
         createInstance(config = {}) {
             // Check max instances limit
-            if (this.maxInstances > 0 && this.instances.size >= this.maxInstances) {
-                console.warn(`Maximum instances (${this.maxInstances}) reached for ${this.type}`);
+            if (
+                this.maxInstances > 0 &&
+                this.instances.size >= this.maxInstances
+            ) {
+                console.warn(
+                    `Maximum instances (${this.maxInstances}) reached for ${this.type}`,
+                );
                 return null;
             }
 
             this.instanceCounter++;
-            const instanceId = config.id || `${this.type}-${this.instanceCounter}`;
+            const instanceId =
+                config.id || `${this.type}-${this.instanceCounter}`;
 
             // Create DOM container
             const container = this.createContainer(instanceId);
@@ -62,7 +70,7 @@ console.log('InstanceManager loaded');
                 type: this.type,
                 title: config.title || `${this.type} ${this.instanceCounter}`,
                 initialState: config.initialState || {},
-                metadata: config.metadata || {}
+                metadata: config.metadata || {},
             };
 
             const instance = new this.instanceClass(instanceConfig);
@@ -99,7 +107,9 @@ console.log('InstanceManager loaded');
          * @returns {BaseWindowInstance|null}
          */
         getActiveInstance() {
-            return this.activeInstanceId ? this.instances.get(this.activeInstanceId) : null;
+            return this.activeInstanceId
+                ? this.instances.get(this.activeInstanceId)
+                : null;
         }
 
         /**
@@ -160,7 +170,10 @@ console.log('InstanceManager loaded');
             // Update active instance if needed
             if (this.activeInstanceId === instanceId) {
                 const remainingIds = this.getAllInstanceIds();
-                this.activeInstanceId = remainingIds.length > 0 ? remainingIds[remainingIds.length - 1] : null;
+                this.activeInstanceId =
+                    remainingIds.length > 0
+                        ? remainingIds[remainingIds.length - 1]
+                        : null;
             }
 
             console.log(`Destroyed instance: ${instanceId}`);
@@ -198,7 +211,9 @@ console.log('InstanceManager loaded');
          * @returns {Array<Object>}
          */
         serializeAll() {
-            return this.getAllInstances().map(instance => instance.serialize());
+            return this.getAllInstances().map((instance) =>
+                instance.serialize(),
+            );
         }
 
         /**
@@ -208,11 +223,11 @@ console.log('InstanceManager loaded');
         deserializeAll(data) {
             if (!Array.isArray(data)) return;
 
-            data.forEach(instanceData => {
+            data.forEach((instanceData) => {
                 const instance = this.createInstance({
                     id: instanceData.instanceId,
                     title: instanceData.title,
-                    metadata: instanceData.metadata
+                    metadata: instanceData.metadata,
                 });
 
                 if (instance && instanceData.state) {
@@ -250,5 +265,4 @@ console.log('InstanceManager loaded');
 
     // Export to global scope
     window.InstanceManager = InstanceManager;
-
 })();

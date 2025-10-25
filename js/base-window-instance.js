@@ -2,7 +2,7 @@ console.log('BaseWindowInstance loaded');
 
 /**
  * BaseWindowInstance - Wiederverwendbare Basis-Klasse für Fenster-Instanzen
- * 
+ *
  * Ermöglicht mehrere Instanzen des gleichen Fenstertyps.
  * Jede Instanz hat ihren eigenen State, DOM-Container und Lifecycle.
  */
@@ -49,7 +49,7 @@ console.log('BaseWindowInstance loaded');
             return {
                 ...initialState,
                 created: Date.now(),
-                modified: Date.now()
+                modified: Date.now(),
             };
         }
 
@@ -135,7 +135,7 @@ console.log('BaseWindowInstance loaded');
             this.state = {
                 ...this.state,
                 ...updates,
-                modified: Date.now()
+                modified: Date.now(),
             };
             this.emit('stateChanged', { oldState, newState: this.state });
         }
@@ -158,7 +158,7 @@ console.log('BaseWindowInstance loaded');
                 type: this.type,
                 title: this.title,
                 state: this.getState(),
-                metadata: this.metadata
+                metadata: this.metadata,
             };
         }
 
@@ -186,11 +186,14 @@ console.log('BaseWindowInstance loaded');
          */
         emit(eventName, data) {
             const listeners = this.eventListeners.get(eventName) || [];
-            listeners.forEach(callback => {
+            listeners.forEach((callback) => {
                 try {
                     callback.call(this, data);
                 } catch (error) {
-                    console.error(`Error in event listener for ${eventName}:`, error);
+                    console.error(
+                        `Error in event listener for ${eventName}:`,
+                        error,
+                    );
                 }
             });
         }
@@ -248,5 +251,4 @@ console.log('BaseWindowInstance loaded');
 
     // Export to global scope
     window.BaseWindowInstance = BaseWindowInstance;
-
 })();

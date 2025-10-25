@@ -3,23 +3,23 @@
  * Einfachere Tests ohne networkidle
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Multi-Instance System - Basic', () => {
-    test('page loads and modules are available', async ({ page }) => {
+test.describe("Multi-Instance System - Basic", () => {
+    test("page loads and modules are available", async ({ page }) => {
         // Listen for console errors
         const consoleErrors = [];
-        page.on('console', msg => {
-            if (msg.type() === 'error') {
+        page.on("console", (msg) => {
+            if (msg.type() === "error") {
                 consoleErrors.push(msg.text());
             }
         });
 
-        await page.goto('/');
+        await page.goto("/");
         await page.waitForTimeout(2000); // Einfaches Warten statt networkidle
 
         // Check console errors
-        console.log('Console errors:', consoleErrors);
+        console.log("Console errors:", consoleErrors);
 
         // Check if core modules loaded
         const modulesAvailable = await page.evaluate(() => {
@@ -29,78 +29,84 @@ test.describe('Multi-Instance System - Basic', () => {
                 WindowChrome: typeof window.WindowChrome,
                 TerminalInstance: typeof window.TerminalInstance,
                 TextEditorInstance: typeof window.TextEditorInstance,
-                TerminalInstanceManager: window.TerminalInstanceManager !== undefined,
-                TextEditorInstanceManager: window.TextEditorInstanceManager !== undefined
+                TerminalInstanceManager:
+                    window.TerminalInstanceManager !== undefined,
+                TextEditorInstanceManager:
+                    window.TextEditorInstanceManager !== undefined,
             };
         });
 
-        console.log('Modules:', modulesAvailable);
+        console.log("Modules:", modulesAvailable);
 
         // Assertions
-        expect(modulesAvailable.BaseWindowInstance).toBe('function');
-        expect(modulesAvailable.InstanceManager).toBe('function');
-        expect(modulesAvailable.WindowChrome).toBe('object');
-        expect(modulesAvailable.TerminalInstance).toBe('function');
-        expect(modulesAvailable.TextEditorInstance).toBe('function');
+        expect(modulesAvailable.BaseWindowInstance).toBe("function");
+        expect(modulesAvailable.InstanceManager).toBe("function");
+        expect(modulesAvailable.WindowChrome).toBe("object");
+        expect(modulesAvailable.TerminalInstance).toBe("function");
+        expect(modulesAvailable.TextEditorInstance).toBe("function");
         expect(modulesAvailable.TerminalInstanceManager).toBe(true);
         expect(modulesAvailable.TextEditorInstanceManager).toBe(true);
     });
 
-    test('can create a terminal instance', async ({ page }) => {
-        await page.goto('/');
+    test("can create a terminal instance", async ({ page }) => {
+        await page.goto("/");
         await page.waitForTimeout(2000);
 
         const result = await page.evaluate(() => {
             try {
                 const manager = window.TerminalInstanceManager;
-                if (!manager) return { error: 'TerminalInstanceManager not found' };
+                if (!manager)
+                    return { error: "TerminalInstanceManager not found" };
 
-                const terminal = manager.createInstance({ title: 'Test Terminal' });
+                const terminal = manager.createInstance({
+                    title: "Test Terminal",
+                });
 
                 return {
                     success: terminal !== null,
                     instanceId: terminal?.instanceId,
                     type: terminal?.type,
-                    title: terminal?.title
+                    title: terminal?.title,
                 };
             } catch (error) {
                 return { error: error.message };
             }
         });
 
-        console.log('Terminal instance result:', result);
+        console.log("Terminal instance result:", result);
 
         expect(result.success).toBe(true);
-        expect(result.type).toBe('terminal');
-        expect(result.title).toBe('Test Terminal');
+        expect(result.type).toBe("terminal");
+        expect(result.title).toBe("Test Terminal");
     });
 
-    test('can create a text editor instance', async ({ page }) => {
-        await page.goto('/');
+    test("can create a text editor instance", async ({ page }) => {
+        await page.goto("/");
         await page.waitForTimeout(2000);
 
         const result = await page.evaluate(() => {
             try {
                 const manager = window.TextEditorInstanceManager;
-                if (!manager) return { error: 'TextEditorInstanceManager not found' };
+                if (!manager)
+                    return { error: "TextEditorInstanceManager not found" };
 
-                const editor = manager.createInstance({ title: 'Test Editor' });
+                const editor = manager.createInstance({ title: "Test Editor" });
 
                 return {
                     success: editor !== null,
                     instanceId: editor?.instanceId,
                     type: editor?.type,
-                    title: editor?.title
+                    title: editor?.title,
                 };
             } catch (error) {
                 return { error: error.message };
             }
         });
 
-        console.log('TextEditor instance result:', result);
+        console.log("TextEditor instance result:", result);
 
         expect(result.success).toBe(true);
-        expect(result.type).toBe('text-editor');
-        expect(result.title).toBe('Test Editor');
+        expect(result.type).toBe("text-editor");
+        expect(result.title).toBe("Test Editor");
     });
 });

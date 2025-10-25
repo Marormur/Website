@@ -2,7 +2,7 @@ console.log('KeyboardShortcuts loaded');
 
 /**
  * KeyboardShortcuts - Global keyboard shortcut manager
- * 
+ *
  * Handles keyboard shortcuts for multi-instance window management:
  * - Cmd/Ctrl+N: New instance
  * - Cmd/Ctrl+W: Close instance
@@ -24,9 +24,9 @@ console.log('KeyboardShortcuts loaded');
 
             // Shortcuts that should work even when typing in input fields
             this.inputFieldAllowlist = [
-                'ctrl+w',      // Close tab
-                'ctrl+tab',    // Next tab
-                'ctrl+shift+tab' // Previous tab
+                'ctrl+w', // Close tab
+                'ctrl+tab', // Next tab
+                'ctrl+shift+tab', // Previous tab
             ];
         }
 
@@ -66,7 +66,7 @@ console.log('KeyboardShortcuts loaded');
                 key,
                 ctrl: config.ctrl || false,
                 shift: config.shift || false,
-                alt: config.alt || false
+                alt: config.alt || false,
             });
 
             this.shortcuts.set(shortcutId, {
@@ -76,10 +76,12 @@ console.log('KeyboardShortcuts loaded');
                 alt: config.alt || false,
                 handler: config.handler,
                 description: config.description || '',
-                context: config.context || 'global'
+                context: config.context || 'global',
             });
 
-            console.log(`Registered shortcut: ${shortcutId} - ${config.description}`);
+            console.log(
+                `Registered shortcut: ${shortcutId} - ${config.description}`,
+            );
         }
 
         /**
@@ -92,7 +94,7 @@ console.log('KeyboardShortcuts loaded');
                 key,
                 ctrl: config.ctrl || false,
                 shift: config.shift || false,
-                alt: config.alt || false
+                alt: config.alt || false,
             });
 
             this.shortcuts.delete(shortcutId);
@@ -104,13 +106,16 @@ console.log('KeyboardShortcuts loaded');
          */
         handleKeyDown(e) {
             // Don't handle shortcuts when typing in input fields (unless explicitly allowed)
-            if (this.isInputElement(e.target) && !e.target.dataset.allowShortcuts) {
+            if (
+                this.isInputElement(e.target) &&
+                !e.target.dataset.allowShortcuts
+            ) {
                 // Check if this shortcut is in the allowlist for input fields
                 const shortcutId = this.getShortcutId({
                     key: this.normalizeKey(e.key),
                     ctrl: e.metaKey || e.ctrlKey,
                     shift: e.shiftKey,
-                    alt: e.altKey
+                    alt: e.altKey,
                 });
 
                 if (!this.inputFieldAllowlist.includes(shortcutId)) {
@@ -122,7 +127,7 @@ console.log('KeyboardShortcuts loaded');
                 key: this.normalizeKey(e.key),
                 ctrl: e.metaKey || e.ctrlKey,
                 shift: e.shiftKey,
-                alt: e.altKey
+                alt: e.altKey,
             });
 
             const shortcut = this.shortcuts.get(shortcutId);
@@ -133,7 +138,10 @@ console.log('KeyboardShortcuts loaded');
                 try {
                     shortcut.handler(e);
                 } catch (error) {
-                    console.error(`Error executing shortcut ${shortcutId}:`, error);
+                    console.error(
+                        `Error executing shortcut ${shortcutId}:`,
+                        error,
+                    );
                 }
             }
         }
@@ -160,12 +168,12 @@ console.log('KeyboardShortcuts loaded');
         normalizeKey(key) {
             // Normalize key names
             const keyMap = {
-                'Control': 'ctrl',
-                'Meta': 'cmd',
-                'Command': 'cmd',
-                'Option': 'alt',
-                'Alt': 'alt',
-                'Shift': 'shift'
+                Control: 'ctrl',
+                Meta: 'cmd',
+                Command: 'cmd',
+                Option: 'alt',
+                Alt: 'alt',
+                Shift: 'shift',
             };
 
             return keyMap[key] || key.toLowerCase();
@@ -209,7 +217,7 @@ console.log('KeyboardShortcuts loaded');
         getAllShortcuts() {
             return Array.from(this.shortcuts.entries()).map(([id, config]) => ({
                 id,
-                ...config
+                ...config,
             }));
         }
 
@@ -229,7 +237,8 @@ console.log('KeyboardShortcuts loaded');
             // Capitalize key
             let keyDisplay = config.key;
             if (config.key === 'tab') keyDisplay = 'Tab';
-            else if (config.key.length === 1) keyDisplay = config.key.toUpperCase();
+            else if (config.key.length === 1)
+                keyDisplay = config.key.toUpperCase();
 
             parts.push(keyDisplay);
 
@@ -251,5 +260,4 @@ console.log('KeyboardShortcuts loaded');
     } else {
         keyboardShortcuts.init();
     }
-
 })();

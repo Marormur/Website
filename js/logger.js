@@ -3,18 +3,18 @@ console.log('Logger loaded');
 /**
  * Logging System
  * Zentrales Logging mit Levels und Kategorien
- * 
+ *
  * @example
  * // Development: Alle Logs
  * Logger.setLevel('TRACE');
- * 
+ *
  * // Production: Nur Errors
  * Logger.setLevel('ERROR');
- * 
+ *
  * // Kategorie-Filter
  * Logger.enableCategory('WindowManager');
  * Logger.disableCategory('Terminal');
- * 
+ *
  * // Logging verwenden
  * Logger.info('WindowManager', 'Window opened');
  * Logger.error('API', 'Failed to fetch data', error);
@@ -28,7 +28,7 @@ console.log('Logger loaded');
         WARN: 1,
         INFO: 2,
         DEBUG: 3,
-        TRACE: 4
+        TRACE: 4,
     };
 
     const LOG_COLORS = {
@@ -36,22 +36,26 @@ console.log('Logger loaded');
         WARN: '#ff9800',
         INFO: '#2196f3',
         DEBUG: '#9c27b0',
-        TRACE: '#607d8b'
+        TRACE: '#607d8b',
     };
 
     class Logger {
         constructor() {
             // Production: nur ERROR und WARN
             // Development: alles
-            this.level = this.isDevelopment() ? LOG_LEVELS.TRACE : LOG_LEVELS.WARN;
+            this.level = this.isDevelopment()
+                ? LOG_LEVELS.TRACE
+                : LOG_LEVELS.WARN;
             this.enabledCategories = new Set(['*']); // * = alle
             this.format = 'compact'; // 'compact' | 'detailed'
         }
 
         isDevelopment() {
-            return location.hostname === 'localhost' || 
-                   location.hostname === '127.0.0.1' ||
-                   location.port !== '';
+            return (
+                location.hostname === 'localhost' ||
+                location.hostname === '127.0.0.1' ||
+                location.port !== ''
+            );
         }
 
         setLevel(level) {
@@ -76,8 +80,10 @@ console.log('Logger loaded');
         }
 
         isCategoryEnabled(category) {
-            return this.enabledCategories.has('*') || 
-                   this.enabledCategories.has(category);
+            return (
+                this.enabledCategories.has('*') ||
+                this.enabledCategories.has(category)
+            );
         }
 
         _log(level, category, message, ...args) {
@@ -86,20 +92,20 @@ console.log('Logger loaded');
 
             const color = LOG_COLORS[level];
             const timestamp = new Date().toLocaleTimeString();
-            
+
             if (this.format === 'detailed') {
                 console.log(
                     `%c[${timestamp}] [${level}] [${category}]`,
                     `color: ${color}; font-weight: bold`,
                     message,
-                    ...args
+                    ...args,
                 );
             } else {
                 console.log(
                     `%c[${category}]`,
                     `color: ${color}`,
                     message,
-                    ...args
+                    ...args,
                 );
             }
         }

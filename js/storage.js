@@ -22,13 +22,15 @@
 
     // ===== Module Dependencies =====
     const APP_CONSTANTS = window.APP_CONSTANTS || {};
-    const FINDER_STATE_KEY = APP_CONSTANTS.FINDER_STATE_STORAGE_KEY || 'finderState';
+    const FINDER_STATE_KEY =
+        APP_CONSTANTS.FINDER_STATE_STORAGE_KEY || 'finderState';
     const OPEN_MODALS_KEY = 'openModals';
     const MODAL_POSITIONS_KEY = 'modalPositions';
 
     // Expected to be available from app.js
     const getModalIds = () => window.APP_CONSTANTS?.MODAL_IDS || [];
-    const getTransientModalIds = () => window.APP_CONSTANTS?.TRANSIENT_MODAL_IDS || new Set();
+    const getTransientModalIds = () =>
+        window.APP_CONSTANTS?.TRANSIENT_MODAL_IDS || new Set();
 
     // ===== Finder State Persistence =====
 
@@ -38,11 +40,12 @@
             if (!raw) return null;
             const parsed = JSON.parse(raw);
             if (!parsed || typeof parsed !== 'object') return null;
-            const repo = typeof parsed.repo === 'string' ? parsed.repo.trim() : '';
+            const repo =
+                typeof parsed.repo === 'string' ? parsed.repo.trim() : '';
             if (!repo) return null;
             return {
                 repo,
-                path: typeof parsed.path === 'string' ? parsed.path : ''
+                path: typeof parsed.path === 'string' ? parsed.path : '',
             };
         } catch (err) {
             console.warn('Finder state konnte nicht gelesen werden:', err);
@@ -57,7 +60,7 @@
         }
         const payload = {
             repo: state.repo,
-            path: typeof state.path === 'string' ? state.path : ''
+            path: typeof state.path === 'string' ? state.path : '',
         };
         try {
             localStorage.setItem(FINDER_STATE_KEY, JSON.stringify(payload));
@@ -80,13 +83,13 @@
         const modalIds = getModalIds();
         const transientModalIds = getTransientModalIds();
 
-        const openModals = modalIds.filter(id => {
+        const openModals = modalIds.filter((id) => {
             if (transientModalIds.has(id)) return false;
             const el = document.getElementById(id);
             if (!el) return false;
             // Als "offen" zählen sowohl sichtbare als auch minimierte Fenster
             const minimized = el.dataset && el.dataset.minimized === 'true';
-            return !el.classList.contains("hidden") || minimized;
+            return !el.classList.contains('hidden') || minimized;
         });
 
         try {
@@ -101,20 +104,22 @@
         let openModals = [];
 
         try {
-            openModals = JSON.parse(localStorage.getItem(OPEN_MODALS_KEY) || "[]");
+            openModals = JSON.parse(
+                localStorage.getItem(OPEN_MODALS_KEY) || '[]',
+            );
         } catch (err) {
             console.warn('Open modals konnte nicht gelesen werden:', err);
             return;
         }
 
-        openModals.forEach(id => {
+        openModals.forEach((id) => {
             if (transientModalIds.has(id)) return;
             const dialogInstance = window.dialogs && window.dialogs[id];
             if (dialogInstance && typeof dialogInstance.open === 'function') {
                 dialogInstance.open();
             } else {
                 const el = document.getElementById(id);
-                if (el) el.classList.remove("hidden");
+                if (el) el.classList.remove('hidden');
             }
         });
 
@@ -139,25 +144,31 @@
         const transientModalIds = getTransientModalIds();
         const positions = {};
 
-        modalIds.forEach(id => {
+        modalIds.forEach((id) => {
             if (transientModalIds.has(id)) return;
             const el = document.getElementById(id);
             const windowEl = getDialogWindowElement(el);
             if (el && windowEl) {
                 positions[id] = {
-                    left: windowEl.style.left || "",
-                    top: windowEl.style.top || "",
-                    width: windowEl.style.width || "",
-                    height: windowEl.style.height || "",
-                    position: windowEl.style.position || ""
+                    left: windowEl.style.left || '',
+                    top: windowEl.style.top || '',
+                    width: windowEl.style.width || '',
+                    height: windowEl.style.height || '',
+                    position: windowEl.style.position || '',
                 };
             }
         });
 
         try {
-            localStorage.setItem(MODAL_POSITIONS_KEY, JSON.stringify(positions));
+            localStorage.setItem(
+                MODAL_POSITIONS_KEY,
+                JSON.stringify(positions),
+            );
         } catch (err) {
-            console.warn('Window positions konnte nicht gespeichert werden:', err);
+            console.warn(
+                'Window positions konnte nicht gespeichert werden:',
+                err,
+            );
         }
     }
 
@@ -166,13 +177,15 @@
         let positions = {};
 
         try {
-            positions = JSON.parse(localStorage.getItem(MODAL_POSITIONS_KEY) || "{}");
+            positions = JSON.parse(
+                localStorage.getItem(MODAL_POSITIONS_KEY) || '{}',
+            );
         } catch (err) {
             console.warn('Window positions konnte nicht gelesen werden:', err);
             return;
         }
 
-        Object.keys(positions).forEach(id => {
+        Object.keys(positions).forEach((id) => {
             if (transientModalIds.has(id)) return;
             const el = document.getElementById(id);
             const windowEl = getDialogWindowElement(el);
@@ -201,7 +214,7 @@
     function resetWindowLayout() {
         const modalIds = getModalIds();
 
-        modalIds.forEach(id => {
+        modalIds.forEach((id) => {
             const modal = document.getElementById(id);
             const windowEl = getDialogWindowElement(modal);
             if (modal) {
@@ -240,8 +253,11 @@
 
         // Enforce menu bar boundary for all dialogs
         if (window.dialogs) {
-            Object.values(window.dialogs).forEach(dialog => {
-                if (dialog && typeof dialog.enforceMenuBarBoundary === 'function') {
+            Object.values(window.dialogs).forEach((dialog) => {
+                if (
+                    dialog &&
+                    typeof dialog.enforceMenuBarBoundary === 'function'
+                ) {
                     dialog.enforceMenuBarBoundary();
                 }
             });
@@ -274,7 +290,6 @@
         getDialogWindowElement,
 
         // Layout reset
-        resetWindowLayout
+        resetWindowLayout,
     };
-
 })();
