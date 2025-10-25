@@ -6,10 +6,10 @@
 
 ## 🎯 Executive Summary
 
-### Aktueller Fortschritt: **~88-90% abgeschlossen**
+### Aktueller Fortschritt: **~90-92% abgeschlossen**
 
 - ✅ **Phase 0-3**: Komplett (Setup, Types, Core Modules)
-- 🟡 **Phase 4**: 11 von 12 Tasks (~92%)
+- ✅ **Phase 4**: Abgeschlossen (12/12)
 - ⏳ **Phase 5**: Noch nicht begonnen (Testing & Quality)
 - ⏳ **Phase 6**: Noch nicht begonnen (Deployment & Docs)
 
@@ -41,7 +41,7 @@
 
 ## 📊 Phase 4 Status: Legacy Refactoring
 
-### ✅ Abgeschlossene Extraktionen (11/12):
+### ✅ Abgeschlossene Extraktionen (12/12):
 
 | Modul              | Zeilen | Status                                          |
 | ------------------ | ------ | ----------------------------------------------- |
@@ -60,15 +60,16 @@
 
 - Start: **1308 Zeilen**
 - Nach Extraktionen: **1024 Zeilen** (-284 Zeilen, -21.7%)
-- Aktuell: **50 Zeilen** (Minimaler Legacy-Wrapper; ~-96% vs. Start)
+- Aktuell: **32 Zeilen** (Minimaler Legacy-Wrapper; ~-97.6% vs. Start)
 
-### 🔴 Verbleibende Tasks (1/12):
+### 🎉 Abschlussdetails Phase 4
 
-#### 1. **Event-Listener auf ActionBus migrieren**
-
-- Verbleibende manuelle `addEventListener` Calls finden
-- Auf deklaratives `data-action` System umstellen
-- ⏱️ Aufwand: 1-2 Stunden
+- ActionBus‑Migration abgeschlossen (declarative wiring):
+    - Launchpad: data-action="launchpadOpenWindow"
+    - Desktop: data-action-dblclick="openDesktopItem" (Touch/Pen Ein‑Tap lokal)
+    - System UI: data-action für Toggles/Aktionen/Devices/Network
+    - WindowChrome: Titelbar‑Controls mit data-action für Close/Minimize/Maximize (Callbacks beibehalten)
+    - Menü/Context‑Menu bleiben als spezialisierte imperative Systeme unverändert
 
 ---
 
@@ -79,6 +80,18 @@
 - Massive Legacy-Implementierung in `app.js` entfernt und zunächst durch schlanken delegierenden Stub ersetzt
 - Anschließend Cleanup umgesetzt: Fallback-Aufruf in `js/menu.js` entfernt und der Stub in `app.js` gelöscht
 - `app.js` jetzt reiner Minimal-Wrapper mit i18n/translate Guard (32 Zeilen)
+
+### Kleinigkeit: ActionBus‑Migration fortgeführt
+
+- Desktop: Doppelklick zum Öffnen läuft deklarativ über ActionBus (`data-action-dblclick="openDesktopItem"`), Touch/Pen Ein‑Tap bleibt lokal.
+
+---
+
+## 🧪 Phase 5 – Vorbereitung gestartet
+
+- App‑Ready‑Signal eingeführt: `window.__APP_READY = true` und `window.dispatchEvent(new CustomEvent('appReady'))` am Ende von `initApp()`
+    - Tests können statt `networkidle` gezielt auf `appReady` warten
+    - Ziel: Flakiness in Multi‑Instance‑E2E reduzieren
 
 ---
 

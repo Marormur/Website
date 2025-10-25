@@ -127,6 +127,12 @@ function initApp() {
     if (win.DockSystem && typeof win.DockSystem.initDockDragDrop === 'function') {
         win.DockSystem.initDockDragDrop();
     }
+
+    // Mark application ready for tests and app-ready probes
+    try {
+        win.__APP_READY = true;
+        win.dispatchEvent(new CustomEvent('appReady'));
+    } catch (_e) { /* noop */ }
 }
 // ============================================================================
 // IIFE Export Pattern - Expose initApp globally and auto-attach to DOMContentLoaded

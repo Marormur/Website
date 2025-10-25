@@ -6,6 +6,19 @@ All notable changes to this project will be documented in this file.
   - Adds data-action-dblclick="openDesktopItem" to desktop icon buttons
   - Keeps single-tap open for touch/pen locally; selection logic unchanged
 
+- refactor(system,actions): route System UI buttons via ActionBus
+  - Adds ActionBus handlers for system toggles/actions/devices/network
+  - Replaces manual click listeners with declarative data-action wiring
+
+- feat(action-bus,window-chrome): window control actions and wiring
+  - Adds ActionBus actions: window:close, window:minimize, window:maximize
+  - WindowChrome control buttons now include matching data-action attributes
+  - Keeps existing callbacks for non-breaking behavior
+
+- feat(app-init): app-ready signal for tests and probes
+  - Sets window.__APP_READY=true and dispatches 'appReady' CustomEvent at end of initApp()
+  - Enables tests to wait for readiness instead of relying on networkidle
+
 - chore: deprecate legacy loadGithubRepos in app.js
   - Removed init-time usage; menu reload now uses FinderSystem directly
   - Kept a guarded no-op function that delegates to FinderSystem and returns early
