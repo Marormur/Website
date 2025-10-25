@@ -26,7 +26,7 @@ console.log('SessionManager loaded');
             this.autoSaveInterval = config.autoSaveInterval || 30000; // 30 seconds
             this.autoSaveEnabled = config.autoSaveEnabled !== false;
             this.storageKey = config.storageKey || 'window-session';
-            
+
             this.instanceManagers = new Map();
             this.autoSaveTimer = null;
             this.lastSaveTime = null;
@@ -55,13 +55,13 @@ console.log('SessionManager loaded');
          */
         startAutoSave() {
             if (!this.autoSaveEnabled) return;
-            
+
             this.stopAutoSave(); // Clear any existing timer
-            
+
             this.autoSaveTimer = setInterval(() => {
                 this.saveAllSessions();
             }, this.autoSaveInterval);
-            
+
             console.log(`SessionManager: Auto-save started (interval: ${this.autoSaveInterval}ms)`);
         }
 
@@ -146,12 +146,12 @@ console.log('SessionManager loaded');
                     const manager = this.instanceManagers.get(type);
                     if (manager) {
                         manager.deserializeAll(typeData.instances);
-                        
+
                         // Restore active instance
                         if (typeData.activeInstanceId) {
                             manager.setActiveInstance(typeData.activeInstanceId);
                         }
-                        
+
                         totalRestored += typeData.instances.length;
                     } else {
                         console.warn(`SessionManager: No manager registered for type ${type}`);
@@ -195,7 +195,7 @@ console.log('SessionManager loaded');
         importSession(jsonString) {
             try {
                 const sessionData = JSON.parse(jsonString);
-                
+
                 if (!sessionData.sessions) {
                     throw new Error('Invalid session format');
                 }
@@ -208,7 +208,7 @@ console.log('SessionManager loaded');
                     const manager = this.instanceManagers.get(type);
                     if (manager) {
                         manager.deserializeAll(typeData.instances);
-                        
+
                         if (typeData.activeInstanceId) {
                             manager.setActiveInstance(typeData.activeInstanceId);
                         }
@@ -241,7 +241,7 @@ console.log('SessionManager loaded');
         saveAsTemplate(name, description = '') {
             const templateKey = `${this.storageKey}-template-${name}`;
             const sessionJson = this.exportSession();
-            
+
             const templateData = {
                 name,
                 description,
@@ -264,7 +264,7 @@ console.log('SessionManager loaded');
          */
         loadTemplate(name) {
             const templateKey = `${this.storageKey}-template-${name}`;
-            
+
             try {
                 const data = localStorage.getItem(templateKey);
                 if (!data) {
@@ -335,11 +335,11 @@ console.log('SessionManager loaded');
         getStorageInfo() {
             const sessionData = localStorage.getItem(this.storageKey);
             const sessionSize = sessionData ? sessionData.length : 0;
-            
+
             let templateCount = 0;
             let templateSize = 0;
             const prefix = `${this.storageKey}-template-`;
-            
+
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key.startsWith(prefix)) {

@@ -25,14 +25,14 @@ console.log('WindowTabs loaded');
         constructor(config) {
             this.containerId = config.containerId;
             this.instanceManager = config.instanceManager;
-            this.onTabSwitch = config.onTabSwitch || (() => {});
-            this.onTabClose = config.onTabClose || (() => {});
-            this.onNewTab = config.onNewTab || (() => {});
-            
+            this.onTabSwitch = config.onTabSwitch || (() => { });
+            this.onTabClose = config.onTabClose || (() => { });
+            this.onNewTab = config.onNewTab || (() => { });
+
             this.tabBarElement = null;
             this.tabsContainer = null;
             this.newTabButton = null;
-            
+
             this.init();
         }
 
@@ -54,21 +54,21 @@ console.log('WindowTabs loaded');
             // Tabs container (scrollable)
             this.tabsContainer = document.createElement('div');
             this.tabsContainer.className = 'window-tabs-container flex-1 flex items-center overflow-x-auto';
-            
+
             // New tab button
             this.newTabButton = document.createElement('button');
             this.newTabButton.className = 'new-tab-button px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors';
             this.newTabButton.innerHTML = '<span class="text-lg">+</span>';
             this.newTabButton.setAttribute('aria-label', 'New tab');
             this.newTabButton.title = 'New tab (⌘N)';
-            
+
             this.newTabButton.addEventListener('click', () => {
                 this.onNewTab();
             });
 
             this.tabBarElement.appendChild(this.tabsContainer);
             this.tabBarElement.appendChild(this.newTabButton);
-            
+
             container.appendChild(this.tabBarElement);
         }
 
@@ -95,7 +95,7 @@ console.log('WindowTabs loaded');
             closeBtn.innerHTML = '×';
             closeBtn.setAttribute('aria-label', 'Close tab');
             closeBtn.title = 'Close tab (⌘W)';
-            
+
             closeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.closeTab(instance.instanceId);
@@ -184,7 +184,7 @@ console.log('WindowTabs loaded');
             if (activeTab) {
                 activeTab.classList.add('bg-white', 'dark:bg-gray-900', 'border-b-2', 'border-blue-500');
                 activeTab.setAttribute('aria-selected', 'true');
-                
+
                 // Scroll into view if needed
                 activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             }
@@ -209,13 +209,13 @@ console.log('WindowTabs loaded');
             if (instance) {
                 // Call the close callback first
                 this.onTabClose(instanceId);
-                
+
                 // Remove the tab from UI
                 this.removeTab(instanceId);
-                
+
                 // Destroy the instance
                 this.instanceManager.destroyInstance(instanceId);
-                
+
                 // Switch to the last remaining tab if any
                 const remainingInstances = this.instanceManager.getAllInstances();
                 if (remainingInstances.length > 0) {
@@ -261,13 +261,13 @@ console.log('WindowTabs loaded');
         switchToNextTab() {
             const tabs = Array.from(this.getAllTabs());
             const activeTab = this.tabsContainer.querySelector('.window-tab[aria-selected="true"]');
-            
+
             if (!activeTab || tabs.length === 0) return;
-            
+
             const currentIndex = tabs.indexOf(activeTab);
             const nextIndex = (currentIndex + 1) % tabs.length;
             const nextTab = tabs[nextIndex];
-            
+
             if (nextTab) {
                 this.switchToTab(nextTab.dataset.instanceId);
             }
@@ -279,13 +279,13 @@ console.log('WindowTabs loaded');
         switchToPreviousTab() {
             const tabs = Array.from(this.getAllTabs());
             const activeTab = this.tabsContainer.querySelector('.window-tab[aria-selected="true"]');
-            
+
             if (!activeTab || tabs.length === 0) return;
-            
+
             const currentIndex = tabs.indexOf(activeTab);
             const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
             const prevTab = tabs[prevIndex];
-            
+
             if (prevTab) {
                 this.switchToTab(prevTab.dataset.instanceId);
             }

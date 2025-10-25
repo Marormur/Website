@@ -55,14 +55,14 @@ test.describe('Multi-Instance Window Tabs', () => {
         // Create multiple terminal instances
         const result = await page.evaluate(() => {
             if (!window.TerminalInstanceManager) return null;
-            
+
             const term1 = window.TerminalInstanceManager.createInstance({
                 title: 'Test Terminal 1'
             });
             const term2 = window.TerminalInstanceManager.createInstance({
                 title: 'Test Terminal 2'
             });
-            
+
             return {
                 count: window.TerminalInstanceManager.getInstanceCount(),
                 term1Id: term1?.instanceId,
@@ -84,7 +84,7 @@ test.describe('Multi-Instance Window Tabs', () => {
         });
 
         expect(shortcuts.length).toBeGreaterThan(0);
-        
+
         // Check for common shortcuts
         const shortcutIds = shortcuts.map(s => s.id);
         expect(shortcutIds).toContain('ctrl+n');
@@ -94,7 +94,7 @@ test.describe('Multi-Instance Window Tabs', () => {
     test('should have session manager configured', async ({ page }) => {
         const sessionInfo = await page.evaluate(() => {
             if (!window.SessionManager) return null;
-            
+
             return {
                 hasManager: typeof window.SessionManager !== 'undefined',
                 storageInfo: window.SessionManager.getStorageInfo()

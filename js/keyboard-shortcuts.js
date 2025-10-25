@@ -21,7 +21,7 @@ console.log('KeyboardShortcuts loaded');
             this.shortcuts = new Map();
             this.enabled = true;
             this.isInitialized = false;
-            
+
             // Shortcuts that should work even when typing in input fields
             this.inputFieldAllowlist = [
                 'ctrl+w',      // Close tab
@@ -112,7 +112,7 @@ console.log('KeyboardShortcuts loaded');
                     shift: e.shiftKey,
                     alt: e.altKey
                 });
-                
+
                 if (!this.inputFieldAllowlist.includes(shortcutId)) {
                     return;
                 }
@@ -129,7 +129,7 @@ console.log('KeyboardShortcuts loaded');
             if (shortcut) {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 try {
                     shortcut.handler(e);
                 } catch (error) {
@@ -178,7 +178,7 @@ console.log('KeyboardShortcuts loaded');
          */
         isInputElement(element) {
             if (!element) return false;
-            
+
             const tagName = element.tagName.toLowerCase();
             return (
                 tagName === 'input' ||
@@ -221,18 +221,18 @@ console.log('KeyboardShortcuts loaded');
         getShortcutDisplay(config) {
             const parts = [];
             const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-            
+
             if (config.ctrl) parts.push(isMac ? '⌘' : 'Ctrl');
             if (config.shift) parts.push(isMac ? '⇧' : 'Shift');
             if (config.alt) parts.push(isMac ? '⌥' : 'Alt');
-            
+
             // Capitalize key
             let keyDisplay = config.key;
             if (config.key === 'tab') keyDisplay = 'Tab';
             else if (config.key.length === 1) keyDisplay = config.key.toUpperCase();
-            
+
             parts.push(keyDisplay);
-            
+
             return parts.join(isMac ? '' : '+');
         }
     }
