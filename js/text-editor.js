@@ -856,15 +856,17 @@
             const end = this.editor.selectionEnd;
             const selectedText = this.editor.value.substring(start, end);
             
-            const url = prompt('Enter URL:', 'https://');
-            if (!url) return;
-            
-            const linkText = selectedText || 'link text';
-            const markdown = `[${linkText}](${url})`;
-            
-            this.editor.setRangeText(markdown, start, end, 'end');
-            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
-            this.focusEditor();
+            const urlLabel = this.resolveTranslation('textEditor.insertLink.enterUrl').text || 'Enter URL:';
+            this.showInputModal(urlLabel, 'https://example.com', 'https://').then(url => {
+                if (!url) return;
+                
+                const linkText = selectedText || 'link text';
+                const markdown = `[${linkText}](${url})`;
+                
+                this.editor.setRangeText(markdown, start, end, 'end');
+                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+                this.focusEditor();
+            });
         },
 
         /**
@@ -1055,6 +1057,86 @@
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 300);
             }, duration);
+        },
+
+        /**
+         * Show input modal dialog
+         * @param {string} title - Modal title
+         * @param {string} placeholder - Input placeholder
+         * @param {string} defaultValue - Default input value
+         * @returns {Promise<string|null>} Resolves with input value or null if cancelled
+         */
+        showInputModal(title, placeholder = '', defaultValue = '') {
+            return new Promise((resolve) => {
+                const modal = document.createElement('div');
+                modal.className = 'text-editor-modal-overlay';
+                
+                modal.innerHTML = `
+                    <div class="text-editor-modal">
+                        <div class="text-editor-modal-header">
+                            <h3>${title}</h3>
+                        </div>
+                        <div class="text-editor-modal-body">
+                            <input type="text" class="text-editor-modal-input" placeholder="${placeholder}" value="${defaultValue}">
+                        </div>
+                        <div class="text-editor-modal-footer">
+                            <button class="text-editor-modal-btn text-editor-modal-btn-cancel">Cancel</button>
+                            <button class="text-editor-modal-btn text-editor-modal-btn-confirm">OK</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                const input = modal.querySelector('.text-editor-modal-input');
+                const cancelBtn = modal.querySelector('.text-editor-modal-btn-cancel');
+                const confirmBtn = modal.querySelector('.text-editor-modal-btn-confirm');
+                
+                // Focus input and select text
+                setTimeout(() => {
+                    input.focus();
+                    input.select();
+                }, 50);
+                
+                const cleanup = () => {
+                    modal.classList.add('closing');
+                    setTimeout(() => modal.remove(), 200);
+                };
+                
+                const handleConfirm = () => {
+                    const value = input.value.trim();
+                    cleanup();
+                    resolve(value || null);
+                };
+                
+                const handleCancel = () => {
+                    cleanup();
+                    resolve(null);
+                };
+                
+                // Event listeners
+                confirmBtn.addEventListener('click', handleConfirm);
+                cancelBtn.addEventListener('click', handleCancel);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleConfirm();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        handleCancel();
+                    }
+                });
+                
+                // Click outside to close
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        handleCancel();
+                    }
+                });
+                
+                // Trigger animation
+                setTimeout(() => modal.classList.add('show'), 10);
+            });
         },
 
         /**
