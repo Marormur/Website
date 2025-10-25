@@ -34,6 +34,9 @@
     <script src="./js/base-window-instance.js"></script>
     <script src="./js/instance-manager.js"></script>
     <script src="./js/window-chrome.js"></script>
+    <script src="./js/window-tabs.js"></script>
+    <script src="./js/keyboard-shortcuts.js"></script>
+    <script src="./js/session-manager.js"></script>
     <script src="./js/multi-instance-demo.js"></script> <!-- Demo Script -->
 
     <!-- Inline module scripts -->
@@ -44,6 +47,7 @@
     <script src="./js/terminal.js"></script>
     <script src="./js/terminal-instance.js"></script>
     <script src="./js/launchpad.js"></script>
+    <script src="./js/multi-instance-integration.js"></script> <!-- Integration after instances -->
 
     <!-- Hauptanwendung -->
     <script src="app.js"></script>
@@ -594,6 +598,8 @@
                 <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select" data-i18n="modals.text.title">
                     Texteditor</h2>
             </div>
+            <!-- Tab container for multiple editor instances -->
+            <div id="text-editor-tabs-container"></div>
             <!-- Content -->
             <!-- Text editor rendered inline via TextEditorSystem module -->
             <div id="text-editor-container" class="flex-1 overflow-hidden"></div>
@@ -687,6 +693,8 @@
                 <h2 class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
                     data-i18n="modals.terminal.title">Terminal</h2>
             </div>
+            <!-- Tab container for multiple terminal instances -->
+            <div id="terminal-tabs-container"></div>
             <div id="terminal-container" class="flex-1 overflow-hidden"></div>
         </div>
     </div>

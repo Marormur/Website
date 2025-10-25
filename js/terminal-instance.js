@@ -615,11 +615,21 @@ console.log('TerminalInstance loaded');
             instanceClass: TerminalInstance,
             maxInstances: 0, // Unlimited
             createContainer: function (instanceId) {
-                // This would create the modal/dialog container
-                // For now, return a simple div
+                // Create container and append to terminal modal container
+                const terminalModalContainer = document.getElementById('terminal-container');
+                if (!terminalModalContainer) {
+                    console.error('Terminal container not found');
+                    return null;
+                }
+                
                 const container = document.createElement('div');
                 container.id = `${instanceId}-container`;
-                container.className = 'terminal-instance-container';
+                container.className = 'terminal-instance-container h-full';
+                
+                // Initially hidden (will be shown by integration layer)
+                container.classList.add('hidden');
+                
+                terminalModalContainer.appendChild(container);
                 return container;
             }
         });

@@ -300,6 +300,87 @@ window.demoEvents = function () {
 };
 
 // =============================================================================
+// NEW TAB SYSTEM DEMOS
+// =============================================================================
+
+logDemo('🗂️ Tab System Demo', 'Test the new tab management features');
+
+window.demoTabs = function() {
+    console.group('Tab System Demo...');
+    
+    // Create multiple terminal instances
+    console.log('Creating 3 terminal instances...');
+    const term1 = window.TerminalInstanceManager.createInstance({ title: 'Terminal 1' });
+    const term2 = window.TerminalInstanceManager.createInstance({ title: 'Terminal 2' });
+    const term3 = window.TerminalInstanceManager.createInstance({ title: 'Terminal 3' });
+    
+    console.log('✓ Terminals created');
+    console.log('✓ Check the tab bar in the terminal modal for tabs');
+    console.log('✓ Try keyboard shortcuts:');
+    console.log('  - Cmd/Ctrl+N: New terminal');
+    console.log('  - Cmd/Ctrl+W: Close terminal');
+    console.log('  - Cmd/Ctrl+Tab: Next tab');
+    console.log('  - Cmd/Ctrl+1-3: Jump to specific tab');
+    
+    console.groupEnd();
+};
+
+window.demoSessionSave = function() {
+    console.group('Session Save Demo...');
+    
+    // Create some instances
+    console.log('Creating instances...');
+    window.TerminalInstanceManager.createInstance({ title: 'Dev Terminal' });
+    window.TerminalInstanceManager.createInstance({ title: 'Test Terminal' });
+    window.TextEditorInstanceManager.createInstance({ title: 'notes.txt' });
+    
+    // Save session
+    console.log('Saving session...');
+    window.SessionManager.saveAllSessions();
+    
+    const info = window.SessionManager.getStorageInfo();
+    console.log('✓ Session saved:', info);
+    console.log('✓ Refresh the page to see auto-restore in action!');
+    
+    console.groupEnd();
+};
+
+window.demoSessionExport = function() {
+    console.group('Session Export Demo...');
+    
+    // Create some instances if none exist
+    if (window.TerminalInstanceManager.getInstanceCount() === 0) {
+        window.TerminalInstanceManager.createInstance({ title: 'Terminal 1' });
+        window.TerminalInstanceManager.createInstance({ title: 'Terminal 2' });
+    }
+    
+    // Export session
+    const sessionJson = window.SessionManager.exportSession();
+    console.log('Exported session:', sessionJson);
+    console.log('✓ You can save this JSON and import it later');
+    
+    console.groupEnd();
+    return sessionJson;
+};
+
+window.demoKeyboardShortcuts = function() {
+    console.group('Keyboard Shortcuts Demo...');
+    
+    const shortcuts = window.KeyboardShortcuts.getAllShortcuts();
+    console.log(`Registered shortcuts: ${shortcuts.length}`);
+    
+    console.log('\n📋 Available shortcuts:');
+    shortcuts.forEach(s => {
+        if (s.description) {
+            const display = window.KeyboardShortcuts.getShortcutDisplay(s);
+            console.log(`  ${display}: ${s.description}`);
+        }
+    });
+    
+    console.groupEnd();
+};
+
+// =============================================================================
 // QUICK START
 // =============================================================================
 
@@ -315,6 +396,12 @@ console.log('%c  demoWindowChrome()', 'color: #00aaff; font-family: monospace');
 console.log('%c  demoMaxInstances()', 'color: #00aaff; font-family: monospace');
 console.log('%c  demoActiveInstance()', 'color: #00aaff; font-family: monospace');
 console.log('%c  demoEvents()', 'color: #00aaff; font-family: monospace');
+
+console.log('\n%c🆕 New Tab System Demos:', 'color: #00ff00; font-weight: bold; font-size: 14px');
+console.log('%c  demoTabs()', 'color: #00aaff; font-family: monospace');
+console.log('%c  demoSessionSave()', 'color: #00aaff; font-family: monospace');
+console.log('%c  demoSessionExport()', 'color: #00aaff; font-family: monospace');
+console.log('%c  demoKeyboardShortcuts()', 'color: #00aaff; font-family: monospace');
 
 console.log('\n%c💡 Tipp:', 'color: #ffaa00; font-weight: bold');
 console.log('%cAlle Demo-Funktionen sind als window.demo* verfügbar', 'color: #888');
