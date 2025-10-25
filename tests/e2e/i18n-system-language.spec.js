@@ -20,12 +20,13 @@ test.describe('i18n: system language detection', () => {
 
         test('uses German when browser locale is de-DE', async ({ page, baseURL }) => {
             await gotoHome(page, baseURL);
+            // Wait for page to load
+            await page.waitForLoadState('load');
 
             // Open Apple menu and verify the label of the settings entry is German
             await openAppleMenu(page);
-            await expect(
-                page.getByRole('menuitem', { name: 'Systemeinstellungen' })
-            ).toBeVisible();
+            const menuItem = page.getByRole('menuitem', { name: 'Systemeinstellungen' });
+            await expect(menuItem).toBeVisible({ timeout: 10000 });
         });
     });
 

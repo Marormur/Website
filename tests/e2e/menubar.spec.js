@@ -30,16 +30,25 @@ async function getProgramLabel(page) {
 }
 
 test.describe('Menubar switches with active window (de-DE)', () => {
+    test.use({ locale: 'de-DE' });
+    
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + '/index.html');
+        // Wait for page to load
+        await page.waitForLoadState('load');
+        // Wait for dock to be ready
+        await page.waitForSelector('#dock .dock-tray .dock-item', { timeout: 10000 });
     });
 
     test('Finder menus appear when Finder is active', async ({ page }) => {
         // Open Finder from dock
         await clickDockIcon(page, 'Finder Icon');
+        await page.waitForTimeout(1000); // Wait for window to open and menubar to update
 
         // Program label becomes "Finder"
-        await expect(page.getByRole('button', { name: 'Finder' })).toBeVisible();
+        const finderButton = page.getByRole('button', { name: 'Finder' });
+        await finderButton.waitFor({ state: 'visible', timeout: 10000 });
+        await expect(finderButton).toBeVisible({ timeout: 10000 });
 
         // Dock indicator for Finder should be visible
         await expect(page.locator('#finder-indicator')).toBeVisible();
@@ -58,7 +67,10 @@ test.describe('Menubar switches with active window (de-DE)', () => {
     test('Switch to Texteditor and back to Finder updates menubar', async ({ page }) => {
         // Open Texteditor
         await clickDockIcon(page, 'Texteditor Icon');
-        await expect(page.getByRole('button', { name: 'Texteditor' })).toBeVisible();
+        await page.waitForTimeout(1000); // Wait for window to open and menubar to update
+        const textEditorButton = page.getByRole('button', { name: 'Texteditor' });
+        await textEditorButton.waitFor({ state: 'visible', timeout: 10000 });
+        await expect(textEditorButton).toBeVisible({ timeout: 10000 });
 
         // Texteditor menubar sections
         await expectMenuButton(page, 'Ablage');

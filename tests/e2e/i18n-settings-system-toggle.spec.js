@@ -9,15 +9,21 @@ async function gotoHome(page, baseURL) {
 
 async function openAppleMenu(page) {
     await page.locator('#apple-menu-trigger').click();
+    await page.waitForTimeout(100); // Give dropdown time to appear
+    await page.waitForSelector('#apple-menu-dropdown', { state: 'visible', timeout: 5000 });
 }
 
 async function openSettings(page) {
     await openAppleMenu(page);
     // Use role by name to be robust against attribute structure
     const label = 'System settings';
-    await page.getByRole('menuitem', { name: label }).click();
+    const menuItem = page.getByRole('menuitem', { name: label });
+    await menuItem.waitFor({ state: 'visible', timeout: 10000 });
+    await menuItem.click();
     // Settings modal should be visible
-    await expect(page.locator('#settings-modal')).toBeVisible();
+    await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 10000 });
+    // Wait for settings sidebar buttons to be rendered
+    await page.waitForSelector('[data-settings-page]', { state: 'visible', timeout: 10000 });
 }
 
 function languageHeadingLocator(page) {
@@ -42,7 +48,9 @@ test('Language settings: switch to German, back to System (en-US)', async ({ pag
     await openSettings(page);
 
     // Navigate to the "Language" section
-    await page.getByRole('button', { name: /Language|Sprache/ }).click();
+    const languageButton = page.getByRole('button', { name: /Language|Sprache/ });
+    await languageButton.waitFor({ state: 'visible', timeout: 10000 });
+    await languageButton.click();
 
     const heading = languageHeadingLocator(page);
 

@@ -3,8 +3,9 @@ const { test, expect } = require('@playwright/test');
 
 test('visual check: homepage in Firefox vs Chrome', async ({ page, browserName }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    
+    // Wait for page to be ready - using 'load' instead of 'networkidle' due to continuous GitHub API calls
+    await page.waitForLoadState('load');
+
     // Wait for critical elements
     await page.waitForSelector('.menubar', { state: 'attached' });
     await page.waitForSelector('#dock', { state: 'attached' });

@@ -11,17 +11,28 @@ async function gotoHome(page, baseURL) {
 async function openAppleMenu(page) {
     const trigger = page.locator('#apple-menu-trigger');
     await trigger.click();
+    await page.waitForTimeout(100); // Give dropdown time to appear
+    // Wait for dropdown to appear
+    await page.waitForSelector('#apple-menu-dropdown', { state: 'visible', timeout: 5000 });
 }
 
 async function closeAppleMenuIfOpen(page) {
-    // Click somewhere else to close the dropdown if it's open
-    await page.locator('body').click();
+    // Click on the desktop area to close the dropdown if it's open
+    // Use a specific visible element instead of body
+    const desktop = page.locator('#desktop');
+    if (await desktop.isVisible()) {
+        await desktop.click({ position: { x: 10, y: 10 }, force: true });
+    }
 }
 
 async function openSettingsViaAppleMenu(page, label) {
     await openAppleMenu(page);
-    await page.getByRole('menuitem', { name: label }).click();
-    await expect(page.locator('#settings-modal')).toBeVisible();
+    const menuItem = page.getByRole('menuitem', { name: label });
+    await menuItem.waitFor({ state: 'visible', timeout: 10000 });
+    await menuItem.click();
+    await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 10000 });
+    // Wait for settings sidebar buttons to be rendered
+    await page.waitForSelector('[data-settings-page]', { state: 'visible', timeout: 10000 });
 }
 
 function languageRadio(page, value) {
@@ -32,7 +43,9 @@ function languageRadio(page, value) {
 async function expectAppleMenuSettingsLabel(page, expectedLabel) {
     await closeAppleMenuIfOpen(page);
     await openAppleMenu(page);
-    await expect(page.getByRole('menuitem', { name: expectedLabel })).toBeVisible();
+    const menuItem = page.getByRole('menuitem', { name: expectedLabel });
+    await menuItem.waitFor({ state: 'visible', timeout: 10000 });
+    await expect(menuItem).toBeVisible();
 }
 
 // Scenario: With system=en-US, Apple menu should show English. After switching to German,
@@ -48,7 +61,9 @@ test('Apple menu labels update when toggling language', async ({ page, baseURL }
     await openSettingsViaAppleMenu(page, 'System settings');
 
     // Go to Language section (button text depends on current language)
-    await page.getByRole('button', { name: /Language|Sprache/ }).click();
+    const languageButton = page.getByRole('button', { name: /Language|Sprache/ });
+    await languageButton.waitFor({ state: 'visible', timeout: 10000 });
+    await languageButton.click();
 
     // Switch to German
     await languageRadio(page, 'de').check();
@@ -58,7 +73,9 @@ test('Apple menu labels update when toggling language', async ({ page, baseURL }
 
     // Switch back to "System" (which is en-US here)
     await openSettingsViaAppleMenu(page, 'Systemeinstellungen');
-    await page.getByRole('button', { name: /Sprache|Language/ }).click();
+    const sprachButton = page.getByRole('button', { name: /Sprache|Language/ });
+    await sprachButton.waitFor({ state: 'visible', timeout: 10000 });
+    await sprachButton.click();
     await languageRadio(page, 'system').check();
 
     // Expect English again
