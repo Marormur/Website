@@ -26,6 +26,10 @@ All notable changes to this project will be documented in this file.
   - **Results**: TypeScript 0 errors, E2E 92/93 passing, ESLint 30 warnings (from 54)
 
 ### Fixed
+- fix(tabs): remove ghost tabs by refreshing UI after instance destruction
+  - After closing a tab, immediately re-render the tab bar to reflect the updated instance list
+  - Prevents lingering (ghost) tabs and subsequent "instance not found" warnings in Finder and Terminal
+  - Verified via Playwright E2E: Finder tab close, last-tab close hides modal, active tab reassignment
 - fix(tabs): ensure content visibility after closing the active tab
   - After tab close, select a deterministic next active tab, trigger integration onTabSwitch, and explicitly show/hide instances as a safety net
   - Eliminates intermittent cases where the new active instance remained hidden (e.g., Finder 3 → Finder 1)
