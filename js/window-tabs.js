@@ -146,8 +146,17 @@
                     }, (id) => {
                         this.opts.onTabClose?.(id);
                         this.manager.destroyInstance(id);
-                        if (this.manager.getAllInstances().length === 0) {
+                        // After destroying, get the new active instance and trigger onTabSwitch
+                        // to ensure its content is visible (fixes ghost tab / hidden content issue)
+                        const remaining = this.manager.getAllInstances();
+                        if (remaining.length === 0) {
                             this.opts.onAllTabsClosed?.();
+                        }
+                        else {
+                            const newActive = this.manager.getActiveInstance();
+                            if (newActive) {
+                                this.opts.onTabSwitch?.(newActive.instanceId);
+                            }
                         }
                     }, () => {
                         if (this.opts.onNewTab) {
@@ -182,8 +191,17 @@
         closeTab(instanceId) {
             this.opts.onTabClose?.(instanceId);
             this.manager.destroyInstance(instanceId);
-            if (this.manager.getAllInstances().length === 0) {
+            // After destroying, get the new active instance and trigger onTabSwitch
+            // to ensure its content is visible (fixes ghost tab / hidden content issue)
+            const remaining = this.manager.getAllInstances();
+            if (remaining.length === 0) {
                 this.opts.onAllTabsClosed?.();
+            }
+            else {
+                const newActive = this.manager.getActiveInstance();
+                if (newActive) {
+                    this.opts.onTabSwitch?.(newActive.instanceId);
+                }
             }
             this.controller?.refresh();
         }
