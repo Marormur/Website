@@ -16,6 +16,7 @@ async function closeAllFinderTabs(page) {
     if (count === 0) break;
     const closeBtn = tabs.nth(count - 1).locator('.wt-tab-close');
     await closeBtn.click();
+<<<<<<< HEAD
     // Wait until either the modal hides or the tabs count decreases
     await page.waitForFunction(prev => {
       try {
@@ -24,6 +25,9 @@ async function closeAllFinderTabs(page) {
         return modalHidden || tabsNow < prev;
       } catch { return false; }
     }, count, { timeout: 20000 });
+=======
+    await page.waitForTimeout(300);
+>>>>>>> ec55494 (fix(finder): show content after close-all reopen; fix(tabs): refresh + onTabSwitch after close; chore(instance): remove DOM container on destroy; feat(window-manager): openHandler hook; test(e2e): add reopen-after-close-all)
     attempts++;
     const modalHidden = await page.locator('#finder-modal').evaluate(el => el.classList.contains('hidden'));
     if (modalHidden) break;
@@ -44,9 +48,15 @@ test.describe('Finder reopen after closing all tabs', () => {
   test('Reopen renders fresh content and tab', async ({ page }) => {
     // Open Finder and create a second tab
     await openFinder(page);
+<<<<<<< HEAD
   const addButton = page.locator('#finder-tabs-container .wt-add');
   await addButton.click();
   await expect(page.locator('#finder-tabs-container .wt-tab')).toHaveCount(2, { timeout: 5000 });
+=======
+    const addButton = page.locator('#finder-tabs-container .wt-add');
+    await addButton.click();
+    await page.waitForTimeout(300);
+>>>>>>> ec55494 (fix(finder): show content after close-all reopen; fix(tabs): refresh + onTabSwitch after close; chore(instance): remove DOM container on destroy; feat(window-manager): openHandler hook; test(e2e): add reopen-after-close-all)
 
     // Now close all tabs (modal should hide)
     await closeAllFinderTabs(page);

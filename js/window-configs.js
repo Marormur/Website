@@ -34,16 +34,24 @@ console.log('Window Configurations loaded');
                                 // If available, refresh the tab UI
                                 const integ = window.MultiInstanceIntegration.getIntegration?.('finder');
                                 integ?.tabManager?.addTab?.(active);
+<<<<<<< HEAD
                                 // Force tab UI refresh to ensure tab is rendered
                                 if (integ?.tabManager?.controller?.refresh) {
                                     integ.tabManager.controller.refresh();
                                 }
+=======
+>>>>>>> ec55494 (fix(finder): show content after close-all reopen; fix(tabs): refresh + onTabSwitch after close; chore(instance): remove DOM container on destroy; feat(window-manager): openHandler hook; test(e2e): add reopen-after-close-all)
                             }
                         } catch (e) {
                             console.warn('Finder init post-create sync failed:', e);
                         }
                     }
+<<<<<<< HEAD
                 },
+=======
+                }
+                ,
+>>>>>>> ec55494 (fix(finder): show content after close-all reopen; fix(tabs): refresh + onTabSwitch after close; chore(instance): remove DOM container on destroy; feat(window-manager): openHandler hook; test(e2e): add reopen-after-close-all)
                 openHandler: function () {
                     // On every open: ensure at least one Finder instance is available and visible
                     if (window.FinderInstanceManager && !window.FinderInstanceManager.hasInstances()) {
@@ -56,10 +64,13 @@ console.log('Window Configurations loaded');
                                 if (integ && integ.tabManager && typeof integ.tabManager.addTab === 'function') {
                                     integ.tabManager.addTab(inst || { instanceId: activeId });
                                 }
+<<<<<<< HEAD
                                 // Force tab UI refresh to ensure tab is rendered
                                 if (integ?.tabManager?.controller?.refresh) {
                                     integ.tabManager.controller.refresh();
                                 }
+=======
+>>>>>>> ec55494 (fix(finder): show content after close-all reopen; fix(tabs): refresh + onTabSwitch after close; chore(instance): remove DOM container on destroy; feat(window-manager): openHandler hook; test(e2e): add reopen-after-close-all)
                             }
                         } catch (e) {
                             console.warn('Finder open post-create sync failed:', e);

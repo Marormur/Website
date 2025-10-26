@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 /**
  * Dialog Utilities Module
  * Provides window/dialog z-index management and focus control functions.

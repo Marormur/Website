@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 console.log('TextEditorInstance (TS) loaded');
 /**
  * TextEditorInstance - Multi-Instance capable text editor
