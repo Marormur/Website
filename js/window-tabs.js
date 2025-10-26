@@ -229,6 +229,9 @@
                                 this.opts.onTabSwitch?.(newActive.instanceId);
                             }
                         }
+                        // Ensure tab UI is refreshed after destroying an instance
+                        // so DOM and manager state remain in sync and no ghost tabs remain
+                        refreshWithHooks();
                     }, () => {
                         if (this.opts.onNewTab) {
                             this.opts.onNewTab();
