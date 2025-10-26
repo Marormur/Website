@@ -149,6 +149,8 @@
                         if (this.manager.getAllInstances().length === 0) {
                             this.opts.onAllTabsClosed?.();
                         }
+                        // Refresh tab UI after destroying instance
+                        refreshWithHooks();
                     }, () => {
                         if (this.opts.onNewTab) {
                             this.opts.onNewTab();
