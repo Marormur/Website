@@ -61,6 +61,11 @@
             }
         }
         open() {
+            // Defensive check: ensure modal element exists
+            if (!this.modal) {
+                console.error('Cannot open dialog: modal element is undefined');
+                return;
+            }
             hideMenuDropdowns();
             this.modal.classList.remove('hidden');
             // Öffnen hebt Minimiert-Status auf

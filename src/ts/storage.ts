@@ -113,15 +113,42 @@
     }
 
     openModals.forEach((id) => {
+      // Skip transient modals
       if (transientModalIds.has(id)) return;
+
+      // Validate modal exists in DOM
+      const el = document.getElementById(id);
+      if (!el) {
+        console.warn(`Skipping restore of modal "${id}": element not found in DOM`);
+        return;
+      }
+
+      // Validate modal is registered in WindowManager (if available)
+      const WindowManager = w['WindowManager'] as { getConfig?: (id: string) => unknown } | undefined;
+      if (WindowManager && typeof WindowManager.getConfig === 'function') {
+        const config = WindowManager.getConfig(id);
+        if (!config) {
+          console.warn(`Skipping restore of modal "${id}": not registered in WindowManager`);
+          return;
+        }
+      }
+
+      // Attempt to restore via dialog instance
       const dialogs = w['dialogs'] as Record<string, unknown> | undefined;
-      const dialogInstance = dialogs && (dialogs[id] as Record<string, unknown>);
+      const dialogInstance = dialogs && (dialogs[id] as Record<string, unknown> | null);
       const openFn = dialogInstance && (dialogInstance['open'] as (() => void) | undefined);
+      
       if (typeof openFn === 'function') {
-        openFn();
+        try {
+          openFn();
+        } catch (err) {
+          console.warn(`Error restoring modal "${id}":`, err);
+          // Fallback: try to show element directly
+          el.classList.remove('hidden');
+        }
       } else {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('hidden');
+        // Fallback: no dialog instance, just show the element
+        el.classList.remove('hidden');
       }
     });
 
