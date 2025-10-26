@@ -563,27 +563,41 @@
     function getMultiInstanceMenuItems(context) {
         const items = [];
 
-        // Check if multi-instance integration is available
-        if (!window.MultiInstanceIntegration) {
-            return items;
-        }
-
         // Get the appropriate manager based on modal ID
         let manager = null;
         let type = null;
+        let typeLabel = null;
+        let newInstanceKey = null;
 
+        // Finder support
         if (
+            (context.modalId === 'finder-modal' || context.modalId === 'projects-modal') &&
+            window.FinderInstanceManager
+        ) {
+            manager = window.FinderInstanceManager;
+            type = 'finder';
+            typeLabel = 'Finder';
+            newInstanceKey = 'menu.window.newFinder';
+        }
+        // Terminal support
+        else if (
             context.modalId === 'terminal-modal' &&
             window.TerminalInstanceManager
         ) {
             manager = window.TerminalInstanceManager;
             type = 'terminal';
-        } else if (
+            typeLabel = 'Terminal';
+            newInstanceKey = 'menu.window.newTerminal';
+        }
+        // TextEditor support
+        else if (
             context.modalId === 'text-modal' &&
             window.TextEditorInstanceManager
         ) {
             manager = window.TextEditorInstanceManager;
             type = 'text-editor';
+            typeLabel = 'Editor';
+            newInstanceKey = 'menu.window.newEditor';
         }
 
         if (!manager) {
@@ -593,13 +607,13 @@
         // New Instance item
         items.push({
             id: 'window-new-instance',
-            label: () => `New ${type === 'terminal' ? 'Terminal' : 'Editor'}`,
+            label: () => translate(newInstanceKey),
             shortcut: '⌘N',
             icon: 'new',
             action: () => {
                 const count = manager.getInstanceCount();
                 manager.createInstance({
-                    title: `${type === 'terminal' ? 'Terminal' : 'Editor'} ${count + 1}`,
+                    title: `${typeLabel} ${count + 1}`,
                 });
             },
         });
@@ -628,14 +642,14 @@
                 { type: 'separator' },
                 {
                     id: 'window-close-all',
-                    label: () => 'Close All',
+                    label: () => translate('menu.window.closeAll'),
                     icon: 'close',
                     action: () => {
-                        if (
-                            confirm(
-                                `Close all ${instances.length} ${type} instances?`,
-                            )
-                        ) {
+                        const confirmMsg = translate('menu.window.closeAllConfirm', {
+                            count: instances.length,
+                            type: typeLabel
+                        });
+                        if (confirm(confirmMsg)) {
                             manager.destroyAllInstances();
                         }
                     },
@@ -922,6 +936,72 @@
             return result;
         }
         return fallback || key;
+    }
+
+    /**
+     * Re-render the current menu (used when instances change)
+     */
+    function refreshCurrentMenu() {
+        renderApplicationMenu(currentMenuModalId);
+    }
+
+    /**
+     * Setup instance manager listeners to refresh menu when instances change
+     */
+    function setupInstanceManagerListeners() {
+        const managers = [
+            window.FinderInstanceManager,
+            window.TerminalInstanceManager,
+            window.TextEditorInstanceManager
+        ];
+
+        managers.forEach(manager => {
+            if (!manager || !manager.getAllInstances) return;
+
+            // Listen for instance creation/destruction by monitoring the instances
+            // We'll use a MutationObserver pattern - check periodically
+            const lastCount = manager.getInstanceCount();
+
+            // Hook into the createInstance and destroyInstance methods
+            const originalCreate = manager.createInstance;
+            const originalDestroy = manager.destroyInstance;
+            const originalDestroyAll = manager.destroyAllInstances;
+
+            if (originalCreate) {
+                manager.createInstance = function(...args) {
+                    const result = originalCreate.apply(this, args);
+                    if (result) {
+                        // Delay refresh slightly to allow UI to update
+                        setTimeout(refreshCurrentMenu, 50);
+                    }
+                    return result;
+                };
+            }
+
+            if (originalDestroy) {
+                manager.destroyInstance = function(...args) {
+                    const result = originalDestroy.apply(this, args);
+                    setTimeout(refreshCurrentMenu, 50);
+                    return result;
+                };
+            }
+
+            if (originalDestroyAll) {
+                manager.destroyAllInstances = function(...args) {
+                    const result = originalDestroyAll.apply(this, args);
+                    setTimeout(refreshCurrentMenu, 50);
+                    return result;
+                };
+            }
+        });
+    }
+
+    // Setup listeners when the page loads
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupInstanceManagerListeners);
+    } else {
+        // DOM already loaded, setup immediately (with delay to ensure managers exist)
+        setTimeout(setupInstanceManagerListeners, 100);
     }
 
     // ============================================================================
