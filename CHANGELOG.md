@@ -1,35 +1,46 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## Unreleased
 
-### Added
-- **feat(tabs): Drag-and-drop tab reordering** (2025-10-26)
-  - Implemented drag-and-drop reordering for Finder tabs (and all multi-instance windows)
-  - Added `reorderInstances()` method to InstanceManager for managing tab order
-  - Tabs now display visual feedback (blue left border) during drag operations
-  - Tab order is preserved in the instance manager and persists across sessions
-  - Active tab remains active after reordering
-  - E2E tests added to verify reordering functionality and active tab persistence
-  - **Fixes**: [#15](https://github.com/Marormur/Website/issues/15) - Finder tabs drag-and-drop reordering
+- fix(storage): prevent TypeError during modal restore on app init
+  - Validate DOM element and WindowManager registration before calling Dialog.open()
+  - Add fallback to show element directly when dialog instance is missing or throws
+  - Add E2E tests to cover invalid modal IDs and transient modal handling
 
-### Changed
-- **refactor(ts): migrate window-tabs to TypeScript (strict mode)** (2025-10-26)
-  - Complete migration of tab system from JS to TypeScript with strict type checking
-  - Source of truth is now `src/ts/window-tabs.ts` (no direct edits to generated `js/window-tabs.js`)
-  - Added comprehensive type definitions in `types/window-tabs.d.ts`
-  - Integrated WindowTabs and WindowTabManager into central type definitions (`types/index.d.ts`)
-  - **Fixed**: Content visibility after tab close - explicitly triggers `onTabSwitch` for newly active instance
-  - **Fixed**: Ghost tab prevention - UI refresh and content visibility stay in sync after `destroyInstance`
-  - Both close handlers (constructor line 229-235 and closeTab method line 268-284) now ensure new active instance content is visible
-  - All keyboard shortcuts (Ctrl/Cmd+W, Ctrl/Cmd+N, Ctrl/Cmd+Tab) continue to work with integration
-  - Maintains full backward compatibility with MultiInstanceIntegration system
+  ### Added
+  - **feat(tabs): Drag-and-drop tab reordering** (2025-10-26)
+    - Implemented drag-and-drop reordering for Finder tabs (and all multi-instance windows)
+    - Added `reorderInstances()` method to InstanceManager for managing tab order
+    - Tabs now display visual feedback (blue left border) during drag operations
+    - Tab order is preserved in the instance manager and persists across sessions
+    - Active tab remains active after reordering
+    - E2E tests added to verify reordering functionality and active tab persistence
+    - **Fixes**: [#15](https://github.com/Marormur/Website/issues/15) - Finder tabs drag-and-drop reordering
 
-- **test(stability): Phase 0.3 – Testing stabilization groundwork** (2025-10-26)
-  - Introduced `docs/TESTING.md` with strategy, env flags, and troubleshooting
-  - Added optional GitHub API mocks via `MOCK_GITHUB=1` integrated in `tests/e2e/utils.js`
-  - VS Code smoke test task now enables `MOCK_GITHUB` by default to avoid network flakiness
+  ### Changed
+  - **refactor(ts): migrate window-tabs to TypeScript (strict mode)** (2025-10-26)
+    - Complete migration of tab system from JS to TypeScript with strict type checking
+    - Source of truth is now `src/ts/window-tabs.ts` (no direct edits to generated `js/window-tabs.js`)
+    - Added comprehensive type definitions in `types/window-tabs.d.ts`
+    - Integrated WindowTabs and WindowTabManager into central type definitions (`types/index.d.ts`)
+    - **Fixed**: Content visibility after tab close - explicitly triggers `onTabSwitch` for newly active instance
+    - **Fixed**: Ghost tab prevention - UI refresh and content visibility stay in sync after `destroyInstance`
+    - Both close handlers now ensure new active instance content is visible
+    - All keyboard shortcuts (Ctrl/Cmd+W, Ctrl/Cmd+N, Ctrl/Cmd+Tab) continue to work with integration
+    - Maintains full backward compatibility with MultiInstanceIntegration system
+
+  - **test(stability): Phase 0.3 – Testing stabilization groundwork** (2025-10-26)
+    - Introduced `docs/TESTING.md` with strategy, env flags, and troubleshooting
+    - Added optional GitHub API mocks via `MOCK_GITHUB=1` integrated in `tests/e2e/utils.js`
+    - VS Code smoke test task now enables `MOCK_GITHUB` by default to avoid network flakiness
+- **fix(storage): prevent TypeError during modal restore on app init** (2025-10-27)
+  - Added validation in `restoreOpenModals()` to check DOM element existence before restore
+  - Added validation to ensure modal is registered in WindowManager before restore
+  - Added defensive null check in `Dialog.open()` to prevent crash if modal element is undefined
+  - Invalid localStorage entries now skip with warning logs instead of crashing the app
+  - Fixes `TypeError: Cannot read properties of undefined (reading 'modal')` at dialog.js:65
+  - **Results**: Graceful handling of stale/invalid localStorage data, app remains functional
   - Enforced TypeScript type-coverage baseline via `npm run type:baseline` and validate pipeline
 
 - **feat(devex): Phase 0.2 Development Workflow improvements** (2025-01-26)
@@ -271,3 +282,4 @@ All notable changes to this project will be documented in this file.
 
 ### Security
 - Initial security audit completed
+>>>>>>> Stashed changes

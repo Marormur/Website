@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 (function () {
     'use strict';
     // (reserved) helper could be added later to skip shortcuts in inputs

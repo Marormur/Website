@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 (function () {
     'use strict';
     // Avoid redefining if legacy already provided these
@@ -15,13 +15,13 @@
         document
             .querySelectorAll('[data-menubar-trigger-button="true"]')
             .forEach((button) => {
-            button.setAttribute('aria-expanded', 'false');
-        });
+                button.setAttribute('aria-expanded', 'false');
+            });
         document
             .querySelectorAll('[data-system-menu-trigger]')
             .forEach((button) => {
-            button.setAttribute('aria-expanded', 'false');
-        });
+                button.setAttribute('aria-expanded', 'false');
+            });
     }
     function isAnyDropdownOpen() {
         return Boolean(document.querySelector('.menu-dropdown:not(.hidden)'));

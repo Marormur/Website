@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 /**
  * WindowManager - Central registry for windows/modals with z-index and program metadata (TypeScript).
  * Mirrors js/window-manager.js behavior while adding types and preserving global API.

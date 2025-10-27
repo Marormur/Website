@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 (function () {
     'use strict';
     // Resolve Program Info via WindowManager or fallback

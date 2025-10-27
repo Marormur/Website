@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 console.log('TerminalInstance (TS) loaded');
 /**
  * TerminalInstance - Multi-Instance capable terminal implementation

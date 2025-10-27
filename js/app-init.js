@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 /**
  * Application Initialization Module
  * Handles DOMContentLoaded setup and modal initialization.
