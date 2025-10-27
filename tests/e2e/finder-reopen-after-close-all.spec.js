@@ -44,9 +44,9 @@ test.describe('Finder reopen after closing all tabs', () => {
   test('Reopen renders fresh content and tab', async ({ page }) => {
     // Open Finder and create a second tab
     await openFinder(page);
-  const addButton = page.locator('#finder-tabs-container .wt-add');
-  await addButton.click();
-  await expect(page.locator('#finder-tabs-container .wt-tab')).toHaveCount(2, { timeout: 5000 });
+    const addButton = page.locator('#finder-tabs-container .wt-add');
+    await addButton.click();
+    await expect(page.locator('#finder-tabs-container .wt-tab')).toHaveCount(2, { timeout: 5000 });
 
     // Now close all tabs (modal should hide)
     await closeAllFinderTabs(page);

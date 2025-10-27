@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 console.log('WindowChrome loaded');
 (function () {
     'use strict';

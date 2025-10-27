@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 /**
  * ActionBus - Declarative event system to wire UI actions via data-action attributes.
  *

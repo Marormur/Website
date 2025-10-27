@@ -34,10 +34,13 @@ console.log('Window Configurations loaded');
                                 // If available, refresh the tab UI
                                 const integ = window.MultiInstanceIntegration.getIntegration?.('finder');
                                 integ?.tabManager?.addTab?.(active);
+ 
                                 // Force tab UI refresh to ensure tab is rendered
                                 if (integ?.tabManager?.controller?.refresh) {
                                     integ.tabManager.controller.refresh();
                                 }
+ 
+ 
                             }
                         } catch (e) {
                             console.warn('Finder init post-create sync failed:', e);
