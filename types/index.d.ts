@@ -22,6 +22,7 @@
 /// <reference path="./theme.d.ts" />
 /// <reference path="./window-chrome.d.ts" />
 /// <reference path="./window-manager.d.ts" />
+/// <reference path="./window-tabs.d.ts" />
 
 /**
  * Global Window Interface Extensions
@@ -95,7 +96,10 @@ declare interface Window {
   TextEditorInstanceManager?: InstanceManager<TextEditorInstance>;
 
   // ===== Phase 2 Features =====
-  /** WindowTabManager - Tab system for windows */
+  /** WindowTabs - Tab system API for creating tab bars */
+  WindowTabs: WindowTabsAPI;
+  
+  /** WindowTabManager - Legacy adapter for tab system with callbacks */
   WindowTabManager: typeof WindowTabManager;
 
   /** KeyboardShortcuts - Global keyboard shortcut system */
@@ -138,6 +142,4 @@ declare class TextEditorInstance extends BaseWindowInstance {
   // Defined in types/text-editor.d.ts
 }
 
-declare class WindowTabManager {
-  // Defined in src/ts/window-tabs.ts
-}
+// WindowTabManager and WindowTabs are now fully defined in types/window-tabs.d.ts

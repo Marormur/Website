@@ -2,6 +2,9 @@
 (function () {
     'use strict';
     // (reserved) helper could be added later to skip shortcuts in inputs
+    // Drag state for tab reordering
+    let draggedTab = null;
+    let draggedInstanceId = null;
     function createTabEl(instance, isActive) {
         const tab = document.createElement('button');
         tab.type = 'button';
@@ -14,6 +17,7 @@
                 : 'bg-gray-200/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800'
         ].join(' ');
         tab.dataset.instanceId = instance.instanceId;
+        tab.draggable = true;
         const title = document.createElement('span');
         title.className = 'wt-tab-title';
         title.textContent = instance.title || instance.instanceId;
@@ -35,6 +39,7 @@
         const activeId = active?.instanceId ?? null;
         instances.forEach((inst) => {
             const tab = createTabEl(inst, inst.instanceId === activeId);
+            // Click handlers
             tab.addEventListener('click', (e) => {
                 const target = e.target;
                 if (target.closest('.wt-tab-close')) {
@@ -48,6 +53,72 @@
             tab.addEventListener('auxclick', (e) => {
                 if (e.button === 1) {
                     onClose(inst.instanceId);
+                }
+            });
+            // Drag and drop handlers for tab reordering
+            tab.addEventListener('dragstart', (e) => {
+                draggedTab = tab;
+                draggedInstanceId = inst.instanceId;
+                if (e.dataTransfer) {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', inst.instanceId);
+                }
+                tab.style.opacity = '0.5';
+            });
+            tab.addEventListener('dragend', () => {
+                tab.style.opacity = '1';
+                draggedTab = null;
+                draggedInstanceId = null;
+                // Remove any drop indicators
+                const allTabs = bar.querySelectorAll('.wt-tab');
+                allTabs.forEach(t => {
+                    t.classList.remove('border-l-4', 'border-l-blue-500');
+                });
+            });
+            tab.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (e.dataTransfer) {
+                    e.dataTransfer.dropEffect = 'move';
+                }
+                // Don't show indicator on the dragged tab itself
+                if (tab === draggedTab) {
+                    return;
+                }
+                // Show visual indicator
+                const allTabs = bar.querySelectorAll('.wt-tab');
+                allTabs.forEach(t => {
+                    t.classList.remove('border-l-4', 'border-l-blue-500');
+                });
+                tab.classList.add('border-l-4', 'border-l-blue-500');
+            });
+            tab.addEventListener('dragleave', () => {
+                tab.classList.remove('border-l-4', 'border-l-blue-500');
+            });
+            tab.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Remove visual indicators
+                tab.classList.remove('border-l-4', 'border-l-blue-500');
+                if (!draggedInstanceId || draggedInstanceId === inst.instanceId) {
+                    return;
+                }
+                // Get current order
+                const currentOrder = manager.getAllInstanceIds();
+                const draggedIdx = currentOrder.indexOf(draggedInstanceId);
+                const targetIdx = currentOrder.indexOf(inst.instanceId);
+                if (draggedIdx === -1 || targetIdx === -1) {
+                    return;
+                }
+                // Create new order by moving dragged item before target
+                const newOrder = [...currentOrder];
+                newOrder.splice(draggedIdx, 1);
+                const newTargetIdx = newOrder.indexOf(inst.instanceId);
+                newOrder.splice(newTargetIdx, 0, draggedInstanceId);
+                // Update instance order if manager supports it
+                if (manager.reorderInstances) {
+                    manager.reorderInstances(newOrder);
+                    // Re-render tabs to reflect new order
+                    renderTabs(container, manager, options, onSelect, onClose, onNew);
                 }
             });
             bar.appendChild(tab);
@@ -146,8 +217,17 @@
                     }, (id) => {
                         this.opts.onTabClose?.(id);
                         this.manager.destroyInstance(id);
-                        if (this.manager.getAllInstances().length === 0) {
+                        // After destroying, get the new active instance and trigger onTabSwitch
+                        // to ensure its content is visible (fixes ghost tab / hidden content issue)
+                        const remaining = this.manager.getAllInstances();
+                        if (remaining.length === 0) {
                             this.opts.onAllTabsClosed?.();
+                        }
+                        else {
+                            const newActive = this.manager.getActiveInstance();
+                            if (newActive) {
+                                this.opts.onTabSwitch?.(newActive.instanceId);
+                            }
                         }
                     }, () => {
                         if (this.opts.onNewTab) {
@@ -182,8 +262,17 @@
         closeTab(instanceId) {
             this.opts.onTabClose?.(instanceId);
             this.manager.destroyInstance(instanceId);
-            if (this.manager.getAllInstances().length === 0) {
+            // After destroying, get the new active instance and trigger onTabSwitch
+            // to ensure its content is visible (fixes ghost tab / hidden content issue)
+            const remaining = this.manager.getAllInstances();
+            if (remaining.length === 0) {
                 this.opts.onAllTabsClosed?.();
+            }
+            else {
+                const newActive = this.manager.getActiveInstance();
+                if (newActive) {
+                    this.opts.onTabSwitch?.(newActive.instanceId);
+                }
             }
             this.controller?.refresh();
         }

@@ -281,4 +281,99 @@ test.describe('Finder Multi-Instance Tabs', () => {
         expect(activeInfo).not.toBeNull();
         expect(activeInfo.isSecondActive).toBe(true);
     });
+
+    test('Can reorder Finder tabs via drag and drop', async ({ page }) => {
+        // Open Finder
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
+
+        // Create two more tabs (total 3)
+        const addButton = page.locator('#finder-tabs-container .wt-add');
+        await addButton.click();
+        await page.waitForTimeout(300);
+        await addButton.click();
+        await page.waitForTimeout(300);
+
+        // Verify three tabs exist
+        const tabs = page.locator('#finder-tabs-container .wt-tab');
+        await expect(tabs).toHaveCount(3);
+
+        // Get initial order from instance manager
+        const initialOrder = await page.evaluate(() => {
+            if (!window.FinderInstanceManager) return null;
+            return window.FinderInstanceManager.getAllInstanceIds();
+        });
+
+        expect(initialOrder).not.toBeNull();
+        expect(initialOrder.length).toBe(3);
+
+        // Get tab elements for drag and drop
+        const firstTab = tabs.nth(0);
+        const thirdTab = tabs.nth(2);
+
+        // Drag the third tab to before the first tab
+        await thirdTab.dragTo(firstTab);
+        await page.waitForTimeout(300);
+
+        // Verify the order changed in the manager
+        const newOrder = await page.evaluate(() => {
+            if (!window.FinderInstanceManager) return null;
+            return window.FinderInstanceManager.getAllInstanceIds();
+        });
+
+        expect(newOrder).not.toBeNull();
+        expect(newOrder.length).toBe(3);
+        
+        // The third tab should now be first
+        expect(newOrder[0]).toBe(initialOrder[2]);
+        expect(newOrder[1]).toBe(initialOrder[0]);
+        expect(newOrder[2]).toBe(initialOrder[1]);
+
+        // Verify the visual order matches by checking tab titles in DOM order
+        const tabsAfterReorder = page.locator('#finder-tabs-container .wt-tab');
+        const firstTabId = await tabsAfterReorder.nth(0).getAttribute('data-instance-id');
+        expect(firstTabId).toBe(initialOrder[2]);
+    });
+
+    test('Active tab persists after reordering', async ({ page }) => {
+        // Open Finder
+        await page.getByRole('img', { name: 'Finder Icon' }).click();
+        await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
+
+        // Create two more tabs (total 3)
+        const addButton = page.locator('#finder-tabs-container .wt-add');
+        await addButton.click();
+        await page.waitForTimeout(300);
+        await addButton.click();
+        await page.waitForTimeout(300);
+
+        // Click the first tab to make it active
+        const tabs = page.locator('#finder-tabs-container .wt-tab');
+        await tabs.nth(0).click();
+        await page.waitForTimeout(200);
+
+        // Get the active instance ID
+        const activeBeforeReorder = await page.evaluate(() => {
+            if (!window.FinderInstanceManager) return null;
+            const active = window.FinderInstanceManager.getActiveInstance();
+            return active?.instanceId;
+        });
+
+        expect(activeBeforeReorder).not.toBeNull();
+
+        // Drag the second tab to before the first tab
+        const firstTab = tabs.nth(0);
+        const secondTab = tabs.nth(1);
+        await secondTab.dragTo(firstTab);
+        await page.waitForTimeout(300);
+
+        // Verify the active instance is still the same
+        const activeAfterReorder = await page.evaluate(() => {
+            if (!window.FinderInstanceManager) return null;
+            const active = window.FinderInstanceManager.getActiveInstance();
+            return active?.instanceId;
+        });
+
+        expect(activeAfterReorder).toBe(activeBeforeReorder);
+    });
 });

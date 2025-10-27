@@ -20,9 +20,43 @@ console.log('Window Configurations loaded');
                 initHandler: function () {
                     // Create first Finder instance when modal opens if none exist
                     if (window.FinderInstanceManager && !window.FinderInstanceManager.hasInstances()) {
-                        window.FinderInstanceManager.createInstance({
+                        const inst = window.FinderInstanceManager.createInstance({
                             title: 'Finder'
                         });
+                        // Ensure visibility and UI sync (tab bar + content) after fresh open
+                        try {
+                            const active = (inst && inst.instanceId)
+                                ? inst
+                                : window.FinderInstanceManager.getActiveInstance?.();
+                            if (active && window.MultiInstanceIntegration) {
+                                // Show the active instance content
+                                window.MultiInstanceIntegration.showInstance('finder', active.instanceId);
+                                // If available, refresh the tab UI
+                                const integ = window.MultiInstanceIntegration.getIntegration?.('finder');
+                                integ?.tabManager?.addTab?.(active);
+                            }
+                        } catch (e) {
+                            console.warn('Finder init post-create sync failed:', e);
+                        }
+                    }
+                }
+                ,
+                openHandler: function () {
+                    // On every open: ensure at least one Finder instance is available and visible
+                    if (window.FinderInstanceManager && !window.FinderInstanceManager.hasInstances()) {
+                        const inst = window.FinderInstanceManager.createInstance({ title: 'Finder' });
+                        try {
+                            const activeId = (inst && inst.instanceId) || window.FinderInstanceManager.getActiveInstance?.()?.instanceId;
+                            if (activeId && window.MultiInstanceIntegration) {
+                                window.MultiInstanceIntegration.showInstance('finder', activeId);
+                                const integ = window.MultiInstanceIntegration.getIntegration?.('finder');
+                                if (integ && integ.tabManager && typeof integ.tabManager.addTab === 'function') {
+                                    integ.tabManager.addTab(inst || { instanceId: activeId });
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Finder open post-create sync failed:', e);
+                        }
                     }
                 }
             }

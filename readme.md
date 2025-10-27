@@ -137,9 +137,9 @@ Oder: http://localhost:3000/?demo=true
 
 **Dokumentation**:
 
-- [Multi-Instance Quick Start](./docs/MULTI_INSTANCE_QUICKSTART.md)
-- [Migration Guide](./docs/MULTI_INSTANCE_MIGRATION.md)
-- [TODO & Next Steps](./TODO_MULTI_INSTANCE.md)
+- [Multi-Instance System Guide](./docs/guides/MULTI_INSTANCE.md)
+- [Architecture Overview](./docs/architecture/OVERVIEW.md)
+- [Refactoring Guide](./docs/architecture/REFACTORING.md)
 
 ### Beitragen
 
