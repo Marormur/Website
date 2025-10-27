@@ -191,6 +191,32 @@ console.log('InstanceManager loaded');
       });
     }
 
+    /**
+     * Reorder instances to match the provided array of instance IDs
+     * @param newOrder - Array of instance IDs in the desired order
+     */
+    reorderInstances(newOrder: string[]): void {
+      // Validate that all IDs exist
+      const validIds = newOrder.filter(id => this.instances.has(id));
+      if (validIds.length !== this.instances.size) {
+        console.warn('Invalid reorder: not all instance IDs provided or some IDs do not exist');
+        return;
+      }
+
+      // Create a new Map with the desired order
+      const newMap = new Map<string, BaseInstanceLike>();
+      validIds.forEach(id => {
+        const instance = this.instances.get(id);
+        if (instance) {
+          newMap.set(id, instance);
+        }
+      });
+
+      // Replace the instances map
+      this.instances = newMap;
+      console.log('Instances reordered:', validIds);
+    }
+
     private _defaultCreateContainer(instanceId: string): HTMLElement {
       const container = document.createElement('div');
       container.id = `${instanceId}-container`;

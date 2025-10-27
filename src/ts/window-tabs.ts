@@ -29,6 +29,7 @@
     createInstance(config?: Partial<InstanceConfig>): Instance | null;
     destroyInstance(id: string): void;
     getInstanceCount?: () => number;
+    reorderInstances?: (newOrder: string[]) => void;
   };
 
   interface WindowTabsOptions {
@@ -45,6 +46,10 @@
 
   // (reserved) helper could be added later to skip shortcuts in inputs
 
+  // Drag state for tab reordering
+  let draggedTab: HTMLElement | null = null;
+  let draggedInstanceId: string | null = null;
+
   function createTabEl(instance: Instance, isActive: boolean): HTMLElement {
     const tab = document.createElement('button');
     tab.type = 'button';
@@ -57,6 +62,7 @@
         : 'bg-gray-200/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800'
     ].join(' ');
     tab.dataset.instanceId = instance.instanceId;
+    tab.draggable = true;
 
     const title = document.createElement('span');
     title.className = 'wt-tab-title';
@@ -92,6 +98,8 @@
 
     instances.forEach((inst: Instance) => {
       const tab = createTabEl(inst, inst.instanceId === activeId);
+      
+      // Click handlers
       tab.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
         if (target.closest('.wt-tab-close')) {
@@ -100,12 +108,93 @@
           onSelect(inst.instanceId);
         }
       });
+      
       // Middle-click closes on supported devices
       tab.addEventListener('auxclick', (e: MouseEvent) => {
         if (e.button === 1) {
           onClose(inst.instanceId);
         }
       });
+
+      // Drag and drop handlers for tab reordering
+      tab.addEventListener('dragstart', (e: DragEvent) => {
+        draggedTab = tab;
+        draggedInstanceId = inst.instanceId;
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', inst.instanceId);
+        }
+        tab.style.opacity = '0.5';
+      });
+
+      tab.addEventListener('dragend', () => {
+        tab.style.opacity = '1';
+        draggedTab = null;
+        draggedInstanceId = null;
+        // Remove any drop indicators
+        const allTabs = bar.querySelectorAll('.wt-tab');
+        allTabs.forEach(t => {
+          (t as HTMLElement).classList.remove('border-l-4', 'border-l-blue-500');
+        });
+      });
+
+      tab.addEventListener('dragover', (e: DragEvent) => {
+        e.preventDefault();
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = 'move';
+        }
+        
+        // Don't show indicator on the dragged tab itself
+        if (tab === draggedTab) {
+          return;
+        }
+
+        // Show visual indicator
+        const allTabs = bar.querySelectorAll('.wt-tab');
+        allTabs.forEach(t => {
+          (t as HTMLElement).classList.remove('border-l-4', 'border-l-blue-500');
+        });
+        tab.classList.add('border-l-4', 'border-l-blue-500');
+      });
+
+      tab.addEventListener('dragleave', () => {
+        tab.classList.remove('border-l-4', 'border-l-blue-500');
+      });
+
+      tab.addEventListener('drop', (e: DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Remove visual indicators
+        tab.classList.remove('border-l-4', 'border-l-blue-500');
+
+        if (!draggedInstanceId || draggedInstanceId === inst.instanceId) {
+          return;
+        }
+
+        // Get current order
+        const currentOrder = manager.getAllInstanceIds();
+        const draggedIdx = currentOrder.indexOf(draggedInstanceId);
+        const targetIdx = currentOrder.indexOf(inst.instanceId);
+
+        if (draggedIdx === -1 || targetIdx === -1) {
+          return;
+        }
+
+        // Create new order by moving dragged item before target
+        const newOrder = [...currentOrder];
+        newOrder.splice(draggedIdx, 1);
+        const newTargetIdx = newOrder.indexOf(inst.instanceId);
+        newOrder.splice(newTargetIdx, 0, draggedInstanceId);
+
+        // Update instance order if manager supports it
+        if (manager.reorderInstances) {
+          manager.reorderInstances(newOrder);
+          // Re-render tabs to reflect new order
+          renderTabs(container, manager, options, onSelect, onClose, onNew);
+        }
+      });
+
       bar.appendChild(tab);
     });
 

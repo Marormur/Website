@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **feat(tabs): Drag-and-drop tab reordering** (2025-10-26)
+  - Implemented drag-and-drop reordering for Finder tabs (and all multi-instance windows)
+  - Added `reorderInstances()` method to InstanceManager for managing tab order
+  - Tabs now display visual feedback (blue left border) during drag operations
+  - Tab order is preserved in the instance manager and persists across sessions
+  - Active tab remains active after reordering
+  - E2E tests added to verify reordering functionality and active tab persistence
+  - **Fixes**: [#15](https://github.com/Marormur/Website/issues/15) - Finder tabs drag-and-drop reordering
+
 - **test(stability): Phase 0.3 – Testing stabilization groundwork** (2025-10-26)
   - Introduced `docs/TESTING.md` with strategy, env flags, and troubleshooting
   - Added optional GitHub API mocks via `MOCK_GITHUB=1` integrated in `tests/e2e/utils.js`
