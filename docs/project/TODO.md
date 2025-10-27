@@ -1,10 +1,36 @@
 # 📋 Multi-Instance System - TODO Liste
 
 > **Status**: Multi-Instance Basis-System ist implementiert und getestet ✅
-> **Letzte Aktualisierung**: 25. Oktober 2025
+> **Letzte Aktualisierung**: 27. Oktober 2025
 > **Branch**: develop
 
 ---
+
+## ✅ Validation - Ergebnisse (27. Oktober 2025)
+
+Kurze Zusammenfassung des zuletzt ausgeführten Validierungs-Laufs (`npm run validate`):
+
+- TypeScript: typecheck erfolgreich (tsc --noEmit)
+- Type Coverage: 81.79% (type-coverage --at-least 81)
+- TypeScript Build: erfolgreich; `scripts/fix-ts-exports.js` hat 2 Dateien korrigiert
+- ESLint: 56 Warnings, 0 Errors (24 fixable mit --fix)
+- Tailwind CSS Build: erfolgreich
+- Playwright E2E: 118 Tests ausgeführt — 110 bestanden, 8 fehlgeschlagen (Chromium)
+- Gesamtdauer der E2E-Suite: ~1.4 Minuten
+
+Fehlende / fehlerhafte E2E-Tests (Kurzüberblick):
+
+- `tests/e2e/finder-reopen-after-close-all.spec.js` — Reopen renders fresh content and tab (Tabs wurden nicht gefunden)
+- `tests/e2e/keyboard-shortcuts.spec.js` — Ctrl+Shift+Tab cycles to previous tab (activeIndex mismatch)
+- `tests/e2e/window-menu-multi-instance.spec.js` — mehrere Failures: Menü-Einträge nicht sichtbar, Switch/Close-All/Neuer Finder Aktionen verhalten sich inkonsistent
+
+Empfohlene nächste Schritte:
+
+1. Untersuchen: Finder-Tab/Window-Menu Timing- und State-Cleanup-Probleme (Screenshots/Videos in `test-results/` vorhanden).
+2. Kurzfristige Stabilisierung: gezielte waits oder defensive guards in Tab/Menu-Render-Logik einbauen.
+3. Re-run: Nach Fixes `npm run validate` erneut ausführen und Ergebnisse aktualisieren.
+
+Diese Ergebnisse wurden automatisch aus einem lokalen `npm run validate` Lauf am 27.10.2025 extrahiert.
 
 ## 🎯 Überblick
 
