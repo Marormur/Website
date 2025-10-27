@@ -304,7 +304,7 @@
             (id) => {
               this.opts.onTabClose?.(id);
               this.manager.destroyInstance(id);
-              
+
               // After destroying, get the new active instance and trigger onTabSwitch
               // to ensure its content is visible (fixes ghost tab / hidden content issue)
               const remaining = this.manager.getAllInstances();
@@ -352,7 +352,7 @@
     closeTab(instanceId: string): void {
       this.opts.onTabClose?.(instanceId);
       this.manager.destroyInstance(instanceId);
-      
+
       // After destroying, get the new active instance and trigger onTabSwitch
       // to ensure its content is visible (fixes ghost tab / hidden content issue)
       const remaining = this.manager.getAllInstances();
@@ -364,7 +364,7 @@
           this.opts.onTabSwitch?.(newActive.instanceId);
         }
       }
-      
+
       this.controller?.refresh();
     }
   }
