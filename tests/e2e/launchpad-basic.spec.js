@@ -96,10 +96,12 @@ test.describe('Launchpad Basic Functionality', () => {
         const launchpadModal = page.locator('#launchpad-modal');
         await expect(launchpadModal).toBeVisible();
 
-        // Click on the modal background (outside the inner content)
-        await launchpadModal.click({ position: { x: 10, y: 10 } });
+        // Click on the page background (outside the inner content).
+        // Since the launchpad wrapper has pointer-events:none to allow dock
+        // clicks through, we use page.mouse.click() to bypass actionability checks.
+        await page.mouse.click(50, 300);
 
-        // Verify launchpad is hidden
+        // Verify launchpad is hidden (closed by capture-phase handler)
         await expect(launchpadModal).toHaveClass(/hidden/);
     });
 
