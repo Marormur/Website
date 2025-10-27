@@ -19,6 +19,21 @@ body {
     --desktop-icon-size: 88px;
 }
 
+/* Launchpad modal: Allow clicks to pass through the wrapper and centering overlay
+   to underlying UI (dock/menubar) while keeping the inner card interactive.
+   The capture-phase document click handler in app-init.js will close the
+   launchpad when clicking outside the inner card. */
+#launchpad-modal {
+    z-index: 11000 !important;
+    pointer-events: none !important;
+}
+#launchpad-modal > .absolute {
+    pointer-events: none;
+}
+#launchpad-modal .launchpad-modal-inner {
+    pointer-events: auto;
+}
+
 .dark {
     --window-shadow: 0 26px 52px rgba(15, 23, 42, 0.45);
     --window-shadow-hover: 0 34px 68px rgba(15, 23, 42, 0.55);
@@ -1125,8 +1140,10 @@ html.dark #dock .dock-tooltip {
 
 /* Launchpad modal specific styling */
 #launchpad-modal {
-    /* Override the default .modal pointer-events: none to enable click-outside-to-close */
+    /* Wrapper needs to be interactive for E2E background-click close */
     pointer-events: auto;
+    /* Ensure launchpad overlays the menubar (z-index ~10000) */
+    z-index: 11000;
 }
 
 /* Position launchpad between menubar and dock */
