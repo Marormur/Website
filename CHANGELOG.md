@@ -14,6 +14,18 @@ All notable changes to this project will be documented in this file.
   - E2E tests added to verify reordering functionality and active tab persistence
   - **Fixes**: [#15](https://github.com/Marormur/Website/issues/15) - Finder tabs drag-and-drop reordering
 
+### Changed
+- **refactor(ts): migrate window-tabs to TypeScript (strict mode)** (2025-10-26)
+  - Complete migration of tab system from JS to TypeScript with strict type checking
+  - Source of truth is now `src/ts/window-tabs.ts` (no direct edits to generated `js/window-tabs.js`)
+  - Added comprehensive type definitions in `types/window-tabs.d.ts`
+  - Integrated WindowTabs and WindowTabManager into central type definitions (`types/index.d.ts`)
+  - **Fixed**: Content visibility after tab close - explicitly triggers `onTabSwitch` for newly active instance
+  - **Fixed**: Ghost tab prevention - UI refresh and content visibility stay in sync after `destroyInstance`
+  - Both close handlers (constructor line 229-235 and closeTab method line 268-284) now ensure new active instance content is visible
+  - All keyboard shortcuts (Ctrl/Cmd+W, Ctrl/Cmd+N, Ctrl/Cmd+Tab) continue to work with integration
+  - Maintains full backward compatibility with MultiInstanceIntegration system
+
 - **test(stability): Phase 0.3 – Testing stabilization groundwork** (2025-10-26)
   - Introduced `docs/TESTING.md` with strategy, env flags, and troubleshooting
   - Added optional GitHub API mocks via `MOCK_GITHUB=1` integrated in `tests/e2e/utils.js`
