@@ -58,6 +58,7 @@
         <script src="./js/text-editor-instance.js"></script>
         <script src="./js/terminal.js"></script>
         <script src="./js/terminal-instance.js"></script>
+        <script src="./js/photos-app.js"></script>
         <script src="./js/finder-instance.js"></script>
         <script src="./js/launchpad.js"></script>
         <script src="./js/multi-instance-integration.js"></script>
@@ -1027,12 +1028,12 @@
             </div>
         </div>
         <!-- Bildbetrachter Modal -->
-        <div id="image-modal" class="fixed inset-0 flex items-center justify-center hidden modal">
+        <div id="image-modal" class="fixed inset-0 flex items-center justify-center hidden modal relative">
             <div
-                class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col w-[min(80vw,960px)] h-[min(70vh,720px)]"
+                class="bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl autopointer flex flex-col w-[min(90vw,1100px)] h-[min(85vh,780px)]"
             >
                 <div
-                    class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header"
+                    class="flex items-center px-5 py-3 bg-gray-200/80 dark:bg-gray-800/80 backdrop-blur rounded-t-3xl draggable-header"
                 >
                     <div class="flex space-x-2">
                         <button
@@ -1049,31 +1050,251 @@
                         <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                     </div>
                     <h2
-                        class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
-                        data-i18n="modals.image.title"
+                        class="ml-4 font-semibold text-lg text-gray-800 dark:text-gray-100 tracking-wide no-select"
+                        data-i18n="photos.title"
                     >
-                        Bildbetrachter
+                        Fotos
                     </h2>
+                    <div class="ml-auto flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/70 dark:bg-gray-900/70 border border-gray-300 dark:border-gray-700">
+                            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                            <span data-i18n="photos.badge">PICSUM CLOUD</span>
+                        </span>
+                    </div>
                 </div>
-                <div class="flex-1 flex flex-col min-h-0">
-                    <div
-                        id="image-info"
-                        class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300 hidden"
-                    ></div>
-                    <div
-                        class="flex-1 flex items-center justify-center bg-gray-100 dark:bg-gray-900 relative overflow-auto"
-                    >
-                        <img
-                            id="image-viewer"
-                            class="max-w-full max-h-full object-contain drop-shadow-lg hidden"
-                            alt="Vorschau ausgewählter Datei"
-                        />
-                        <div
-                            id="image-placeholder"
-                            class="text-gray-500 dark:text-gray-400 text-center px-6"
-                            data-i18n="modals.image.placeholder"
+                <div class="flex flex-1 min-h-0">
+                    <aside class="hidden md:flex flex-col w-56 border-r border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/60">
+                        <div class="px-5 pt-6 pb-4">
+                            <p
+                                class="text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500"
+                                data-i18n="photos.sidebar.library"
+                            >
+                                Bibliothek
+                            </p>
+                            <nav class="mt-4 space-y-1" id="photos-sidebar">
+                                <button
+                                    type="button"
+                                    data-photos-filter="all"
+                                    class="photos-sidebar-button"
+                                >
+                                    <span data-i18n="photos.sidebar.items.all">Alle Fotos</span>
+                                    <span id="photos-count-all" class="photos-sidebar-count">–</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    data-photos-filter="favorites"
+                                    class="photos-sidebar-button"
+                                >
+                                    <span data-i18n="photos.sidebar.items.favorites">Favoriten</span>
+                                    <span id="photos-count-favorites" class="photos-sidebar-count">0</span>
+                                </button>
+                            </nav>
+                            <p
+                                class="text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mt-6"
+                                data-i18n="photos.sidebar.filters"
+                            >
+                                Filter
+                            </p>
+                            <nav class="mt-4 space-y-1">
+                                <button type="button" data-photos-filter="landscape" class="photos-sidebar-button">
+                                    <span data-i18n="photos.sidebar.items.landscape">Querformat</span>
+                                    <span id="photos-count-landscape" class="photos-sidebar-count">–</span>
+                                </button>
+                                <button type="button" data-photos-filter="portrait" class="photos-sidebar-button">
+                                    <span data-i18n="photos.sidebar.items.portrait">Hochformat</span>
+                                    <span id="photos-count-portrait" class="photos-sidebar-count">–</span>
+                                </button>
+                                <button type="button" data-photos-filter="square" class="photos-sidebar-button">
+                                    <span data-i18n="photos.sidebar.items.square">Quadratisch</span>
+                                    <span id="photos-count-square" class="photos-sidebar-count">–</span>
+                                </button>
+                            </nav>
+                        </div>
+                        <div class="px-5 pb-6 mt-auto">
+                            <button
+                                id="photos-refresh"
+                                type="button"
+                                class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 transition hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-400 dark:hover:text-blue-300"
+                            >
+                                <span aria-hidden="true">↻</span>
+                                <span data-i18n="photos.sidebar.refresh">Neu laden</span>
+                            </button>
+                            <p
+                                class="text-[11px] text-gray-400 dark:text-gray-500 mt-3 leading-relaxed"
+                                data-i18n="photos.sidebar.sourceNote"
+                            >
+                                Quelle: Lorem Picsum – zufällige kuratierte Fotokollektionen.
+                            </p>
+                        </div>
+                    </aside>
+                    <div class="flex-1 flex flex-col min-h-0 relative">
+                        <div class="px-5 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/60 backdrop-blur">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <div class="flex bg-gray-200 dark:bg-gray-800 rounded-full p-1 text-sm font-medium text-gray-600 dark:text-gray-300 shadow-inner" role="group">
+                                    <button type="button" data-photos-segment="moments" class="photos-segment-button" data-i18n="photos.segments.moments">Momente</button>
+                                    <button type="button" data-photos-segment="collections" class="photos-segment-button" data-i18n="photos.segments.collections">Sammlungen</button>
+                                    <button type="button" data-photos-segment="years" class="photos-segment-button" data-i18n="photos.segments.years">Jahre</button>
+                                </div>
+                                <div class="flex items-center gap-3 ml-auto w-full sm:w-auto">
+                                    <div class="relative flex-1 sm:flex-initial">
+                                        <input
+                                            id="photos-search"
+                                            type="search"
+                                            placeholder="Nach Autor suchen"
+                                            data-i18n-placeholder="photos.search.placeholder"
+                                            class="w-full sm:w-56 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        />
+                                        <button
+                                            id="photos-search-clear"
+                                            type="button"
+                                            class="absolute inset-y-0 right-2 flex items-center text-xl text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                                            title="Suche löschen"
+                                            data-i18n-title="photos.search.clear"
+                                            >
+                                                ×
+                                        </button>
+                                    </div>
+                                    <div class="hidden sm:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                        <span id="photo-count" class="font-medium" data-i18n="photos.status.countPlaceholder">– Fotos</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex-1 relative min-h-0">
+                            <div id="photos-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 hidden">
+                                <div class="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300">
+                                    <span class="h-10 w-10 border-4 border-gray-300 dark:border-gray-700 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin"></span>
+                                    <span class="text-sm font-medium" data-i18n="photos.status.loading">Lade Fotos…</span>
+                                </div>
+                            </div>
+                            <div id="photos-error" class="absolute inset-x-0 top-6 mx-auto max-w-lg bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-200 rounded-2xl shadow px-5 py-4 hidden">
+                                <p class="font-semibold mb-1" data-i18n="photos.errors.heading">Fehler beim Laden</p>
+                                <p class="text-sm" data-i18n="photos.errors.description">Bitte überprüfe deine Verbindung und versuche es erneut.</p>
+                                <button
+                                    id="photos-error-retry"
+                                    type="button"
+                                    class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-100 underline decoration-dotted"
+                                    data-i18n="photos.buttons.retry"
+                                >
+                                    Erneut versuchen
+                                </button>
+                            </div>
+                            <div id="photos-gallery" class="absolute inset-0 overflow-y-auto px-5 sm:px-6 py-6 space-y-8"></div>
+                            <div id="photos-empty" class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 hidden px-6">
+                                <div>
+                                    <p class="text-lg font-semibold" data-i18n="photos.empty.title">Keine Fotos gefunden</p>
+                                    <p class="text-sm mt-1" data-i18n="photos.empty.description">Passe Suche oder Filter an, um weitere Ergebnisse zu sehen.</p>
+                                </div>
+                            </div>
+                            <div
+                                id="image-placeholder"
+                                class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 hidden pointer-events-none"
+                                data-i18n="photos.placeholder"
+                            >
+                                Wähle ein Foto aus, um Details zu sehen.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div
+                id="photo-detail-overlay"
+                class="absolute inset-0 hidden items-center justify-center px-4 py-10 bg-black/50 backdrop-blur-sm z-30"
+            >
+                <div class="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full h-full flex flex-col">
+                    <div class="flex items-center gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+                        <div class="flex-1 min-w-0">
+                            <p
+                                id="photo-detail-title"
+                                class="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate"
+                                data-i18n="photos.detail.titleFallback"
+                            >
+                                Foto
+                            </p>
+                            <p id="photo-detail-meta" class="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate"></p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button
+                                id="photo-detail-favorite"
+                                type="button"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-medium transition hover:bg-gray-200 dark:hover:bg-gray-700"
+                            >
+                                <span aria-hidden="true">♡</span>
+                                <span data-i18n="photos.detail.favoriteAdd">Zu Favoriten</span>
+                            </button>
+                            <a
+                                id="photo-detail-download"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-600 text-white text-sm font-medium transition hover:bg-blue-500"
+                                href="#"
+                                target="_blank"
+                                rel="noreferrer"
+                                data-i18n="photos.detail.download"
+                            >
+                                Herunterladen
+                            </a>
+                            <button
+                                id="photo-detail-close"
+                                type="button"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-lg leading-none transition hover:bg-gray-200 dark:hover:bg-gray-700"
+                                title="Schließen"
+                                data-i18n-title="common.close"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex overflow-hidden">
+                        <button
+                            id="photo-detail-prev"
+                            type="button"
+                            class="hidden sm:flex items-center justify-center w-14 bg-transparent text-3xl text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition"
+                            title="Vorheriges Foto"
+                            data-i18n-title="photos.detail.prev"
                         >
-                            Öffne eine Bilddatei aus dem Sucher, um die Vorschau zu sehen.
+                            ‹
+                        </button>
+                        <div class="flex-1 relative bg-gray-50 dark:bg-gray-950 flex items-center justify-center overflow-hidden">
+                            <img
+                                id="image-viewer"
+                                class="max-w-full max-h-full object-contain"
+                                alt="Ausgewähltes Foto"
+                                data-i18n-alt="photos.detail.imageAlt"
+                            />
+                            <div
+                                id="photo-detail-loader"
+                                class="absolute inset-0 flex items-center justify-center bg-gray-900/40 text-white text-sm font-medium hidden"
+                                data-i18n="photos.detail.loader"
+                            >
+                                Foto wird geladen…
+                            </div>
+                        </div>
+                        <button
+                            id="photo-detail-next"
+                            type="button"
+                            class="hidden sm:flex items-center justify-center w-14 bg-transparent text-3xl text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition"
+                            title="Nächstes Foto"
+                            data-i18n-title="photos.detail.next"
+                        >
+                            ›
+                        </button>
+                    </div>
+                    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-800 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
+                        <div class="flex-1 min-w-[200px]">
+                            <p id="image-info" class="font-medium text-gray-700 dark:text-gray-200"></p>
+                            <p id="photo-detail-dimensions" class="text-xs text-gray-500 dark:text-gray-400 mt-1"></p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span id="photo-detail-counter" class="text-sm text-gray-500 dark:text-gray-400"></span>
+                            <a
+                                id="photo-detail-open"
+                                class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                                href="#"
+                                target="_blank"
+                                rel="noreferrer"
+                                data-i18n="photos.detail.open"
+                            >
+                                Auf Lorem Picsum ansehen
+                            </a>
                         </div>
                     </div>
                 </div>
