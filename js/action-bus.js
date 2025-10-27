@@ -200,7 +200,13 @@ console.log('ActionBus loaded');
         openAbout: () => {
             const g = window;
             g.hideMenuDropdowns?.();
-            g.dialogs?.['about-modal']?.open?.();
+            const dlg = g.dialogs?.['about-modal'];
+            if (dlg && typeof dlg.open === 'function') {
+                dlg.open();
+            } else {
+                const el = document.getElementById('about-modal');
+                el?.classList.remove('hidden');
+            }
             g.updateProgramLabelByTopModal?.();
         },
         // Settings öffnen

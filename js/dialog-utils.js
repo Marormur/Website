@@ -8,7 +8,7 @@
  *
  * @module dialog-utils
  */
-// Object.defineProperty(exports, "__esModule", { value: true }); // REMOVED: Causes "exports is not defined" in browser
+// Note: Removed CommonJS __esModule marker for browser-global script compatibility
 /**
  * Get all modal IDs from WindowManager or fallback to APP_CONSTANTS
  * @returns Array of modal element IDs
