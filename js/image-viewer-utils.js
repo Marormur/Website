@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 (function () {
     'use strict';
     function getEl(id) {
