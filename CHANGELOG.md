@@ -1,10 +1,14 @@
 # Changelog
 
-
 ## Unreleased
-# Changelog
 
-## Unreleased
+### Fixed - TypeScript Migration Stabilization (Phase 1 Complete ✅)
+  - **E2E Tests**: All 20 quick E2E tests passing; browser-global TS migration stable
+  - **CommonJS Artifacts**: Removed `exports.__esModule` and `exports.default` from compiled JS to prevent runtime errors
+  - **APP_CONSTANTS**: Exposed as browser global via IIFE pattern; consumed by WindowManager, app-init, StorageSystem
+  - **Launchpad UI**: Fixed pointer-events to allow dock/menubar clicks while open; capture-phase handler closes on outside click
+  - **Build Automation**: Generalized `scripts/fix-ts-exports.js` to process all `./js/**/*.js` and prevent regressions
+  - **Test Updates**: Adjusted launchpad background-click test to use `page.mouse.click()` for pointer-events compatibility
 
 Summary of notable changes in progress & recent work:
 
