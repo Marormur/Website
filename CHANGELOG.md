@@ -26,6 +26,15 @@ All notable changes to this project will be documented in this file.
   - **Results**: TypeScript 0 errors, E2E 92/93 passing, ESLint 30 warnings (from 54)
 
 ### Fixed
+- **fix(storage): prevent TypeError during modal restore on app init** (2025-10-27)
+  - Added validation in `restoreOpenModals()` to check DOM element existence before restore
+  - Added validation to ensure modal is registered in WindowManager before restore
+  - Added try-catch wrapper around `dialog.open()` with fallback to direct DOM manipulation
+  - Added defensive null check in `Dialog.open()` to prevent crash if modal element is undefined
+  - Invalid localStorage entries now skip with warning logs instead of crashing the app
+  - Fixes `TypeError: Cannot read properties of undefined (reading 'modal')` at dialog.js:65
+  - **Results**: Graceful handling of stale/invalid localStorage data, app remains functional
+
 - fix(tabs): ensure content visibility after closing the active tab
   - After tab close, select a deterministic next active tab, trigger integration onTabSwitch, and explicitly show/hide instances as a safety net
   - Eliminates intermittent cases where the new active instance remained hidden (e.g., Finder 3 → Finder 1)
