@@ -37,6 +37,8 @@
         const instances = manager.getAllInstances();
         const active = manager.getActiveInstance();
         const activeId = active?.instanceId ?? null;
+        // Diagnostic: log all instance IDs being rendered as tabs
+        console.log('[WindowTabs] Rendering tabs for instance IDs:', instances.map(i => i.instanceId));
         instances.forEach((inst) => {
             const tab = createTabEl(inst, inst.instanceId === activeId);
             // Click handlers

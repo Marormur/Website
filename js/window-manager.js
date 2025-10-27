@@ -126,15 +126,6 @@
                     console.warn(`Init handler for ${windowId} threw:`, e);
                 }
             }
-            // Call optional openHandler on every open if provided
-            if (config && config.metadata && typeof config.metadata.openHandler === 'function') {
-                try {
-                    config.metadata.openHandler();
-                }
-                catch (e) {
-                    console.warn(`Open handler for ${windowId} threw:`, e);
-                }
-            }
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.open === 'function') {
                 instance.open();

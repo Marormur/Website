@@ -88,8 +88,6 @@ console.log('InstanceManager loaded');
             }
             instance.destroy();
             this.instances.delete(instanceId);
-            // Diagnostic: log all remaining instance IDs after delete
-            console.log('[InstanceManager] After delete, remaining:', Array.from(this.instances.keys()));
             // Update active instance if needed
             if (this.activeInstanceId === instanceId) {
                 const remainingIds = this.getAllInstanceIds();
