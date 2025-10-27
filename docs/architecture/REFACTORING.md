@@ -6,7 +6,7 @@ Dieses Refactoring führt drei neue zentrale Systeme ein, um den Code wartbarer,
 
 ## 🆕 Neue Module
 
-### 1. **WindowManager** (`js/window-manager.js`)
+### 1. **WindowManager** (`src/ts/window-manager.ts`)
 
 Zentrale Verwaltung aller Fenster/Modals im System.
 
@@ -49,7 +49,7 @@ const info = WindowManager.getProgramInfo('my-modal');
 
 ---
 
-### 2. **ActionBus** (`js/action-bus.js`)
+### 2. **ActionBus** (`src/ts/action-bus.ts`)
 
 Deklaratives Event-System für UI-Aktionen.
 
@@ -105,7 +105,7 @@ ActionBus.register('myAction', (params, element) => {
 
 ---
 
-### 3. **API** (`js/api.js`)
+### 3. **API** (`src/ts/api.ts`)
 
 Saubere Schnittstelle zu allen Modulen.
 
@@ -153,7 +153,7 @@ const text = API.i18n.translate('key', 'fallback');
 
 ---
 
-### 4. **Window Configurations** (`js/window-configs.js`)
+### 4. **Window Configurations** (`src/ts/window-configs.ts`)
 
 Zentrale Konfigurationsdatei für alle Fenster.
 
@@ -245,7 +245,7 @@ var modalIds = [
 ### Neu (automatisch aus Registry):
 
 ```javascript
-// In window-configs.js einfach hinzufügen:
+// In `src/ts/window-configs.ts` einfach hinzufügen:
 windowConfigurations.push({
     id: 'neues-fenster-modal',
     // ... weitere Config
@@ -257,12 +257,12 @@ const allWindows = WindowManager.getAllWindowIds();
 
 ---
 
-## 📦 Gelöschter/Vereinfachter Code
+### Gelöschter/Vereinfachter Code
 
 ### Entfernt aus `app.js`:
 
 - ❌ ~150 Zeilen Wrapper-Funktionen
-- ❌ `programInfoDefinitions` (jetzt in window-configs.js)
+- ❌ `programInfoDefinitions` (jetzt in `src/ts/window-configs.ts`)
 - ❌ Hart-kodierte `modalIds` Arrays
 - ❌ Repetitive Event-Handler für Close-Buttons
 - ❌ Duplizierte z-Index Logik
@@ -288,8 +288,8 @@ const allWindows = WindowManager.getAllWindowIds();
 
 ### Jetzt (1 Schritt):
 
-```javascript
-// In window-configs.js:
+```ts
+// In `src/ts/window-configs.ts`:
 {
     id: 'neues-fenster-modal',
     type: 'persistent',
@@ -402,6 +402,6 @@ Mögliche zukünftige Verbesserungen:
 
 ---
 
-**Erstellt**: 2025-10-24  
-**Version**: 3.0  
+**Erstellt**: 2025-10-24
+**Version**: 3.0
 **Status**: ✅ Produktionsbereit

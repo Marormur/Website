@@ -26,9 +26,8 @@
     "forceConsistentCasingInFileNames": true,
 
     // Paths
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["js/*"]
+      "@/*": ["./js/*"]
     }
   },
   "include": ["js/**/*.js", "js/**/*.ts", "app.js", "i18n.js", "types/**/*.d.ts"],

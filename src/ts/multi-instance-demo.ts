@@ -1,26 +1,41 @@
-'use strict';
-Object.defineProperty(exports, '__esModule', { value: true });
+/*
+ * Multi-Instance Demo (TypeScript port)
+ * Mirrors the convenience demo helpers from `js/multi-instance-demo.js`.
+ * It uses runtime guards and local casts to avoid strict-type errors.
+ */
+export {};
+
+declare global {
+    interface Window {
+        // Demo helpers
+        demoCreateTerminals?: () => any;
+        demoCreateEditors?: () => any;
+        demoSaveTerminals?: () => void;
+        demoRestoreTerminals?: () => void;
+        // Keep other demos as optional
+    }
+}
+
 // Helper to safely access window managers with casts
-const W = window;
+const W = window as any;
+
 W.demoCreateTerminals = function demoCreateTerminals() {
-    if (!W.TerminalInstanceManager)
-        return null;
+    if (!W.TerminalInstanceManager) return null;
     console.group('Creating Terminals...');
     const term1 = W.TerminalInstanceManager.createInstance?.({ title: 'Terminal 1 - Main' });
     const term2 = W.TerminalInstanceManager.createInstance?.({ title: 'Terminal 2 - Dev' });
     const term3 = W.TerminalInstanceManager.createInstance?.({ title: 'Terminal 3 - Logs' });
     try {
         console.log('Total terminals:', W.TerminalInstanceManager.getInstanceCount?.());
-    }
-    catch {
+    } catch {
         // ignore
     }
     console.groupEnd();
     return { term1, term2, term3 };
 };
+
 W.demoCreateEditors = function demoCreateEditors() {
-    if (!W.TextEditorInstanceManager)
-        return null;
+    if (!W.TextEditorInstanceManager) return null;
     console.group('Creating Text Editors...');
     const editor1 = W.TextEditorInstanceManager.createInstance?.({
         title: 'README.md',
@@ -33,16 +48,15 @@ W.demoCreateEditors = function demoCreateEditors() {
     const editor3 = W.TextEditorInstanceManager.createInstance?.({ title: 'Untitled' });
     try {
         console.log('Total editors:', W.TextEditorInstanceManager.getInstanceCount?.());
-    }
-    catch {
+    } catch {
         // ignore
     }
     console.groupEnd();
     return { editor1, editor2, editor3 };
 };
+
 W.demoSaveTerminals = function demoSaveTerminals() {
-    if (!W.TerminalInstanceManager)
-        return;
+    if (!W.TerminalInstanceManager) return;
     console.group('Save Terminal State...');
     const terminals = W.demoCreateTerminals?.();
     if (terminals && terminals.term1) {
@@ -53,15 +67,14 @@ W.demoSaveTerminals = function demoSaveTerminals() {
     try {
         localStorage.setItem('demo_terminals', JSON.stringify(savedState));
         console.log('Saved state:', savedState);
-    }
-    catch {
+    } catch {
         // ignore
     }
     console.groupEnd();
 };
+
 W.demoRestoreTerminals = function demoRestoreTerminals() {
-    if (!W.TerminalInstanceManager)
-        return;
+    if (!W.TerminalInstanceManager) return;
     console.group('Restore Terminal State...');
     try {
         W.TerminalInstanceManager.destroyAllInstances?.();
@@ -69,25 +82,65 @@ W.demoRestoreTerminals = function demoRestoreTerminals() {
         W.TerminalInstanceManager.deserializeAll?.(savedState);
         const restored = W.TerminalInstanceManager.getAllInstances?.() || [];
         console.log(`Restored ${restored.length} terminals`);
-    }
-    catch (e) {
+    } catch (e) {
         console.warn('Restore failed', e);
     }
     console.groupEnd();
 };
+
+// other helpers can be added similarly, keeping runtime guards
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/*
+ * Multi-Instance Demo Helpers (TypeScript)
+ * Ported from js/multi-instance-demo.js — kept as runtime demo helpers exposed on window.
+ * NOTE: This is a non-critical convenience module; it mirrors the legacy JS implementation.
+ */
+
+export {};
+
+// Note: rely on central type declarations in /types rather than redeclaring Window properties here.
+// This file intentionally avoids augmenting `Window` to prevent conflicts during migration.
+
+type TerminalInstance = {
+    instanceId?: string;
+    currentPath?: string;
+    commandHistory?: string[];
+    on?: (event: string, cb: (...args: unknown[]) => void) => void;
+    updateState?: (u: Record<string, unknown>) => void;
+    focus?: () => void;
+    blur?: () => void;
+    state?: Record<string, unknown>;
+};
+
+type TerminalManager = {
+    createInstance: (cfg?: Record<string, unknown>) => TerminalInstance | null | undefined;
+    getInstanceCount?: () => number;
+    serializeAll?: () => unknown;
+    destroyAllInstances?: () => void;
+    deserializeAll?: (data: unknown) => void;
+    getAllInstances?: () => TerminalInstance[];
+    getActiveInstance?: () => TerminalInstance | null | undefined;
+    setActiveInstance?: (id: string) => void;
+};
+
 // EditorInstance shape intentionally omitted during migration to keep demo lightweight.
+
 // EditorManager and demo helper return types are intentionally omitted to reduce churn during migration.
-function logDemo(title, description) {
+
+function logDemo(title: string, description: string): void {
     console.log(`%c${title}`, 'color: #00aaff; font-weight: bold; font-size: 14px');
+
     console.log(`%c${description}`, 'color: #888; font-size: 12px');
 }
+
 // Attach demo helpers to window
 (() => {
     // Terminal demos
     logDemo('📟 Terminal Instances', 'Erstelle mehrere Terminal-Instanzen');
+
     window.demoCreateTerminals = function () {
         console.group('Creating Terminals...');
-        const manager = window.TerminalInstanceManager;
+        const manager = window.TerminalInstanceManager as any;
         const term1 = manager.createInstance({ title: 'Terminal 1 - Main' });
         console.log('✓ Terminal 1:', term1?.instanceId);
         const term2 = manager.createInstance({ title: 'Terminal 2 - Dev' });
@@ -96,13 +149,13 @@ function logDemo(title, description) {
         console.log('✓ Terminal 3:', term3?.instanceId);
         console.log(`Total terminals: ${manager.getInstanceCount()}`);
         console.groupEnd();
-        return { term1, term2, term3 };
+        return { term1, term2, term3 } as Record<string, any>;
     };
+
     window.demoTerminalIsolation = function () {
         console.group('Terminal Isolation Demo...');
         const terminals = window.demoCreateTerminals?.();
-        if (!terminals)
-            return;
+        if (!terminals) return;
         if (terminals.term1) {
             terminals.term1.currentPath = '/home/user';
             terminals.term1.commandHistory = terminals.term1.commandHistory || [];
@@ -127,11 +180,13 @@ function logDemo(title, description) {
         console.log('%c✓ Alle Terminals haben isolierten State!', 'color: #00ff00');
         console.groupEnd();
     };
+
     // Editor demos
     logDemo('📝 Text Editor Instances', 'Erstelle mehrere Editor-Instanzen');
+
     window.demoCreateEditors = function () {
         console.group('Creating Text Editors...');
-        const mgr = window.TextEditorInstanceManager;
+        const mgr = window.TextEditorInstanceManager as any;
         const editor1 = mgr.createInstance({
             title: 'README.md',
             initialState: {
@@ -152,31 +207,32 @@ function logDemo(title, description) {
         console.log('✓ Editor 3:', editor3?.instanceId);
         console.log('Total editors:', mgr.getInstanceCount());
         console.groupEnd();
-        return { editor1, editor2, editor3 };
+        return { editor1, editor2, editor3 } as Record<string, any>;
     };
+
     window.demoEditorContent = function () {
         console.group('Editor Content Demo...');
         const editors = window.demoCreateEditors?.();
-        if (!editors)
-            return;
+        if (!editors) return;
         console.log('Editor 1 content:', editors.editor1?.state?.content);
         console.log('Editor 2 content:', editors.editor2?.state?.content);
         console.log('Editor 3 content:', editors.editor3?.state?.content);
         console.log('%c✓ Jeder Editor hat eigenen Content!', 'color: #00ff00');
         console.groupEnd();
     };
+
     // State persistence demos
     logDemo('💾 State Persistence', 'Speichern und Wiederherstellen von Instanzen');
+
     window.demoSaveTerminals = function () {
         console.group('Save Terminal State...');
         const terminals = window.demoCreateTerminals?.();
-        if (!terminals)
-            return;
+        if (!terminals) return;
         if (terminals.term1) {
             terminals.term1.currentPath = '/home';
             terminals.term1.commandHistory = ['ls', 'pwd', 'cd documents'];
         }
-        const mgr = window.TerminalInstanceManager;
+        const mgr = window.TerminalInstanceManager as TerminalManager | undefined;
         const savedState = mgr?.serializeAll ? mgr.serializeAll() : undefined;
         if (typeof savedState !== 'undefined') {
             localStorage.setItem('demo_terminals', JSON.stringify(savedState));
@@ -185,9 +241,10 @@ function logDemo(title, description) {
         console.log('%c✓ Terminals gespeichert in localStorage!', 'color: #00ff00');
         console.groupEnd();
     };
+
     window.demoRestoreTerminals = function () {
         console.group('Restore Terminal State...');
-        const mgr = window.TerminalInstanceManager;
+        const mgr = window.TerminalInstanceManager as TerminalManager | undefined;
         mgr?.destroyAllInstances?.();
         console.log('All instances destroyed');
         const savedState = JSON.parse(localStorage.getItem('demo_terminals') || '[]');
@@ -199,8 +256,10 @@ function logDemo(title, description) {
         console.log('%c✓ Terminals wiederhergestellt!', 'color: #00ff00');
         console.groupEnd();
     };
+
     // WindowChrome demo
     logDemo('🎨 WindowChrome Components', 'Wiederverwendbare UI-Komponenten');
+
     window.demoWindowChrome = function () {
         console.group('WindowChrome Demo...');
         const titlebar = window.WindowChrome?.createTitlebar?.({
@@ -236,16 +295,18 @@ function logDemo(title, description) {
         console.log('%c✓ WindowChrome Komponenten erstellt!', 'color: #00ff00');
         console.groupEnd();
     };
+
     // Instance manager demos
     logDemo('⚙️ Instance Manager Features', 'Erweiterte Manager-Funktionen');
+
     window.demoMaxInstances = function () {
         console.group('Max Instances Demo...');
         const limitedManager = window.InstanceManager
             ? new window.InstanceManager({
-                type: 'demo',
-                instanceClass: window.BaseWindowInstance,
-                maxInstances: 2,
-            })
+                  type: 'demo',
+                  instanceClass: window.BaseWindowInstance,
+                  maxInstances: 2,
+              })
             : null;
         if (!limitedManager) {
             console.warn('InstanceManager not available in demo environment');
@@ -261,29 +322,44 @@ function logDemo(title, description) {
         console.log('%c✓ Max instances Limit funktioniert!', 'color: #00ff00');
         console.groupEnd();
     };
+
     window.demoActiveInstance = function () {
         console.group('Active Instance Tracking...');
         const terminals = window.demoCreateTerminals?.();
-        console.log('Active instance:', window.TerminalInstanceManager?.getActiveInstance?.()?.instanceId);
+        console.log(
+            'Active instance:',
+            window.TerminalInstanceManager?.getActiveInstance?.()?.instanceId
+        );
         if (terminals?.term1)
-            window.TerminalInstanceManager?.setActiveInstance?.(terminals.term1.instanceId);
-        console.log('Switched to:', window.TerminalInstanceManager?.getActiveInstance?.()?.instanceId);
+            window.TerminalInstanceManager?.setActiveInstance?.(
+                terminals.term1.instanceId as string
+            );
+        console.log(
+            'Switched to:',
+            window.TerminalInstanceManager?.getActiveInstance?.()?.instanceId
+        );
         if (terminals?.term2)
-            window.TerminalInstanceManager?.setActiveInstance?.(terminals.term2.instanceId);
-        console.log('Switched to:', window.TerminalInstanceManager?.getActiveInstance?.()?.instanceId);
+            window.TerminalInstanceManager?.setActiveInstance?.(
+                terminals.term2.instanceId as string
+            );
+        console.log(
+            'Switched to:',
+            window.TerminalInstanceManager?.getActiveInstance?.()?.instanceId
+        );
         console.log('%c✓ Active instance tracking funktioniert!', 'color: #00ff00');
         console.groupEnd();
     };
+
     // Event system demo
     logDemo('📡 Event System', 'Instance Event Handling');
+
     window.demoEvents = function () {
         console.group('Event System Demo...');
         const terminal = window.TerminalInstanceManager?.createInstance?.({
             title: 'Event Demo Terminal',
         });
-        if (!terminal)
-            return;
-        terminal.on('stateChanged', (data) => {
+        if (!terminal) return;
+        terminal.on('stateChanged', (data: any) => {
             console.log('State changed:', data.newState);
         });
         terminal.on('focused', () => {
@@ -298,8 +374,10 @@ function logDemo(title, description) {
         console.log('%c✓ Event System funktioniert!', 'color: #00ff00');
         console.groupEnd();
     };
+
     // Tab system demo
     logDemo('🗂️ Tab System Demo', 'Test the new tab management features');
+
     window.demoTabs = function () {
         console.group('Tab System Demo...');
         console.log('Creating 3 terminal instances...');
@@ -309,6 +387,7 @@ function logDemo(title, description) {
         console.log('✓ Terminals created');
         console.groupEnd();
     };
+
     window.demoSessionSave = function () {
         console.group('Session Save Demo...');
         window.TerminalInstanceManager?.createInstance?.({ title: 'Dev Terminal' });
@@ -320,6 +399,7 @@ function logDemo(title, description) {
         console.log('✓ Session saved:', info);
         console.groupEnd();
     };
+
     window.demoSessionExport = function () {
         console.group('Session Export Demo...');
         if ((window.TerminalInstanceManager?.getInstanceCount?.() || 0) === 0) {
@@ -331,11 +411,12 @@ function logDemo(title, description) {
         console.groupEnd();
         return sessionJson;
     };
+
     window.demoKeyboardShortcuts = function () {
         console.group('Keyboard Shortcuts Demo...');
         const shortcuts = window.KeyboardShortcuts.getAllShortcuts();
         console.log(`Registered shortcuts: ${shortcuts.length}`);
-        shortcuts.forEach((s) => {
+        shortcuts.forEach((s: any) => {
             if (s.description) {
                 const display = window.KeyboardShortcuts.getShortcutDisplay(s);
                 console.log(`  ${display}: ${s.description}`);
@@ -343,7 +424,8 @@ function logDemo(title, description) {
         });
         console.groupEnd();
     };
+
     // Quick start message
+
     console.log('\n%c📖 Quick Start:', 'color: #ffaa00; font-weight: bold; font-size: 16px');
 })();
-//# sourceMappingURL=multi-instance-demo.js.map

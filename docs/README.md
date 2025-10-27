@@ -1,5 +1,7 @@
 # 📚 Documentation Index
 
+> NOTE: TypeScript migration is complete. For development and edits prefer the TypeScript sources in `src/ts/`. The `js/` directory contains emitted JavaScript output and legacy artifacts — edit `js/` only when fixing generated output or maintaining historical docs.
+
 Welcome to the documentation for Marvin's Portfolio Website!
 
 ## 🚀 Quick Start
@@ -33,14 +35,14 @@ For contributing to this project, see the [CONTRIBUTING.md](../CONTRIBUTING.md) 
 
 The application is built with a modular architecture:
 
-1. **WindowManager** (`js/window-manager.js`) - Central window/modal management
-2. **ActionBus** (`js/action-bus.js`) - Declarative event system
-3. **API** (`js/api.js`) - Clean interface to all modules
-4. **Window Configs** (`js/window-configs.js`) - Central window definitions
+1. **WindowManager** (`src/ts/window-manager.ts`) - Central window/modal management
+2. **ActionBus** (`src/ts/action-bus.ts`) - Declarative event system
+3. **API** (`src/ts/api.ts`) - Clean interface to all modules
+4. **Window Configs** (`src/ts/window-configs.ts`) - Central window definitions
 
 ### Adding a New Window
 
-Simply add to `js/window-configs.js`:
+Simply add to `src/ts/window-configs.ts`:
 
 ```javascript
 {
@@ -75,7 +77,7 @@ Instead of manual event handlers, use declarative actions:
 ├── src/               # Source files
 │   ├── css/          # CSS source files
 │   └── input.css     # Tailwind input
-├── js/               # JavaScript modules
+├── src/ts/           # TypeScript source files
 ├── img/              # Images and icons
 ├── tests/            # E2E tests
 ├── dist/             # Built files (output.css)

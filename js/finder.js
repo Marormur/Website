@@ -935,7 +935,7 @@ console.log('Finder.js loaded');
                     if (data && data.encoding === 'base64' && typeof data.content === 'string') {
                         try {
                             return atob(data.content.replace(/\s/g, ''));
-                        } catch (_) {
+                        } catch {
                             throw new Error('Decode error');
                         }
                     }

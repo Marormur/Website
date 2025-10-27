@@ -1301,4 +1301,4 @@ const TextEditorSystem: TextEditorSystemInternal = {
             TextEditorSystem.init(container);
         }
     }
-})();
+// End of TextEditorSystem module

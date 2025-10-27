@@ -31,7 +31,7 @@
                 icon: this.icon,
                 about: {},
             };
-            aboutFields.forEach((field) => {
+            aboutFields.forEach(field => {
                 info.about[field] = translate(`${this.programKey}.about.${field}`);
             });
             return info;
@@ -47,7 +47,7 @@
             return windowConfig;
         },
         registerAll(configs) {
-            configs.forEach((c) => this.register(c));
+            configs.forEach(c => this.register(c));
         },
         getConfig(windowId) {
             return windowRegistry.get(windowId) || null;
@@ -56,13 +56,13 @@
             return Array.from(windowRegistry.keys());
         },
         getPersistentWindowIds() {
-            return this.getAllWindowIds().filter((id) => {
+            return this.getAllWindowIds().filter(id => {
                 const config = this.getConfig(id);
                 return !!config && !config.isTransient();
             });
         },
         getTransientWindowIds() {
-            return this.getAllWindowIds().filter((id) => {
+            return this.getAllWindowIds().filter(id => {
                 const config = this.getConfig(id);
                 return !!config && config.isTransient();
             });
@@ -89,7 +89,7 @@
         getTopWindow() {
             let topModal = null;
             let highestZ = 0;
-            this.getAllWindowIds().forEach((id) => {
+            this.getAllWindowIds().forEach(id => {
                 const modal = document.getElementById(id);
                 if (modal && !modal.classList.contains('hidden')) {
                     const zIndex = parseInt(getComputedStyle(modal).zIndex, 10) || 0;
@@ -112,15 +112,15 @@
         },
         open(windowId) {
             const config = this.getConfig(windowId);
-            if (config && config.metadata && typeof config.metadata.initHandler === 'function') {
+            // Run the configured initHandler on every open. Some windows rely on
+            // per-open initialization (e.g., Finder multi-instance recreation).
+            if (config &&
+                config.metadata &&
+                typeof config.metadata.initHandler === 'function') {
                 try {
                     const md = config.metadata;
-                    if (!md.__initialized) {
-                        if (typeof md.initHandler === 'function') {
-                            md.initHandler();
-                        }
-                        md.__initialized = true;
-                    }
+                    if (typeof md.initHandler === 'function')
+                        md.initHandler();
                 }
                 catch (e) {
                     console.warn(`Init handler for ${windowId} threw:`, e);
@@ -136,15 +136,6 @@
                     modal.classList.remove('hidden');
                     this.bringToFront(windowId);
                 }
-            }
-            // Always call the openHandler if provided - intended to run on every open
-            try {
-                if (config && config.metadata && typeof config.metadata.openHandler === 'function') {
-                    config.metadata.openHandler();
-                }
-            }
-            catch (e) {
-                console.warn(`Open handler for ${windowId} threw:`, e);
             }
         },
         close(windowId) {
@@ -164,7 +155,7 @@
         },
         syncZIndexWithDOM() {
             let maxZ = baseZIndex;
-            this.getAllWindowIds().forEach((id) => {
+            this.getAllWindowIds().forEach(id => {
                 const modal = document.getElementById(id);
                 if (!modal)
                     return;

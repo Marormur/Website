@@ -81,9 +81,13 @@
         });
     }
 
+    /*
+     LEGACY JS: System UI helpers maintained in JS. If a TypeScript source exists, prefer edits there.
+     Last edited (lint-maintenance): 2025-10-27
+    */
     function updateSystemStateText(stateKey, text) {
         document.querySelectorAll(`[data-state="${stateKey}"]`).forEach(el => {
-            el.textContent = text != null ? String(text) : '';
+            el.textContent = text !== null && text !== undefined ? String(text) : '';
         });
     }
 

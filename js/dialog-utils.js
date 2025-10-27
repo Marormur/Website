@@ -31,18 +31,16 @@ function getModalIds() {
  */
 function syncTopZIndexWithDOM() {
     const win = window;
-    if (win.WindowManager &&
-        typeof win.WindowManager.syncZIndexWithDOM === 'function') {
+    if (win.WindowManager && typeof win.WindowManager.syncZIndexWithDOM === 'function') {
         win.WindowManager.syncZIndexWithDOM();
         return;
     }
     // Fallback implementation
     let maxZ = 1000;
     const modalIds = getModalIds();
-    modalIds.forEach((id) => {
+    modalIds.forEach(id => {
         const modal = document.getElementById(id);
-        if (!modal)
-            return;
+        if (!modal) return;
         const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
         if (!Number.isNaN(modalZ)) {
             maxZ = Math.max(maxZ, modalZ);
@@ -64,8 +62,7 @@ function syncTopZIndexWithDOM() {
 function bringDialogToFront(dialogId) {
     if (window.dialogs?.[dialogId]) {
         window.dialogs[dialogId].bringToFront?.();
-    }
-    else {
+    } else {
         console.error('Kein Dialog mit der ID ' + dialogId + ' gefunden.');
     }
 }
@@ -76,14 +73,15 @@ function bringDialogToFront(dialogId) {
  */
 function bringAllWindowsToFront() {
     const modalIds = getModalIds();
-    if (!window.dialogs || !modalIds || !Array.isArray(modalIds))
-        return;
-    modalIds.forEach((id) => {
+    if (!window.dialogs || !modalIds || !Array.isArray(modalIds)) return;
+    modalIds.forEach(id => {
         const dialog = window.dialogs?.[id];
-        if (dialog &&
+        if (
+            dialog &&
             dialog.modal &&
             !dialog.modal.classList.contains('hidden') &&
-            typeof dialog.bringToFront === 'function') {
+            typeof dialog.bringToFront === 'function'
+        ) {
             dialog.bringToFront();
         }
     });

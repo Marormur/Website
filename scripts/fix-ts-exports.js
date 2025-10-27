@@ -13,8 +13,21 @@
 const fs = require('fs');
 const path = require('path');
 
-// Files that need fixing (add more as needed)
-const FILES_TO_FIX = ['js/app-init.js', 'js/dialog-utils.js'];
+// Recursively collect all JS files under the provided directory
+function collectJsFiles(dir) {
+    const results = [];
+    if (!fs.existsSync(dir)) return results;
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+            results.push(...collectJsFiles(full));
+        } else if (entry.isFile() && full.endsWith('.js')) {
+            results.push(full);
+        }
+    }
+    return results;
+}
 
 const EXPORTS_PATTERN = /^Object\.defineProperty\(exports, "__esModule", \{ value: true \}\);$/gm;
 const REPLACEMENT =
@@ -25,14 +38,13 @@ let filesSkipped = 0;
 
 console.log('🔧 Fixing TypeScript exports...\n');
 
-FILES_TO_FIX.forEach(filePath => {
-    const fullPath = path.join(process.cwd(), filePath);
+const files = collectJsFiles(path.join(process.cwd(), 'js'));
+if (files.length === 0) {
+    console.log('ℹ️  No JS files found under ./js');
+}
 
-    if (!fs.existsSync(fullPath)) {
-        console.log(`⚠️  Skipped (not found): ${filePath}`);
-        filesSkipped++;
-        return;
-    }
+files.forEach(fullPath => {
+    const filePath = path.relative(process.cwd(), fullPath);
 
     let content = fs.readFileSync(fullPath, 'utf8');
     const originalContent = content;

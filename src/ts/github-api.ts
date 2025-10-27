@@ -6,10 +6,10 @@
     function getCacheTtl(): number {
         const dflt = 5 * 60 * 1000; // 5 minutes
         try {
-            const constants = (window as unknown as { APP_CONSTANTS?: Record<string, unknown> }).APP_CONSTANTS || {};
-            const val = (constants as Record<string, unknown>)[
-                'GITHUB_CACHE_DURATION'
-            ];
+            const constants =
+                (window as unknown as { APP_CONSTANTS?: Record<string, unknown> }).APP_CONSTANTS ||
+                {};
+            const val = (constants as Record<string, unknown>)['GITHUB_CACHE_DURATION'];
             return typeof val === 'number' ? (val as number) : dflt;
         } catch {
             return dflt;
@@ -21,7 +21,12 @@
         return `${GITHUB_CACHE_NS}contents:${repo}:${subPath}`;
     }
 
-    function writeCache(kind: 'repos' | 'contents', repo: string, subPath: string, data: unknown): void {
+    function writeCache(
+        kind: 'repos' | 'contents',
+        repo: string,
+        subPath: string,
+        data: unknown
+    ): void {
         const key = makeCacheKey(kind, repo, subPath);
         try {
             const payload = { t: Date.now(), d: data };
@@ -69,15 +74,22 @@
         return res.json() as Promise<T>;
     }
 
-    async function fetchUserRepos(username: string, params?: { per_page?: number; sort?: string }): Promise<unknown[]> {
-        const search = new URLSearchParams();
+    async function fetchUserRepos(
+        username: string,
+        params?: { per_page?: number; sort?: string }
+    ): Promise<unknown[]> {
+        const search = new globalThis.URLSearchParams();
         search.set('per_page', String(params?.per_page ?? 100));
         search.set('sort', params?.sort ?? 'updated');
         const url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?${search.toString()}`;
         return fetchJSON<unknown[]>(url);
     }
 
-    async function fetchRepoContents(username: string, repo: string, subPath = ''): Promise<unknown> {
+    async function fetchRepoContents(
+        username: string,
+        repo: string,
+        subPath = ''
+    ): Promise<unknown> {
         const pathPart = subPath ? `/${encodeURIComponent(subPath).replace(/%2F/g, '/')}` : '';
         const url = `https://api.github.com/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/contents${pathPart}`;
         return fetchJSON<unknown>(url);
@@ -85,10 +97,22 @@
 
     type GitHubAPINamespace = {
         getHeaders: () => Record<string, string>;
-        readCache: <T = unknown>(kind: 'repos' | 'contents', repo?: string, subPath?: string) => T | null;
-        writeCache: (kind: 'repos' | 'contents', repo: string, subPath: string, data: unknown) => void;
+        readCache: <T = unknown>(
+            kind: 'repos' | 'contents',
+            repo?: string,
+            subPath?: string
+        ) => T | null;
+        writeCache: (
+            kind: 'repos' | 'contents',
+            repo: string,
+            subPath: string,
+            data: unknown
+        ) => void;
         fetchJSON: <T = unknown>(url: string) => Promise<T>;
-        fetchUserRepos: (username: string, params?: { per_page?: number; sort?: string }) => Promise<unknown[]>;
+        fetchUserRepos: (
+            username: string,
+            params?: { per_page?: number; sort?: string }
+        ) => Promise<unknown[]>;
         fetchRepoContents: (username: string, repo: string, subPath?: string) => Promise<unknown>;
     };
 

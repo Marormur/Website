@@ -143,9 +143,6 @@ console.log('MultiInstanceIntegration loaded');
                 },
             });
 
-            // Register keyboard shortcuts for Terminal
-            this.registerShortcutsForType('terminal', window.TerminalInstanceManager);
-
             // Store integration info
             this.integrations.set('terminal', {
                 manager: window.TerminalInstanceManager,
@@ -153,6 +150,9 @@ console.log('MultiInstanceIntegration loaded');
                 modalId: 'terminal-modal',
                 containerId: 'terminal-container',
             });
+
+            // Register keyboard shortcuts for Terminal (after integration is stored)
+            this.registerShortcutsForType('terminal', window.TerminalInstanceManager);
 
             // Add tabs for any existing instances
             const existingTerminals = window.TerminalInstanceManager.getAllInstances();
@@ -200,9 +200,6 @@ console.log('MultiInstanceIntegration loaded');
                 },
             });
 
-            // Register keyboard shortcuts for Text Editor
-            this.registerShortcutsForType('text-editor', window.TextEditorInstanceManager);
-
             // Store integration info
             this.integrations.set('text-editor', {
                 manager: window.TextEditorInstanceManager,
@@ -210,6 +207,9 @@ console.log('MultiInstanceIntegration loaded');
                 modalId: 'text-modal',
                 containerId: 'text-editor-container',
             });
+
+            // Register keyboard shortcuts for Text Editor (after integration is stored)
+            this.registerShortcutsForType('text-editor', window.TextEditorInstanceManager);
 
             // Add tabs for any existing instances
             const existingEditors = window.TextEditorInstanceManager.getAllInstances();
@@ -266,9 +266,6 @@ console.log('MultiInstanceIntegration loaded');
                 },
             });
 
-            // Register keyboard shortcuts for Finder
-            this.registerShortcutsForType('finder', window.FinderInstanceManager);
-
             // Store integration info
             this.integrations.set('finder', {
                 manager: window.FinderInstanceManager,
@@ -276,6 +273,9 @@ console.log('MultiInstanceIntegration loaded');
                 modalId: 'finder-modal',
                 containerId: 'finder-container',
             });
+
+            // Register keyboard shortcuts for Finder (after integration is stored)
+            this.registerShortcutsForType('finder', window.FinderInstanceManager);
 
             // Add tabs for any existing instances
             const existingFinders = window.FinderInstanceManager.getAllInstances();
@@ -373,107 +373,35 @@ console.log('MultiInstanceIntegration loaded');
          * @param {InstanceManager} manager - Instance manager
          */
         registerShortcutsForType(type, manager) {
-            // Cmd/Ctrl+N - New instance
-            window.KeyboardShortcuts.register({
-                key: 'n',
-                ctrl: true,
-                handler: () => {
-                    const activeInstance = manager.getActiveInstance();
-                    if (activeInstance && activeInstance.isVisible) {
-                        manager.createInstance({
-                            title: `${type} ${manager.getInstanceCount() + 1}`,
-                        });
-                    }
-                },
-                description: `New ${type} instance`,
-                context: type,
+            // Get the modal element to scope shortcuts to
+            const integration = this.integrations.get(type);
+            const modalId = integration?.modalId;
+            if (!modalId) {
+                console.error(`Cannot register shortcuts for ${type}: no modalId found`);
+                return;
+            }
+
+            const modalElement = document.getElementById(modalId);
+            if (!modalElement) {
+                console.error(`Cannot register shortcuts for ${type}: modal element ${modalId} not found`);
+                return;
+            }
+
+            console.log(`Registering shortcuts for ${type} on modal ${modalId}`, modalElement);
+
+                // Use manager-style registration scoped to document
+                // Modal-scoped registration doesn't work because keyboard events require element focus
+                // Instead, we rely on the manager's instance state to determine if shortcuts should fire
+            const unregister = window.KeyboardShortcuts.register(manager, {
+                    scope: document,
+                newTitleFactory: () => `${type} ${manager.getInstanceCount() + 1}`,
             });
 
-            // Cmd/Ctrl+W - Close instance
-            window.KeyboardShortcuts.register({
-                key: 'w',
-                ctrl: true,
-                handler: () => {
-                    const activeInstance = manager.getActiveInstance();
-                    if (activeInstance && activeInstance.isVisible) {
-                        // Use tab manager's closeTab to properly remove tab UI and destroy instance
-                        const integration = this.integrations.get(type);
-                        if (integration && integration.tabManager) {
-                            integration.tabManager.closeTab(activeInstance.instanceId);
-                        } else {
-                            // Fallback if no tab manager (shouldn't happen in multi-instance integrations)
-                            manager.destroyInstance(activeInstance.instanceId);
-                        }
-                    }
-                },
-                description: `Close ${type} instance`,
-                context: type,
-            });
+            console.log(`Successfully registered shortcuts for ${type}`);
 
-            // Cmd/Ctrl+Tab - Next tab
-            window.KeyboardShortcuts.register({
-                key: 'tab',
-                ctrl: true,
-                handler: () => {
-                    const instances = manager.getAllInstances();
-                    const activeInstance = manager.getActiveInstance();
-
-                    if (instances.length <= 1 || !activeInstance) return;
-
-                    const currentIndex = instances.findIndex(
-                        i => i.instanceId === activeInstance.instanceId
-                    );
-                    const nextIndex = (currentIndex + 1) % instances.length;
-                    const nextId = instances[nextIndex].instanceId;
-                    manager.setActiveInstance(nextId);
-                    // Ensure content visibility reflects the change (tab UI refresh is automatic)
-                    this.showInstance(type, nextId);
-                },
-                description: `Next ${type} tab`,
-                context: type,
-            });
-
-            // Cmd/Ctrl+Shift+Tab - Previous tab
-            window.KeyboardShortcuts.register({
-                key: 'tab',
-                ctrl: true,
-                shift: true,
-                handler: () => {
-                    const instances = manager.getAllInstances();
-                    const activeInstance = manager.getActiveInstance();
-
-                    if (instances.length <= 1 || !activeInstance) return;
-
-                    const currentIndex = instances.findIndex(
-                        i => i.instanceId === activeInstance.instanceId
-                    );
-                    const prevIndex = (currentIndex - 1 + instances.length) % instances.length;
-                    const prevId = instances[prevIndex].instanceId;
-                    manager.setActiveInstance(prevId);
-                    // Ensure content visibility reflects the change (tab UI refresh is automatic)
-                    this.showInstance(type, prevId);
-                },
-                description: `Previous ${type} tab`,
-                context: type,
-            });
-
-            // Cmd/Ctrl+1-9 - Jump to specific tab
-            for (let i = 1; i <= 9; i++) {
-                window.KeyboardShortcuts.register({
-                    key: i.toString(),
-                    ctrl: true,
-                    handler: () => {
-                        const instances = manager.getAllInstances();
-                        if (instances[i - 1]) {
-                            const targetId = instances[i - 1].instanceId;
-                            manager.setActiveInstance(targetId);
-                            // Ensure content visibility reflects the change (tab UI refresh is automatic)
-                            this.showInstance(type, targetId);
-                        }
-                    },
-                    description: `Jump to ${type} tab ${i}`,
-                    context: type,
-                });
+            // Store unregister function for cleanup if needed
+            if (integration) {
+                integration.unregisterShortcuts = unregister;
             }
         }
 

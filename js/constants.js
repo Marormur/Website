@@ -83,5 +83,9 @@
         SNAP_SIDES,
     };
 
-    try { window.APP_CONSTANTS = APP_CONSTANTS; } catch { /* ignore */ }
+    try {
+        window.APP_CONSTANTS = APP_CONSTANTS;
+    } catch {
+        /* ignore */
+    }
 })();

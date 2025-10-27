@@ -1,3 +1,8 @@
+/*
+ LEGACY JS: This file is part of the repository's legacy JavaScript sources.
+ Maintained in-place. Prefer editing corresponding TypeScript sources in src/ts when available.
+ Last edited (lint-maintenance): 2025-10-27
+*/
 // Desktop icons and selection logic
 // Exports: window.DesktopSystem
 (function (global) {
@@ -437,21 +442,21 @@
                     desktopLastFocusedIndex = DESKTOP_ITEMS.findIndex(entry => entry.id === lastId);
                 }
                 updateDesktopSelectionUI();
-                cleanupRubber(false);
+                cleanupRubber();
             };
 
-            const onPointerCancel = () => cleanupRubber(true);
-            const onWindowBlur = () => cleanupRubber(true);
+            const onPointerCancel = () => cleanupRubber();
+            const onWindowBlur = () => cleanupRubber();
             const onVisibilityChange = () => {
-                if (document.visibilityState !== 'visible') cleanupRubber(true);
+                if (document.visibilityState !== 'visible') cleanupRubber();
             };
 
-            const cleanupRubber = abortOnly => {
+            const cleanupRubber = () => {
                 if (!rubber) return;
                 desktopButtons.forEach(btn => btn.classList.remove('rubber-selected'));
                 try {
                     rubber.remove();
-                } catch (err) {
+                } catch {
                     /* ignore */
                 }
                 rubber = null;

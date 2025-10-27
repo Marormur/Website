@@ -1,5 +1,7 @@
 # Marvins Portfolio – Desktop‑Style Web App
 
+> NOTE: TypeScript sources are the canonical source of truth. The codebase has been migrated to TypeScript and the authoritative source lives under `src/ts/`. The `js/` directory contains emitted JavaScript output (built artifacts and legacy runtime files); edit `src/ts/` and run the build when changing behavior.
+
 Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale und Menüleiste im macOS‑Look, Dark Mode, Mehrsprachigkeit (DE/EN) und ein integrierter Projekte‑Browser, der öffentliche GitHub‑Repos lädt. Zusätzlich enthält die Seite einen einfachen Texteditor und einen Bildbetrachter.
 
 ## Features

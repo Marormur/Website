@@ -1,89 +1,103 @@
-'use strict';
 /*
  * src/ts/context-menu.ts
  * Typed port of js/context-menu.js
  */
-Object.defineProperty(exports, '__esModule', { value: true });
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 const guardKey = '__customContextMenuInit';
-if (window[guardKey]) {
+if ((window as any)[guardKey]) {
     // already initialized
-}
-else {
-    window[guardKey] = true;
-    const i18n = window.appI18n ||
-        {
-            translate: (k) => k,
-            applyTranslations: (_el) => { },
-        };
-    const hideAllDropdowns = typeof window.hideMenuDropdowns === 'function'
-        ? window.hideMenuDropdowns
-        : () => {
-            document
-                .querySelectorAll('.menu-dropdown')
-                .forEach(d => d.classList.add('hidden'));
-            document
-                .querySelectorAll('[aria-expanded="true"]')
-                .forEach(b => b.setAttribute('aria-expanded', 'false'));
-        };
-    function openModal(id) {
+} else {
+    (window as any)[guardKey] = true;
+
+    const i18n =
+        (window as any).appI18n ||
+        ({
+            translate: (k: string) => k,
+            applyTranslations: (_el?: Element) => {},
+        } as { translate: (k: string) => string; applyTranslations: (el?: Element) => void });
+
+    const hideAllDropdowns =
+        typeof (window as any).hideMenuDropdowns === 'function'
+            ? (window as any).hideMenuDropdowns
+            : () => {
+                  document
+                      .querySelectorAll('.menu-dropdown')
+                      .forEach(d => d.classList.add('hidden'));
+                  document
+                      .querySelectorAll('[aria-expanded="true"]')
+                      .forEach(b => b.setAttribute('aria-expanded', 'false'));
+              };
+
+    function openModal(id: string) {
         const el = document.getElementById(id);
-        if (!el)
-            return;
-        if (!window.dialogs)
-            window.dialogs = {};
-        if (!window.dialogs[id] && typeof window.Dialog === 'function') {
+        if (!el) return;
+        if (!(window as any).dialogs) (window as any).dialogs = {};
+        if (!(window as any).dialogs[id] && typeof (window as any).Dialog === 'function') {
             try {
-                window.dialogs[id] = new window.Dialog(id);
-            }
-            catch {
+                (window as any).dialogs[id] = new (window as any).Dialog(id);
+            } catch {
                 // noop
             }
         }
-        const dlg = window.dialogs[id];
+        const dlg = (window as any).dialogs[id];
         if (dlg && typeof dlg.open === 'function') {
             dlg.open();
-        }
-        else {
+        } else {
             el.classList.remove('hidden');
-            if (typeof window.bringDialogToFront === 'function') {
-                window.bringDialogToFront(id);
+            if (typeof (window as any).bringDialogToFront === 'function') {
+                (window as any).bringDialogToFront(id);
             }
         }
-        if (typeof window.updateProgramLabelByTopModal === 'function') {
-            window.updateProgramLabelByTopModal();
+        if (typeof (window as any).updateProgramLabelByTopModal === 'function') {
+            (window as any).updateProgramLabelByTopModal();
         }
     }
+
     function toggleDarkMode() {
-        if (window.SystemUI &&
-            typeof window.SystemUI.handleSystemToggle === 'function') {
-            window.SystemUI.handleSystemToggle('dark-mode');
-        }
-        else {
+        if (
+            (window as any).SystemUI &&
+            typeof (window as any).SystemUI.handleSystemToggle === 'function'
+        ) {
+            (window as any).SystemUI.handleSystemToggle('dark-mode');
+        } else {
             const next = !document.documentElement.classList.contains('dark');
             document.documentElement.classList.toggle('dark', next);
-            if (window.ThemeSystem &&
-                typeof window.ThemeSystem.setThemePreference === 'function') {
-                window.ThemeSystem.setThemePreference(next ? 'dark' : 'light');
+            if (
+                (window as any).ThemeSystem &&
+                typeof (window as any).ThemeSystem.setThemePreference === 'function'
+            ) {
+                (window as any).ThemeSystem.setThemePreference(next ? 'dark' : 'light');
             }
         }
     }
-    function getMenuItemsForTarget(target) {
-        const items = [];
-        const inDesktop = !!(target &&
-            target.closest &&
-            target.closest('#desktop'));
-        const inDockItem = !!(target &&
-            target.closest &&
-            target.closest('#dock .dock-item'));
-        const inImageModal = !!(target &&
-            target.closest &&
-            target.closest('#image-modal'));
-        const inFinderModal = !!(target &&
-            target.closest &&
-            target.closest('#finder-modal'));
+
+    function getMenuItemsForTarget(target: Element | null) {
+        const items: Array<any> = [];
+        const inDesktop = !!(
+            target &&
+            (target as Element).closest &&
+            (target as Element).closest('#desktop')
+        );
+        const inDockItem = !!(
+            target &&
+            (target as Element).closest &&
+            (target as Element).closest('#dock .dock-item')
+        );
+        const inImageModal = !!(
+            target &&
+            (target as Element).closest &&
+            (target as Element).closest('#image-modal')
+        );
+        const inFinderModal = !!(
+            target &&
+            (target as Element).closest &&
+            (target as Element).closest('#finder-modal')
+        );
+
         if (inDockItem) {
-            const dockItem = target.closest('#dock .dock-item');
+            const dockItem = (target as Element).closest('#dock .dock-item') as Element | null;
             const winId = dockItem && dockItem.getAttribute('data-window-id');
             if (winId) {
                 items.push({
@@ -94,47 +108,54 @@ else {
                 items.push({ type: 'separator' });
             }
         }
-        if (inImageModal && typeof window.getImageViewerState === 'function') {
-            const st = window.getImageViewerState();
+
+        if (inImageModal && typeof (window as any).getImageViewerState === 'function') {
+            const st = (window as any).getImageViewerState();
             if (st && st.hasImage) {
                 items.push({
                     id: 'image-open-tab',
-                    label: i18n.translate('context.image.openInTab') ||
+                    label:
+                        i18n.translate('context.image.openInTab') ||
                         i18n.translate('menu.image.openInTab') ||
                         'Bild in neuem Tab öffnen',
                     action: () => {
-                        if (typeof window.openActiveImageInNewTab === 'function')
-                            window.openActiveImageInNewTab();
+                        if (typeof (window as any).openActiveImageInNewTab === 'function')
+                            (window as any).openActiveImageInNewTab();
                     },
                 });
                 items.push({
                     id: 'image-save',
-                    label: i18n.translate('context.image.save') ||
+                    label:
+                        i18n.translate('context.image.save') ||
                         i18n.translate('menu.image.saveImage') ||
                         'Bild sichern …',
                     action: () => {
-                        if (typeof window.downloadActiveImage === 'function')
-                            window.downloadActiveImage();
+                        if (typeof (window as any).downloadActiveImage === 'function')
+                            (window as any).downloadActiveImage();
                     },
                 });
                 items.push({ type: 'separator' });
             }
         }
+
         if (inFinderModal) {
-            const finderItem = target &&
-                target.closest &&
-                target.closest('.finder-list-item, .finder-grid-item');
+            const finderItem =
+                target &&
+                (target as Element).closest &&
+                (target as Element).closest('.finder-list-item, .finder-grid-item');
             if (finderItem) {
-                const itemName = finderItem.getAttribute('data-item-name');
-                const itemType = finderItem.getAttribute('data-item-type');
+                const itemName = (finderItem as Element).getAttribute('data-item-name');
+                const itemType = (finderItem as Element).getAttribute('data-item-type');
                 if (itemName && itemType) {
                     items.push({
                         id: 'finder-open-item',
                         label: i18n.translate('context.finder.openItem') || 'Öffnen',
                         action: () => {
-                            if (window.FinderSystem &&
-                                typeof window.FinderSystem.openItem === 'function')
-                                window.FinderSystem.openItem(itemName, itemType);
+                            if (
+                                (window as any).FinderSystem &&
+                                typeof (window as any).FinderSystem.openItem === 'function'
+                            )
+                                (window as any).FinderSystem.openItem(itemName, itemType);
                         },
                     });
                     items.push({ type: 'separator' });
@@ -148,31 +169,41 @@ else {
                     return items;
                 }
             }
+
             items.push({
                 id: 'finder-refresh',
                 label: i18n.translate('context.finder.refresh') || 'Aktualisieren',
                 action: () => {
-                    if (window.FinderSystem &&
-                        typeof window.FinderSystem.navigateTo === 'function') {
-                        const state = window.FinderSystem.getState();
+                    if (
+                        (window as any).FinderSystem &&
+                        typeof (window as any).FinderSystem.navigateTo === 'function'
+                    ) {
+                        const state = (window as any).FinderSystem.getState();
                         if (state) {
-                            window.FinderSystem.navigateTo(state.currentPath, state.currentView);
+                            (window as any).FinderSystem.navigateTo(
+                                state.currentPath,
+                                state.currentView
+                            );
                         }
                     }
                 },
             });
             items.push({ type: 'separator' });
-            const currentViewMode = window.FinderSystem && window.FinderSystem.getState
-                ? window.FinderSystem.getState().viewMode
-                : 'list';
+
+            const currentViewMode =
+                (window as any).FinderSystem && (window as any).FinderSystem.getState
+                    ? (window as any).FinderSystem.getState().viewMode
+                    : 'list';
             if (currentViewMode !== 'list') {
                 items.push({
                     id: 'finder-view-list',
                     label: i18n.translate('context.finder.viewList') || 'Als Liste',
                     action: () => {
-                        if (window.FinderSystem &&
-                            typeof window.FinderSystem.setViewMode === 'function')
-                            window.FinderSystem.setViewMode('list');
+                        if (
+                            (window as any).FinderSystem &&
+                            typeof (window as any).FinderSystem.setViewMode === 'function'
+                        )
+                            (window as any).FinderSystem.setViewMode('list');
                     },
                 });
             }
@@ -181,42 +212,53 @@ else {
                     id: 'finder-view-grid',
                     label: i18n.translate('context.finder.viewGrid') || 'Als Raster',
                     action: () => {
-                        if (window.FinderSystem &&
-                            typeof window.FinderSystem.setViewMode === 'function')
-                            window.FinderSystem.setViewMode('grid');
+                        if (
+                            (window as any).FinderSystem &&
+                            typeof (window as any).FinderSystem.setViewMode === 'function'
+                        )
+                            (window as any).FinderSystem.setViewMode('grid');
                     },
                 });
             }
             items.push({ type: 'separator' });
+
             items.push({
                 id: 'finder-sort-name',
                 label: i18n.translate('context.finder.sortByName') || 'Nach Name sortieren',
                 action: () => {
-                    if (window.FinderSystem &&
-                        typeof window.FinderSystem.setSortBy === 'function')
-                        window.FinderSystem.setSortBy('name');
+                    if (
+                        (window as any).FinderSystem &&
+                        typeof (window as any).FinderSystem.setSortBy === 'function'
+                    )
+                        (window as any).FinderSystem.setSortBy('name');
                 },
             });
             items.push({
                 id: 'finder-sort-date',
                 label: i18n.translate('context.finder.sortByDate') || 'Nach Datum sortieren',
                 action: () => {
-                    if (window.FinderSystem &&
-                        typeof window.FinderSystem.setSortBy === 'function')
-                        window.FinderSystem.setSortBy('date');
+                    if (
+                        (window as any).FinderSystem &&
+                        typeof (window as any).FinderSystem.setSortBy === 'function'
+                    )
+                        (window as any).FinderSystem.setSortBy('date');
                 },
             });
             items.push({
                 id: 'finder-sort-size',
                 label: i18n.translate('context.finder.sortBySize') || 'Nach Größe sortieren',
                 action: () => {
-                    if (window.FinderSystem &&
-                        typeof window.FinderSystem.setSortBy === 'function')
-                        window.FinderSystem.setSortBy('size');
+                    if (
+                        (window as any).FinderSystem &&
+                        typeof (window as any).FinderSystem.setSortBy === 'function'
+                    )
+                        (window as any).FinderSystem.setSortBy('size');
                 },
             });
+
             return items;
         }
+
         if (inDesktop) {
             items.push({
                 id: 'open-finder',
@@ -252,6 +294,7 @@ else {
             });
             return items;
         }
+
         items.push({
             id: 'open-finder',
             label: i18n.translate('context.openFinder') || 'Finder öffnen',
@@ -281,29 +324,30 @@ else {
         });
         return items;
     }
+
     // Create DOM once
     const menu = document.createElement('ul');
     menu.id = 'context-menu';
     menu.className = 'menu-dropdown context-menu hidden';
     menu.setAttribute('role', 'menu');
     menu.setAttribute('aria-label', i18n.translate('context.menuLabel') || 'Kontextmenü');
+
     document.addEventListener('DOMContentLoaded', () => {
-        if (!document.body.contains(menu))
-            document.body.appendChild(menu);
+        if (!document.body.contains(menu)) document.body.appendChild(menu);
         try {
             i18n.applyTranslations(menu);
-        }
-        catch { }
+        } catch {}
     });
+
     function clearMenu() {
-        while (menu.firstChild)
-            menu.removeChild(menu.firstChild);
+        while (menu.firstChild) menu.removeChild(menu.firstChild);
     }
-    function renderMenu(items) {
+
+    function renderMenu(items: Array<any>) {
         clearMenu();
         const fragment = document.createDocumentFragment();
-        let firstFocusable = null;
-        items.forEach((it, idx) => {
+        let firstFocusable: HTMLElement | null = null;
+        items.forEach((it: any, idx: number) => {
             if (it.type === 'separator') {
                 const sep = document.createElement('li');
                 sep.className = 'menu-separator';
@@ -329,24 +373,22 @@ else {
                     if (it.action) {
                         it.action();
                     }
-                }
-                catch (e) {
+                } catch (e) {
                     console.warn('Context action failed', e);
                 }
             });
             li.appendChild(btn);
             fragment.appendChild(li);
-            if (!firstFocusable)
-                firstFocusable = btn;
+            if (!firstFocusable) firstFocusable = btn;
         });
         menu.appendChild(fragment);
         try {
             i18n.applyTranslations(menu);
-        }
-        catch { }
+        } catch {}
         return firstFocusable;
     }
-    function clampPosition(x, y) {
+
+    function clampPosition(x: number, y: number) {
         const rect = menu.getBoundingClientRect();
         const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
         const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
@@ -355,24 +397,23 @@ else {
         const ny = Math.min(Math.max(margin, y), Math.max(margin, vh - rect.height - margin));
         return { x: nx, y: ny };
     }
-    function showContextMenu(ev) {
+
+    function showContextMenu(ev: MouseEvent) {
         const target = ev.target instanceof Element ? ev.target : null;
-        if (!target)
-            return;
-        if (target.closest('input, textarea, [contenteditable="true"]'))
-            return;
+        if (!target) return;
+        if (target.closest('input, textarea, [contenteditable="true"]')) return;
         ev.preventDefault();
         ev.stopPropagation();
         hideAllDropdowns();
         buildAndOpenAt(ev.clientX, ev.clientY, target);
     }
-    function buildAndOpenAt(x, y, target) {
+
+    function buildAndOpenAt(x: number, y: number, target: Element | null) {
         const items = getMenuItemsForTarget(target);
         const firstFocusable = renderMenu(items);
         if (document.body && menu.parentElement !== document.body) {
             document.body.appendChild(menu);
-        }
-        else if (document.body && document.body.lastElementChild !== menu) {
+        } else if (document.body && document.body.lastElementChild !== menu) {
             document.body.appendChild(menu);
         }
         menu.classList.remove('hidden');
@@ -382,106 +423,109 @@ else {
         menu.style.left = clamped.x + 'px';
         menu.style.top = clamped.y + 'px';
         if (lastInvokeWasKeyboard && firstFocusable) {
-            firstFocusable.focus();
+            (firstFocusable as HTMLElement).focus();
         }
         bindAutoClose();
     }
+
     function hideContextMenu() {
-        if (!menu.classList.contains('hidden'))
-            menu.classList.add('hidden');
+        if (!menu.classList.contains('hidden')) menu.classList.add('hidden');
         unbindAutoClose();
     }
-    let onDocClick = null;
-    let onDocScroll = null;
-    let onResize = null;
-    let onKeyDown = null;
+
+    let onDocClick: ((e: Event) => void) | null = null;
+    let onDocScroll: (() => void) | null = null;
+    let onResize: (() => void) | null = null;
+    let onKeyDown: ((e: KeyboardEvent) => void) | null = null;
+
     function bindAutoClose() {
         unbindAutoClose();
-        onDocClick = (e) => {
+        onDocClick = (e: Event) => {
             const t = e.target instanceof Element ? e.target : null;
             if (!t) {
                 hideContextMenu();
                 return;
             }
-            if (t.closest('#context-menu'))
-                return;
+            if (t.closest('#context-menu')) return;
             hideContextMenu();
         };
         onDocScroll = () => hideContextMenu();
         onResize = () => hideContextMenu();
-        onKeyDown = (e) => {
-            const items = Array.from(menu.querySelectorAll('.menu-item'));
+        onKeyDown = (e: KeyboardEvent) => {
+            const items = Array.from(menu.querySelectorAll('.menu-item')) as HTMLElement[];
             const focusIdx = items.findIndex(el => el === document.activeElement);
             if (e.key === 'Escape') {
                 e.preventDefault();
                 hideContextMenu();
                 return;
             }
-            if (!items.length)
-                return;
+            if (!items.length) return;
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 const next = items[(Math.max(0, focusIdx) + 1) % items.length];
-                if (next)
-                    next.focus();
-            }
-            else if (e.key === 'ArrowUp') {
+                if (next) next.focus();
+            } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 const next = items[(focusIdx > 0 ? focusIdx : items.length) - 1];
-                if (next)
-                    next.focus();
-            }
-            else if (e.key === 'Home') {
+                if (next) next.focus();
+            } else if (e.key === 'Home') {
                 e.preventDefault();
                 items[0].focus();
-            }
-            else if (e.key === 'End') {
+            } else if (e.key === 'End') {
                 e.preventDefault();
                 items[items.length - 1].focus();
-            }
-            else if (e.key === 'Enter' || e.key === ' ') {
-                if (document.activeElement &&
-                    document.activeElement.classList.contains('menu-item')) {
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                if (
+                    document.activeElement &&
+                    (document.activeElement as Element).classList.contains('menu-item')
+                ) {
                     e.preventDefault();
-                    document.activeElement.click();
+                    (document.activeElement as HTMLElement).click();
                 }
             }
         };
-        document.addEventListener('click', onDocClick, { capture: true });
-        document.addEventListener('contextmenu', onDocClick, { capture: true });
-        document.addEventListener('scroll', onDocScroll, { capture: true });
-        window.addEventListener('resize', onResize);
-        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('click', onDocClick as EventListener, { capture: true });
+        document.addEventListener('contextmenu', onDocClick as EventListener, { capture: true });
+        document.addEventListener('scroll', onDocScroll as EventListener, { capture: true });
+        window.addEventListener('resize', onResize as EventListener);
+        document.addEventListener('keydown', onKeyDown as EventListener);
     }
+
     function unbindAutoClose() {
         if (onDocClick)
-            document.removeEventListener('click', onDocClick, { capture: true });
+            document.removeEventListener('click', onDocClick as EventListener, { capture: true });
         if (onDocClick)
-            document.removeEventListener('contextmenu', onDocClick, {
+            document.removeEventListener('contextmenu', onDocClick as EventListener, {
                 capture: true,
             });
         if (onDocScroll)
-            document.removeEventListener('scroll', onDocScroll, { capture: true });
-        if (onResize)
-            window.removeEventListener('resize', onResize);
-        if (onKeyDown)
-            document.removeEventListener('keydown', onKeyDown);
+            document.removeEventListener('scroll', onDocScroll as EventListener, { capture: true });
+        if (onResize) window.removeEventListener('resize', onResize as EventListener);
+        if (onKeyDown) document.removeEventListener('keydown', onKeyDown as EventListener);
         onDocClick = onDocScroll = onResize = onKeyDown = null;
     }
+
     let lastInvokeWasKeyboard = false;
     document.addEventListener('keydown', e => {
         if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
             lastInvokeWasKeyboard = true;
         }
     });
-    document.addEventListener('keyup', () => {
-        lastInvokeWasKeyboard = false;
-    }, { capture: true });
+    document.addEventListener(
+        'keyup',
+        () => {
+            lastInvokeWasKeyboard = false;
+        },
+        { capture: true }
+    );
+
     document.addEventListener('contextmenu', showContextMenu);
-    if (typeof window.bindDropdownTrigger === 'function') {
+
+    if (typeof (window as any).bindDropdownTrigger === 'function') {
         document.querySelectorAll('[data-menubar-trigger-button="true"]').forEach(btn => {
             btn.addEventListener('click', () => hideContextMenu());
         });
     }
 }
-//# sourceMappingURL=context-menu.js.map
+
+export {};

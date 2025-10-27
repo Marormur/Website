@@ -4,35 +4,35 @@
 
 ## Architecture Overview
 
-This is a **desktop-metaphor web application** built with vanilla JavaScript, featuring a macOS-inspired UI with windows, modals, dock, and menubar. The codebase recently underwent significant refactoring from monolithic code (~1800 lines in `app.js`) to a modular architecture with specialized systems.
+This is a **desktop-metaphor web application** built with TypeScript (compiled to JavaScript), featuring a macOS-inspired UI with windows, modals, dock, and menubar. The codebase was refactored from a large monolith into a modular TypeScript architecture with specialized systems.
 
-**⚠️ MIGRATION IN PROGRESS**: Legacy code in `app.js` is gradually being moved to modules. Prefer new module patterns over legacy approaches.
+**✅ MIGRATION COMPLETE**: The codebase has been migrated to TypeScript. Prefer the modern TypeScript module patterns and the `src/ts/` sources when adding or updating code.
 
 ### Core Systems (Load Order Matters!)
 
-1. **WindowManager** (`js/window-manager.js`) - Central window registry, z-index management, program metadata
-2. **ActionBus** (`js/action-bus.js`) - Declarative event system via `data-action` attributes
-3. **WindowConfigs** (`js/window-configs.js`) - Single source of truth for all window definitions
-4. **API** (`js/api.js`) - Unified interface to all modules with legacy compatibility
-5. **InstanceManager** (`js/instance-manager.js`) - Multi-instance window support (multiple terminals, editors)
-6. **BaseWindowInstance** (`js/base-window-instance.js`) - Base class for window instances
-7. **WindowChrome** (`js/window-chrome.js`) - Reusable UI components (titlebars, toolbars, status bars)
+1. **WindowManager** (`src/ts/window-manager.ts`) - Central window registry, z-index management, program metadata
+2. **ActionBus** (`src/ts/action-bus.ts`) - Declarative event system via `data-action` attributes
+3. **WindowConfigs** (`src/ts/window-configs.ts`) - Single source of truth for all window definitions
+4. **API** (`src/ts/api.ts`) - Unified interface to all modules with compatibility helpers
+5. **InstanceManager** (`src/ts/instance-manager.ts`) - Multi-instance window support (multiple terminals, editors)
+6. **BaseWindowInstance** (`src/ts/base-window-instance.ts`) - Base class for window instances
+7. **WindowChrome** (`src/ts/window-chrome.ts`) - Reusable UI components (titlebars, toolbars, status bars)
 
 ### Supporting Modules
 
-- `theme.js` - Dark/light mode (system, light, dark)
-- `i18n.js` - Internationalization (DE/EN) with system/manual language selection
-- `dock.js` - macOS-style dock with magnification effect
-- `menu.js` - Dynamic menu system
-- `finder.js` - File browser for GitHub repositories
-- `storage.js` - localStorage persistence for window positions, Finder state
-- `desktop.js` - Desktop icon system
+- `theme.ts` - Dark/light mode (system, light, dark)
+- `i18n.ts` - Internationalization (DE/EN) with system/manual language selection
+- `dock.ts` - macOS-style dock with magnification effect
+- `menu.ts` - Dynamic menu system
+- `finder.ts` - File browser for GitHub repositories
+- `storage.ts` - localStorage persistence for window positions, Finder state
+- `desktop.ts` - Desktop icon system
 
 ## Critical Patterns
 
 ### Adding New Windows
 
-**ONE STEP ONLY** - Add to `js/window-configs.js`:
+**ONE STEP ONLY** - Add to `src/ts/window-configs.ts`:
 
 ```javascript
 {
@@ -135,9 +135,9 @@ API.storage.saveWindowPositions();
 
 Legacy wrapper functions exist for backwards compatibility but new code should use `API.*`
 
-## Deprecated Patterns (Legacy Code)
+## Deprecated Patterns (Historical)
 
-**⚠️ DO NOT use these patterns** - they exist only for backwards compatibility during migration:
+**⚠️ DO NOT use these patterns** - they are kept for historical reference only and should not be used in new TypeScript code:
 
 ### ❌ Manual addEventListener for UI actions
 
@@ -189,17 +189,16 @@ API.theme.setThemePreference('dark');
 
 ## Development Workflow
 
-### TypeScript & JavaScript
+### TypeScript
 
-This project uses **TypeScript with strict mode** alongside existing JavaScript files:
+This project uses **TypeScript with strict mode** throughout the codebase:
 
 - **New features**: Write in TypeScript (`src/ts/*.ts`)
-- **Legacy code**: JavaScript files in `js/` are being gradually migrated
 - **Build process**: `npm run build:ts` compiles TS → JS, with automatic export fixing
 - **Type checking**: Always run `npm run typecheck` before committing
 - **Watch mode**: Use `npm run typecheck:watch` during development
 
-**When editing existing JavaScript files**: You're working with legacy code that will be migrated to TypeScript. Maintain existing patterns but consider if migration to TS would be appropriate for larger changes.
+If you find any remaining JavaScript files they are historical; prefer converting or adding functionality in `src/ts/`.
 
 ### Git workflow & commit cadence
 
@@ -320,10 +319,9 @@ Finder loads public repos from GitHub API for user **"Marormur"**.
 
 **To customize for another user**:
 
-1. Edit `js/finder.js`: Change `const GITHUB_USERNAME = 'Marormur';` (primary location)
-2. If legacy code is active: Also update `const username` in `app.js` (around line 845) and `projekte.html`
-3. Update test mocks in `tests/e2e/utils.js` (search for "Marormur" API URLs)
-4. Note: No authentication token is used
+1. Edit `src/ts/finder.ts`: Change `const GITHUB_USERNAME = 'Marormur';` (primary location)
+2. Update test mocks in `tests/e2e/utils.js` (search for "Marormur" API URLs)
+3. Note: No authentication token is used
 
 **Rate limiting**:
 
@@ -352,16 +350,16 @@ Access via `API.storage.*` methods. Reset with "Fenster zurücksetzen" menu item
 
 ### Dialog/Modal System
 
-All modals use `Dialog` class (`js/dialog.js`):
+All modals use `Dialog` class (`src/ts/dialog.ts`):
 
-```javascript
+```ts
 const dialog = new Dialog('modal-id', {
     closeButton: 'close-button-id',
     persistent: true, // or false for transient
 });
 ```
 
-Dialogs auto-register with WindowManager. Z-index managed automatically on focus.
+Dialogs auto-register with WindowManager. Z-index is managed automatically on focus.
 
 ## Common Pitfalls
 
@@ -401,17 +399,17 @@ If you're forking this project for your own portfolio:
 
 ## Key Files for Reference
 
-- `docs/architecture/OVERVIEW.md` - Visual architecture diagrams and data flow
-- `docs/architecture/PATTERNS.md` - Design patterns and best practices
-- `docs/architecture/REFACTORING.md` - Migration guide from old to new architecture
-- `docs/QUICKSTART.md` - Quick start guide for developers
-- `docs/TYPESCRIPT_GUIDELINES.md` - TypeScript usage, strict mode, and migration patterns
-- `docs/TESTING.md` - Testing strategy, environment variables, and troubleshooting
-- `docs/archive/MULTI_INSTANCE_QUICKSTART.md` - Multi-instance system guide with examples (archived)
-- `docs/guides/DEPLOYMENT.md` - GitHub Pages deployment setup
-- `js/window-configs.js` - All window definitions (single source of truth)
-- `app.js` - Main application bootstrap (legacy code being gradually migrated)
-- `i18n.js` - Complete translation dictionary
+-- `docs/architecture/OVERVIEW.md` - Visual architecture diagrams and data flow
+-- `docs/architecture/PATTERNS.md` - Design patterns and best practices
+-- `docs/architecture/REFACTORING.md` - Migration guide and notes for the TypeScript refactor
+-- `docs/QUICKSTART.md` - Quick start guide for developers
+-- `docs/TYPESCRIPT_GUIDELINES.md` - TypeScript usage, strict mode, and migration patterns
+-- `docs/TESTING.md` - Testing strategy, environment variables, and troubleshooting
+-- `docs/archive/MULTI_INSTANCE_QUICKSTART.md` - Multi-instance system guide with examples (archived)
+-- `docs/guides/DEPLOYMENT.md` - GitHub Pages deployment setup
+-- `src/ts/window-configs.ts` - All window definitions (single source of truth)
+-- `src/ts/app.ts` - Main application bootstrap (TypeScript entry)
+-- `src/ts/i18n.ts` - Translation dictionary and helpers
 
 ## Quick Wins for AI Agents
 

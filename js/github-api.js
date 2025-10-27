@@ -5,7 +5,8 @@
     function getCacheTtl() {
         const dflt = 5 * 60 * 1000; // 5 minutes
         try {
-            const constants = window.APP_CONSTANTS || {};
+            const constants = window.APP_CONSTANTS ||
+                {};
             const val = constants['GITHUB_CACHE_DURATION'];
             return typeof val === 'number' ? val : dflt;
         }
@@ -69,7 +70,7 @@
         return res.json();
     }
     async function fetchUserRepos(username, params) {
-        const search = new URLSearchParams();
+        const search = new globalThis.URLSearchParams();
         search.set('per_page', String(params?.per_page ?? 100));
         search.set('sort', params?.sort ?? 'updated');
         const url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?${search.toString()}`;

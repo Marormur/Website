@@ -1,5 +1,7 @@
 # 🤝 Contributing to Marvin's Portfolio Website
 
+> NOTE: TypeScript migration is complete. Prefer the TypeScript sources in `src/ts/` when adding or editing code. The `js/` directory contains emitted JavaScript output and legacy artifacts — edit `js/` only when fixing generated output or maintaining historical documentation.
+
 Thank you for your interest in contributing! This document provides guidelines for contributing to the project.
 
 ## 📋 Table of Contents
@@ -56,8 +58,12 @@ Thank you for your interest in contributing! This document provides guidelines f
 - **Source Files**: `src/` directory
     - `src/css/` - CSS source files
     - `src/input.css` - Tailwind CSS input
-- **JavaScript Modules**: `js/` directory
+- **TypeScript Modules (source)**: `src/ts/` directory
     - Core modules (window-manager, action-bus, api, etc.)
+    - Use this for all new modules and edits.
+- **Runtime / Emitted JS**: `js/` directory
+    - Contains compiled/emitted JavaScript output and historical artifacts
+    - Do NOT create new modules under `js/`. Edit `src/ts/` and run the build instead. Only edit `js/` when fixing generated output or maintaining historical docs.
 - **Documentation**: `docs/` directory
 - **Tests**: `tests/` directory
 
@@ -137,15 +143,15 @@ npm run build:ts          # Build TypeScript to JavaScript
 When adding new functionality:
 
 1. **Use existing modules** when possible (WindowManager, ActionBus, API)
-2. **Create new modules** in `js/` directory if needed
-3. **Register windows** in `js/window-configs.js`
+2. **Create new modules** in `src/ts/` directory if needed
+3. **Register windows** in `src/ts/window-configs.ts`
 4. **Register actions** using `ActionBus.register()`
 
 ### Example: Adding a New Window
 
-1. Add window configuration to `js/window-configs.js`:
+1. Add window configuration to `src/ts/window-configs.ts`:
 
-    ```javascript
+    ```ts
     {
         id: 'calculator-modal',
         type: 'persistent',
@@ -166,8 +172,8 @@ When adding new functionality:
 
 ### Example: Adding a Custom Action
 
-```javascript
-// Register in app.js or module file
+```ts
+// Register in `src/ts/app.ts` or module file
 ActionBus.register('myAction', (params, element) => {
     console.log('Action triggered with params:', params);
     // Your logic here

@@ -1,5 +1,7 @@
 # 🚀 TypeScript Migration Plan
 
+> NOTE: Migration is largely complete. For all new development and edits prefer the TypeScript sources in `src/ts/`. The `js/` directory contains emitted JavaScript output and legacy artifacts — edit `js/` only when fixing generated output or maintaining historical docs.
+
 **Projekt:** macOS-Style Portfolio Website
 **Status:** ✅ Phase 0-5 Abgeschlossen | ⏳ Phase 6 Optional
 **Ziel:** Inkrementelle Migration zu TypeScript mit Zero Breaking Changes

@@ -16,7 +16,7 @@
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌────────────────────────────────────────────────────────┐    │
-│  │  1️⃣  WindowManager (js/window-manager.js)              │    │
+│  │  1️⃣  WindowManager (src/ts/window-manager.ts)          │    │
 │  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │    │
 │  │  • Fenster registrieren                                │    │
 │  │  • z-Index verwalten                                   │    │
@@ -28,7 +28,7 @@
 │  └────────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  ┌────────────────────────────────────────────────────────┐    │
-│  │  2️⃣  ActionBus (js/action-bus.js)                      │    │
+│  │  2️⃣  ActionBus (src/ts/action-bus.ts)                  │    │
 │  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │    │
 │  │  • Event-Handler automatisieren                        │    │
 │  │  • Actions deklarativ binden                           │    │
@@ -39,7 +39,7 @@
 │  └────────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  ┌────────────────────────────────────────────────────────┐    │
-│  │  3️⃣  API (js/api.js)                                   │    │
+│  │  3️⃣  API (src/ts/api.ts)                               │    │
 │  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │    │
 │  │  • Sauberer Zugriff auf alle Module                   │    │
 │  │  • Konsistente Schnittstelle                           │    │
@@ -50,7 +50,7 @@
 │  └────────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  ┌────────────────────────────────────────────────────────┐    │
-│  │  4️⃣  Window Configs (js/window-configs.js)            │    │
+│  │  4️⃣  Window Configs (src/ts/window-configs.ts)        │    │
 │  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │    │
 │  │  • Alle Fenster an einem Ort                          │    │
 │  │  • Einfach neue hinzufügen                             │    │
@@ -124,7 +124,7 @@
 │  ───────────────────────────────────────────────────────────   │
 │                                                                 │
 │  JETZT (1 Schritt):                                            │
-│  ✅ In window-configs.js hinzufügen:                           │
+│  ✅ In src/ts/window-configs.ts hinzufügen:                    │
 │                                                                 │
 │     {                                                           │
 │       id: 'neues-fenster-modal',                              │
@@ -148,10 +148,10 @@
 │  • Gespart: ~200 Zeilen (-11%)                                 │
 │                                                                 │
 │  Neue Module:                                                   │
-│  • window-manager.js:  9,345 bytes                             │
-│  • action-bus.js:      8,215 bytes                             │
-│  • api.js:             9,091 bytes                             │
-│  • window-configs.js:  2,763 bytes                             │
+│  • src/ts/window-manager.ts:  9,345 bytes                       │
+│  • src/ts/action-bus.ts:      8,215 bytes                       │
+│  • src/ts/api.ts:             9,091 bytes                       │
+│  • src/ts/window-configs.ts:  2,763 bytes                       │
 │  • TOTAL:             29,414 bytes (~800 Zeilen)               │
 │                                                                 │
 │  Funktionalität:                                                │
@@ -226,6 +226,6 @@
 
 ---
 
-**Status**: ✅ Produktionsbereit  
-**Breaking Changes**: ❌ Keine  
+**Status**: ✅ Produktionsbereit
+**Breaking Changes**: ❌ Keine
 **Empfehlung**: ⭐⭐⭐⭐⭐

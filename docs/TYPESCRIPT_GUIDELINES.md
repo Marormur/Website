@@ -7,6 +7,8 @@
 
 ---
 
+> NOTE: TypeScript migration is complete. Prefer the TypeScript sources in `src/ts/` for development and edits. The `js/` directory contains emitted JavaScript output and legacy artifacts — edit `js/` only when fixing generated output or maintaining historical documentation.
+
 ## 📋 Table of Contents
 
 1. [Quick Start](#quick-start)

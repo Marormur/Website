@@ -2,6 +2,8 @@
 
 Schnell lauffähig werden und die wichtigsten Konzepte der neuen Architektur nutzen.
 
+> NOTE: The codebase has been migrated to TypeScript. Prefer edits in `src/ts/` (e.g. `src/ts/window-configs.ts`). The `js/` directory contains emitted runtime output and legacy artifacts — only edit `js/` when fixing generated output.
+
 ## Lokales Setup
 
 Option A – VS Code Tasks (empfohlen):
@@ -51,9 +53,9 @@ Drei neue zentrale Systeme wurden eingeführt, um deinen Code flexibler und wart
 
 ### Jetzt: 1 Schritt!
 
-**In `js/window-configs.js` hinzufügen:**
+**In `src/ts/window-configs.ts` hinzufügen:**
 
-```javascript
+```ts
 {
     id: 'calculator-modal',
     type: 'persistent',
@@ -63,14 +65,10 @@ Drei neue zentrale Systeme wurden eingeführt, um deinen Code flexibler und wart
 }
 ```
 
-**Fertig!** 🎉
-
 Das System erkennt das Fenster automatisch und:
 
 - ✅ Registriert es im WindowManager
-- ✅ Erstellt die Dialog-Instanz
-- ✅ Verwaltet z-Index automatisch
-- ✅ Speichert/Lädt Position
+  **In `src/ts/window-configs.ts` hinzufügen:**
 - ✅ Bindet Close-Button automatisch
 
 ## HTML vereinfachen (Optional)
@@ -81,11 +79,12 @@ Das System erkennt das Fenster automatisch und:
 <button id="close-finder-modal" ...>Schließen</button>
 ```
 
+**Fertig!** 🎉
+
 ### Neu:
 
-```html
-<button data-action="closeWindow" data-window-id="finder-modal">
     Schließen
+
 </button>
 ```
 
@@ -209,7 +208,7 @@ Falls etwas klemmt (Port belegt, Tests flakey, TypeScript-Fehler), siehe `docs/T
 
 - Vollständige Doku: `REFACTORING.md`
 - HTML-Beispiele: `HTML_MIGRATION.html`
-- Module: `js/window-manager.js`, `js/action-bus.js`, `js/api.js`
+- Module (TypeScript sources): `src/ts/window-manager.ts`, `src/ts/action-bus.ts`, `src/ts/api.ts`
 
 ---
 
