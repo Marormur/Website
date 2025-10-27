@@ -37,6 +37,8 @@
         const instances = manager.getAllInstances();
         const active = manager.getActiveInstance();
         const activeId = active?.instanceId ?? null;
+        // Diagnostic: log all instance IDs being rendered as tabs
+        console.log('[WindowTabs] Rendering tabs for instance IDs:', instances.map(i => i.instanceId));
         instances.forEach((inst) => {
             const tab = createTabEl(inst, inst.instanceId === activeId);
             // Click handlers
@@ -229,9 +231,6 @@
                                 this.opts.onTabSwitch?.(newActive.instanceId);
                             }
                         }
-                        // Ensure tab UI is refreshed after destroying an instance
-                        // so DOM and manager state remain in sync and no ghost tabs remain
-                        refreshWithHooks();
                     }, () => {
                         if (this.opts.onNewTab) {
                             this.opts.onNewTab();
