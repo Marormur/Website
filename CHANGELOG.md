@@ -3,25 +3,21 @@
 
 ## Unreleased
 
-<<<<<<< HEAD
-- fix(storage): prevent TypeError during modal restore on app init
-  - Validate DOM element and WindowManager registration before calling Dialog.open()
-  - Add fallback to show element directly when dialog instance is missing or throws
-  - Add E2E tests to cover invalid modal IDs and transient modal handling
+Summary of notable changes in progress & recent work:
 
-  ### Added
-  - **feat(tabs): Drag-and-drop tab reordering** (2025-10-26)
-    - Implemented drag-and-drop reordering for Finder tabs (and all multi-instance windows)
-    - Added `reorderInstances()` method to InstanceManager for managing tab order
-    - Tabs now display visual feedback (blue left border) during drag operations
-    - Tab order is preserved in the instance manager and persists across sessions
-    - Active tab remains active after reordering
-    - E2E tests added to verify reordering functionality and active tab persistence
-    - **Fixes**: [#15](https://github.com/Marormur/Website/issues/15) - Finder tabs drag-and-drop reordering
+- Tests & stability
+  - Added comprehensive E2E tests for window tab keyboard shortcuts (`tests/e2e/keyboard-shortcuts.spec.js`) covering Ctrl/Cmd+1-9, Ctrl/Cmd+W, Ctrl/Cmd+N, Ctrl+Tab, and Ctrl+Shift+Tab.
+  - Testing stabilization groundwork: `docs/TESTING.md`, optional GitHub API mocks (`MOCK_GITHUB=1`), and a quick smoke runner (`test:e2e:quick`).
 
-  ### Changed
-  - **refactor(ts): migrate window-tabs to TypeScript (strict mode)** (2025-10-26)
-    - Complete migration of tab system from JS to TypeScript with strict type checking
-    - Source of truth is now `src/ts/window-tabs.ts` (no direct edits to generated `js/window-tabs.js`)
-    - Added comprehensive type definitions in `types/window-tabs.d.ts`
-    - Integrated WindowTabs and WindowTabManager into central type definitions (`types/index.d.ts`)
+- Tabs & multi-instance
+  - Drag-and-drop tab reordering implemented; `InstanceManager.reorderInstances()` preserves tab order and UI state.
+  - `src/ts/window-tabs.ts` migrated to TypeScript (strict mode) with fixes for content visibility and ghost-tab prevention.
+
+- Storage & robustness
+  - Fixed modal restore: validate DOM elements and WindowManager registration before restoring open modals to avoid TypeError on startup.
+
+- Developer experience
+  - Workflow improvements: TypeScript watch, consolidated dev tasks, pre-push quick smoke checks, and `.gitattributes` for cross-platform EOL.
+
+For full details and per-change descriptions see the open PRs (e.g. #22, #23, #26) which contain the complete diffs and test additions.
+
