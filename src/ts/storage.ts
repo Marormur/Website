@@ -137,7 +137,7 @@
       const dialogs = w['dialogs'] as Record<string, unknown> | undefined;
       const dialogInstance = dialogs && (dialogs[id] as Record<string, unknown> | null);
       const openFn = dialogInstance && (dialogInstance['open'] as (() => void) | undefined);
-      
+
       if (typeof openFn === 'function') {
         try {
           openFn();
