@@ -318,6 +318,16 @@ console.log('MultiInstanceIntegration loaded');
                 }
                 return instance;
             };
+
+            // Listen for instance destruction (via manager)
+            const originalDestroy = manager.destroyInstance.bind(manager);
+            manager.destroyInstance = instanceId => {
+                originalDestroy(instanceId);
+                // After destruction, force tab UI refresh to ensure sync
+                if (tabManager && tabManager.controller && typeof tabManager.controller.refresh === 'function') {
+                    tabManager.controller.refresh();
+                }
+            };
         }
 
         /**

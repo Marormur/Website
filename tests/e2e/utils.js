@@ -84,8 +84,22 @@ async function expectAppleMenuSettingsLabel(page, expectedLabel) {
 }
 
 // Menubar/UI helpers
-async function clickDockIcon(page, altText) {
-    await page.getByRole('img', { name: altText }).click();
+async function clickDockIcon(page, identifier) {
+    // Prefer stable data-window-id based clicks when a modal id is provided
+    try {
+        if (typeof identifier === 'string' && identifier.endsWith('-modal')) {
+            const sel = `#dock .dock-tray .dock-item[data-window-id="${identifier}"]`;
+            const el = page.locator(sel).first();
+            await el.waitFor({ state: 'visible', timeout: 10000 });
+            await el.click();
+            return;
+        }
+    } catch (e) {
+        // fallthrough to legacy behaviour
+    }
+
+    // Legacy: click image by accessible name (alt text)
+    await page.getByRole('img', { name: identifier }).click();
 }
 
 async function expectMenuButton(page, label) {
@@ -126,9 +140,26 @@ async function getDockOrder(page) {
     );
 }
 
+// Wait until dock order differs from prevOrder (stringified comparison)
+async function waitForDockOrderChange(page, prevOrder, timeout = 5000) {
+    await page.waitForFunction(
+        ({ prev }) => {
+            const cur = Array.from(document.querySelectorAll('#dock .dock-tray .dock-item')).map(it => it.getAttribute('data-window-id'));
+            try {
+                return JSON.stringify(cur) !== JSON.stringify(prev);
+            } catch {
+                return false;
+            }
+        },
+        { prev: prevOrder },
+        { timeout }
+    );
+}
+
 async function dragAfter(page, sourceId, targetId) {
     const srcSel = `#dock .dock-tray .dock-item[data-window-id="${sourceId}"]`;
     const tgtSel = `#dock .dock-tray .dock-item[data-window-id="${targetId}"]`;
+    const prevOrder = await getDockOrder(page);
     await page.evaluate(
         ({ srcSel, tgtSel }) => {
             const src = document.querySelector(srcSel);
@@ -168,13 +199,14 @@ async function dragAfter(page, sourceId, targetId) {
         },
         { srcSel, tgtSel }
     );
-    // Intentional small delay to allow DOM reorder event propagation in drag/drop flows
-    await page.waitForTimeout(150);
+    // Wait until the dock order has changed instead of a fixed timeout
+    await waitForDockOrderChange(page, prevOrder, 3000);
 }
 
 async function dragBefore(page, sourceId, targetId) {
     const srcSel = `#dock .dock-tray .dock-item[data-window-id="${sourceId}"]`;
     const tgtSel = `#dock .dock-tray .dock-item[data-window-id="${targetId}"]`;
+    const prevOrder = await getDockOrder(page);
     await page.evaluate(
         ({ srcSel, tgtSel }) => {
             const src = document.querySelector(srcSel);
@@ -214,8 +246,8 @@ async function dragBefore(page, sourceId, targetId) {
         },
         { srcSel, tgtSel }
     );
-    // Intentional small delay to allow DOM reorder event propagation in drag/drop flows
-    await page.waitForTimeout(150);
+    // Wait until the dock order has changed instead of a fixed timeout
+    await waitForDockOrderChange(page, prevOrder, 3000);
 }
 
 function expectOrderContains(order, beforeId, afterId) {

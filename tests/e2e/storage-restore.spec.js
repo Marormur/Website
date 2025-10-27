@@ -35,12 +35,9 @@ test.describe('Storage Modal Restore @basic', () => {
             });
         });
 
-        // Wait a bit for any console messages to appear
-        await page.waitForTimeout(1000);
-
-        // App should not crash - verify it's functional
-        const dock = page.locator('#dock');
-        await expect(dock).toBeVisible();
+    // App should not crash - verify it's functional
+    const dock = page.locator('#dock');
+    await expect(dock).toBeVisible({ timeout: 5000 });
 
         // Valid modals should be restored (finder and about)
         const finderModal = page.locator('#finder-modal');
@@ -71,8 +68,9 @@ test.describe('Storage Modal Restore @basic', () => {
             errors.push(error.message);
         });
 
-        await page.waitForTimeout(1000);
-        expect(errors).toHaveLength(0);
+    // App should remain error-free
+    await expect(page.locator('#dock')).toBeVisible({ timeout: 5000 });
+    expect(errors).toHaveLength(0);
     });
 
     test('should restore valid modals without errors', async ({ page }) => {
@@ -80,14 +78,19 @@ test.describe('Storage Modal Restore @basic', () => {
         await page.goto('http://127.0.0.1:5173/index.html');
         await waitForAppReady(page);
 
-        // Open About modal via dock
-        const aboutIcon = page.locator('#dock img[alt*="Über"]').or(page.locator('#dock img[alt*="About"]'));
-        await aboutIcon.click();
-        await page.waitForTimeout(500);
+    // Open About modal via header (stable, uses ActionBus)
+    // First open the Apple menu dropdown where the About item lives
+    const appleMenuButton = page.locator('[aria-controls="apple-menu-dropdown"]').first();
+    await appleMenuButton.click();
+    const appleMenu = page.locator('#apple-menu-dropdown');
+    await expect(appleMenu).toBeVisible();
 
-        // Verify it's open
+    const aboutTrigger = page.locator('[data-action="openAbout"]').first();
+    await aboutTrigger.click();
+
+        // Verify it's open (wait for animation/visibility)
         const aboutModal = page.locator('#about-modal');
-        await expect(aboutModal).not.toHaveClass(/hidden/);
+        await expect(aboutModal).not.toHaveClass(/hidden/, { timeout: 5000 });
 
         // Now reload and verify it's restored
         await page.reload();
@@ -139,10 +142,8 @@ test.describe('Storage Modal Restore @basic', () => {
             }
         });
 
-        await page.waitForTimeout(1000);
-
-        // App should still be functional
-        const dock = page.locator('#dock');
-        await expect(dock).toBeVisible();
+    // App should still be functional
+    const dock = page.locator('#dock');
+    await expect(dock).toBeVisible({ timeout: 5000 });
     });
 });

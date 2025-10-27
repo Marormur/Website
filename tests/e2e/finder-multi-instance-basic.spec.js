@@ -154,7 +154,8 @@ test.describe('Finder Multi-Instance System - Basic', () => {
 
     test('finder instances have independent view states', async ({ page }) => {
         await page.goto('/');
-        await page.waitForTimeout(2000);
+        // Wait for the application to be fully ready instead of a fixed sleep
+        await utils.waitForAppReady(page);
 
         const result = await page.evaluate(() => {
             try {

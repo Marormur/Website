@@ -22,6 +22,18 @@ node_modules/
 test-results/
 playwright-report/
 
+# Playwright / test artifacts and media (exclude large test output and videos/screenshots)
+# Keeps repo free of generated videos/images from E2E runs
+test-results/**/video.*
+test-results/**/trace.*
+test-results/**/screenshot*.png
+test-results/**/test-failed-*.png
+playwright-report/**
+
+# Logs folder (project-specific)
+logs/
+logs/**
+
 # Build outputs
 # Tailwind CSS output is built by GitHub Actions during deployment
 dist/output.css

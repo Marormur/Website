@@ -570,6 +570,7 @@ console.log('FinderInstance loaded');
          */
         renderListView(items) {
             const html = `
+                <div id="finder-list-container">
                 <table class="finder-list-table">
                     <thead>
                         <tr>
@@ -591,6 +592,7 @@ console.log('FinderInstance loaded');
                         `).join('')}
                     </tbody>
                 </table>
+                </div>
             `;
 
             this.domRefs.contentArea.innerHTML = html;
@@ -601,6 +603,7 @@ console.log('FinderInstance loaded');
          */
         renderGridView(items) {
             const html = `
+                <div id="finder-list-container">
                 <div class="finder-grid-container">
                     ${items.map(item => `
                         <div class="finder-grid-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
@@ -608,6 +611,7 @@ console.log('FinderInstance loaded');
                             <div class="finder-grid-name">${item.name}</div>
                         </div>
                     `).join('')}
+                </div>
                 </div>
             `;
 

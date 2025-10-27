@@ -12,8 +12,8 @@ test.describe('Menubar switches with active window (de-DE)', () => {
     });
 
     test('Finder menus appear when Finder is active', async ({ page }) => {
-        // Open Finder from dock
-        await clickDockIcon(page, 'Finder Icon');
+            // Open Finder from dock (use stable window id)
+            await clickDockIcon(page, 'finder-modal');
         // Ensure Finder is the active window before asserting menubar
         await bringModalToFront(page, 'finder-modal');
 
@@ -34,8 +34,8 @@ test.describe('Menubar switches with active window (de-DE)', () => {
     });
 
     test('Switch to Texteditor and back to Finder updates menubar', async ({ page }) => {
-        // Open Texteditor
-        await clickDockIcon(page, 'Texteditor Icon');
+    // Open Texteditor (use stable window id)
+    await clickDockIcon(page, 'text-modal');
         const textEditorButton = page.getByRole('button', {
             name: 'Texteditor',
         });
@@ -49,8 +49,8 @@ test.describe('Menubar switches with active window (de-DE)', () => {
         await expectMenuButton(page, 'Fenster');
         await expectMenuButton(page, 'Hilfe');
 
-        // Open Finder too
-        await clickDockIcon(page, 'Finder Icon');
+    // Open Finder too
+    await clickDockIcon(page, 'finder-modal');
 
         // Ensure Finder is actually the top-most by clicking its title bar
         await bringModalToFront(page, 'finder-modal');

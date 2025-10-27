@@ -22,8 +22,19 @@ test.describe('Finder GitHub integration', () => {
     test('Clicking GitHub in Finder does not open Projects window', async ({ page }) => {
         await openFinder(page);
         await openFinderGithub(page);
-        // Wait for either loading text or any content to appear
-        await page.waitForTimeout(500);
+        // Wait for either repo rows or an error/empty message to appear
+        const websiteRow = page.locator('tr:has-text("Website")').first();
+        const errorMsg = page
+            .locator(
+                'text=/Repos konnten nicht geladen werden|Keine öffentlichen Repositories gefunden|Repositories could not be loaded|No public repositories found|Rate Limit/i'
+            )
+            .first();
+        const race = Promise.race([
+            websiteRow.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'ok'),
+            errorMsg.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'error'),
+        ]);
+    const _outcome = await race;
+        // Projects modal should remain hidden regardless
         const projectsModal = page.locator('#projects-modal');
         await expect(projectsModal).toHaveClass(/hidden/);
     });

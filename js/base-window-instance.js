@@ -60,7 +60,19 @@ console.log('BaseWindowInstance loaded');
             this.emit('beforeDestroy');
             this.removeAllEventListeners();
             if (this.container) {
-                this.container.innerHTML = '';
+                try {
+                    // Remove the container element from the DOM to avoid stale visible nodes
+                    if (this.container.parentElement) {
+                        this.container.remove();
+                    }
+                }
+                catch {
+                    // Fallback: clear content if remove fails
+                    try {
+                        this.container.innerHTML = '';
+                    }
+                    catch { }
+                }
                 this.container = null;
             }
             this.windowElement = null;

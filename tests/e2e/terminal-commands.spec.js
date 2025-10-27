@@ -19,8 +19,9 @@ test.describe('Terminal - Command and Path Handling', () => {
         });
 
         // Wait for terminal to be initialized - old system uses .terminal-input class
-        await page.waitForSelector('.terminal-input', { timeout: 5000 });
-        await page.waitForTimeout(500); // Give terminal time to initialize
+    await page.waitForSelector('.terminal-input', { timeout: 5000 });
+    // Wait for at least one output line (welcome) so terminal is initialized
+    await page.waitForSelector('.terminal-output .terminal-line', { timeout: 5000 });
     });
 
     /**
@@ -29,8 +30,25 @@ test.describe('Terminal - Command and Path Handling', () => {
     async function executeCommand(page, command) {
         const input = page.locator('.terminal-input');
         await input.fill(command);
+        // Capture current output count before executing
+        const prevCount = await page.locator('.terminal-output .terminal-line').count();
         await input.press('Enter');
-        await page.waitForTimeout(200); // Wait for command execution
+        // Special-case commands that clear output (no new line expected)
+        if (command.trim() === 'clear') {
+            // Wait until output is empty
+            await page.waitForFunction(() => {
+                try {
+                    return document.querySelectorAll('.terminal-output .terminal-line').length === 0;
+                } catch { return false; }
+            }, { timeout: 5000 });
+        } else {
+            // Wait for a new output line to appear after executing the command
+            await page.waitForFunction(prev => {
+                try {
+                    return document.querySelectorAll('.terminal-output .terminal-line').length > prev;
+                } catch { return false; }
+            }, prevCount, { timeout: 5000 });
+        }
     }
 
     /**

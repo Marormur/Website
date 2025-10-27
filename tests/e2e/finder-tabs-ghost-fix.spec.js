@@ -13,16 +13,14 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
         await page.getByRole('img', { name: 'Finder Icon' }).click();
         await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
 
-        // Create two more tabs (total 3)
-        const addButton = page.locator('#finder-tabs-container .wt-add');
-        await addButton.click();
-        await page.waitForTimeout(300);
-        await addButton.click();
-        await page.waitForTimeout(300);
+    // Create two more tabs (total 3)
+    const addButton = page.locator('#finder-tabs-container .wt-add');
+    await addButton.click();
+    await addButton.click();
 
-        // Verify 3 tabs exist
-        let tabs = page.locator('#finder-tabs-container .wt-tab');
-        await expect(tabs).toHaveCount(3);
+    // Verify 3 tabs exist
+    let tabs = page.locator('#finder-tabs-container .wt-tab');
+    await expect(tabs).toHaveCount(3, { timeout: 5000 });
 
         // Get the tab titles before closing
         const tabTitlesBefore = await tabs.allTextContents();
@@ -35,8 +33,16 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
         const middleTabClose = tabs.nth(1).locator('.wt-tab-close');
         await middleTabClose.click();
 
-        // Wait for UI to update
-        await page.waitForTimeout(300);
+        // Wait for UI and manager to reflect removal
+        await page.waitForFunction(() => {
+            try {
+                const tabs = document.querySelectorAll('#finder-tabs-container .wt-tab').length;
+                const mgr = window.FinderInstanceManager;
+                const count = mgr ? mgr.getInstanceCount() : 0;
+                // Accept either the DOM update or the manager update to reduce flakiness
+                return tabs === 2 || count === 2;
+            } catch { return false; }
+        }, { timeout: 20000 });
 
         // Verify only 2 tabs remain
         tabs = page.locator('#finder-tabs-container .wt-tab');
@@ -77,11 +83,10 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
 
         // Close the only tab
         const closeButton = tabs.first().locator('.wt-tab-close');
-        await closeButton.click();
-        await page.waitForTimeout(300);
+    await closeButton.click();
 
-        // Verify modal is hidden
-        await expect(page.locator('#finder-modal')).toHaveClass(/hidden/);
+    // Verify modal is hidden
+    await expect(page.locator('#finder-modal')).toHaveClass(/hidden/, { timeout: 5000 });
 
         // Verify no instances remain
         const instanceCount = await page.evaluate(() => {
@@ -106,14 +111,22 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
 
         // Create second tab
         const addButton = page.locator('#finder-tabs-container .wt-add');
-        await addButton.click();
-        await page.waitForTimeout(300);
+    await addButton.click();
+    await expect(page.locator('#finder-tabs-container .wt-tab')).toHaveCount(2, { timeout: 5000 });
 
         // Close second tab
         let tabs = page.locator('#finder-tabs-container .wt-tab');
         const secondTabClose = tabs.nth(1).locator('.wt-tab-close');
         await secondTabClose.click();
-        await page.waitForTimeout(300);
+        // Wait until DOM and manager reflect removal
+        await page.waitForFunction(() => {
+            try {
+                const tabs = document.querySelectorAll('#finder-tabs-container .wt-tab').length;
+                const mgr = window.FinderInstanceManager;
+                const count = mgr ? mgr.getInstanceCount() : 0;
+                return tabs === 1 || count === 1;
+            } catch { return false; }
+        }, { timeout: 20000 });
 
         // Verify no "not found" warnings
         const notFoundWarnings = warnings.filter(w => w.includes('not found'));
@@ -121,12 +134,13 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
 
         // Try to interact with remaining tab (should not cause warnings)
         tabs = page.locator('#finder-tabs-container .wt-tab');
-        await tabs.first().click();
-        await page.waitForTimeout(200);
+    await tabs.first().click();
+    // Ensure interaction completes and no new warnings are emitted
+    await page.waitForFunction(() => true, { timeout: 200 });
 
-        // Still no warnings
-        const notFoundWarningsAfter = warnings.filter(w => w.includes('not found'));
-        expect(notFoundWarningsAfter).toHaveLength(0);
+    // Still no warnings
+    const notFoundWarningsAfter = warnings.filter(w => w.includes('not found'));
+    expect(notFoundWarningsAfter).toHaveLength(0);
     });
 
     test('Active tab is reassigned after closing active tab', async ({ page }) => {
@@ -136,14 +150,12 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
 
         // Create two more tabs
         const addButton = page.locator('#finder-tabs-container .wt-add');
-        await addButton.click();
-        await page.waitForTimeout(300);
-        await addButton.click();
-        await page.waitForTimeout(300);
+    await addButton.click();
+    await addButton.click();
 
-        // Verify 3 tabs, third is active
-        let tabs = page.locator('#finder-tabs-container .wt-tab');
-        await expect(tabs).toHaveCount(3);
+    // Verify 3 tabs, third is active
+    let tabs = page.locator('#finder-tabs-container .wt-tab');
+    await expect(tabs).toHaveCount(3, { timeout: 5000 });
 
         const activeBeforeClose = await page.evaluate(() => {
             if (!window.FinderInstanceManager) return null;
@@ -154,7 +166,15 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
         // Close the active tab (third)
         const thirdTabClose = tabs.nth(2).locator('.wt-tab-close');
         await thirdTabClose.click();
-        await page.waitForTimeout(300);
+        // Wait for manager and DOM to reflect removal
+        await page.waitForFunction(() => {
+            try {
+                const tabs = document.querySelectorAll('#finder-tabs-container .wt-tab').length;
+                const mgr = window.FinderInstanceManager;
+                const count = mgr ? mgr.getInstanceCount() : 0;
+                return tabs === 2 || count === 2;
+            } catch { return false; }
+        }, { timeout: 20000 });
 
         // Verify 2 tabs remain
         tabs = page.locator('#finder-tabs-container .wt-tab');

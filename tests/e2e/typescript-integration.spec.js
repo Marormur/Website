@@ -217,9 +217,12 @@ test.describe('TypeScript Integration', () => {
         await page.reload();
         await utils.waitForAppReady(page);
 
-        // Wait for app to fully initialize (all modules loaded)
-        // Using short delay here as we just reloaded and already have appReady
-        await page.waitForTimeout(500); // Intentional: ensure module initialization complete after reload
+        // Wait for a known module to be available (indicates modules initialized)
+        await page.waitForFunction(() => {
+            try {
+                return window.WindowChrome && typeof window.WindowChrome.createTitlebar === 'function';
+            } catch { return false; }
+        }, { timeout: 5000 });
 
         expect(errors.length, `No CommonJS export errors: ${errors.join(', ')}`).toBe(0);
     });
