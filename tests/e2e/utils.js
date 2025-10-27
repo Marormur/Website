@@ -144,7 +144,9 @@ async function getDockOrder(page) {
 async function waitForDockOrderChange(page, prevOrder, timeout = 5000) {
     await page.waitForFunction(
         ({ prev }) => {
-            const cur = Array.from(document.querySelectorAll('#dock .dock-tray .dock-item')).map(it => it.getAttribute('data-window-id'));
+            const cur = Array.from(document.querySelectorAll('#dock .dock-tray .dock-item')).map(
+                it => it.getAttribute('data-window-id')
+            );
             try {
                 return JSON.stringify(cur) !== JSON.stringify(prev);
             } catch {

@@ -60,9 +60,7 @@ const server = http.createServer((req, res) => {
     const extname = String(path.extname(filePath)).toLowerCase();
     const contentType = MIME_TYPES[extname] || 'application/octet-stream';
 
-    console.log(
-        `[${new Date().toISOString()}] ${req.method} ${req.url} -> ${filePath}`,
-    );
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} -> ${filePath}`);
 
     fs.readFile(filePath, (error, content) => {
         if (error) {
@@ -71,9 +69,7 @@ const server = http.createServer((req, res) => {
                 res.writeHead(404, { 'Content-Type': 'text/html' });
                 res.end('<h1>404 Not Found</h1>', 'utf-8');
             } else {
-                console.error(
-                    `[500] Server error: ${error.code} for ${filePath}`,
-                );
+                console.error(`[500] Server error: ${error.code} for ${filePath}`);
                 res.writeHead(500);
                 res.end('Server Error: ' + error.code, 'utf-8');
             }
@@ -96,9 +92,7 @@ server.listen(PORT, HOST, () => {
     try {
         chokidar = require('chokidar');
         if (process.env.NO_WATCH === '1' || process.env.CI === 'true') {
-            console.log(
-                '[LR] Live reload disabled by environment (NO_WATCH/CI).',
-            );
+            console.log('[LR] Live reload disabled by environment (NO_WATCH/CI).');
             return;
         }
 
@@ -127,11 +121,10 @@ server.listen(PORT, HOST, () => {
             depth: 6,
         });
 
-        const broadcastReload = (changedPath) => {
+        const broadcastReload = changedPath => {
             const rel = path.relative(__dirname, changedPath || '');
             const ext = path.extname(rel).toLowerCase();
-            const kind =
-                ext === '.css' ? 'css' : ext === '.html' ? 'html' : 'js';
+            const kind = ext === '.css' ? 'css' : ext === '.html' ? 'html' : 'js';
             const msg = `event: reload\ndata: ${JSON.stringify({ path: rel, kind, ts: Date.now() })}\n\n`;
             for (const client of sseClients) {
                 try {
@@ -161,10 +154,7 @@ server.listen(PORT, HOST, () => {
             }, 120);
         }
 
-        watcher
-            .on('add', scheduleReload)
-            .on('change', scheduleReload)
-            .on('unlink', scheduleReload);
+        watcher.on('add', scheduleReload).on('change', scheduleReload).on('unlink', scheduleReload);
 
         // Periodic heartbeat to prune dead SSE clients
         setInterval(() => {
@@ -184,7 +174,7 @@ server.listen(PORT, HOST, () => {
         console.log('[LR] Live reload enabled (SSE).');
     } catch (err) {
         console.log(
-            '[LR] Live reload disabled (chokidar not installed). Run "npm i -D chokidar" to enable.',
+            '[LR] Live reload disabled (chokidar not installed). Run "npm i -D chokidar" to enable.'
         );
     }
 });

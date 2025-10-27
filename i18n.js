@@ -141,8 +141,7 @@
                 projects: {
                     title: 'Projekte',
                     repositories: 'Repositories',
-                    placeholder:
-                        'Wähle ein Repository aus, um dessen Dateien zu sehen.',
+                    placeholder: 'Wähle ein Repository aus, um dessen Dateien zu sehen.',
                 },
                 about: {
                     title: 'Über Marvin',
@@ -164,8 +163,7 @@
                 },
                 image: {
                     title: 'Bildbetrachter',
-                    placeholder:
-                        'Öffne eine Bilddatei aus dem Sucher, um die Vorschau zu sehen.',
+                    placeholder: 'Öffne eine Bilddatei aus dem Sucher, um die Vorschau zu sehen.',
                 },
                 finder: {
                     title: 'Sucher',
@@ -216,8 +214,7 @@
                 imageLoadErrorRetry:
                     'Das Bild konnte nicht geladen werden. Bitte versuche es später erneut.',
                 fileLoadError: 'Die Datei konnte nicht geladen werden.',
-                rateLimit:
-                    'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
                 pathNotFound: 'Der ausgewählte Pfad ist nicht mehr verfügbar.',
             },
             programs: {
@@ -256,8 +253,7 @@
                     infoLabel: 'Über Systemeinstellungen',
                     about: {
                         name: 'Systemeinstellungen',
-                        tagline:
-                            'Konfiguriere Erscheinungsbild, Accounts und mehr.',
+                        tagline: 'Konfiguriere Erscheinungsbild, Accounts und mehr.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
                     },
@@ -277,8 +273,7 @@
                     infoLabel: 'Über Bildanzeige',
                     about: {
                         name: 'Bildanzeige',
-                        tagline:
-                            'Betrachte Screenshots und Fotos mit Vorschau.',
+                        tagline: 'Betrachte Screenshots und Fotos mit Vorschau.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
                     },
@@ -308,8 +303,7 @@
                     infoLabel: 'Über Terminal',
                     about: {
                         name: 'Terminal',
-                        tagline:
-                            'Kommandozeilenschnittstelle für das Portfolio.',
+                        tagline: 'Kommandozeilenschnittstelle für das Portfolio.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
                     },
@@ -355,8 +349,7 @@
                     loading: 'Lade Datei …',
                     loadingWithLabel: '{label} (lädt …)',
                     loadError: 'Datei konnte nicht geladen werden.',
-                    rateLimit:
-                        'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+                    rateLimit: 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
                     wordCount: 'Wörter: {words} | Zeichen: {chars}',
                     position: 'Zeile {line}, Spalte {col}',
                 },
@@ -448,37 +441,31 @@
                 },
                 display: {
                     title: 'Darstellungsoptionen',
-                    description:
-                        'Passe an, wie der Desktop mit hellem und dunklem Design umgeht.',
+                    description: 'Passe an, wie der Desktop mit hellem und dunklem Design umgeht.',
                     legend: 'Darkmode',
                     options: {
                         system: {
                             label: 'System',
-                            description:
-                                'Folgt den aktuellen Systemeinstellungen.',
+                            description: 'Folgt den aktuellen Systemeinstellungen.',
                         },
                         light: {
                             label: 'Hell',
-                            description:
-                                'Bleibt immer im hellen Erscheinungsbild.',
+                            description: 'Bleibt immer im hellen Erscheinungsbild.',
                         },
                         dark: {
                             label: 'Dunkel',
-                            description:
-                                'Bleibt immer im dunklen Erscheinungsbild.',
+                            description: 'Bleibt immer im dunklen Erscheinungsbild.',
                         },
                     },
                 },
                 language: {
                     title: 'Sprache',
-                    description:
-                        'Wähle, in welcher Sprache die Oberfläche angezeigt wird.',
+                    description: 'Wähle, in welcher Sprache die Oberfläche angezeigt wird.',
                     legend: 'Bevorzugte Sprache',
                     options: {
                         system: {
                             label: 'System',
-                            description:
-                                'Verwendet automatisch die Sprache deines Systems.',
+                            description: 'Verwendet automatisch die Sprache deines Systems.',
                         },
                         de: {
                             label: 'Deutsch',
@@ -653,8 +640,7 @@
                 },
                 image: {
                     title: 'Image viewer',
-                    placeholder:
-                        'Open an image file from Finder to preview it.',
+                    placeholder: 'Open an image file from Finder to preview it.',
                 },
                 finder: {
                     title: 'Finder',
@@ -784,20 +770,16 @@
                 imageViewer: 'Image viewer',
                 textEditor: 'Text editor',
                 loadingFiles: 'Loading files…',
-                filesLoadError:
-                    'Files could not be loaded. Please try again later.',
+                filesLoadError: 'Files could not be loaded. Please try again later.',
                 emptyDirectory: 'No files found in this directory.',
                 noRepositories: 'No public repositories found.',
-                repositoriesError:
-                    'Repositories could not be loaded. Please try again later.',
+                repositoriesError: 'Repositories could not be loaded. Please try again later.',
                 repoDescriptionMissing: 'No description available.',
                 repoUnnamed: 'Untitled repository',
                 loadingImage: 'Loading {name}…',
                 imageLoadError: 'Could not load the image.',
-                imageLoadErrorRetry:
-                    'The image could not be loaded. Please try again later.',
-                fileLoadError:
-                    'The file could not be loaded. Please try again later.',
+                imageLoadErrorRetry: 'The image could not be loaded. Please try again later.',
+                fileLoadError: 'The file could not be loaded. Please try again later.',
                 rateLimit: 'GitHub rate limit reached. Please try again later.',
                 pathNotFound: 'The selected path is no longer available.',
             },
@@ -840,8 +822,7 @@
                     loading: 'Loading file…',
                     loadingWithLabel: '{label} (loading…)',
                     loadError: 'The file could not be loaded.',
-                    rateLimit:
-                        'GitHub rate limit was reached. Please try again later.',
+                    rateLimit: 'GitHub rate limit was reached. Please try again later.',
                     wordCount: 'Words: {words} | Characters: {chars}',
                     position: 'Line {line}, Col {col}',
                 },
@@ -933,8 +914,7 @@
                 },
                 display: {
                     title: 'Appearance options',
-                    description:
-                        'Adjust how the desktop handles light and dark mode.',
+                    description: 'Adjust how the desktop handles light and dark mode.',
                     legend: 'Dark mode',
                     options: {
                         system: {
@@ -958,8 +938,7 @@
                     options: {
                         system: {
                             label: 'System',
-                            description:
-                                'Automatically uses your system language.',
+                            description: 'Automatically uses your system language.',
                         },
                         de: {
                             label: 'German',
@@ -1022,9 +1001,7 @@
         return FALLBACK_LANGUAGE;
     }
 
-    let languagePreference = parsePreference(
-        localStorage.getItem(LANGUAGE_PREFERENCE_KEY),
-    );
+    let languagePreference = parsePreference(localStorage.getItem(LANGUAGE_PREFERENCE_KEY));
 
     function resolveActiveLanguage(pref) {
         if (pref === 'system') {
@@ -1050,9 +1027,7 @@
         }
         return template.replace(/\{([^}]+)\}/g, (match, token) => {
             const key = token.trim();
-            return Object.prototype.hasOwnProperty.call(params, key)
-                ? params[key]
-                : match;
+            return Object.prototype.hasOwnProperty.call(params, key) ? params[key] : match;
         });
     }
 
@@ -1060,11 +1035,7 @@
         const segments = key.split('.');
         let current = translations[lang];
         for (const segment of segments) {
-            if (
-                !current ||
-                typeof current !== 'object' ||
-                !(segment in current)
-            ) {
+            if (!current || typeof current !== 'object' || !(segment in current)) {
                 return undefined;
             }
             current = current[segment];
@@ -1114,10 +1085,9 @@
         if (htmlKey) {
             element.innerHTML = translate(htmlKey, params);
         }
-        Array.from(element.attributes).forEach((attr) => {
+        Array.from(element.attributes).forEach(attr => {
             if (!attr.name.startsWith('data-i18n-')) return;
-            if (attr.name === 'data-i18n' || attr.name === 'data-i18n-html')
-                return;
+            if (attr.name === 'data-i18n' || attr.name === 'data-i18n-html') return;
             const targetAttr = attr.name.substring('data-i18n-'.length);
             if (!targetAttr) return;
             element.setAttribute(targetAttr, translate(attr.value, params));
@@ -1176,7 +1146,7 @@
         }
     });
 
-    window.addEventListener('storage', (event) => {
+    window.addEventListener('storage', event => {
         if (event.key !== LANGUAGE_PREFERENCE_KEY) {
             return;
         }
@@ -1188,9 +1158,7 @@
     setDocumentLanguage(activeLanguage);
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () =>
-            applyTranslations(document),
-        );
+        document.addEventListener('DOMContentLoaded', () => applyTranslations(document));
     } else {
         applyTranslations(document);
     }

@@ -1,98 +1,98 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Firefox: Launch with Dev Server",
+      "type": "firefox",
+      "request": "launch",
+      "reAttach": true,
+      "url": "http://127.0.0.1:5173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "Start Dev Server",
+      // Auto-refresh the tab when files change while debugging (Firefox Debugger feature)
+      "reloadOnChange": {
+        "watch": [
+          "${workspaceFolder}/**/*.html",
+          "${workspaceFolder}/**/*.css",
+          "${workspaceFolder}/**/*.js"
+        ],
+        "ignore": [
+          "${workspaceFolder}/node_modules/**",
+          "${workspaceFolder}/dist/**",
+          "${workspaceFolder}/.git/**"
+        ]
+      },
+      "pathMappings": [
         {
-            "name": "Firefox: Launch with Dev Server",
-            "type": "firefox",
-            "request": "launch",
-            "reAttach": true,
-            "url": "http://127.0.0.1:5173",
-            "webRoot": "${workspaceFolder}",
-            "preLaunchTask": "Start Dev Server",
-            // Auto-refresh the tab when files change while debugging (Firefox Debugger feature)
-            "reloadOnChange": {
-                "watch": [
-                    "${workspaceFolder}/**/*.html",
-                    "${workspaceFolder}/**/*.css",
-                    "${workspaceFolder}/**/*.js"
-                ],
-                "ignore": [
-                    "${workspaceFolder}/node_modules/**",
-                    "${workspaceFolder}/dist/**",
-                    "${workspaceFolder}/.git/**"
-                ]
-            },
-            "pathMappings": [
-                {
-                    "url": "http://127.0.0.1:5173",
-                    "path": "${workspaceFolder}"
-                }
-            ]
-        },
-        {
-            "name": "Chrome: Launch with Dev Server",
-            "type": "chrome",
-            "request": "launch",
-            "url": "http://127.0.0.1:5173",
-            "webRoot": "${workspaceFolder}",
-            "preLaunchTask": "Start Dev Server",
-            "pathMapping": {
-                "/": "${workspaceFolder}"
-            }
-        },
-        {
-            "name": "Edge: Launch with Dev Server",
-            "type": "msedge",
-            "request": "launch",
-            "url": "http://127.0.0.1:5173",
-            "webRoot": "${workspaceFolder}",
-            "preLaunchTask": "Start Dev Server",
-            "pathMapping": {
-                "/": "${workspaceFolder}"
-            }
-        },
-        {
-            "name": "Chrome: Dev + Tailwind (Start All)",
-            "type": "chrome",
-            "request": "launch",
-            "url": "http://127.0.0.1:5173",
-            "webRoot": "${workspaceFolder}",
-            "preLaunchTask": "Dev Environment: Start All",
-            "postDebugTask": "Stop Dev Server"
-        },
-        {
-            "name": "Node: server.js (debug)",
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceFolder}/server.js",
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal"
-        },
-        {
-            "name": "Chrome: Open API Docs",
-            "type": "chrome",
-            "request": "launch",
-            "url": "http://127.0.0.1:5173/docs/api/index.html",
-            "webRoot": "${workspaceFolder}",
-            "preLaunchTask": "Start Dev Server",
-            "postDebugTask": "Stop Dev Server"
-        },
-        {
-            "name": "Firefox: Launch (File Protocol)",
-            "type": "firefox",
-            "request": "launch",
-            "reAttach": true,
-            "file": "${workspaceFolder}/index.html"
-        },
-        {
-            "name": "Firefox: Attach to Running Instance",
-            "type": "firefox",
-            "request": "attach",
-            "url": "http://127.0.0.1:5173",
-            "webRoot": "${workspaceFolder}"
+          "url": "http://127.0.0.1:5173",
+          "path": "${workspaceFolder}"
         }
-    ]
+      ]
+    },
+    {
+      "name": "Chrome: Launch with Dev Server",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://127.0.0.1:5173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "Start Dev Server",
+      "pathMapping": {
+        "/": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "Edge: Launch with Dev Server",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://127.0.0.1:5173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "Start Dev Server",
+      "pathMapping": {
+        "/": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "Chrome: Dev + Tailwind (Start All)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://127.0.0.1:5173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "Dev Environment: Start All",
+      "postDebugTask": "Stop Dev Server"
+    },
+    {
+      "name": "Node: server.js (debug)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server.js",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Chrome: Open API Docs",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://127.0.0.1:5173/docs/api/index.html",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "Start Dev Server",
+      "postDebugTask": "Stop Dev Server"
+    },
+    {
+      "name": "Firefox: Launch (File Protocol)",
+      "type": "firefox",
+      "request": "launch",
+      "reAttach": true,
+      "file": "${workspaceFolder}/index.html"
+    },
+    {
+      "name": "Firefox: Attach to Running Instance",
+      "type": "firefox",
+      "request": "attach",
+      "url": "http://127.0.0.1:5173",
+      "webRoot": "${workspaceFolder}"
+    }
+  ]
 }

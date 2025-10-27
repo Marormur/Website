@@ -14,13 +14,11 @@ const fs = require('fs');
 const path = require('path');
 
 // Files that need fixing (add more as needed)
-const FILES_TO_FIX = [
-    'js/app-init.js',
-    'js/dialog-utils.js'
-];
+const FILES_TO_FIX = ['js/app-init.js', 'js/dialog-utils.js'];
 
 const EXPORTS_PATTERN = /^Object\.defineProperty\(exports, "__esModule", \{ value: true \}\);$/gm;
-const REPLACEMENT = '// Object.defineProperty(exports, "__esModule", { value: true }); // REMOVED: Causes "exports is not defined" in browser';
+const REPLACEMENT =
+    '// Object.defineProperty(exports, "__esModule", { value: true }); // REMOVED: Causes "exports is not defined" in browser';
 
 let filesFixed = 0;
 let filesSkipped = 0;

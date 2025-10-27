@@ -50,10 +50,7 @@ console.log('Terminal System loaded');
             this.attachEventListeners();
             this.showWelcomeMessage();
             // Focus input immediately so users can start typing right away
-            if (
-                this.inputElement &&
-                typeof this.inputElement.focus === 'function'
-            ) {
+            if (this.inputElement && typeof this.inputElement.focus === 'function') {
                 this.inputElement.focus();
             }
         },
@@ -82,17 +79,13 @@ console.log('Terminal System loaded');
             // Provide localized aria-label when possible
             try {
                 const lang =
-                    window.appI18n &&
-                    typeof window.appI18n.getActiveLanguage === 'function'
+                    window.appI18n && typeof window.appI18n.getActiveLanguage === 'function'
                         ? window.appI18n.getActiveLanguage()
-                        : (document.documentElement &&
-                              document.documentElement.lang) ||
-                          'en';
+                        : (document.documentElement && document.documentElement.lang) || 'en';
                 const label = String(lang).toLowerCase().startsWith('de')
                     ? 'Terminal-Eingabe'
                     : 'Terminal input';
-                if (this.inputElement)
-                    this.inputElement.setAttribute('aria-label', label);
+                if (this.inputElement) this.inputElement.setAttribute('aria-label', label);
             } catch (_) {
                 /* noop */
             }
@@ -101,7 +94,7 @@ console.log('Terminal System loaded');
         attachEventListeners: function () {
             if (!this.inputElement) return;
 
-            this.inputElement.addEventListener('keydown', (e) => {
+            this.inputElement.addEventListener('keydown', e => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     const command = this.inputElement.value.trim();
@@ -117,15 +110,13 @@ console.log('Terminal System loaded');
                     e.preventDefault();
                     if (this.historyIndex > 0) {
                         this.historyIndex--;
-                        this.inputElement.value =
-                            this.commandHistory[this.historyIndex];
+                        this.inputElement.value = this.commandHistory[this.historyIndex];
                     }
                 } else if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     if (this.historyIndex < this.commandHistory.length - 1) {
                         this.historyIndex++;
-                        this.inputElement.value =
-                            this.commandHistory[this.historyIndex];
+                        this.inputElement.value = this.commandHistory[this.historyIndex];
                     } else {
                         this.historyIndex = this.commandHistory.length;
                         this.inputElement.value = '';
@@ -143,13 +134,10 @@ console.log('Terminal System loaded');
         },
 
         showWelcomeMessage: function () {
-            this.addOutput(
-                'Terminal v1.0.0 - Marvin Temmen Portfolio',
-                'text-cyan-400',
-            );
+            this.addOutput('Terminal v1.0.0 - Marvin Temmen Portfolio', 'text-cyan-400');
             this.addOutput(
                 'Gib "help" ein, um eine Liste der verfügbaren Befehle zu sehen.',
-                'text-gray-400',
+                'text-gray-400'
             );
             this.addOutput('');
         },
@@ -167,10 +155,7 @@ console.log('Terminal System loaded');
         },
 
         addPromptLine: function (command) {
-            this.addOutput(
-                `guest@marvin:${this.currentPath}$ ${command}`,
-                'text-blue-400',
-            );
+            this.addOutput(`guest@marvin:${this.currentPath}$ ${command}`, 'text-blue-400');
         },
 
         executeCommand: function (commandLine) {
@@ -201,13 +186,10 @@ console.log('Terminal System loaded');
             if (commands[command]) {
                 commands[command]();
             } else if (command) {
-                this.addOutput(
-                    `bash: ${command}: Befehl nicht gefunden`,
-                    'text-red-400',
-                );
+                this.addOutput(`bash: ${command}: Befehl nicht gefunden`, 'text-red-400');
                 this.addOutput(
                     'Gib "help" ein, um eine Liste der verfügbaren Befehle zu sehen.',
-                    'text-gray-400',
+                    'text-gray-400'
                 );
             }
 
@@ -215,8 +197,7 @@ console.log('Terminal System loaded');
         },
 
         updatePrompt: function () {
-            const promptElement =
-                this.container.querySelector('.terminal-prompt');
+            const promptElement = this.container.querySelector('.terminal-prompt');
             if (promptElement) {
                 promptElement.textContent = `guest@marvin:${this.currentPath}$`;
             }
@@ -227,62 +208,23 @@ console.log('Terminal System loaded');
             this.addOutput('');
             this.addOutput('Verfügbare Befehle:', 'text-yellow-400 font-bold');
             this.addOutput('');
-            this.addOutput(
-                '  help          - Zeigt diese Hilfe an',
-                'text-gray-300',
-            );
-            this.addOutput(
-                '  clear         - Löscht den Bildschirm',
-                'text-gray-300',
-            );
+            this.addOutput('  help          - Zeigt diese Hilfe an', 'text-gray-300');
+            this.addOutput('  clear         - Löscht den Bildschirm', 'text-gray-300');
             this.addOutput('  echo [text]   - Gibt Text aus', 'text-gray-300');
-            this.addOutput(
-                '  pwd           - Zeigt aktuelles Verzeichnis',
-                'text-gray-300',
-            );
-            this.addOutput(
-                '  ls [dir]      - Listet Dateien und Ordner',
-                'text-gray-300',
-            );
-            this.addOutput(
-                '  cd [dir]      - Wechselt das Verzeichnis',
-                'text-gray-300',
-            );
-            this.addOutput(
-                '  cat [file]    - Zeigt Dateiinhalt an',
-                'text-gray-300',
-            );
-            this.addOutput(
-                '  date          - Zeigt Datum und Uhrzeit',
-                'text-gray-300',
-            );
-            this.addOutput(
-                '  whoami        - Zeigt Benutzername',
-                'text-gray-300',
-            );
-            this.addOutput(
-                '  uname         - Zeigt Systeminfo',
-                'text-gray-300',
-            );
+            this.addOutput('  pwd           - Zeigt aktuelles Verzeichnis', 'text-gray-300');
+            this.addOutput('  ls [dir]      - Listet Dateien und Ordner', 'text-gray-300');
+            this.addOutput('  cd [dir]      - Wechselt das Verzeichnis', 'text-gray-300');
+            this.addOutput('  cat [file]    - Zeigt Dateiinhalt an', 'text-gray-300');
+            this.addOutput('  date          - Zeigt Datum und Uhrzeit', 'text-gray-300');
+            this.addOutput('  whoami        - Zeigt Benutzername', 'text-gray-300');
+            this.addOutput('  uname         - Zeigt Systeminfo', 'text-gray-300');
             this.addOutput('');
             this.addOutput('Portfolio-Befehle:', 'text-yellow-400 font-bold');
             this.addOutput('');
-            this.addOutput(
-                '  about         - Informationen über Marvin',
-                'text-gray-300',
-            );
-            this.addOutput(
-                '  github        - GitHub Profil öffnen',
-                'text-gray-300',
-            );
-            this.addOutput(
-                '  contact       - Kontaktinformationen',
-                'text-gray-300',
-            );
-            this.addOutput(
-                '  skills        - Zeigt Fähigkeiten',
-                'text-gray-300',
-            );
+            this.addOutput('  about         - Informationen über Marvin', 'text-gray-300');
+            this.addOutput('  github        - GitHub Profil öffnen', 'text-gray-300');
+            this.addOutput('  contact       - Kontaktinformationen', 'text-gray-300');
+            this.addOutput('  skills        - Zeigt Fähigkeiten', 'text-gray-300');
             this.addOutput('  projects      - Zeigt Projekte', 'text-gray-300');
             this.addOutput('');
         },
@@ -313,7 +255,7 @@ console.log('Terminal System loaded');
             if (!dir) {
                 this.addOutput(
                     `ls: ${targetPath}: Datei oder Verzeichnis nicht gefunden`,
-                    'text-red-400',
+                    'text-red-400'
                 );
                 return;
             }
@@ -328,12 +270,9 @@ console.log('Terminal System loaded');
                 return;
             }
 
-            entries.forEach((entry) => {
+            entries.forEach(entry => {
                 const item = dir.contents[entry];
-                const color =
-                    item.type === 'directory'
-                        ? 'text-blue-300'
-                        : 'text-green-400';
+                const color = item.type === 'directory' ? 'text-blue-300' : 'text-green-400';
                 const suffix = item.type === 'directory' ? '/' : '';
                 this.addOutput(`  ${entry}${suffix}`, color);
             });
@@ -352,16 +291,13 @@ console.log('Terminal System loaded');
             if (!dir) {
                 this.addOutput(
                     `cd: ${args[0]}: Datei oder Verzeichnis nicht gefunden`,
-                    'text-red-400',
+                    'text-red-400'
                 );
                 return;
             }
 
             if (dir.type !== 'directory') {
-                this.addOutput(
-                    `cd: ${args[0]}: Ist kein Verzeichnis`,
-                    'text-red-400',
-                );
+                this.addOutput(`cd: ${args[0]}: Ist kein Verzeichnis`, 'text-red-400');
                 return;
             }
 
@@ -382,21 +318,18 @@ console.log('Terminal System loaded');
             if (!file) {
                 this.addOutput(
                     `cat: ${args[0]}: Datei oder Verzeichnis nicht gefunden`,
-                    'text-red-400',
+                    'text-red-400'
                 );
                 return;
             }
 
             if (file.type !== 'file') {
-                this.addOutput(
-                    `cat: ${args[0]}: Ist ein Verzeichnis`,
-                    'text-red-400',
-                );
+                this.addOutput(`cat: ${args[0]}: Ist ein Verzeichnis`, 'text-red-400');
                 return;
             }
 
             const lines = file.content.split('\n');
-            lines.forEach((line) => this.addOutput(line));
+            lines.forEach(line => this.addOutput(line));
         },
 
         cmdDate: function () {
@@ -414,19 +347,10 @@ console.log('Terminal System loaded');
 
         cmdAbout: function () {
             this.addOutput('');
-            this.addOutput(
-                '═══════════════════════════════════════',
-                'text-cyan-400',
-            );
-            this.addOutput(
-                '  Marvin Temmen',
-                'text-yellow-400 font-bold text-lg',
-            );
+            this.addOutput('═══════════════════════════════════════', 'text-cyan-400');
+            this.addOutput('  Marvin Temmen', 'text-yellow-400 font-bold text-lg');
             this.addOutput('  Softwareentwickler', 'text-gray-300');
-            this.addOutput(
-                '═══════════════════════════════════════',
-                'text-cyan-400',
-            );
+            this.addOutput('═══════════════════════════════════════', 'text-cyan-400');
             this.addOutput('');
             this.addOutput('  📍 Deutschland', 'text-gray-300');
             this.addOutput('  💼 WinWorker', 'text-gray-300');
@@ -434,7 +358,7 @@ console.log('Terminal System loaded');
             this.addOutput('');
             this.addOutput(
                 'Gib "skills", "projects" oder "contact" ein für mehr Infos.',
-                'text-gray-400',
+                'text-gray-400'
             );
             this.addOutput('');
         },
@@ -446,34 +370,22 @@ console.log('Terminal System loaded');
 
         cmdContact: function () {
             this.addOutput('');
-            this.addOutput(
-                'Kontaktinformationen:',
-                'text-yellow-400 font-bold',
-            );
+            this.addOutput('Kontaktinformationen:', 'text-yellow-400 font-bold');
             this.addOutput('');
             this.addOutput(
                 '  🔗 LinkedIn: https://linkedin.com/in/marvin-temmen-788537216',
-                'text-gray-300',
+                'text-gray-300'
             );
-            this.addOutput(
-                '  🐙 GitHub:   https://github.com/Marormur',
-                'text-gray-300',
-            );
+            this.addOutput('  🐙 GitHub:   https://github.com/Marormur', 'text-gray-300');
             this.addOutput('');
         },
 
         cmdSkills: function () {
             this.addOutput('');
-            this.addOutput(
-                'Technische Fähigkeiten:',
-                'text-yellow-400 font-bold',
-            );
+            this.addOutput('Technische Fähigkeiten:', 'text-yellow-400 font-bold');
             this.addOutput('');
             this.addOutput('  💻 Programmierung:', 'text-cyan-400');
-            this.addOutput(
-                '     • JavaScript, TypeScript, Python',
-                'text-gray-300',
-            );
+            this.addOutput('     • JavaScript, TypeScript, Python', 'text-gray-300');
             this.addOutput('     • HTML, CSS, Tailwind CSS', 'text-gray-300');
             this.addOutput('     • Node.js, React, Vue.js', 'text-gray-300');
             this.addOutput('');
@@ -491,21 +403,12 @@ console.log('Terminal System loaded');
             this.addOutput('  📁 Diese Website', 'text-cyan-400');
             this.addOutput(
                 '     Ein Desktop-Stil Portfolio mit macOS Look & Feel',
-                'text-gray-300',
+                'text-gray-300'
             );
-            this.addOutput(
-                '     GitHub: https://github.com/Marormur/Website',
-                'text-gray-300',
-            );
+            this.addOutput('     GitHub: https://github.com/Marormur/Website', 'text-gray-300');
             this.addOutput('');
-            this.addOutput(
-                'Weitere Projekte auf GitHub verfügbar.',
-                'text-gray-400',
-            );
-            this.addOutput(
-                'Gib "github" ein, um das Profil zu öffnen.',
-                'text-gray-400',
-            );
+            this.addOutput('Weitere Projekte auf GitHub verfügbar.', 'text-gray-400');
+            this.addOutput('Gib "github" ein, um das Profil zu öffnen.', 'text-gray-400');
             this.addOutput('');
         },
 
@@ -525,7 +428,7 @@ console.log('Terminal System loaded');
             const parts = normalizedPath
                 .replace(/^~\/?/, '')
                 .split('/')
-                .filter((p) => p);
+                .filter(p => p);
 
             for (const part of parts) {
                 if (!current.contents || !current.contents[part]) {
@@ -562,18 +465,13 @@ console.log('Terminal System loaded');
             }
 
             // Split into parts and resolve . and ..
-            const parts = workingPath
-                .split('/')
-                .filter((p) => p !== '' && p !== '.');
+            const parts = workingPath.split('/').filter(p => p !== '' && p !== '.');
             const resolved = [];
 
             for (const part of parts) {
                 if (part === '..') {
                     // Go up one directory (but not above ~)
-                    if (
-                        resolved.length > 0 &&
-                        resolved[resolved.length - 1] !== '~'
-                    ) {
+                    if (resolved.length > 0 && resolved[resolved.length - 1] !== '~') {
                         resolved.pop();
                     }
                 } else {
@@ -582,10 +480,7 @@ console.log('Terminal System loaded');
             }
 
             // Build final path
-            if (
-                resolved.length === 0 ||
-                (resolved.length === 1 && resolved[0] === '~')
-            ) {
+            if (resolved.length === 0 || (resolved.length === 1 && resolved[0] === '~')) {
                 return '~';
             }
 

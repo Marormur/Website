@@ -138,8 +138,7 @@ console.log('Finder.js loaded');
             const parsed = JSON.parse(raw);
             if (!parsed || typeof parsed !== 'object') return null;
             const ttl = getCacheTtl();
-            if (typeof parsed.t !== 'number' || Date.now() - parsed.t > ttl)
-                return null;
+            if (typeof parsed.t !== 'number' || Date.now() - parsed.t > ttl) return null;
             return Array.isArray(parsed.d) ? parsed.d : null;
         } catch {
             return null;
@@ -158,9 +157,7 @@ console.log('Finder.js loaded');
         domRefs = {
             sidebarComputer: document.getElementById('finder-sidebar-computer'),
             sidebarGithub: document.getElementById('finder-sidebar-github'),
-            sidebarFavorites: document.getElementById(
-                'finder-sidebar-favorites',
-            ),
+            sidebarFavorites: document.getElementById('finder-sidebar-favorites'),
             sidebarRecent: document.getElementById('finder-sidebar-recent'),
             breadcrumbs: document.getElementById('finder-path-breadcrumbs'),
             contentArea: document.getElementById('finder-content-area'),
@@ -218,7 +215,7 @@ console.log('Finder.js loaded');
             refs.sidebarGithub,
             refs.sidebarFavorites,
             refs.sidebarRecent,
-        ].forEach((el) => {
+        ].forEach(el => {
             if (el) el.classList.remove('finder-sidebar-active');
         });
 
@@ -229,18 +226,14 @@ console.log('Finder.js loaded');
                     refs.sidebarComputer.classList.add('finder-sidebar-active');
                 break;
             case 'github':
-                if (refs.sidebarGithub)
-                    refs.sidebarGithub.classList.add('finder-sidebar-active');
+                if (refs.sidebarGithub) refs.sidebarGithub.classList.add('finder-sidebar-active');
                 break;
             case 'favorites':
                 if (refs.sidebarFavorites)
-                    refs.sidebarFavorites.classList.add(
-                        'finder-sidebar-active',
-                    );
+                    refs.sidebarFavorites.classList.add('finder-sidebar-active');
                 break;
             case 'recent':
-                if (refs.sidebarRecent)
-                    refs.sidebarRecent.classList.add('finder-sidebar-active');
+                if (refs.sidebarRecent) refs.sidebarRecent.classList.add('finder-sidebar-active');
                 break;
         }
     }
@@ -273,24 +266,20 @@ console.log('Finder.js loaded');
         }
 
         parts.push(
-            `<button class="finder-breadcrumb-item" data-action="finder:goRoot">${viewLabel}</button>`,
+            `<button class="finder-breadcrumb-item" data-action="finder:goRoot">${viewLabel}</button>`
         );
 
         // Pfad-Teile (überspringe ersten Teil wenn er gleich dem View-Label ist)
         finderState.currentPath.forEach((part, index) => {
             // Überspringe "Computer" wenn wir in der Computer-Ansicht sind und es der erste Pfad-Teil ist
-            if (
-                index === 0 &&
-                finderState.currentView === 'computer' &&
-                part === 'Computer'
-            ) {
+            if (index === 0 && finderState.currentView === 'computer' && part === 'Computer') {
                 return; // Überspringe diesen Teil
             }
 
             const pathUpToHere = finderState.currentPath.slice(0, index + 1);
             parts.push('<span class="finder-breadcrumb-separator">›</span>');
             parts.push(
-                `<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join('/')}">${part}</button>`,
+                `<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join('/')}">${part}</button>`
             );
         });
 
@@ -362,32 +351,31 @@ console.log('Finder.js loaded');
                         `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`,
                         {
                             headers: getGithubHeaders(),
-                        },
-                    ).then((r) => (r.ok ? r.json() : Promise.reject(r))))
-                    .then((repos) => {
-                        const list = (Array.isArray(repos) ? repos : []).map(
-                            (r) => ({
-                                name:
-                                    r.name ||
-                                    (window.translate
-                                        ? window.translate('finder.repoUnnamed')
-                                        : 'Unbenanntes Repository'),
-                                type: 'folder',
-                                icon: '📂',
-                                size: 0,
-                                modified:
-                                    r.updated_at ||
-                                    r.pushed_at ||
-                                    r.created_at ||
-                                    new Date().toISOString(),
-                                html_url: r.html_url,
-                            }),
-                        );
+                        }
+                    ).then(r => (r.ok ? r.json() : Promise.reject(r)))
+                )
+                    .then(repos => {
+                        const list = (Array.isArray(repos) ? repos : []).map(r => ({
+                            name:
+                                r.name ||
+                                (window.translate
+                                    ? window.translate('finder.repoUnnamed')
+                                    : 'Unbenanntes Repository'),
+                            type: 'folder',
+                            icon: '📂',
+                            size: 0,
+                            modified:
+                                r.updated_at ||
+                                r.pushed_at ||
+                                r.created_at ||
+                                new Date().toISOString(),
+                            html_url: r.html_url,
+                        }));
                         finderState.githubRepos = repos || [];
                         writeCache('repos', '', '', list);
                         finderState.githubError = false;
                     })
-                    .catch((err) => {
+                    .catch(err => {
                         if (err && err.status === 403) {
                             finderState.githubError = true;
                         }
@@ -439,7 +427,7 @@ console.log('Finder.js loaded');
                     },
                 ];
             }
-            return finderState.githubRepos.map((r) => ({
+            return finderState.githubRepos.map(r => ({
                 name:
                     r.name ||
                     (window.translate
@@ -448,11 +436,7 @@ console.log('Finder.js loaded');
                 type: 'folder',
                 icon: '📂',
                 size: 0,
-                modified:
-                    r.updated_at ||
-                    r.pushed_at ||
-                    r.created_at ||
-                    new Date().toISOString(),
+                modified: r.updated_at || r.pushed_at || r.created_at || new Date().toISOString(),
                 html_url: r.html_url,
             }));
         }
@@ -471,44 +455,37 @@ console.log('Finder.js loaded');
         }
         if (!cached && !finderState.githubLoading && !finderState.githubError) {
             finderState.githubLoading = true;
-            const pathPart = subPath
-                ? `/${encodeURIComponent(subPath).replace(/%2F/g, '/')}`
-                : '';
+            const pathPart = subPath ? `/${encodeURIComponent(subPath).replace(/%2F/g, '/')}` : '';
             (window.GitHubAPI && window.GitHubAPI.fetchRepoContents
-                ? window.GitHubAPI.fetchRepoContents(
-                    GITHUB_USERNAME,
-                    repo,
-                    subPath,
-                )
+                ? window.GitHubAPI.fetchRepoContents(GITHUB_USERNAME, repo, subPath)
                 : fetch(
                     `https://api.github.com/repos/${GITHUB_USERNAME}/${encodeURIComponent(
-                        repo,
+                        repo
                     )}/contents${pathPart}`,
                     {
                         headers: getGithubHeaders(),
-                    },
-                ).then((r) => (r.ok ? r.json() : Promise.reject(r))))
-                .then((items) => {
-                    const mapped = (Array.isArray(items) ? items : [items]).map(
-                        (it) => {
-                            const isDir = it.type === 'dir';
-                            return {
-                                name: it.name,
-                                type: isDir ? 'folder' : 'file',
-                                icon: isDir ? '📁' : '📄',
-                                size: it.size || 0,
-                                modified: '',
-                                url: it.url,
-                                html_url: it.html_url,
-                                download_url: it.download_url,
-                            };
-                        },
-                    );
+                    }
+                ).then(r => (r.ok ? r.json() : Promise.reject(r)))
+            )
+                .then(items => {
+                    const mapped = (Array.isArray(items) ? items : [items]).map(it => {
+                        const isDir = it.type === 'dir';
+                        return {
+                            name: it.name,
+                            type: isDir ? 'folder' : 'file',
+                            icon: isDir ? '📁' : '📄',
+                            size: it.size || 0,
+                            modified: '',
+                            url: it.url,
+                            html_url: it.html_url,
+                            download_url: it.download_url,
+                        };
+                    });
                     githubContentCache.set(cacheKey, mapped);
                     writeCache('contents', repo, subPath, mapped);
                     finderState.githubError = false;
                 })
-                .catch((err) => {
+                .catch(err => {
                     if (err && err.status === 403) {
                         finderState.githubError = true;
                     }
@@ -567,7 +544,7 @@ console.log('Finder.js loaded');
     }
 
     function getFavoriteItems() {
-        return Array.from(finderState.favorites).map((path) => ({
+        return Array.from(finderState.favorites).map(path => ({
             name: path.split('/').pop(),
             type: 'favorite',
             icon: '⭐',
@@ -576,7 +553,7 @@ console.log('Finder.js loaded');
     }
 
     function getRecentItems() {
-        return finderState.recentFiles.map((file) => ({
+        return finderState.recentFiles.map(file => ({
             name: file.name,
             type: 'recent',
             icon: file.icon || '📄',
@@ -636,8 +613,7 @@ console.log('Finder.js loaded');
                     comparison = (a.size || 0) - (b.size || 0);
                     break;
                 case 'date':
-                    comparison =
-                        new Date(b.modified || 0) - new Date(a.modified || 0);
+                    comparison = new Date(b.modified || 0) - new Date(a.modified || 0);
                     break;
                 case 'type':
                     comparison = (a.type || '').localeCompare(b.type || '');
@@ -666,7 +642,7 @@ console.log('Finder.js loaded');
                 <tbody>
                     ${items
         .map(
-            (item) => `
+            item => `
                         <tr class="finder-list-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                             <td>
                                 <span class="finder-item-icon">${item.icon}</span>
@@ -675,7 +651,7 @@ console.log('Finder.js loaded');
                             <td>${formatSize(item.size)}</td>
                             <td>${formatDate(item.modified)}</td>
                         </tr>
-                    `,
+                    `
         )
         .join('')}
                 </tbody>
@@ -693,12 +669,12 @@ console.log('Finder.js loaded');
             <div class="finder-grid-container">
                 ${items
         .map(
-            (item) => `
+            item => `
                     <div class="finder-grid-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                         <div class="finder-grid-icon">${item.icon}</div>
                         <div class="finder-grid-name">${item.name}</div>
                     </div>
-                `,
+                `
         )
         .join('')}
             </div>
@@ -721,7 +697,7 @@ console.log('Finder.js loaded');
             navigateToFolder(name);
         } else if (type === 'action') {
             const items = getCurrentItems();
-            const item = items.find((i) => i.name === name);
+            const item = items.find(i => i.name === name);
             if (item && item.action) {
                 item.action();
             }
@@ -737,7 +713,7 @@ console.log('Finder.js loaded');
         // GitHub-spezifische Datei-Öffnung (inline)
         if (finderState.currentView === 'github') {
             const items = getCurrentItems();
-            const entry = items.find((i) => i && i.name === name);
+            const entry = items.find(i => i && i.name === name);
             const isImage = isImageFile(name);
             const isText = isProbablyTextFile(name);
             if (entry && (isImage || isText)) {
@@ -848,12 +824,12 @@ console.log('Finder.js loaded');
     function isProbablyTextFile(filename) {
         if (!filename) return false;
         const lower = String(filename).toLowerCase();
-        return textFileExtensions.some((ext) => lower.endsWith(ext));
+        return textFileExtensions.some(ext => lower.endsWith(ext));
     }
     function isImageFile(filename) {
         if (!filename) return false;
         const lower = String(filename).toLowerCase();
-        return imageFileExtensions.some((ext) => lower.endsWith(ext));
+        return imageFileExtensions.some(ext => lower.endsWith(ext));
     }
 
     function ensureImageViewerOpen() {
@@ -890,13 +866,12 @@ console.log('Finder.js loaded');
         if (placeholder) {
             placeholder.classList.remove('hidden');
         }
-        const finalize = (src) => {
+        const finalize = src => {
             if (!img) return;
             img.onload = () => {
                 if (placeholder) placeholder.classList.add('hidden');
                 img.classList.remove('hidden');
-                if (dlg && typeof dlg.bringToFront === 'function')
-                    dlg.bringToFront();
+                if (dlg && typeof dlg.bringToFront === 'function') dlg.bringToFront();
             };
             img.onerror = () => {
                 if (placeholder) placeholder.classList.remove('hidden');
@@ -909,17 +884,19 @@ console.log('Finder.js loaded');
             return;
         }
         if (entry.url) {
-            const p = window.GitHubAPI && window.GitHubAPI.fetchJSON
-                ? window.GitHubAPI.fetchJSON(entry.url)
-                : fetch(entry.url, { headers: { Accept: 'application/vnd.github.v3+json' } }).then((r) => (r.ok ? r.json() : Promise.reject(r)));
-            p.then((data) => {
+            const p =
+                window.GitHubAPI && window.GitHubAPI.fetchJSON
+                    ? window.GitHubAPI.fetchJSON(entry.url)
+                    : fetch(entry.url, {
+                        headers: { Accept: 'application/vnd.github.v3+json' },
+                    }).then(r => (r.ok ? r.json() : Promise.reject(r)));
+            p.then(data => {
                 if (data && typeof data.download_url === 'string') {
                     finalize(data.download_url);
                 }
-            })
-                .catch(() => {
-                    /* silently ignore */
-                });
+            }).catch(() => {
+                /* silently ignore */
+            });
         }
     }
 
@@ -936,27 +913,26 @@ console.log('Finder.js loaded');
 
         const fetchText = () => {
             if (entry.download_url) {
-                return fetch(entry.download_url).then((r) => {
+                return fetch(entry.download_url).then(r => {
                     if (!r.ok) throw new Error('Download failed');
                     return r.text();
                 });
             }
             if (entry.url) {
-                const p = window.GitHubAPI && window.GitHubAPI.fetchJSON
-                    ? window.GitHubAPI.fetchJSON(entry.url)
-                    : fetch(entry.url, { headers: { Accept: 'application/vnd.github.v3+json' } }).then((r) => (r.ok ? r.json() : Promise.reject(r)));
-                return p.then((data) => {
+                const p =
+                    window.GitHubAPI && window.GitHubAPI.fetchJSON
+                        ? window.GitHubAPI.fetchJSON(entry.url)
+                        : fetch(entry.url, {
+                            headers: { Accept: 'application/vnd.github.v3+json' },
+                        }).then(r => (r.ok ? r.json() : Promise.reject(r)));
+                return p.then(data => {
                     if (data && typeof data.download_url === 'string') {
-                        return fetch(data.download_url).then((r) => {
+                        return fetch(data.download_url).then(r => {
                             if (!r.ok) throw new Error('Download failed');
                             return r.text();
                         });
                     }
-                    if (
-                        data &&
-                            data.encoding === 'base64' &&
-                            typeof data.content === 'string'
-                    ) {
+                    if (data && data.encoding === 'base64' && typeof data.content === 'string') {
                         try {
                             return atob(data.content.replace(/\s/g, ''));
                         } catch (_) {
@@ -969,19 +945,18 @@ console.log('Finder.js loaded');
             return Promise.reject(new Error('No source'));
         };
         fetchText()
-            .then((content) => {
+            .then(content => {
                 // Load remote file via direct API call
                 if (window.API && window.API.textEditor) {
                     window.API.textEditor.loadRemoteFile(
-                        Object.assign({}, payloadBase, { content }),
+                        Object.assign({}, payloadBase, { content })
                     );
                 } else if (window.TextEditorSystem) {
                     window.TextEditorSystem.loadRemoteFile(
-                        Object.assign({}, payloadBase, { content }),
+                        Object.assign({}, payloadBase, { content })
                     );
                 }
-                if (dlg && typeof dlg.bringToFront === 'function')
-                    dlg.bringToFront();
+                if (dlg && typeof dlg.bringToFront === 'function') dlg.bringToFront();
             })
             .catch(() => {
                 // Show error via direct API call
@@ -989,13 +964,13 @@ console.log('Finder.js loaded');
                     window.API.textEditor.showLoadError(
                         Object.assign({}, payloadBase, {
                             message: 'Fehler beim Laden',
-                        }),
+                        })
                     );
                 } else if (window.TextEditorSystem) {
                     window.TextEditorSystem.showLoadError(
                         Object.assign({}, payloadBase, {
                             message: 'Fehler beim Laden',
-                        }),
+                        })
                     );
                 }
             });
@@ -1020,8 +995,7 @@ console.log('Finder.js loaded');
 
     function setSortBy(field) {
         if (finderState.sortBy === field) {
-            finderState.sortOrder =
-                finderState.sortOrder === 'asc' ? 'desc' : 'asc';
+            finderState.sortOrder = finderState.sortOrder === 'asc' ? 'desc' : 'asc';
         } else {
             finderState.sortBy = field;
             finderState.sortOrder = 'asc';
@@ -1107,10 +1081,7 @@ console.log('Finder.js loaded');
         navigateTo(finderState.currentPath, finderState.currentView);
 
         // i18n-Übersetzungen anwenden
-        if (
-            window.appI18n &&
-            typeof window.appI18n.applyTranslations === 'function'
-        ) {
+        if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
             const finderModal = document.getElementById('finder-modal');
             if (finderModal) {
                 window.appI18n.applyTranslations(finderModal);

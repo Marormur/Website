@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 console.log('WindowChrome loaded');
 (function () {
     'use strict';
@@ -13,8 +13,7 @@ console.log('WindowChrome loaded');
             if (type === 'close') {
                 btn.style.backgroundColor = '#ef4444';
                 btn.style.color = '#ffffff';
-            }
-            else {
+            } else {
                 btn.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
             }
         });
@@ -30,19 +29,16 @@ console.log('WindowChrome loaded');
     function createToolbarButton(config) {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'toolbar-btn px-2 py-1 text-sm rounded hover:bg-gray-200 dark:hover:bg-gray-800 transition';
+        btn.className =
+            'toolbar-btn px-2 py-1 text-sm rounded hover:bg-gray-200 dark:hover:bg-gray-800 transition';
         if (config.icon) {
             btn.innerHTML = config.icon;
-        }
-        else if (config.label) {
+        } else if (config.label) {
             btn.textContent = config.label;
         }
-        if (config.title)
-            btn.title = config.title;
-        if (config.action)
-            btn.dataset.action = config.action;
-        if (config.onClick)
-            btn.addEventListener('click', config.onClick);
+        if (config.title) btn.title = config.title;
+        if (config.action) btn.dataset.action = config.action;
+        if (config.onClick) btn.addEventListener('click', config.onClick);
         return btn;
     }
     const WindowChrome = {
@@ -56,14 +52,17 @@ console.log('WindowChrome loaded');
             if (config.icon) {
                 const iconEl = document.createElement('span');
                 iconEl.className = 'window-icon';
-                if (config.icon.startsWith('http') || config.icon.startsWith('./') || config.icon.startsWith('/')) {
+                if (
+                    config.icon.startsWith('http') ||
+                    config.icon.startsWith('./') ||
+                    config.icon.startsWith('/')
+                ) {
                     const img = document.createElement('img');
                     img.src = config.icon;
                     img.alt = '';
                     img.style.cssText = 'width: 16px; height: 16px; object-fit: contain;';
                     iconEl.appendChild(img);
-                }
-                else {
+                } else {
                     iconEl.textContent = config.icon;
                     iconEl.style.fontSize = '16px';
                 }
@@ -93,14 +92,14 @@ console.log('WindowChrome loaded');
             const toolbar = document.createElement('div');
             toolbar.className =
                 'window-toolbar flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-900 border-b border-gray-300 dark:border-gray-700';
-            buttons.forEach((btn) => {
+            buttons.forEach(btn => {
                 if (btn.type === 'separator') {
                     const separator = document.createElement('div');
                     separator.className = 'toolbar-separator';
-                    separator.style.cssText = 'width: 1px; height: 20px; background: currentColor; opacity: 0.2;';
+                    separator.style.cssText =
+                        'width: 1px; height: 20px; background: currentColor; opacity: 0.2;';
                     toolbar.appendChild(separator);
-                }
-                else {
+                } else {
                     toolbar.appendChild(createToolbarButton(btn));
                 }
             });
@@ -123,17 +122,16 @@ console.log('WindowChrome loaded');
         },
         updateTitle(titlebar, newTitle) {
             const titleEl = titlebar.querySelector('[data-title-target="true"]');
-            if (titleEl)
-                titleEl.textContent = newTitle;
+            if (titleEl) titleEl.textContent = newTitle;
         },
         updateStatusBar(statusBar, side, content) {
             const target = statusBar.querySelector(`.statusbar-${side}`);
-            if (target)
-                target.textContent = content;
+            if (target) target.textContent = content;
         },
         createWindowFrame(config) {
             const frame = document.createElement('div');
-            frame.className = 'window-frame flex flex-col h-full bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden';
+            frame.className =
+                'window-frame flex flex-col h-full bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden';
             const titlebar = this.createTitlebar({
                 title: config.title || 'Untitled',
                 icon: config.icon,

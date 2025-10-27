@@ -182,10 +182,7 @@
             `;
 
             // Apply i18n translations
-            if (
-                window.appI18n &&
-                typeof window.appI18n.applyTranslations === 'function'
-            ) {
+            if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
                 window.appI18n.applyTranslations(this.container);
             }
         },
@@ -197,10 +194,8 @@
             if (!this.container) return;
 
             // Theme preference change listeners
-            const themeRadios = this.container.querySelectorAll(
-                'input[name="theme-mode"]',
-            );
-            themeRadios.forEach((radio) => {
+            const themeRadios = this.container.querySelectorAll('input[name="theme-mode"]');
+            themeRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
                     if (!radio.checked) return;
                     this.handleThemeChange(radio.value);
@@ -209,9 +204,9 @@
 
             // Language preference change listeners
             const languageRadios = this.container.querySelectorAll(
-                'input[name="language-preference"]',
+                'input[name="language-preference"]'
             );
-            languageRadios.forEach((radio) => {
+            languageRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
                     if (!radio.checked) return;
                     this.handleLanguageChange(radio.value);
@@ -219,13 +214,13 @@
             });
 
             // Listen for external theme/language changes
-            window.addEventListener('themePreferenceChange', (event) => {
+            window.addEventListener('themePreferenceChange', event => {
                 if (event && event.detail && event.detail.preference) {
                     this.syncThemePreference();
                 }
             });
 
-            window.addEventListener('languagePreferenceChange', (event) => {
+            window.addEventListener('languagePreferenceChange', event => {
                 if (event && event.detail && event.detail.preference) {
                     this.syncLanguagePreference();
                 }
@@ -233,7 +228,7 @@
 
             // Register settings actions with ActionBus
             if (window.ActionBus) {
-                window.ActionBus.register('settings:showSection', (params) => {
+                window.ActionBus.register('settings:showSection', params => {
                     const section = params.section || params.value || 'general';
                     this.showSection(section);
                 });
@@ -302,10 +297,8 @@
                 preference = getThemePreference();
             }
 
-            const themeRadios = this.container.querySelectorAll(
-                'input[name="theme-mode"]',
-            );
-            themeRadios.forEach((radio) => {
+            const themeRadios = this.container.querySelectorAll('input[name="theme-mode"]');
+            themeRadios.forEach(radio => {
                 radio.checked = radio.value === preference;
             });
         },
@@ -331,9 +324,9 @@
             }
 
             const languageRadios = this.container.querySelectorAll(
-                'input[name="language-preference"]',
+                'input[name="language-preference"]'
             );
-            languageRadios.forEach((radio) => {
+            languageRadios.forEach(radio => {
                 radio.checked = radio.value === preference;
             });
         },
@@ -348,12 +341,8 @@
             this.currentSection = section;
 
             // Hide all sections
-            const sections = [
-                'settings-general',
-                'settings-display',
-                'settings-language',
-            ];
-            sections.forEach((id) => {
+            const sections = ['settings-general', 'settings-display', 'settings-language'];
+            sections.forEach(id => {
                 const el = this.container.querySelector(`#${id}`);
                 if (el) {
                     el.classList.add('hidden');
@@ -368,9 +357,9 @@
 
             // Update nav highlighting
             const navItems = this.container.querySelectorAll(
-                '[data-action="settings:showSection"]',
+                '[data-action="settings:showSection"]'
             );
-            navItems.forEach((item) => {
+            navItems.forEach(item => {
                 const itemSection = item.dataset.section;
                 if (itemSection === section) {
                     item.classList.add(
@@ -378,7 +367,7 @@
                         'dark:bg-gray-600',
                         'text-gray-900',
                         'dark:text-gray-100',
-                        'font-medium',
+                        'font-medium'
                     );
                 } else {
                     item.classList.remove(
@@ -386,7 +375,7 @@
                         'dark:bg-gray-600',
                         'text-gray-900',
                         'dark:text-gray-100',
-                        'font-medium',
+                        'font-medium'
                     );
                 }
             });

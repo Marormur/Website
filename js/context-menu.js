@@ -18,7 +18,7 @@
     window.__customContextMenuInit = true;
 
     const i18n = window.appI18n || {
-        translate: (k) => k,
+        translate: k => k,
         applyTranslations: () => {},
     };
 
@@ -29,10 +29,10 @@
             : () => {
                 document
                     .querySelectorAll('.menu-dropdown')
-                    .forEach((d) => d.classList.add('hidden'));
+                    .forEach(d => d.classList.add('hidden'));
                 document
                     .querySelectorAll('[aria-expanded="true"]')
-                    .forEach((b) => b.setAttribute('aria-expanded', 'false'));
+                    .forEach(b => b.setAttribute('aria-expanded', 'false'));
             };
 
     // Actions
@@ -63,18 +63,12 @@
     }
 
     function toggleDarkMode() {
-        if (
-            window.SystemUI &&
-            typeof window.SystemUI.handleSystemToggle === 'function'
-        ) {
+        if (window.SystemUI && typeof window.SystemUI.handleSystemToggle === 'function') {
             window.SystemUI.handleSystemToggle('dark-mode');
         } else {
             const next = !document.documentElement.classList.contains('dark');
             document.documentElement.classList.toggle('dark', next);
-            if (
-                window.ThemeSystem &&
-                typeof window.ThemeSystem.setThemePreference === 'function'
-            ) {
+            if (window.ThemeSystem && typeof window.ThemeSystem.setThemePreference === 'function') {
                 window.ThemeSystem.setThemePreference(next ? 'dark' : 'light');
             }
         }
@@ -84,26 +78,10 @@
     function getMenuItemsForTarget(target) {
         const items = [];
 
-        const inDesktop = !!(
-            target &&
-            target.closest &&
-            target.closest('#desktop')
-        );
-        const inDockItem = !!(
-            target &&
-            target.closest &&
-            target.closest('#dock .dock-item')
-        );
-        const inImageModal = !!(
-            target &&
-            target.closest &&
-            target.closest('#image-modal')
-        );
-        const inFinderModal = !!(
-            target &&
-            target.closest &&
-            target.closest('#finder-modal')
-        );
+        const inDesktop = !!(target && target.closest && target.closest('#desktop'));
+        const inDockItem = !!(target && target.closest && target.closest('#dock .dock-item'));
+        const inImageModal = !!(target && target.closest && target.closest('#image-modal'));
+        const inFinderModal = !!(target && target.closest && target.closest('#finder-modal'));
 
         // Dock item: offer "Open" for its window-id
         if (inDockItem) {
@@ -130,9 +108,7 @@
                         i18n.translate('menu.image.openInTab') ||
                         'Bild in neuem Tab öffnen',
                     action: () => {
-                        if (
-                            typeof window.openActiveImageInNewTab === 'function'
-                        )
+                        if (typeof window.openActiveImageInNewTab === 'function')
                             window.openActiveImageInNewTab();
                     },
                 });
@@ -153,9 +129,7 @@
 
         // Finder: offer file/folder specific actions
         if (inFinderModal) {
-            const finderItem = target.closest(
-                '.finder-list-item, .finder-grid-item',
-            );
+            const finderItem = target.closest('.finder-list-item, .finder-grid-item');
 
             // Context menu on a file or folder
             if (finderItem) {
@@ -165,28 +139,20 @@
                 if (itemName && itemType) {
                     items.push({
                         id: 'finder-open-item',
-                        label:
-                            i18n.translate('context.finder.openItem') ||
-                            'Öffnen',
+                        label: i18n.translate('context.finder.openItem') || 'Öffnen',
                         action: () => {
                             if (
                                 window.FinderSystem &&
-                                typeof window.FinderSystem.openItem ===
-                                    'function'
+                                typeof window.FinderSystem.openItem === 'function'
                             ) {
-                                window.FinderSystem.openItem(
-                                    itemName,
-                                    itemType,
-                                );
+                                window.FinderSystem.openItem(itemName, itemType);
                             }
                         },
                     });
                     items.push({ type: 'separator' });
                     items.push({
                         id: 'finder-get-info',
-                        label:
-                            i18n.translate('context.finder.getInfo') ||
-                            'Informationen',
+                        label: i18n.translate('context.finder.getInfo') || 'Informationen',
                         action: () => {
                             // Placeholder for get info - could open a modal with file details
                             console.log('Get info for:', itemName, itemType);
@@ -199,8 +165,7 @@
             // Context menu in empty space of Finder
             items.push({
                 id: 'finder-refresh',
-                label:
-                    i18n.translate('context.finder.refresh') || 'Aktualisieren',
+                label: i18n.translate('context.finder.refresh') || 'Aktualisieren',
                 action: () => {
                     if (
                         window.FinderSystem &&
@@ -208,10 +173,7 @@
                     ) {
                         const state = window.FinderSystem.getState();
                         if (state) {
-                            window.FinderSystem.navigateTo(
-                                state.currentPath,
-                                state.currentView,
-                            );
+                            window.FinderSystem.navigateTo(state.currentPath, state.currentView);
                         }
                     }
                 },
@@ -226,14 +188,11 @@
             if (currentViewMode !== 'list') {
                 items.push({
                     id: 'finder-view-list',
-                    label:
-                        i18n.translate('context.finder.viewList') ||
-                        'Als Liste',
+                    label: i18n.translate('context.finder.viewList') || 'Als Liste',
                     action: () => {
                         if (
                             window.FinderSystem &&
-                            typeof window.FinderSystem.setViewMode ===
-                                'function'
+                            typeof window.FinderSystem.setViewMode === 'function'
                         ) {
                             window.FinderSystem.setViewMode('list');
                         }
@@ -243,14 +202,11 @@
             if (currentViewMode !== 'grid') {
                 items.push({
                     id: 'finder-view-grid',
-                    label:
-                        i18n.translate('context.finder.viewGrid') ||
-                        'Als Raster',
+                    label: i18n.translate('context.finder.viewGrid') || 'Als Raster',
                     action: () => {
                         if (
                             window.FinderSystem &&
-                            typeof window.FinderSystem.setViewMode ===
-                                'function'
+                            typeof window.FinderSystem.setViewMode === 'function'
                         ) {
                             window.FinderSystem.setViewMode('grid');
                         }
@@ -262,9 +218,7 @@
             // Sort options
             items.push({
                 id: 'finder-sort-name',
-                label:
-                    i18n.translate('context.finder.sortByName') ||
-                    'Nach Name sortieren',
+                label: i18n.translate('context.finder.sortByName') || 'Nach Name sortieren',
                 action: () => {
                     if (
                         window.FinderSystem &&
@@ -276,9 +230,7 @@
             });
             items.push({
                 id: 'finder-sort-date',
-                label:
-                    i18n.translate('context.finder.sortByDate') ||
-                    'Nach Datum sortieren',
+                label: i18n.translate('context.finder.sortByDate') || 'Nach Datum sortieren',
                 action: () => {
                     if (
                         window.FinderSystem &&
@@ -290,9 +242,7 @@
             });
             items.push({
                 id: 'finder-sort-size',
-                label:
-                    i18n.translate('context.finder.sortBySize') ||
-                    'Nach Größe sortieren',
+                label: i18n.translate('context.finder.sortBySize') || 'Nach Größe sortieren',
                 action: () => {
                     if (
                         window.FinderSystem &&
@@ -315,30 +265,23 @@
             });
             items.push({
                 id: 'open-text',
-                label:
-                    i18n.translate('context.openTextEditor') ||
-                    'Texteditor öffnen',
+                label: i18n.translate('context.openTextEditor') || 'Texteditor öffnen',
                 action: () => openModal('text-modal'),
             });
             items.push({
                 id: 'open-projects',
-                label:
-                    i18n.translate('context.openProjects') || 'Projekte öffnen',
+                label: i18n.translate('context.openProjects') || 'Projekte öffnen',
                 action: () => openModal('projects-modal'),
             });
             items.push({ type: 'separator' });
             items.push({
                 id: 'toggle-dark',
-                label:
-                    i18n.translate('context.toggleDarkMode') ||
-                    'Dark Mode umschalten',
+                label: i18n.translate('context.toggleDarkMode') || 'Dark Mode umschalten',
                 action: toggleDarkMode,
             });
             items.push({
                 id: 'open-settings',
-                label:
-                    i18n.translate('context.openSettings') ||
-                    'Systemeinstellungen …',
+                label: i18n.translate('context.openSettings') || 'Systemeinstellungen …',
                 action: () => openModal('settings-modal'),
             });
             items.push({ type: 'separator' });
@@ -358,23 +301,18 @@
         });
         items.push({
             id: 'open-text',
-            label:
-                i18n.translate('context.openTextEditor') || 'Texteditor öffnen',
+            label: i18n.translate('context.openTextEditor') || 'Texteditor öffnen',
             action: () => openModal('text-modal'),
         });
         items.push({ type: 'separator' });
         items.push({
             id: 'toggle-dark',
-            label:
-                i18n.translate('context.toggleDarkMode') ||
-                'Dark Mode umschalten',
+            label: i18n.translate('context.toggleDarkMode') || 'Dark Mode umschalten',
             action: toggleDarkMode,
         });
         items.push({
             id: 'open-settings',
-            label:
-                i18n.translate('context.openSettings') ||
-                'Systemeinstellungen …',
+            label: i18n.translate('context.openSettings') || 'Systemeinstellungen …',
             action: () => openModal('settings-modal'),
         });
         items.push({ type: 'separator' });
@@ -391,10 +329,7 @@
     menu.id = 'context-menu';
     menu.className = 'menu-dropdown context-menu hidden';
     menu.setAttribute('role', 'menu');
-    menu.setAttribute(
-        'aria-label',
-        i18n.translate('context.menuLabel') || 'Kontextmenü',
-    );
+    menu.setAttribute('aria-label', i18n.translate('context.menuLabel') || 'Kontextmenü');
     // Ensure in DOM
     document.addEventListener('DOMContentLoaded', () => {
         if (!document.body.contains(menu)) {
@@ -433,7 +368,7 @@
             labelSpan.className = 'menu-item-label';
             labelSpan.textContent = it.label || '';
             btn.appendChild(labelSpan);
-            btn.addEventListener('click', (ev) => {
+            btn.addEventListener('click', ev => {
                 ev.stopPropagation();
                 hideContextMenu();
                 try {
@@ -457,23 +392,11 @@
 
     function clampPosition(x, y) {
         const rect = menu.getBoundingClientRect();
-        const vw = Math.max(
-            document.documentElement.clientWidth,
-            window.innerWidth || 0,
-        );
-        const vh = Math.max(
-            document.documentElement.clientHeight,
-            window.innerHeight || 0,
-        );
+        const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+        const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
         const margin = 6;
-        const nx = Math.min(
-            Math.max(margin, x),
-            Math.max(margin, vw - rect.width - margin),
-        );
-        const ny = Math.min(
-            Math.max(margin, y),
-            Math.max(margin, vh - rect.height - margin),
-        );
+        const nx = Math.min(Math.max(margin, x), Math.max(margin, vw - rect.width - margin));
+        const ny = Math.min(Math.max(margin, y), Math.max(margin, vh - rect.height - margin));
         return { x: nx, y: ny };
     }
 
@@ -527,7 +450,7 @@
     let onDocClick, onDocScroll, onResize, onKeyDown;
     function bindAutoClose() {
         unbindAutoClose();
-        onDocClick = (e) => {
+        onDocClick = e => {
             const t = e.target instanceof Element ? e.target : null;
             if (!t) {
                 hideContextMenu();
@@ -538,11 +461,9 @@
         };
         onDocScroll = () => hideContextMenu();
         onResize = () => hideContextMenu();
-        onKeyDown = (e) => {
+        onKeyDown = e => {
             const items = Array.from(menu.querySelectorAll('.menu-item'));
-            const focusIdx = items.findIndex(
-                (el) => el === document.activeElement,
-            );
+            const focusIdx = items.findIndex(el => el === document.activeElement);
             if (e.key === 'Escape') {
                 e.preventDefault();
                 hideContextMenu();
@@ -555,8 +476,7 @@
                 next && next.focus();
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                const next =
-                    items[(focusIdx > 0 ? focusIdx : items.length) - 1];
+                const next = items[(focusIdx > 0 ? focusIdx : items.length) - 1];
                 next && next.focus();
             } else if (e.key === 'Home') {
                 e.preventDefault();
@@ -600,7 +520,7 @@
 
     // Track keyboard-invoked context menu (Shift+F10 or ContextMenu key)
     let lastInvokeWasKeyboard = false;
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', e => {
         // ContextMenu key has key === 'ContextMenu' in some browsers; also Shift+F10
         if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
             lastInvokeWasKeyboard = true;
@@ -611,7 +531,7 @@
         () => {
             lastInvokeWasKeyboard = false;
         },
-        { capture: true },
+        { capture: true }
     );
 
     // Main hook: intercept right-clicks except in inputs/editable
@@ -619,10 +539,8 @@
 
     // Also close if user clicks the menubar triggers (consistency with dropdowns)
     if (typeof window.bindDropdownTrigger === 'function') {
-        document
-            .querySelectorAll('[data-menubar-trigger-button="true"]')
-            .forEach((btn) => {
-                btn.addEventListener('click', () => hideContextMenu());
-            });
+        document.querySelectorAll('[data-menubar-trigger-button="true"]').forEach(btn => {
+            btn.addEventListener('click', () => hideContextMenu());
+        });
     }
 })();

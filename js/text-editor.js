@@ -27,10 +27,7 @@
                     : containerOrId;
 
             if (!container) {
-                console.error(
-                    'Text editor container not found:',
-                    containerOrId,
-                );
+                console.error('Text editor container not found:', containerOrId);
                 return;
             }
 
@@ -109,10 +106,7 @@
             this.updateCSSVariables();
 
             // Apply i18n translations
-            if (
-                window.appI18n &&
-                typeof window.appI18n.applyTranslations === 'function'
-            ) {
+            if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
                 window.appI18n.applyTranslations(this.container);
             }
         },
@@ -125,42 +119,30 @@
 
             const isDark = document.documentElement.classList.contains('dark');
 
-            this.container.style.setProperty(
-                '--editor-body-bg',
-                isDark ? '#0f172a' : '#fafafa',
-            );
-            this.container.style.setProperty(
-                '--editor-text',
-                isDark ? '#e5e7eb' : '#111827',
-            );
-            this.container.style.setProperty(
-                '--editor-toolbar-bg',
-                isDark ? '#1f2937' : '#f5f5f5',
-            );
+            this.container.style.setProperty('--editor-body-bg', isDark ? '#0f172a' : '#fafafa');
+            this.container.style.setProperty('--editor-text', isDark ? '#e5e7eb' : '#111827');
+            this.container.style.setProperty('--editor-toolbar-bg', isDark ? '#1f2937' : '#f5f5f5');
             this.container.style.setProperty(
                 '--editor-toolbar-border',
-                isDark ? '#374151' : '#d1d5db',
+                isDark ? '#374151' : '#d1d5db'
             );
             this.container.style.setProperty(
                 '--editor-toolbar-button-bg',
-                isDark ? '#111827' : '#ffffff',
+                isDark ? '#111827' : '#ffffff'
             );
             this.container.style.setProperty(
                 '--editor-toolbar-button-hover',
-                isDark ? '#1f2937' : '#e5e7eb',
+                isDark ? '#1f2937' : '#e5e7eb'
             );
             this.container.style.setProperty(
                 '--editor-toolbar-button-border',
-                isDark ? '#475569' : '#d1d5db',
+                isDark ? '#475569' : '#d1d5db'
             );
-            this.container.style.setProperty(
-                '--editor-surface-bg',
-                isDark ? '#111827' : '#ffffff',
-            );
+            this.container.style.setProperty('--editor-surface-bg', isDark ? '#111827' : '#ffffff');
 
             // Apply button styles
             const buttons = this.container.querySelectorAll('.text-editor-btn');
-            buttons.forEach((btn) => {
+            buttons.forEach(btn => {
                 btn.style.margin = '0';
                 btn.style.padding = '6px 12px';
                 btn.style.fontSize = '14px';
@@ -182,14 +164,9 @@
             this.statusBar = this.container.querySelector('#text-file-status');
             this.saveButton = this.container.querySelector('#text-save-button');
             this.fileInput = this.container.querySelector('#text-file-input');
-            this.wordCountDisplay = this.container.querySelector(
-                '#word-count-display',
-            );
-            this.lineColDisplay =
-                this.container.querySelector('#line-col-display');
-            this.findReplacePanel = this.container.querySelector(
-                '#find-replace-panel',
-            );
+            this.wordCountDisplay = this.container.querySelector('#word-count-display');
+            this.lineColDisplay = this.container.querySelector('#line-col-display');
+            this.findReplacePanel = this.container.querySelector('#find-replace-panel');
             this.findInput = this.container.querySelector('#find-input');
             this.replaceInput = this.container.querySelector('#replace-input');
         },
@@ -213,8 +190,7 @@
             const normalized = mode === 'soft' ? 'soft' : 'off';
             this.wrapMode = normalized;
             this.editor.wrap = normalized;
-            this.editor.style.whiteSpace =
-                normalized === 'soft' ? 'pre-wrap' : 'pre';
+            this.editor.style.whiteSpace = normalized === 'soft' ? 'pre-wrap' : 'pre';
 
             try {
                 localStorage.setItem('textEditorWrapMode', normalized);
@@ -230,9 +206,7 @@
             const next = this.wrapMode === 'soft' ? 'off' : 'soft';
             this.applyWrapMode(next);
             this.setStatusPlain(
-                next === 'soft'
-                    ? 'Zeilenumbruch aktiviert'
-                    : 'Zeilenumbruch deaktiviert',
+                next === 'soft' ? 'Zeilenumbruch aktiviert' : 'Zeilenumbruch deaktiviert'
             );
             this.focusEditor();
         },
@@ -259,7 +233,7 @@
             });
 
             // File input change listener
-            this.fileInput.addEventListener('change', (event) => {
+            this.fileInput.addEventListener('change', event => {
                 this.handleFileSelect(event);
             });
 
@@ -304,8 +278,7 @@
                 'textEditor:bold': () => this.wrapSelection('**', '**'),
                 'textEditor:italic': () => this.wrapSelection('*', '*'),
                 'textEditor:underline': () => this.wrapSelection('<u>', '</u>'),
-                'textEditor:strikethrough': () =>
-                    this.wrapSelection('~~', '~~'),
+                'textEditor:strikethrough': () => this.wrapSelection('~~', '~~'),
                 'textEditor:heading1': () => this.insertHeading(1),
                 'textEditor:heading2': () => this.insertHeading(2),
                 'textEditor:heading3': () => this.insertHeading(3),
@@ -332,10 +305,7 @@
             try {
                 localStorage.setItem('textEditorContent', this.editor.value);
             } catch (err) {
-                console.warn(
-                    'Could not save editor content to localStorage:',
-                    err,
-                );
+                console.warn('Could not save editor content to localStorage:', err);
             }
 
             this.syncSaveButtonState();
@@ -349,7 +319,7 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = e => {
                 const content = e.target.result;
                 if (this.editor) {
                     this.editor.value = content;
@@ -480,13 +450,10 @@
         handlePaste() {
             this.focusEditor();
 
-            if (
-                navigator.clipboard &&
-                typeof navigator.clipboard.readText === 'function'
-            ) {
+            if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
                 navigator.clipboard
                     .readText()
-                    .then((text) => {
+                    .then(text => {
                         if (text && this.editor) {
                             this.insertTextAtCursor(text);
                         }
@@ -521,9 +488,7 @@
                     ? this.editor.selectionStart
                     : this.editor.value.length;
             const end =
-                typeof this.editor.selectionEnd === 'number'
-                    ? this.editor.selectionEnd
-                    : start;
+                typeof this.editor.selectionEnd === 'number' ? this.editor.selectionEnd : start;
 
             this.editor.setRangeText(text, start, end, 'end');
             this.editor.dispatchEvent(new Event('input', { bubbles: true }));
@@ -615,28 +580,22 @@
             if (this.statusState.type === 'i18n') {
                 const { text, translated } = this.resolveTranslation(
                     this.statusState.key,
-                    this.statusState.params,
+                    this.statusState.params
                 );
                 this.statusBar.textContent = text;
 
                 if (translated) {
-                    this.statusBar.setAttribute(
-                        'data-i18n',
-                        this.statusState.key,
-                    );
+                    this.statusBar.setAttribute('data-i18n', this.statusState.key);
                     if (this.statusState.params) {
                         this.statusBar.setAttribute(
                             'data-i18n-params',
-                            JSON.stringify(this.statusState.params),
+                            JSON.stringify(this.statusState.params)
                         );
                     } else {
                         this.statusBar.removeAttribute('data-i18n-params');
                     }
 
-                    if (
-                        window.appI18n &&
-                        typeof window.appI18n.applyTranslations === 'function'
-                    ) {
+                    if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
                         window.appI18n.applyTranslations(this.statusBar);
                     }
                 } else {
@@ -663,44 +622,37 @@
 
             const fallbackMessages = {
                 'textEditor.documentTitle': () => 'Texteditor',
-                'textEditor.documentTitleWithFile': (p) => {
+                'textEditor.documentTitleWithFile': p => {
                     const fileName = p && p.fileName ? p.fileName : '';
                     return fileName ? `Texteditor – ${fileName}` : 'Texteditor';
                 },
                 'textEditor.status.loading': () => 'Lade Datei …',
-                'textEditor.status.loadingWithLabel': (p) => {
+                'textEditor.status.loadingWithLabel': p => {
                     const label = p && p.label ? p.label : '';
                     return label ? `${label} (lädt …)` : 'Lade Datei …';
                 },
-                'textEditor.status.loadError': () =>
-                    'Datei konnte nicht geladen werden.',
+                'textEditor.status.loadError': () => 'Datei konnte nicht geladen werden.',
                 'textEditor.status.rateLimit': () =>
                     'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
-                'textEditor.status.wordCount': (p) => {
-                    const words =
-                        p && typeof p.words === 'number' ? p.words : 0;
-                    const chars =
-                        p && typeof p.chars === 'number' ? p.chars : 0;
+                'textEditor.status.wordCount': p => {
+                    const words = p && typeof p.words === 'number' ? p.words : 0;
+                    const chars = p && typeof p.chars === 'number' ? p.chars : 0;
                     return `Words: ${words} | Characters: ${chars}`;
                 },
-                'textEditor.status.position': (p) => {
+                'textEditor.status.position': p => {
                     const line = p && typeof p.line === 'number' ? p.line : 1;
                     const col = p && typeof p.col === 'number' ? p.col : 1;
                     return `Line ${line}, Col ${col}`;
                 },
                 'textEditor.findReplace.noMatch': () => 'No match found',
-                'textEditor.findReplace.replacedCount': (p) => {
-                    const count =
-                        p && typeof p.count === 'number' ? p.count : 0;
+                'textEditor.findReplace.replacedCount': p => {
+                    const count = p && typeof p.count === 'number' ? p.count : 0;
                     return `Replaced ${count} occurrence(s)`;
                 },
             };
 
             try {
-                if (
-                    window.appI18n &&
-                    typeof window.appI18n.translate === 'function'
-                ) {
+                if (window.appI18n && typeof window.appI18n.translate === 'function') {
                     const translated = window.appI18n.translate(key, params);
                     if (translated && translated !== key) {
                         return { text: translated, translated: true };
@@ -783,11 +735,8 @@
          */
         showLoadError(payload = {}) {
             const label = this.formatFileLabel(payload);
-            const fallback = this.resolveTranslation(
-                'textEditor.status.loadError',
-            );
-            const message =
-                payload && payload.message ? payload.message : fallback.text;
+            const fallback = this.resolveTranslation('textEditor.status.loadError');
+            const message = payload && payload.message ? payload.message : fallback.text;
 
             if (label) {
                 this.setStatusPlain(`${label} — ${message}`);
@@ -868,8 +817,7 @@
 
             if (headingMatch) {
                 // Replace existing heading
-                newLine =
-                    prefix + currentLine.substring(headingMatch[0].length);
+                newLine = prefix + currentLine.substring(headingMatch[0].length);
             } else {
                 // Add new heading
                 newLine = prefix + currentLine;
@@ -896,9 +844,7 @@
             let lineEnd = text.indexOf('\n', end);
             if (lineEnd === -1) lineEnd = text.length;
 
-            const selectedLines = text
-                .substring(lineStart, lineEnd)
-                .split('\n');
+            const selectedLines = text.substring(lineStart, lineEnd).split('\n');
             const prefix = type === 'ordered' ? '1. ' : '- ';
 
             const newLines = selectedLines.map((line, index) => {
@@ -953,22 +899,15 @@
             const selectedText = this.editor.value.substring(start, end);
 
             const urlLabel =
-                this.resolveTranslation('textEditor.insertLink.enterUrl')
-                    .text || 'Enter URL:';
-            this.showInputModal(
-                urlLabel,
-                'https://example.com',
-                'https://',
-            ).then((url) => {
+                this.resolveTranslation('textEditor.insertLink.enterUrl').text || 'Enter URL:';
+            this.showInputModal(urlLabel, 'https://example.com', 'https://').then(url => {
                 if (!url) return;
 
                 const linkText = selectedText || 'link text';
                 const markdown = `[${linkText}](${url})`;
 
                 this.editor.setRangeText(markdown, start, end, 'end');
-                this.editor.dispatchEvent(
-                    new Event('input', { bubbles: true }),
-                );
+                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
                 this.focusEditor();
             });
         },
@@ -982,22 +921,15 @@
             const text = this.editor.value;
             const chars = text.length;
             const trimmedText = text.trim();
-            const words =
-                trimmedText === '' ? 0 : trimmedText.split(/\s+/).length;
+            const words = trimmedText === '' ? 0 : trimmedText.split(/\s+/).length;
 
             // Use i18n if available
-            if (
-                window.appI18n &&
-                typeof window.appI18n.translate === 'function'
-            ) {
-                const translated = window.appI18n.translate(
-                    'textEditor.status.wordCount',
-                    { words, chars },
-                );
-                if (
-                    translated &&
-                    translated !== 'textEditor.status.wordCount'
-                ) {
+            if (window.appI18n && typeof window.appI18n.translate === 'function') {
+                const translated = window.appI18n.translate('textEditor.status.wordCount', {
+                    words,
+                    chars,
+                });
+                if (translated && translated !== 'textEditor.status.wordCount') {
                     this.wordCountDisplay.textContent = translated;
                     return;
                 }
@@ -1022,14 +954,11 @@
             const col = lines[lines.length - 1].length + 1;
 
             // Use i18n if available
-            if (
-                window.appI18n &&
-                typeof window.appI18n.translate === 'function'
-            ) {
-                const translated = window.appI18n.translate(
-                    'textEditor.status.position',
-                    { line, col },
-                );
+            if (window.appI18n && typeof window.appI18n.translate === 'function') {
+                const translated = window.appI18n.translate('textEditor.status.position', {
+                    line,
+                    col,
+                });
                 if (translated && translated !== 'textEditor.status.position') {
                     this.lineColDisplay.textContent = translated;
                     return;
@@ -1086,16 +1015,12 @@
                 // Wrap around to beginning
                 const firstIndex = text.indexOf(searchText);
                 if (firstIndex !== -1) {
-                    this.editor.setSelectionRange(
-                        firstIndex,
-                        firstIndex + searchText.length,
-                    );
+                    this.editor.setSelectionRange(firstIndex, firstIndex + searchText.length);
                     this.editor.focus();
                 } else {
                     const message =
-                        this.resolveTranslation(
-                            'textEditor.findReplace.noMatch',
-                        ).text || 'No match found';
+                        this.resolveTranslation('textEditor.findReplace.noMatch').text ||
+                        'No match found';
                     this.showToast(message, 'info');
                 }
             }
@@ -1118,9 +1043,7 @@
 
             if (selectedText === searchText) {
                 this.editor.setRangeText(replaceText, start, end, 'end');
-                this.editor.dispatchEvent(
-                    new Event('input', { bubbles: true }),
-                );
+                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
                 this.findNext(); // Find next occurrence
             } else {
                 this.findNext(); // Find first occurrence
@@ -1145,20 +1068,16 @@
             if (count > 0) {
                 const newText = parts.join(replaceText);
                 this.editor.value = newText;
-                this.editor.dispatchEvent(
-                    new Event('input', { bubbles: true }),
-                );
+                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
 
                 const message =
-                    this.resolveTranslation(
-                        'textEditor.findReplace.replacedCount',
-                        { count },
-                    ).text || `Replaced ${count} occurrence(s)`;
+                    this.resolveTranslation('textEditor.findReplace.replacedCount', { count })
+                        .text || `Replaced ${count} occurrence(s)`;
                 this.showToast(message, 'success');
             } else {
                 const message =
-                    this.resolveTranslation('textEditor.findReplace.noMatch')
-                        .text || 'No match found';
+                    this.resolveTranslation('textEditor.findReplace.noMatch').text ||
+                    'No match found';
                 this.showToast(message, 'info');
             }
 
@@ -1203,7 +1122,7 @@
          * @returns {Promise<string|null>} Resolves with input value or null if cancelled
          */
         showInputModal(title, placeholder = '', defaultValue = '') {
-            return new Promise((resolve) => {
+            return new Promise(resolve => {
                 const modal = document.createElement('div');
                 modal.className = 'text-editor-modal-overlay';
 
@@ -1225,12 +1144,8 @@
                 document.body.appendChild(modal);
 
                 const input = modal.querySelector('.text-editor-modal-input');
-                const cancelBtn = modal.querySelector(
-                    '.text-editor-modal-btn-cancel',
-                );
-                const confirmBtn = modal.querySelector(
-                    '.text-editor-modal-btn-confirm',
-                );
+                const cancelBtn = modal.querySelector('.text-editor-modal-btn-cancel');
+                const confirmBtn = modal.querySelector('.text-editor-modal-btn-confirm');
 
                 // Focus input and select text
                 setTimeout(() => {
@@ -1257,7 +1172,7 @@
                 // Event listeners
                 confirmBtn.addEventListener('click', handleConfirm);
                 cancelBtn.addEventListener('click', handleCancel);
-                input.addEventListener('keydown', (e) => {
+                input.addEventListener('keydown', e => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         handleConfirm();
@@ -1268,7 +1183,7 @@
                 });
 
                 // Click outside to close
-                modal.addEventListener('click', (e) => {
+                modal.addEventListener('click', e => {
                     if (e.target === modal) {
                         handleCancel();
                     }

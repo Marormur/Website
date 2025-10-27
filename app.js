@@ -7,7 +7,7 @@ console.log('App.js loaded v3');
 // Ensure appI18n exists on window for translations
 if (!window.appI18n) {
     window.appI18n = {
-        translate: (key) => key,
+        translate: key => key,
         applyTranslations: () => {},
         setLanguagePreference: () => {},
         getLanguagePreference: () => 'system',

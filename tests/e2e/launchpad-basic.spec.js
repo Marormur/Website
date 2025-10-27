@@ -57,22 +57,34 @@ test.describe('Launchpad Basic Functionality', () => {
         await searchInput.fill('Finder');
 
         // Wait for filtering to take effect (filtered count should be <= initial)
-        await page.waitForFunction(init => {
-            try {
-                return document.querySelectorAll('.launchpad-app-button').length <= init;
-            } catch { return false; }
-        }, initialCount, { timeout: 5000 });
+        await page.waitForFunction(
+            init => {
+                try {
+                    return document.querySelectorAll('.launchpad-app-button').length <= init;
+                } catch {
+                    return false;
+                }
+            },
+            initialCount,
+            { timeout: 5000 }
+        );
         const filteredCount = await appButtons.count();
         expect(filteredCount).toBeLessThanOrEqual(initialCount);
 
         // Clear search
         await searchInput.clear();
         // Wait for the apps grid to restore to the original count
-        await page.waitForFunction(init => {
-            try {
-                return document.querySelectorAll('.launchpad-app-button').length === init;
-            } catch { return false; }
-        }, initialCount, { timeout: 5000 });
+        await page.waitForFunction(
+            init => {
+                try {
+                    return document.querySelectorAll('.launchpad-app-button').length === init;
+                } catch {
+                    return false;
+                }
+            },
+            initialCount,
+            { timeout: 5000 }
+        );
         const finalCount = await appButtons.count();
         expect(finalCount).toBe(initialCount);
     });

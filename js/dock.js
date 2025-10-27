@@ -38,7 +38,7 @@ function initDockMagnification() {
     if (!icons.length) return;
 
     // Sammle alle Icons mit ihren Tooltips
-    const items = icons.map((icon) => {
+    const items = icons.map(icon => {
         const parent = icon.parentElement;
         const tooltip = parent ? parent.querySelector('.dock-tooltip') : null;
         return {
@@ -81,10 +81,7 @@ function initDockMagnification() {
             const influence = Math.exp(-(dx * dx) / (2 * sigma * sigma));
             const scale = Math.max(
                 minScale,
-                Math.min(
-                    maxScale,
-                    minScale + (maxScale - minScale) * influence,
-                ),
+                Math.min(maxScale, minScale + (maxScale - minScale) * influence)
             );
 
             // Leichtes Anheben nach oben, abhängig von der Skalierung
@@ -105,7 +102,7 @@ function initDockMagnification() {
     };
 
     // Event-Handler
-    const onMove = (e) => {
+    const onMove = e => {
         pointerX = e.clientX;
         if (!rafId) rafId = requestAnimationFrame(apply);
     };
@@ -136,10 +133,7 @@ function loadDockOrder() {
 
 function saveDockOrder(order) {
     try {
-        localStorage.setItem(
-            DOCK_ORDER_STORAGE_KEY,
-            JSON.stringify(order || []),
-        );
+        localStorage.setItem(DOCK_ORDER_STORAGE_KEY, JSON.stringify(order || []));
     } catch (_) {
         /* ignore */
     }
@@ -153,9 +147,7 @@ function getDockItemId(item) {
 function getCurrentDockOrder() {
     const tray = document.querySelector('#dock .dock-tray');
     if (!tray) return [];
-    return Array.from(tray.querySelectorAll('.dock-item'))
-        .map(getDockItemId)
-        .filter(Boolean);
+    return Array.from(tray.querySelectorAll('.dock-item')).map(getDockItemId).filter(Boolean);
 }
 
 function applyDockOrder(order) {
@@ -163,10 +155,10 @@ function applyDockOrder(order) {
     const tray = document.querySelector('#dock .dock-tray');
     if (!tray) return;
     const items = Array.from(tray.querySelectorAll('.dock-item'));
-    const map = new Map(items.map((it) => [getDockItemId(it), it]));
+    const map = new Map(items.map(it => [getDockItemId(it), it]));
     // Füge bekannte IDs in gewünschter Reihenfolge ein, unbekannte später anhängen
     const fragment = document.createDocumentFragment();
-    order.forEach((id) => {
+    order.forEach(id => {
         const el = map.get(id);
         if (el) {
             fragment.appendChild(el);
@@ -203,7 +195,7 @@ function initDockDragDrop() {
     let prevUserSelect = '';
     let suppressClicksUntil = 0;
 
-    const updatePlaceholderSize = (ref) => {
+    const updatePlaceholderSize = ref => {
         if (!placeholder || !ref) return;
         try {
             const r = ref.getBoundingClientRect();
@@ -220,18 +212,15 @@ function initDockDragDrop() {
         updatePlaceholderSize(draggedItem || targetItem);
         const rect = targetItem.getBoundingClientRect();
         const insertBefore = clientX < rect.left + rect.width / 2;
-        tray.insertBefore(
-            placeholder,
-            insertBefore ? targetItem : targetItem.nextSibling,
-        );
+        tray.insertBefore(placeholder, insertBefore ? targetItem : targetItem.nextSibling);
     };
 
-    const handleTrayDragOver = (e) => {
+    const handleTrayDragOver = e => {
         if (!draggedItem) return;
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
         const items = Array.from(tray.querySelectorAll('.dock-item')).filter(
-            (it) => it !== draggedItem,
+            it => it !== draggedItem
         );
         if (!placeholder) placeholder = createPlaceholder();
         if (items.length === 0) {
@@ -252,7 +241,7 @@ function initDockDragDrop() {
         else tray.appendChild(placeholder);
     };
 
-    const onDragStart = (e) => {
+    const onDragStart = e => {
         const item = e.currentTarget.closest('.dock-item');
         if (!item) return;
         draggedItem = item;
@@ -275,7 +264,7 @@ function initDockDragDrop() {
         tray.insertBefore(placeholder, item.nextSibling);
     };
 
-    const onDragOver = (e) => {
+    const onDragOver = e => {
         if (!draggedItem) return;
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
@@ -296,7 +285,7 @@ function initDockDragDrop() {
         saveDockOrder(order);
     };
 
-    const onDrop = (e) => {
+    const onDrop = e => {
         if (!draggedItem) return;
         e.preventDefault();
         const phDidNotMove =
@@ -307,9 +296,9 @@ function initDockDragDrop() {
         // If placeholder didn't move (or is missing), compute target via drop position
         if (!placeholder || !placeholder.isConnected || phDidNotMove) {
             const x = e.clientX;
-            const items = Array.from(
-                tray.querySelectorAll('.dock-item'),
-            ).filter((it) => it !== draggedItem);
+            const items = Array.from(tray.querySelectorAll('.dock-item')).filter(
+                it => it !== draggedItem
+            );
             let inserted = false;
             for (const it of items) {
                 const r = it.getBoundingClientRect();
@@ -344,13 +333,13 @@ function initDockDragDrop() {
     // Click-Suppression (versehentliches Öffnen vermeiden)
     dock.addEventListener(
         'click',
-        (ev) => {
+        ev => {
             if (Date.now() < suppressClicksUntil || draggedItem) {
                 ev.stopPropagation();
                 ev.preventDefault();
             }
         },
-        true,
+        true
     );
 
     // Globale Sicherheitsleine
@@ -358,7 +347,7 @@ function initDockDragDrop() {
 
     // Delegation: Items draggable machen und Events binden
     const enableDraggable = () => {
-        tray.querySelectorAll('.dock-item').forEach((it) => {
+        tray.querySelectorAll('.dock-item').forEach(it => {
             it.setAttribute('draggable', 'true');
             it.addEventListener('dragstart', onDragStart);
         });
@@ -384,13 +373,12 @@ function updateDockIndicators() {
         { modalId: 'image-modal', indicatorId: 'image-indicator' },
     ];
 
-    indicatorMappings.forEach((mapping) => {
+    indicatorMappings.forEach(mapping => {
         const modal = document.getElementById(mapping.modalId);
         const indicator = document.getElementById(mapping.indicatorId);
         if (modal && indicator) {
             // Show dot when window is visible OR minimized
-            const minimized =
-                modal.dataset && modal.dataset.minimized === 'true';
+            const minimized = modal.dataset && modal.dataset.minimized === 'true';
             if (!modal.classList.contains('hidden') || minimized) {
                 indicator.classList.remove('hidden');
             } else {

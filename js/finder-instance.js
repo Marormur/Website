@@ -2,7 +2,7 @@ console.log('FinderInstance loaded');
 
 /**
  * FinderInstance - Multi-Instance fähiger Finder-Implementierung
- * 
+ *
  * Ermöglicht mehrere Finder-Fenster mit isolierten States
  * Zeigt, wie das Finder-Modul für Multi-Instance umgebaut werden kann
  */
@@ -20,7 +20,7 @@ console.log('FinderInstance loaded');
         constructor(config) {
             super({
                 ...config,
-                type: 'finder'
+                type: 'finder',
             });
 
             // Finder-specific state
@@ -47,7 +47,7 @@ console.log('FinderInstance loaded');
                 breadcrumbs: null,
                 contentArea: null,
                 toolbar: null,
-                searchInput: null
+                searchInput: null,
             };
 
             // GitHub cache
@@ -73,36 +73,37 @@ console.log('FinderInstance loaded');
                             'README.md': {
                                 type: 'file',
                                 icon: '📝',
-                                content: '# Willkommen im Finder\n\nDies ist ein virtuelles Dateisystem.',
-                                size: 1024
-                            }
-                        }
+                                content:
+                                    '# Willkommen im Finder\n\nDies ist ein virtuelles Dateisystem.',
+                                size: 1024,
+                            },
+                        },
                     },
                     Downloads: {
                         type: 'folder',
                         icon: '⬇️',
-                        children: {}
+                        children: {},
                     },
                     Pictures: {
                         type: 'folder',
                         icon: '🖼️',
-                        children: {}
+                        children: {},
                     },
                     Music: {
                         type: 'folder',
                         icon: '🎵',
-                        children: {}
+                        children: {},
                     },
                     Videos: {
                         type: 'folder',
                         icon: '🎬',
-                        children: {}
-                    }
-                }
+                        children: {},
+                    },
+                },
             };
 
             return {
-                [ROOT_FOLDER_NAME]: rootFolder
+                [ROOT_FOLDER_NAME]: rootFolder,
             };
         }
 
@@ -119,7 +120,7 @@ console.log('FinderInstance loaded');
                 sortBy: initialState.sortBy || 'name',
                 sortOrder: initialState.sortOrder || 'asc',
                 favorites: initialState.favorites || [],
-                recentFiles: initialState.recentFiles || []
+                recentFiles: initialState.recentFiles || [],
             };
         }
 
@@ -222,10 +223,18 @@ console.log('FinderInstance loaded');
             this.container.innerHTML = html;
 
             // Cache DOM references
-            this.domRefs.sidebarComputer = this.container.querySelector('[data-finder-sidebar-computer]');
-            this.domRefs.sidebarGithub = this.container.querySelector('[data-finder-sidebar-github]');
-            this.domRefs.sidebarFavorites = this.container.querySelector('[data-finder-sidebar-favorites]');
-            this.domRefs.sidebarRecent = this.container.querySelector('[data-finder-sidebar-recent]');
+            this.domRefs.sidebarComputer = this.container.querySelector(
+                '[data-finder-sidebar-computer]'
+            );
+            this.domRefs.sidebarGithub = this.container.querySelector(
+                '[data-finder-sidebar-github]'
+            );
+            this.domRefs.sidebarFavorites = this.container.querySelector(
+                '[data-finder-sidebar-favorites]'
+            );
+            this.domRefs.sidebarRecent = this.container.querySelector(
+                '[data-finder-sidebar-recent]'
+            );
             this.domRefs.breadcrumbs = this.container.querySelector('[data-finder-breadcrumbs]');
             this.domRefs.contentArea = this.container.querySelector('[data-finder-content]');
             this.domRefs.toolbar = this.container.querySelector('[data-finder-toolbar]');
@@ -240,8 +249,8 @@ console.log('FinderInstance loaded');
             if (!this.container) return;
 
             // Delegate events on container
-            this.container.addEventListener('click', (e) => this._handleClick(e));
-            this.container.addEventListener('dblclick', (e) => this._handleDoubleClick(e));
+            this.container.addEventListener('click', e => this._handleClick(e));
+            this.container.addEventListener('dblclick', e => this._handleDoubleClick(e));
 
             // Initial render
             this.navigateTo(this.state.currentPath, this.state.currentView);
@@ -273,7 +282,7 @@ console.log('FinderInstance loaded');
                 'finder:setViewMode': () => {
                     const mode = e.target.closest('[data-view-mode]')?.dataset.viewMode;
                     if (mode) this.setViewMode(mode);
-                }
+                },
             };
 
             if (handlers[action]) {
@@ -315,7 +324,7 @@ console.log('FinderInstance loaded');
             this.renderContent();
             this.updateState({
                 currentPath: this.currentPath,
-                currentView: this.currentView
+                currentView: this.currentView,
             });
         }
 
@@ -353,23 +362,32 @@ console.log('FinderInstance loaded');
             if (!refs) return;
 
             // Remove all active marks
-            [refs.sidebarComputer, refs.sidebarGithub, refs.sidebarFavorites, refs.sidebarRecent].forEach(el => {
+            [
+                refs.sidebarComputer,
+                refs.sidebarGithub,
+                refs.sidebarFavorites,
+                refs.sidebarRecent,
+            ].forEach(el => {
                 if (el) el.classList.remove('finder-sidebar-active');
             });
 
             // Mark current view
             switch (this.currentView) {
                 case 'computer':
-                    if (refs.sidebarComputer) refs.sidebarComputer.classList.add('finder-sidebar-active');
+                    if (refs.sidebarComputer)
+                        refs.sidebarComputer.classList.add('finder-sidebar-active');
                     break;
                 case 'github':
-                    if (refs.sidebarGithub) refs.sidebarGithub.classList.add('finder-sidebar-active');
+                    if (refs.sidebarGithub)
+                        refs.sidebarGithub.classList.add('finder-sidebar-active');
                     break;
                 case 'favorites':
-                    if (refs.sidebarFavorites) refs.sidebarFavorites.classList.add('finder-sidebar-active');
+                    if (refs.sidebarFavorites)
+                        refs.sidebarFavorites.classList.add('finder-sidebar-active');
                     break;
                 case 'recent':
-                    if (refs.sidebarRecent) refs.sidebarRecent.classList.add('finder-sidebar-active');
+                    if (refs.sidebarRecent)
+                        refs.sidebarRecent.classList.add('finder-sidebar-active');
                     break;
             }
         }
@@ -399,7 +417,9 @@ console.log('FinderInstance loaded');
                     break;
             }
 
-            parts.push(`<button class="finder-breadcrumb-item" data-action="finder:goRoot">${viewLabel}</button>`);
+            parts.push(
+                `<button class="finder-breadcrumb-item" data-action="finder:goRoot">${viewLabel}</button>`
+            );
 
             // Path parts
             this.currentPath.forEach((part, index) => {
@@ -410,7 +430,9 @@ console.log('FinderInstance loaded');
 
                 const pathUpToHere = this.currentPath.slice(0, index + 1);
                 parts.push('<span class="finder-breadcrumb-separator">›</span>');
-                parts.push(`<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join('/')}">${part}</button>`);
+                parts.push(
+                    `<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join('/')}">${part}</button>`
+                );
             });
 
             this.domRefs.breadcrumbs.innerHTML = parts.join('');
@@ -494,7 +516,7 @@ console.log('FinderInstance loaded');
                 type: item.type,
                 icon: item.icon || (item.type === 'folder' ? '📁' : '📄'),
                 size: item.size || 0,
-                modified: item.modified || new Date().toISOString()
+                modified: item.modified || new Date().toISOString(),
             }));
         }
 
@@ -514,7 +536,7 @@ console.log('FinderInstance loaded');
                 name: path.split('/').pop(),
                 type: 'favorite',
                 icon: '⭐',
-                path
+                path,
             }));
         }
 
@@ -527,7 +549,7 @@ console.log('FinderInstance loaded');
                 type: 'recent',
                 icon: file.icon || '📄',
                 path: file.path,
-                modified: file.modified
+                modified: file.modified,
             }));
         }
 
@@ -580,7 +602,9 @@ console.log('FinderInstance loaded');
                         </tr>
                     </thead>
                     <tbody>
-                        ${items.map(item => `
+                        ${items
+        .map(
+            item => `
                             <tr class="finder-list-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                                 <td>
                                     <span class="finder-item-icon">${item.icon}</span>
@@ -589,7 +613,9 @@ console.log('FinderInstance loaded');
                                 <td>${this.formatSize(item.size)}</td>
                                 <td>${this.formatDate(item.modified)}</td>
                             </tr>
-                        `).join('')}
+                        `
+        )
+        .join('')}
                     </tbody>
                 </table>
                 </div>
@@ -605,12 +631,16 @@ console.log('FinderInstance loaded');
             const html = `
                 <div id="finder-list-container">
                 <div class="finder-grid-container">
-                    ${items.map(item => `
+                    ${items
+        .map(
+            item => `
                         <div class="finder-grid-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                             <div class="finder-grid-icon">${item.icon}</div>
                             <div class="finder-grid-name">${item.name}</div>
                         </div>
-                    `).join('')}
+                    `
+        )
+        .join('')}
                 </div>
                 </div>
             `;
@@ -654,16 +684,18 @@ console.log('FinderInstance loaded');
                 el.innerHTML = '<div class="finder-empty-state">Lade Repositories…</div>';
                 const repos = await this.fetchGithubRepos();
                 this.lastGithubItemsMap.clear();
-                const items = (repos || []).map((repo) => ({
+                const items = (repos || []).map(repo => ({
                     name: repo.name,
                     type: 'folder',
                     icon: '📦',
                 }));
-                items.forEach((it) => this.lastGithubItemsMap.set(it.name, it));
+                items.forEach(it => this.lastGithubItemsMap.set(it.name, it));
                 if (this.githubError && items.length === 0) {
-                    el.innerHTML = '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">⚠️</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
+                    el.innerHTML =
+                        '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">⚠️</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
                 } else if (items.length === 0) {
-                    el.innerHTML = '<div class="finder-empty-state text-center">Keine öffentlichen Repositories gefunden</div>';
+                    el.innerHTML =
+                        '<div class="finder-empty-state text-center">Keine öffentlichen Repositories gefunden</div>';
                 } else {
                     this.renderListView(items);
                 }
@@ -678,7 +710,7 @@ console.log('FinderInstance loaded');
             el.innerHTML = '<div class="finder-empty-state">Lade Inhalte…</div>';
             const contents = await this.fetchGithubContents(repo, subPath);
             this.lastGithubItemsMap.clear();
-            const items = (contents || []).map((entry) => {
+            const items = (contents || []).map(entry => {
                 const isDir = entry.type === 'dir';
                 return {
                     name: entry.name,
@@ -688,11 +720,13 @@ console.log('FinderInstance loaded');
                     download_url: entry.download_url || null,
                 };
             });
-            items.forEach((it) => this.lastGithubItemsMap.set(it.name, it));
+            items.forEach(it => this.lastGithubItemsMap.set(it.name, it));
             if (this.githubError && items.length === 0) {
-                el.innerHTML = '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">⚠️</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
+                el.innerHTML =
+                    '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">⚠️</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
             } else if (items.length === 0) {
-                el.innerHTML = '<div class="finder-empty-state text-center">Dieser Ordner ist leer</div>';
+                el.innerHTML =
+                    '<div class="finder-empty-state text-center">Dieser Ordner ist leer</div>';
             } else {
                 this.renderListView(items);
             }
@@ -708,10 +742,9 @@ console.log('FinderInstance loaded');
                 if (Array.isArray(this.githubRepos) && this.githubRepos.length) {
                     return this.githubRepos;
                 }
-                const res = await fetch(
-                    `https://api.github.com/users/${GITHUB_USERNAME}/repos`,
-                    { headers: { Accept: 'application/vnd.github.v3+json' } },
-                );
+                const res = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos`, {
+                    headers: { Accept: 'application/vnd.github.v3+json' },
+                });
                 if (!res.ok) throw new Error('GitHub repos fetch failed');
                 const data = await res.json();
                 this.githubRepos = data || [];
@@ -762,7 +795,7 @@ console.log('FinderInstance loaded');
             return subPath
                 .split('/')
                 .filter(Boolean)
-                .map((seg) => encodeURIComponent(seg))
+                .map(seg => encodeURIComponent(seg))
                 .join('/');
         }
 
@@ -803,7 +836,7 @@ console.log('FinderInstance loaded');
                 name,
                 path: fullPath,
                 icon: '📄',
-                modified: new Date().toISOString()
+                modified: new Date().toISOString(),
             });
 
             // Limit to 20 items
@@ -853,7 +886,7 @@ console.log('FinderInstance loaded');
             return date.toLocaleDateString('de-DE', {
                 day: '2-digit',
                 month: '2-digit',
-                year: 'numeric'
+                year: 'numeric',
             });
         }
 
@@ -869,7 +902,7 @@ console.log('FinderInstance loaded');
                 sortBy: this.sortBy,
                 sortOrder: this.sortOrder,
                 favorites: Array.from(this.favorites),
-                recentFiles: this.recentFiles
+                recentFiles: this.recentFiles,
             };
         }
 
@@ -949,8 +982,7 @@ console.log('FinderInstance loaded');
 
                 finderModalContainer.appendChild(container);
                 return container;
-            }
+            },
         });
     }
-
 })();

@@ -37,7 +37,7 @@
         const normalized = [];
         let previousWasSeparator = true;
 
-        items.forEach((item) => {
+        items.forEach(item => {
             if (!item) return;
 
             // Handle separators (keine doppelten Separatoren)
@@ -65,10 +65,7 @@
         });
 
         // Entferne trailing separators
-        while (
-            normalized.length &&
-            normalized[normalized.length - 1].type === 'separator'
-        ) {
+        while (normalized.length && normalized[normalized.length - 1].type === 'separator') {
             normalized.pop();
         }
 
@@ -99,12 +96,10 @@
                             // If a Finder instance manager exists in future, use it; otherwise open the modal
                             if (
                                 window.FinderInstanceManager &&
-                                typeof window.FinderInstanceManager
-                                    .createInstance === 'function'
+                                typeof window.FinderInstanceManager.createInstance === 'function'
                             ) {
                                 const count =
-                                    window.FinderInstanceManager.getInstanceCount?.() ||
-                                    0;
+                                    window.FinderInstanceManager.getInstanceCount?.() || 0;
                                 window.FinderInstanceManager.createInstance({
                                     title: `Finder ${count + 1}`,
                                 });
@@ -124,7 +119,7 @@
                                 window.openModal('finder-modal');
                             } else {
                                 console.warn(
-                                    'Finder new window action not available: no window manager found',
+                                    'Finder new window action not available: no window manager found'
                                 );
                             }
                         },
@@ -142,7 +137,9 @@
                             ) {
                                 try {
                                     // Clear in-memory repos so a fresh fetch is triggered
-                                    const st = window.FinderSystem.getState && window.FinderSystem.getState();
+                                    const st =
+                                        window.FinderSystem.getState &&
+                                        window.FinderSystem.getState();
                                     if (st && Array.isArray(st.githubRepos)) {
                                         st.githubRepos = [];
                                     }
@@ -281,8 +278,7 @@
                         label: () => translate('menu.text.selectAll'),
                         shortcut: '⌘A',
                         icon: 'selectAll',
-                        action: () =>
-                            sendTextEditorMenuAction('edit:selectAll'),
+                        action: () => sendTextEditorMenuAction('edit:selectAll'),
                     },
                 ],
             },
@@ -295,8 +291,7 @@
                         label: () => translate('menu.text.toggleWrap'),
                         shortcut: '⌥⌘W',
                         icon: 'wrap',
-                        action: () =>
-                            sendTextEditorMenuAction('view:toggleWrap'),
+                        action: () => sendTextEditorMenuAction('view:toggleWrap'),
                     },
                 ],
             },
@@ -324,8 +319,7 @@
                         disabled: !state.hasImage,
                         icon: 'imageOpen',
                         action: () => {
-                            if (window.openActiveImageInNewTab)
-                                window.openActiveImageInNewTab();
+                            if (window.openActiveImageInNewTab) window.openActiveImageInNewTab();
                         },
                     },
                     {
@@ -334,8 +328,7 @@
                         disabled: !state.hasImage,
                         icon: 'download',
                         action: () => {
-                            if (window.downloadActiveImage)
-                                window.downloadActiveImage();
+                            if (window.downloadActiveImage) window.downloadActiveImage();
                         },
                     },
                     {
@@ -450,15 +443,10 @@
                         icon: 'clear',
                         action: () => {
                             // Send clear command to active terminal
-                            if (
-                                context &&
-                                context.instanceId &&
-                                window.TerminalInstanceManager
-                            ) {
-                                const instance =
-                                    window.TerminalInstanceManager.getInstance(
-                                        context.instanceId,
-                                    );
+                            if (context && context.instanceId && window.TerminalInstanceManager) {
+                                const instance = window.TerminalInstanceManager.getInstance(
+                                    context.instanceId
+                                );
                                 if (instance && instance.clearOutput) {
                                     instance.clearOutput();
                                 }
@@ -537,8 +525,7 @@
                 disabled: !hasAnyVisibleDialog(),
                 icon: 'windowFront',
                 action: () => {
-                    if (window.bringAllWindowsToFront)
-                        window.bringAllWindowsToFront();
+                    if (window.bringAllWindowsToFront) window.bringAllWindowsToFront();
                 },
             },
             {
@@ -551,7 +538,7 @@
                 disabled: !hasDialog,
                 icon: 'close',
                 action: () => closeContextWindow(context),
-            },
+            }
         );
 
         return items;
@@ -580,20 +567,14 @@
             newInstanceKey = 'menu.window.newFinder';
         }
         // Terminal support
-        else if (
-            context.modalId === 'terminal-modal' &&
-            window.TerminalInstanceManager
-        ) {
+        else if (context.modalId === 'terminal-modal' && window.TerminalInstanceManager) {
             manager = window.TerminalInstanceManager;
             type = 'terminal';
             typeLabel = 'Terminal';
             newInstanceKey = 'menu.window.newTerminal';
         }
         // TextEditor support
-        else if (
-            context.modalId === 'text-modal' &&
-            window.TextEditorInstanceManager
-        ) {
+        else if (context.modalId === 'text-modal' && window.TextEditorInstanceManager) {
             manager = window.TextEditorInstanceManager;
             type = 'text-editor';
             typeLabel = 'Editor';
@@ -624,9 +605,7 @@
             items.push({ type: 'separator' });
 
             instances.forEach((instance, index) => {
-                const isActive =
-                    manager.getActiveInstance()?.instanceId ===
-                    instance.instanceId;
+                const isActive = manager.getActiveInstance()?.instanceId === instance.instanceId;
                 items.push({
                     id: `window-instance-${instance.instanceId}`,
                     label: () => `${isActive ? '✓ ' : '  '}${instance.title}`,
@@ -647,13 +626,13 @@
                     action: () => {
                         const confirmMsg = translate('menu.window.closeAllConfirm', {
                             count: instances.length,
-                            type: typeLabel
+                            type: typeLabel,
                         });
                         if (confirm(confirmMsg)) {
                             manager.destroyAllInstances();
                         }
                     },
-                },
+                }
             );
         }
 
@@ -706,9 +685,7 @@
         if (!container) return;
 
         const modalKey =
-            activeModalId && menuDefinitions[activeModalId]
-                ? activeModalId
-                : 'default';
+            activeModalId && menuDefinitions[activeModalId] ? activeModalId : 'default';
         const builder = menuDefinitions[modalKey] || menuDefinitions.default;
         const context = createMenuContext(activeModalId || null);
         const sections =
@@ -742,9 +719,7 @@
             button.dataset.menubarTriggerButton = 'true';
 
             const label =
-                typeof section.label === 'function'
-                    ? section.label(context)
-                    : section.label;
+                typeof section.label === 'function' ? section.label(context) : section.label;
             button.textContent = label || '';
 
             const sectionId = section.id || `section-${sectionIndex}`;
@@ -762,7 +737,7 @@
             dropdown.setAttribute('role', 'menu');
             dropdown.setAttribute('aria-labelledby', buttonId);
 
-            items.forEach((item) => {
+            items.forEach(item => {
                 if (item.type === 'separator') {
                     const separator = document.createElement('li');
                     separator.className = 'menu-separator';
@@ -807,11 +782,7 @@
                         ? window.IconSystem.getMenuIconSvg(item.icon)
                         : '';
                     if (window.IconSystem.renderIconIntoElement) {
-                        window.IconSystem.renderIconIntoElement(
-                            iconSpan,
-                            iconSvg,
-                            item.icon,
-                        );
+                        window.IconSystem.renderIconIntoElement(iconSpan, iconSvg, item.icon);
                     }
                     labelSpan.appendChild(iconSpan);
                 }
@@ -846,7 +817,7 @@
                 }
 
                 if (item.href && typeof item.onClick === 'function') {
-                    actionEl.addEventListener('click', (event) => {
+                    actionEl.addEventListener('click', event => {
                         const result = item.onClick(event);
                         if (result === false) {
                             event.preventDefault();
@@ -875,9 +846,7 @@
 
     function handleMenuActionActivation(event) {
         const target =
-            event.target instanceof Element
-                ? event.target.closest('[data-menu-action]')
-                : null;
+            event.target instanceof Element ? event.target.closest('[data-menu-action]') : null;
         if (!target) return;
 
         const actionId = target.getAttribute('data-menu-action');
@@ -910,9 +879,7 @@
 
     function hasAnyVisibleDialog() {
         if (!window.dialogs) return false;
-        return Object.values(window.dialogs).some(
-            (d) => d && d.isOpen && d.isOpen(),
-        );
+        return Object.values(window.dialogs).some(d => d && d.isOpen && d.isOpen());
     }
 
     function sendTextEditorMenuAction(actionType) {
@@ -952,7 +919,7 @@
         const managers = [
             window.FinderInstanceManager,
             window.TerminalInstanceManager,
-            window.TextEditorInstanceManager
+            window.TextEditorInstanceManager,
         ];
 
         managers.forEach(manager => {
@@ -968,7 +935,7 @@
             const originalDestroyAll = manager.destroyAllInstances;
 
             if (originalCreate) {
-                manager.createInstance = function(...args) {
+                manager.createInstance = function (...args) {
                     const result = originalCreate.apply(this, args);
                     if (result) {
                         // Delay refresh slightly to allow UI to update
@@ -979,7 +946,7 @@
             }
 
             if (originalDestroy) {
-                manager.destroyInstance = function(...args) {
+                manager.destroyInstance = function (...args) {
                     const result = originalDestroy.apply(this, args);
                     setTimeout(refreshCurrentMenu, 50);
                     return result;
@@ -987,7 +954,7 @@
             }
 
             if (originalDestroyAll) {
-                manager.destroyAllInstances = function(...args) {
+                manager.destroyAllInstances = function (...args) {
                     const result = originalDestroyAll.apply(this, args);
                     setTimeout(refreshCurrentMenu, 50);
                     return result;

@@ -11,7 +11,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
     test('Window menu shows Finder instances and actions', async ({ page }) => {
         // Open Finder from dock
         await clickDockIcon(page, 'Finder Icon');
-        
+
         // Wait for Finder to open
         await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
         await page.waitForTimeout(300);
@@ -22,9 +22,11 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await page.waitForTimeout(200);
 
         // Verify "New Finder" action is visible
-        const newFinderItem = page.locator('.menu-item', { 
-            hasText: /Neuer Finder|New Finder/i 
-        }).first();
+        const newFinderItem = page
+            .locator('.menu-item', {
+                hasText: /Neuer Finder|New Finder/i,
+            })
+            .first();
         await expect(newFinderItem).toBeVisible();
 
         // Close menu
@@ -58,8 +60,8 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
         // Verify two Finder instances are listed in menu
         // Look for "Finder 1" and "Finder 2" in the menu
-        const finderItems = page.locator('.menu-item', { 
-            hasText: /Finder \d+/i 
+        const finderItems = page.locator('.menu-item', {
+            hasText: /Finder \d+/i,
         });
         const count = await finderItems.count();
         expect(count).toBeGreaterThanOrEqual(2);
@@ -122,7 +124,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         // Look for the item without checkmark (not active)
         const menuItems = page.locator('.menu-item', { hasText: /Finder \d+/ });
         const itemCount = await menuItems.count();
-        
+
         // Find item without checkmark and click it
         for (let i = 0; i < itemCount; i++) {
             const item = menuItems.nth(i);
@@ -160,8 +162,8 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await page.waitForTimeout(300);
 
         // Verify "Close All" action is visible
-        const closeAllItem = page.locator('.menu-item', { 
-            hasText: /Alle schließen|Close All/i 
+        const closeAllItem = page.locator('.menu-item', {
+            hasText: /Alle schließen|Close All/i,
         });
         await expect(closeAllItem).toBeVisible();
 
@@ -191,13 +193,13 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await page.waitForTimeout(300);
 
         // Click "Close All"
-        const closeAllItem = page.locator('.menu-item', { 
-            hasText: /Alle schließen|Close All/i 
+        const closeAllItem = page.locator('.menu-item', {
+            hasText: /Alle schließen|Close All/i,
         });
-        
+
         // Handle the confirmation dialog
         page.on('dialog', dialog => dialog.accept());
-        
+
         await closeAllItem.click();
         await page.waitForTimeout(500);
 
@@ -227,10 +229,12 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await windowMenuButton.click();
         await page.waitForTimeout(300);
 
-        // Click "New Finder" 
-        const newFinderItem = page.locator('.menu-item', { 
-            hasText: /Neuer Finder|New Finder/i 
-        }).first();
+        // Click "New Finder"
+        const newFinderItem = page
+            .locator('.menu-item', {
+                hasText: /Neuer Finder|New Finder/i,
+            })
+            .first();
         await newFinderItem.click();
         await page.waitForTimeout(500);
 
@@ -256,11 +260,11 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await page.waitForTimeout(300);
 
         // Should not have "Close All" yet (only one instance)
-        let closeAllItem = page.locator('.menu-item', { 
-            hasText: /Alle schließen|Close All/i 
+        let closeAllItem = page.locator('.menu-item', {
+            hasText: /Alle schließen|Close All/i,
         });
         await expect(closeAllItem).not.toBeVisible();
-        
+
         await page.keyboard.press('Escape');
         await page.waitForTimeout(200);
 
@@ -275,8 +279,8 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await page.waitForTimeout(300);
 
         // Now "Close All" should be visible
-        closeAllItem = page.locator('.menu-item', { 
-            hasText: /Alle schließen|Close All/i 
+        closeAllItem = page.locator('.menu-item', {
+            hasText: /Alle schließen|Close All/i,
         });
         await expect(closeAllItem).toBeVisible();
 

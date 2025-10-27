@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 /**
  * src/ts/theme.ts
  * Theme management (dark/light/system) with safe typing and legacy compatibility.
@@ -13,25 +13,24 @@
     const systemDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
     let themePreference = (() => {
         const fromStorage = localStorage.getItem(THEME_KEY);
-        return (fromStorage && validThemePreferences.includes(fromStorage)
-            ? fromStorage
-            : 'system');
+        return fromStorage && validThemePreferences.includes(fromStorage) ? fromStorage : 'system';
     })();
     function updateThemeFromPreference() {
-        const useDark = themePreference === 'dark' ||
-            (themePreference === 'system' && systemDarkQuery.matches);
+        const useDark =
+            themePreference === 'dark' || (themePreference === 'system' && systemDarkQuery.matches);
         document.documentElement.classList.toggle('dark', useDark);
     }
     function setThemePreference(pref) {
-        if (!validThemePreferences.includes(pref))
-            return;
+        if (!validThemePreferences.includes(pref)) return;
         themePreference = pref;
         localStorage.setItem(THEME_KEY, pref);
         updateThemeFromPreference();
         // Notify other modules
-        window.dispatchEvent(new CustomEvent('themePreferenceChange', {
-            detail: { preference: pref },
-        }));
+        window.dispatchEvent(
+            new CustomEvent('themePreferenceChange', {
+                detail: { preference: pref },
+            })
+        );
     }
     function getThemePreference() {
         return themePreference;
@@ -44,8 +43,7 @@
     const mql = systemDarkQuery;
     if (typeof mql.addEventListener === 'function') {
         mql.addEventListener('change', handleSystemThemeChange);
-    }
-    else if (typeof mql.addListener === 'function') {
+    } else if (typeof mql.addListener === 'function') {
         mql.addListener(handleSystemThemeChange);
     }
     // Global export

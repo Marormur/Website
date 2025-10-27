@@ -33,7 +33,7 @@ test.describe('Finder GitHub integration', () => {
             websiteRow.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'ok'),
             errorMsg.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'error'),
         ]);
-    const _outcome = await race;
+        const _outcome = await race;
         // Projects modal should remain hidden regardless
         const projectsModal = page.locator('#projects-modal');
         await expect(projectsModal).toHaveClass(/hidden/);

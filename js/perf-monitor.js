@@ -6,7 +6,10 @@
     function isEnabledByDefault() {
         try {
             // Enable in development environments by default
-            const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.port !== '';
+            const isDev =
+                location.hostname === 'localhost' ||
+                location.hostname === '127.0.0.1' ||
+                location.port !== '';
             const flag = localStorage.getItem(STORAGE_KEY);
             if (flag === 'true') return true;
             if (flag === 'false') return false;
@@ -23,13 +26,21 @@
 
         enable() {
             this.enabled = true;
-            try { localStorage.setItem(STORAGE_KEY, 'true'); } catch (_e) { void _e; }
+            try {
+                localStorage.setItem(STORAGE_KEY, 'true');
+            } catch (_e) {
+                void _e;
+            }
             (window.Logger || console).info('PerfMonitor', 'Enabled');
         },
 
         disable() {
             this.enabled = false;
-            try { localStorage.setItem(STORAGE_KEY, 'false'); } catch (_e) { void _e; }
+            try {
+                localStorage.setItem(STORAGE_KEY, 'false');
+            } catch (_e) {
+                void _e;
+            }
             (window.Logger || console).info('PerfMonitor', 'Disabled');
         },
 
@@ -68,14 +79,18 @@
         report(options) {
             if (!this.enabled) return [];
             const { clear = false, topN = 10 } = options || {};
-            const measures = performance.getEntriesByType('measure')
+            const measures = performance
+                .getEntriesByType('measure')
                 .slice()
                 .sort((a, b) => b.duration - a.duration)
                 .slice(0, topN);
             if (measures.length) {
                 (window.Logger || console).group('PerfMonitor report');
                 for (const m of measures) {
-                    (window.Logger || console).info('PerfMonitor', `${m.name}: ${m.duration.toFixed(2)}ms`);
+                    (window.Logger || console).info(
+                        'PerfMonitor',
+                        `${m.name}: ${m.duration.toFixed(2)}ms`
+                    );
                 }
                 (window.Logger || console).groupEnd();
             }
@@ -83,7 +98,9 @@
                 performance.clearMeasures();
                 try {
                     for (const m of this.marks) performance.clearMarks(m);
-                } catch (_e) { void _e; }
+                } catch (_e) {
+                    void _e;
+                }
                 this.marks.clear();
             }
             return measures;
@@ -98,14 +115,22 @@
                 // DOM already parsed
                 PerfMonitor.mark('app:dom-ready');
             } else {
-                document.addEventListener('DOMContentLoaded', () => PerfMonitor.mark('app:dom-ready'), { once: true });
+                document.addEventListener(
+                    'DOMContentLoaded',
+                    () => PerfMonitor.mark('app:dom-ready'),
+                    { once: true }
+                );
             }
-            window.addEventListener('load', () => {
-                PerfMonitor.mark('app:window-load');
-                PerfMonitor.measure('app:domready->load', 'app:dom-ready', 'app:window-load');
-                PerfMonitor.measure('app:start->load', 'app:js-start', 'app:window-load');
-                PerfMonitor.report({ topN: 5 });
-            }, { once: true });
+            window.addEventListener(
+                'load',
+                () => {
+                    PerfMonitor.mark('app:window-load');
+                    PerfMonitor.measure('app:domready->load', 'app:dom-ready', 'app:window-load');
+                    PerfMonitor.measure('app:start->load', 'app:js-start', 'app:window-load');
+                    PerfMonitor.report({ topN: 5 });
+                },
+                { once: true }
+            );
         } catch (_e) {
             void _e;
         }

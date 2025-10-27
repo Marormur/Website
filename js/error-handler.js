@@ -118,7 +118,9 @@
     function handleUnhandledRejection(event) {
         if (!ErrorHandler.enabled) return;
         const reason = event && (event.reason || event.detail || event);
-        const plain = toPlainError(reason && reason instanceof Error ? reason : { message: safeStringify(reason) });
+        const plain = toPlainError(
+            reason && reason instanceof Error ? reason : { message: safeStringify(reason) }
+        );
         const entry = {
             type: 'unhandledrejection',
             time: nowISO(),

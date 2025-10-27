@@ -1,6 +1,6 @@
 /**
  * TypeScript Integration Tests
- * 
+ *
  * Verifies all migrated TypeScript modules are available and functional
  * in the browser after build. Tests the TypeScript → JavaScript build
  * pipeline and ensures no CommonJS export issues.
@@ -36,7 +36,7 @@ test.describe('TypeScript Integration', () => {
                 ActionBus: typeof window.ActionBus,
                 WindowChrome: typeof window.WindowChrome,
                 API: typeof window.API,
-                
+
                 // Phase 3: System Modules
                 ThemeSystem: window.API && typeof window.API.theme,
                 StorageSystem: window.API && typeof window.API.storage,
@@ -119,10 +119,10 @@ test.describe('TypeScript Integration', () => {
             try {
                 // Check if TerminalInstanceManager exists
                 if (!window.TerminalInstanceManager) return false;
-                
+
                 // Create instance
                 const instance = window.TerminalInstanceManager.createInstance({
-                    title: 'Test Terminal'
+                    title: 'Test Terminal',
                 });
 
                 if (!instance) return false;
@@ -150,10 +150,12 @@ test.describe('TypeScript Integration', () => {
                 hasTheme: window.API && typeof window.API.theme === 'object',
                 hasStorage: window.API && typeof window.API.storage === 'object',
                 hasWindow: window.API && typeof window.API.window === 'object',
-                
+
                 // Check specific methods
-                hasSetTheme: window.API && typeof window.API.theme.setThemePreference === 'function',
-                hasSavePositions: window.API && typeof window.API.storage.saveWindowPositions === 'function',
+                hasSetTheme:
+                    window.API && typeof window.API.theme.setThemePreference === 'function',
+                hasSavePositions:
+                    window.API && typeof window.API.storage.saveWindowPositions === 'function',
                 hasOpenWindow: window.API && typeof window.API.window.open === 'function',
             };
         });
@@ -179,7 +181,7 @@ test.describe('TypeScript Integration', () => {
 
                 // Create toolbar
                 const toolbar = window.WindowChrome.createToolbar([
-                    { label: 'Test', onClick: () => {} }
+                    { label: 'Test', onClick: () => {} },
                 ]);
 
                 if (!toolbar || !toolbar.nodeType) return false;
@@ -218,11 +220,19 @@ test.describe('TypeScript Integration', () => {
         await utils.waitForAppReady(page);
 
         // Wait for a known module to be available (indicates modules initialized)
-        await page.waitForFunction(() => {
-            try {
-                return window.WindowChrome && typeof window.WindowChrome.createTitlebar === 'function';
-            } catch { return false; }
-        }, { timeout: 5000 });
+        await page.waitForFunction(
+            () => {
+                try {
+                    return (
+                        window.WindowChrome &&
+                        typeof window.WindowChrome.createTitlebar === 'function'
+                    );
+                } catch {
+                    return false;
+                }
+            },
+            { timeout: 5000 }
+        );
 
         expect(errors.length, `No CommonJS export errors: ${errors.join(', ')}`).toBe(0);
     });
@@ -230,14 +240,16 @@ test.describe('TypeScript Integration', () => {
     test('TypeScript modules integrate with legacy code', async ({ page }) => {
         // Open a window that uses both TS and JS modules
         await page.click('[data-action="openWindow"][data-window-id="terminal-modal"]');
-        
+
         // Wait for terminal to be visible
         await page.waitForSelector('#terminal-modal', { state: 'visible' });
 
         // Check that terminal instance was created (uses TerminalInstance from TS)
         const hasTerminal = await page.evaluate(() => {
-            return window.TerminalInstanceManager && 
-                   window.TerminalInstanceManager.getActiveInstance() !== null;
+            return (
+                window.TerminalInstanceManager &&
+                window.TerminalInstanceManager.getActiveInstance() !== null
+            );
         });
 
         expect(hasTerminal).toBe(true);

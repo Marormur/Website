@@ -324,7 +324,11 @@ console.log('MultiInstanceIntegration loaded');
             manager.destroyInstance = instanceId => {
                 originalDestroy(instanceId);
                 // After destruction, force tab UI refresh to ensure sync
-                if (tabManager && tabManager.controller && typeof tabManager.controller.refresh === 'function') {
+                if (
+                    tabManager &&
+                    tabManager.controller &&
+                    typeof tabManager.controller.refresh === 'function'
+                ) {
                     tabManager.controller.refresh();
                 }
             };

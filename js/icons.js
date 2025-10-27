@@ -161,25 +161,15 @@ function renderIconIntoElement(target, svgMarkup, fallbackKey) {
             const doc = svgParser.parseFromString(svgMarkup, 'image/svg+xml');
             const svgEl = doc && doc.documentElement;
 
-            if (
-                svgEl &&
-                svgEl.tagName &&
-                svgEl.tagName.toLowerCase() === 'svg'
-            ) {
+            if (svgEl && svgEl.tagName && svgEl.tagName.toLowerCase() === 'svg') {
                 const imported = target.ownerDocument.importNode(svgEl, true);
 
                 // Set dimensions if not present
                 if (!imported.getAttribute('width')) {
-                    imported.setAttribute(
-                        'width',
-                        target.dataset.iconSize || '16',
-                    );
+                    imported.setAttribute('width', target.dataset.iconSize || '16');
                 }
                 if (!imported.getAttribute('height')) {
-                    imported.setAttribute(
-                        'height',
-                        target.dataset.iconSize || '16',
-                    );
+                    imported.setAttribute('height', target.dataset.iconSize || '16');
                 }
 
                 // Accessibility

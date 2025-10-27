@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 console.log('BaseWindowInstance loaded');
 (function () {
     'use strict';
@@ -102,11 +102,10 @@ console.log('BaseWindowInstance loaded');
         }
         emit(eventName, data) {
             const listeners = this.eventListeners.get(eventName) || [];
-            listeners.forEach((callback) => {
+            listeners.forEach(callback => {
                 try {
                     callback.call(this, data);
-                }
-                catch (error) {
+                } catch (error) {
                     console.error(`Error in event listener for ${eventName}:`, error);
                 }
             });
@@ -118,8 +117,7 @@ console.log('BaseWindowInstance loaded');
             this.eventListeners.get(eventName).push(callback);
         }
         off(eventName, callback) {
-            if (!this.eventListeners.has(eventName))
-                return;
+            if (!this.eventListeners.has(eventName)) return;
             const listeners = this.eventListeners.get(eventName);
             const index = listeners.indexOf(callback);
             if (index > -1) {
@@ -138,7 +136,6 @@ console.log('BaseWindowInstance loaded');
             this.emit('blurred');
         }
     }
-    window.BaseWindowInstance =
-        BaseWindowInstance;
+    window.BaseWindowInstance = BaseWindowInstance;
 })();
 //# sourceMappingURL=base-window-instance.js.map

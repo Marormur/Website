@@ -43,9 +43,7 @@ console.log('Logger loaded');
         constructor() {
             // Production: nur ERROR und WARN
             // Development: alles
-            this.level = this.isDevelopment()
-                ? LOG_LEVELS.TRACE
-                : LOG_LEVELS.WARN;
+            this.level = this.isDevelopment() ? LOG_LEVELS.TRACE : LOG_LEVELS.WARN;
             this.enabledCategories = new Set(['*']); // * = alle
             this.format = 'compact'; // 'compact' | 'detailed'
         }
@@ -80,10 +78,7 @@ console.log('Logger loaded');
         }
 
         isCategoryEnabled(category) {
-            return (
-                this.enabledCategories.has('*') ||
-                this.enabledCategories.has(category)
-            );
+            return this.enabledCategories.has('*') || this.enabledCategories.has(category);
         }
 
         _log(level, category, message, ...args) {
@@ -98,15 +93,10 @@ console.log('Logger loaded');
                     `%c[${timestamp}] [${level}] [${category}]`,
                     `color: ${color}; font-weight: bold`,
                     message,
-                    ...args,
+                    ...args
                 );
             } else {
-                console.log(
-                    `%c[${category}]`,
-                    `color: ${color}`,
-                    message,
-                    ...args,
-                );
+                console.log(`%c[${category}]`, `color: ${color}`, message, ...args);
             }
         }
 

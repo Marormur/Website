@@ -7,15 +7,12 @@
 
 console.log(
     '%c🚀 Multi-Instance System Demo',
-    'color: #00ff00; font-size: 20px; font-weight: bold',
+    'color: #00ff00; font-size: 20px; font-weight: bold'
 );
 
 // Helper function to log with style
 function logDemo(title, description) {
-    console.log(
-        `%c${title}`,
-        'color: #00aaff; font-weight: bold; font-size: 14px',
-    );
+    console.log(`%c${title}`, 'color: #00aaff; font-weight: bold; font-size: 14px');
     console.log(`%c${description}`, 'color: #888; font-size: 12px');
 }
 
@@ -43,9 +40,7 @@ window.demoCreateTerminals = function () {
     });
     console.log('✓ Terminal 3:', term3.instanceId);
 
-    console.log(
-        `Total terminals: ${window.TerminalInstanceManager.getInstanceCount()}`,
-    );
+    console.log(`Total terminals: ${window.TerminalInstanceManager.getInstanceCount()}`);
     console.groupEnd();
 
     return { term1, term2, term3 };
@@ -111,9 +106,7 @@ window.demoCreateEditors = function () {
     });
     console.log('✓ Editor 3:', editor3.instanceId);
 
-    console.log(
-        `Total editors: ${window.TextEditorInstanceManager.getInstanceCount()}`,
-    );
+    console.log(`Total editors: ${window.TextEditorInstanceManager.getInstanceCount()}`);
     console.groupEnd();
 
     return { editor1, editor2, editor3 };
@@ -163,9 +156,7 @@ window.demoRestoreTerminals = function () {
     console.log('All instances destroyed');
 
     // Aus localStorage wiederherstellen
-    const savedState = JSON.parse(
-        localStorage.getItem('demo_terminals') || '[]',
-    );
+    const savedState = JSON.parse(localStorage.getItem('demo_terminals') || '[]');
     window.TerminalInstanceManager.deserializeAll(savedState);
 
     const restored = window.TerminalInstanceManager.getAllInstances();
@@ -263,27 +254,14 @@ window.demoActiveInstance = function () {
 
     const terminals = window.demoCreateTerminals();
 
-    console.log(
-        'Active instance:',
-        window.TerminalInstanceManager.getActiveInstance()?.instanceId,
-    );
+    console.log('Active instance:', window.TerminalInstanceManager.getActiveInstance()?.instanceId);
 
     // Wechsle active instance
-    window.TerminalInstanceManager.setActiveInstance(
-        terminals.term1.instanceId,
-    );
-    console.log(
-        'Switched to:',
-        window.TerminalInstanceManager.getActiveInstance()?.instanceId,
-    );
+    window.TerminalInstanceManager.setActiveInstance(terminals.term1.instanceId);
+    console.log('Switched to:', window.TerminalInstanceManager.getActiveInstance()?.instanceId);
 
-    window.TerminalInstanceManager.setActiveInstance(
-        terminals.term2.instanceId,
-    );
-    console.log(
-        'Switched to:',
-        window.TerminalInstanceManager.getActiveInstance()?.instanceId,
-    );
+    window.TerminalInstanceManager.setActiveInstance(terminals.term2.instanceId);
+    console.log('Switched to:', window.TerminalInstanceManager.getActiveInstance()?.instanceId);
 
     console.log('%c✓ Active instance tracking funktioniert!', 'color: #00ff00');
     console.groupEnd();
@@ -303,7 +281,7 @@ window.demoEvents = function () {
     });
 
     // Event Listener hinzufügen
-    terminal.on('stateChanged', (data) => {
+    terminal.on('stateChanged', data => {
         console.log('State changed:', data.newState);
     });
 
@@ -401,7 +379,7 @@ window.demoKeyboardShortcuts = function () {
     console.log(`Registered shortcuts: ${shortcuts.length}`);
 
     console.log('\n📋 Available shortcuts:');
-    shortcuts.forEach((s) => {
+    shortcuts.forEach(s => {
         if (s.description) {
             const display = window.KeyboardShortcuts.getShortcutDisplay(s);
             console.log(`  ${display}: ${s.description}`);
@@ -415,70 +393,31 @@ window.demoKeyboardShortcuts = function () {
 // QUICK START
 // =============================================================================
 
-console.log(
-    '\n%c📖 Quick Start:',
-    'color: #ffaa00; font-weight: bold; font-size: 16px',
-);
+console.log('\n%c📖 Quick Start:', 'color: #ffaa00; font-weight: bold; font-size: 16px');
 console.log('%cProbiere diese Funktionen aus:', 'color: #888; font-size: 12px');
-console.log(
-    '%c  demoCreateTerminals()',
-    'color: #00aaff; font-family: monospace',
-);
-console.log(
-    '%c  demoTerminalIsolation()',
-    'color: #00aaff; font-family: monospace',
-);
-console.log(
-    '%c  demoCreateEditors()',
-    'color: #00aaff; font-family: monospace',
-);
-console.log(
-    '%c  demoEditorContent()',
-    'color: #00aaff; font-family: monospace',
-);
-console.log(
-    '%c  demoSaveTerminals()',
-    'color: #00aaff; font-family: monospace',
-);
-console.log(
-    '%c  demoRestoreTerminals()',
-    'color: #00aaff; font-family: monospace',
-);
+console.log('%c  demoCreateTerminals()', 'color: #00aaff; font-family: monospace');
+console.log('%c  demoTerminalIsolation()', 'color: #00aaff; font-family: monospace');
+console.log('%c  demoCreateEditors()', 'color: #00aaff; font-family: monospace');
+console.log('%c  demoEditorContent()', 'color: #00aaff; font-family: monospace');
+console.log('%c  demoSaveTerminals()', 'color: #00aaff; font-family: monospace');
+console.log('%c  demoRestoreTerminals()', 'color: #00aaff; font-family: monospace');
 console.log('%c  demoWindowChrome()', 'color: #00aaff; font-family: monospace');
 console.log('%c  demoMaxInstances()', 'color: #00aaff; font-family: monospace');
-console.log(
-    '%c  demoActiveInstance()',
-    'color: #00aaff; font-family: monospace',
-);
+console.log('%c  demoActiveInstance()', 'color: #00aaff; font-family: monospace');
 console.log('%c  demoEvents()', 'color: #00aaff; font-family: monospace');
 
-console.log(
-    '\n%c🆕 New Tab System Demos:',
-    'color: #00ff00; font-weight: bold; font-size: 14px',
-);
+console.log('\n%c🆕 New Tab System Demos:', 'color: #00ff00; font-weight: bold; font-size: 14px');
 console.log('%c  demoTabs()', 'color: #00aaff; font-family: monospace');
 console.log('%c  demoSessionSave()', 'color: #00aaff; font-family: monospace');
-console.log(
-    '%c  demoSessionExport()',
-    'color: #00aaff; font-family: monospace',
-);
-console.log(
-    '%c  demoKeyboardShortcuts()',
-    'color: #00aaff; font-family: monospace',
-);
+console.log('%c  demoSessionExport()', 'color: #00aaff; font-family: monospace');
+console.log('%c  demoKeyboardShortcuts()', 'color: #00aaff; font-family: monospace');
 
 console.log('\n%c💡 Tipp:', 'color: #ffaa00; font-weight: bold');
-console.log(
-    '%cAlle Demo-Funktionen sind als window.demo* verfügbar',
-    'color: #888',
-);
+console.log('%cAlle Demo-Funktionen sind als window.demo* verfügbar', 'color: #888');
 
 // Auto-run demo on load (optional)
 if (window.location.search.includes('demo=true')) {
-    console.log(
-        '\n%c🎬 Running all demos...',
-        'color: #ff00ff; font-weight: bold',
-    );
+    console.log('\n%c🎬 Running all demos...', 'color: #ff00ff; font-weight: bold');
     setTimeout(() => {
         demoCreateTerminals();
         demoTerminalIsolation();

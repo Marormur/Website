@@ -90,7 +90,7 @@ console.log('Launchpad loaded');
 
         allApps = [];
 
-        windowIds.forEach((windowId) => {
+        windowIds.forEach(windowId => {
             const config = global.WindowManager.getConfig(windowId);
             const programInfo = global.WindowManager.getProgramInfo(windowId);
 
@@ -107,9 +107,7 @@ console.log('Launchpad loaded');
             if (programInfo) {
                 allApps.push({
                     id: windowId,
-                    name:
-                        programInfo.programLabel ||
-                        translate('programs.default.label', 'App'),
+                    name: programInfo.programLabel || translate('programs.default.label', 'App'),
                     icon: programInfo.icon || './img/sucher.png',
                     programKey: config ? config.programKey : null,
                 });
@@ -129,9 +127,7 @@ console.log('Launchpad loaded');
         if (!query) {
             filteredApps = [...allApps];
         } else {
-            filteredApps = allApps.filter((app) =>
-                app.name.toLowerCase().includes(query),
-            );
+            filteredApps = allApps.filter(app => app.name.toLowerCase().includes(query));
         }
 
         renderApps();
@@ -154,7 +150,7 @@ console.log('Launchpad loaded');
             return;
         }
 
-        filteredApps.forEach((app) => {
+        filteredApps.forEach(app => {
             const appButton = document.createElement('button');
             appButton.className = 'launchpad-app-button';
             appButton.setAttribute('data-window-id', app.id);
@@ -167,8 +163,7 @@ console.log('Launchpad loaded');
 
             // Render icon: image path or emoji
             const isImagePath =
-                typeof app.icon === 'string' &&
-                /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(app.icon);
+                typeof app.icon === 'string' && /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(app.icon);
             if (
                 isImagePath ||
                 (typeof app.icon === 'string' &&
@@ -213,21 +208,14 @@ console.log('Launchpad loaded');
 
         // Close Launchpad
         const launchpadModal = document.getElementById('launchpad-modal');
-        if (
-            launchpadModal &&
-            global.dialogs &&
-            global.dialogs['launchpad-modal']
-        ) {
+        if (launchpadModal && global.dialogs && global.dialogs['launchpad-modal']) {
             global.dialogs['launchpad-modal'].close();
         } else if (launchpadModal) {
             launchpadModal.classList.add('hidden');
         }
 
         // Open the selected app
-        if (
-            global.WindowManager &&
-            typeof global.WindowManager.open === 'function'
-        ) {
+        if (global.WindowManager && typeof global.WindowManager.open === 'function') {
             global.WindowManager.open(windowId);
             return;
         }
@@ -276,7 +264,7 @@ console.log('Launchpad loaded');
     // Export
     // Register ActionBus action to open window and close launchpad
     if (global.ActionBus && typeof global.ActionBus.register === 'function') {
-        global.ActionBus.register('launchpadOpenWindow', (params) => {
+        global.ActionBus.register('launchpadOpenWindow', params => {
             const id = params?.windowId || params?.windowid || params?.window || params?.id;
             if (id) openApp(id);
         });
