@@ -16,7 +16,7 @@ console.log('API loaded');
     }
     function createModuleProxy(moduleName, methods) {
         const proxy = {};
-        methods.forEach(method => {
+        methods.forEach((method) => {
             proxy[method] = function (...args) {
                 const module = getWindowProp(moduleName);
                 if (module && typeof module[method] === 'function') {
@@ -68,7 +68,10 @@ console.log('API loaded');
             'toggleMenuDropdown',
             'isAnyDropdownOpen',
         ]),
-        desktop: createModuleProxy('DesktopSystem', ['initDesktop', 'openDesktopItemById']),
+        desktop: createModuleProxy('DesktopSystem', [
+            'initDesktop',
+            'openDesktopItemById',
+        ]),
         system: createModuleProxy('SystemUI', [
             'initSystemStatusControls',
             'updateAllSystemStatusUI',
@@ -90,45 +93,39 @@ console.log('API loaded');
         ]),
         finder: createModuleProxy('FinderSystem', ['init', 'openFinder', 'closeFinder']),
         textEditor: {
-            init: container => callWindowMethod('TextEditorSystem', 'init', container),
-            loadRemoteFile: payload =>
-                callWindowMethod('TextEditorSystem', 'loadRemoteFile', payload),
-            showLoading: payload => callWindowMethod('TextEditorSystem', 'showLoading', payload),
-            showLoadError: payload =>
-                callWindowMethod('TextEditorSystem', 'showLoadError', payload),
+            init: (container) => callWindowMethod('TextEditorSystem', 'init', container),
+            loadRemoteFile: (payload) => callWindowMethod('TextEditorSystem', 'loadRemoteFile', payload),
+            showLoading: (payload) => callWindowMethod('TextEditorSystem', 'showLoading', payload),
+            showLoadError: (payload) => callWindowMethod('TextEditorSystem', 'showLoadError', payload),
             clearEditor: () => callWindowMethod('TextEditorSystem', 'clearEditor'),
             saveFile: () => callWindowMethod('TextEditorSystem', 'saveFile'),
             openFile: () => callWindowMethod('TextEditorSystem', 'openFile'),
-            handleMenuAction: action =>
-                callWindowMethod('TextEditorSystem', 'handleMenuAction', action),
+            handleMenuAction: (action) => callWindowMethod('TextEditorSystem', 'handleMenuAction', action),
         },
         settings: {
-            init: container => callWindowMethod('SettingsSystem', 'init', container),
-            showSection: section => callWindowMethod('SettingsSystem', 'showSection', section),
+            init: (container) => callWindowMethod('SettingsSystem', 'init', container),
+            showSection: (section) => callWindowMethod('SettingsSystem', 'showSection', section),
             syncThemePreference: () => callWindowMethod('SettingsSystem', 'syncThemePreference'),
-            syncLanguagePreference: () =>
-                callWindowMethod('SettingsSystem', 'syncLanguagePreference'),
+            syncLanguagePreference: () => callWindowMethod('SettingsSystem', 'syncLanguagePreference'),
         },
         window: {
-            register: config => callWindowMethod('WindowManager', 'register', config),
-            registerAll: configs => callWindowMethod('WindowManager', 'registerAll', configs),
-            getConfig: id => callWindowMethod('WindowManager', 'getConfig', id),
-            open: id => callWindowMethod('WindowManager', 'open', id),
-            close: id => callWindowMethod('WindowManager', 'close', id),
-            bringToFront: id => callWindowMethod('WindowManager', 'bringToFront', id),
+            register: (config) => callWindowMethod('WindowManager', 'register', config),
+            registerAll: (configs) => callWindowMethod('WindowManager', 'registerAll', configs),
+            getConfig: (id) => callWindowMethod('WindowManager', 'getConfig', id),
+            open: (id) => callWindowMethod('WindowManager', 'open', id),
+            close: (id) => callWindowMethod('WindowManager', 'close', id),
+            bringToFront: (id) => callWindowMethod('WindowManager', 'bringToFront', id),
             getTopWindow: () => callWindowMethod('WindowManager', 'getTopWindow'),
-            getProgramInfo: id => callWindowMethod('WindowManager', 'getProgramInfo', id),
+            getProgramInfo: (id) => callWindowMethod('WindowManager', 'getProgramInfo', id),
             getAllWindowIds: () => callWindowMethod('WindowManager', 'getAllWindowIds') || [],
-            getPersistentWindowIds: () =>
-                callWindowMethod('WindowManager', 'getPersistentWindowIds') || [],
-            getDialogInstance: id => callWindowMethod('WindowManager', 'getDialogInstance', id),
+            getPersistentWindowIds: () => callWindowMethod('WindowManager', 'getPersistentWindowIds') || [],
+            getDialogInstance: (id) => callWindowMethod('WindowManager', 'getDialogInstance', id),
             syncZIndexWithDOM: () => callWindowMethod('WindowManager', 'syncZIndexWithDOM'),
         },
         action: {
             register: (name, handler) => callWindowMethod('ActionBus', 'register', name, handler),
-            registerAll: actions => callWindowMethod('ActionBus', 'registerAll', actions),
-            execute: (name, params, element) =>
-                callWindowMethod('ActionBus', 'execute', name, params, element),
+            registerAll: (actions) => callWindowMethod('ActionBus', 'registerAll', actions),
+            execute: (name, params, element) => callWindowMethod('ActionBus', 'execute', name, params, element),
         },
         i18n: {
             translate: (key, fallback) => {
@@ -139,34 +136,33 @@ console.log('API loaded');
                 }
                 return fallback || key;
             },
-            setLanguagePreference: lang =>
-                callWindowMethod('appI18n', 'setLanguagePreference', lang),
-            getLanguagePreference: () =>
-                callWindowMethod('appI18n', 'getLanguagePreference') || 'system',
+            setLanguagePreference: (lang) => callWindowMethod('appI18n', 'setLanguagePreference', lang),
+            getLanguagePreference: () => callWindowMethod('appI18n', 'getLanguagePreference') || 'system',
             getActiveLanguage: () => callWindowMethod('appI18n', 'getActiveLanguage') || 'en',
             applyTranslations: () => callWindowMethod('appI18n', 'applyTranslations'),
         },
         helpers: {
             getMenuBarBottom: () => {
                 const header = document.querySelector('body > header');
-                if (!header) return 0;
+                if (!header)
+                    return 0;
                 return header.getBoundingClientRect().bottom;
             },
-            clampWindowToMenuBar: target => {
+            clampWindowToMenuBar: (target) => {
                 const fn = getWindowProp('clampWindowToMenuBar');
                 if (typeof fn === 'function') {
                     return fn(target);
                 }
                 return undefined;
             },
-            computeSnapMetrics: side => {
+            computeSnapMetrics: (side) => {
                 const fn = getWindowProp('computeSnapMetrics');
                 if (typeof fn === 'function') {
                     return fn(side);
                 }
                 return undefined;
             },
-            showSnapPreview: side => {
+            showSnapPreview: (side) => {
                 const fn = getWindowProp('showSnapPreview');
                 if (typeof fn === 'function') {
                     fn(side);
@@ -182,7 +178,7 @@ console.log('API loaded');
     };
     window.API = API;
     // Legacy compatibility wrappers
-    const createLegacyWrapper = apiPath => {
+    const createLegacyWrapper = (apiPath) => {
         return function (...args) {
             const parts = apiPath.split('.');
             let fn = API;

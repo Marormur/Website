@@ -14,7 +14,7 @@
             'transition-colors whitespace-nowrap flex items-center gap-2',
             isActive
                 ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700'
-                : 'bg-gray-200/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800',
+                : 'bg-gray-200/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800'
         ].join(' ');
         tab.dataset.instanceId = instance.instanceId;
         tab.draggable = true;
@@ -38,29 +38,27 @@
         const active = manager.getActiveInstance();
         const activeId = active?.instanceId ?? null;
         // Diagnostic: log all instance IDs being rendered as tabs
-        console.log(
-            '[WindowTabs] Rendering tabs for instance IDs:',
-            instances.map(i => i.instanceId)
-        );
-        instances.forEach(inst => {
+        console.log('[WindowTabs] Rendering tabs for instance IDs:', instances.map(i => i.instanceId));
+        instances.forEach((inst) => {
             const tab = createTabEl(inst, inst.instanceId === activeId);
             // Click handlers
-            tab.addEventListener('click', e => {
+            tab.addEventListener('click', (e) => {
                 const target = e.target;
                 if (target.closest('.wt-tab-close')) {
                     onClose(inst.instanceId);
-                } else {
+                }
+                else {
                     onSelect(inst.instanceId);
                 }
             });
             // Middle-click closes on supported devices
-            tab.addEventListener('auxclick', e => {
+            tab.addEventListener('auxclick', (e) => {
                 if (e.button === 1) {
                     onClose(inst.instanceId);
                 }
             });
             // Drag and drop handlers for tab reordering
-            tab.addEventListener('dragstart', e => {
+            tab.addEventListener('dragstart', (e) => {
                 draggedTab = tab;
                 draggedInstanceId = inst.instanceId;
                 if (e.dataTransfer) {
@@ -79,7 +77,7 @@
                     t.classList.remove('border-l-4', 'border-l-blue-500');
                 });
             });
-            tab.addEventListener('dragover', e => {
+            tab.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 if (e.dataTransfer) {
                     e.dataTransfer.dropEffect = 'move';
@@ -98,7 +96,7 @@
             tab.addEventListener('dragleave', () => {
                 tab.classList.remove('border-l-4', 'border-l-blue-500');
             });
-            tab.addEventListener('drop', e => {
+            tab.addEventListener('drop', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 // Remove visual indicators
@@ -130,14 +128,14 @@
         if (options.addButton !== false) {
             const addBtn = document.createElement('button');
             addBtn.type = 'button';
-            addBtn.className =
-                'wt-add px-2 py-1 text-sm rounded-md border bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700';
+            addBtn.className = 'wt-add px-2 py-1 text-sm rounded-md border bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700';
             addBtn.textContent = '+';
             addBtn.title = 'Neue Instanz';
             addBtn.addEventListener('click', () => {
                 if (onNew) {
                     onNew();
-                } else {
+                }
+                else {
                     const title = options.onCreateInstanceTitle?.();
                     manager.createInstance({ title });
                 }
@@ -155,16 +153,16 @@
         const createOrig = manager.createInstance.bind(manager);
         const destroyOrig = manager.destroyInstance.bind(manager);
         const setActiveOrig = manager.setActiveInstance.bind(manager);
-        manager.createInstance = cfg => {
+        manager.createInstance = (cfg) => {
             const inst = createOrig(cfg);
             onChange();
             return inst;
         };
-        manager.destroyInstance = id => {
+        manager.destroyInstance = (id) => {
             destroyOrig(id);
             onChange();
         };
-        manager.setActiveInstance = id => {
+        manager.setActiveInstance = (id) => {
             setActiveOrig(id);
             onChange();
         };
@@ -175,13 +173,7 @@
         const controller = {
             el: mountEl,
             refresh() {
-                renderTabs(
-                    mountEl,
-                    wrapped,
-                    options,
-                    id => wrapped.setActiveInstance(id),
-                    id => wrapped.destroyInstance(id)
-                );
+                renderTabs(mountEl, wrapped, options, (id) => wrapped.setActiveInstance(id), (id) => wrapped.destroyInstance(id));
             },
             destroy() {
                 mountEl.innerHTML = '';
@@ -192,7 +184,7 @@
                     inst.title = title;
                     this.refresh();
                 }
-            },
+            }
         };
         controller.refresh();
         return controller;
@@ -203,7 +195,7 @@
          */
         create(manager, mountEl, options) {
             return createController(manager, mountEl, options);
-        },
+        }
     };
     // Adapter expected by legacy integration code: WindowTabManager
     class WindowTabManager {
@@ -221,54 +213,45 @@
             if (mount) {
                 // Build controller with custom handlers
                 const refreshWithHooks = () => {
-                    renderTabs(
-                        mount,
-                        this.manager,
-                        { addButton: true },
-                        id => {
-                            this.manager.setActiveInstance(id);
-                            this.opts.onTabSwitch?.(id);
-                        },
-                        id => {
-                            this.opts.onTabClose?.(id);
-                            this.manager.destroyInstance(id);
-                            // After destroying, get the new active instance and trigger onTabSwitch
-                            // to ensure its content is visible (fixes ghost tab / hidden content issue)
-                            const remaining = this.manager.getAllInstances();
-                            if (remaining.length === 0) {
-                                this.opts.onAllTabsClosed?.();
-                            } else {
-                                const newActive = this.manager.getActiveInstance();
-                                if (newActive) {
-                                    this.opts.onTabSwitch?.(newActive.instanceId);
-                                }
-                            }
-                        },
-                        () => {
-                            if (this.opts.onNewTab) {
-                                this.opts.onNewTab();
-                            } else {
-                                const next =
-                                    (this.manager.getInstanceCount?.() ||
-                                        this.manager.getAllInstances().length) + 1;
-                                this.manager.createInstance({ title: `Instance ${next}` });
+                    renderTabs(mount, this.manager, { addButton: true }, (id) => {
+                        this.manager.setActiveInstance(id);
+                        this.opts.onTabSwitch?.(id);
+                    }, (id) => {
+                        this.opts.onTabClose?.(id);
+                        this.manager.destroyInstance(id);
+                        // After destroying, get the new active instance and trigger onTabSwitch
+                        // to ensure its content is visible (fixes ghost tab / hidden content issue)
+                        const remaining = this.manager.getAllInstances();
+                        if (remaining.length === 0) {
+                            this.opts.onAllTabsClosed?.();
+                        }
+                        else {
+                            const newActive = this.manager.getActiveInstance();
+                            if (newActive) {
+                                this.opts.onTabSwitch?.(newActive.instanceId);
                             }
                         }
-                    );
+                    }, () => {
+                        if (this.opts.onNewTab) {
+                            this.opts.onNewTab();
+                        }
+                        else {
+                            const next = (this.manager.getInstanceCount?.() || this.manager.getAllInstances().length) + 1;
+                            this.manager.createInstance({ title: `Instance ${next}` });
+                        }
+                    });
                 };
                 this.controller = {
                     el: mount,
                     refresh: refreshWithHooks,
-                    destroy() {
-                        mount.innerHTML = '';
-                    },
+                    destroy() { mount.innerHTML = ''; },
                     setTitle: (instanceId, title) => {
                         const inst = this.manager.getInstance(instanceId);
                         if (inst) {
                             inst.title = title;
                         }
                         refreshWithHooks();
-                    },
+                    }
                 };
                 // initial render
                 this.controller.refresh();
@@ -286,7 +269,8 @@
             const remaining = this.manager.getAllInstances();
             if (remaining.length === 0) {
                 this.opts.onAllTabsClosed?.();
-            } else {
+            }
+            else {
                 const newActive = this.manager.getActiveInstance();
                 if (newActive) {
                     this.opts.onTabSwitch?.(newActive.instanceId);

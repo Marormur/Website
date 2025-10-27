@@ -7,8 +7,7 @@ console.log('InstanceManager loaded');
             this.type = config.type;
             this.instanceClass = config.instanceClass;
             this.maxInstances = config.maxInstances || 0;
-            this.createContainer =
-                config.createContainer || this._defaultCreateContainer.bind(this);
+            this.createContainer = config.createContainer || this._defaultCreateContainer.bind(this);
             this.instances = new Map();
             this.activeInstanceId = null;
             this.instanceCounter = 0;
@@ -40,7 +39,8 @@ console.log('InstanceManager loaded');
                 this._setupInstanceEvents(instance);
                 console.log(`Created instance: ${instanceId}`);
                 return instance;
-            } catch (error) {
+            }
+            catch (error) {
                 console.error('Failed to initialize instance:', error);
                 container.remove();
                 return null;
@@ -92,14 +92,13 @@ console.log('InstanceManager loaded');
             if (this.activeInstanceId === instanceId) {
                 const remainingIds = this.getAllInstanceIds();
                 // noUncheckedIndexedAccess: array access returns T | undefined
-                const lastId =
-                    remainingIds.length > 0 ? remainingIds[remainingIds.length - 1] : undefined;
+                const lastId = remainingIds.length > 0 ? remainingIds[remainingIds.length - 1] : undefined;
                 this.activeInstanceId = lastId ?? null;
             }
             console.log(`Destroyed instance: ${instanceId}`);
         }
         destroyAllInstances() {
-            this.instances.forEach(instance => {
+            this.instances.forEach((instance) => {
                 instance.destroy();
             });
             this.instances.clear();
@@ -112,11 +111,12 @@ console.log('InstanceManager loaded');
             return this.instances.size;
         }
         serializeAll() {
-            return this.getAllInstances().map(instance => instance.serialize());
+            return this.getAllInstances().map((instance) => instance.serialize());
         }
         deserializeAll(data) {
-            if (!Array.isArray(data)) return;
-            data.forEach(instanceData => {
+            if (!Array.isArray(data))
+                return;
+            data.forEach((instanceData) => {
                 const instance = this.createInstance({
                     id: instanceData.instanceId,
                     title: instanceData.title,
@@ -135,9 +135,7 @@ console.log('InstanceManager loaded');
             // Validate that all IDs exist
             const validIds = newOrder.filter(id => this.instances.has(id));
             if (validIds.length !== this.instances.size) {
-                console.warn(
-                    'Invalid reorder: not all instance IDs provided or some IDs do not exist'
-                );
+                console.warn('Invalid reorder: not all instance IDs provided or some IDs do not exist');
                 return;
             }
             // Create a new Map with the desired order

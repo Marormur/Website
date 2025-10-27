@@ -20,7 +20,8 @@
     }
     function updateProgramLabel(newLabel) {
         const programLabel = document.getElementById('program-label');
-        if (programLabel) programLabel.textContent = newLabel;
+        if (programLabel)
+            programLabel.textContent = newLabel;
     }
     function getTopModal() {
         const wm = window.WindowManager;
@@ -29,7 +30,7 @@
         }
         let top = null;
         let highest = 0;
-        document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
+        document.querySelectorAll('.modal:not(.hidden)').forEach((modal) => {
             const z = parseInt(getComputedStyle(modal).zIndex, 10) || 0;
             if (z > highest) {
                 highest = z;
@@ -40,19 +41,22 @@
     }
     function updateProgramInfoMenu(info) {
         const infoLink = document.getElementById('about-program');
-        if (!infoLink) return;
+        if (!infoLink)
+            return;
         const fallbackInfo = resolveProgramInfo(null);
         infoLink.textContent = info.infoLabel || fallbackInfo.infoLabel;
         const el = infoLink;
         if (info.fallbackInfoModalId) {
             el.dataset.fallbackInfoModalId = info.fallbackInfoModalId;
-        } else if (el.dataset) {
+        }
+        else if (el.dataset) {
             delete el.dataset.fallbackInfoModalId;
         }
     }
     function renderProgramInfo(info) {
         const modal = document.getElementById('program-info-modal');
-        if (!modal) return;
+        if (!modal)
+            return;
         modal.dataset.infoTarget = info.modalId || '';
         const fallbackInfo = resolveProgramInfo(null);
         const about = info.about || fallbackInfo.about || {};
@@ -62,7 +66,8 @@
                 iconEl.src = info.icon;
                 iconEl.alt = about.name || info.programLabel || 'Programm';
                 iconEl.classList.remove('hidden');
-            } else {
+            }
+            else {
                 iconEl.classList.add('hidden');
             }
         }
@@ -104,7 +109,8 @@
             event.stopPropagation();
         }
         const hideMenus = window.hideMenuDropdowns;
-        if (hideMenus) hideMenus();
+        if (hideMenus)
+            hideMenus();
         const info = infoOverride || currentProgramInfo || getProgramInfo(null);
         currentProgramInfo = info;
         const infoEvent = new CustomEvent('programInfoRequested', {
@@ -112,9 +118,11 @@
             cancelable: true,
         });
         const dispatchResult = window.dispatchEvent(infoEvent);
-        if (!dispatchResult) return;
+        if (!dispatchResult)
+            return;
         const fallbackId = info.fallbackInfoModalId;
-        if (!fallbackId) return;
+        if (!fallbackId)
+            return;
         if (fallbackId === 'program-info-modal') {
             renderProgramInfo(info);
         }
@@ -122,12 +130,14 @@
         const dialogInstance = dialogs && dialogs[fallbackId];
         if (dialogInstance && typeof dialogInstance.open === 'function') {
             dialogInstance.open();
-        } else {
+        }
+        else {
             const modalElement = document.getElementById(fallbackId);
             if (modalElement) {
                 modalElement.classList.remove('hidden');
                 const bringToFront = window.dialogs?.[fallbackId]?.bringToFront;
-                if (bringToFront) bringToFront();
+                if (bringToFront)
+                    bringToFront();
                 updateProgramLabelByTopModal();
             }
         }
@@ -144,11 +154,7 @@
             const config = wm.getConfig(topModal.id);
             if (config && config.metadata && config.metadata.skipMenubarUpdate) {
                 const all = Array.from(document.querySelectorAll('.modal:not(.hidden)'));
-                const sorted = all.sort(
-                    (a, b) =>
-                        (parseInt(getComputedStyle(b).zIndex, 10) || 0) -
-                        (parseInt(getComputedStyle(a).zIndex, 10) || 0)
-                );
+                const sorted = all.sort((a, b) => (parseInt(getComputedStyle(b).zIndex, 10) || 0) - (parseInt(getComputedStyle(a).zIndex, 10) || 0));
                 let next = null;
                 for (const m of sorted) {
                     const mc = wm.getConfig(m.id);
@@ -168,15 +174,11 @@
             }
         }
         let info;
-        if (
-            topModal &&
-            topModal.id === 'program-info-modal' &&
-            currentProgramInfo &&
-            currentProgramInfo.modalId
-        ) {
+        if (topModal && topModal.id === 'program-info-modal' && currentProgramInfo && currentProgramInfo.modalId) {
             info = resolveProgramInfo(currentProgramInfo.modalId);
             currentProgramInfo = info;
-        } else {
+        }
+        else {
             info = getProgramInfo(topModal ? topModal.id : null);
             currentProgramInfo = info;
         }
@@ -205,12 +207,14 @@
                 }
             }
             const updateAllSystemStatusUI = window.updateAllSystemStatusUI;
-            if (updateAllSystemStatusUI) updateAllSystemStatusUI();
+            if (updateAllSystemStatusUI)
+                updateAllSystemStatusUI();
         });
     if (!alreadyWired)
         window.addEventListener('themePreferenceChange', () => {
             const updateAllSystemStatusUI = window.updateAllSystemStatusUI;
-            if (updateAllSystemStatusUI) updateAllSystemStatusUI();
+            if (updateAllSystemStatusUI)
+                updateAllSystemStatusUI();
         });
     // Export legacy globals for compatibility
     window.updateProgramLabelByTopModal = updateProgramLabelByTopModal;

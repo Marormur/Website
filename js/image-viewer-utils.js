@@ -12,7 +12,8 @@
     }
     function setPlaceholder(messageKey, params) {
         const placeholder = getEl('image-placeholder');
-        if (!placeholder) return;
+        if (!placeholder)
+            return;
         if (typeof messageKey !== 'string' || messageKey.length === 0) {
             placeholder.removeAttribute('data-i18n');
             placeholder.removeAttribute('data-i18n-params');
@@ -24,7 +25,8 @@
         placeholder.setAttribute('data-i18n', messageKey);
         if (params && Object.keys(params).length > 0) {
             placeholder.setAttribute('data-i18n-params', JSON.stringify(params));
-        } else {
+        }
+        else {
             placeholder.removeAttribute('data-i18n-params');
         }
         state.placeholder = { key: messageKey, params };
@@ -33,12 +35,16 @@
     }
     function updateInfo(opts) {
         const infoEl = getEl('image-info');
-        if (!infoEl) return;
+        if (!infoEl)
+            return;
         const parts = [];
-        if (opts.repo) parts.push(opts.repo);
-        if (opts.path) parts.push(opts.path);
+        if (opts.repo)
+            parts.push(opts.repo);
+        if (opts.path)
+            parts.push(opts.path);
         const meta = [];
-        if (opts.dimensions) meta.push(opts.dimensions);
+        if (opts.dimensions)
+            meta.push(opts.dimensions);
         if (typeof opts.size === 'number' && opts.size > 0) {
             const kb = (opts.size / 1024).toFixed(1);
             meta.push(`${kb} KB`);
@@ -47,7 +53,8 @@
         if (info) {
             infoEl.textContent = info;
             infoEl.classList.remove('hidden');
-        } else {
+        }
+        else {
             infoEl.textContent = '';
             infoEl.classList.add('hidden');
         }
@@ -67,7 +74,9 @@
     w.ImageViewerUtils = w.ImageViewerUtils || {};
     w.ImageViewerUtils.setPlaceholder = setPlaceholder;
     w.ImageViewerUtils.updateInfo = updateInfo;
-    if (typeof w.setImagePlaceholder !== 'function') w.setImagePlaceholder = setPlaceholder;
-    if (typeof w.updateImageInfo !== 'function') w.updateImageInfo = updateInfo;
+    if (typeof w.setImagePlaceholder !== 'function')
+        w.setImagePlaceholder = setPlaceholder;
+    if (typeof w.updateImageInfo !== 'function')
+        w.updateImageInfo = updateInfo;
 })();
 //# sourceMappingURL=image-viewer-utils.js.map

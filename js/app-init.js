@@ -22,7 +22,8 @@ function initModalIds() {
             modalIds,
             transientModalIds: new Set(transientIds),
         };
-    } else {
+    }
+    else {
         // Fallback
         const modalIds = win.APP_CONSTANTS?.MODAL_IDS || [
             'finder-modal',
@@ -34,8 +35,7 @@ function initModalIds() {
             'image-modal',
             'program-info-modal',
         ];
-        const transientModalIds =
-            win.APP_CONSTANTS?.TRANSIENT_MODAL_IDS || new Set(['program-info-modal']);
+        const transientModalIds = win.APP_CONSTANTS?.TRANSIENT_MODAL_IDS || new Set(['program-info-modal']);
         return { modalIds, transientModalIds };
     }
 }
@@ -54,7 +54,7 @@ function initApp() {
         win.ActionBus.init?.();
     }
     // Wenn auf einen sichtbaren Modalcontainer geklickt wird, hole das Fenster in den Vordergrund
-    document.querySelectorAll('.modal').forEach(modal => {
+    document.querySelectorAll('.modal').forEach((modal) => {
         modal.addEventListener('click', function (e) {
             // Verhindere, dass Klicks auf interaktive Elemente im Modal den Fokuswechsel stören.
             const target = e.target;
@@ -69,9 +69,10 @@ function initApp() {
     const dialogs = window.dialogs || {};
     window.dialogs = dialogs;
     if (modalIds && Array.isArray(modalIds)) {
-        modalIds.forEach(id => {
+        modalIds.forEach((id) => {
             const modal = document.getElementById(id);
-            if (!modal || !win.Dialog) return;
+            if (!modal || !win.Dialog)
+                return;
             const dialogInstance = new win.Dialog(id);
             dialogs[id] = dialogInstance;
             // Im WindowManager registrieren
@@ -139,7 +140,8 @@ function initApp() {
     // Auto-attach to DOMContentLoaded
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initApp);
-    } else {
+    }
+    else {
         // DOMContentLoaded already fired, run immediately
         initApp();
     }

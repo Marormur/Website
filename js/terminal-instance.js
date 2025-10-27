@@ -35,8 +35,7 @@ console.log('TerminalInstance (TS) loaded');
                         Downloads: { type: 'directory', contents: {} },
                         'welcome.txt': {
                             type: 'file',
-                            content:
-                                'Willkommen auf Marvins Portfolio-Website!\n\nGib "help" ein, um eine Liste verfügbarer Befehle zu sehen.',
+                            content: 'Willkommen auf Marvins Portfolio-Website!\n\nGib "help" ein, um eine Liste verfügbarer Befehle zu sehen.',
                         },
                     },
                 },
@@ -44,7 +43,8 @@ console.log('TerminalInstance (TS) loaded');
         }
         // No override of _initializeState to avoid type modifier conflicts
         render() {
-            if (!this.container) return;
+            if (!this.container)
+                return;
             const html = `
                 <div class="terminal-wrapper h-full flex flex-col bg-gray-900 text-green-400 font-mono text-sm">
                     <div class="terminal-output flex-1 overflow-y-auto p-4 space-y-1" data-terminal-output>
@@ -67,7 +67,8 @@ console.log('TerminalInstance (TS) loaded');
             this.inputElement = this.container.querySelector('[data-terminal-input]');
             try {
                 this.showWelcomeMessage();
-            } catch {
+            }
+            catch {
                 /* noop */
             }
             if (this.inputElement && typeof this.inputElement.focus === 'function') {
@@ -75,8 +76,9 @@ console.log('TerminalInstance (TS) loaded');
             }
         }
         attachEventListeners() {
-            if (!this.inputElement) return;
-            this.inputElement.addEventListener('keydown', e => {
+            if (!this.inputElement)
+                return;
+            this.inputElement.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     const command = this.inputElement.value.trim();
@@ -88,10 +90,12 @@ console.log('TerminalInstance (TS) loaded');
                     }
                     this.inputElement.value = '';
                     this.inputElement.focus();
-                } else if (e.key === 'Tab') {
+                }
+                else if (e.key === 'Tab') {
                     e.preventDefault();
                     this.handleTabCompletion();
-                } else if (e.key === 'ArrowUp') {
+                }
+                else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     if (this.historyIndex > 0) {
                         this.historyIndex--;
@@ -101,7 +105,8 @@ console.log('TerminalInstance (TS) loaded');
                             this.inputElement.value = historyEntry;
                         }
                     }
-                } else if (e.key === 'ArrowDown') {
+                }
+                else if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     if (this.historyIndex < this.commandHistory.length - 1) {
                         this.historyIndex++;
@@ -110,7 +115,8 @@ console.log('TerminalInstance (TS) loaded');
                         if (historyEntry !== undefined) {
                             this.inputElement.value = historyEntry;
                         }
-                    } else {
+                    }
+                    else {
                         this.historyIndex = this.commandHistory.length;
                         this.inputElement.value = '';
                     }
@@ -118,36 +124,26 @@ console.log('TerminalInstance (TS) loaded');
             });
         }
         showWelcomeMessage() {
-            this.addOutput(
-                'Willkommen im Terminal! Gib "help" ein für verfügbare Befehle.',
-                'info'
-            );
+            this.addOutput('Willkommen im Terminal! Gib "help" ein für verfügbare Befehle.', 'info');
         }
         handleTabCompletion() {
-            if (!this.inputElement) return;
+            if (!this.inputElement)
+                return;
             const input = this.inputElement.value;
             const [partialCmd, ...args] = input.split(' ');
             // noUncheckedIndexedAccess: array destructuring may return undefined
-            if (partialCmd === undefined) return;
-            const availableCommands = [
-                'help',
-                'clear',
-                'ls',
-                'pwd',
-                'cd',
-                'cat',
-                'echo',
-                'date',
-                'whoami',
-            ];
+            if (partialCmd === undefined)
+                return;
+            const availableCommands = ['help', 'clear', 'ls', 'pwd', 'cd', 'cat', 'echo', 'date', 'whoami'];
             if (args.length === 0) {
-                const matches = availableCommands.filter(cmd => cmd.startsWith(partialCmd));
+                const matches = availableCommands.filter((cmd) => cmd.startsWith(partialCmd));
                 if (matches.length === 1) {
                     const match = matches[0];
                     if (match !== undefined) {
                         this.inputElement.value = match + ' ';
                     }
-                } else if (matches.length > 1) {
+                }
+                else if (matches.length > 1) {
                     this.addOutput(`guest@marvin:${this.currentPath}$ ${input}`, 'command');
                     this.addOutput(matches.join('  '), 'info');
                     const commonPrefix = this.findCommonPrefix(matches);
@@ -155,55 +151,57 @@ console.log('TerminalInstance (TS) loaded');
                         this.inputElement.value = commonPrefix;
                     }
                 }
-            } else {
+            }
+            else {
                 if (partialCmd === 'cd' || partialCmd === 'cat') {
                     this.completePathArgument(partialCmd, args[0] || '');
                 }
             }
         }
         findCommonPrefix(strings) {
-            if (!strings.length) return '';
+            if (!strings.length)
+                return '';
             // noUncheckedIndexedAccess: array access may return undefined
             const firstString = strings[0];
-            if (strings.length === 1) return firstString ?? '';
-            if (firstString === undefined) return '';
+            if (strings.length === 1)
+                return firstString ?? '';
+            if (firstString === undefined)
+                return '';
             let prefix = firstString;
             for (let i = 1; i < strings.length; i++) {
                 const currentString = strings[i];
-                if (currentString === undefined) continue;
+                if (currentString === undefined)
+                    continue;
                 while (currentString.indexOf(prefix) !== 0) {
                     prefix = prefix.substring(0, prefix.length - 1);
-                    if (!prefix) return '';
+                    if (!prefix)
+                        return '';
                 }
             }
             return prefix;
         }
         completePathArgument(cmd, partial) {
             const currentDir = this.resolvePath(this.currentPath);
-            if (!currentDir || currentDir.type !== 'directory') return;
+            if (!currentDir || currentDir.type !== 'directory')
+                return;
             const items = Object.keys(currentDir.contents);
             let matches;
             if (cmd === 'cd') {
-                matches = items.filter(
-                    item =>
-                        currentDir.contents[item].type === 'directory' && item.startsWith(partial)
-                );
-            } else {
-                matches = items.filter(
-                    item => currentDir.contents[item].type === 'file' && item.startsWith(partial)
-                );
+                matches = items.filter((item) => currentDir.contents[item].type === 'directory' && item.startsWith(partial));
+            }
+            else {
+                matches = items.filter((item) => currentDir.contents[item].type === 'file' && item.startsWith(partial));
             }
             if (matches.length === 1) {
                 this.inputElement.value = `${cmd} ${matches[0]}`;
-            } else if (matches.length > 1) {
-                this.addOutput(
-                    `guest@marvin:${this.currentPath}$ ${this.inputElement.value}`,
-                    'command'
-                );
-                const formatted = matches.map(item => {
+            }
+            else if (matches.length > 1) {
+                this.addOutput(`guest@marvin:${this.currentPath}$ ${this.inputElement.value}`, 'command');
+                const formatted = matches.map((item) => {
                     // noUncheckedIndexedAccess: dictionary access may return undefined
                     const itemObj = currentDir.contents[item];
-                    if (!itemObj) return item;
+                    if (!itemObj)
+                        return item;
                     const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
                     return prefix + item;
                 });
@@ -218,7 +216,8 @@ console.log('TerminalInstance (TS) loaded');
             this.addOutput(`guest@marvin:${this.currentPath}$ ${command}`, 'command');
             const [cmd, ...args] = command.split(' ');
             // noUncheckedIndexedAccess: array destructuring may return undefined
-            if (cmd === undefined) return;
+            if (cmd === undefined)
+                return;
             const commands = {
                 help: () => this.showHelp(),
                 clear: () => this.clearOutput(),
@@ -233,15 +232,14 @@ console.log('TerminalInstance (TS) loaded');
             const commandFn = commands[cmd];
             if (commandFn !== undefined) {
                 commandFn();
-            } else {
-                this.addOutput(
-                    `Befehl nicht gefunden: ${cmd}. Gib "help" ein für verfügbare Befehle.`,
-                    'error'
-                );
+            }
+            else {
+                this.addOutput(`Befehl nicht gefunden: ${cmd}. Gib "help" ein für verfügbare Befehle.`, 'error');
             }
         }
         addOutput(text, type = 'output') {
-            if (!this.outputElement) return;
+            if (!this.outputElement)
+                return;
             const line = document.createElement('div');
             line.className = `terminal-line terminal-${type}`;
             const colorMap = {
@@ -256,7 +254,8 @@ console.log('TerminalInstance (TS) loaded');
             this.outputElement.scrollTop = this.outputElement.scrollHeight;
         }
         clearOutput() {
-            if (this.outputElement) this.outputElement.innerHTML = '';
+            if (this.outputElement)
+                this.outputElement.innerHTML = '';
         }
         showHelp() {
             const helpText = [
@@ -283,7 +282,7 @@ console.log('TerminalInstance (TS) loaded');
                 '  ↑/↓          - Durchsuche Befehlshistorie',
                 '  Tab          - Vervollständige Befehle und Pfade',
             ];
-            helpText.forEach(l => this.addOutput(l, 'info'));
+            helpText.forEach((l) => this.addOutput(l, 'info'));
         }
         listDirectory(path) {
             const targetPath = path ? this.normalizePath(path) : this.currentPath;
@@ -297,12 +296,14 @@ console.log('TerminalInstance (TS) loaded');
                 return;
             }
             const items = Object.keys(targetDir.contents);
-            if (items.length === 0) this.addOutput('(leer)', 'output');
+            if (items.length === 0)
+                this.addOutput('(leer)', 'output');
             else {
-                items.forEach(item => {
+                items.forEach((item) => {
                     // noUncheckedIndexedAccess: dictionary access may return undefined
                     const itemObj = targetDir.contents[item];
-                    if (!itemObj) return;
+                    if (!itemObj)
+                        return;
                     const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
                     this.addOutput(prefix + item, 'output');
                 });
@@ -338,7 +339,7 @@ console.log('TerminalInstance (TS) loaded');
             }
             if (filename.includes('/')) {
                 const normalizedPath = this.normalizePath(filename);
-                const pathParts = normalizedPath.split('/').filter(p => p !== '');
+                const pathParts = normalizedPath.split('/').filter((p) => p !== '');
                 const fileName = pathParts.pop();
                 const dirPath = pathParts.length > 0 ? pathParts.join('/') : '~';
                 const dir = this.resolvePath(dirPath);
@@ -347,17 +348,22 @@ console.log('TerminalInstance (TS) loaded');
                     return;
                 }
                 const file = dir.contents?.[fileName];
-                if (!file) this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
+                if (!file)
+                    this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
                 else if (file.type !== 'file')
                     this.addOutput(`${filename} ist keine Datei`, 'error');
-                else this.addOutput(file.content, 'output');
-            } else {
+                else
+                    this.addOutput(file.content, 'output');
+            }
+            else {
                 const currentDir = this.resolvePath(this.currentPath);
                 const file = currentDir?.contents?.[filename];
-                if (!file) this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
+                if (!file)
+                    this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
                 else if (file.type !== 'file')
                     this.addOutput(`${filename} ist keine Datei`, 'error');
-                else this.addOutput(file.content, 'output');
+                else
+                    this.addOutput(file.content, 'output');
             }
         }
         echo(text) {
@@ -373,50 +379,63 @@ console.log('TerminalInstance (TS) loaded');
             }
         }
         resolvePath(path) {
-            if (!path) return null;
+            if (!path)
+                return null;
             const normalizedPath = this.normalizePath(path);
             // noUncheckedIndexedAccess: dictionary access may return undefined
             const homeNode = this.fileSystem['~'];
-            if (normalizedPath === '~') return homeNode ?? null;
-            if (homeNode === undefined) return null;
+            if (normalizedPath === '~')
+                return homeNode ?? null;
+            if (homeNode === undefined)
+                return null;
             let current = homeNode;
             const parts = normalizedPath
                 .replace(/^~\/?/, '')
                 .split('/')
-                .filter(p => p);
+                .filter((p) => p);
             for (const part of parts) {
-                if (current.type !== 'directory') return null;
-                if (!current.contents || !current.contents[part]) return null;
+                if (current.type !== 'directory')
+                    return null;
+                if (!current.contents || !current.contents[part])
+                    return null;
                 // noUncheckedIndexedAccess: dictionary access may return undefined
                 const nextNode = current.contents[part];
-                if (nextNode === undefined) return null;
+                if (nextNode === undefined)
+                    return null;
                 current = nextNode;
             }
             return current;
         }
         normalizePath(path) {
-            if (!path || path === '~') return '~';
-            if (path === '.') return this.currentPath;
-            if (path === './') return this.currentPath;
+            if (!path || path === '~')
+                return '~';
+            if (path === '.')
+                return this.currentPath;
+            if (path === './')
+                return this.currentPath;
             let workingPath;
-            if (path.startsWith('~')) workingPath = path;
-            else if (path.startsWith('/')) workingPath = '~' + path;
+            if (path.startsWith('~'))
+                workingPath = path;
+            else if (path.startsWith('/'))
+                workingPath = '~' + path;
             else
-                workingPath =
-                    this.currentPath === '~' ? `~/${path}` : `${this.currentPath}/${path}`;
-            const parts = workingPath.split('/').filter(p => p !== '' && p !== '.');
+                workingPath = this.currentPath === '~' ? `~/${path}` : `${this.currentPath}/${path}`;
+            const parts = workingPath.split('/').filter((p) => p !== '' && p !== '.');
             const resolved = [];
             for (const part of parts) {
                 if (part === '..') {
                     if (resolved.length > 0 && resolved[resolved.length - 1] !== '~') {
                         resolved.pop();
                     }
-                } else {
+                }
+                else {
                     resolved.push(part);
                 }
             }
-            if (resolved.length === 0 || (resolved.length === 1 && resolved[0] === '~')) return '~';
-            if (resolved[0] !== '~') resolved.unshift('~');
+            if (resolved.length === 0 || (resolved.length === 1 && resolved[0] === '~'))
+                return '~';
+            if (resolved[0] !== '~')
+                resolved.unshift('~');
             return resolved.join('/');
         }
         parentPath(path) {
@@ -453,7 +472,8 @@ console.log('TerminalInstance (TS) loaded');
         focus() {
             const baseFocus = Base.prototype.focus;
             baseFocus.call(this);
-            if (this.inputElement) this.inputElement.focus();
+            if (this.inputElement)
+                this.inputElement.focus();
         }
     }
     window.TerminalInstance = TerminalInstance;

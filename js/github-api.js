@@ -8,12 +8,14 @@
             const constants = window.APP_CONSTANTS || {};
             const val = constants['GITHUB_CACHE_DURATION'];
             return typeof val === 'number' ? val : dflt;
-        } catch {
+        }
+        catch {
             return dflt;
         }
     }
     function makeCacheKey(kind, repo = '', subPath = '') {
-        if (kind === 'repos') return GITHUB_CACHE_NS + 'repos';
+        if (kind === 'repos')
+            return GITHUB_CACHE_NS + 'repos';
         return `${GITHUB_CACHE_NS}contents:${repo}:${subPath}`;
     }
     function writeCache(kind, repo, subPath, data) {
@@ -21,7 +23,8 @@
         try {
             const payload = { t: Date.now(), d: data };
             localStorage.setItem(key, JSON.stringify(payload));
-        } catch {
+        }
+        catch {
             /* ignore */
         }
     }
@@ -29,13 +32,17 @@
         const key = makeCacheKey(kind, repo, subPath);
         try {
             const raw = localStorage.getItem(key);
-            if (!raw) return null;
+            if (!raw)
+                return null;
             const parsed = JSON.parse(raw);
-            if (!parsed || typeof parsed !== 'object') return null;
+            if (!parsed || typeof parsed !== 'object')
+                return null;
             const ttl = getCacheTtl();
-            if (typeof parsed.t !== 'number' || Date.now() - parsed.t > ttl) return null;
+            if (typeof parsed.t !== 'number' || Date.now() - parsed.t > ttl)
+                return null;
             return parsed.d ?? null;
-        } catch {
+        }
+        catch {
             return null;
         }
     }
@@ -46,7 +53,8 @@
             if (token && token.trim()) {
                 headers['Authorization'] = `token ${token.trim()}`;
             }
-        } catch {
+        }
+        catch {
             /* ignore */
         }
         return headers;

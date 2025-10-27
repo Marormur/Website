@@ -26,17 +26,21 @@
     function readFinderState() {
         try {
             const raw = localStorage.getItem(FINDER_STATE_KEY);
-            if (!raw) return null;
+            if (!raw)
+                return null;
             const parsed = JSON.parse(raw);
-            if (!parsed || typeof parsed !== 'object') return null;
+            if (!parsed || typeof parsed !== 'object')
+                return null;
             const po = parsed;
             const repo = typeof po.repo === 'string' ? po.repo.trim() : '';
-            if (!repo) return null;
+            if (!repo)
+                return null;
             return {
                 repo,
                 path: typeof po.path === 'string' ? po.path : '',
             };
-        } catch (err) {
+        }
+        catch (err) {
             console.warn('Finder state konnte nicht gelesen werden:', err);
             return null;
         }
@@ -52,14 +56,16 @@
         };
         try {
             localStorage.setItem(FINDER_STATE_KEY, JSON.stringify(payload));
-        } catch (err) {
+        }
+        catch (err) {
             console.warn('Finder state konnte nicht gespeichert werden:', err);
         }
     }
     function clearFinderState() {
         try {
             localStorage.removeItem(FINDER_STATE_KEY);
-        } catch (err) {
+        }
+        catch (err) {
             console.warn('Finder state konnte nicht gelöscht werden:', err);
         }
     }
@@ -67,16 +73,19 @@
     function saveOpenModals() {
         const modalIds = getModalIds();
         const transientModalIds = getTransientModalIds();
-        const openModals = modalIds.filter(id => {
-            if (transientModalIds.has(id)) return false;
+        const openModals = modalIds.filter((id) => {
+            if (transientModalIds.has(id))
+                return false;
             const el = document.getElementById(id);
-            if (!el) return false;
+            if (!el)
+                return false;
             const minimized = el.dataset && el.dataset.minimized === 'true';
             return !el.classList.contains('hidden') || minimized;
         });
         try {
             localStorage.setItem(OPEN_MODALS_KEY, JSON.stringify(openModals));
-        } catch (err) {
+        }
+        catch (err) {
             console.warn('Open modals konnte nicht gespeichert werden:', err);
         }
     }
@@ -85,13 +94,15 @@
         let openModals = [];
         try {
             openModals = JSON.parse(localStorage.getItem(OPEN_MODALS_KEY) || '[]');
-        } catch (err) {
+        }
+        catch (err) {
             console.warn('Open modals konnte nicht gelesen werden:', err);
             return;
         }
-        openModals.forEach(id => {
+        openModals.forEach((id) => {
             // Skip transient modals
-            if (transientModalIds.has(id)) return;
+            if (transientModalIds.has(id))
+                return;
             // Validate modal exists in DOM
             const el = document.getElementById(id);
             if (!el) {
@@ -103,9 +114,7 @@
             if (WindowManager && typeof WindowManager.getConfig === 'function') {
                 const config = WindowManager.getConfig(id);
                 if (!config) {
-                    console.warn(
-                        `Skipping restore of modal "${id}": not registered in WindowManager`
-                    );
+                    console.warn(`Skipping restore of modal "${id}": not registered in WindowManager`);
                     return;
                 }
             }
@@ -116,48 +125,55 @@
             if (typeof openFn === 'function') {
                 try {
                     openFn();
-                } catch (err) {
+                }
+                catch (err) {
                     console.warn(`Error restoring modal "${id}":`, err);
                     // Fallback: try to show element directly
                     el.classList.remove('hidden');
                 }
-            } else {
+            }
+            else {
                 // Fallback: no dialog instance, just show the element
                 el.classList.remove('hidden');
             }
         });
         // Update dock indicators and program label (if available)
         const updateDockIndicators = w['updateDockIndicators'];
-        if (typeof updateDockIndicators === 'function') updateDockIndicators();
+        if (typeof updateDockIndicators === 'function')
+            updateDockIndicators();
         const updateProgramLabelByTopModal = w['updateProgramLabelByTopModal'];
-        if (typeof updateProgramLabelByTopModal === 'function') updateProgramLabelByTopModal();
+        if (typeof updateProgramLabelByTopModal === 'function')
+            updateProgramLabelByTopModal();
     }
     // ===== Window Positions & Sizes =====
     function getDialogWindowElement(modal) {
-        if (!modal) return null;
+        if (!modal)
+            return null;
         return modal.querySelector('.autopointer') || modal;
     }
     function saveWindowPositions() {
         const modalIds = getModalIds();
         const transientModalIds = getTransientModalIds();
         const positions = {};
-        modalIds.forEach(id => {
-            if (transientModalIds.has(id)) return;
+        modalIds.forEach((id) => {
+            if (transientModalIds.has(id))
+                return;
             const el = document.getElementById(id);
             const windowEl = getDialogWindowElement(el);
             if (el && windowEl) {
                 positions[id] = {
-                    left: windowEl.style.left || '',
-                    top: windowEl.style.top || '',
-                    width: windowEl.style.width || '',
-                    height: windowEl.style.height || '',
-                    position: windowEl.style.position || '',
+                    left: (windowEl.style.left || ''),
+                    top: (windowEl.style.top || ''),
+                    width: (windowEl.style.width || ''),
+                    height: (windowEl.style.height || ''),
+                    position: (windowEl.style.position || ''),
                 };
             }
         });
         try {
             localStorage.setItem(MODAL_POSITIONS_KEY, JSON.stringify(positions));
-        } catch (err) {
+        }
+        catch (err) {
             console.warn('Window positions konnte nicht gespeichert werden:', err);
         }
     }
@@ -166,27 +182,35 @@
         let positions = {};
         try {
             positions = JSON.parse(localStorage.getItem(MODAL_POSITIONS_KEY) || '{}');
-        } catch (err) {
+        }
+        catch (err) {
             console.warn('Window positions konnte nicht gelesen werden:', err);
             return;
         }
-        Object.keys(positions).forEach(id => {
-            if (transientModalIds.has(id)) return;
+        Object.keys(positions).forEach((id) => {
+            if (transientModalIds.has(id))
+                return;
             const el = document.getElementById(id);
             const windowEl = getDialogWindowElement(el);
             if (el && windowEl) {
                 const stored = positions[id];
                 // noUncheckedIndexedAccess: positions[id] may be undefined
-                if (!stored) return;
+                if (!stored)
+                    return;
                 if (stored.position) {
                     windowEl.style.position = stored.position;
-                } else if (stored.left || stored.top) {
+                }
+                else if (stored.left || stored.top) {
                     windowEl.style.position = 'fixed';
                 }
-                if (stored.left) windowEl.style.left = stored.left;
-                if (stored.top) windowEl.style.top = stored.top;
-                if (stored.width) windowEl.style.width = stored.width;
-                if (stored.height) windowEl.style.height = stored.height;
+                if (stored.left)
+                    windowEl.style.left = stored.left;
+                if (stored.top)
+                    windowEl.style.top = stored.top;
+                if (stored.width)
+                    windowEl.style.width = stored.width;
+                if (stored.height)
+                    windowEl.style.height = stored.height;
             }
             const clampWindowToMenuBar = w['clampWindowToMenuBar'];
             if (typeof clampWindowToMenuBar === 'function') {
@@ -197,7 +221,7 @@
     // ===== Layout Reset =====
     function resetWindowLayout() {
         const modalIds = getModalIds();
-        modalIds.forEach(id => {
+        modalIds.forEach((id) => {
             const modal = document.getElementById(id);
             const windowEl = getDialogWindowElement(modal);
             if (modal) {
@@ -217,24 +241,29 @@
         }
         try {
             localStorage.removeItem(MODAL_POSITIONS_KEY);
-        } catch (err) {
+        }
+        catch (err) {
             console.warn('Modal positions konnte nicht gelöscht werden:', err);
         }
         const hideMenuDropdowns = w['hideMenuDropdowns'];
-        if (typeof hideMenuDropdowns === 'function') hideMenuDropdowns();
+        if (typeof hideMenuDropdowns === 'function')
+            hideMenuDropdowns();
         const syncTopZIndexWithDOM = w['syncTopZIndexWithDOM'];
-        if (typeof syncTopZIndexWithDOM === 'function') syncTopZIndexWithDOM();
+        if (typeof syncTopZIndexWithDOM === 'function')
+            syncTopZIndexWithDOM();
         const dialogs = w['dialogs'];
         if (dialogs) {
-            Object.values(dialogs).forEach(dialog => {
+            Object.values(dialogs).forEach((dialog) => {
                 const enforce = dialog['enforceMenuBarBoundary'];
-                if (typeof enforce === 'function') enforce();
+                if (typeof enforce === 'function')
+                    enforce();
             });
         }
         // Clear finder state
         clearFinderState();
         const updateProgramLabelByTopModal = w['updateProgramLabelByTopModal'];
-        if (typeof updateProgramLabelByTopModal === 'function') updateProgramLabelByTopModal();
+        if (typeof updateProgramLabelByTopModal === 'function')
+            updateProgramLabelByTopModal();
     }
     // ===== Public API (global) =====
     const api = {

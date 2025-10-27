@@ -47,7 +47,8 @@ console.log('ActionBus loaded');
             }
             try {
                 handler(params, element);
-            } catch (error) {
+            }
+            catch (error) {
                 console.error(`Error executing action ${actionName}:`, error);
             }
         },
@@ -78,7 +79,7 @@ console.log('ActionBus loaded');
                 this.execute(actionName, params, element);
             });
             // Support für data-action-hover
-            this.delegateEvent('mouseenter', '[data-action-hover]', element => {
+            this.delegateEvent('mouseenter', '[data-action-hover]', (element) => {
                 const actionName = element.getAttribute('data-action-hover');
                 const params = this.extractParams(element);
                 this.execute(actionName, params, element);
@@ -89,9 +90,10 @@ console.log('ActionBus loaded');
          * Event-Delegation Helper
          */
         delegateEvent(eventType, selector, handler) {
-            const delegate = event => {
+            const delegate = (event) => {
                 const target = event.target;
-                if (!(target instanceof Element)) return;
+                if (!(target instanceof Element))
+                    return;
                 const element = target.closest(selector);
                 if (element) {
                     handler(element, event);
@@ -128,7 +130,7 @@ console.log('ActionBus loaded');
     // Standard-Actions registrieren
     ActionBus.registerAll({
         // Fenster schließen
-        closeWindow: params => {
+        closeWindow: (params) => {
             const windowId = params.windowId;
             if (!windowId) {
                 console.warn('closeWindow: missing windowId');
@@ -145,7 +147,7 @@ console.log('ActionBus loaded');
             g.updateProgramLabelByTopModal?.();
         },
         // Fenster öffnen
-        openWindow: params => {
+        openWindow: (params) => {
             const windowId = params.windowId;
             if (!windowId) {
                 console.warn('openWindow: missing windowId');
@@ -169,11 +171,14 @@ console.log('ActionBus loaded');
             let topId = null;
             if (typeof maybeTop === 'string') {
                 topId = maybeTop;
-            } else if (maybeTop && typeof maybeTop === 'object') {
-                const obj = maybeTop;
-                if (typeof obj.id === 'string') topId = obj.id;
             }
-            if (!topId) return;
+            else if (maybeTop && typeof maybeTop === 'object') {
+                const obj = maybeTop;
+                if (typeof obj.id === 'string')
+                    topId = obj.id;
+            }
+            if (!topId)
+                return;
             g.WindowManager?.close?.(topId);
             g.saveOpenModals?.();
             g.updateDockIndicators?.();
@@ -206,7 +211,7 @@ console.log('ActionBus loaded');
             g.updateProgramLabelByTopModal?.();
         },
         // Desktop-Item öffnen (für Dock-Icons)
-        openDesktopItem: params => {
+        openDesktopItem: (params) => {
             const itemId = params.itemId;
             if (!itemId) {
                 console.warn('openDesktopItem: missing itemId');
@@ -229,7 +234,7 @@ console.log('ActionBus loaded');
             }
         },
         // Finder: Ansicht wechseln (computer/github/favorites/recent)
-        'finder:switchView': params => {
+        'finder:switchView': (params) => {
             const view = params['finderView'] || params.view;
             if (!view) {
                 console.warn('finder:switchView: missing finderView');
@@ -239,7 +244,7 @@ console.log('ActionBus loaded');
             wf.FinderSystem?.navigateTo?.([], view);
         },
         // Finder: View-Mode setzen (list/grid/columns)
-        'finder:setViewMode': params => {
+        'finder:setViewMode': (params) => {
             const mode = params['viewMode'] || params['mode'];
             if (!mode) {
                 console.warn('finder:setViewMode: missing viewMode');
@@ -249,7 +254,7 @@ console.log('ActionBus loaded');
             wf.FinderSystem?.setViewMode?.(mode);
         },
         // Finder: Sortierung setzen
-        'finder:setSortBy': params => {
+        'finder:setSortBy': (params) => {
             const field = params['sortBy'] || params['field'];
             if (!field) {
                 console.warn('finder:setSortBy: missing sortBy');
@@ -259,14 +264,14 @@ console.log('ActionBus loaded');
             wf.FinderSystem?.setSortBy?.(field);
         },
         // Finder: In Pfad navigieren (data-path="A/B/C")
-        'finder:navigateToPath': params => {
+        'finder:navigateToPath': (params) => {
             const raw = params.path || '';
             const parts = typeof raw === 'string' && raw.length ? raw.split('/') : [];
             const wf = window;
             wf.FinderSystem?.navigateTo?.(parts);
         },
         // Finder: Item öffnen (Datei oder Ordner)
-        'finder:openItem': params => {
+        'finder:openItem': (params) => {
             const name = params['itemName'] || params['name'];
             const type = params['itemType'] || params['type'];
             if (!name || !type) {

@@ -21,18 +21,23 @@
      * @param target - The element to clamp (e.g., a modal or dialog window).
      */
     function clampWindowToMenuBar(target) {
-        if (!target) return;
+        if (!target)
+            return;
         const minTop = getMenuBarBottom();
-        if (minTop <= 0) return;
+        if (minTop <= 0)
+            return;
         const computed = window.getComputedStyle(target);
         if (computed.position === 'static') {
             target.style.position = 'fixed';
         }
         const currentTop = parseFloat(target.style.top);
-        const numericTop = Number.isNaN(currentTop) ? parseFloat(computed.top) : currentTop;
+        const numericTop = Number.isNaN(currentTop)
+            ? parseFloat(computed.top)
+            : currentTop;
         if (!Number.isNaN(numericTop) && numericTop < minTop) {
             target.style.top = `${minTop}px`;
-        } else if (Number.isNaN(numericTop)) {
+        }
+        else if (Number.isNaN(numericTop)) {
             const rect = target.getBoundingClientRect();
             if (rect.top < minTop) {
                 if (!target.style.left) {
@@ -48,11 +53,13 @@
      * @returns Snap metrics (left, top, width, height) or null if invalid.
      */
     function computeSnapMetrics(side) {
-        if (side !== 'left' && side !== 'right') return null;
+        if (side !== 'left' && side !== 'right')
+            return null;
         const minTop = Math.round(getMenuBarBottom());
         const viewportWidth = Math.max(window.innerWidth || 0, 0);
         const viewportHeight = Math.max(window.innerHeight || 0, 0);
-        if (viewportWidth <= 0 || viewportHeight <= 0) return null;
+        if (viewportWidth <= 0 || viewportHeight <= 0)
+            return null;
         const minWidth = Math.min(320, viewportWidth);
         const halfWidth = Math.round(viewportWidth / 2);
         const width = Math.max(Math.min(halfWidth, viewportWidth), minWidth);
@@ -60,8 +67,7 @@
         const top = minTop;
         // Fetch dock reserved bottom height
         const getDockReservedBottom = window.getDockReservedBottom;
-        const dockReserve =
-            typeof getDockReservedBottom === 'function' ? getDockReservedBottom() : 0;
+        const dockReserve = typeof getDockReservedBottom === 'function' ? getDockReservedBottom() : 0;
         const height = Math.max(0, viewportHeight - top - dockReserve);
         return { left, top, width, height };
     }
@@ -97,7 +103,8 @@
             return;
         }
         const el = ensureSnapPreviewElement();
-        if (!el) return;
+        if (!el)
+            return;
         el.style.left = `${metrics.left}px`;
         el.style.top = `${metrics.top}px`;
         el.style.width = `${metrics.width}px`;

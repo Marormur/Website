@@ -28,7 +28,8 @@ console.log('TextEditorInstance (TS) loaded');
             this.isDirty = false;
         }
         render() {
-            if (!this.container) return;
+            if (!this.container)
+                return;
             const isDark = document.documentElement.classList.contains('dark');
             this.container.innerHTML = `
                 <div class="text-editor-wrapper flex flex-col h-full" style="background: ${isDark ? '#0f172a' : '#fafafa'}; color: ${isDark ? '#e5e7eb' : '#111827'};">
@@ -79,10 +80,11 @@ console.log('TextEditorInstance (TS) loaded');
             this._applyButtonStyles();
         }
         _applyButtonStyles() {
-            if (!this.container) return;
+            if (!this.container)
+                return;
             const isDark = document.documentElement.classList.contains('dark');
             const buttons = this.container.querySelectorAll('.text-editor-btn');
-            buttons.forEach(btn => {
+            buttons.forEach((btn) => {
                 btn.style.cssText = `
                     padding: 6px 12px;
                     font-size: 13px;
@@ -95,7 +97,7 @@ console.log('TextEditorInstance (TS) loaded');
                 `;
             });
             const separators = this.container.querySelectorAll('.toolbar-separator');
-            separators.forEach(sep => {
+            separators.forEach((sep) => {
                 sep.style.cssText = `
                     width: 1px;
                     height: 20px;
@@ -105,7 +107,8 @@ console.log('TextEditorInstance (TS) loaded');
             });
         }
         attachEventListeners() {
-            if (!this.container) return;
+            if (!this.container)
+                return;
             this.editor = this.container.querySelector('.text-editor-textarea');
             this.statusBar = this.container.querySelector('.text-file-status');
             this.saveButton = this.container.querySelector('[data-action="save"]');
@@ -122,15 +125,16 @@ console.log('TextEditorInstance (TS) loaded');
             this.editor?.addEventListener('click', () => this._updateCursorPosition());
             this.editor?.addEventListener('keyup', () => this._updateCursorPosition());
             this.editor?.addEventListener('select', () => this._updateCursorPosition());
-            this.container.addEventListener('click', e => {
+            this.container.addEventListener('click', (e) => {
                 const target = e.target;
                 const btn = target?.closest('[data-action]');
-                if (!btn) return;
+                if (!btn)
+                    return;
                 const action = btn.getAttribute('data-action');
                 this._handleAction(action);
             });
             if (this.fileInput) {
-                this.fileInput.addEventListener('change', e => this._handleFileOpen(e));
+                this.fileInput.addEventListener('change', (e) => this._handleFileOpen(e));
             }
             this._updateWordCount();
             this._updateCursorPosition();
@@ -151,7 +155,8 @@ console.log('TextEditorInstance (TS) loaded');
                 replaceAll: () => this.replaceAll(),
                 closeFindReplace: () => this.closeFindReplace(),
             };
-            if (actions[action]) actions[action]();
+            if (actions[action])
+                actions[action]();
         }
         _handleInput() {
             this.isDirty = true;
@@ -164,14 +169,16 @@ console.log('TextEditorInstance (TS) loaded');
             }
         }
         _updateWordCount() {
-            if (!this.editor || !this.wordCountDisplay) return;
+            if (!this.editor || !this.wordCountDisplay)
+                return;
             const text = this.editor.value;
             const words = text.trim() ? text.trim().split(/\s+/).length : 0;
             const chars = text.length;
             this.wordCountDisplay.textContent = `Wörter: ${words} | Zeichen: ${chars}`;
         }
         _updateCursorPosition() {
-            if (!this.editor || !this.lineColDisplay) return;
+            if (!this.editor || !this.lineColDisplay)
+                return;
             const pos = this.editor.selectionStart;
             const textBeforeCursor = this.editor.value.substring(0, pos);
             const line = (textBeforeCursor.match(/\n/g) || []).length + 1;
@@ -181,11 +188,13 @@ console.log('TextEditorInstance (TS) loaded');
             this.updateState({ cursorPosition: { line, col } });
         }
         _updateSaveButton() {
-            if (!this.saveButton) return;
+            if (!this.saveButton)
+                return;
             if (this.isDirty) {
                 this.saveButton.style.fontWeight = 'bold';
                 this.saveButton.setAttribute('title', 'Änderungen speichern');
-            } else {
+            }
+            else {
                 this.saveButton.style.fontWeight = 'normal';
                 this.saveButton.setAttribute('title', 'Speichern');
             }
@@ -194,7 +203,8 @@ console.log('TextEditorInstance (TS) loaded');
             if (this.isDirty && !confirm('Ungespeicherte Änderungen gehen verloren. Fortfahren?')) {
                 return;
             }
-            if (this.editor) this.editor.value = '';
+            if (this.editor)
+                this.editor.value = '';
             this.currentFilename = 'Untitled.txt';
             this.isDirty = false;
             this.updateState({ content: '', filename: this.currentFilename });
@@ -210,11 +220,13 @@ console.log('TextEditorInstance (TS) loaded');
         _handleFileOpen(event) {
             const target = event.target;
             const file = target?.files?.[0];
-            if (!file) return;
+            if (!file)
+                return;
             const reader = new FileReader();
-            reader.onload = e => {
+            reader.onload = (e) => {
                 const result = e.target.result;
-                if (this.editor) this.editor.value = result;
+                if (this.editor)
+                    this.editor.value = result;
                 this.currentFilename = file.name;
                 this.isDirty = false;
                 this.updateState({ content: result, filename: file.name });
@@ -242,7 +254,8 @@ console.log('TextEditorInstance (TS) loaded');
             emit.call(this, 'fileSaved', { filename: this.currentFilename });
         }
         _wrapSelection(before, after) {
-            if (!this.editor) return;
+            if (!this.editor)
+                return;
             const start = this.editor.selectionStart;
             const end = this.editor.selectionEnd;
             const selectedText = this.editor.value.substring(start, end);
@@ -259,13 +272,12 @@ console.log('TextEditorInstance (TS) loaded');
             }
             try {
                 localStorage.setItem(`textEditorWrapMode_${this.instanceId}`, this.wrapMode);
-            } catch (e) {
+            }
+            catch (e) {
                 console.warn('Could not save wrap mode', e);
             }
             this.updateState({ wrapMode: this.wrapMode });
-            this._showStatusBar(
-                this.wrapMode === 'soft' ? 'Zeilenumbruch aktiviert' : 'Zeilenumbruch deaktiviert'
-            );
+            this._showStatusBar(this.wrapMode === 'soft' ? 'Zeilenumbruch aktiviert' : 'Zeilenumbruch deaktiviert');
         }
         _loadWrapPreference() {
             try {
@@ -276,16 +288,20 @@ console.log('TextEditorInstance (TS) loaded');
                     this.editor.wrap = this.wrapMode;
                     this.editor.style.whiteSpace = this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
                 }
-            } catch (e) {
+            }
+            catch (e) {
                 console.warn('Could not load wrap mode', e);
             }
         }
         toggleFindReplace() {
-            if (!this.findReplacePanel) return;
+            if (!this.findReplacePanel)
+                return;
             const isHidden = this.findReplacePanel.style.display === 'none';
             this.findReplacePanel.style.display = isHidden ? 'flex' : 'none';
-            if (isHidden && this.findInput) this.findInput.focus();
-            else this.editor?.focus();
+            if (isHidden && this.findInput)
+                this.findInput.focus();
+            else
+                this.editor?.focus();
         }
         closeFindReplace() {
             if (this.findReplacePanel) {
@@ -294,30 +310,36 @@ console.log('TextEditorInstance (TS) loaded');
             }
         }
         findNext() {
-            if (!this.findInput || !this.editor) return;
+            if (!this.findInput || !this.editor)
+                return;
             const searchText = this.findInput.value;
-            if (!searchText) return;
+            if (!searchText)
+                return;
             const content = this.editor.value;
             const currentPos = this.editor.selectionEnd;
             const index = content.indexOf(searchText, currentPos);
             if (index !== -1) {
                 this.editor.setSelectionRange(index, index + searchText.length);
                 this.editor.focus();
-            } else {
+            }
+            else {
                 const firstIndex = content.indexOf(searchText);
                 if (firstIndex !== -1) {
                     this.editor.setSelectionRange(firstIndex, firstIndex + searchText.length);
                     this.editor.focus();
-                } else {
+                }
+                else {
                     this._showStatusBar('Nicht gefunden');
                 }
             }
         }
         replaceOne() {
-            if (!this.findInput || !this.replaceInput || !this.editor) return;
+            if (!this.findInput || !this.replaceInput || !this.editor)
+                return;
             const searchText = this.findInput.value;
             const replaceText = this.replaceInput.value;
-            if (!searchText) return;
+            if (!searchText)
+                return;
             const start = this.editor.selectionStart;
             const end = this.editor.selectionEnd;
             const selectedText = this.editor.value.substring(start, end);
@@ -328,10 +350,12 @@ console.log('TextEditorInstance (TS) loaded');
             this.findNext();
         }
         replaceAll() {
-            if (!this.findInput || !this.replaceInput || !this.editor) return;
+            if (!this.findInput || !this.replaceInput || !this.editor)
+                return;
             const searchText = this.findInput.value;
             const replaceText = this.replaceInput.value;
-            if (!searchText) return;
+            if (!searchText)
+                return;
             const newContent = this.editor.value.split(searchText).join(replaceText);
             const count = (this.editor.value.match(new RegExp(searchText, 'g')) || []).length;
             this.editor.value = newContent;
@@ -339,13 +363,15 @@ console.log('TextEditorInstance (TS) loaded');
             this._showStatusBar(`${count} Ersetzungen vorgenommen`);
         }
         _showStatusBar(message) {
-            if (!this.statusBar) return;
+            if (!this.statusBar)
+                return;
             this.statusBar.textContent = message;
             this.statusBar.style.display = 'block';
             setTimeout(() => this._hideStatusBar(), 3000);
         }
         _hideStatusBar() {
-            if (this.statusBar) this.statusBar.style.display = 'none';
+            if (this.statusBar)
+                this.statusBar.style.display = 'none';
         }
         focus() {
             const baseFocus = Base.prototype.focus;
@@ -371,7 +397,8 @@ console.log('TextEditorInstance (TS) loaded');
                 this.editor.value = d.content;
                 this._updateWordCount();
             }
-            if (d.filename) this.currentFilename = d.filename;
+            if (d.filename)
+                this.currentFilename = d.filename;
             if (d.wrapMode) {
                 this.wrapMode = d.wrapMode;
                 if (this.editor) {
