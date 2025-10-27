@@ -21,7 +21,7 @@
         getProgramInfo() {
             const w = window;
             const i18n = w['appI18n'] || undefined;
-            const translate = i18n?.translate || (key => key);
+            const translate = i18n?.translate || ((key) => key);
             const aboutFields = ['name', 'tagline', 'version', 'copyright'];
             const info = {
                 modalId: this.id,
@@ -31,7 +31,7 @@
                 icon: this.icon,
                 about: {},
             };
-            aboutFields.forEach(field => {
+            aboutFields.forEach((field) => {
                 info.about[field] = translate(`${this.programKey}.about.${field}`);
             });
             return info;
@@ -47,7 +47,7 @@
             return windowConfig;
         },
         registerAll(configs) {
-            configs.forEach(c => this.register(c));
+            configs.forEach((c) => this.register(c));
         },
         getConfig(windowId) {
             return windowRegistry.get(windowId) || null;
@@ -56,13 +56,13 @@
             return Array.from(windowRegistry.keys());
         },
         getPersistentWindowIds() {
-            return this.getAllWindowIds().filter(id => {
+            return this.getAllWindowIds().filter((id) => {
                 const config = this.getConfig(id);
                 return !!config && !config.isTransient();
             });
         },
         getTransientWindowIds() {
-            return this.getAllWindowIds().filter(id => {
+            return this.getAllWindowIds().filter((id) => {
                 const config = this.getConfig(id);
                 return !!config && config.isTransient();
             });
@@ -89,7 +89,7 @@
         getTopWindow() {
             let topModal = null;
             let highestZ = 0;
-            this.getAllWindowIds().forEach(id => {
+            this.getAllWindowIds().forEach((id) => {
                 const modal = document.getElementById(id);
                 if (modal && !modal.classList.contains('hidden')) {
                     const zIndex = parseInt(getComputedStyle(modal).zIndex, 10) || 0;
@@ -105,7 +105,8 @@
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.bringToFront === 'function') {
                 instance.bringToFront();
-            } else {
+            }
+            else {
                 console.warn(`Keine Dialog-Instanz für ${windowId} gefunden.`);
             }
         },
@@ -120,28 +121,41 @@
                         }
                         md.__initialized = true;
                     }
-                } catch (e) {
+                }
+                catch (e) {
                     console.warn(`Init handler for ${windowId} threw:`, e);
                 }
             }
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.open === 'function') {
                 instance.open();
-            } else {
+            }
+            else {
                 const modal = document.getElementById(windowId);
                 if (modal) {
                     modal.classList.remove('hidden');
                     this.bringToFront(windowId);
                 }
             }
+            // Always call the openHandler if provided - intended to run on every open
+            try {
+                if (config && config.metadata && typeof config.metadata.openHandler === 'function') {
+                    config.metadata.openHandler();
+                }
+            }
+            catch (e) {
+                console.warn(`Open handler for ${windowId} threw:`, e);
+            }
         },
         close(windowId) {
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.close === 'function') {
                 instance.close();
-            } else {
+            }
+            else {
                 const modal = document.getElementById(windowId);
-                if (modal) modal.classList.add('hidden');
+                if (modal)
+                    modal.classList.add('hidden');
             }
         },
         getNextZIndex() {
@@ -150,33 +164,38 @@
         },
         syncZIndexWithDOM() {
             let maxZ = baseZIndex;
-            this.getAllWindowIds().forEach(id => {
+            this.getAllWindowIds().forEach((id) => {
                 const modal = document.getElementById(id);
-                if (!modal) return;
+                if (!modal)
+                    return;
                 const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
-                if (!Number.isNaN(modalZ)) maxZ = Math.max(maxZ, modalZ);
+                if (!Number.isNaN(modalZ))
+                    maxZ = Math.max(maxZ, modalZ);
                 const windowEl = this.getDialogWindowElement(modal);
                 if (windowEl) {
                     const contentZ = parseInt(window.getComputedStyle(windowEl).zIndex, 10);
-                    if (!Number.isNaN(contentZ)) maxZ = Math.max(maxZ, contentZ);
+                    if (!Number.isNaN(contentZ))
+                        maxZ = Math.max(maxZ, contentZ);
                 }
             });
             topZIndex = maxZ;
             return maxZ;
         },
         getDialogWindowElement(modal) {
-            if (!modal) return null;
+            if (!modal)
+                return null;
             return modal.querySelector('.autopointer') || modal;
         },
         getProgramInfo(windowId) {
             const config = this.getConfig(windowId);
-            if (config) return config.getProgramInfo();
+            if (config)
+                return config.getProgramInfo();
             return this.getDefaultProgramInfo();
         },
         getDefaultProgramInfo() {
             const w = window;
             const i18n = w['appI18n'] || undefined;
-            const translate = i18n?.translate || (key => key);
+            const translate = i18n?.translate || ((key) => key);
             const programKey = 'programs.default';
             return {
                 modalId: null,
@@ -205,7 +224,7 @@
     window.WindowManager = WindowManager;
     Object.defineProperty(window, 'topZIndex', {
         get: () => WindowManager.topZIndex,
-        set: value => {
+        set: (value) => {
             WindowManager.topZIndex = value;
         },
     });
