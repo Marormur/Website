@@ -4,12 +4,17 @@
 
 ### Refactored - TypeScript Code Quality Improvements
 
-#### DOM Utils Migration (In Progress)
+#### DOM Utils Migration (Complete)
   - **Goal**: Eliminate 20+ duplicate `classList.add/remove('hidden')` patterns across codebase
   - **Approach**: Centralized `window.DOMUtils` module with graceful fallback pattern
   - **Completed**:
     - ✅ Created `src/ts/dom-utils.ts` with show/hide/toggle helpers (null-safe, type-safe)
-    - ✅ Migrated `dialog.ts` (3 occurrences) - All 20 E2E tests passing
+    - ✅ Migrated `dialog.ts` (3)
+    - ✅ Migrated `menubar-utils.ts` (2)
+    - ✅ Migrated `context-menu.ts` (4)
+    - ✅ Migrated instance container creation: `terminal-instance.ts`, `text-editor-instance.ts` (2)
+    - ✅ Migrated fallbacks: `storage.ts` (2), `image-viewer-utils.ts` (3)
+    - ✅ Tests: Quick + Full E2E suites green (MOCK_GITHUB=1)
   - **Pattern**:
     ```typescript
     const domUtils = (window as any).DOMUtils;
@@ -25,7 +30,8 @@
     - Backwards-compatible (no breaking changes)
     - No `require()` issues in browser (uses window global)
     - Foundation for future animation/transition support
-  - **Next**: menubar-utils.ts, context-menu.ts, instance modules (~15 more files)
+  - **Notes**:
+    - `base-window-instance.ts` intentionally left with direct classList for now due to dual export + IIFE pattern; revisit when module pattern is unified.
 
 ### Fixed - Session restore for multi-instance windows
   - **Centralized tab refresh**: Tab setup now happens AFTER session restore for all window types (Terminal, TextEditor, Finder)
