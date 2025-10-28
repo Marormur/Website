@@ -23,10 +23,10 @@ test.describe('TypeScript Integration', () => {
     });
 
     test('all TypeScript-migrated modules are available', async ({ page }) => {
-        const modulesAvailable = await page.evaluate(() => {
+    const modulesAvailable = await page.evaluate(() => {
             return {
                 // Phase 2: New Features
-                WindowTabManager: typeof window.WindowTabManager,
+        WindowTabs: typeof window.WindowTabs,
                 KeyboardShortcuts: typeof window.KeyboardShortcuts,
 
                 // Phase 3: Core Modules
@@ -53,8 +53,8 @@ test.describe('TypeScript Integration', () => {
 
         console.log('TypeScript modules:', modulesAvailable);
 
-        // Phase 2 assertions
-        expect(modulesAvailable.WindowTabManager, 'WindowTabManager').toBe('function'); // Constructor
+    // Phase 2 assertions
+    expect(modulesAvailable.WindowTabs, 'WindowTabs').toBe('object'); // API object
         expect(modulesAvailable.KeyboardShortcuts, 'KeyboardShortcuts').toBe('object');
 
         // Phase 3 Core assertions

@@ -14,7 +14,7 @@ test.describe('Multi-Instance Window Tabs', () => {
                 BaseWindowInstance: typeof window.BaseWindowInstance !== 'undefined',
                 InstanceManager: typeof window.InstanceManager !== 'undefined',
                 WindowChrome: typeof window.WindowChrome !== 'undefined',
-                WindowTabManager: typeof window.WindowTabManager !== 'undefined',
+                WindowTabs: typeof window.WindowTabs !== 'undefined',
                 KeyboardShortcuts: typeof window.KeyboardShortcuts !== 'undefined',
                 SessionManager: typeof window.SessionManager !== 'undefined',
                 MultiInstanceIntegration: typeof window.MultiInstanceIntegration !== 'undefined',
@@ -24,7 +24,7 @@ test.describe('Multi-Instance Window Tabs', () => {
         expect(modules.BaseWindowInstance).toBe(true);
         expect(modules.InstanceManager).toBe(true);
         expect(modules.WindowChrome).toBe(true);
-        expect(modules.WindowTabManager).toBe(true);
+    expect(modules.WindowTabs).toBe(true);
         expect(modules.KeyboardShortcuts).toBe(true);
         expect(modules.SessionManager).toBe(true);
         expect(modules.MultiInstanceIntegration).toBe(true);
