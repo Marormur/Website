@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed - Runtime readiness + menu + launchpad
+  - app-init: Ensure `window.__APP_READY` is reliably set even if `load` is delayed; add 4s fallback timer.
+  - app-init: Add capture-phase document click handler to close Launchpad on background clicks (works with pointer-events:none overlays).
+  - menu: Prevent infinite recursion in `createMenuContext` by avoiding self-delegation when hoisted as a global.
+  - E2E: Quick smoke suite now green (20/20) on Chromium with `MOCK_GITHUB=1`.
+
 ### Fixed - TypeScript Migration Stabilization (Phase 1 Complete ✅)
   - **E2E Tests**: All 20 quick E2E tests passing; browser-global TS migration stable
   - **CommonJS Artifacts**: Removed `exports.__esModule` and `exports.default` from compiled JS to prevent runtime errors
