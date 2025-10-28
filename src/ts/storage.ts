@@ -144,11 +144,23 @@
         } catch (err) {
           console.warn(`Error restoring modal "${id}":`, err);
           // Fallback: try to show element directly
-          el.classList.remove('hidden');
+          const domUtils = (w as unknown as { DOMUtils?: { show?: (el: Element) => void } })
+            .DOMUtils;
+          if (domUtils && typeof domUtils.show === 'function') {
+            domUtils.show(el);
+          } else {
+            el.classList.remove('hidden');
+          }
         }
       } else {
         // Fallback: no dialog instance, just show the element
-        el.classList.remove('hidden');
+        const domUtils = (w as unknown as { DOMUtils?: { show?: (el: Element) => void } })
+          .DOMUtils;
+        if (domUtils && typeof domUtils.show === 'function') {
+          domUtils.show(el);
+        } else {
+          el.classList.remove('hidden');
+        }
       }
     });
 

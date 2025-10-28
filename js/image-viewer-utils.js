@@ -18,7 +18,13 @@
             placeholder.removeAttribute('data-i18n');
             placeholder.removeAttribute('data-i18n-params');
             placeholder.textContent = '';
-            placeholder.classList.add('hidden');
+            const domUtils = window.DOMUtils;
+            if (domUtils && typeof domUtils.hide === 'function') {
+                domUtils.hide(placeholder);
+            }
+            else {
+                placeholder.classList.add('hidden');
+            }
             state.placeholder = null;
             return;
         }
@@ -31,7 +37,16 @@
         }
         state.placeholder = { key: messageKey, params };
         applyTranslations(placeholder);
-        placeholder.classList.remove('hidden');
+        {
+            const domUtils = window
+                .DOMUtils;
+            if (domUtils && typeof domUtils.show === 'function') {
+                domUtils.show(placeholder);
+            }
+            else {
+                placeholder.classList.remove('hidden');
+            }
+        }
     }
     function updateInfo(opts) {
         const infoEl = getEl('image-info');
@@ -52,11 +67,25 @@
         const info = [parts.join(' / '), meta.join(' • ')].filter(Boolean).join(' — ');
         if (info) {
             infoEl.textContent = info;
-            infoEl.classList.remove('hidden');
+            const domUtils = window
+                .DOMUtils;
+            if (domUtils && typeof domUtils.show === 'function') {
+                domUtils.show(infoEl);
+            }
+            else {
+                infoEl.classList.remove('hidden');
+            }
         }
         else {
             infoEl.textContent = '';
-            infoEl.classList.add('hidden');
+            const domUtils = window
+                .DOMUtils;
+            if (domUtils && typeof domUtils.hide === 'function') {
+                domUtils.hide(infoEl);
+            }
+            else {
+                infoEl.classList.add('hidden');
+            }
         }
     }
     const state = { placeholder: null };
