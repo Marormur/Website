@@ -12,9 +12,15 @@
     }
 
     function hideMenuDropdowns(): void {
+        const domUtils = (window as any).DOMUtils;
+        
         document.querySelectorAll('.menu-dropdown').forEach(dropdown => {
             if (!dropdown.classList.contains('hidden')) {
-                dropdown.classList.add('hidden');
+                if (domUtils && typeof domUtils.hide === 'function') {
+                    domUtils.hide(dropdown);
+                } else {
+                    dropdown.classList.add('hidden');
+                }
             }
         });
         document.querySelectorAll('[data-menubar-trigger-button="true"]').forEach(button => {
@@ -69,7 +75,13 @@
                 if (!menu) return;
             }
 
-            menu.classList.remove('hidden');
+            const domUtils = (window as any).DOMUtils;
+            if (domUtils && typeof domUtils.show === 'function') {
+                domUtils.show(menu);
+            } else {
+                menu.classList.remove('hidden');
+            }
+            
             trigger.setAttribute('aria-expanded', 'true');
         }
     }

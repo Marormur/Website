@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+### Refactored - TypeScript Code Quality Improvements
+
+#### DOM Utils Migration (In Progress)
+  - **Goal**: Eliminate 20+ duplicate `classList.add/remove('hidden')` patterns across codebase
+  - **Approach**: Centralized `window.DOMUtils` module with graceful fallback pattern
+  - **Completed**:
+    - ✅ Created `src/ts/dom-utils.ts` with show/hide/toggle helpers (null-safe, type-safe)
+    - ✅ Migrated `dialog.ts` (3 occurrences) - All 20 E2E tests passing
+  - **Pattern**:
+    ```typescript
+    const domUtils = (window as any).DOMUtils;
+    if (domUtils && typeof domUtils.show === 'function') {
+        domUtils.show(element);
+    } else {
+        element.classList.remove('hidden'); // fallback
+    }
+    ```
+  - **Benefits**:
+    - Centralized DOM manipulation logic
+    - Type-safe with built-in null-checks
+    - Backwards-compatible (no breaking changes)
+    - No `require()` issues in browser (uses window global)
+    - Foundation for future animation/transition support
+  - **Next**: menubar-utils.ts, context-menu.ts, instance modules (~15 more files)
+
 ### Fixed - Session restore for multi-instance windows
   - **Centralized tab refresh**: Tab setup now happens AFTER session restore for all window types (Terminal, TextEditor, Finder)
   - **Fixed empty content bug**: Windows restored from session now properly show their content and tabs
