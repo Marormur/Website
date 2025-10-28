@@ -40,7 +40,6 @@ console.log('SessionManager loaded');
     let debounceDelay = DEFAULT_DEBOUNCE_MS;
     let pendingSaveTypes = new Set<string>(); // Track which instance types need saving
     let quotaExceeded = false;
-    let lastSaveAttempt = 0;
     let saveInProgress = false;
 
     // ===== Storage Helpers =====
