@@ -60,6 +60,10 @@ interface GlobalModules {
     DockSystem?: {
         initDockDragDrop?: () => void;
     };
+    SessionManager?: {
+        init?: () => void;
+        restoreSession?: () => boolean;
+    };
 }
 
 /**
@@ -231,6 +235,22 @@ function initApp(): void {
     funcs.initDockMagnification?.();
     if (win.DockSystem && typeof win.DockSystem.initDockDragDrop === 'function') {
         win.DockSystem.initDockDragDrop();
+    }
+    
+    // Initialize SessionManager for auto-save and restore session if available
+    if (win.SessionManager) {
+        try {
+            win.SessionManager.init?.();
+            // Attempt to restore session after all managers are initialized
+            // This happens after Terminal/TextEditor managers are ready
+            setTimeout(() => {
+                if (win.SessionManager?.restoreSession) {
+                    win.SessionManager.restoreSession();
+                }
+            }, 100); // Small delay to ensure all managers are ready
+        } catch (err) {
+            console.warn('SessionManager initialization failed:', err);
+        }
     }
 
     // Defensive: ensure the dock is visible. Some environments or timing races

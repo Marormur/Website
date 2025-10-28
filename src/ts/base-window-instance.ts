@@ -121,6 +121,20 @@ export class BaseWindowInstance {
             modified: Date.now(),
         };
         this.emit('stateChanged', { oldState, newState: this.state });
+        
+        // Trigger auto-save when state changes
+        this._triggerAutoSave();
+    }
+    
+    private _triggerAutoSave(): void {
+        const w = window as any;
+        if (w.SessionManager && typeof w.SessionManager.saveInstanceType === 'function') {
+            try {
+                w.SessionManager.saveInstanceType(this.type);
+            } catch (error) {
+                console.warn('Failed to trigger auto-save:', error);
+            }
+        }
     }
 
     getState(): Record<string, any> {
@@ -328,6 +342,21 @@ console.log('BaseWindowInstance loaded');
                 modified: Date.now(),
             };
             this.emit('stateChanged', { oldState, newState: this.state } as StateChangeEvent);
+            
+            // Trigger auto-save when state changes
+            this._triggerAutoSave();
+        }
+        
+        private _triggerAutoSave(): void {
+            const w = window as unknown as Record<string, unknown>;
+            const SessionManager = w.SessionManager as Record<string, unknown> | undefined;
+            if (SessionManager && typeof SessionManager.saveInstanceType === 'function') {
+                try {
+                    (SessionManager.saveInstanceType as (type: string) => void)(this.type);
+                } catch (error) {
+                    console.warn('Failed to trigger auto-save:', error);
+                }
+            }
         }
 
         getState(): Record<string, unknown> {
