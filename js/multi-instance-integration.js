@@ -82,6 +82,9 @@ console.log('MultiInstanceIntegration loaded');
                     window.SessionManager.registerManager('finder', window.FinderInstanceManager);
                 }
 
+                // Restore saved sessions before starting auto-save
+                window.SessionManager.restoreAllSessions();
+
                 // Start auto-save
                 window.SessionManager.startAutoSave();
             }
