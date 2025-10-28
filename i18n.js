@@ -179,6 +179,87 @@
                     title: 'Terminal',
                 },
             },
+            photos: {
+                title: 'Fotos',
+                badge: 'PICSUM CLOUD',
+                sidebar: {
+                    library: 'Bibliothek',
+                    filters: 'Filter',
+                    refresh: 'Neu laden',
+                    sourceNote: 'Quelle: Lorem Picsum – zufällige kuratierte Fotokollektionen.',
+                    items: {
+                        all: 'Alle Fotos',
+                        favorites: 'Favoriten',
+                        landscape: 'Querformat',
+                        portrait: 'Hochformat',
+                        square: 'Quadratisch',
+                    },
+                },
+                segments: {
+                    moments: 'Momente',
+                    collections: 'Sammlungen',
+                    years: 'Jahre',
+                },
+                search: {
+                    placeholder: 'Nach Autor suchen',
+                    clear: 'Suche löschen',
+                },
+                status: {
+                    countPlaceholder: '– Fotos',
+                    loading: 'Lade Fotos…',
+                    count: '{count} {label} • {segment}',
+                },
+                errors: {
+                    heading: 'Fehler beim Laden',
+                    description: 'Bitte überprüfe deine Verbindung und versuche es erneut.',
+                    detailImage: 'Das Foto konnte nicht geladen werden.',
+                },
+                buttons: {
+                    retry: 'Erneut versuchen',
+                },
+                empty: {
+                    title: 'Keine Fotos gefunden',
+                    description: 'Passe Suche oder Filter an, um weitere Ergebnisse zu sehen.',
+                },
+                placeholder: 'Wähle ein Foto aus, um Details zu sehen.',
+                detail: {
+                    titleFallback: 'Foto',
+                    favoriteAdd: 'Zu Favoriten',
+                    favoriteRemove: 'Favorit entfernen',
+                    favoriteUnavailable: 'Nicht verfügbar',
+                    download: 'Herunterladen',
+                    open: 'Auf Lorem Picsum ansehen',
+                    loader: 'Foto wird geladen…',
+                    prev: 'Vorheriges Foto',
+                    next: 'Nächstes Foto',
+                    imageAlt: 'Ausgewähltes Foto',
+                    unknownPhoto: 'Unbekanntes Foto',
+                    unknownPhotographer: 'Unbekannter Fotograf',
+                    externalLabel: 'Externes Foto',
+                    dimensions: 'Auflösung: {width} × {height}px',
+                    downloadFilename: 'foto-{id}.jpg',
+                    externalCounter: 'Externes Bild',
+                    counter: '{index} von {total}',
+                    externalFile: 'Externe Datei',
+                },
+                orientations: {
+                    landscape: 'Querformat',
+                    portrait: 'Porträt',
+                    square: 'Quadrat',
+                },
+                collections: {
+                    landscape: 'Horizonte',
+                    portrait: 'Porträts',
+                    square: 'Quadrate',
+                },
+                labels: {
+                    photoSingular: 'Foto',
+                    photoPlural: 'Fotos',
+                },
+                gallery: {
+                    alt: 'Foto von {author}',
+                },
+            },
             finder: {
                 // Toolbar
                 toolbar: {
@@ -644,6 +725,87 @@
                 },
                 finder: {
                     title: 'Finder',
+                },
+                photos: {
+                    title: 'Photos',
+                    badge: 'PICSUM CLOUD',
+                    sidebar: {
+                        library: 'Library',
+                        filters: 'Filters',
+                        refresh: 'Reload',
+                        sourceNote: 'Source: Lorem Picsum — curated random photo collections.',
+                        items: {
+                            all: 'All Photos',
+                            favorites: 'Favorites',
+                            landscape: 'Landscape',
+                            portrait: 'Portrait',
+                            square: 'Square',
+                        },
+                    },
+                    segments: {
+                        moments: 'Moments',
+                        collections: 'Collections',
+                        years: 'Years',
+                    },
+                    search: {
+                        placeholder: 'Search by author',
+                        clear: 'Clear search',
+                    },
+                    status: {
+                        countPlaceholder: '– Photos',
+                        loading: 'Loading photos…',
+                        count: '{count} {label} • {segment}',
+                    },
+                    errors: {
+                        heading: 'Loading error',
+                        description: 'Please check your connection and try again.',
+                        detailImage: 'The photo could not be loaded.',
+                    },
+                    buttons: {
+                        retry: 'Try again',
+                    },
+                    empty: {
+                        title: 'No photos found',
+                        description: 'Adjust search or filters to see more results.',
+                    },
+                    placeholder: 'Select a photo to view details.',
+                    detail: {
+                        titleFallback: 'Photo',
+                        favoriteAdd: 'Add to favorites',
+                        favoriteRemove: 'Remove favorite',
+                        favoriteUnavailable: 'Unavailable',
+                        download: 'Download',
+                        open: 'View on Lorem Picsum',
+                        loader: 'Loading photo…',
+                        prev: 'Previous photo',
+                        next: 'Next photo',
+                        imageAlt: 'Selected photo',
+                        unknownPhoto: 'Unknown photo',
+                        unknownPhotographer: 'Unknown photographer',
+                        externalLabel: 'External photo',
+                        dimensions: 'Resolution: {width} × {height}px',
+                        downloadFilename: 'photo-{id}.jpg',
+                        externalCounter: 'External image',
+                        counter: '{index} of {total}',
+                        externalFile: 'External file',
+                    },
+                    orientations: {
+                        landscape: 'Landscape',
+                        portrait: 'Portrait',
+                        square: 'Square',
+                    },
+                    collections: {
+                        landscape: 'Landscapes',
+                        portrait: 'Portraits',
+                        square: 'Squares',
+                    },
+                    labels: {
+                        photoSingular: 'Photo',
+                        photoPlural: 'Photos',
+                    },
+                    gallery: {
+                        alt: 'Photo by {author}',
+                    },
                 },
                 programInfo: {
                     title: 'About this app',
