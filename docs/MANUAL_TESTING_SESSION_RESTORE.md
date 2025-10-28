@@ -106,7 +106,10 @@ This guide provides steps to manually test the session restore functionality.
 1. In Console, inject a session with transient modal (uses example modal IDs):
    ```javascript
    // Note: 'program-info-modal' is a transient modal in this application
-   // 'about-modal' is a persistent modal - adjust IDs based on your setup
+   // 'about-modal' is a persistent modal - adjust IDs based on your setup.
+   // To check which modals are transient or persistent in your setup, open the browser console and run:
+   //   WindowManager.getTransientWindowIds()   // lists transient modals
+   //   WindowManager.getPersistentWindowIds()  // lists persistent modals
    const sessionData = {
        version: '1.1',
        timestamp: Date.now(),

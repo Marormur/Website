@@ -261,10 +261,9 @@ test.describe('Session Restore - Full Integration @basic', () => {
         await expect(dock).toBeVisible({ timeout: 5000 });
 
         // Should have logged a warning about missing modal
-        const hasWarning = consoleWarnings.some(msg => 
-            msg.includes('not found') || msg.includes('non-existent')
-        );
-        expect(hasWarning).toBe(true);
+        const expectedWarning = 'SessionManager: Modal "non-existent-modal" not found in DOM';
+        const hasSpecificWarning = consoleWarnings.some(msg => msg === expectedWarning);
+        expect(hasSpecificWarning).toBe(true);
     });
 
     test('should be idempotent - running restore twice yields same result', async ({ page }) => {
