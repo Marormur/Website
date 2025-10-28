@@ -470,10 +470,10 @@ if ((window as any)[guardKey]) {
                 if (next) next.focus();
             } else if (e.key === 'Home') {
                 e.preventDefault();
-                items[0].focus();
+                items[0]?.focus();
             } else if (e.key === 'End') {
                 e.preventDefault();
-                items[items.length - 1].focus();
+                items[items.length - 1]?.focus();
             } else if (e.key === 'Enter' || e.key === ' ') {
                 if (
                     document.activeElement &&
