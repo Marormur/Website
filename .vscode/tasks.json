@@ -284,18 +284,6 @@
       }
     },
     {
-      "label": "Validate: All",
-      "type": "shell",
-      "command": "npm run validate",
-      "group": "build"
-    },
-    {
-      "label": "Validate: All",
-      "type": "shell",
-      "command": "npm run validate",
-      "group": "build"
-    },
-    {
       "label": "Quick E2E to capture readiness and console errors",
       "type": "shell",
       "command": "npm run test:e2e:quick",
@@ -344,6 +332,54 @@
         "Bundle: Watch",
         "Start Dev Server"
       ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Clean: All",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "$paths = @('node_modules', 'dist', 'test-results', 'test-output.json', 'playwright-report', 'coverage', '.playwright-mcp'); foreach ($p in $paths) { if (Test-Path $p) { Remove-Item -Recurse -Force $p; Write-Host \"✓ Removed $p\" } else { Write-Host \"⊘ $p not found\" } }"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Restart Dev Environment",
+      "dependsOn": ["Stop Dev Server", "Dev Environment: Start All"],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Quick Check",
+      "type": "shell",
+      "command": "npm run typecheck ; npm run lint",
+      "group": {
+        "kind": "build"
+      },
+      "problemMatcher": ["$tsc", "$eslint-stylish"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Pre-Commit: Simulate",
+      "type": "shell",
+      "command": "npx lint-staged --diff",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
