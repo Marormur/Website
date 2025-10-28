@@ -45,7 +45,10 @@ body > header {
     top: 0;
     left: 0;
     right: 0;
-    z-index: 4000 !important;
+    /* Elevate menubar above app windows so dropdowns are clickable.
+       Launchpad uses z-index: 11000, so menubar at 10000 stays below it
+       but above dialogs/windows (<= ~9999). */
+    z-index: 10000 !important;
 }
 
 .desktop-area {
