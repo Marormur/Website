@@ -38,6 +38,8 @@ console.log('InstanceManager loaded');
                 this.activeInstanceId = instanceId;
                 this._setupInstanceEvents(instance);
                 console.log(`Created instance: ${instanceId}`);
+                // Trigger auto-save after instance creation
+                this._triggerAutoSave();
                 return instance;
             }
             catch (error) {
@@ -96,6 +98,8 @@ console.log('InstanceManager loaded');
                 this.activeInstanceId = lastId ?? null;
             }
             console.log(`Destroyed instance: ${instanceId}`);
+            // Trigger auto-save after instance destruction
+            this._triggerAutoSave();
         }
         destroyAllInstances() {
             this.instances.forEach((instance) => {
@@ -164,6 +168,17 @@ console.log('InstanceManager loaded');
             instance.on('destroyed', () => {
                 this.instances.delete(instance.instanceId);
             });
+            // Hook state changes for auto-save
+            instance.on('stateChanged', () => {
+                this._triggerAutoSave();
+            });
+        }
+        _triggerAutoSave() {
+            const w = window;
+            const SessionManager = w['SessionManager'];
+            if (SessionManager && typeof SessionManager.saveAll === 'function') {
+                SessionManager.saveAll({ debounce: true });
+            }
         }
     }
     window.InstanceManager = InstanceManager;

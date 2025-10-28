@@ -115,6 +115,16 @@ console.log('API loaded');
       'getDialogWindowElement',
     ] as const),
 
+    session: createModuleProxy('SessionManager', [
+      'saveAll',
+      'loadSession',
+      'clearSession',
+      'setDebounceDelay',
+      'setEnabled',
+      'getConfig',
+      'init',
+    ] as const),
+
     finder: createModuleProxy('FinderSystem', ['init', 'openFinder', 'closeFinder'] as const),
 
     textEditor: {

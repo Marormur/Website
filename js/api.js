@@ -91,6 +91,15 @@ console.log('API loaded');
             'resetWindowLayout',
             'getDialogWindowElement',
         ]),
+        session: createModuleProxy('SessionManager', [
+            'saveAll',
+            'loadSession',
+            'clearSession',
+            'setDebounceDelay',
+            'setEnabled',
+            'getConfig',
+            'init',
+        ]),
         finder: createModuleProxy('FinderSystem', ['init', 'openFinder', 'closeFinder']),
         textEditor: {
             init: (container) => callWindowMethod('TextEditorSystem', 'init', container),

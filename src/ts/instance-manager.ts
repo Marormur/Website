@@ -83,6 +83,10 @@ console.log('InstanceManager loaded');
         this._setupInstanceEvents(instance);
 
         console.log(`Created instance: ${instanceId}`);
+
+        // Trigger auto-save after instance creation
+        this._triggerAutoSave();
+
         return instance;
       } catch (error) {
         console.error('Failed to initialize instance:', error);
@@ -153,6 +157,9 @@ console.log('InstanceManager loaded');
       }
 
       console.log(`Destroyed instance: ${instanceId}`);
+
+      // Trigger auto-save after instance destruction
+      this._triggerAutoSave();
     }
 
     destroyAllInstances(): void {
@@ -233,6 +240,21 @@ console.log('InstanceManager loaded');
       instance.on('destroyed', () => {
         this.instances.delete(instance.instanceId);
       });
+
+      // Hook state changes for auto-save
+      instance.on('stateChanged', () => {
+        this._triggerAutoSave();
+      });
+    }
+
+    private _triggerAutoSave(): void {
+      const w = window as unknown as Record<string, unknown>;
+      const SessionManager = w['SessionManager'] as
+        | { saveAll?: (options?: { debounce?: boolean }) => void }
+        | undefined;
+      if (SessionManager && typeof SessionManager.saveAll === 'function') {
+        SessionManager.saveAll({ debounce: true });
+      }
     }
   }
 

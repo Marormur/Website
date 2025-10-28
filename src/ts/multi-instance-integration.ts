@@ -269,10 +269,13 @@
             } else {
                 const all = integration.manager.getAllInstances();
                 if (all.length > 0) {
-                    const firstId = all[0].instanceId;
-                    // Ensure a consistent active selection
-                    integration.manager.setActiveInstance(firstId);
-                    this.showInstance(type, firstId);
+                    const first = all[0];
+                    if (first) {
+                        const firstId = first.instanceId;
+                        // Ensure a consistent active selection
+                        integration.manager.setActiveInstance(firstId);
+                        this.showInstance(type, firstId);
+                    }
                 }
             }
         }
