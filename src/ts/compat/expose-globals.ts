@@ -43,7 +43,7 @@ import '../github-api';
 import '../legacy/window-configs.js'; // Must load before windows are registered
 import '../legacy/finder-instance.js';
 import '../legacy/launchpad.js';
-import '../legacy/multi-instance-integration.js';
+import '../multi-instance-integration';
 import '../legacy/desktop.js';
 import '../legacy/system.js';
 
