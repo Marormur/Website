@@ -758,6 +758,10 @@ console.log('FinderInstance loaded');
                     img.src = src;
                     img.classList.remove('hidden');
                 }
+                // Notify Photos App about external image if available
+                if (window.PhotosApp && typeof window.PhotosApp.showExternalImage === 'function') {
+                    window.PhotosApp.showExternalImage({ src, name });
+                }
                 if (window.API?.window?.open) {
                     window.API.window.open('image-modal');
                 }

@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Added - Photos App with macOS-Style Gallery 📸 (28. Oktober 2025)
+  - **New Application**: Photos App with Picsum API integration
+    - Three view modes: **Moments** (by photographer), **Collections** (by orientation), **Years** (2014-2024)
+    - Filtering: All Photos, Favorites, Landscape, Portrait, Square
+    - Search by photographer name
+    - Detail view with navigation (prev/next), favorite toggle, download, external link
+    - Full **i18n support** (German/English) with 90+ translation keys
+    - External image support for Finder integration
+    - Client-side favorite management (session-only)
+  - **Files Added**:
+    - `src/ts/photos-app.ts` (1,006 lines) - TypeScript source with Picsum API client
+    - `js/photos-app.js` + source map - Compiled JavaScript
+    - Photos-specific CSS components in `src/css/style.css`
+    - Complete German and English translations in `i18n.js`
+    - Photos App modal HTML in `index.html` (247 lines)
+  - **Integration**:
+    - Finder now notifies Photos App when opening images via `window.PhotosApp.showExternalImage()`
+    - Replaces old simple image viewer with full-featured gallery application
+  - **Technical**: TypeScript strict mode compliant, builds successfully with `npm run build:ts`
+
 ### Verified - Window Menu Multi-Instance Integration ✅ (28. Oktober 2025)
   - Confirmed that `src/ts/menu.ts` already implements complete Window menu functionality:
     - Dynamic "Fenster/Window" section in menubar with instance list
