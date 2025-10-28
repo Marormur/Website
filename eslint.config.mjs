@@ -14,10 +14,15 @@ const compat = new FlatCompat({
 });
 
 export default [
-    // JavaScript Dateien
+    // JavaScript Dateien (kompilierte TypeScript-Files in js/ ausschließen)
     {
         files: ['**/*.js'],
-        ignores: ['tests/**/*.spec.js', 'playwright.config.js', 'postcss.config.js'],
+        ignores: [
+            'tests/**/*.spec.js',
+            'playwright.config.js',
+            'postcss.config.js',
+            'js/**/*.js', // Ignore compiled TypeScript output
+        ],
         languageOptions: {
             ecmaVersion: 'latest',
             sourceType: 'script',

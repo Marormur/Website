@@ -22,9 +22,13 @@ body {
 /* Launchpad modal: Allow clicks to pass through the wrapper and centering overlay
    to underlying UI (dock/menubar) while keeping the inner card interactive.
    The capture-phase document click handler in app-init.js will close the
-   launchpad when clicking outside the inner card. */
+   launchpad when clicking outside the inner card. 
+   
+   z-index must be higher than any window (windows can reach ~10000+) but below
+   menubar dropdowns (2147483647). Using 2147483600 ensures Launchpad overlays
+   all windows while staying below the menubar. */
 #launchpad-modal {
-    z-index: 11000 !important;
+    z-index: 2147483600 !important;
     pointer-events: none !important;
 }
 #launchpad-modal > .absolute {
@@ -742,8 +746,13 @@ html.dark #snap-preview-overlay {
 }
 
 /* --- macOS‑ähnliches Dock --- */
+/* Dock must stay above all windows. Windows can reach z-index ~10000+,
+   so we use 2147483550 to ensure the dock is always visible and clickable.
+   This is below the menubar (2147483500 for header, 2147483647 for dropdowns)
+   and below Launchpad (2147483600). */
 #dock {
     pointer-events: auto;
+    z-index: 2147483550 !important;
 }
 
 #dock .dock-tray {

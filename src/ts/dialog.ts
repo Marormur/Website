@@ -87,6 +87,13 @@ export class Dialog {
     close() {
         if (this.modal.classList.contains('hidden')) return;
         this.modal.classList.add('hidden');
+        
+        // Remove from z-index manager stack
+        const zIndexManager = (window as any).__zIndexManager;
+        if (zIndexManager && typeof zIndexManager.removeWindow === 'function') {
+            zIndexManager.removeWindow(this.modal.id);
+        }
+        
         (window as any).saveOpenModals?.();
         (window as any).updateDockIndicators?.();
         (window as any).updateProgramLabelByTopModal?.();
@@ -245,11 +252,77 @@ export class Dialog {
     }
 
     bringToFront() {
-        (window as any).topZIndex =
-            (typeof (window as any).topZIndex === 'number' ? (window as any).topZIndex : 1000) + 1;
-        const zValue = (window as any).topZIndex.toString();
-        this.modal.style.zIndex = zValue as any;
-        if (this.windowEl) this.windowEl.style.zIndex = zValue as any;
+        // Use a robust z-index management system that maintains a sorted window stack
+        // and reassigns z-indexes to prevent reaching the maximum
+        const zIndexManager = (window as any).__zIndexManager || this.initZIndexManager();
+        zIndexManager.bringToFront(this.modal.id, this.modal, this.windowEl);
+    }
+
+    private initZIndexManager() {
+        // Initialize global z-index manager if not exists
+        if ((window as any).__zIndexManager) {
+            return (window as any).__zIndexManager;
+        }
+
+        const BASE_Z_INDEX = 1000;
+        const MAX_WINDOW_Z_INDEX = 2147483500; // Below Dock (2147483550) and Launchpad (2147483600)
+        const windowStack: string[] = []; // Ordered list of window IDs (bottom to top)
+
+        (window as any).__zIndexManager = {
+            bringToFront(windowId: string, _modal: HTMLElement, _windowEl?: HTMLElement | null) {
+                // Remove from current position if exists
+                const currentIndex = windowStack.indexOf(windowId);
+                if (currentIndex !== -1) {
+                    windowStack.splice(currentIndex, 1);
+                }
+
+                // Add to top of stack
+                windowStack.push(windowId);
+
+                // Reassign z-indexes to all windows in stack
+                // This prevents z-index from growing indefinitely
+                windowStack.forEach((id, index) => {
+                    const zIndex = BASE_Z_INDEX + index;
+                    const element = document.getElementById(id);
+                    
+                    if (element) {
+                        // Clamp to maximum to ensure critical UI elements stay on top
+                        const clampedZIndex = Math.min(zIndex, MAX_WINDOW_Z_INDEX);
+                        element.style.zIndex = clampedZIndex.toString();
+                        
+                        // Also update windowEl if it's a separate element
+                        const win = element.querySelector('.window-container') as HTMLElement;
+                        if (win) {
+                            win.style.zIndex = clampedZIndex.toString();
+                        }
+                    }
+                });
+
+                // Update legacy topZIndex for compatibility
+                (window as any).topZIndex = Math.min(
+                    BASE_Z_INDEX + windowStack.length,
+                    MAX_WINDOW_Z_INDEX
+                );
+            },
+
+            removeWindow(windowId: string) {
+                const index = windowStack.indexOf(windowId);
+                if (index !== -1) {
+                    windowStack.splice(index, 1);
+                }
+            },
+
+            getWindowStack() {
+                return [...windowStack];
+            },
+
+            reset() {
+                windowStack.length = 0;
+                (window as any).topZIndex = BASE_Z_INDEX;
+            }
+        };
+
+        return (window as any).__zIndexManager;
     }
 
     refocus() {

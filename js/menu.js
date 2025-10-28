@@ -1,11 +1,11 @@
 /* EXPORTS STUB FOR BROWSER */
 var exports = {};
-'use strict';
+"use strict";
 /*
  * src/ts/menu.ts
  * Typed port of js/menu.js
  */
-Object.defineProperty(exports, '__esModule', { value: true });
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerMenuAction = registerMenuAction;
 exports.normalizeMenuItems = normalizeMenuItems;
 exports.renderApplicationMenu = renderApplicationMenu;

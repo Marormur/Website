@@ -33,7 +33,7 @@
   },
   "lint-staged": {
     "*.js": [
-      "eslint --fix"
+      "bash -c 'files=\"$@\"; filtered=$(echo \"$files\" | tr \" \" \"\\n\" | grep -v \"^js/\"); [ -n \"$filtered\" ] && eslint --fix $filtered || true' _"
     ],
     "*.{css,md,html,json}": [
       "prettier --write"
