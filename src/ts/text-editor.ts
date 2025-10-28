@@ -38,6 +38,55 @@ interface TextEditorSystemInternal extends TextEditorSystemAPI {
     findInput: HTMLInputElement | null;
     replaceInput: HTMLInputElement | null;
     toastContainer: HTMLElement | null;
+    
+    // Internal methods
+    init(containerOrId: HTMLElement | string): void;
+        render(): void;
+        cacheElements(): void;
+        loadWrapPreference(): void;
+        attachListeners(): void;
+        loadSavedContent(): void;
+        syncSaveButtonState(): void;
+        registerActions(): void;
+        updateCSSVariables(): void;
+        applyWrapMode(mode?: string): void;
+        setStatusPlain(msg: string): void;
+        focusEditor(): void;
+        handleEditorInput(): void;
+        updateWordCount(): void;
+        updateCursorPosition(): void;
+        handleFileSelect(event: Event): void;
+        updateDocumentTitle(): void;
+        clearStatus(): void;
+        toggleWrapMode(): void;
+        execCommand(cmd: string): void;
+            handlePaste(e?: Event): void;
+        selectAll(): void;
+        wrapSelection(before: string, after: string): void;
+        insertHeading(level: number): void;
+        insertList(type: string): void;
+        alignText(align: string): void;
+        insertLink(): void;
+        toggleFindReplace(): void;
+        findNext(): void;
+        replaceOne(): void;
+        replaceAll(): void;
+        closeFindReplace(): void;
+            formatFileLabel(meta?: unknown): string;
+        setStatusLocalized(key: string, params?: unknown): void;
+            resolveTranslation(key: string, params?: unknown): { text: string; translated: boolean };
+        showToast(msg: string, type?: string): void;
+        insertTextAtCursor(text: string): void;
+        showInputModal(title: string, defaultValue?: string, placeholder?: string): Promise<string | null>;
+            applyStatusState(state?: StatusState): void;
+            clearEditor(): void;
+            openFile(): void;
+            saveFile(): void;
+        loadRemoteFile(payload: Partial<RemoteFilePayload>): void;
+        showLoading(payload?: unknown): void;
+        showLoadError(payload?: unknown): void;
+        handleMenuAction(action: string): void;
+        destroy(): void;
 }
 
 const TextEditorSystem: TextEditorSystemInternal = {
@@ -147,7 +196,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
 
             // Apply i18n translations
             if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
-                window.appI18n.applyTranslations(this.container);
+                window.appI18n.applyTranslations();
             }
         },
 
@@ -230,10 +279,10 @@ const TextEditorSystem: TextEditorSystemInternal = {
          * Apply wrap mode
          * @param {string} mode - Wrap mode (soft|off)
          */
-        applyWrapMode(mode: string): void {
+        applyWrapMode(mode?: string): void {
             if (!this.editor) return;
-
-            const normalized = mode === 'soft' ? 'soft' : 'off';
+            const effective = mode ?? this.wrapMode;
+            const normalized = effective === 'soft' ? 'soft' : 'off';
             this.wrapMode = normalized;
             this.editor.wrap = normalized;
             this.editor.style.whiteSpace = normalized === 'soft' ? 'pre-wrap' : 'pre';
@@ -373,7 +422,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
                     this.updateWordCount();
                     this.updateCursorPosition();
                 }
-                this.currentRemoteFile = { fileName: file.name };
+                    this.currentRemoteFile = { fileName: file.name, content: '' };
                 this.updateDocumentTitle();
                 this.setStatusPlain(file.name);
                 this.syncSaveButtonState();
@@ -496,7 +545,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
         /**
          * Handle paste operation
          */
-        handlePaste(): void {
+    handlePaste(e?: Event): void {
             this.focusEditor();
 
             if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
@@ -645,7 +694,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
                     }
 
                     if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
-                        window.appI18n.applyTranslations(this.statusBar);
+                        window.appI18n.applyTranslations();
                     }
                 } else {
                     this.statusBar.removeAttribute('data-i18n');
@@ -674,38 +723,38 @@ const TextEditorSystem: TextEditorSystemInternal = {
 
             const fallbackMessages = {
                 'textEditor.documentTitle': () => 'Texteditor',
-                'textEditor.documentTitleWithFile': p => {
-                    const fileName = p && p.fileName ? p.fileName : '';
+                    'textEditor.documentTitleWithFile': (p: unknown) => {
+                        const fileName = p && (p as any).fileName ? (p as any).fileName : '';
                     return fileName ? `Texteditor – ${fileName}` : 'Texteditor';
                 },
                 'textEditor.status.loading': () => 'Lade Datei …',
-                'textEditor.status.loadingWithLabel': p => {
-                    const label = p && p.label ? p.label : '';
+                    'textEditor.status.loadingWithLabel': (p: unknown) => {
+                        const label = p && (p as any).label ? (p as any).label : '';
                     return label ? `${label} (lädt …)` : 'Lade Datei …';
                 },
                 'textEditor.status.loadError': () => 'Datei konnte nicht geladen werden.',
                 'textEditor.status.rateLimit': () =>
                     'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
-                'textEditor.status.wordCount': p => {
-                    const words = p && typeof p.words === 'number' ? p.words : 0;
-                    const chars = p && typeof p.chars === 'number' ? p.chars : 0;
+                    'textEditor.status.wordCount': (p: unknown) => {
+                        const words = p && typeof (p as any).words === 'number' ? (p as any).words : 0;
+                        const chars = p && typeof (p as any).chars === 'number' ? (p as any).chars : 0;
                     return `Words: ${words} | Characters: ${chars}`;
                 },
-                'textEditor.status.position': p => {
-                    const line = p && typeof p.line === 'number' ? p.line : 1;
-                    const col = p && typeof p.col === 'number' ? p.col : 1;
+                    'textEditor.status.position': (p: unknown) => {
+                        const line = p && typeof (p as any).line === 'number' ? (p as any).line : 1;
+                        const col = p && typeof (p as any).col === 'number' ? (p as any).col : 1;
                     return `Line ${line}, Col ${col}`;
                 },
                 'textEditor.findReplace.noMatch': () => 'No match found',
-                'textEditor.findReplace.replacedCount': p => {
-                    const count = p && typeof p.count === 'number' ? p.count : 0;
+                    'textEditor.findReplace.replacedCount': (p: unknown) => {
+                        const count = p && typeof (p as any).count === 'number' ? (p as any).count : 0;
                     return `Replaced ${count} occurrence(s)`;
                 },
-            };
+                } as Record<string, ((...args: unknown[]) => string) | (() => string)>;
 
             try {
                 if (window.appI18n && typeof window.appI18n.translate === 'function') {
-                    const translated = window.appI18n.translate(key, params);
+                    const translated = window.appI18n.translate(key);
                     if (translated && translated !== key) {
                         return { text: translated, translated: true };
                     }
@@ -811,7 +860,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
         handleMenuAction(action: string): void {
             if (!action) return;
 
-            const actionMap = {
+            const actionMap: Record<string, string> = {
                 'file:new': 'textEditor:clear',
                 'file:open': 'textEditor:open',
                 'file:save': 'textEditor:save',
@@ -959,14 +1008,14 @@ const TextEditorSystem: TextEditorSystemInternal = {
 
             const urlLabel =
                 this.resolveTranslation('textEditor.insertLink.enterUrl').text || 'Enter URL:';
-            this.showInputModal(urlLabel, 'https://example.com', 'https://').then(url => {
+            this.showInputModal(urlLabel, 'https://example.com', 'https://').then((url: string | null) => {
                 if (!url) return;
 
                 const linkText = selectedText || 'link text';
                 const markdown = `[${linkText}](${url})`;
 
-                this.editor.setRangeText(markdown, start, end, 'end');
-                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+                this.editor?.setRangeText(markdown, start, end, 'end');
+                this.editor?.dispatchEvent(new Event('input', { bubbles: true }));
                 this.focusEditor();
             });
         },
@@ -982,16 +1031,11 @@ const TextEditorSystem: TextEditorSystemInternal = {
             const trimmedText = text.trim();
             const words = trimmedText === '' ? 0 : trimmedText.split(/\s+/).length;
 
-            // Use i18n if available
-            if (window.appI18n && typeof window.appI18n.translate === 'function') {
-                const translated = window.appI18n.translate('textEditor.status.wordCount', {
-                    words,
-                    chars,
-                });
-                if (translated && translated !== 'textEditor.status.wordCount') {
-                    this.wordCountDisplay.textContent = translated;
-                    return;
-                }
+            // Use internal resolver (handles fallback + params)
+            const wc = this.resolveTranslation('textEditor.status.wordCount', { words, chars });
+            if (wc.translated) {
+                this.wordCountDisplay.textContent = wc.text;
+                return;
             }
 
             // Fallback to English
@@ -1010,18 +1054,14 @@ const TextEditorSystem: TextEditorSystemInternal = {
             const textBeforeCursor = text.substring(0, pos);
             const lines = textBeforeCursor.split('\n');
             const line = lines.length;
-            const col = lines[lines.length - 1].length + 1;
+            const lastLine = lines[lines.length - 1] || '';
+            const col = lastLine.length + 1;
 
-            // Use i18n if available
-            if (window.appI18n && typeof window.appI18n.translate === 'function') {
-                const translated = window.appI18n.translate('textEditor.status.position', {
-                    line,
-                    col,
-                });
-                if (translated && translated !== 'textEditor.status.position') {
-                    this.lineColDisplay.textContent = translated;
-                    return;
-                }
+            // Use internal resolver (handles fallback + params)
+            const posMsg = this.resolveTranslation('textEditor.status.position', { line, col });
+            if (posMsg.translated) {
+                this.lineColDisplay.textContent = posMsg.text;
+                return;
             }
 
             // Fallback to English
@@ -1188,9 +1228,9 @@ const TextEditorSystem: TextEditorSystemInternal = {
          */
         showInputModal(
             title: string,
-            placeholder = '',
-            defaultValue = ''
-        ): string | null {
+            defaultValue = '',
+            placeholder = ''
+        ): Promise<string | null> {
             return new Promise(resolve => {
                 const modal = document.createElement('div');
                 modal.className = 'text-editor-modal-overlay';
@@ -1212,14 +1252,20 @@ const TextEditorSystem: TextEditorSystemInternal = {
 
                 document.body.appendChild(modal);
 
-                const input = modal.querySelector('.text-editor-modal-input');
-                const cancelBtn = modal.querySelector('.text-editor-modal-btn-cancel');
-                const confirmBtn = modal.querySelector('.text-editor-modal-btn-confirm');
+                const input = modal.querySelector('.text-editor-modal-input') as HTMLInputElement | null;
+                const cancelBtn = modal.querySelector('.text-editor-modal-btn-cancel') as HTMLButtonElement | null;
+                const confirmBtn = modal.querySelector('.text-editor-modal-btn-confirm') as HTMLButtonElement | null;
+
+                if (!input || !cancelBtn || !confirmBtn) {
+                    modal.remove();
+                    resolve(null);
+                    return;
+                }
 
                 // Focus input and select text
                 setTimeout(() => {
-                    input.focus();
-                    input.select();
+                    input?.focus();
+                    input?.select();
                 }, 50);
 
                 const cleanup = () => {
@@ -1228,9 +1274,9 @@ const TextEditorSystem: TextEditorSystemInternal = {
                 };
 
                 const handleConfirm = () => {
-                    const value = input.value.trim();
+                    const value = input?.value.trim();
                     cleanup();
-                    resolve(value || null);
+                    resolve((value || '') as string || null);
                 };
 
                 const handleCancel = () => {
@@ -1241,7 +1287,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
                 // Event listeners
                 confirmBtn.addEventListener('click', handleConfirm);
                 cancelBtn.addEventListener('click', handleCancel);
-                input.addEventListener('keydown', e => {
+                input.addEventListener('keydown', (e: KeyboardEvent) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         handleConfirm();
@@ -1252,7 +1298,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
                 });
 
                 // Click outside to close
-                modal.addEventListener('click', e => {
+                modal.addEventListener('click', (e: MouseEvent) => {
                     if (e.target === modal) {
                         handleCancel();
                     }
