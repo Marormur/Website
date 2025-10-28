@@ -12,6 +12,14 @@
 > - Build: Bundle Migration Complete (Default) → siehe `CHANGELOG.md#build---bundle-migration-complete-default`
 > - Build: Conditional Bundle Loading → siehe `CHANGELOG.md#build---conditional-bundle-loading-`
 
+> ✅ Abgeschlossen in Phase 1.1 – Details im CHANGELOG (28. Oktober 2025):
+>
+> - Changed: Multi-Instance Integration nutzt jetzt direkt `WindowTabs.create` (Legacy-Adapter entfernt)
+> - Tests: DnD Tab-Reordering für Terminal/Text Editor ergänzt
+> - Tests: Window Tabs für Terminal/Text Editor erweitert und stabilisiert
+> - Types: Legacy `WindowTabManager` aus den Typen entfernt; globale Exporte bereinigt
+> - Hinweis: Siehe CHANGELOG „Changed - Multi-Instance Integration uses WindowTabs.create“ und „Tests - Drag & Drop Tab Reordering …“
+
 ## 📊 TypeScript Refactoring Opportunities (28. Oktober 2025) ✅ TEILWEISE ERLEDIGT
 
 **Analyse-Dokument**: `docs/analysis/TYPESCRIPT_REFACTORING_OPPORTUNITIES.md`
@@ -242,36 +250,35 @@ Die Entwicklungsumgebung (Phase 0) ist vollständig abgeschlossen. Ab jetzt kon
 
 **Ziel**: Benutzer sollen mehrere Instanzen visuell verwalten können
 
-- [ ] **Window Tabs System** (wie Browser-Tabs)
-    - [ ] Tab-Leiste oberhalb des Fenster-Inhalts
-    - [ ] Tab hinzufügen (+) Button
-    - [ ] Tab schließen (X) Button
-    - [ ] Tab-Wechsel per Klick
-    - [ ] Active Tab Highlighting
-    - [ ] Tab-Reordering per Drag & Drop
-    - [ ] Keyboard Shortcuts (Cmd+1-9 für Tab-Wechsel)
-- [ ] **Window Menü in Menubar**
-    - [ ] "Fenster" Menü-Eintrag hinzufügen
-    - [ ] Liste aller offenen Instanzen
-    - [ ] Wechsel zwischen Instanzen
-    - [ ] "Alle schließen" Option
-    - [ ] "Neue Instanz" Shortcuts
+- [x] **Window Tabs System** (wie Browser-Tabs) — abgeschlossen, siehe CHANGELOG (28.10.2025)
+    - [x] Tab-Leiste oberhalb des Fenster-Inhalts
+    - [x] Tab hinzufügen (+) Button
+    - [x] Tab schließen (X) Button
+    - [x] Tab-Wechsel per Klick
+    - [x] Active Tab Highlighting
+    - [x] Tab-Reordering per Drag & Drop
+    - [x] Keyboard Shortcuts (Cmd+1-9 für Tab-Wechsel)
+- [x] **Window Menü in Menubar** — abgeschlossen, bereits vollständig implementiert in `src/ts/menu.ts`
+    - [x] "Fenster" Menü-Eintrag hinzufügen
+    - [x] Liste aller offenen Instanzen
+    - [x] Wechsel zwischen Instanzen
+    - [x] "Alle schließen" Option
+    - [x] "Neue Instanz" Shortcuts
 
-- [ ] **Keyboard Shortcuts**
-    - [ ] Cmd/Ctrl+N - Neue Instanz des aktiven Typs
-    - [ ] Cmd/Ctrl+W - Aktuelle Instanz schließen
-    - [ ] Cmd/Ctrl+Tab - Nächste Instanz
-    - [ ] Cmd/Ctrl+Shift+Tab - Vorherige Instanz
-    - [ ] Cmd/Ctrl+1-9 - Zu Instanz 1-9 springen
+- [x] **Keyboard Shortcuts** — abgeschlossen, siehe CHANGELOG (Shortcuts- und Tabs-Tests)
+    - [x] Cmd/Ctrl+N - Neue Instanz des aktiven Typs
+    - [x] Cmd/Ctrl+W - Aktuelle Instanz schließen
+    - [x] Cmd/Ctrl+Tab - Nächste Instanz
+    - [x] Cmd/Ctrl+Shift+Tab - Vorherige Instanz
+    - [x] Cmd/Ctrl+1-9 - Zu Instanz 1-9 springen
 
 **Dateien**:
 
-- Neu: `src/ts/window-tabs.ts` → emit: `js/window-tabs.js` - Tab Management System
-- Neu: `src/ts/keyboard-shortcuts.ts` → emit: `js/keyboard-shortcuts.js` - Shortcut Handler
-- Update: `js/menu.js` - Window Menü hinzufügen
-- Update: `app.js` - Shortcuts registrieren
+- ✅ Status: `src/ts/window-tabs.ts`, `src/ts/keyboard-shortcuts.ts`, `src/ts/menu.ts` sind produktiv
+- ✅ Window-Menü ist bereits vollständig implementiert (`createWindowMenuSection()`)
+- ✅ Integration mit InstanceManager: Menü refresht automatisch bei create/destroy
 
-**Geschätzter Aufwand**: 6-8 Stunden
+**Tatsächlicher Aufwand**: ~1 Stunde (Verifizierung + Tests) — Implementierung war bereits komplett!
 
 ---
 
@@ -654,16 +661,17 @@ Die Entwicklungsumgebung (Phase 0) ist vollständig abgeschlossen. Ab jetzt kon
 
 • Phase 0: Development Environment – Abgeschlossen (siehe CHANGELOG)
 
-### Phase 1: UI Integration (1-2 Wochen)
+### Phase 1: UI Integration (1-2 Wochen) — ✅ ABGESCHLOSSEN!
 
-**Erst nach Phase 0!**
+**Hinweis:** Alle UI-Integrationsaufgaben sind komplett!
 
-1. Window Tabs System ✨ (wichtigste Feature!)
-2. Modal Integration
-3. Window Menü
-4. Keyboard Shortcuts
+1. ✅ Window Tabs System (siehe CHANGELOG 28.10.2025)
+2. ✅ Modal Integration (bereits produktiv)
+3. ✅ Window Menü (vollständig in menu.ts)
+4. ✅ Keyboard Shortcuts (vollständig in keyboard-shortcuts.ts)
 
-**Total: ~15-20 Stunden**
+**Tatsächlicher Aufwand Phase 1**: ~10-12 Stunden (inkl. Debugging + Tests)
+**Original geschätzt**: ~15-20 Stunden
 
 ---
 
@@ -922,6 +930,14 @@ npm run dev
 
 ## 🧭 Nächster Schritt (kurz)
 
-**🎯 Priorität 1.1: Window Tabs System** (6–8 Stunden)
+**🎯 Priorität 1.3: State Persistierung & Session Management**
 
-Alternative Quick Wins (falls zwischendurch): Window-Menü in Menubar, Cmd/Ctrl+N/W Shortcuts.
+Auto-Save System für Instanzen:
+
+- Alle Instanzen periodisch speichern (debounced)
+- LocalStorage/SessionStorage Integration
+- Speicher-Quota Management
+
+Danach: Session Restore (Instanzen beim Reload wiederherstellen, Modal-State, Active Tab, Cursor-Position).
+
+**Hinweis:** Priorität 1.1 (Window Tabs + Shortcuts) und 1.2 (Window-Menü) sind abgeschlossen! ✅

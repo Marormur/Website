@@ -2,11 +2,52 @@
 
 ## Unreleased
 
+### Verified - Window Menu Multi-Instance Integration ✅ (28. Oktober 2025)
+  - Confirmed that `src/ts/menu.ts` already implements complete Window menu functionality:
+    - Dynamic "Fenster/Window" section in menubar with instance list
+    - Active instance marked with checkmark (✓)
+    - "New Finder/Terminal/Editor" action (Cmd+N)
+    - "Close All" action with confirmation dialog
+    - Instance switching via menu (Cmd+1-9 shortcuts)
+    - Auto-refresh on create/destroy via `setupInstanceManagerListeners()`
+  - **Test Results**: All 8 E2E tests passing (`tests/e2e/window-menu-multi-instance.spec.js`)
+  - **Status**: Priorität 1.2 (Window Menu) is complete — no additional implementation needed
+
+### Changed - Multi-Instance Integration uses WindowTabs.create ✅
+  - Refactored `src/ts/multi-instance-integration.ts` to use `WindowTabs.create(...)` directly instead of the legacy `WindowTabManager` adapter.
+  - Behavior preserved and improved:
+    - Active-instance visibility is now guaranteed on create/switch/restore (fixes hidden content on first open).
+    - Finder auto-closes its modal when the last tab is closed.
+    - Plus button titles remain contextual (Terminal N / Editor N / Finder N).
+  - Removal: Legacy `window.WindowTabManager` adapter and global export removed; types cleaned; tests adjusted to assert `window.WindowTabs` API.
+
+### Tests - Drag & Drop Tab Reordering for Terminal/Text Editor ✅
+  - Added DnD reorder coverage to:
+    - `tests/e2e/terminal-tabs.spec.js`
+    - `tests/e2e/text-editor-tabs.spec.js`
+  - Verifies instance order updates in manager and DOM order matches after dragging.
+
+### Tests - Window Tabs for Terminal/Text Editor ✅
+  - Added new E2E suites to validate tab behavior in Terminal and Text Editor modals:
+    - `tests/e2e/terminal-tabs.spec.js`
+    - `tests/e2e/text-editor-tabs.spec.js`
+  - Covered scenarios:
+    - Modal opens with initial tab and active instance
+    - + button creates a new instance/tab
+    - Switching tabs updates the active instance in the manager
+    - Close button removes a tab (UI and manager in sync)
+    - Keyboard shortcuts (Ctrl/Cmd+N, Ctrl/Cmd+W, Ctrl+Tab) operate on the active manager via integration
+  - Verified locally with the full E2E suite; quick smoke continues to run unchanged
+
+### Docs - Project TODO refreshed ✅
+  - Updated `docs/project/TODO.md` to reflect completed Window Tabs System and Keyboard Shortcuts.
+  - Added reference to adapter removal and new DnD tests; focused next steps on Window menu and session management.
+
 ### Fixed - Storage Restore Bug (Transient Modals) ✅
   - **Issue**: Transient modal `program-info-modal` was incorrectly restored from localStorage
   - **Root Cause**: `constants.ts` was not imported in bundle → `window.APP_CONSTANTS.TRANSIENT_MODAL_IDS` was undefined
   - **Fix**: Added `import '../constants'` to `expose-globals.ts` (bundle entry point)
-  - **Impact**: 
+  - **Impact**:
     - Bundle mode: 19/20 → **20/20 tests ✅**
     - Scripts mode: Already working (20/20 ✅)
   - **Bundle size**: 404.7 KB (was 401.8 KB, +2.9 KB for constants)
@@ -26,11 +67,11 @@
     ```bash
     # Default: Bundle mode
     npm run dev
-    
+
     # Force scripts mode
     USE_BUNDLE=0 npm run dev
     open "http://127.0.0.1:5173/?bundle=0"
-    
+
     # E2E testing
     npm run test:e2e:quick  # Bundle default
     USE_BUNDLE=0 npm run test:e2e:quick  # Scripts mode
