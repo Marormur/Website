@@ -1,4 +1,6 @@
 // E2E tests for Window menu multi-instance integration
+/* eslint-disable no-restricted-syntax */
+// Note: waitForTimeout used intentionally for menu animations and DOM updates
 const { test, expect } = require('@playwright/test');
 const { waitForAppReady, clickDockIcon } = require('./utils');
 
@@ -14,12 +16,12 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
         // Wait for Finder to open
         await expect(page.locator('#finder-modal')).not.toHaveClass(/hidden/);
-        await page.waitForTimeout(300);
+        await page.waitForTimeout(300); // Allow Finder instance to initialize
 
         // Open Window menu in menubar
         const windowMenuButton = page.getByRole('button', { name: /Fenster|Window/i });
         await windowMenuButton.click();
-        await page.waitForTimeout(200);
+        await page.waitForTimeout(200); // Wait for menu dropdown animation
 
         // Verify "New Finder" action is visible
         const newFinderItem = page
@@ -290,3 +292,4 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         expect(itemCount).toBeGreaterThanOrEqual(2);
     });
 });
+

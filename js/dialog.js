@@ -308,7 +308,7 @@ class Dialog {
             reset() {
                 windowStack.length = 0;
                 window.topZIndex = BASE_Z_INDEX;
-            }
+            },
         };
         return window.__zIndexManager;
     }

@@ -14,7 +14,7 @@
             'transition-colors whitespace-nowrap flex items-center gap-2',
             isActive
                 ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700'
-                : 'bg-gray-200/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800'
+                : 'bg-gray-200/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800',
         ].join(' ');
         tab.dataset.instanceId = instance.instanceId;
         tab.draggable = true;
@@ -42,7 +42,7 @@
         instances.forEach((inst) => {
             const tab = createTabEl(inst, inst.instanceId === activeId);
             // Click handlers
-            tab.addEventListener('click', (e) => {
+            tab.addEventListener('click', e => {
                 const target = e.target;
                 if (target.closest('.wt-tab-close')) {
                     onClose(inst.instanceId);
@@ -128,7 +128,8 @@
         if (options.addButton !== false) {
             const addBtn = document.createElement('button');
             addBtn.type = 'button';
-            addBtn.className = 'wt-add px-2 py-1 text-sm rounded-md border bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700';
+            addBtn.className =
+                'wt-add px-2 py-1 text-sm rounded-md border bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700';
             addBtn.textContent = '+';
             addBtn.title = 'Neue Instanz';
             addBtn.addEventListener('click', () => {
@@ -173,7 +174,7 @@
         const controller = {
             el: mountEl,
             refresh() {
-                renderTabs(mountEl, wrapped, options, (id) => wrapped.setActiveInstance(id), (id) => wrapped.destroyInstance(id));
+                renderTabs(mountEl, wrapped, options, id => wrapped.setActiveInstance(id), id => wrapped.destroyInstance(id));
             },
             destroy() {
                 mountEl.innerHTML = '';
@@ -184,7 +185,7 @@
                     inst.title = title;
                     this.refresh();
                 }
-            }
+            },
         };
         controller.refresh();
         return controller;
@@ -195,7 +196,7 @@
          */
         create(manager, mountEl, options) {
             return createController(manager, mountEl, options);
-        }
+        },
     };
     // Adapter expected by legacy integration code: WindowTabManager
     class WindowTabManager {
@@ -213,12 +214,12 @@
             if (mount) {
                 // Build controller with custom handlers
                 const refreshWithHooks = () => {
-                    renderTabs(mount, this.manager, { addButton: true }, (id) => {
+                    renderTabs(mount, this.manager, { addButton: true }, id => {
                         this.manager.setActiveInstance(id);
                         this.opts.onTabSwitch?.(id);
                         // Refresh tabs to update visual state after switching
                         refreshWithHooks();
-                    }, (id) => {
+                    }, id => {
                         this.opts.onTabClose?.(id);
                         this.manager.destroyInstance(id);
                         // After destroying, get the new active instance and trigger onTabSwitch
@@ -238,7 +239,8 @@
                             this.opts.onNewTab();
                         }
                         else {
-                            const next = (this.manager.getInstanceCount?.() || this.manager.getAllInstances().length) + 1;
+                            const next = (this.manager.getInstanceCount?.() ||
+                                this.manager.getAllInstances().length) + 1;
                             this.manager.createInstance({ title: `Instance ${next}` });
                         }
                     });
@@ -246,14 +248,16 @@
                 this.controller = {
                     el: mount,
                     refresh: refreshWithHooks,
-                    destroy() { mount.innerHTML = ''; },
+                    destroy() {
+                        mount.innerHTML = '';
+                    },
                     setTitle: (instanceId, title) => {
                         const inst = this.manager.getInstance(instanceId);
                         if (inst) {
                             inst.title = title;
                         }
                         refreshWithHooks();
-                    }
+                    },
                 };
                 // initial render
                 this.controller.refresh();

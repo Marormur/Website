@@ -87,13 +87,13 @@ export class Dialog {
     close() {
         if (this.modal.classList.contains('hidden')) return;
         this.modal.classList.add('hidden');
-        
+
         // Remove from z-index manager stack
         const zIndexManager = (window as any).__zIndexManager;
         if (zIndexManager && typeof zIndexManager.removeWindow === 'function') {
             zIndexManager.removeWindow(this.modal.id);
         }
-        
+
         (window as any).saveOpenModals?.();
         (window as any).updateDockIndicators?.();
         (window as any).updateProgramLabelByTopModal?.();
@@ -284,12 +284,12 @@ export class Dialog {
                 windowStack.forEach((id, index) => {
                     const zIndex = BASE_Z_INDEX + index;
                     const element = document.getElementById(id);
-                    
+
                     if (element) {
                         // Clamp to maximum to ensure critical UI elements stay on top
                         const clampedZIndex = Math.min(zIndex, MAX_WINDOW_Z_INDEX);
                         element.style.zIndex = clampedZIndex.toString();
-                        
+
                         // Also update windowEl if it's a separate element
                         const win = element.querySelector('.window-container') as HTMLElement;
                         if (win) {
@@ -319,7 +319,7 @@ export class Dialog {
             reset() {
                 windowStack.length = 0;
                 (window as any).topZIndex = BASE_Z_INDEX;
-            }
+            },
         };
 
         return (window as any).__zIndexManager;
@@ -701,3 +701,4 @@ export class Dialog {
 // Note: Type declaration is in types/index.d.ts
 (window as any).Dialog = Dialog;
 export default Dialog;
+

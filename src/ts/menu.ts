@@ -43,11 +43,11 @@ export function normalizeMenuItems(items: unknown[], context: MenuContext) {
         }
         const clone = Object.assign({}, item) as Record<string, unknown>;
         if (typeof item.disabled === 'function')
-            (clone.disabled as any) = (item.disabled as Function)(context);
+            (clone.disabled as unknown) = (item.disabled as (ctx: MenuContext) => boolean)(context);
         if (typeof item.label === 'function')
-            (clone.label as any) = (item.label as Function)(context);
+            (clone.label as unknown) = (item.label as (ctx: MenuContext) => string)(context);
         if (typeof item.shortcut === 'function')
-            (clone.shortcut as any) = (item.shortcut as Function)(context);
+            (clone.shortcut as unknown) = (item.shortcut as (ctx: MenuContext) => string)(context);
         normalized.push(clone);
         previousWasSeparator = false;
     });
@@ -75,7 +75,9 @@ function buildFinderMenuDefinition(context: MenuContext) {
                     action: () => {
                         const mgr = window['FinderInstanceManager'];
                         if (mgr && typeof mgr.createInstance === 'function') {
-                            const count = mgr.getInstanceCount ? mgr.getInstanceCount() : mgr.getAllInstances?.().length || 0;
+                            const count = mgr.getInstanceCount
+                                ? mgr.getInstanceCount()
+                                : mgr.getAllInstances?.().length || 0;
                             mgr.createInstance({ title: `Finder ${count + 1}` });
                         }
                     },
@@ -513,9 +515,11 @@ function getMultiInstanceMenuItems(context: MenuContext) {
                         // Determine type based on manager
                         let type: string | null = null;
                         if (manager === (window as any).FinderInstanceManager) type = 'finder';
-                        else if (manager === (window as any).TerminalInstanceManager) type = 'terminal';
-                        else if (manager === (window as any).TextEditorInstanceManager) type = 'text-editor';
-                        
+                        else if (manager === (window as any).TerminalInstanceManager)
+                            type = 'terminal';
+                        else if (manager === (window as any).TextEditorInstanceManager)
+                            type = 'text-editor';
+
                         if (type) {
                             integration.updateInstanceVisibility(type);
                         }
@@ -675,7 +679,8 @@ export function renderApplicationMenu(activeModalId?: string | null) {
             if (item.shortcut) {
                 const shortcutSpan = document.createElement('span');
                 shortcutSpan.className = 'menu-item-shortcut';
-                shortcutSpan.textContent = typeof item.shortcut === 'function' ? item.shortcut() : item.shortcut;
+                shortcutSpan.textContent =
+                    typeof item.shortcut === 'function' ? item.shortcut() : item.shortcut;
                 actionEl.appendChild(shortcutSpan);
             }
             actionEl.setAttribute('role', 'menuitem');
@@ -820,3 +825,4 @@ declare global {
 console.log('✅ MenuSystem loaded');
 
 export default {};
+

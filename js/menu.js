@@ -69,7 +69,9 @@ function buildFinderMenuDefinition(context) {
                     action: () => {
                         const mgr = window['FinderInstanceManager'];
                         if (mgr && typeof mgr.createInstance === 'function') {
-                            const count = mgr.getInstanceCount ? mgr.getInstanceCount() : mgr.getAllInstances?.().length || 0;
+                            const count = mgr.getInstanceCount
+                                ? mgr.getInstanceCount()
+                                : mgr.getAllInstances?.().length || 0;
                             mgr.createInstance({ title: `Finder ${count + 1}` });
                         }
                     },
@@ -655,7 +657,8 @@ function renderApplicationMenu(activeModalId) {
             if (item.shortcut) {
                 const shortcutSpan = document.createElement('span');
                 shortcutSpan.className = 'menu-item-shortcut';
-                shortcutSpan.textContent = typeof item.shortcut === 'function' ? item.shortcut() : item.shortcut;
+                shortcutSpan.textContent =
+                    typeof item.shortcut === 'function' ? item.shortcut() : item.shortcut;
                 actionEl.appendChild(shortcutSpan);
             }
             actionEl.setAttribute('role', 'menuitem');

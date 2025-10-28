@@ -49,3 +49,4 @@ function checkServer(timeoutMs = 300) {
         process.exit(code ?? 0);
     });
 })();
+

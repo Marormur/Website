@@ -7,19 +7,15 @@
         return;
     }
     function hideMenuDropdowns() {
-        document.querySelectorAll('.menu-dropdown').forEach((dropdown) => {
+        document.querySelectorAll('.menu-dropdown').forEach(dropdown => {
             if (!dropdown.classList.contains('hidden')) {
                 dropdown.classList.add('hidden');
             }
         });
-        document
-            .querySelectorAll('[data-menubar-trigger-button="true"]')
-            .forEach((button) => {
+        document.querySelectorAll('[data-menubar-trigger-button="true"]').forEach(button => {
             button.setAttribute('aria-expanded', 'false');
         });
-        document
-            .querySelectorAll('[data-system-menu-trigger]')
-            .forEach((button) => {
+        document.querySelectorAll('[data-system-menu-trigger]').forEach(button => {
             button.setAttribute('aria-expanded', 'false');
         });
     }
@@ -46,8 +42,7 @@
                 const MenuSystem = window.MenuSystem;
                 if (MenuSystem && typeof MenuSystem.renderApplicationMenu === 'function') {
                     // Get the current active modal to pass to menu renderer
-                    const topModal = Array.from(document.querySelectorAll('.modal:not(.hidden)'))
-                        .sort((a, b) => {
+                    const topModal = Array.from(document.querySelectorAll('.modal:not(.hidden)')).sort((a, b) => {
                         const zA = parseInt(getComputedStyle(a).zIndex, 10) || 0;
                         const zB = parseInt(getComputedStyle(b).zIndex, 10) || 0;
                         return zB - zA;
@@ -69,15 +64,17 @@
             return;
         const hoverRequiresExisting = options.hoverRequiresOpen !== undefined ? options.hoverRequiresOpen : true;
         let clickJustOccurred = false;
-        el.addEventListener('click', (event) => {
+        el.addEventListener('click', event => {
             event.stopPropagation();
             clickJustOccurred = true;
             const now = Date.now();
-            window.__lastMenuInteractionAt = now;
+            window.__lastMenuInteractionAt =
+                now;
             const menuId = el.getAttribute('aria-controls');
             const menu = menuId ? document.getElementById(menuId) : null;
             const isOpen = menu ? !menu.classList.contains('hidden') : false;
-            const sinceFocus = now - (window.__lastMenuFocusAt || 0);
+            const sinceFocus = now -
+                (window.__lastMenuFocusAt || 0);
             if (isOpen && sinceFocus > 200) {
                 hideMenuDropdowns();
                 el.setAttribute('aria-expanded', 'false');
@@ -92,20 +89,23 @@
         el.addEventListener('mouseenter', () => {
             if (clickJustOccurred)
                 return;
-            window.__lastMenuInteractionAt = Date.now();
+            window.__lastMenuInteractionAt =
+                Date.now();
             if (hoverRequiresExisting && !isAnyDropdownOpen())
                 return;
             toggleMenuDropdown(el, { forceOpen: true });
         });
         el.addEventListener('focus', () => {
             const now = Date.now();
-            window.__lastMenuInteractionAt = now;
+            window.__lastMenuInteractionAt =
+                now;
             window.__lastMenuFocusAt = now;
             toggleMenuDropdown(el, { forceOpen: true });
         });
     }
     function handleDocumentClickToCloseMenus(event) {
-        const last = window.__lastMenuInteractionAt;
+        const last = window
+            .__lastMenuInteractionAt;
         if (last && Date.now() - last < 200) {
             return;
         }
@@ -125,22 +125,25 @@
         bindDropdownTrigger(appleMenuTrigger, { hoverRequiresOpen: true });
         bindDropdownTrigger(programLabel, { hoverRequiresOpen: true });
         // Menu action activation from menu.js
-        document.addEventListener('click', (event) => {
+        document.addEventListener('click', event => {
             const MenuSystem = window.MenuSystem;
             if (MenuSystem && typeof MenuSystem.handleMenuActionActivation === 'function') {
                 MenuSystem.handleMenuActionActivation(event);
             }
         });
         document.addEventListener('click', handleDocumentClickToCloseMenus);
-        document.addEventListener('pointerdown', handleDocumentClickToCloseMenus, { capture: true });
-        document.addEventListener('keydown', (event) => {
+        document.addEventListener('pointerdown', handleDocumentClickToCloseMenus, {
+            capture: true,
+        });
+        document.addEventListener('keydown', event => {
             if (event.key === 'Escape')
                 hideMenuDropdowns();
         });
     }
     // Expose API
     window.hideMenuDropdowns = hideMenuDropdowns;
-    window.bindDropdownTrigger = bindDropdownTrigger;
+    window.bindDropdownTrigger =
+        bindDropdownTrigger;
     // Initialize on DOMContentLoaded (idempotent)
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initMenubarWiring, { once: true });

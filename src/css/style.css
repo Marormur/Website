@@ -22,8 +22,8 @@ body {
 /* Launchpad modal: Allow clicks to pass through the wrapper and centering overlay
    to underlying UI (dock/menubar) while keeping the inner card interactive.
    The capture-phase document click handler in app-init.js will close the
-   launchpad when clicking outside the inner card. 
-   
+   launchpad when clicking outside the inner card.
+
    z-index must be higher than any window (windows can reach ~10000+) but below
    menubar dropdowns (2147483647). Using 2147483600 ensures Launchpad overlays
    all windows while staying below the menubar. */
@@ -1136,6 +1136,7 @@ html.dark #dock .dock-tooltip {
     max-width: 100%;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    -webkit-hyphens: auto;
     hyphens: auto;
 }
 

@@ -68,8 +68,12 @@
             }
             if (key === 'tab') {
                 e.preventDefault();
-                const currentIndex = active ? instances.findIndex(i => i.instanceId === active.instanceId) : -1;
-                const idx = e.shiftKey ? prevIndex(currentIndex, total) : nextIndex(currentIndex, total);
+                const currentIndex = active
+                    ? instances.findIndex(i => i.instanceId === active.instanceId)
+                    : -1;
+                const idx = e.shiftKey
+                    ? prevIndex(currentIndex, total)
+                    : nextIndex(currentIndex, total);
                 const target = instances[idx];
                 if (target)
                     manager.setActiveInstance(target.instanceId);
