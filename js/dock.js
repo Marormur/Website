@@ -1,5 +1,3 @@
-/* EXPORTS STUB FOR BROWSER */
-var exports = {};
 "use strict";
 /*
  * src/ts/dock.ts

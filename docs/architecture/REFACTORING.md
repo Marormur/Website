@@ -28,9 +28,9 @@ Neues zentralisiertes Modul **`src/ts/dom-utils.ts`** mit konsistenter API:
 // Zentrale DOM-Utilities
 import * as DOMUtils from './dom-utils';
 
-DOMUtils.show(element);     // element.classList.remove('hidden')
-DOMUtils.hide(element);     // element.classList.add('hidden')
-DOMUtils.toggle(element);   // toggle visibility
+DOMUtils.show(element); // element.classList.remove('hidden')
+DOMUtils.hide(element); // element.classList.add('hidden')
+DOMUtils.toggle(element); // toggle visibility
 DOMUtils.isVisible(element); // check if visible
 DOMUtils.query<T>(selector); // type-safe querySelector
 ```
@@ -60,6 +60,7 @@ if (domUtils && typeof domUtils.show === 'function') {
 - ✅ `image-viewer-utils.ts` (3 Vorkommen)
 
 **Bewusst nicht migriert:**
+
 - `base-window-instance.ts` — Dual Export+IIFE Pattern; wird mit Bundle-Migration angegangen
 
 ### Ergebnisse
@@ -86,14 +87,14 @@ Statt einzelne Module schrittweise umzustellen, wurde eine **Bundle-Pipeline** i
 **Komponenten:**
 
 1. **Build Script**: `scripts/build-esbuild.mjs`
-   - IIFE format, globalName: `App`
-   - Target: ES2019, sourcemaps enabled
-   - Watch mode via `context()` API
+    - IIFE format, globalName: `App`
+    - Target: ES2019, sourcemaps enabled
+    - Watch mode via `context()` API
 
 2. **Compatibility Adapter**: `src/ts/compat/expose-globals.ts`
-   - Side-effect imports für Legacy-Module (IIFE Pattern)
-   - Explizite Exports für moderne Module (z.B. DOMUtils)
-   - Setzt `window.__BUNDLE_READY__ = true`
+    - Side-effect imports für Legacy-Module (IIFE Pattern)
+    - Explizite Exports für moderne Module (z.B. DOMUtils)
+    - Setzt `window.__BUNDLE_READY__ = true`
 
 3. **Output**: `js/app.bundle.js` (~285kb + sourcemap)
 
@@ -105,6 +106,7 @@ npm run dev:bundle    # Watch mode
 ```
 
 **VS Code Task:**
+
 - "Dev Environment: Start All (Bundle)" — CSS + TS + Bundle + Server
 
 ### ✅ Bundle Migration Complete (Default)
@@ -128,6 +130,7 @@ cp js/system.js src/ts/legacy/
 ```
 
 Import in `src/ts/compat/expose-globals.ts`:
+
 ```typescript
 // Legacy JS modules (copied to src/ts/legacy/ for esbuild compatibility)
 import '../legacy/window-configs.js'; // Must load before windows are registered
@@ -149,9 +152,9 @@ import '../legacy/system.js';
 **Known Issues:**
 
 1. **storage-restore Test:** "should skip transient modals during restore" schlägt in **beiden** Modi fehl
-   - `program-info-modal` (transient) wird fälschlicherweise restauriert
-   - Pre-existing Bug im Storage-System, **nicht** durch Bundle-Migration verursacht
-   - Betrifft <5% der Tests, nicht Bundle-spezifisch
+    - `program-info-modal` (transient) wird fälschlicherweise restauriert
+    - Pre-existing Bug im Storage-System, **nicht** durch Bundle-Migration verursacht
+    - Betrifft <5% der Tests, nicht Bundle-spezifisch
 
 **Verwendung:**
 
@@ -176,10 +179,16 @@ USE_BUNDLE=0 npm run test:e2e:quick  # Scripts mode
 - ✅ Source Maps für Debugging
 - ✅ Rollback-Pfad vorhanden (USE_BUNDLE=0)
 
-**Nächste Schritte:**
+**Cleanup (28. Oktober 2025):**
 
-- [ ] `fix-ts-exports` Script entfernen (Legacy TS-Output nicht mehr benötigt)
-- [ ] Individuelle Script-Tags aus `index.html` entfernen (nur noch Bundle-Pfad behalten)
+- ✅ `fix-ts-exports` Script entfernt (Legacy TS-Output Post-Processor nicht mehr benötigt)
+    - Entfernt aus `package.json` Build-Pipeline
+    - Verschoben nach `scripts/archive/` für historische Referenz
+    - TypeScript Build jetzt eigenständig ohne Post-Processing
+
+**Optionale nächste Schritte:**
+
+- [ ] Individuelle Script-Tags aus `index.html` entfernen (Bundle-Only-Modus, kein Rollback)
 - [ ] Storage-Restore Bug fixen (unabhängig von Bundle)
 
 ### ⚠️ Runtime-Integrations-Blocker (GELÖST)
@@ -187,19 +196,24 @@ USE_BUNDLE=0 npm run test:e2e:quick  # Scripts mode
 **Problem entdeckt:** Duplikat-Initialisierung verursacht DOM-Konflikte
 
 **Symptome (28. Oktober 2025):**
+
 - Bundle + Individual Scripts gleichzeitig geladen → Module initialisieren zweimal
 - Launchpad-Tests schlagen fehl (6/6): DOM-Elemente (`#launchpad-apps-grid`, `#launchpad-search-input`) nicht gefunden
 - Storage-Restore-Test schlägt fehl (1/1): `about-modal` bleibt versteckt
 
 **Testergebnisse (Initial):**
+
 - **Mit Bundle in index.html:** 13/20 Tests bestehen (65%)
 - **Ohne Bundle (nur Scripts):** 20/20 Tests bestehen (100%)
 
 **Root Cause:**
+
 ```html
 <!-- KONFLIKT: Beide Wege laden dieselben Module -->
-<script src="./js/launchpad.js"></script>  <!-- Initialisiert Launchpad #1 -->
-<script src="./js/app.bundle.js"></script> <!-- Initialisiert Launchpad #2 -->
+<script src="./js/launchpad.js"></script>
+<!-- Initialisiert Launchpad #1 -->
+<script src="./js/app.bundle.js"></script>
+<!-- Initialisiert Launchpad #2 -->
 ```
 
 Die zweite Initialisierung überschreibt/entfernt DOM-Elemente der ersten.
@@ -213,36 +227,40 @@ Die zweite Initialisierung überschreibt/entfernt DOM-Elemente der ersten.
 **Komponenten:**
 
 1. **Flag-Initialisierung in `index.html`** (vor allen Scripts):
-   ```javascript
-   // 3 Quellen (Priorität absteigend):
-   const bundleFromEnv = window.__USE_BUNDLE__ || false;      // Playwright Tests
-   const bundleFromUrl = urlParams.get('bundle') === '1';    // Manuelles Testing
-   const bundleFromStorage = localStorage.getItem('USE_BUNDLE') === '1'; // User Preference
-   
-   window.USE_BUNDLE = bundleFromEnv || bundleFromUrl || bundleFromStorage || false;
-   ```
+
+    ```javascript
+    // 3 Quellen (Priorität absteigend):
+    const bundleFromEnv = window.__USE_BUNDLE__ || false; // Playwright Tests
+    const bundleFromUrl = urlParams.get('bundle') === '1'; // Manuelles Testing
+    const bundleFromStorage = localStorage.getItem('USE_BUNDLE') === '1'; // User Preference
+
+    window.USE_BUNDLE =
+        bundleFromEnv || bundleFromUrl || bundleFromStorage || false;
+    ```
 
 2. **Conditional Script Loading** via `document.write()`:
-   ```javascript
-   if (window.USE_BUNDLE) {
-       console.log('[Module Loader] Loading esbuild bundle...');
-       document.write('<script src="./js/app.bundle.js"><\/script>');
-   } else {
-       console.log('[Module Loader] Loading individual scripts...');
-       // 30+ document.write() calls für alle Module
-   }
-   ```
+
+    ```javascript
+    if (window.USE_BUNDLE) {
+        console.log('[Module Loader] Loading esbuild bundle...');
+        document.write('<script src="./js/app.bundle.js"><\/script>');
+    } else {
+        console.log('[Module Loader] Loading individual scripts...');
+        // 30+ document.write() calls für alle Module
+    }
+    ```
 
 3. **E2E Test Support** (`tests/e2e/utils.js`):
-   ```javascript
-   if (process.env.USE_BUNDLE === '1') {
-       await page.addInitScript(() => {
-           window.__USE_BUNDLE__ = true;
-       });
-   }
-   ```
+    ```javascript
+    if (process.env.USE_BUNDLE === '1') {
+        await page.addInitScript(() => {
+            window.__USE_BUNDLE__ = true;
+        });
+    }
+    ```
 
 **Testergebnisse (Nach Implementierung):**
+
 - **Default Mode (Scripts):** 20/20 Tests ✅ (5.3s)
 - **Bundle Mode (USE_BUNDLE=1):** 20/20 Tests ✅ (6.5s)
 
@@ -276,10 +294,10 @@ USE_BUNDLE=1 MOCK_GITHUB=1 npm run test:e2e:quick
 - ✅ E2E-Tests in beiden Modi verifiziert (20/20 jeweils)
 - ✅ VS Code Tasks für Bundle-Modus hinzugefügt
 - 📋 **Nächste Schritte:**
-  - Bundle-Modus als Default setzen (nach Verifizierung in Produktion)
-  - Individual Scripts aus `index.html` vollständig entfernen
-  - `scripts/fix-ts-exports.js` entfernen (obsolet mit Bundle)
-  - DOM-Utils-Migration vervollständigen (verbleibende 12 Module)
+    - Bundle-Modus als Default setzen (nach Verifizierung in Produktion)
+    - Individual Scripts aus `index.html` vollständig entfernen
+    - `scripts/fix-ts-exports.js` entfernen (obsolet mit Bundle)
+    - DOM-Utils-Migration vervollständigen (verbleibende 12 Module)
 
 **Siehe:** CHANGELOG.md Abschnitt "Build - Esbuild bundle (compat adapter) ✅"
 

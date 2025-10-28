@@ -30,7 +30,10 @@
     npm run test:e2e:quick  # Bundle default
     USE_BUNDLE=0 npm run test:e2e:quick  # Scripts mode
     ```
-  - **Next Steps**: Remove `fix-ts-exports` script (legacy TS output no longer needed)
+  - **Cleanup**: Removed `fix-ts-exports` script (legacy TS output post-processor no longer needed with bundle)
+    - Removed from `package.json` build pipeline
+    - Moved to `scripts/archive/` for historical reference
+    - TypeScript build now standalone: `npm run build:ts` (no post-processing)
 
 ### Build - Conditional Bundle Loading ✅
   - **Problem**: Bundle + individual scripts loaded simultaneously → duplicate module initialization → DOM conflicts (13/20 tests failed)

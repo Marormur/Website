@@ -1,5 +1,3 @@
-/* EXPORTS STUB FOR BROWSER */
-var exports = {};
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // Helper to safely access window managers with casts

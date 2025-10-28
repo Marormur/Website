@@ -1,5 +1,3 @@
-/* EXPORTS STUB FOR BROWSER */
-var exports = {};
 "use strict";
 /**
  * Dialog Utilities Module

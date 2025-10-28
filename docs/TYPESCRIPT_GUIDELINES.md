@@ -47,27 +47,27 @@ npm run dev:bundle
 #### How It Works
 
 1. **Entry Point:** `src/ts/compat/expose-globals.ts`
-   - Imports all core modules as side-effects (legacy globals register themselves)
-   - Explicitly exports modern modules (e.g., `DOMUtils`) to `window.*`
-   - Sets `window.__BUNDLE_READY__ = true` for test/probe detection
+    - Imports all core modules as side-effects (legacy globals register themselves)
+    - Explicitly exports modern modules (e.g., `DOMUtils`) to `window.*`
+    - Sets `window.__BUNDLE_READY__ = true` for test/probe detection
 
 2. **Build Script:** `scripts/build-esbuild.mjs`
-   - Bundles with esbuild in IIFE format
-   - GlobalName: `App` (exposed as `window.App`)
-   - Sourcemaps enabled for debugging
-   - Watch mode support via `context()` API
+    - Bundles with esbuild in IIFE format
+    - GlobalName: `App` (exposed as `window.App`)
+    - Sourcemaps enabled for debugging
+    - Watch mode support via `context()` API
 
 3. **Configuration:**
-   ```javascript
-   {
-     bundle: true,
-     platform: 'browser',
-     target: ['es2019'],
-     format: 'iife',
-     globalName: 'App',
-     sourcemap: true
-   }
-   ```
+    ```javascript
+    {
+      bundle: true,
+      platform: 'browser',
+      target: ['es2019'],
+      format: 'iife',
+      globalName: 'App',
+      sourcemap: true
+    }
+    ```
 
 #### Adding Modules to Bundle
 
@@ -75,15 +75,17 @@ To include a new module in the bundle:
 
 1. **Create your TypeScript module:** `src/ts/my-module.ts`
 2. **Add to compatibility adapter:** `src/ts/compat/expose-globals.ts`
-   ```typescript
-   // Import for side-effects (if IIFE pattern)
-   import '../my-module';
-   
-   // OR import explicitly (if exports pattern)
-   import * as MyModule from '../my-module';
-   // ... then expose on window if needed
-   w['MyModule'] ??= MyModule;
-   ```
+
+    ```typescript
+    // Import for side-effects (if IIFE pattern)
+    import '../my-module';
+
+    // OR import explicitly (if exports pattern)
+    import * as MyModule from '../my-module';
+    // ... then expose on window if needed
+    w['MyModule'] ??= MyModule;
+    ```
+
 3. **Rebuild bundle:** `npm run build:bundle`
 
 **See:** CHANGELOG.md section "Build - Esbuild bundle (compat adapter) ✅"
@@ -106,7 +108,7 @@ npm run typecheck:watch
 # Output: js/*.js (one file per src/ts/*.ts)
 ```
 
-**Note:** After build, `scripts/fix-ts-exports.js` runs automatically to remove CommonJS artifacts from compiled output (temporary workaround until full bundle migration).
+**Note:** Since bundle migration (October 2025), individual TypeScript compilation is only used for development. Production uses the esbuild bundle (`js/app.bundle.js`). The legacy `fix-ts-exports.js` post-processor has been removed.
 
 ---
 
@@ -747,15 +749,16 @@ const data: MyData = JSON.parse(jsonString);
 
 ### Runtime Errors
 
-**"exports is not defined"**
+**"exports is not defined" (Historical)**
 
-This was fixed with `scripts/fix-ts-exports.js` post-build processor.
+This issue was resolved by migrating to the esbuild bundle (October 2025). The legacy `scripts/fix-ts-exports.js` post-processor has been removed as it's no longer needed.
 
-If you see this error:
+If you encounter module loading issues:
 
-1. Check `package.json` has `"build:ts:fix-exports"` script
-2. Verify `fix-ts-exports.js` runs after TypeScript compilation
-3. Check compiled `.js` files don't contain `Object.defineProperty(exports, ...)`
+1. Verify bundle is enabled: `window.USE_BUNDLE` should be `true`
+2. Check bundle builds successfully: `npm run build:bundle`
+3. Force bundle mode in browser: `?bundle=1` or `localStorage.setItem('USE_BUNDLE', '1')`
+4. Fallback to scripts mode if needed: `?bundle=0`
 
 ### ESLint Warnings
 
