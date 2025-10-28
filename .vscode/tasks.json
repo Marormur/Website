@@ -110,7 +110,7 @@
         },
         "background": {
           "activeOnStart": true,
-          "beginsPattern": ".",
+          "beginsPattern": "^\\[dev-server-ensure\\]|^Server running at",
           "endsPattern": "Server running at http://127\\.0\\.0\\.1:5173/"
         }
       },
@@ -237,7 +237,7 @@
         },
         "background": {
           "activeOnStart": true,
-          "beginsPattern": ".",
+          "beginsPattern": "^\\[dev-server-ensure\\]|^Server running at",
           "endsPattern": "Server running at http://127\\.0\\.0\\.1:5173/"
         }
       },
