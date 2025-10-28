@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Fixed - Session restore for multi-instance windows
+  - **Centralized tab refresh**: Tab setup now happens AFTER session restore for all window types (Terminal, TextEditor, Finder)
+  - **Fixed empty content bug**: Windows restored from session now properly show their content and tabs
+  - Removed redundant tab setup logic from individual `setup*Integration()` methods
+  - Tab refresh now uses `controller.refresh()` for all integrations in a single centralized loop
+  - Ensures future-proof session restore for any new tab-based windows
+  - **Before**: Tab managers initialized before restore → restored instances had no tabs/content
+  - **After**: All integrations refresh tabs after `SessionManager.restoreAllSessions()` completes
+
 ### Fixed - Cross-platform VS Code tasks (macOS)
   - Replaced Windows PowerShell-only task commands with a cross-platform Node helper for the dev server (`scripts/dev-server-ensure.js`).
   - Updated `.vscode/tasks.json`:
