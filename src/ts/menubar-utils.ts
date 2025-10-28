@@ -13,7 +13,7 @@
 
     function hideMenuDropdowns(): void {
         const domUtils = (window as any).DOMUtils;
-        
+
         document.querySelectorAll('.menu-dropdown').forEach(dropdown => {
             if (!dropdown.classList.contains('hidden')) {
                 if (domUtils && typeof domUtils.hide === 'function') {
@@ -81,7 +81,7 @@
             } else {
                 menu.classList.remove('hidden');
             }
-            
+
             trigger.setAttribute('aria-expanded', 'true');
         }
     }

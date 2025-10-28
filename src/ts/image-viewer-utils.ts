@@ -21,14 +21,14 @@
             placeholder.removeAttribute('data-i18n');
             placeholder.removeAttribute('data-i18n-params');
             placeholder.textContent = '';
-            
+
             const domUtils = (window as any).DOMUtils;
             if (domUtils && typeof domUtils.hide === 'function') {
                 domUtils.hide(placeholder);
             } else {
                 placeholder.classList.add('hidden');
             }
-            
+
             state.placeholder = null;
             return;
         }
@@ -51,7 +51,12 @@
         }
     }
 
-    function updateInfo(opts: { repo?: string; path?: string; dimensions?: string; size?: number }): void {
+    function updateInfo(opts: {
+        repo?: string;
+        path?: string;
+        dimensions?: string;
+        size?: number;
+    }): void {
         const infoEl = getEl('image-info');
         if (!infoEl) return;
         const parts: string[] = [];
@@ -100,7 +105,10 @@
 
     // Export as globals (namespaced + legacy aliases if free)
     type ImageViewerGlobal = Window & {
-        ImageViewerUtils?: { setPlaceholder?: typeof setPlaceholder; updateInfo?: typeof updateInfo };
+        ImageViewerUtils?: {
+            setPlaceholder?: typeof setPlaceholder;
+            updateInfo?: typeof updateInfo;
+        };
         setImagePlaceholder?: typeof setPlaceholder;
         updateImageInfo?: typeof updateInfo;
     };
@@ -111,3 +119,4 @@
     if (typeof w.setImagePlaceholder !== 'function') w.setImagePlaceholder = setPlaceholder;
     if (typeof w.updateImageInfo !== 'function') w.updateImageInfo = updateInfo;
 })();
+

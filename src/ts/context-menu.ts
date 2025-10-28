@@ -23,15 +23,13 @@ if ((window as any)[guardKey]) {
             ? (window as any).hideMenuDropdowns
             : () => {
                   const domUtils = (window as any).DOMUtils;
-                  document
-                      .querySelectorAll('.menu-dropdown')
-                      .forEach(d => {
-                          if (domUtils && typeof domUtils.hide === 'function') {
-                              domUtils.hide(d);
-                          } else {
-                              d.classList.add('hidden');
-                          }
-                      });
+                  document.querySelectorAll('.menu-dropdown').forEach(d => {
+                      if (domUtils && typeof domUtils.hide === 'function') {
+                          domUtils.hide(d);
+                      } else {
+                          d.classList.add('hidden');
+                      }
+                  });
                   document
                       .querySelectorAll('[aria-expanded="true"]')
                       .forEach(b => b.setAttribute('aria-expanded', 'false'));
@@ -553,3 +551,4 @@ if ((window as any)[guardKey]) {
 }
 
 export {};
+

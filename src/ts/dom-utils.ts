@@ -1,7 +1,7 @@
 /**
  * DOM Utility Functions
  * Centralized helpers for common DOM manipulations
- * 
+ *
  * @module dom-utils
  */
 
@@ -125,3 +125,4 @@ if (typeof window !== 'undefined') {
 }
 
 console.log('✅ DOMUtils loaded');
+

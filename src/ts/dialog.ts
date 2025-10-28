@@ -75,7 +75,7 @@ export class Dialog {
         }
         // preserve original behavior
         (window as any).hideMenuDropdowns?.();
-        
+
         // Use DOMUtils if available, fallback to classList
         const domUtils = (window as any).DOMUtils;
         if (domUtils && typeof domUtils.show === 'function') {
@@ -83,7 +83,7 @@ export class Dialog {
         } else {
             this.modal.classList.remove('hidden');
         }
-        
+
         if (this.modal.dataset) delete (this.modal.dataset as any).minimized;
         this.bringToFront();
         this.enforceMenuBarBoundary();
@@ -94,7 +94,7 @@ export class Dialog {
 
     close() {
         if (this.modal.classList.contains('hidden')) return;
-        
+
         // Use DOMUtils if available, fallback to classList
         const domUtils = (window as any).DOMUtils;
         if (domUtils && typeof domUtils.hide === 'function') {
@@ -116,7 +116,7 @@ export class Dialog {
 
     minimize() {
         if (this.modal.dataset) (this.modal.dataset as any).minimized = 'true';
-        
+
         // Use DOMUtils if available, fallback to classList
         const domUtils = (window as any).DOMUtils;
         if (domUtils && typeof domUtils.hide === 'function') {
@@ -128,7 +128,7 @@ export class Dialog {
                 this.modal.classList.add('hidden');
             }
         }
-        
+
         (window as any).saveOpenModals?.();
         (window as any).updateDockIndicators?.();
         (window as any).updateProgramLabelByTopModal?.();

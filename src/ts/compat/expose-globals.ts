@@ -53,25 +53,29 @@ import '../legacy/system.js';
 import '../app-init';
 
 // Guarded attach for modern modules not yet on window
-type WindowWithBundle = Window & { __BUNDLE_READY__?: boolean; initApp?: () => void } & Record<string, unknown>;
+type WindowWithBundle = Window & { __BUNDLE_READY__?: boolean; initApp?: () => void } & Record<
+        string,
+        unknown
+    >;
 const w = window as unknown as WindowWithBundle;
 
 if (!('DOMUtils' in w)) {
-  w['DOMUtils'] = DOMUtils;
+    w['DOMUtils'] = DOMUtils;
 }
 
 // Trigger app initialization manually since the IIFE in app-init.ts
 // runs in module scope and may not execute due to esbuild bundling
 if (typeof w.initApp === 'function') {
-  console.log('[BUNDLE] Triggering initApp; readyState:', document.readyState);
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', w.initApp);
-  } else {
-    w.initApp();
-  }
+    console.log('[BUNDLE] Triggering initApp; readyState:', document.readyState);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', w.initApp);
+    } else {
+        w.initApp();
+    }
 } else {
-  console.error('[BUNDLE] window.initApp is not defined; app initialization failed');
+    console.error('[BUNDLE] window.initApp is not defined; app initialization failed');
 }
 
 // Optional ready flag for tests
 w.__BUNDLE_READY__ = true;
+
