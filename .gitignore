@@ -30,6 +30,7 @@ test-results/**/trace.*
 test-results/**/screenshot*.png
 test-results/**/test-failed-*.png
 playwright-report/**
+test-output.json/**
 
 # Logs folder (project-specific)
 logs/
