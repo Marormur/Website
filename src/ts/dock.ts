@@ -346,10 +346,19 @@ export function updateDockIndicators(): void {
         const indicator = document.getElementById(mapping.indicatorId);
         if (modal && indicator) {
             const minimized = modal.dataset && modal.dataset.minimized === 'true';
+            const domUtils = (window as any).DOMUtils;
             if (!modal.classList.contains('hidden') || minimized) {
-                indicator.classList.remove('hidden');
+                if (domUtils && typeof domUtils.show === 'function') {
+                    domUtils.show(indicator);
+                } else {
+                    indicator.classList.remove('hidden');
+                }
             } else {
-                indicator.classList.add('hidden');
+                if (domUtils && typeof domUtils.hide === 'function') {
+                    domUtils.hide(indicator);
+                } else {
+                    indicator.classList.add('hidden');
+                }
             }
         }
     });

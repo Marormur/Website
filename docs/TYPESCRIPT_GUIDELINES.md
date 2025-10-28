@@ -1,23 +1,112 @@
 # TypeScript Guidelines
 
 **Project:** macOS-Style Portfolio Website
-**Last Updated:** October 25, 2025
+**Last Updated:** October 28, 2025
 **TypeScript Version:** 5.x
 **Strict Mode:** ✅ Enabled
+**Build System:** ✅ esbuild IIFE Bundle
 
 ---
 
-> NOTE: TypeScript migration is complete. Prefer the TypeScript sources in `src/ts/` for development and edits. The `js/` directory contains emitted JavaScript output and legacy artifacts — edit `js/` only when fixing generated output or maintaining historical documentation.
+> NOTE: TypeScript migration is complete. Prefer the TypeScript sources in `src/ts/` for development and edits. The `js/` directory contains emitted JavaScript output and legacy artifacts. A modern **esbuild bundle pipeline** is available for production builds (`npm run build:bundle` → `js/app.bundle.js`).
 
 ## 📋 Table of Contents
 
 1. [Quick Start](#quick-start)
-2. [TypeScript Configuration](#typescript-configuration)
-3. [File Organization](#file-organization)
-4. [Type Safety Rules](#type-safety-rules)
-5. [Common Patterns](#common-patterns)
-6. [Migration Guide](#migration-guide)
-7. [Troubleshooting](#troubleshooting)
+2. [Build Systems](#build-systems)
+3. [TypeScript Configuration](#typescript-configuration)
+4. [File Organization](#file-organization)
+5. [Type Safety Rules](#type-safety-rules)
+6. [Common Patterns](#common-patterns)
+7. [Migration Guide](#migration-guide)
+8. [Troubleshooting](#troubleshooting)
+
+---
+
+## Build Systems
+
+### Modern Bundle Build (Recommended for Production)
+
+**Status:** ✅ Available (October 28, 2025)
+
+The project now includes a modern **esbuild-based bundle pipeline** that produces a single IIFE bundle for production use:
+
+```bash
+# Build bundle once
+npm run build:bundle
+
+# Watch mode (rebuilds on file changes)
+npm run dev:bundle
+
+# VS Code Task (recommended)
+"Dev Environment: Start All (Bundle)"  # CSS + TS + Bundle + Server
+```
+
+**Output:** `js/app.bundle.js` (~285kb + sourcemap)
+
+#### How It Works
+
+1. **Entry Point:** `src/ts/compat/expose-globals.ts`
+   - Imports all core modules as side-effects (legacy globals register themselves)
+   - Explicitly exports modern modules (e.g., `DOMUtils`) to `window.*`
+   - Sets `window.__BUNDLE_READY__ = true` for test/probe detection
+
+2. **Build Script:** `scripts/build-esbuild.mjs`
+   - Bundles with esbuild in IIFE format
+   - GlobalName: `App` (exposed as `window.App`)
+   - Sourcemaps enabled for debugging
+   - Watch mode support via `context()` API
+
+3. **Configuration:**
+   ```javascript
+   {
+     bundle: true,
+     platform: 'browser',
+     target: ['es2019'],
+     format: 'iife',
+     globalName: 'App',
+     sourcemap: true
+   }
+   ```
+
+#### Adding Modules to Bundle
+
+To include a new module in the bundle:
+
+1. **Create your TypeScript module:** `src/ts/my-module.ts`
+2. **Add to compatibility adapter:** `src/ts/compat/expose-globals.ts`
+   ```typescript
+   // Import for side-effects (if IIFE pattern)
+   import '../my-module';
+   
+   // OR import explicitly (if exports pattern)
+   import * as MyModule from '../my-module';
+   // ... then expose on window if needed
+   w['MyModule'] ??= MyModule;
+   ```
+3. **Rebuild bundle:** `npm run build:bundle`
+
+**See:** CHANGELOG.md section "Build - Esbuild bundle (compat adapter) ✅"
+
+---
+
+### Legacy Build (Individual Module Compilation)
+
+**Status:** ✅ Still supported (for gradual migration)
+
+Individual TypeScript modules are compiled separately:
+
+```bash
+# Build all TypeScript modules
+npm run build:ts
+
+# Watch mode
+npm run typecheck:watch
+
+# Output: js/*.js (one file per src/ts/*.ts)
+```
+
+**Note:** After build, `scripts/fix-ts-exports.js` runs automatically to remove CommonJS artifacts from compiled output (temporary workaround until full bundle migration).
 
 ---
 
@@ -36,7 +125,9 @@ npm run typecheck:watch
 npm run type:coverage
 ```
 
-### Creating a New TypeScript Module
+### Creating a New TypeScript Module (Bundle Pattern)
+
+**Recommended for new modules (clean exports):**
 
 ```typescript
 // src/ts/my-module.ts
@@ -44,13 +135,11 @@ npm run type:coverage
 
 /**
  * MyModule - Brief description
- *
- * Detailed explanation of what this module does.
  */
 
 interface MyModuleOptions {
     setting1: string;
-    setting2?: number; // Optional
+    setting2?: number;
 }
 
 class MyModule {
@@ -65,14 +154,42 @@ class MyModule {
     }
 }
 
-// Export to global window
-declare global {
-    interface Window {
-        MyModule: typeof MyModule;
-    }
-}
+// Clean export (will be bundled)
+export { MyModule };
+export type { MyModuleOptions };
+```
 
-window.MyModule = MyModule;
+**Then add to bundle adapter:**
+
+```typescript
+// src/ts/compat/expose-globals.ts
+import { MyModule } from '../my-module';
+w['MyModule'] ??= MyModule;
+```
+
+**Build:** `npm run build:bundle`
+
+---
+
+### Creating a New TypeScript Module (Legacy IIFE)
+
+**For standalone modules (bypasses bundle):**
+
+```typescript
+// src/ts/my-module.ts
+'use strict';
+
+// ... implementation ...
+
+// IIFE: Immediately register on window
+(function () {
+    declare global {
+        interface Window {
+            MyModule: typeof MyModule;
+        }
+    }
+    window.MyModule = MyModule;
+})();
 
 export {}; // Ensure this is a module
 ```
@@ -81,9 +198,8 @@ export {}; // Ensure this is a module
 
 ```bash
 # Build TypeScript to JavaScript
-npm run build:ts
-
-# Output: js/my-module.js (automatically processed by fix-ts-exports.js)
+npm run build:ts        # Individual modules → js/*.js
+npm run build:bundle    # Bundle → js/app.bundle.js
 ```
 
 ---
@@ -696,6 +812,7 @@ ESLint warns about `/// <reference path="..." />` but these are correct for ambi
 - Consult `types/index.d.ts` for Window interface patterns
 - Run `npm run typecheck` to validate changes
 
-**Last Updated:** October 25, 2025
+**Last Updated:** October 28, 2025
 **TypeScript Version:** 5.x
 **Project Strictness Level:** 6/6 (Paranoid Mode) 🎯
+**Build System:** esbuild IIFE Bundle (js/app.bundle.js)

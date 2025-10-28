@@ -549,7 +549,12 @@ function getMultiInstanceMenuItems(context: MenuContext) {
                             } else {
                                 const el = document.getElementById(targetModal);
                                 if (el && !el.classList.contains('hidden')) {
-                                    el.classList.add('hidden');
+                                    const domUtils = (window as any).DOMUtils;
+                                    if (domUtils && typeof domUtils.hide === 'function') {
+                                        domUtils.hide(el);
+                                    } else {
+                                        el.classList.add('hidden');
+                                    }
                                 }
                             }
                         }

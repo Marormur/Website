@@ -9,66 +9,100 @@
     <link rel="stylesheet" href="./dist/output.css">
     <link rel="stylesheet" href="./src/css/style.css">
 
+    <!-- 🔀 Conditional Module Loading (October 28, 2025) -->
+    <!-- Controls whether to load esbuild bundle OR individual scripts -->
+    <script>
+        // USE_BUNDLE flag: Controls module loading strategy
+        // Sources (priority order):
+        // 1) Env-injected (tests): window.__USE_BUNDLE__ = true/false
+        // 2) URL param: ?bundle=1 or ?bundle=0
+        // 3) localStorage: USE_BUNDLE = '1' or '0'
+        // Default (fallback): true (Bundle as default)
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlBundleParam = urlParams.get('bundle');
+        const bundleFromUrl = urlBundleParam === '1' ? true : urlBundleParam === '0' ? false : undefined;
+
+        const storageFlag = window.localStorage.getItem('USE_BUNDLE');
+        const bundleFromStorage = storageFlag === '1' ? true : storageFlag === '0' ? false : undefined;
+
+        const bundleFromEnv = (typeof window.__USE_BUNDLE__ !== 'undefined') ? !!window.__USE_BUNDLE__ : undefined;
+
+        const defaultBundle = true; // Bundle default (all modules now included)
+        // Pick first defined source, otherwise use default
+        window.USE_BUNDLE = [bundleFromEnv, bundleFromUrl, bundleFromStorage, defaultBundle].find(v => v !== undefined);
+
+        console.log('[Module Loader] USE_BUNDLE:', window.USE_BUNDLE);
+    </script>
+
     <!-- i18n System -->
     <script src="i18n.js"></script>
 
-    <!-- Logger System (laden VOR allen anderen Modulen) -->
-    <script src="./js/logger.js"></script>
+    <script>
+        // Conditional loading: Either bundle OR individual scripts
+        if (window.USE_BUNDLE) {
+            console.log('[Module Loader] Loading esbuild bundle...');
+            document.write('<script src="./js/app.bundle.js"><\/script>');
+        } else {
+            console.log('[Module Loader] Loading individual scripts...');
 
-    <!-- Core observability systems -->
-    <script src="./js/error-handler.js"></script>
-    <script src="./js/perf-monitor.js"></script>
+            // Logger System (laden VOR allen anderen Modulen)
+            document.write('<script src="./js/logger.js"><\/script>');
 
-    <!-- Modularisierte Komponenten (in Ladereihenfolge) -->
-    <script src="./js/constants.js"></script>
-    <script src="./js/icons.js"></script>
-    <script src="./js/theme.js"></script>
-    <script src="./js/dock.js"></script>
-    <script src="./js/storage.js"></script>
-    <script src="./js/snap-utils.js"></script>
-    <script src="./js/dialog-utils.js"></script>
-    <script src="./js/dialog.js"></script>
-    <script src="./js/desktop.js"></script>
-    <script src="./js/system.js"></script>
-    <script src="./js/menubar-utils.js"></script>
-    <script src="./js/program-actions.js"></script>
-    <script src="./js/menu.js"></script>
-    <script src="./js/github-api.js"></script>
-    <script src="./js/finder.js"></script>
+            // Core observability systems
+            document.write('<script src="./js/error-handler.js"><\/script>');
+            document.write('<script src="./js/perf-monitor.js"><\/script>');
 
-    <!-- Neue zentrale Systeme -->
-    <script src="./js/window-manager.js"></script>
-    <script src="./js/action-bus.js"></script>
-    <script src="./js/window-configs.js"></script>
-    <script src="./js/api.js"></script>
+            // Modularisierte Komponenten (in Ladereihenfolge)
+            document.write('<script src="./js/constants.js"><\/script>');
+            document.write('<script src="./js/icons.js"><\/script>');
+            document.write('<script src="./js/theme.js"><\/script>');
+            document.write('<script src="./js/dock.js"><\/script>');
+            document.write('<script src="./js/storage.js"><\/script>');
+            document.write('<script src="./js/snap-utils.js"><\/script>');
+            document.write('<script src="./js/dialog-utils.js"><\/script>');
+            document.write('<script src="./js/dialog.js"><\/script>');
+            document.write('<script src="./js/desktop.js"><\/script>');
+            document.write('<script src="./js/system.js"><\/script>');
+            document.write('<script src="./js/menubar-utils.js"><\/script>');
+            document.write('<script src="./js/program-actions.js"><\/script>');
+            document.write('<script src="./js/menu.js"><\/script>');
+            document.write('<script src="./js/github-api.js"><\/script>');
+            document.write('<script src="./js/finder.js"><\/script>');
 
-    <!-- Multi-Instance Support -->
-    <script src="./js/base-window-instance.js"></script>
-    <script src="./js/instance-manager.js"></script>
-    <script src="./js/window-chrome.js"></script>
-    <script src="./js/window-tabs.js"></script>
-    <script src="./js/keyboard-shortcuts.js"></script>
-    <script src="./js/session-manager.js"></script>
-    <script src="./js/multi-instance-demo.js"></script>
-    <!-- Demo Script -->
+            // Neue zentrale Systeme
+            document.write('<script src="./js/window-manager.js"><\/script>');
+            document.write('<script src="./js/action-bus.js"><\/script>');
+            document.write('<script src="./js/window-configs.js"><\/script>');
+            document.write('<script src="./js/api.js"><\/script>');
 
-    <!-- Inline module scripts -->
-    <script src="./js/context-menu.js"></script>
-    <script src="./js/settings.js"></script>
-    <script src="./js/text-editor.js"></script>
-    <script src="./js/text-editor-instance.js"></script>
-    <script src="./js/terminal.js"></script>
-    <script src="./js/terminal-instance.js"></script>
-    <script src="./js/finder-instance.js"></script>
-    <script src="./js/launchpad.js"></script>
-    <script src="./js/multi-instance-integration.js"></script>
-    <!-- Integration after instances -->
+            // Multi-Instance Support
+            document.write('<script src="./js/base-window-instance.js"><\/script>');
+            document.write('<script src="./js/instance-manager.js"><\/script>');
+            document.write('<script src="./js/window-chrome.js"><\/script>');
+            document.write('<script src="./js/window-tabs.js"><\/script>');
+            document.write('<script src="./js/keyboard-shortcuts.js"><\/script>');
+            document.write('<script src="./js/session-manager.js"><\/script>');
+            document.write('<script src="./js/multi-instance-demo.js"><\/script>');
 
-    <!-- Hauptanwendung -->
-    <script src="./js/image-viewer-utils.js"></script>
-    <script src="./js/program-menu-sync.js"></script>
-    <script src="./js/app-init.js"></script>
-    <script src="app.js"></script>
+            // Inline module scripts
+            document.write('<script src="./js/context-menu.js"><\/script>');
+            document.write('<script src="./js/settings.js"><\/script>');
+            document.write('<script src="./js/text-editor.js"><\/script>');
+            document.write('<script src="./js/text-editor-instance.js"><\/script>');
+            document.write('<script src="./js/terminal.js"><\/script>');
+            document.write('<script src="./js/terminal-instance.js"><\/script>');
+            document.write('<script src="./js/finder-instance.js"><\/script>');
+            document.write('<script src="./js/launchpad.js"><\/script>');
+            document.write('<script src="./js/multi-instance-integration.js"><\/script>');
+
+            // Hauptanwendung
+            document.write('<script src="./js/image-viewer-utils.js"><\/script>');
+            document.write('<script src="./js/program-menu-sync.js"><\/script>');
+            document.write('<script src="./js/app-init.js"><\/script>');
+            document.write('<script src="app.js"><\/script>');
+        }
+    </script>
 </head>
 
 <body class="m-0 text-gray-900 dark:text-gray-100 transition-colors duration-300">
@@ -710,6 +744,7 @@
                             <!-- Dock -->
                             <!-- Inline styles ensure the dock remains visible in test environments
            where CSS can be missing or applied late. Kept minimal and harmless. -->
+                            <!-- stylelint-disable-next-line -->
                             <div id="dock" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000]"
                                 style="display:flex;visibility:visible;opacity:1;">
                                 <div class="dock-tray inline-flex items-end gap-2 px-3 py-2">

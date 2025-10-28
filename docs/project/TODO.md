@@ -1,8 +1,54 @@
 # 📋 Multi-Instance System - TODO Liste
 
 > **Status**: Multi-Instance Basis-System ist implementiert und getestet ✅
-> **Letzte Aktualisierung**: 27. Oktober 2025
+> **Letzte Aktualisierung**: 28. Oktober 2025
 > **Branch**: develop
+
+---
+
+## 📊 TypeScript Refactoring Opportunities (28. Oktober 2025) ✅ TEILWEISE ERLEDIGT
+
+**Analyse-Dokument**: `docs/analysis/TYPESCRIPT_REFACTORING_OPPORTUNITIES.md`
+
+Nach der erfolgreichen TypeScript-Migration wurde eine umfassende Code-Analyse durchgeführt:
+
+### ✅ Umgesetzt:
+
+1. **DOM-Utility-Duplikation** ✅ ERLEDIGT
+   - **Problem:** `classList.add/remove('hidden')` in 20+ Dateien dupliziert
+   - **Lösung:** Neues `src/ts/dom-utils.ts` Modul erstellt
+   - **Impact:** 8 Module migriert; ~100 Zeilen Code-Reduktion
+   - **Tests:** 20/20 quick, 120/120 full E2E passing
+   - **Status:** Produktiv, bewusst nicht in `base-window-instance.ts` (siehe CHANGELOG)
+
+2. **Bundle Build Pipeline** ✅ ERLEDIGT
+   - **Problem:** IIFE Pattern Inkonsistenzen (11 IIFE only, 3 Export+IIFE, 6 Pure Exports)
+   - **Lösung:** esbuild-Bundle mit Compatibility-Adapter
+   - **Komponenten:** `src/ts/compat/expose-globals.ts`, `scripts/build-esbuild.mjs`
+   - **Output:** `js/app.bundle.js` (285.4kb)
+   - **Tasks:** "Bundle: Build", "Bundle: Watch", "Dev Environment: Start All (Bundle)"
+   - **Status:** Build erfolgreich, noch nicht in index.html eingebunden
+
+### 🚧 In Arbeit:
+
+3. **Bundle-Integration** (staged rollout)
+   - [ ] Bundle testweise in index.html einbinden
+   - [ ] E2E-Tests mit Bundle verifizieren
+   - [ ] Schrittweise alte Script-Tags ersetzen
+   - [ ] `scripts/fix-ts-exports.js` entfernen (obsolet nach Bundle-Rollout)
+
+### 📋 Backlog (Niedrige Priorität):
+
+4. **Base-Class Casting Duplikation**
+   - **Problem:** Identisches Casting-Pattern in `terminal-instance.ts` und `text-editor-instance.ts`
+   - **Empfehlung:** `base-import.ts` Helper (nach Bundle-Migration)
+
+5. **Window-Interface Type-Guards**
+   - **Problem:** Wiederholte `window as unknown as { ... }` Patterns
+   - **Empfehlung:** Zentrale Type-Guard Utilities (nach Bundle-Migration)
+
+### Geschätzter Gesamtaufwand (verbleibend): 4-6 Stunden
+**Potenzial (bereits erreicht):** 100+ Zeilen Code-Reduktion + bessere Type-Safety
 
 ---
 

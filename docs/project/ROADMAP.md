@@ -10,23 +10,29 @@ Eine moderne, macOS-inspirierte Portfolio-Website mit vollständiger TypeScript-
 
 ### ✅ Abgeschlossen
 
-- [x] Multi-Instance System (Terminal, TextEditor)
+- [x] Multi-Instance System (Terminal, TextEditor, Finder)
 - [x] WindowManager & ActionBus Refactoring
-- [x] Umfangreiche E2E-Tests
-- [x] Documentation Cleanup
+- [x] Umfangreiche E2E-Tests (120 passing)
+- [x] Documentation Cleanup (Phase 1: Archive erstellt)
 - [x] Logger System
+- [x] TypeScript Migration (Phase 0-1 komplett)
+- [x] DOM-Utils Refactoring (8 Module migriert)
+- [x] Bundle Build Pipeline (esbuild + compat adapter)
+- [x] Session Restore Fix (Multi-Instance Windows)
+- [x] Window Tabs System (TypeScript Migration)
+- [x] Keyboard Shortcuts System (Tabs, Windows, Multi-Instance)
 
 ### 🚧 In Arbeit
 
-- [ ] TypeScript Migration (Phase 0-1)
-- [ ] Codebase Improvements (Prettier, ESLint, Husky)
-- [ ] Documentation konsolidieren
+- [ ] Bundle-Integration in index.html (staged rollout)
+- [ ] Documentation Updates (TYPESCRIPT_REFACTORING_OPPORTUNITIES, TODO, etc.)
+- [ ] Codebase Improvements (ESLint fixes, deprecated patterns)
 
-### 📋 Geplant
+### 📋 Geplant (bis Ende Q4)
 
-- [ ] Window Tabs System
-- [ ] Keyboard Shortcuts System
-- [ ] Session Management erweitern
+- [ ] Fix-Exports Script entfernen (nach Bundle-Rollout)
+- [ ] Session Management erweitern (Finder-Tabs persistence)
+- [ ] E2E Test-Stabilisierung (Window-Menu, Finder-Tabs flaky tests)
 
 ---
 

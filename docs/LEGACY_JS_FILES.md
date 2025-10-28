@@ -1,6 +1,8 @@
 # Legacy JS files touched during lint-maintenance (2025-10-27)
 
-> NOTE: These files are historical or compiled outputs. Do NOT use these as the primary place for new development. Prefer `src/ts/` TypeScript sources for all new code and edits. The `js/` directory contains emitted JS (runtime output) and legacy artifacts kept for reference or compatibility only.
+> **NOTE:** These files are historical or compiled outputs. Do NOT use these as the primary place for new development. Prefer `src/ts/` TypeScript sources for all new code and edits. The `js/` directory contains emitted JS (runtime output) and legacy artifacts kept for reference or compatibility only.
+
+> **UPDATE (2025-10-28):** With the esbuild bundle pipeline now in place (`scripts/build-esbuild.mjs` → `js/app.bundle.js`), many of these individual JS files will eventually be replaced by the single IIFE bundle. The bundle uses a compatibility adapter (`src/ts/compat/expose-globals.ts`) to expose modules on `window.*` for legacy consumers. See CHANGELOG.md section "Build - Esbuild bundle (compat adapter) ✅" for details.
 
 The following files were edited as part of a targeted lint-maintenance pass. Many of these are legacy JavaScript sources. If a TypeScript source exists under `src/ts/`, prefer editing that file and rebuilding the project instead of changing emitted JS.
 

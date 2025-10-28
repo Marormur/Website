@@ -5,8 +5,18 @@ const { expect } = require('@playwright/test');
 
 // Navigation and readiness
 async function gotoHome(page, baseURL) {
+    // Set USE_BUNDLE flag if env var is set (BEFORE navigation)
+    if (typeof process.env.USE_BUNDLE !== 'undefined') {
+        const flag = process.env.USE_BUNDLE === '1' ? true : process.env.USE_BUNDLE === '0' ? false : undefined;
+        if (typeof flag !== 'undefined') {
+            await page.addInitScript(val => { window.__USE_BUNDLE__ = val; }, flag);
+            console.log(`[Test Utils] Bundle mode via USE_BUNDLE=${process.env.USE_BUNDLE}`);
+        }
+    }
+    
     await page.goto(baseURL + '/index.html');
     await page.waitForLoadState('load');
+    
     await page.waitForSelector('#dock .dock-tray .dock-item', {
         timeout: 10000,
     });

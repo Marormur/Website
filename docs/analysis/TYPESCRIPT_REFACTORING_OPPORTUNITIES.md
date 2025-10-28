@@ -2,22 +2,67 @@
 
 **Datum:** 28. Oktober 2025  
 **Analysiert von:** GitHub Copilot  
-**Scope:** `src/ts/` TypeScript-Codebase nach JS→TS Migration
+**Scope:** `src/ts/` TypeScript-Codebase nach JS→TS Migration  
+**Status:** Teilweise umgesetzt - siehe Abschnitte unten
 
 ## Executive Summary
 
-Die TypeScript-Migration ist technisch erfolgreich, aber es gibt mehrere Möglichkeiten zur Vereinheitlichung und Reduktion von Redundanz. Die größten Verbesserungspotenziale liegen in:
+Die TypeScript-Migration ist technisch erfolgreich. Mehrere Verbesserungspotenziale wurden identifiziert und teilweise bereits umgesetzt:
 
-1. **DOM-Utility-Funktionen** - Häufig wiederholte Patterns für Element-Visibility
-2. **IIFE Pattern Inkonsistenzen** - Mischung aus export/IIFE in verschiedenen Modulen
-3. **Type-Guard Duplikation** - Ähnliche Window-Interface-Prüfungen
-4. **Event-Handler-Patterns** - Unterschiedliche Ansätze für Event-Delegation
+1. **DOM-Utility-Funktionen** ✅ ERLEDIGT (28. Oktober 2025)
+2. **IIFE Pattern Inkonsistenzen** 🚧 IN ARBEIT (Bundle-Migration läuft)
+3. **Type-Guard Duplikation** - Noch offen
+4. **Event-Handler-Patterns** - Noch offen
 
 ---
 
-## 1. DOM-Utility-Funktionen - HOHE PRIORITÄT ⭐⭐⭐
+## 1. DOM-Utility-Funktionen ✅ ERLEDIGT
 
-### Problem: Wiederholtes `classList` Pattern
+### Status: Implementiert & Verifiziert (28. Oktober 2025)
+
+**Was wurde umgesetzt:**
+
+- ✅ Modul `src/ts/dom-utils.ts` erstellt mit `show()`, `hide()`, `toggle()`, `isVisible()`, `query()`
+- ✅ Exponiert als `window.DOMUtils` für Legacy-Kompatibilität
+- ✅ Migriert in 8 Modulen:
+  - `dialog.ts` (3 Vorkommen)
+  - `menubar-utils.ts` (2 Vorkommen)
+  - `context-menu.ts` (4 Vorkommen)
+  - `terminal-instance.ts` (1 Vorkommen)
+  - `text-editor-instance.ts` (1 Vorkommen)
+  - `storage.ts` (2 Vorkommen)
+  - `image-viewer-utils.ts` (3 Vorkommen)
+
+**Test-Ergebnisse:**
+- Quick E2E: 20/20 passing (MOCK_GITHUB=1)
+- Full E2E: 120/120 passing
+- TypeScript: Build erfolgreich, keine Fehler
+
+**Pattern verwendet:**
+```typescript
+// Graceful fallback für Legacy-Compat
+const domUtils = (window as any).DOMUtils;
+if (domUtils && typeof domUtils.show === 'function') {
+    domUtils.show(element);
+} else {
+    element.classList.remove('hidden'); // fallback
+}
+```
+
+**Bewusst nicht migriert:**
+- `base-window-instance.ts` - Dual Export+IIFE Pattern; wird mit Bundle-Migration angegangen
+
+**Siehe:** `CHANGELOG.md` Abschnitt "DOM Utils Migration (Complete)"
+
+---
+
+## 2. IIFE vs. Export Pattern 🚧 IN ARBEIT
+
+### Status: Bundle-Migration gestartet (28. Oktober 2025)
+
+**Aktueller Ansatz:**
+
+Statt schrittweise einzelne Module umzustellen, wurde eine **Bundle-basierte Lösung** implementiert:
 
 **Gefunden in 20+ Dateien:**
 
@@ -142,16 +187,30 @@ export function bar() {}
 - `base-window-instance.ts`, `instance-manager.ts`
 - `window-chrome.ts`, `storage.ts`, `theme.ts`, `constants.ts`
 
-### Empfehlung: Schrittweise Modernisierung
+### Neue Lösung: Bundle-Migration 🚧
 
-**Phase 1:** Utility-Module zu Pattern C migrieren
+Statt schrittweise einzelne Module umzustellen, wurde eine **esbuild-basierte Bundle-Pipeline** implementiert:
 
-- `dialog-utils.ts`, `menubar-utils.ts`, `snap-utils.ts`, `image-viewer-utils.ts`
+- ✅ `src/ts/compat/expose-globals.ts` - Compatibility-Adapter
+- ✅ `scripts/build-esbuild.mjs` - IIFE-Bundle-Builder
+- ✅ npm scripts: `build:bundle`, `dev:bundle`
+- ✅ VS Code Tasks: "Bundle: Build", "Bundle: Watch", "Dev Environment: Start All (Bundle)"
+- ✅ Output: `js/app.bundle.js` (285.4kb, globalName: 'App')
+- ✅ Verifiziert: Quick E2E 20/20, TypeScript build erfolgreich
 
-**Phase 2:** System-Module behalten Pattern A
+**Nächste Schritte:**
+- [ ] Bundle kontrolliert in `index.html` einbinden (staged rollout)
+- [ ] Nach Verifikation: alte Script-Tags durch Bundle ersetzen
+- [ ] `scripts/fix-ts-exports.js` entfernen (obsolet mit Bundle)
+- [ ] Alle Module auf Pure Exports umstellen (Bundle übernimmt IIFE)
 
-- Module mit globaler Window-Erweiterung (context-menu, menu, dock) können IIFE behalten
-- Begründung: Vermeidet Breaking Changes für bestehende Integrationen
+**Vorteile:**
+- Vereinheitlicht Module-Pattern langfristig
+- Reduziert <script>-Tags in index.html
+- Ermöglicht Tree-Shaking und Optimierung
+- Bessere Developer Experience (ein Build-Command)
+
+**Siehe:** CHANGELOG.md "Build - Esbuild bundle (compat adapter) ✅"
 
 **Phase 3:** Instance-Module modernisieren
 

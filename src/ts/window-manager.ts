@@ -186,7 +186,12 @@
             } else {
                 const modal = document.getElementById(windowId);
                 if (modal) {
-                    modal.classList.remove('hidden');
+                    const domUtils = (window as any).DOMUtils;
+                    if (domUtils && typeof domUtils.show === 'function') {
+                        domUtils.show(modal);
+                    } else {
+                        modal.classList.remove('hidden');
+                    }
                     this.bringToFront(windowId);
                 }
             }
@@ -198,7 +203,14 @@
                 instance.close();
             } else {
                 const modal = document.getElementById(windowId);
-                if (modal) modal.classList.add('hidden');
+                if (modal) {
+                    const domUtils = (window as any).DOMUtils;
+                    if (domUtils && typeof domUtils.hide === 'function') {
+                        domUtils.hide(modal);
+                    } else {
+                        modal.classList.add('hidden');
+                    }
+                }
             }
         },
 
