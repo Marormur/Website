@@ -11,6 +11,4 @@ declare interface TextEditorSystemAPI {
   handleMenuAction(action: string): void;
 }
 
-declare const TextEditorSystem: TextEditorSystemAPI;
-
 // Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

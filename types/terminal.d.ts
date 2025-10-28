@@ -6,4 +6,8 @@ declare interface TerminalSystemAPI {
 
 declare const TerminalSystem: TerminalSystemAPI;
 
+declare interface TerminalInstance {
+  clearOutput?(): void;
+}
+
 // Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

@@ -4,6 +4,8 @@ declare interface FinderSystemAPI {
   init(): void;
   openFinder(): void;
   closeFinder(): void;
+  navigateTo?(path: string[], view: string): void;
+  getState?(): any;
 }
 
 declare const FinderSystem: FinderSystemAPI;

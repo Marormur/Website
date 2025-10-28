@@ -106,6 +106,8 @@ declare interface Window {
   KeyboardShortcuts: {
     register(binding: unknown): () => void;
     setContextResolver(resolver: () => string): void;
+      getAllShortcuts?(): unknown[];
+      getShortcutDisplay?(shortcut: unknown): string;
   };
 
   // ===== Phase 4 Modules =====
@@ -124,7 +126,7 @@ declare interface Window {
 
   // ===== Legacy/Utility =====
   /** APP_CONSTANTS - Application constants */
-  APP_CONSTANTS?: Record<string, unknown>;
+  APP_CONSTANTS?: import('../src/ts/constants').AppConstants;
 
   /** topZIndex - Current top z-index (delegated to WindowManager) */
   topZIndex: number;
