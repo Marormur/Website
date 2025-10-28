@@ -10,14 +10,14 @@ Dieses Dokument beschreibt die schrittweise Refactoring-Journey zu einer moderne
 2. **Phase 2**: DOM-Utils Migration ✅ Erledigt (Oktober 2025)
 3. **Phase 3**: Bundle-basierte Architektur 🚧 In Arbeit (Oktober 2025)
 
-Für eine vollständige Analyse der TypeScript-Refactoring-Möglichkeiten siehe:  
+Für eine vollständige Analyse der TypeScript-Refactoring-Möglichkeiten siehe:
 📄 **[TYPESCRIPT_REFACTORING_OPPORTUNITIES.md](../analysis/TYPESCRIPT_REFACTORING_OPPORTUNITIES.md)**
 
 ---
 
 ## ✅ Phase 2 Abgeschlossen: DOM-Utils Migration
 
-**Datum:** 28. Oktober 2025  
+**Datum:** 28. Oktober 2025
 **Problem:** 20+ Code-Duplikationen von `element.classList.add/remove('hidden')` im gesamten Codebase
 
 ### Lösung
@@ -77,7 +77,7 @@ if (domUtils && typeof domUtils.show === 'function') {
 
 ## 🚧 Phase 3 In Arbeit: Bundle-basierte Architektur
 
-**Datum:** 28. Oktober 2025  
+**Datum:** 28. Oktober 2025
 **Problem:** Inkonsistente Module-Patterns (11 IIFE only, 3 Export+IIFE, 6 Pure Exports); viele `<script>`-Tags in `index.html`
 
 ### Lösung: esbuild IIFE Bundle

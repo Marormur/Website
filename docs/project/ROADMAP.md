@@ -182,5 +182,5 @@ Eine moderne, macOS-inspirierte Portfolio-Website mit vollständiger TypeScript-
 
 ---
 
-**Letzte Aktualisierung:** Oktober 2025  
+**Letzte Aktualisierung:** Oktober 2025
 **Status:** Living Document - wird kontinuierlich aktualisiert

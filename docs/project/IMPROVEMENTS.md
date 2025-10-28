@@ -1,7 +1,7 @@
 # 🔧 Codebase Improvements - Organisatorische Aufgaben
 
-**Status:** 📋 Empfehlungen zur Verbesserung der Wartbarkeit  
-**Ziel:** Migration und zukünftige Entwicklung vereinfachen  
+**Status:** 📋 Empfehlungen zur Verbesserung der Wartbarkeit
+**Ziel:** Migration und zukünftige Entwicklung vereinfachen
 **Priorität:** Hoch - Sollte VOR TypeScript-Migration durchgeführt werden
 
 ---
@@ -29,6 +29,7 @@
 **Status Update (28. Oktober 2025):**
 
 ✅ **Erledigt:**
+
 - Archiv-Struktur `docs/archive/` erstellt
 - 10 Migration-Docs archiviert (Finder, Window-Tabs, Multi-Instance Summaries)
 - ROADMAP.md erstellt und aktualisiert
@@ -37,10 +38,12 @@
 - CHANGELOG.md aktiv genutzt
 
 🚧 **In Arbeit:**
+
 - Weitere Doc-Updates (TYPESCRIPT_GUIDELINES, TESTING, etc.)
 - Siehe `docs/analysis/DOCUMENTATION_AUDIT.md` für vollständige Analyse
 
 📋 **Verbleibend (optional):**
+
 - Legacy-Root-Docs prüfen (SUMMARY.md, NEXT_STEPS.md, etc.)
 - Weitere Konsolidierung nach Bedarf
 
@@ -508,7 +511,7 @@ package-lock.json
 
 #### 2.3 ESLint Konfiguration erweitern
 
-**Aktuell:** Basis-Config vorhanden  
+**Aktuell:** Basis-Config vorhanden
 **Problem:** Noch zu locker, keine TS-Vorbereitung
 
 **`.eslintrc.json` erweitern:**
@@ -590,7 +593,7 @@ package-lock.json
 
 #### 2.4 GitHub Actions erweitern
 
-**Aktuell:** Nur `deploy.yml`, `e2e.yml`, `eslint.yml`  
+**Aktuell:** Nur `deploy.yml`, `e2e.yml`, `eslint.yml`
 **Problem:** Keine umfassende CI-Pipeline
 
 **Neu: `.github/workflows/ci.yml`**
@@ -1228,6 +1231,6 @@ Dann **ERST** TypeScript-Migration starten mit besserer Foundation!
 
 ---
 
-**Erstellt:** Oktober 2025  
-**Status:** 📋 Bereit zur Umsetzung  
+**Erstellt:** Oktober 2025
+**Status:** 📋 Bereit zur Umsetzung
 **Nächster Schritt:** Quick Wins (30 Min) JETZT ausführen

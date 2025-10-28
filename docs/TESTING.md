@@ -65,13 +65,15 @@ Both modes are fully tested and functional (20/20 E2E tests pass in each mode).
 **Implementation:**
 
 `index.html` uses a `USE_BUNDLE` flag with 3 sources (priority order):
+
 1. **Env injection** (`window.__USE_BUNDLE__`) — for E2E tests via Playwright `addInitScript`
 2. **URL parameter** (`?bundle=1`) — for manual browser testing
 3. **localStorage** (`USE_BUNDLE=1`) — for user preference persistence
 
 ```javascript
 // In index.html (simplified):
-window.USE_BUNDLE = bundleFromEnv || bundleFromUrl || bundleFromStorage || false;
+window.USE_BUNDLE =
+    bundleFromEnv || bundleFromUrl || bundleFromStorage || false;
 
 if (window.USE_BUNDLE) {
     document.write('<script src="./js/app.bundle.js"><\/script>');
@@ -98,6 +100,7 @@ open "http://127.0.0.1:5173/index.html?bundle=1"
 ```
 
 **Test Results (October 28, 2025):**
+
 - **Default Mode:** 20/20 tests pass ✅ (5.3s)
 - **Bundle Mode:** 20/20 tests pass ✅ (6.5s)
 
@@ -114,9 +117,9 @@ open "http://127.0.0.1:5173/index.html?bundle=1"
 // Check bundle loaded correctly
 await page.evaluate(() => {
     return {
-        bundleReady: window.__BUNDLE_READY__,  // Set by bundle
-        domUtils: typeof window.DOMUtils,      // Exposed by compat layer
-        useBundle: window.USE_BUNDLE,          // Flag value
+        bundleReady: window.__BUNDLE_READY__, // Set by bundle
+        domUtils: typeof window.DOMUtils, // Exposed by compat layer
+        useBundle: window.USE_BUNDLE, // Flag value
     };
 });
 ```

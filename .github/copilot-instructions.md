@@ -157,7 +157,7 @@ closeBtn.addEventListener('click', () => closeWindow('finder-modal'));
 // OLD - Don't do this
 const dialog = new Dialog('my-modal', { closeButton: 'close-btn' });
 
-// NEW - Register in window-configs.js, WindowManager handles creation
+// NEW - Register in src/ts/window-configs.ts, WindowManager handles creation
 ```
 
 ### ❌ Hard-coded modal ID arrays
@@ -166,7 +166,7 @@ const dialog = new Dialog('my-modal', { closeButton: 'close-btn' });
 // OLD - Don't modify these arrays
 var modalIds = ["finder-modal", "about-modal", ...];
 
-// NEW - Register windows in window-configs.js
+// NEW - Register windows in src/ts/window-configs.ts
 ```
 
 ### ❌ Direct module function calls
@@ -207,6 +207,25 @@ If you find any remaining JavaScript files they are historical; prefer convertin
 - Push frequently to the working branch (develop or a feature branch) to keep CI running early and often.
 - When editing multiple files in a burst, split into separate commits by concern (config, types, code, tests, docs).
 - Before pushing, run: `npm run typecheck`, `npm run lint`, and optionally the basic E2E suite.
+
+### Documentation Maintenance (Markdown)
+
+- Copilot soll die Markdown-Dokumentation regelmäßig auf Aktualität und Korrektheit prüfen.
+- Auslöser: wöchentlich, vor Releases, nach größeren Refactorings, sowie immer wenn sich Build-Skripte, VS Code Tasks oder öffentliche APIs ändern.
+- Umfang: `docs/**/*.md`, `README.md`, Dateien in `docs/guides/`, `docs/architecture/`, `docs/TESTING.md`, `docs/QUICKSTART.md`, sowie `CHANGELOG.md`.
+- Prüfpunkte:
+    - Befehle in Codeblöcken stimmen mit `package.json`-Skripten und vorhandenen VS Code Tasks überein.
+    - Dateipfade/Modulnamen existieren und spiegeln die aktuelle `src/ts/`-Struktur wider (TypeScript-Migration berücksichtigen).
+    - Links funktionieren (interne Anker, relative Pfade, Referenzen auf vorhandene Dateien/Abschnitte).
+    - Testanleitungen entsprechen der aktuellen Playwright-Konfiguration und Umgebungsvariablen (`MOCK_GITHUB`, `USE_BUNDLE`, `USE_NODE_SERVER`).
+    - Deploy-Schritte passen zur aktuellen GitHub-Pages-Pipeline.
+- Maßnahmen bei Abweichungen:
+    - Betroffene Markdown-Dateien in kleinen, thematisch getrennten Commits aktualisieren.
+    - Einen Eintrag in `CHANGELOG.md` unter `docs:` ergänzen (kurze, präzise Beschreibung).
+    - Bei größeren Lücken ein Issue mit Checkliste eröffnen.
+- Nützliche Tasks zur Unterstützung:
+    - "Docs: Generate" (sofern relevant) zum Aktualisieren generierter API-Dokumente.
+    - "Validate: All" vor dem Pushen ausführen, um Inkonsistenzen früh zu erkennen.
 
 ### Build & Run
 
@@ -304,14 +323,14 @@ Test patterns use `utils.js` for shared setup. Server configuration:
 
 ### Internationalization (i18n)
 
-All user-facing text goes through `i18n.js`:
+All user-facing text goes through `src/ts/i18n.ts`:
 
 ```javascript
 translate('programs.finder.label'); // Returns localized string
 appI18n.applyTranslations(); // Re-render all translations
 ```
 
-Add new translations to BOTH `de` and `en` objects in `i18n.js`. Use dotted keys like `context.finder.openItem`.
+Add new translations to BOTH `de` and `en` objects in `src/ts/i18n.ts`. Use dotted keys like `context.finder.openItem`.
 
 ### GitHub Integration
 
@@ -350,16 +369,7 @@ Access via `API.storage.*` methods. Reset with "Fenster zurücksetzen" menu item
 
 ### Dialog/Modal System
 
-All modals use `Dialog` class (`src/ts/dialog.ts`):
-
-```ts
-const dialog = new Dialog('modal-id', {
-    closeButton: 'close-button-id',
-    persistent: true, // or false for transient
-});
-```
-
-Dialogs auto-register with WindowManager. Z-index is managed automatically on focus.
+All modals are managed by the WindowManager and backed by the internal `Dialog` class (`src/ts/dialog.ts`). Do not create `Dialog` instances manually. Instead, register windows in `src/ts/window-configs.ts`; the WindowManager will instantiate and manage dialogs automatically (z-index, focus, cleanup).
 
 ## Common Pitfalls
 
@@ -377,7 +387,7 @@ Dialogs auto-register with WindowManager. Z-index is managed automatically on fo
 
 7. **Using old event patterns**: Don't add manual `addEventListener` for standard UI actions - use ActionBus `data-action` instead.
 
-8. **Changing GitHub username**: Remember to update not just `js/finder.js`, but also test mocks in `tests/e2e/utils.js` to avoid test failures.
+8. **Changing GitHub username**: Remember to update `src/ts/finder.ts` (primary), and test mocks in `tests/e2e/utils.js` to avoid test failures.
 
 9. **TypeScript errors**: Always run `npm run typecheck` before committing. Strict mode catches runtime bugs early (null/undefined access, array bounds).
 
@@ -388,11 +398,11 @@ Dialogs auto-register with WindowManager. Z-index is managed automatically on fo
 If you're forking this project for your own portfolio:
 
 1. **GitHub Username**:
-    - Primary: Edit `js/finder.js` - change `const GITHUB_USERNAME = 'Marormur';` to your username
+    - Primary: Edit `src/ts/finder.ts` - change `const GITHUB_USERNAME = 'Marormur';` to your username
     - Legacy (if used): Also update `const username` in `app.js` and `projekte.html`
     - Tests: Update API URL mocks in `tests/e2e/utils.js` (search/replace "Marormur")
 2. **Profile Image**: Replace `img/profil.jpg` with your photo
-3. **Translations**: Update personal info in `i18n.js` (both `de` and `en` objects)
+3. **Translations**: Update personal info in `src/ts/i18n.ts` (both `de` and `en` objects)
 4. **GitHub Pages URL**: Update `docs/guides/DEPLOYMENT.md` with your repository URL
 5. **Repository Settings**: Enable GitHub Pages with source "GitHub Actions"
 6. **Branding**: Replace icons in `img/` directory as needed
@@ -413,8 +423,8 @@ If you're forking this project for your own portfolio:
 
 ## Quick Wins for AI Agents
 
-- Adding windows? Edit `js/window-configs.js` only
+- Adding windows? Edit `src/ts/window-configs.ts` only
 - Adding UI actions? Register in ActionBus, use `data-action` in HTML
-- Adding translations? Add to both `de` and `en` in `i18n.js`
+- Adding translations? Add to both `de` and `en` in `src/ts/i18n.ts`
 - Need new instance type? Extend `BaseWindowInstance`, create manager
 - Modifying styles? Check if Tailwind class exists before custom CSS

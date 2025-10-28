@@ -1,365 +1,354 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"label": "Tailwind CSS: Watch",
-			"type": "shell",
-			"command": "npm run watch:css",
-			"problemMatcher": [],
-			"isBackground": true,
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated"
-			},
-			"runOptions": {
-				"runOn": "folderOpen"
-			}
-		},
-		{
-			"label": "Tailwind CSS: Build",
-			"type": "shell",
-			"command": "npm run build:css",
-			"problemMatcher": [],
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			}
-		},
-		{
-			"label": "TypeScript: Watch",
-			"type": "shell",
-			"command": "npm run typecheck:watch",
-			"problemMatcher": "$tsc-watch",
-			"isBackground": true,
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated"
-			}
-		},
-		{
-			"label": "TypeScript: Check",
-			"type": "shell",
-			"command": "npm run typecheck",
-			"problemMatcher": "$tsc",
-			"group": {
-				"kind": "build"
-			}
-		},
-		{
-			"label": "E2E: Install Playwright browsers",
-			"type": "shell",
-			"command": "npm run pw:install",
-			"problemMatcher": [],
-			"group": {
-				"kind": "build"
-			},
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "E2E: Test (headless)",
-			"type": "shell",
-			"command": "npm run test:e2e",
-			"problemMatcher": [],
-			"group": {
-				"kind": "test",
-				"isDefault": true
-			},
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "E2E: Test (headed)",
-			"type": "shell",
-			"command": "npm run test:e2e:headed",
-			"problemMatcher": [],
-			"group": {
-				"kind": "test"
-			},
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "E2E: Test (UI mode)",
-			"type": "shell",
-			"command": "npm run test:e2e:ui",
-			"problemMatcher": [],
-			"group": {
-				"kind": "test"
-			},
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "E2E: Test (Bundle Mode - Quick)",
-			"type": "shell",
-			"command": "USE_BUNDLE=1 MOCK_GITHUB=1 npm run test:e2e:quick",
-			"problemMatcher": [],
-			"group": {
-				"kind": "test"
-			},
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "E2E: Test (Bundle Mode - Full)",
-			"type": "shell",
-			"command": "USE_BUNDLE=1 MOCK_GITHUB=1 npm run test:e2e",
-			"problemMatcher": [],
-			"group": {
-				"kind": "test"
-			},
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "Start Dev Server",
-			"type": "shell",
-			"command": "node scripts/dev-server-ensure.js",
-			"isBackground": true,
-			"problemMatcher": {
-				"owner": "dev-server",
-				"pattern": {
-					"regexp": "^$"
-				},
-				"background": {
-					"activeOnStart": true,
-					"beginsPattern": "^\\[dev-server-ensure\\]|^Server running at",
-					"endsPattern": "Server running at http://127\\.0\\.0\\.1:5173/"
-				}
-			},
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated",
-				"focus": false,
-				"clear": true
-			}
-		},
-		{
-			"label": "Stop Dev Server",
-			"type": "shell",
-			"command": "echo 'Stopping dev server...'",
-			"windows": {
-				"command": "powershell -NoProfile -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -eq '' -and $_.Path -like '*node.exe*' } | Stop-Process -Force\""
-			},
-			"osx": {
-				"command": "bash -lc 'pids=$(lsof -ti tcp:5173); if [ -n \"$pids\" ]; then kill -9 $pids; else echo \"No server on :5173\"; fi'"
-			},
-			"linux": {
-				"command": "bash -lc 'pids=$(lsof -ti tcp:5173); if [ -n \"$pids\" ]; then kill -9 $pids; else echo \"No server on :5173\"; fi'"
-			},
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "Dev Environment: Start All",
-			"dependsOn": [
-				"Tailwind CSS: Watch",
-				"TypeScript: Watch",
-				"Start Dev Server"
-			],
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "Install Playwright Browsers (once)",
-			"type": "shell",
-			"command": "npm run pw:install",
-			"group": "build"
-		},
-		{
-			"label": "Docs: Generate",
-			"type": "shell",
-			"command": "npm run docs:generate",
-			"group": "build",
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "Docs: Clean",
-			"type": "shell",
-			"command": "npm run docs:clean",
-			"group": "build",
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "Validate: All",
-			"type": "shell",
-			"command": "npm run validate",
-			"group": {
-				"kind": "build"
-			},
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "E2E: Test (basic smoke)",
-			"type": "shell",
-			"command": "npm run test:e2e:quick",
-			"problemMatcher": [],
-			"group": {
-				"kind": "test"
-			},
-			"options": {
-				"env": {
-					"USE_NODE_SERVER": "1",
-					"MOCK_GITHUB": "1"
-				}
-			},
-			"dependsOn": [
-				"Start Dev Server"
-			],
-			"dependsOrder": "sequence",
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "E2E: Install + Test (headless)",
-			"dependsOn": [
-				"E2E: Install Playwright browsers",
-				"E2E: Test (headless)"
-			],
-			"dependsOrder": "sequence",
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "Start Dev Server (No Watch)",
-			"type": "shell",
-			"command": "node scripts/dev-server-ensure.js",
-			"isBackground": true,
-			"options": {
-				"env": {
-					"NO_WATCH": "1"
-				}
-			},
-			"problemMatcher": {
-				"owner": "dev-server",
-				"pattern": {
-					"regexp": "^$"
-				},
-				"background": {
-					"activeOnStart": true,
-					"beginsPattern": "^\\[dev-server-ensure\\]|^Server running at",
-					"endsPattern": "Server running at http://127\\.0\\.0\\.1:5173/"
-				}
-			},
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated",
-				"focus": false,
-				"clear": true
-			}
-		},
-		{
-			"label": "Dev: Server Only (No Watch)",
-			"dependsOn": [
-				"Start Dev Server (No Watch)"
-			],
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		},
-		{
-			"label": "Validate: All",
-			"type": "shell",
-			"command": "npm run validate",
-			"group": "build"
-		},
-		{
-			"label": "Validate: All",
-			"type": "shell",
-			"command": "npm run validate",
-			"group": "build"
-		},
-		{
-			"label": "Quick E2E to capture readiness and console errors",
-			"type": "shell",
-			"command": "npm run test:e2e:quick",
-			"isBackground": false,
-			"options": {
-				"env": {
-					"USE_NODE_SERVER": "1",
-					"MOCK_GITHUB": "1"
-				}
-			},
-			"problemMatcher": [],
-			"group": "test"
-		},
-		{
-			"label": "Bundle: Build",
-			"type": "shell",
-			"command": "npm run build:bundle",
-			"group": "build"
-		},
-		{
-			"label": "Bundle: Watch",
-			"type": "shell",
-			"command": "npm run dev:bundle",
-			"isBackground": true,
-			"problemMatcher": {
-				"owner": "esbuild",
-				"pattern": {
-					"regexp": "^$"
-				},
-				"background": {
-					"activeOnStart": true,
-					"beginsPattern": "^> website@.* dev:bundle$|^node scripts/build-esbuild.mjs",
-					"endsPattern": "^✔️  Built js/app.bundle.js \\(watching\\)"
-				}
-			},
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated"
-			}
-		},
-		{
-			"label": "Dev Environment: Start All (Bundle)",
-			"dependsOn": [
-				"Tailwind CSS: Watch",
-				"TypeScript: Watch",
-				"Bundle: Watch",
-				"Start Dev Server"
-			],
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "shared"
-			}
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Tailwind CSS: Watch",
+      "type": "shell",
+      "command": "npm run watch:css",
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "Tailwind CSS: Build",
+      "type": "shell",
+      "command": "npm run build:css",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "TypeScript: Watch",
+      "type": "shell",
+      "command": "npm run typecheck:watch",
+      "problemMatcher": "$tsc-watch",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "TypeScript: Check",
+      "type": "shell",
+      "command": "npm run typecheck",
+      "problemMatcher": "$tsc",
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "E2E: Install Playwright browsers",
+      "type": "shell",
+      "command": "npm run pw:install",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "E2E: Test (headless)",
+      "type": "shell",
+      "command": "npm run test:e2e",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "E2E: Test (headed)",
+      "type": "shell",
+      "command": "npm run test:e2e:headed",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "E2E: Test (UI mode)",
+      "type": "shell",
+      "command": "npm run test:e2e:ui",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "E2E: Test (Bundle Mode - Quick)",
+      "type": "shell",
+      "command": "USE_BUNDLE=1 MOCK_GITHUB=1 npm run test:e2e:quick",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "E2E: Test (Bundle Mode - Full)",
+      "type": "shell",
+      "command": "USE_BUNDLE=1 MOCK_GITHUB=1 npm run test:e2e",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Start Dev Server",
+      "type": "shell",
+      "command": "node scripts/dev-server-ensure.js",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "dev-server",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\[dev-server-ensure\\]|^Server running at",
+          "endsPattern": "Server running at http://127\\.0\\.0\\.1:5173/"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Stop Dev Server",
+      "type": "shell",
+      "command": "echo 'Stopping dev server...'",
+      "windows": {
+        "command": "powershell -NoProfile -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -eq '' -and $_.Path -like '*node.exe*' } | Stop-Process -Force\""
+      },
+      "osx": {
+        "command": "bash -lc 'pids=$(lsof -ti tcp:5173); if [ -n \"$pids\" ]; then kill -9 $pids; else echo \"No server on :5173\"; fi'"
+      },
+      "linux": {
+        "command": "bash -lc 'pids=$(lsof -ti tcp:5173); if [ -n \"$pids\" ]; then kill -9 $pids; else echo \"No server on :5173\"; fi'"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Dev Environment: Start All",
+      "dependsOn": ["Tailwind CSS: Watch", "TypeScript: Watch", "Start Dev Server"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Install Playwright Browsers (once)",
+      "type": "shell",
+      "command": "npm run pw:install",
+      "group": "build"
+    },
+    {
+      "label": "Docs: Generate",
+      "type": "shell",
+      "command": "npm run docs:generate",
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docs: Clean",
+      "type": "shell",
+      "command": "npm run docs:clean",
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Validate: All",
+      "type": "shell",
+      "command": "npm run validate",
+      "group": {
+        "kind": "build"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "E2E: Test (basic smoke)",
+      "type": "shell",
+      "command": "npm run test:e2e:quick",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test"
+      },
+      "options": {
+        "env": {
+          "USE_NODE_SERVER": "1",
+          "MOCK_GITHUB": "1"
+        }
+      },
+      "dependsOn": ["Start Dev Server"],
+      "dependsOrder": "sequence",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "E2E: Install + Test (headless)",
+      "dependsOn": ["E2E: Install Playwright browsers", "E2E: Test (headless)"],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Start Dev Server (No Watch)",
+      "type": "shell",
+      "command": "node scripts/dev-server-ensure.js",
+      "isBackground": true,
+      "options": {
+        "env": {
+          "NO_WATCH": "1"
+        }
+      },
+      "problemMatcher": {
+        "owner": "dev-server",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\[dev-server-ensure\\]|^Server running at",
+          "endsPattern": "Server running at http://127\\.0\\.0\\.1:5173/"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Dev: Server Only (No Watch)",
+      "dependsOn": ["Start Dev Server (No Watch)"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Validate: All",
+      "type": "shell",
+      "command": "npm run validate",
+      "group": "build"
+    },
+    {
+      "label": "Validate: All",
+      "type": "shell",
+      "command": "npm run validate",
+      "group": "build"
+    },
+    {
+      "label": "Quick E2E to capture readiness and console errors",
+      "type": "shell",
+      "command": "npm run test:e2e:quick",
+      "isBackground": false,
+      "options": {
+        "env": {
+          "USE_NODE_SERVER": "1",
+          "MOCK_GITHUB": "1"
+        }
+      },
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Bundle: Build",
+      "type": "shell",
+      "command": "npm run build:bundle",
+      "group": "build"
+    },
+    {
+      "label": "Bundle: Watch",
+      "type": "shell",
+      "command": "npm run dev:bundle",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "esbuild",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^> website@.* dev:bundle$|^node scripts/build-esbuild.mjs",
+          "endsPattern": "^✔️  Built js/app.bundle.js \\(watching\\)"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Dev Environment: Start All (Bundle)",
+      "dependsOn": [
+        "Tailwind CSS: Watch",
+        "TypeScript: Watch",
+        "Bundle: Watch",
+        "Start Dev Server"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
 }
