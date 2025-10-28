@@ -21,9 +21,17 @@ else {
     const hideAllDropdowns = typeof window.hideMenuDropdowns === 'function'
         ? window.hideMenuDropdowns
         : () => {
+            const domUtils = window.DOMUtils;
             document
                 .querySelectorAll('.menu-dropdown')
-                .forEach(d => d.classList.add('hidden'));
+                .forEach(d => {
+                if (domUtils && typeof domUtils.hide === 'function') {
+                    domUtils.hide(d);
+                }
+                else {
+                    d.classList.add('hidden');
+                }
+            });
             document
                 .querySelectorAll('[aria-expanded="true"]')
                 .forEach(b => b.setAttribute('aria-expanded', 'false'));
@@ -47,7 +55,13 @@ else {
             dlg.open();
         }
         else {
-            el.classList.remove('hidden');
+            const domUtils = window.DOMUtils;
+            if (domUtils && typeof domUtils.show === 'function') {
+                domUtils.show(el);
+            }
+            else {
+                el.classList.remove('hidden');
+            }
             if (typeof window.bringDialogToFront === 'function') {
                 window.bringDialogToFront(id);
             }
@@ -377,7 +391,13 @@ else {
         else if (document.body && document.body.lastElementChild !== menu) {
             document.body.appendChild(menu);
         }
-        menu.classList.remove('hidden');
+        const domUtils = window.DOMUtils;
+        if (domUtils && typeof domUtils.show === 'function') {
+            domUtils.show(menu);
+        }
+        else {
+            menu.classList.remove('hidden');
+        }
         menu.style.left = Math.max(0, x) + 'px';
         menu.style.top = Math.max(0, y) + 'px';
         const clamped = clampPosition(x, y);
@@ -389,8 +409,15 @@ else {
         bindAutoClose();
     }
     function hideContextMenu() {
-        if (!menu.classList.contains('hidden'))
-            menu.classList.add('hidden');
+        const domUtils = window.DOMUtils;
+        if (!menu.classList.contains('hidden')) {
+            if (domUtils && typeof domUtils.hide === 'function') {
+                domUtils.hide(menu);
+            }
+            else {
+                menu.classList.add('hidden');
+            }
+        }
         unbindAutoClose();
     }
     let onDocClick = null;

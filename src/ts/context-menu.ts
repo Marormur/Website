@@ -22,9 +22,16 @@ if ((window as any)[guardKey]) {
         typeof (window as any).hideMenuDropdowns === 'function'
             ? (window as any).hideMenuDropdowns
             : () => {
+                  const domUtils = (window as any).DOMUtils;
                   document
                       .querySelectorAll('.menu-dropdown')
-                      .forEach(d => d.classList.add('hidden'));
+                      .forEach(d => {
+                          if (domUtils && typeof domUtils.hide === 'function') {
+                              domUtils.hide(d);
+                          } else {
+                              d.classList.add('hidden');
+                          }
+                      });
                   document
                       .querySelectorAll('[aria-expanded="true"]')
                       .forEach(b => b.setAttribute('aria-expanded', 'false'));
@@ -45,7 +52,12 @@ if ((window as any)[guardKey]) {
         if (dlg && typeof dlg.open === 'function') {
             dlg.open();
         } else {
-            el.classList.remove('hidden');
+            const domUtils = (window as any).DOMUtils;
+            if (domUtils && typeof domUtils.show === 'function') {
+                domUtils.show(el);
+            } else {
+                el.classList.remove('hidden');
+            }
             if (typeof (window as any).bringDialogToFront === 'function') {
                 (window as any).bringDialogToFront(id);
             }
@@ -416,7 +428,12 @@ if ((window as any)[guardKey]) {
         } else if (document.body && document.body.lastElementChild !== menu) {
             document.body.appendChild(menu);
         }
-        menu.classList.remove('hidden');
+        const domUtils = (window as any).DOMUtils;
+        if (domUtils && typeof domUtils.show === 'function') {
+            domUtils.show(menu);
+        } else {
+            menu.classList.remove('hidden');
+        }
         menu.style.left = Math.max(0, x) + 'px';
         menu.style.top = Math.max(0, y) + 'px';
         const clamped = clampPosition(x, y);
@@ -429,7 +446,14 @@ if ((window as any)[guardKey]) {
     }
 
     function hideContextMenu() {
-        if (!menu.classList.contains('hidden')) menu.classList.add('hidden');
+        const domUtils = (window as any).DOMUtils;
+        if (!menu.classList.contains('hidden')) {
+            if (domUtils && typeof domUtils.hide === 'function') {
+                domUtils.hide(menu);
+            } else {
+                menu.classList.add('hidden');
+            }
+        }
         unbindAutoClose();
     }
 
