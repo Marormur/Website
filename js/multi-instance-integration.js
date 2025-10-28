@@ -383,17 +383,19 @@ console.log('MultiInstanceIntegration loaded');
 
             const modalElement = document.getElementById(modalId);
             if (!modalElement) {
-                console.error(`Cannot register shortcuts for ${type}: modal element ${modalId} not found`);
+                console.error(
+                    `Cannot register shortcuts for ${type}: modal element ${modalId} not found`
+                );
                 return;
             }
 
             console.log(`Registering shortcuts for ${type} on modal ${modalId}`, modalElement);
 
-                // Use manager-style registration scoped to document
-                // Modal-scoped registration doesn't work because keyboard events require element focus
-                // Instead, we rely on the manager's instance state to determine if shortcuts should fire
+            // Use manager-style registration scoped to document
+            // Modal-scoped registration doesn't work because keyboard events require element focus
+            // Instead, we rely on the manager's instance state to determine if shortcuts should fire
             const unregister = window.KeyboardShortcuts.register(manager, {
-                    scope: document,
+                scope: document,
                 newTitleFactory: () => `${type} ${manager.getInstanceCount() + 1}`,
             });
 
@@ -424,3 +426,4 @@ console.log('MultiInstanceIntegration loaded');
     // Auto-initialize
     integration.init();
 })();
+

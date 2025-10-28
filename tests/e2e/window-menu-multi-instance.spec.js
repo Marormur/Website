@@ -104,16 +104,16 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await addButton.click();
         await page.waitForTimeout(500);
 
-        // Get current active instance ID
-        const initialActiveId = await page.evaluate(() => {
-            if (!window.FinderInstanceManager) return null;
-            return window.FinderInstanceManager.getActiveInstance()?.instanceId;
-        });
-
         // Click first tab to make first instance active
         const tabs = page.locator('#finder-tabs-container .wt-tab');
         await tabs.nth(0).click();
         await page.waitForTimeout(300);
+
+        // Get current active instance ID (after switching to first tab)
+        const initialActiveId = await page.evaluate(() => {
+            if (!window.FinderInstanceManager) return null;
+            return window.FinderInstanceManager.getActiveInstance()?.instanceId;
+        });
 
         // Open Window menu
         const windowMenuButton = page.getByRole('button', { name: /Fenster|Window/i });

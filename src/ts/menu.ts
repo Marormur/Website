@@ -71,33 +71,12 @@ function buildFinderMenuDefinition(context: MenuContext) {
                     id: 'finder-new-window',
                     label: () => translate('menu.finder.newWindow'),
                     shortcut: '⌘N',
-                    icon: 'finder',
+                    icon: 'new',
                     action: () => {
-                        if (
-                            window['FinderInstanceManager'] &&
-                            typeof window['FinderInstanceManager'].createInstance === 'function'
-                        ) {
-                            const count = window['FinderInstanceManager'].getInstanceCount?.() || 0;
-                            window['FinderInstanceManager'].createInstance({
-                                title: `Finder ${count + 1}`,
-                            });
-                        } else if (
-                            window['WindowManager'] &&
-                            typeof window['WindowManager'].open === 'function'
-                        ) {
-                            window['WindowManager'].open('finder-modal');
-                        } else if (
-                            window['API'] &&
-                            window['API'].window &&
-                            typeof window['API'].window.open === 'function'
-                        ) {
-                            window['API'].window.open('finder-modal');
-                        } else if (typeof window['openModal'] === 'function') {
-                            window['openModal']('finder-modal');
-                        } else {
-                            console.warn(
-                                'Finder new window action not available: no window manager found'
-                            );
+                        const mgr = window['FinderInstanceManager'];
+                        if (mgr && typeof mgr.createInstance === 'function') {
+                            const count = mgr.getInstanceCount ? mgr.getInstanceCount() : mgr.getAllInstances?.().length || 0;
+                            mgr.createInstance({ title: `Finder ${count + 1}` });
                         }
                     },
                 },
@@ -520,9 +499,11 @@ function getMultiInstanceMenuItems(context: MenuContext) {
         items.push({ type: 'separator' });
         instances.forEach((instance: any, index: number) => {
             const isActive = manager.getActiveInstance()?.instanceId === instance.instanceId;
+            // Normalize label to always include index-based numbering for stable UI/test selection
+            const numberLabel = `${typeLabel} ${index + 1}`;
             items.push({
                 id: `window-instance-${instance.instanceId}`,
-                label: () => `${isActive ? '✓ ' : '  '}${instance.title}`,
+                label: () => `${isActive ? '✓ ' : ''}${numberLabel}`,
                 shortcut: index < 9 ? `⌘${index + 1}` : undefined,
                 action: () => {
                     manager.setActiveInstance(instance.instanceId);
@@ -541,7 +522,21 @@ function getMultiInstanceMenuItems(context: MenuContext) {
                         typeof base === 'string' && base !== 'menu.window.closeAllConfirm'
                             ? base
                             : `Close all ${typeLabel} (${instances.length})?`;
-                    if (confirm(confirmMsg)) manager.destroyAllInstances();
+                    if (confirm(confirmMsg)) {
+                        manager.destroyAllInstances();
+                        // If we closed all instances for a modal-backed window, also hide the modal
+                        const targetModal = (context as any)?.modalId;
+                        if (targetModal) {
+                            if (typeof window['API']?.window?.close === 'function') {
+                                window['API'].window.close(targetModal);
+                            } else {
+                                const el = document.getElementById(targetModal);
+                                if (el && !el.classList.contains('hidden')) {
+                                    el.classList.add('hidden');
+                                }
+                            }
+                        }
+                    }
                 },
             }
         );

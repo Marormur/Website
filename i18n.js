@@ -836,7 +836,7 @@
                     help: 'Help',
                 },
                 finder: {
-                    newWindow: 'New Finder Window',
+                    newWindow: 'Create Finder Window',
                     reload: 'Reload Finder',
                     close: 'Close window',
                     help: 'Show Finder help',

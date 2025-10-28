@@ -46,9 +46,10 @@ body > header {
     left: 0;
     right: 0;
     /* Elevate menubar above app windows so dropdowns are clickable.
-       Launchpad uses z-index: 11000, so menubar at 10000 stays below it
-       but above dialogs/windows (<= ~9999). */
-    z-index: 10000 !important;
+       Windows may increase their z-index dynamically during tests/sessions.
+       Use a very high value to ensure the menubar (buttons + dropdowns)
+       always stays on top, but still below OS-level overlays if any. */
+    z-index: 2147483500 !important;
 }
 
 .desktop-area {
@@ -655,6 +656,12 @@ html.dark .menu-separator {
 
 #apple-menu-dropdown,
 #program-dropdown {
+    z-index: 2147483647 !important;
+}
+
+/* Ensure dynamically rendered application menus (e.g., Fenster/Window section)
+   also float above any app windows and are always clickable. */
+#menubar-links .menu-dropdown {
     z-index: 2147483647 !important;
 }
 

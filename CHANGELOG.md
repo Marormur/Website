@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Fixed - Cross-platform VS Code tasks (macOS)
+  - Replaced Windows PowerShell-only task commands with a cross-platform Node helper for the dev server (`scripts/dev-server-ensure.js`).
+  - Updated `.vscode/tasks.json`:
+    - `Start Dev Server` and `Start Dev Server (No Watch)` now use `node scripts/dev-server-ensure.js` (works on macOS/Linux/Windows).
+    - `Stop Dev Server` uses OS-specific commands (PowerShell on Windows, `lsof`+`kill` on macOS/Linux).
+    - `Quick E2E to capture readiness and console errors` sets env vars via `options.env` (no inline `$env:`).
+  - Outcome: TypeScript watch/check tasks and the aggregated "Dev Environment: Start All" workflow work on macOS.
+
 ### Fixed - Runtime readiness + menu + launchpad
   - app-init: Ensure `window.__APP_READY` is reliably set even if `load` is delayed; add 4s fallback timer.
   - app-init: Add capture-phase document click handler to close Launchpad on background clicks (works with pointer-events:none overlays).

@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 (function () {
     'use strict';
     const state = {
@@ -6,9 +6,7 @@
         contextResolver: (() => 'global'),
         globalListenerAttached: false,
     };
-    function isMac() {
-        return navigator.platform.toUpperCase().includes('MAC');
-    }
+    // Note: We intentionally do not branch on platform. We accept either Cmd (Meta) or Ctrl as modifier everywhere.
     function isEditable(target) {
         if (!(target instanceof Element))
             return false;
@@ -45,8 +43,8 @@
         const manager = arg1;
         const scope = arg2.scope || document;
         const handler = (e) => {
-            const useMeta = isMac();
-            const mod = useMeta ? e.metaKey : e.ctrlKey;
+            // Cross-platform: accept either Cmd (Meta) or Ctrl as the modifier
+            const mod = e.metaKey || e.ctrlKey;
             if (!mod)
                 return;
             if (isEditable(e.target))
@@ -94,8 +92,8 @@
         if (state.globalListenerAttached)
             return;
         const listener = (e) => {
-            const useMeta = isMac();
-            const mod = useMeta ? e.metaKey : e.ctrlKey;
+            // Cross-platform: accept either Cmd (Meta) or Ctrl as the modifier
+            const mod = e.metaKey || e.ctrlKey;
             if (!mod)
                 return;
             if (isEditable(e.target))

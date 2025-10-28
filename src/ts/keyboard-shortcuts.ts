@@ -30,9 +30,7 @@
     globalListenerAttached: false,
   };
 
-  function isMac(): boolean {
-    return navigator.platform.toUpperCase().includes('MAC');
-  }
+  // Note: We intentionally do not branch on platform. We accept either Cmd (Meta) or Ctrl as modifier everywhere.
 
   function isEditable(target: EventTarget | null): boolean {
     if (!(target instanceof Element)) return false;
@@ -75,8 +73,8 @@
     const manager = arg1 as Manager;
     const scope: Document | HTMLElement = arg2.scope || document;
     const handler = (e: KeyboardEvent) => {
-      const useMeta = isMac();
-      const mod = useMeta ? e.metaKey : e.ctrlKey;
+      // Cross-platform: accept either Cmd (Meta) or Ctrl as the modifier
+      const mod = e.metaKey || e.ctrlKey;
       if (!mod) return;
       if (isEditable(e.target)) return;
       const key = e.key.toLowerCase();
@@ -124,8 +122,8 @@
   function ensureGlobalListener() {
     if (state.globalListenerAttached) return;
     const listener = (e: KeyboardEvent) => {
-      const useMeta = isMac();
-      const mod = useMeta ? e.metaKey : e.ctrlKey;
+      // Cross-platform: accept either Cmd (Meta) or Ctrl as the modifier
+      const mod = e.metaKey || e.ctrlKey;
       if (!mod) return;
       if (isEditable(e.target)) return;
       const key = e.key.toLowerCase();

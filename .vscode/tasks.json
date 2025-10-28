@@ -101,7 +101,7 @@
     {
       "label": "Start Dev Server",
       "type": "shell",
-      "command": "if (Test-NetConnection -ComputerName 127.0.0.1 -Port 5173 -InformationLevel Quiet) { 'Server running at http://127.0.0.1:5173/' | Write-Output; Start-Sleep -Milliseconds 200; } else { node server.js }",
+      "command": "node scripts/dev-server-ensure.js",
       "isBackground": true,
       "problemMatcher": {
         "owner": "dev-server",
@@ -124,7 +124,16 @@
     {
       "label": "Stop Dev Server",
       "type": "shell",
-      "command": "Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { $_.Path -like '*node.exe*' } | Stop-Process -Force",
+      "command": "echo 'Stopping dev server...'",
+      "windows": {
+        "command": "powershell -NoProfile -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -eq '' -and $_.Path -like '*node.exe*' } | Stop-Process -Force\""
+      },
+      "osx": {
+        "command": "bash -lc 'pids=$(lsof -ti tcp:5173); if [ -n \"$pids\" ]; then kill -9 $pids; else echo \"No server on :5173\"; fi'"
+      },
+      "linux": {
+        "command": "bash -lc 'pids=$(lsof -ti tcp:5173); if [ -n \"$pids\" ]; then kill -9 $pids; else echo \"No server on :5173\"; fi'"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "shared"
@@ -214,7 +223,7 @@
     {
       "label": "Start Dev Server (No Watch)",
       "type": "shell",
-      "command": "if (Test-NetConnection -ComputerName 127.0.0.1 -Port 5173 -InformationLevel Quiet) { 'Server running at http://127.0.0.1:5173/' | Write-Output; Start-Sleep -Milliseconds 200; } else { node server.js }",
+      "command": "node scripts/dev-server-ensure.js",
       "isBackground": true,
       "options": {
         "env": {
@@ -263,8 +272,14 @@
     {
       "label": "Quick E2E to capture readiness and console errors",
       "type": "shell",
-      "command": "$env:USE_NODE_SERVER='1'; $env:MOCK_GITHUB='1'; npm run test:e2e:quick",
+      "command": "npm run test:e2e:quick",
       "isBackground": false,
+      "options": {
+        "env": {
+          "USE_NODE_SERVER": "1",
+          "MOCK_GITHUB": "1"
+        }
+      },
       "problemMatcher": [],
       "group": "test"
     }
