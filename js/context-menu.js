@@ -20,9 +20,7 @@ else {
         ? window.hideMenuDropdowns
         : () => {
             const domUtils = window.DOMUtils;
-            document
-                .querySelectorAll('.menu-dropdown')
-                .forEach(d => {
+            document.querySelectorAll('.menu-dropdown').forEach(d => {
                 if (domUtils && typeof domUtils.hide === 'function') {
                     domUtils.hide(d);
                 }
