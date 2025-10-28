@@ -8,8 +8,8 @@ export {};
 declare global {
     interface Window {
         // Demo helpers
-        demoCreateTerminals?: () => any;
-        demoCreateEditors?: () => any;
+        demoCreateTerminals?: () => void;
+        demoCreateEditors?: () => void;
         demoSaveTerminals?: () => void;
         demoRestoreTerminals?: () => void;
         // Keep other demos as optional
@@ -58,7 +58,7 @@ W.demoCreateEditors = function demoCreateEditors() {
 W.demoSaveTerminals = function demoSaveTerminals() {
     if (!W.TerminalInstanceManager) return;
     console.group('Save Terminal State...');
-    const terminals = W.demoCreateTerminals?.();
+    const terminals = W.demoCreateTerminals?.() as Record<string, any> | undefined;
     if (terminals && terminals.term1) {
         terminals.term1.currentPath = '/home';
         terminals.term1.commandHistory = ['ls', 'pwd', 'cd documents'];
@@ -154,7 +154,7 @@ function logDemo(title: string, description: string): void {
 
     window.demoTerminalIsolation = function () {
         console.group('Terminal Isolation Demo...');
-        const terminals = window.demoCreateTerminals?.();
+            const terminals = window.demoCreateTerminals?.() as Record<string, any> | undefined;
         if (!terminals) return;
         if (terminals.term1) {
             terminals.term1.currentPath = '/home/user';
@@ -212,11 +212,11 @@ function logDemo(title: string, description: string): void {
 
     window.demoEditorContent = function () {
         console.group('Editor Content Demo...');
-        const editors = window.demoCreateEditors?.();
+            const editors = window.demoCreateEditors?.() as Record<string, unknown> | undefined;
         if (!editors) return;
-        console.log('Editor 1 content:', editors.editor1?.state?.content);
-        console.log('Editor 2 content:', editors.editor2?.state?.content);
-        console.log('Editor 3 content:', editors.editor3?.state?.content);
+        console.log('Editor 1 content:', (editors.editor1 as any)?.state?.content);
+        console.log('Editor 2 content:', (editors.editor2 as any)?.state?.content);
+        console.log('Editor 3 content:', (editors.editor3 as any)?.state?.content);
         console.log('%c✓ Jeder Editor hat eigenen Content!', 'color: #00ff00');
         console.groupEnd();
     };
@@ -226,7 +226,7 @@ function logDemo(title: string, description: string): void {
 
     window.demoSaveTerminals = function () {
         console.group('Save Terminal State...');
-        const terminals = window.demoCreateTerminals?.();
+            const terminals = window.demoCreateTerminals?.() as Record<string, any> | undefined;
         if (!terminals) return;
         if (terminals.term1) {
             terminals.term1.currentPath = '/home';
@@ -325,14 +325,14 @@ function logDemo(title: string, description: string): void {
 
     window.demoActiveInstance = function () {
         console.group('Active Instance Tracking...');
-        const terminals = window.demoCreateTerminals?.();
+            const terminals = window.demoCreateTerminals?.() as Record<string, unknown> | undefined;
         console.log(
             'Active instance:',
             window.TerminalInstanceManager?.getActiveInstance?.()?.instanceId
         );
         if (terminals?.term1)
             window.TerminalInstanceManager?.setActiveInstance?.(
-                terminals.term1.instanceId as string
+                    (terminals.term1 as any).instanceId as string
             );
         console.log(
             'Switched to:',
@@ -340,7 +340,7 @@ function logDemo(title: string, description: string): void {
         );
         if (terminals?.term2)
             window.TerminalInstanceManager?.setActiveInstance?.(
-                terminals.term2.instanceId as string
+                    (terminals.term2 as any).instanceId as string
             );
         console.log(
             'Switched to:',
@@ -414,11 +414,11 @@ function logDemo(title: string, description: string): void {
 
     window.demoKeyboardShortcuts = function () {
         console.group('Keyboard Shortcuts Demo...');
-        const shortcuts = window.KeyboardShortcuts.getAllShortcuts();
+        const shortcuts = window.KeyboardShortcuts.getAllShortcuts?.() || [];
         console.log(`Registered shortcuts: ${shortcuts.length}`);
         shortcuts.forEach((s: any) => {
             if (s.description) {
-                const display = window.KeyboardShortcuts.getShortcutDisplay(s);
+            const display = window.KeyboardShortcuts.getShortcutDisplay?.(s);
                 console.log(`  ${display}: ${s.description}`);
             }
         });
