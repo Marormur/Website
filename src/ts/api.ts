@@ -173,6 +173,17 @@ console.log('API loaded');
       applyTranslations: () => callWindowMethod('appI18n', 'applyTranslations'),
     },
 
+    session: createModuleProxy('SessionManager', [
+      'init',
+      'saveAll',
+      'saveInstanceType',
+      'restoreSession',
+      'clear',
+      'setDebounceDelay',
+      'getDebounceDelay',
+      'getStats',
+    ] as const),
+
     helpers: {
       getMenuBarBottom: (): number => {
         const header = document.querySelector('body > header');

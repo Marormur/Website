@@ -329,6 +329,16 @@ var App = (() => {
             getActiveLanguage: () => callWindowMethod("appI18n", "getActiveLanguage") || "en",
             applyTranslations: () => callWindowMethod("appI18n", "applyTranslations")
           },
+          session: createModuleProxy("SessionManager", [
+            "init",
+            "saveAll",
+            "saveInstanceType",
+            "restoreSession",
+            "clear",
+            "setDebounceDelay",
+            "getDebounceDelay",
+            "getStats"
+          ]),
           helpers: {
             getMenuBarBottom: () => {
               const header = document.querySelector("body > header");
@@ -3982,6 +3992,280 @@ var App = (() => {
     }
   });
 
+  // src/ts/session-manager.ts
+  var require_session_manager = __commonJS({
+    "src/ts/session-manager.ts"() {
+      "use strict";
+      console.log("SessionManager loaded");
+      (() => {
+        "use strict";
+        const SESSION_STORAGE_KEY = "windowInstancesSession";
+        const SESSION_VERSION = "1.0";
+        const DEFAULT_DEBOUNCE_MS = 750;
+        const MAX_STORAGE_SIZE = 5 * 1024 * 1024;
+        let saveTimer = null;
+        let debounceDelay = DEFAULT_DEBOUNCE_MS;
+        let pendingSaveTypes = /* @__PURE__ */ new Set();
+        let quotaExceeded = false;
+        let lastSaveAttempt = 0;
+        let saveInProgress = false;
+        function estimateSize(data) {
+          try {
+            return JSON.stringify(data).length * 2;
+          } catch {
+            return 0;
+          }
+        }
+        function checkStorageQuota(dataSize) {
+          if (quotaExceeded) {
+            return false;
+          }
+          return dataSize < MAX_STORAGE_SIZE;
+        }
+        function readSession() {
+          try {
+            const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== "object") return null;
+            if (parsed.version !== SESSION_VERSION) {
+              console.warn(`SessionManager: Version mismatch (stored: ${parsed.version}, expected: ${SESSION_VERSION})`);
+              return null;
+            }
+            return parsed;
+          } catch (err) {
+            console.warn("SessionManager: Failed to read session:", err);
+            return null;
+          }
+        }
+        function writeSession(session) {
+          const size = estimateSize(session);
+          if (!checkStorageQuota(size)) {
+            if (!quotaExceeded) {
+              console.error("SessionManager: Storage quota exceeded. Auto-save disabled.");
+              console.error(`Attempted to save ${(size / 1024).toFixed(2)}KB, limit is ${(MAX_STORAGE_SIZE / 1024).toFixed(2)}KB`);
+              quotaExceeded = true;
+            }
+            return false;
+          }
+          try {
+            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+            quotaExceeded = false;
+            return true;
+          } catch (err) {
+            if (err instanceof Error && err.name === "QuotaExceededError") {
+              console.error("SessionManager: Storage quota exceeded:", err);
+              quotaExceeded = true;
+            } else {
+              console.error("SessionManager: Failed to write session:", err);
+            }
+            return false;
+          }
+        }
+        function clearSession() {
+          try {
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+            console.log("SessionManager: Session cleared");
+          } catch (err) {
+            console.warn("SessionManager: Failed to clear session:", err);
+          }
+        }
+        function getInstanceManagers() {
+          const managers = /* @__PURE__ */ new Map();
+          const w = window;
+          const knownManagers = [
+            "TerminalInstanceManager",
+            "TextEditorInstanceManager"
+          ];
+          knownManagers.forEach((key) => {
+            const manager = w[key];
+            if (manager && typeof manager === "object") {
+              const mgr = manager;
+              const type = typeof mgr.type === "string" ? mgr.type : key.replace("InstanceManager", "").toLowerCase();
+              managers.set(type, manager);
+            }
+          });
+          return managers;
+        }
+        function serializeAllInstances() {
+          const result = {};
+          const managers = getInstanceManagers();
+          managers.forEach((manager, type) => {
+            const mgr = manager;
+            if (typeof mgr.serializeAll === "function") {
+              try {
+                const instances = mgr.serializeAll();
+                if (Array.isArray(instances)) {
+                  result[type] = instances;
+                }
+              } catch (err) {
+                console.error(`SessionManager: Failed to serialize instances for type "${type}":`, err);
+              }
+            }
+          });
+          return result;
+        }
+        function performSave() {
+          if (saveInProgress) {
+            console.warn("SessionManager: Save already in progress, skipping");
+            return;
+          }
+          saveInProgress = true;
+          lastSaveAttempt = Date.now();
+          try {
+            const instances = serializeAllInstances();
+            const session = {
+              version: SESSION_VERSION,
+              timestamp: Date.now(),
+              instances
+            };
+            const success = writeSession(session);
+            if (success) {
+              const instanceCount = Object.values(instances).reduce((sum, arr) => sum + arr.length, 0);
+              console.log(`SessionManager: Saved ${instanceCount} instances across ${Object.keys(instances).length} types`);
+            }
+            pendingSaveTypes.clear();
+          } catch (err) {
+            console.error("SessionManager: Save failed:", err);
+          } finally {
+            saveInProgress = false;
+          }
+        }
+        function scheduleSave(instanceType) {
+          if (instanceType) {
+            pendingSaveTypes.add(instanceType);
+          }
+          if (saveTimer !== null) {
+            clearTimeout(saveTimer);
+          }
+          saveTimer = window.setTimeout(() => {
+            saveTimer = null;
+            performSave();
+          }, debounceDelay);
+        }
+        function saveAll(options = {}) {
+          if (options.immediate) {
+            if (saveTimer !== null) {
+              clearTimeout(saveTimer);
+              saveTimer = null;
+            }
+            performSave();
+          } else {
+            scheduleSave();
+          }
+        }
+        function saveInstanceType(instanceType, options = {}) {
+          if (options.immediate) {
+            if (saveTimer !== null) {
+              clearTimeout(saveTimer);
+              saveTimer = null;
+            }
+            performSave();
+          } else {
+            scheduleSave(instanceType);
+          }
+        }
+        function restoreSession() {
+          const session = readSession();
+          if (!session) {
+            console.log("SessionManager: No session to restore");
+            return false;
+          }
+          const managers = getInstanceManagers();
+          let restoredCount = 0;
+          Object.entries(session.instances).forEach(([type, instances]) => {
+            const manager = managers.get(type);
+            if (!manager) {
+              console.warn(`SessionManager: No manager found for type "${type}"`);
+              return;
+            }
+            const mgr = manager;
+            if (typeof mgr.deserializeAll === "function") {
+              try {
+                mgr.deserializeAll(instances);
+                restoredCount += instances.length;
+                console.log(`SessionManager: Restored ${instances.length} "${type}" instances`);
+              } catch (err) {
+                console.error(`SessionManager: Failed to restore instances for type "${type}":`, err);
+              }
+            }
+          });
+          console.log(`SessionManager: Restored ${restoredCount} instances total`);
+          return restoredCount > 0;
+        }
+        function setDebounceDelay(ms) {
+          if (ms < 100 || ms > 5e3) {
+            console.warn(`SessionManager: Invalid debounce delay ${ms}ms, must be 100-5000ms`);
+            return;
+          }
+          debounceDelay = ms;
+          console.log(`SessionManager: Debounce delay set to ${ms}ms`);
+        }
+        function getDebounceDelay() {
+          return debounceDelay;
+        }
+        function clear() {
+          if (saveTimer !== null) {
+            clearTimeout(saveTimer);
+            saveTimer = null;
+          }
+          pendingSaveTypes.clear();
+          clearSession();
+          quotaExceeded = false;
+        }
+        function getStats() {
+          const session = readSession();
+          if (!session) {
+            return {
+              hasSession: false,
+              instanceCount: 0,
+              types: [],
+              timestamp: null,
+              sizeBytes: 0
+            };
+          }
+          const instanceCount = Object.values(session.instances).reduce((sum, arr) => sum + arr.length, 0);
+          const types = Object.keys(session.instances);
+          const sizeBytes = estimateSize(session);
+          return {
+            hasSession: true,
+            instanceCount,
+            types,
+            timestamp: session.timestamp,
+            sizeBytes,
+            quotaExceeded
+          };
+        }
+        function init() {
+          console.log("SessionManager: Initializing auto-save system");
+          window.addEventListener("blur", () => {
+            saveAll({ immediate: true });
+          });
+          window.addEventListener("beforeunload", () => {
+            performSave();
+          });
+          document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+              saveAll({ immediate: true });
+            }
+          });
+          console.log(`SessionManager: Initialized with ${debounceDelay}ms debounce`);
+        }
+        const SessionManager = {
+          init,
+          saveAll,
+          saveInstanceType,
+          restoreSession,
+          clear,
+          setDebounceDelay,
+          getDebounceDelay,
+          getStats
+        };
+        window.SessionManager = SessionManager;
+      })();
+    }
+  });
+
   // src/ts/theme.ts
   var require_theme = __commonJS({
     "src/ts/theme.ts"() {
@@ -4127,6 +4411,17 @@ var App = (() => {
             modified: Date.now()
           };
           this.emit("stateChanged", { oldState, newState: this.state });
+          this._triggerAutoSave();
+        }
+        _triggerAutoSave() {
+          const w = window;
+          if (w.SessionManager && typeof w.SessionManager.saveInstanceType === "function") {
+            try {
+              w.SessionManager.saveInstanceType(this.type);
+            } catch (error) {
+              console.warn("Failed to trigger auto-save:", error);
+            }
+          }
         }
         getState() {
           return { ...this.state };
@@ -4268,6 +4563,18 @@ var App = (() => {
               modified: Date.now()
             };
             this.emit("stateChanged", { oldState, newState: this.state });
+            this._triggerAutoSave();
+          }
+          _triggerAutoSave() {
+            const w = window;
+            const SessionManager = w.SessionManager;
+            if (SessionManager && typeof SessionManager.saveInstanceType === "function") {
+              try {
+                SessionManager.saveInstanceType(this.type);
+              } catch (error) {
+                console.warn("Failed to trigger auto-save:", error);
+              }
+            }
           }
           getState() {
             return { ...this.state };
@@ -4376,6 +4683,7 @@ var App = (() => {
               this.instances.set(instanceId, instance);
               this.activeInstanceId = instanceId;
               this._setupInstanceEvents(instance);
+              this._triggerAutoSave();
               console.log(`Created instance: ${instanceId}`);
               return instance;
             } catch (error) {
@@ -4428,6 +4736,7 @@ var App = (() => {
               const lastId = remainingIds.length > 0 ? remainingIds[remainingIds.length - 1] : void 0;
               this.activeInstanceId = lastId != null ? lastId : null;
             }
+            this._triggerAutoSave();
             console.log(`Destroyed instance: ${instanceId}`);
           }
           destroyAllInstances() {
@@ -4436,6 +4745,7 @@ var App = (() => {
             });
             this.instances.clear();
             this.activeInstanceId = null;
+            this._triggerAutoSave();
           }
           hasInstances() {
             return this.instances.size > 0;
@@ -4478,6 +4788,17 @@ var App = (() => {
             });
             this.instances = newMap;
             console.log("Instances reordered:", validIds);
+          }
+          _triggerAutoSave() {
+            const w = window;
+            const SessionManager = w.SessionManager;
+            if (SessionManager && typeof SessionManager.saveInstanceType === "function") {
+              try {
+                SessionManager.saveInstanceType(this.type);
+              } catch (error) {
+                console.warn("Failed to trigger auto-save:", error);
+              }
+            }
           }
           _defaultCreateContainer(instanceId) {
             const container = document.createElement("div");
@@ -9581,7 +9902,7 @@ ${selectedText}
     }
   }
   function initApp() {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
     const win = window;
     const funcs = window;
     const { modalIds } = initModalIds();
@@ -9673,6 +9994,19 @@ ${selectedText}
     (_n = funcs.initDockMagnification) == null ? void 0 : _n.call(funcs);
     if (win.DockSystem && typeof win.DockSystem.initDockDragDrop === "function") {
       win.DockSystem.initDockDragDrop();
+    }
+    if (win.SessionManager) {
+      try {
+        (_p = (_o = win.SessionManager).init) == null ? void 0 : _p.call(_o);
+        setTimeout(() => {
+          var _a2;
+          if ((_a2 = win.SessionManager) == null ? void 0 : _a2.restoreSession) {
+            win.SessionManager.restoreSession();
+          }
+        }, 100);
+      } catch (err) {
+        console.warn("SessionManager initialization failed:", err);
+      }
     }
     try {
       const dockEl = document.getElementById("dock");
@@ -9824,6 +10158,7 @@ ${selectedText}
       var import_menubar_utils = __toESM(require_menubar_utils());
       init_context_menu();
       var import_storage = __toESM(require_storage());
+      var import_session_manager = __toESM(require_session_manager());
       var import_theme = __toESM(require_theme());
       init_base_window_instance();
       var import_instance_manager = __toESM(require_instance_manager());
