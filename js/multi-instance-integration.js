@@ -85,6 +85,27 @@ console.log('MultiInstanceIntegration loaded');
                 // Restore saved sessions before starting auto-save
                 window.SessionManager.restoreAllSessions();
 
+                // After restoring sessions (or on fresh start), ensure all integrations
+                // have their tabs properly set up and active instances visible
+                this.integrations.forEach((integration, type) => {
+                    const { manager, tabManager } = integration;
+                    const instances = manager.getAllInstances();
+
+                    // Refresh tabs to reflect current instances
+                    // (works for both restored instances and fresh starts)
+                    if (tabManager && tabManager.controller) {
+                        tabManager.controller.refresh();
+                    }
+
+                    // Show the active instance if any exist
+                    if (instances.length > 0) {
+                        const activeInstance = manager.getActiveInstance();
+                        if (activeInstance) {
+                            this.showInstance(type, activeInstance.instanceId);
+                        }
+                    }
+                });
+
                 // Start auto-save
                 window.SessionManager.startAutoSave();
             }
@@ -157,20 +178,6 @@ console.log('MultiInstanceIntegration loaded');
             // Register keyboard shortcuts for Terminal (after integration is stored)
             this.registerShortcutsForType('terminal', window.TerminalInstanceManager);
 
-            // Add tabs for any existing instances
-            const existingTerminals = window.TerminalInstanceManager.getAllInstances();
-            existingTerminals.forEach(instance => {
-                terminalTabManager.addTab(instance);
-            });
-
-            // Show the active instance if any exist
-            if (existingTerminals.length > 0) {
-                const activeInstance = window.TerminalInstanceManager.getActiveInstance();
-                if (activeInstance) {
-                    this.showInstance('terminal', activeInstance.instanceId);
-                }
-            }
-
             // Listen for new instances and add tabs
             this.setupInstanceListeners('terminal');
         }
@@ -213,20 +220,6 @@ console.log('MultiInstanceIntegration loaded');
 
             // Register keyboard shortcuts for Text Editor (after integration is stored)
             this.registerShortcutsForType('text-editor', window.TextEditorInstanceManager);
-
-            // Add tabs for any existing instances
-            const existingEditors = window.TextEditorInstanceManager.getAllInstances();
-            existingEditors.forEach(instance => {
-                editorTabManager.addTab(instance);
-            });
-
-            // Show the active instance if any exist
-            if (existingEditors.length > 0) {
-                const activeInstance = window.TextEditorInstanceManager.getActiveInstance();
-                if (activeInstance) {
-                    this.showInstance('text-editor', activeInstance.instanceId);
-                }
-            }
 
             // Listen for new instances and add tabs
             this.setupInstanceListeners('text-editor');
@@ -279,20 +272,6 @@ console.log('MultiInstanceIntegration loaded');
 
             // Register keyboard shortcuts for Finder (after integration is stored)
             this.registerShortcutsForType('finder', window.FinderInstanceManager);
-
-            // Add tabs for any existing instances
-            const existingFinders = window.FinderInstanceManager.getAllInstances();
-            existingFinders.forEach(instance => {
-                finderTabManager.addTab(instance);
-            });
-
-            // Show the active instance if any exist
-            if (existingFinders.length > 0) {
-                const activeInstance = window.FinderInstanceManager.getActiveInstance();
-                if (activeInstance) {
-                    this.showInstance('finder', activeInstance.instanceId);
-                }
-            }
 
             // Listen for new instances and add tabs
             this.setupInstanceListeners('finder');
