@@ -37,13 +37,37 @@
         if (!trigger) return;
         const menuId = trigger.getAttribute('aria-controls');
         if (!menuId) return;
-        const menu = document.getElementById(menuId);
-        if (!menu) return;
+        
         const forceOpen = Boolean(options.forceOpen);
+        let menu = document.getElementById(menuId);
+        if (!menu) return;
+        
         const wasOpen = !menu.classList.contains('hidden');
         const shouldOpen = forceOpen || !wasOpen;
         hideMenuDropdowns();
+        
         if (shouldOpen) {
+            // Only re-render menu if it was NOT already open (i.e., we're opening it fresh)
+            // This prevents re-rendering during hover events when menu is already visible
+            if (!wasOpen) {
+                const MenuSystem = (window as unknown as { MenuSystem?: { renderApplicationMenu?: (modalId?: string | null) => void } }).MenuSystem;
+                if (MenuSystem && typeof MenuSystem.renderApplicationMenu === 'function') {
+                    // Get the current active modal to pass to menu renderer
+                    const topModal = Array.from(document.querySelectorAll('.modal:not(.hidden)'))
+                        .sort((a, b) => {
+                            const zA = parseInt(getComputedStyle(a).zIndex, 10) || 0;
+                            const zB = parseInt(getComputedStyle(b).zIndex, 10) || 0;
+                            return zB - zA;
+                        })[0];
+                    const activeModalId = topModal?.id || null;
+                    MenuSystem.renderApplicationMenu(activeModalId);
+                }
+                
+                // Re-get menu element after rendering (it may have been recreated)
+                menu = document.getElementById(menuId);
+                if (!menu) return;
+            }
+            
             menu.classList.remove('hidden');
             trigger.setAttribute('aria-expanded', 'true');
         }

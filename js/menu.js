@@ -489,6 +489,21 @@ function getMultiInstanceMenuItems(context) {
                 shortcut: index < 9 ? `⌘${index + 1}` : undefined,
                 action: () => {
                     manager.setActiveInstance(instance.instanceId);
+                    // Also update visibility via MultiInstanceIntegration
+                    const integration = window.multiInstanceIntegration;
+                    if (integration && typeof integration.updateInstanceVisibility === 'function') {
+                        // Determine type based on manager
+                        let type = null;
+                        if (manager === window.FinderInstanceManager)
+                            type = 'finder';
+                        else if (manager === window.TerminalInstanceManager)
+                            type = 'terminal';
+                        else if (manager === window.TextEditorInstanceManager)
+                            type = 'text-editor';
+                        if (type) {
+                            integration.updateInstanceVisibility(type);
+                        }
+                    }
                 },
             });
         });
