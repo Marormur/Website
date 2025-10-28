@@ -24,7 +24,7 @@ test.describe('Multi-Instance Window Tabs', () => {
         expect(modules.BaseWindowInstance).toBe(true);
         expect(modules.InstanceManager).toBe(true);
         expect(modules.WindowChrome).toBe(true);
-    expect(modules.WindowTabs).toBe(true);
+        expect(modules.WindowTabs).toBe(true);
         expect(modules.KeyboardShortcuts).toBe(true);
         expect(modules.SessionManager).toBe(true);
         expect(modules.MultiInstanceIntegration).toBe(true);
@@ -105,3 +105,4 @@ test.describe('Multi-Instance Window Tabs', () => {
         expect(sessionInfo.storageInfo).toBeDefined();
     });
 });
+

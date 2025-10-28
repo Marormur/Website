@@ -156,3 +156,4 @@ test.describe('Terminal Multi-Instance Tabs', () => {
         expect(firstTabId).toBe(initialOrder[2]);
     });
 });
+

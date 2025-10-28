@@ -23,10 +23,10 @@ test.describe('TypeScript Integration', () => {
     });
 
     test('all TypeScript-migrated modules are available', async ({ page }) => {
-    const modulesAvailable = await page.evaluate(() => {
+        const modulesAvailable = await page.evaluate(() => {
             return {
                 // Phase 2: New Features
-        WindowTabs: typeof window.WindowTabs,
+                WindowTabs: typeof window.WindowTabs,
                 KeyboardShortcuts: typeof window.KeyboardShortcuts,
 
                 // Phase 3: Core Modules
@@ -53,8 +53,8 @@ test.describe('TypeScript Integration', () => {
 
         console.log('TypeScript modules:', modulesAvailable);
 
-    // Phase 2 assertions
-    expect(modulesAvailable.WindowTabs, 'WindowTabs').toBe('object'); // API object
+        // Phase 2 assertions
+        expect(modulesAvailable.WindowTabs, 'WindowTabs').toBe('object'); // API object
         expect(modulesAvailable.KeyboardShortcuts, 'KeyboardShortcuts').toBe('object');
 
         // Phase 3 Core assertions
@@ -258,3 +258,4 @@ test.describe('TypeScript Integration', () => {
         await page.click('[data-action="closeWindow"][data-window-id="terminal-modal"]');
     });
 });
+

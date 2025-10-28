@@ -52,9 +52,12 @@
             if (W.FinderInstanceManager) this.setupFinderIntegration();
 
             if (W.SessionManager) {
-                if (W.TerminalInstanceManager) W.SessionManager.registerManager('terminal', W.TerminalInstanceManager);
-                if (W.TextEditorInstanceManager) W.SessionManager.registerManager('text-editor', W.TextEditorInstanceManager);
-                if (W.FinderInstanceManager) W.SessionManager.registerManager('finder', W.FinderInstanceManager);
+                if (W.TerminalInstanceManager)
+                    W.SessionManager.registerManager('terminal', W.TerminalInstanceManager);
+                if (W.TextEditorInstanceManager)
+                    W.SessionManager.registerManager('text-editor', W.TextEditorInstanceManager);
+                if (W.FinderInstanceManager)
+                    W.SessionManager.registerManager('finder', W.FinderInstanceManager);
 
                 W.SessionManager.restoreAllSessions();
 
@@ -64,11 +67,12 @@
                     // Support both legacy adapter ({controller: {refresh}}) and new controller ({refresh})
                     try {
                         const maybe = tabManager as any;
-                        const refreshFn = typeof maybe?.refresh === 'function'
-                            ? maybe.refresh.bind(maybe)
-                            : typeof maybe?.controller?.refresh === 'function'
-                              ? maybe.controller.refresh.bind(maybe.controller)
-                              : null;
+                        const refreshFn =
+                            typeof maybe?.refresh === 'function'
+                                ? maybe.refresh.bind(maybe)
+                                : typeof maybe?.controller?.refresh === 'function'
+                                  ? maybe.controller.refresh.bind(maybe.controller)
+                                  : null;
                         if (refreshFn) refreshFn();
                     } catch {}
                     const active = manager.getActiveInstance();
@@ -79,11 +83,15 @@
             }
 
             // Scope keyboard shortcuts by top window
-            if (W.KeyboardShortcuts && typeof W.KeyboardShortcuts.setContextResolver === 'function') {
+            if (
+                W.KeyboardShortcuts &&
+                typeof W.KeyboardShortcuts.setContextResolver === 'function'
+            ) {
                 W.KeyboardShortcuts.setContextResolver(() => {
                     try {
                         const wm = W.WindowManager;
-                        const top = wm && typeof wm.getTopWindow === 'function' ? wm.getTopWindow() : null;
+                        const top =
+                            wm && typeof wm.getTopWindow === 'function' ? wm.getTopWindow() : null;
                         const topId = top?.id || '';
                         let match = 'global';
                         this.integrations.forEach((val, key) => {
@@ -123,7 +131,8 @@
             if (!mount) return;
             const controller = W.WindowTabs.create(manager, mount, {
                 addButton: true,
-                onCreateInstanceTitle: () => `Terminal ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
+                onCreateInstanceTitle: () =>
+                    `Terminal ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
             });
 
             this.integrations.set('terminal', {
@@ -162,7 +171,8 @@
             if (!mount) return;
             const controller = W.WindowTabs.create(manager, mount, {
                 addButton: true,
-                onCreateInstanceTitle: () => `Editor ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
+                onCreateInstanceTitle: () =>
+                    `Editor ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
             });
 
             this.integrations.set('text-editor', {
@@ -205,7 +215,8 @@
             if (!mount) return;
             const controller = W.WindowTabs.create(manager, mount, {
                 addButton: true,
-                onCreateInstanceTitle: () => `Finder ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
+                onCreateInstanceTitle: () =>
+                    `Finder ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
             });
 
             this.integrations.set('finder', {
@@ -289,3 +300,4 @@
     (window as any).multiInstanceIntegration = integration;
     integration.init();
 })();
+
