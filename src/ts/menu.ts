@@ -51,7 +51,7 @@ export function normalizeMenuItems(items: unknown[], context: MenuContext) {
         normalized.push(clone);
         previousWasSeparator = false;
     });
-    while (normalized.length && normalized[normalized.length - 1].type === 'separator')
+    while (normalized.length && normalized[normalized.length - 1]?.type === 'separator')
         normalized.pop();
     return normalized;
 }
@@ -375,7 +375,7 @@ function buildTerminalMenuDefinition(context: any) {
                     action: () => {
                         if (
                             window['TerminalInstanceManager'] &&
-                            window['TerminalInstanceManager'].createInstance
+                            typeof window['TerminalInstanceManager'].createInstance === 'function'
                         )
                             window['TerminalInstanceManager'].createInstance();
                     },
@@ -507,12 +507,12 @@ function getMultiInstanceMenuItems(context: MenuContext) {
     if (!manager) return items;
     items.push({
         id: 'window-new-instance',
-        label: () => translate(newInstanceKey),
+        label: () => translate(newInstanceKey || 'menu.window.newWindow'),
         shortcut: '⌘N',
         icon: 'new',
         action: () => {
             const count = manager.getInstanceCount();
-            manager.createInstance({ title: `${typeLabel} ${count + 1}` });
+            manager.createInstance({ title: `${typeLabel} ${count + 1}` } as any);
         },
     });
     const instances = manager.getAllInstances();
@@ -667,7 +667,7 @@ export function renderApplicationMenu(activeModalId?: string | null) {
             if (item.shortcut) {
                 const shortcutSpan = document.createElement('span');
                 shortcutSpan.className = 'menu-item-shortcut';
-                shortcutSpan.textContent = item.shortcut;
+                shortcutSpan.textContent = typeof item.shortcut === 'function' ? item.shortcut() : item.shortcut;
                 actionEl.appendChild(shortcutSpan);
             }
             actionEl.setAttribute('role', 'menuitem');
@@ -677,12 +677,12 @@ export function renderApplicationMenu(activeModalId?: string | null) {
                 actionEl.setAttribute('aria-disabled', 'true');
                 if (tagName === 'button') actionEl.disabled = true;
             } else if (typeof item.action === 'function') {
-                const actionId = registerMenuAction(item.action);
+                const actionId = registerMenuAction(item.action as MenuHandler);
                 if (actionId) actionEl.dataset.menuAction = actionId;
             }
             if (item.href && typeof item.onClick === 'function') {
                 actionEl.addEventListener('click', (event: Event) => {
-                    const result = item.onClick(event);
+                    const result = (item.onClick as (e: Event) => boolean | void)(event);
                     if (result === false) event.preventDefault();
                 });
             }
@@ -735,7 +735,16 @@ function sendTextEditorMenuAction(actionType: string) {
 }
 
 function createMenuContext(modalId: string | null) {
-    if ((window as any).createMenuContext) return (window as any).createMenuContext(modalId);
+    const w = window as any;
+    // Allow external override but avoid self-recursion when this function is
+    // hoisted onto window as a global in non-module script context.
+    if (w.createMenuContext && w.createMenuContext !== (createMenuContext as any)) {
+        try {
+            return w.createMenuContext(modalId);
+        } catch (e) {
+            console.warn('[Menu] createMenuContext override threw; falling back', e);
+        }
+    }
     return { modalId: modalId, dialog: null };
 }
 
