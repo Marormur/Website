@@ -21,6 +21,8 @@ Summary of notable changes in progress & recent work:
 
 - Developer experience
   - Workflow improvements: TypeScript watch, consolidated dev tasks, pre-push quick smoke checks, and `.gitattributes` for cross-platform EOL.
+- Internationalization
+  - Photos app fallbacks now use English defaults so missing keys degrade gracefully in the fallback locale.
 
 ### Changed
   - Complete migration of tab system from JS to TypeScript with strict type checking

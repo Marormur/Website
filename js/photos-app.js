@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 /*
  * Fotos-App – inspiriert von der macOS Fotos Anwendung.
  * Lädt Bilder aus der Picsum API, gruppiert sie in verschiedene Ansichten
@@ -239,7 +239,7 @@ function t(key, fallback, params) {
     function handleImageError() {
         setDetailLoading(false);
         if (elements.detailMeta) {
-            elements.detailMeta.textContent = t('photos.errors.detailImage', 'Das Foto konnte nicht geladen werden.');
+            elements.detailMeta.textContent = t('photos.errors.detailImage', 'The photo could not be loaded.');
         }
     }
     async function fetchPhotos(options = {}) {
@@ -267,7 +267,7 @@ function t(key, fallback, params) {
             updateSidebarCounts();
         }
         catch (error) {
-            console.warn('Fotos-App: Laden fehlgeschlagen', error);
+            console.warn('Photos app: failed to load', error);
             setError(true);
         }
         finally {
@@ -283,7 +283,7 @@ function t(key, fallback, params) {
         const year = 2014 + ((yearBase % 10) + 1);
         const sanitizedAuthor = item.author && item.author.trim().length > 0
             ? item.author.trim()
-            : t('photos.detail.unknownPhotographer', 'Unbekannter Fotograf');
+            : t('photos.detail.unknownPhotographer', 'Unknown photographer');
         const id = String(item.id);
         return {
             id,
@@ -364,7 +364,7 @@ function t(key, fallback, params) {
             const count = document.createElement('span');
             count.className = 'text-xs text-gray-500 dark:text-gray-400';
             const countKey = group.photos.length === 1 ? 'photos.labels.photoSingular' : 'photos.labels.photoPlural';
-            const countLabel = t(countKey, group.photos.length === 1 ? 'Foto' : 'Fotos');
+            const countLabel = t(countKey, group.photos.length === 1 ? 'Photo' : 'Photos');
             count.textContent = `${group.photos.length} ${countLabel}`;
             heading.append(title, count);
             section.append(heading);
@@ -385,7 +385,7 @@ function t(key, fallback, params) {
                 }
                 const image = document.createElement('img');
                 image.src = photo.thumbUrl;
-                image.alt = t('photos.gallery.alt', 'Foto von {author}', { author: photo.author });
+                image.alt = t('photos.gallery.alt', 'Photo by {author}', { author: photo.author });
                 image.loading = 'lazy';
                 image.className = 'w-full h-full object-cover transition duration-300 group-hover:scale-105';
                 const overlay = document.createElement('div');
@@ -407,9 +407,9 @@ function t(key, fallback, params) {
     function buildGroups(photos, segment) {
         if (segment === 'collections') {
             const orientations = [
-                { title: t('photos.collections.landscape', 'Horizonte'), key: 'landscape' },
-                { title: t('photos.collections.portrait', 'Porträts'), key: 'portrait' },
-                { title: t('photos.collections.square', 'Quadrate'), key: 'square' },
+                { title: t('photos.collections.landscape', 'Landscapes'), key: 'landscape' },
+                { title: t('photos.collections.portrait', 'Portraits'), key: 'portrait' },
+                { title: t('photos.collections.square', 'Squares'), key: 'square' },
             ];
             return orientations
                 .map(item => ({ title: item.title, photos: photos.filter(photo => photo.orientation === item.key) }))
@@ -436,20 +436,20 @@ function t(key, fallback, params) {
         });
         return Array.from(byAuthor.entries())
             .sort((a, b) => {
-            const latestA = Math.max(...a[1].map(item => item.year));
-            const latestB = Math.max(...b[1].map(item => item.year));
-            return latestB - latestA;
-        })
+                const latestA = Math.max(...a[1].map(item => item.year));
+                const latestB = Math.max(...b[1].map(item => item.year));
+                return latestB - latestA;
+            })
             .map(([author, group]) => ({ title: author, photos: group }));
     }
     function formatOrientation(orientation) {
         if (orientation === 'portrait') {
-            return t('photos.orientations.portrait', 'Porträt');
+            return t('photos.orientations.portrait', 'Portrait');
         }
         if (orientation === 'square') {
-            return t('photos.orientations.square', 'Quadrat');
+            return t('photos.orientations.square', 'Square');
         }
-        return t('photos.orientations.landscape', 'Querformat');
+        return t('photos.orientations.landscape', 'Landscape');
     }
     function setActiveCard(photoId) {
         if (!elements.gallery) {
@@ -481,17 +481,17 @@ function t(key, fallback, params) {
         }
         const total = state.filteredPhotos.length;
         const labelKey = total === 1 ? 'photos.labels.photoSingular' : 'photos.labels.photoPlural';
-        const label = t(labelKey, total === 1 ? 'Foto' : 'Fotos');
+        const label = t(labelKey, total === 1 ? 'Photo' : 'Photos');
         const segmentKey = state.activeSegment === 'collections'
             ? 'photos.segments.collections'
             : state.activeSegment === 'years'
                 ? 'photos.segments.years'
                 : 'photos.segments.moments';
         const segmentFallback = state.activeSegment === 'collections'
-            ? 'Sammlungen'
+            ? 'Collections'
             : state.activeSegment === 'years'
-                ? 'Jahre'
-                : 'Momente';
+                ? 'Years'
+                : 'Moments';
         const segmentLabel = t(segmentKey, segmentFallback);
         elements.photoCount.textContent = t('photos.status.count', `${total} ${label} • ${segmentLabel}`, { count: total, label, segment: segmentLabel });
     }
@@ -596,7 +596,7 @@ function t(key, fallback, params) {
     }
     function updateDetailMetadata(photo) {
         if (elements.detailTitle) {
-            const fallbackTitle = t('photos.detail.unknownPhoto', 'Unbekanntes Foto');
+            const fallbackTitle = t('photos.detail.unknownPhoto', 'Unknown photo');
             elements.detailTitle.textContent = photo.author || fallbackTitle;
         }
         if (elements.imageInfo) {
@@ -606,7 +606,7 @@ function t(key, fallback, params) {
         const orientationLabel = formatOrientation(photo.orientation);
         const metaParts = [];
         if (isExternalPhoto(photo)) {
-            metaParts.push(t('photos.detail.externalLabel', 'Externes Foto'));
+            metaParts.push(t('photos.detail.externalLabel', 'External photo'));
             if (photo.sourceName) {
                 metaParts.push(photo.sourceName);
             }
@@ -620,7 +620,7 @@ function t(key, fallback, params) {
         }
         if (elements.detailDimensions) {
             if (photo.width && photo.height) {
-                elements.detailDimensions.textContent = t('photos.detail.dimensions', `Auflösung: ${photo.width} × ${photo.height}px`, { width: photo.width, height: photo.height });
+                elements.detailDimensions.textContent = t('photos.detail.dimensions', `Resolution: ${photo.width} × ${photo.height}px`, { width: photo.width, height: photo.height });
             }
             else {
                 elements.detailDimensions.textContent = '';
@@ -631,7 +631,7 @@ function t(key, fallback, params) {
         }
         if (elements.detailDownload) {
             elements.detailDownload.href = photo.downloadUrl;
-            elements.detailDownload.download = t('photos.detail.downloadFilename', `foto-${photo.id}.jpg`, { id: photo.id });
+            elements.detailDownload.download = t('photos.detail.downloadFilename', `photo-${photo.id}.jpg`, { id: photo.id });
         }
         updateFavoriteButton(photo);
     }
@@ -642,15 +642,15 @@ function t(key, fallback, params) {
         if (isExternalPhoto(photo)) {
             elements.detailFavorite.setAttribute('disabled', 'true');
             elements.detailFavorite.classList.add('opacity-40', 'pointer-events-none');
-            elements.detailFavoriteLabel.textContent = t('photos.detail.favoriteUnavailable', 'Nicht verfügbar');
+            elements.detailFavoriteLabel.textContent = t('photos.detail.favoriteUnavailable', 'Unavailable');
             elements.detailFavoriteIcon.textContent = '–';
             return;
         }
         const isFavorite = state.favorites.has(photo.id);
         elements.detailFavorite.removeAttribute('disabled');
         elements.detailFavorite.classList.remove('opacity-40', 'pointer-events-none');
-        const removeLabel = t('photos.detail.favoriteRemove', 'Favorit entfernen');
-        const addLabel = t('photos.detail.favoriteAdd', 'Zu Favoriten');
+        const removeLabel = t('photos.detail.favoriteRemove', 'Remove favorite');
+        const addLabel = t('photos.detail.favoriteAdd', 'Add to favorites');
         elements.detailFavoriteLabel.textContent = isFavorite ? removeLabel : addLabel;
         elements.detailFavoriteIcon.textContent = isFavorite ? '♥' : '♡';
     }
@@ -730,11 +730,11 @@ function t(key, fallback, params) {
             return;
         }
         if (state.externalPhoto) {
-            elements.detailCounter.textContent = t('photos.detail.externalCounter', 'Externes Bild');
+            elements.detailCounter.textContent = t('photos.detail.externalCounter', 'External image');
             return;
         }
         if (state.selectedIndex >= 0) {
-            elements.detailCounter.textContent = t('photos.detail.counter', `${state.selectedIndex + 1} von ${state.filteredPhotos.length}`, { index: state.selectedIndex + 1, total: state.filteredPhotos.length });
+            elements.detailCounter.textContent = t('photos.detail.counter', `${state.selectedIndex + 1} of ${state.filteredPhotos.length}`, { index: state.selectedIndex + 1, total: state.filteredPhotos.length });
         }
         else {
             elements.detailCounter.textContent = '';
@@ -769,7 +769,7 @@ function t(key, fallback, params) {
         }
         const name = payload.name && payload.name.trim().length > 0
             ? payload.name.trim()
-            : t('photos.detail.externalFile', 'Externe Datei');
+            : t('photos.detail.externalFile', 'External file');
         const externalPhoto = {
             id: `external-${Date.now()}`,
             author: name,
