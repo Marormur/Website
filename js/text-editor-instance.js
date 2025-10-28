@@ -429,7 +429,15 @@ console.log('TextEditorInstance (TS) loaded');
                 const container = document.createElement('div');
                 container.id = `${instanceId}-container`;
                 container.className = 'text-editor-instance-container h-full';
-                container.classList.add('hidden');
+                // Use DOMUtils if available to hide initially, else fallback
+                const domUtils = window
+                    .DOMUtils;
+                if (domUtils && typeof domUtils.hide === 'function') {
+                    domUtils.hide(container);
+                }
+                else {
+                    container.classList.add('hidden');
+                }
                 editorModalContainer.appendChild(container);
                 return container;
             },
