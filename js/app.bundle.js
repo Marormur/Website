@@ -3827,7 +3827,9 @@ var App = (() => {
             if (WindowManager && typeof WindowManager.getConfig === "function") {
               const config = WindowManager.getConfig(id);
               if (!config) {
-                console.warn(`Skipping restore of modal "${id}": not registered in WindowManager`);
+                console.warn(
+                  `Skipping restore of modal "${id}": not registered in WindowManager`
+                );
                 return;
               }
             }
@@ -4851,94 +4853,7 @@ var App = (() => {
             return createController(manager, mountEl, options);
           }
         };
-        class WindowTabManager {
-          constructor(config) {
-            this.controller = null;
-            this.manager = config.instanceManager;
-            this.opts = {
-              containerId: config.containerId,
-              onTabSwitch: config.onTabSwitch,
-              onTabClose: config.onTabClose,
-              onNewTab: config.onNewTab,
-              onAllTabsClosed: config.onAllTabsClosed
-            };
-            const mount = document.getElementById(config.containerId);
-            if (mount) {
-              const refreshWithHooks = () => {
-                renderTabs(
-                  mount,
-                  this.manager,
-                  { addButton: true },
-                  (id) => {
-                    var _a, _b;
-                    this.manager.setActiveInstance(id);
-                    (_b = (_a = this.opts).onTabSwitch) == null ? void 0 : _b.call(_a, id);
-                    refreshWithHooks();
-                  },
-                  (id) => {
-                    var _a, _b, _c, _d, _e, _f;
-                    (_b = (_a = this.opts).onTabClose) == null ? void 0 : _b.call(_a, id);
-                    this.manager.destroyInstance(id);
-                    const remaining = this.manager.getAllInstances();
-                    if (remaining.length === 0) {
-                      (_d = (_c = this.opts).onAllTabsClosed) == null ? void 0 : _d.call(_c);
-                    } else {
-                      const newActive = this.manager.getActiveInstance();
-                      if (newActive) {
-                        (_f = (_e = this.opts).onTabSwitch) == null ? void 0 : _f.call(_e, newActive.instanceId);
-                      }
-                    }
-                  },
-                  () => {
-                    var _a, _b;
-                    if (this.opts.onNewTab) {
-                      this.opts.onNewTab();
-                    } else {
-                      const next = (((_b = (_a = this.manager).getInstanceCount) == null ? void 0 : _b.call(_a)) || this.manager.getAllInstances().length) + 1;
-                      this.manager.createInstance({ title: `Instance ${next}` });
-                    }
-                  }
-                );
-              };
-              this.controller = {
-                el: mount,
-                refresh: refreshWithHooks,
-                destroy() {
-                  mount.innerHTML = "";
-                },
-                setTitle: (instanceId, title) => {
-                  const inst = this.manager.getInstance(instanceId);
-                  if (inst) {
-                    inst.title = title;
-                  }
-                  refreshWithHooks();
-                }
-              };
-              this.controller.refresh();
-            }
-          }
-          addTab(_instance) {
-            var _a;
-            (_a = this.controller) == null ? void 0 : _a.refresh();
-          }
-          closeTab(instanceId) {
-            var _a, _b, _c, _d, _e, _f, _g;
-            (_b = (_a = this.opts).onTabClose) == null ? void 0 : _b.call(_a, instanceId);
-            this.manager.destroyInstance(instanceId);
-            const remaining = this.manager.getAllInstances();
-            if (remaining.length === 0) {
-              (_d = (_c = this.opts).onAllTabsClosed) == null ? void 0 : _d.call(_c);
-            } else {
-              const newActive = this.manager.getActiveInstance();
-              if (newActive) {
-                (_f = (_e = this.opts).onTabSwitch) == null ? void 0 : _f.call(_e, newActive.instanceId);
-              }
-            }
-            (_g = this.controller) == null ? void 0 : _g.refresh();
-          }
-        }
         window.WindowTabs = WindowTabs;
-        window.WindowTabManager = WindowTabManager;
       })();
     }
   });
@@ -5058,14 +4973,27 @@ var App = (() => {
             });
           }
           showWelcomeMessage() {
-            this.addOutput('Willkommen im Terminal! Gib "help" ein f\xFCr verf\xFCgbare Befehle.', "info");
+            this.addOutput(
+              'Willkommen im Terminal! Gib "help" ein f\xFCr verf\xFCgbare Befehle.',
+              "info"
+            );
           }
           handleTabCompletion() {
             if (!this.inputElement) return;
             const input = this.inputElement.value;
             const [partialCmd, ...args] = input.split(" ");
             if (partialCmd === void 0) return;
-            const availableCommands = ["help", "clear", "ls", "pwd", "cd", "cat", "echo", "date", "whoami"];
+            const availableCommands = [
+              "help",
+              "clear",
+              "ls",
+              "pwd",
+              "cd",
+              "cat",
+              "echo",
+              "date",
+              "whoami"
+            ];
             if (args.length === 0) {
               const matches = availableCommands.filter((cmd) => cmd.startsWith(partialCmd));
               if (matches.length === 1) {
@@ -5120,7 +5048,10 @@ var App = (() => {
             if (matches.length === 1) {
               this.inputElement.value = `${cmd} ${matches[0]}`;
             } else if (matches.length > 1) {
-              this.addOutput(`guest@marvin:${this.currentPath}$ ${this.inputElement.value}`, "command");
+              this.addOutput(
+                `guest@marvin:${this.currentPath}$ ${this.inputElement.value}`,
+                "command"
+              );
               const formatted = matches.map((item) => {
                 const itemObj = currentDir.contents[item];
                 if (!itemObj) return item;
@@ -5153,7 +5084,10 @@ var App = (() => {
             if (commandFn !== void 0) {
               commandFn();
             } else {
-              this.addOutput(`Befehl nicht gefunden: ${cmd}. Gib "help" ein f\xFCr verf\xFCgbare Befehle.`, "error");
+              this.addOutput(
+                `Befehl nicht gefunden: ${cmd}. Gib "help" ein f\xFCr verf\xFCgbare Befehle.`,
+                "error"
+              );
             }
           }
           addOutput(text, type = "output") {
@@ -5264,13 +5198,15 @@ var App = (() => {
               }
               const file = (_a = dir.contents) == null ? void 0 : _a[fileName];
               if (!file) this.addOutput(`Datei nicht gefunden: ${filename}`, "error");
-              else if (file.type !== "file") this.addOutput(`${filename} ist keine Datei`, "error");
+              else if (file.type !== "file")
+                this.addOutput(`${filename} ist keine Datei`, "error");
               else this.addOutput(file.content, "output");
             } else {
               const currentDir = this.resolvePath(this.currentPath);
               const file = (_b = currentDir == null ? void 0 : currentDir.contents) == null ? void 0 : _b[filename];
               if (!file) this.addOutput(`Datei nicht gefunden: ${filename}`, "error");
-              else if (file.type !== "file") this.addOutput(`${filename} ist keine Datei`, "error");
+              else if (file.type !== "file")
+                this.addOutput(`${filename} ist keine Datei`, "error");
               else this.addOutput(file.content, "output");
             }
           }
@@ -5297,7 +5233,8 @@ var App = (() => {
             const parts = normalizedPath.replace(/^~\/?/, "").split("/").filter((p) => p);
             for (const part of parts) {
               if (current.type !== "directory") return null;
-              if (!current.contents || !current.contents[part]) return null;
+              if (!current.contents || !current.contents[part])
+                return null;
               const nextNode = current.contents[part];
               if (nextNode === void 0) return null;
               current = nextNode;
@@ -5311,7 +5248,8 @@ var App = (() => {
             let workingPath;
             if (path.startsWith("~")) workingPath = path;
             else if (path.startsWith("/")) workingPath = "~" + path;
-            else workingPath = this.currentPath === "~" ? `~/${path}` : `${this.currentPath}/${path}`;
+            else
+              workingPath = this.currentPath === "~" ? `~/${path}` : `${this.currentPath}/${path}`;
             const parts = workingPath.split("/").filter((p) => p !== "" && p !== ".");
             const resolved = [];
             for (const part of parts) {
@@ -5478,7 +5416,9 @@ var App = (() => {
           _applyButtonStyles() {
             if (!this.container) return;
             const isDark = document.documentElement.classList.contains("dark");
-            const buttons = this.container.querySelectorAll(".text-editor-btn");
+            const buttons = this.container.querySelectorAll(
+              ".text-editor-btn"
+            );
             buttons.forEach((btn) => {
               btn.style.cssText = `
                     padding: 6px 12px;
@@ -5504,15 +5444,21 @@ var App = (() => {
           attachEventListeners() {
             var _a, _b, _c, _d;
             if (!this.container) return;
-            this.editor = this.container.querySelector(".text-editor-textarea");
+            this.editor = this.container.querySelector(
+              ".text-editor-textarea"
+            );
             this.statusBar = this.container.querySelector(".text-file-status");
             this.saveButton = this.container.querySelector('[data-action="save"]');
-            this.fileInput = this.container.querySelector(".text-file-input");
+            this.fileInput = this.container.querySelector(
+              ".text-file-input"
+            );
             this.wordCountDisplay = this.container.querySelector(".word-count-display");
             this.lineColDisplay = this.container.querySelector(".line-col-display");
             this.findReplacePanel = this.container.querySelector(".find-replace-panel");
             this.findInput = this.container.querySelector(".find-input");
-            this.replaceInput = this.container.querySelector(".replace-input");
+            this.replaceInput = this.container.querySelector(
+              ".replace-input"
+            );
             if (this.state && this.state.content && this.editor) {
               this.editor.value = this.state.content;
             }
@@ -5528,7 +5474,10 @@ var App = (() => {
               this._handleAction(action);
             });
             if (this.fileInput) {
-              this.fileInput.addEventListener("change", (e) => this._handleFileOpen(e));
+              this.fileInput.addEventListener(
+                "change",
+                (e) => this._handleFileOpen(e)
+              );
             }
             this._updateWordCount();
             this._updateCursorPosition();
@@ -5659,12 +5608,17 @@ var App = (() => {
               this.editor.style.whiteSpace = this.wrapMode === "soft" ? "pre-wrap" : "pre";
             }
             try {
-              localStorage.setItem(`textEditorWrapMode_${this.instanceId}`, this.wrapMode);
+              localStorage.setItem(
+                `textEditorWrapMode_${this.instanceId}`,
+                this.wrapMode
+              );
             } catch (e) {
               console.warn("Could not save wrap mode", e);
             }
             this.updateState({ wrapMode: this.wrapMode });
-            this._showStatusBar(this.wrapMode === "soft" ? "Zeilenumbruch aktiviert" : "Zeilenumbruch deaktiviert");
+            this._showStatusBar(
+              this.wrapMode === "soft" ? "Zeilenumbruch aktiviert" : "Zeilenumbruch deaktiviert"
+            );
           }
           _loadWrapPreference() {
             try {
@@ -8513,95 +8467,62 @@ ${selectedText}
     }
   });
 
-  // src/ts/legacy/multi-instance-integration.js
+  // src/ts/multi-instance-integration.ts
   var require_multi_instance_integration = __commonJS({
-    "src/ts/legacy/multi-instance-integration.js"() {
+    "src/ts/multi-instance-integration.ts"() {
       "use strict";
-      console.log("MultiInstanceIntegration loaded");
-      (function() {
+      (() => {
         "use strict";
         class MultiInstanceIntegration {
           constructor() {
             this.integrations = /* @__PURE__ */ new Map();
             this.isInitialized = false;
           }
-          /**
-           * Initialize multi-instance integration
-           */
           init() {
-            if (this.isInitialized) {
-              console.warn("MultiInstanceIntegration already initialized");
-              return;
-            }
+            if (this.isInitialized) return;
             if (document.readyState === "loading") {
-              document.addEventListener("DOMContentLoaded", () => {
-                this.setup();
-              });
+              document.addEventListener("DOMContentLoaded", () => this.setup());
             } else {
               this.setup();
             }
           }
-          /**
-           * Setup integrations
-           */
           setup() {
-            console.log("MultiInstanceIntegration: Setting up...");
-            if (!window.InstanceManager || !window.WindowTabManager || !window.KeyboardShortcuts) {
+            const W = window;
+            if (!W.InstanceManager || !W.WindowTabs || !W.KeyboardShortcuts) {
               console.error("MultiInstanceIntegration: Required dependencies not loaded");
               return;
             }
-            if (window.TerminalInstanceManager) {
-              this.setupTerminalIntegration();
-            }
-            if (window.TextEditorInstanceManager) {
-              this.setupTextEditorIntegration();
-            }
-            if (window.FinderInstanceManager) {
-              this.setupFinderIntegration();
-            }
-            if (window.SessionManager) {
-              if (window.TerminalInstanceManager) {
-                window.SessionManager.registerManager(
-                  "terminal",
-                  window.TerminalInstanceManager
-                );
-              }
-              if (window.TextEditorInstanceManager) {
-                window.SessionManager.registerManager(
-                  "text-editor",
-                  window.TextEditorInstanceManager
-                );
-              }
-              if (window.FinderInstanceManager) {
-                window.SessionManager.registerManager("finder", window.FinderInstanceManager);
-              }
-              window.SessionManager.restoreAllSessions();
+            if (W.TerminalInstanceManager) this.setupTerminalIntegration();
+            if (W.TextEditorInstanceManager) this.setupTextEditorIntegration();
+            if (W.FinderInstanceManager) this.setupFinderIntegration();
+            if (W.SessionManager) {
+              if (W.TerminalInstanceManager) W.SessionManager.registerManager("terminal", W.TerminalInstanceManager);
+              if (W.TextEditorInstanceManager) W.SessionManager.registerManager("text-editor", W.TextEditorInstanceManager);
+              if (W.FinderInstanceManager) W.SessionManager.registerManager("finder", W.FinderInstanceManager);
+              W.SessionManager.restoreAllSessions();
               this.integrations.forEach((integration2, type) => {
+                var _a;
                 const { manager, tabManager } = integration2;
-                const instances = manager.getAllInstances();
-                if (tabManager && tabManager.controller) {
-                  tabManager.controller.refresh();
-                }
-                if (instances.length > 0) {
-                  const activeInstance = manager.getActiveInstance();
-                  if (activeInstance) {
-                    this.showInstance(type, activeInstance.instanceId);
-                  }
-                }
-              });
-              window.SessionManager.startAutoSave();
-            }
-            if (window.KeyboardShortcuts && typeof window.KeyboardShortcuts.setContextResolver === "function") {
-              window.KeyboardShortcuts.setContextResolver(() => {
                 try {
-                  const wm = window.WindowManager;
+                  const maybe = tabManager;
+                  const refreshFn = typeof (maybe == null ? void 0 : maybe.refresh) === "function" ? maybe.refresh.bind(maybe) : typeof ((_a = maybe == null ? void 0 : maybe.controller) == null ? void 0 : _a.refresh) === "function" ? maybe.controller.refresh.bind(maybe.controller) : null;
+                  if (refreshFn) refreshFn();
+                } catch {
+                }
+                const active = manager.getActiveInstance();
+                if (active) this.showInstance(type, active.instanceId);
+              });
+              W.SessionManager.startAutoSave();
+            }
+            if (W.KeyboardShortcuts && typeof W.KeyboardShortcuts.setContextResolver === "function") {
+              W.KeyboardShortcuts.setContextResolver(() => {
+                try {
+                  const wm = W.WindowManager;
                   const top = wm && typeof wm.getTopWindow === "function" ? wm.getTopWindow() : null;
                   const topId = (top == null ? void 0 : top.id) || "";
                   let match = "global";
                   this.integrations.forEach((val, key) => {
-                    if (val && val.modalId === topId) {
-                      match = key;
-                    }
+                    if (val && val.modalId === topId) match = key;
                   });
                   return match;
                 } catch {
@@ -8610,202 +8531,184 @@ ${selectedText}
               });
             }
             this.isInitialized = true;
-            console.log("MultiInstanceIntegration: Setup complete");
           }
-          /**
-           * Setup Terminal modal integration
-           */
           setupTerminalIntegration() {
-            console.log("Setting up Terminal integration...");
-            const terminalTabManager = new window.WindowTabManager({
-              containerId: "terminal-tabs-container",
-              instanceManager: window.TerminalInstanceManager,
-              onTabSwitch: (instanceId) => {
-                window.TerminalInstanceManager.setActiveInstance(instanceId);
-                this.showInstance("terminal", instanceId);
-              },
-              onTabClose: (_instanceId) => {
-              },
-              onNewTab: () => {
-                const count = window.TerminalInstanceManager.getInstanceCount();
-                window.TerminalInstanceManager.createInstance({
-                  title: `Terminal ${count + 1}`
-                });
+            const W = window;
+            const manager = W.TerminalInstanceManager;
+            const origSetActive = manager.setActiveInstance.bind(manager);
+            manager.setActiveInstance = (id) => {
+              origSetActive(id);
+              this.showInstance("terminal", id);
+            };
+            const origDestroy = manager.destroyInstance.bind(manager);
+            manager.destroyInstance = (id) => {
+              origDestroy(id);
+              const remaining = manager.getAllInstances().length;
+              if (remaining > 0) {
+                const active = manager.getActiveInstance();
+                if (active) this.showInstance("terminal", active.instanceId);
+              }
+            };
+            const mount = document.getElementById("terminal-tabs-container");
+            if (!mount) return;
+            const controller = W.WindowTabs.create(manager, mount, {
+              addButton: true,
+              onCreateInstanceTitle: () => {
+                var _a;
+                return `Terminal ${(((_a = manager.getInstanceCount) == null ? void 0 : _a.call(manager)) || manager.getAllInstances().length) + 1}`;
               }
             });
             this.integrations.set("terminal", {
-              manager: window.TerminalInstanceManager,
-              tabManager: terminalTabManager,
+              manager,
+              tabManager: controller,
               modalId: "terminal-modal",
               containerId: "terminal-container"
             });
-            this.registerShortcutsForType("terminal", window.TerminalInstanceManager);
+            this.registerShortcutsForType("terminal", manager);
+            this.updateInstanceVisibility("terminal");
             this.setupInstanceListeners("terminal");
           }
-          /**
-           * Setup Text Editor modal integration
-           */
           setupTextEditorIntegration() {
-            console.log("Setting up TextEditor integration...");
-            const editorTabManager = new window.WindowTabManager({
-              containerId: "text-editor-tabs-container",
-              instanceManager: window.TextEditorInstanceManager,
-              onTabSwitch: (instanceId) => {
-                window.TextEditorInstanceManager.setActiveInstance(instanceId);
-                this.showInstance("text-editor", instanceId);
-              },
-              onTabClose: (_instanceId) => {
-              },
-              onNewTab: () => {
-                const count = window.TextEditorInstanceManager.getInstanceCount();
-                window.TextEditorInstanceManager.createInstance({
-                  title: `Editor ${count + 1}`
-                });
+            const W = window;
+            const manager = W.TextEditorInstanceManager;
+            const origSetActive = manager.setActiveInstance.bind(manager);
+            manager.setActiveInstance = (id) => {
+              origSetActive(id);
+              this.showInstance("text-editor", id);
+            };
+            const origDestroy = manager.destroyInstance.bind(manager);
+            manager.destroyInstance = (id) => {
+              origDestroy(id);
+              const remaining = manager.getAllInstances().length;
+              if (remaining > 0) {
+                const active = manager.getActiveInstance();
+                if (active) this.showInstance("text-editor", active.instanceId);
+              }
+            };
+            const mount = document.getElementById("text-editor-tabs-container");
+            if (!mount) return;
+            const controller = W.WindowTabs.create(manager, mount, {
+              addButton: true,
+              onCreateInstanceTitle: () => {
+                var _a;
+                return `Editor ${(((_a = manager.getInstanceCount) == null ? void 0 : _a.call(manager)) || manager.getAllInstances().length) + 1}`;
               }
             });
             this.integrations.set("text-editor", {
-              manager: window.TextEditorInstanceManager,
-              tabManager: editorTabManager,
+              manager,
+              tabManager: controller,
               modalId: "text-modal",
               containerId: "text-editor-container"
             });
-            this.registerShortcutsForType("text-editor", window.TextEditorInstanceManager);
+            this.registerShortcutsForType("text-editor", manager);
+            this.updateInstanceVisibility("text-editor");
             this.setupInstanceListeners("text-editor");
           }
-          /**
-           * Setup Finder modal integration
-           */
           setupFinderIntegration() {
-            console.log("Setting up Finder integration...");
-            const finderTabManager = new window.WindowTabManager({
-              containerId: "finder-tabs-container",
-              instanceManager: window.FinderInstanceManager,
-              onTabSwitch: (instanceId) => {
-                window.FinderInstanceManager.setActiveInstance(instanceId);
-                this.showInstance("finder", instanceId);
-              },
-              onTabClose: (_instanceId) => {
-              },
-              onNewTab: () => {
-                const count = window.FinderInstanceManager.getInstanceCount();
-                window.FinderInstanceManager.createInstance({
-                  title: `Finder ${count + 1}`
-                });
-              },
-              // Close the Finder modal if the last tab was closed
-              onAllTabsClosed: () => {
-                var _a, _b;
-                if ((_b = (_a = window.API) == null ? void 0 : _a.window) == null ? void 0 : _b.close) {
-                  window.API.window.close("finder-modal");
-                } else {
-                  const modal = document.getElementById("finder-modal");
-                  if (modal) modal.classList.add("hidden");
+            const W = window;
+            const manager = W.FinderInstanceManager;
+            const origSetActive = manager.setActiveInstance.bind(manager);
+            manager.setActiveInstance = (id) => {
+              origSetActive(id);
+              this.showInstance("finder", id);
+            };
+            const origDestroy = manager.destroyInstance.bind(manager);
+            manager.destroyInstance = (id) => {
+              var _a, _b;
+              origDestroy(id);
+              const remaining = manager.getAllInstances().length;
+              if (remaining === 0) {
+                try {
+                  const API = window.API;
+                  if ((_a = API == null ? void 0 : API.window) == null ? void 0 : _a.close) API.window.close("finder-modal");
+                  else (_b = document.getElementById("finder-modal")) == null ? void 0 : _b.classList.add("hidden");
+                } catch {
                 }
+              } else {
+                const active = manager.getActiveInstance();
+                if (active) this.showInstance("finder", active.instanceId);
+              }
+            };
+            const mount = document.getElementById("finder-tabs-container");
+            if (!mount) return;
+            const controller = W.WindowTabs.create(manager, mount, {
+              addButton: true,
+              onCreateInstanceTitle: () => {
+                var _a;
+                return `Finder ${(((_a = manager.getInstanceCount) == null ? void 0 : _a.call(manager)) || manager.getAllInstances().length) + 1}`;
               }
             });
             this.integrations.set("finder", {
-              manager: window.FinderInstanceManager,
-              tabManager: finderTabManager,
+              manager,
+              tabManager: controller,
               modalId: "finder-modal",
               containerId: "finder-container"
             });
-            this.registerShortcutsForType("finder", window.FinderInstanceManager);
+            this.registerShortcutsForType("finder", manager);
+            this.updateInstanceVisibility("finder");
             this.setupInstanceListeners("finder");
           }
-          /**
-           * Setup listeners for instance creation/destruction
-           * @param {string} type - Instance type
-           */
           setupInstanceListeners(type) {
             const integration2 = this.integrations.get(type);
             if (!integration2) return;
-            const { manager, tabManager, containerId: _containerId } = integration2;
+            const { manager } = integration2;
             const originalCreate = manager.createInstance.bind(manager);
             manager.createInstance = (config) => {
               const instance = originalCreate(config);
-              if (instance) {
-                tabManager.addTab(instance);
-                this.updateInstanceVisibility(type);
+              const active = manager.getActiveInstance();
+              if (active) {
+                this.showInstance(type, active.instanceId);
+              } else if (instance) {
+                this.showInstance(type, instance.instanceId);
               }
               return instance;
             };
-            const originalDestroy = manager.destroyInstance.bind(manager);
-            manager.destroyInstance = (instanceId) => {
-              originalDestroy(instanceId);
-              if (tabManager && tabManager.controller && typeof tabManager.controller.refresh === "function") {
-                tabManager.controller.refresh();
-              }
-            };
           }
-          /**
-           * Show a specific instance and hide others
-           * @param {string} type - Instance type
-           * @param {string} instanceId - Instance ID to show
-           */
           showInstance(type, instanceId) {
             const integration2 = this.integrations.get(type);
             if (!integration2) return;
             const instances = integration2.manager.getAllInstances();
-            instances.forEach((instance) => {
-              if (instance.instanceId === instanceId) {
-                instance.show();
-              } else {
-                instance.hide();
-              }
+            instances.forEach((inst) => {
+              var _a, _b;
+              if (inst.instanceId === instanceId) (_a = inst.show) == null ? void 0 : _a.call(inst);
+              else (_b = inst.hide) == null ? void 0 : _b.call(inst);
             });
           }
-          /**
-           * Update visibility of all instances for a type
-           * @param {string} type - Instance type
-           */
           updateInstanceVisibility(type) {
             const integration2 = this.integrations.get(type);
             if (!integration2) return;
-            const activeInstance = integration2.manager.getActiveInstance();
-            if (activeInstance) {
-              this.showInstance(type, activeInstance.instanceId);
+            const active = integration2.manager.getActiveInstance();
+            if (active) {
+              this.showInstance(type, active.instanceId);
+            } else {
+              const all = integration2.manager.getAllInstances();
+              if (all.length > 0) {
+                const firstId = all[0].instanceId;
+                integration2.manager.setActiveInstance(firstId);
+                this.showInstance(type, firstId);
+              }
             }
           }
-          /**
-           * Register keyboard shortcuts for a window type
-           * @param {string} type - Window type
-           * @param {InstanceManager} manager - Instance manager
-           */
           registerShortcutsForType(type, manager) {
-            const integration2 = this.integrations.get(type);
-            const modalId = integration2 == null ? void 0 : integration2.modalId;
-            if (!modalId) {
-              console.error(`Cannot register shortcuts for ${type}: no modalId found`);
+            var _a;
+            const W = window;
+            const modalId = (_a = this.integrations.get(type)) == null ? void 0 : _a.modalId;
+            const modalEl = modalId ? document.getElementById(modalId) : null;
+            if (!modalEl) {
+              console.error(`Cannot register shortcuts for ${type}: modal ${modalId} not found`);
               return;
             }
-            const modalElement = document.getElementById(modalId);
-            if (!modalElement) {
-              console.error(
-                `Cannot register shortcuts for ${type}: modal element ${modalId} not found`
-              );
-              return;
-            }
-            console.log(`Registering shortcuts for ${type} on modal ${modalId}`, modalElement);
-            const unregister = window.KeyboardShortcuts.register(manager, {
+            const unregister = W.KeyboardShortcuts.register(manager, {
               scope: document,
               newTitleFactory: () => `${type} ${manager.getInstanceCount() + 1}`
             });
-            console.log(`Successfully registered shortcuts for ${type}`);
-            if (integration2) {
-              integration2.unregisterShortcuts = unregister;
-            }
-          }
-          /**
-           * Get integration for a type
-           * @param {string} type
-           * @returns {Object|null}
-           */
-          getIntegration(type) {
-            return this.integrations.get(type) || null;
+            const rec = this.integrations.get(type);
+            if (rec) rec.unregisterShortcuts = unregister;
           }
         }
         const integration = new MultiInstanceIntegration();
         window.MultiInstanceIntegration = integration;
+        window.multiInstanceIntegration = integration;
         integration.init();
       })();
     }
