@@ -1,11 +1,12 @@
 /**
  * Post-processing script for TypeScript compiled output
  *
- * Problem: TypeScript generates `Object.defineProperty(exports, "__esModule", { value: true });`
- * even with "module": "none" in tsconfig, because we use `export {}` for global augmentation.
+ * Problem: TypeScript generates CommonJS export code even with "module": "none"
+ * when source files contain `export` statements.
  *
- * Solution: Remove/comment out this line from generated JS files since we don't use CommonJS/ES modules
- * in the browser - all code runs as global scripts.
+ * Solution: Add a simple exports object stub at the TOP of each file that has exports,
+ * BEFORE 'use strict'. This allows the export assignments to work without errors,
+ * while the actual exports are exposed via window.* assignments at the end of each file.
  *
  * This script runs automatically after `npm run build:ts`
  */
@@ -29,14 +30,10 @@ function collectJsFiles(dir) {
     return results;
 }
 
-const EXPORTS_PATTERN = /^Object\.defineProperty\(exports, "__esModule", \{ value: true \}\);$/gm;
-const REPLACEMENT =
-    '// Object.defineProperty(exports, "__esModule", { value: true }); // REMOVED: Causes "exports is not defined" in browser';
-
-let filesFixed = 0;
+let filesProcessed = 0;
 let filesSkipped = 0;
 
-console.log('🔧 Fixing TypeScript exports...\n');
+console.log('🔧 Adding exports stub to TypeScript-compiled files...\n');
 
 const files = collectJsFiles(path.join(process.cwd(), 'js'));
 if (files.length === 0) {
@@ -49,20 +46,39 @@ files.forEach(fullPath => {
     let content = fs.readFileSync(fullPath, 'utf8');
     const originalContent = content;
 
-    content = content.replace(EXPORTS_PATTERN, REPLACEMENT);
+    // Check if file has exports references
+    const hasExports = content.includes('Object.defineProperty(exports,') || 
+                       /^exports\.\w+\s*=/m.test(content);
 
-    if (content !== originalContent) {
-        fs.writeFileSync(fullPath, content, 'utf8');
-        console.log(`✅ Fixed: ${filePath}`);
-        filesFixed++;
-    } else {
-        console.log(`ℹ️  No changes: ${filePath}`);
+    if (!hasExports) {
         filesSkipped++;
+        return;
     }
+
+    // Check if we've already added the stub
+    if (content.includes('/* EXPORTS STUB FOR BROWSER */')) {
+        filesSkipped++;
+        return;
+    }
+
+    // Add exports stub at the very beginning, before 'use strict'
+    const exportsStub = `/* EXPORTS STUB FOR BROWSER */
+var exports = {};
+`;
+
+    content = exportsStub + content;
+
+    fs.writeFileSync(fullPath, content, 'utf8');
+    console.log(`✅ Added exports stub to: ${filePath}`);
+    filesProcessed++;
 });
 
-console.log(`\n📊 Summary: ${filesFixed} fixed, ${filesSkipped} skipped`);
+console.log(`\n📊 Summary: ${filesProcessed} processed, ${filesSkipped} skipped`);
 
-if (filesFixed > 0) {
-    console.log('✅ TypeScript exports fixed successfully');
+if (filesProcessed > 0) {
+    console.log('✅ Exports stubs added successfully');
+    console.log('ℹ️  Modules still export via window.* assignments');
 }
+
+
+

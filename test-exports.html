@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Test Exports</title>
+    </head>
+    <body>
+        <h1>Test Exports Issue</h1>
+        <div id="output"></div>
+
+        <script>
+            console.log('Before loading menu.js');
+            console.log('window.MenuSystem before:', typeof window.MenuSystem);
+        </script>
+
+        <script src="./js/menu.js"></script>
+
+        <script>
+            console.log('After loading menu.js');
+            console.log('window.MenuSystem after:', typeof window.MenuSystem);
+
+            const output = document.getElementById('output');
+            output.innerHTML = `
+            <p>window.MenuSystem type: ${typeof window.MenuSystem}</p>
+            <p>Check console for errors</p>
+        `;
+        </script>
+    </body>
+</html>
