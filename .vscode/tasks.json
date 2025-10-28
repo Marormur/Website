@@ -259,6 +259,14 @@
       "type": "shell",
       "command": "npm run validate",
       "group": "build"
+    },
+    {
+      "label": "Quick E2E to capture readiness and console errors",
+      "type": "shell",
+      "command": "$env:USE_NODE_SERVER='1'; $env:MOCK_GITHUB='1'; npm run test:e2e:quick",
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "test"
     }
   ]
 }
