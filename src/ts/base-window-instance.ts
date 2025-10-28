@@ -181,11 +181,7 @@ export class BaseWindowInstance {
 }
 
 // Attach to window for legacy compatibility
-declare global {
-    interface Window {
-        BaseWindowInstance?: any;
-    }
-}
+// Note: Type declaration is in types/index.d.ts
 if (typeof window !== 'undefined') {
     (window as any).BaseWindowInstance = BaseWindowInstance;
 }

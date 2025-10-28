@@ -625,12 +625,6 @@ export class Dialog {
         if (state.zIndex) this.modal.style.zIndex = state.zIndex;
     }
 }
-
-declare global {
-    interface Window {
-        Dialog?: any;
-    }
-}
+// Note: Type declaration is in types/index.d.ts
 (window as any).Dialog = Dialog;
-
 export default Dialog;
