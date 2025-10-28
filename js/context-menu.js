@@ -1,9 +1,11 @@
-'use strict';
+/* EXPORTS STUB FOR BROWSER */
+var exports = {};
+"use strict";
 /*
  * src/ts/context-menu.ts
  * Typed port of js/context-menu.js
  */
-Object.defineProperty(exports, '__esModule', { value: true });
+Object.defineProperty(exports, "__esModule", { value: true });
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const guardKey = '__customContextMenuInit';
 if (window[guardKey]) {
@@ -433,11 +435,11 @@ else {
             }
             else if (e.key === 'Home') {
                 e.preventDefault();
-                items[0].focus();
+                items[0]?.focus();
             }
             else if (e.key === 'End') {
                 e.preventDefault();
-                items[items.length - 1].focus();
+                items[items.length - 1]?.focus();
             }
             else if (e.key === 'Enter' || e.key === ' ') {
                 if (document.activeElement &&

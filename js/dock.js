@@ -1,9 +1,11 @@
-'use strict';
+/* EXPORTS STUB FOR BROWSER */
+var exports = {};
+"use strict";
 /*
  * src/ts/dock.ts
  * Typed port of js/dock.js
  */
-Object.defineProperty(exports, '__esModule', { value: true });
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.getDockReservedBottom = getDockReservedBottom;
 exports.initDockMagnification = initDockMagnification;
 exports.loadDockOrder = loadDockOrder;

@@ -1,9 +1,11 @@
-'use strict';
+/* EXPORTS STUB FOR BROWSER */
+var exports = {};
+"use strict";
 /*
  * src/ts/dialog.ts
  * Typed port of js/dialog.js
  */
-Object.defineProperty(exports, '__esModule', { value: true });
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.Dialog = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 class Dialog {
@@ -641,6 +643,7 @@ class Dialog {
     }
 }
 exports.Dialog = Dialog;
+// Note: Type declaration is in types/index.d.ts
 window.Dialog = Dialog;
 exports.default = Dialog;
 //# sourceMappingURL=dialog.js.map

@@ -1,9 +1,11 @@
-'use strict';
+/* EXPORTS STUB FOR BROWSER */
+var exports = {};
+"use strict";
 /**
  * src/ts/logger.ts
  * Typed port of the legacy `js/logger.js`.
  */
-Object.defineProperty(exports, '__esModule', { value: true });
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.Logger = void 0;
 const LOG_LEVELS = {
     ERROR: 0,

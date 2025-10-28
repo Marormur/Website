@@ -1,9 +1,13 @@
-'use strict';
+/* EXPORTS STUB FOR BROWSER */
+var exports = {};
+"use strict";
 /**
  * src/ts/base-window-instance.ts
  * Typed port of js/base-window-instance.js
  */
-// Note: Removed CommonJS exports for browser-global script compatibility
+/* eslint-disable @typescript-eslint/no-explicit-any */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BaseWindowInstance = void 0;
 class BaseWindowInstance {
     constructor(config) {
         this.instanceId = config.id || this._generateId();
@@ -66,14 +70,17 @@ class BaseWindowInstance {
             try {
                 if (typeof this.container.remove === 'function') {
                     this.container.remove();
-                } else if (this.container.parentNode) {
+                }
+                else if (this.container.parentNode) {
                     this.container.parentNode.removeChild(this.container);
                 }
-            } catch {
+            }
+            catch {
                 try {
                     this.container.innerHTML = '';
                     this.container.classList.add('hidden');
-                } catch {
+                }
+                catch {
                     /* ignore */
                 }
             }
@@ -105,9 +112,12 @@ class BaseWindowInstance {
         };
     }
     deserialize(data) {
-        if (data.state) this.state = data.state;
-        if (data.title) this.title = data.title;
-        if (data.metadata) this.metadata = { ...this.metadata, ...data.metadata };
+        if (data.state)
+            this.state = data.state;
+        if (data.title)
+            this.title = data.title;
+        if (data.metadata)
+            this.metadata = { ...this.metadata, ...data.metadata };
         this.emit('deserialized');
     }
     emit(eventName, data) {
@@ -115,36 +125,43 @@ class BaseWindowInstance {
         listeners.forEach(callback => {
             try {
                 callback.call(this, data);
-            } catch (error) {
+            }
+            catch (error) {
                 console.error(`Error in event listener for ${eventName}:`, error);
             }
         });
     }
     on(eventName, callback) {
-        if (!this.eventListeners.has(eventName)) this.eventListeners.set(eventName, []);
+        if (!this.eventListeners.has(eventName))
+            this.eventListeners.set(eventName, []);
         this.eventListeners.get(eventName).push(callback);
     }
     off(eventName, callback) {
-        if (!this.eventListeners.has(eventName)) return;
+        if (!this.eventListeners.has(eventName))
+            return;
         const listeners = this.eventListeners.get(eventName);
         const index = listeners.indexOf(callback);
-        if (index > -1) listeners.splice(index, 1);
+        if (index > -1)
+            listeners.splice(index, 1);
     }
     removeAllEventListeners() {
         this.eventListeners.clear();
     }
     focus() {
-        if (this.container && this.isVisible) this.emit('focused');
+        if (this.container && this.isVisible)
+            this.emit('focused');
     }
     blur() {
         this.emit('blurred');
     }
 }
-// Expose globally (no CommonJS)
+exports.BaseWindowInstance = BaseWindowInstance;
+// Attach to window for legacy compatibility
+// Note: Type declaration is in types/index.d.ts
 if (typeof window !== 'undefined') {
     window.BaseWindowInstance = BaseWindowInstance;
 }
-// No default export in browser-global build
+exports.default = BaseWindowInstance;
 console.log('BaseWindowInstance loaded');
 (function () {
     'use strict';
@@ -210,15 +227,18 @@ console.log('BaseWindowInstance loaded');
                     // Remove container element from DOM to avoid orphaned visible nodes
                     if (typeof this.container.remove === 'function') {
                         this.container.remove();
-                    } else if (this.container.parentNode) {
+                    }
+                    else if (this.container.parentNode) {
                         this.container.parentNode.removeChild(this.container);
                     }
-                } catch {
+                }
+                catch {
                     // Fallback: clear contents and hide
                     try {
                         this.container.innerHTML = '';
                         this.container.classList.add('hidden');
-                    } catch {
+                    }
+                    catch {
                         /* ignore */
                     }
                 }
@@ -266,7 +286,8 @@ console.log('BaseWindowInstance loaded');
             listeners.forEach(callback => {
                 try {
                     callback.call(this, data);
-                } catch (error) {
+                }
+                catch (error) {
                     console.error(`Error in event listener for ${eventName}:`, error);
                 }
             });
@@ -278,7 +299,8 @@ console.log('BaseWindowInstance loaded');
             this.eventListeners.get(eventName).push(callback);
         }
         off(eventName, callback) {
-            if (!this.eventListeners.has(eventName)) return;
+            if (!this.eventListeners.has(eventName))
+                return;
             const listeners = this.eventListeners.get(eventName);
             const index = listeners.indexOf(callback);
             if (index > -1) {
@@ -297,6 +319,7 @@ console.log('BaseWindowInstance loaded');
             this.emit('blurred');
         }
     }
-    window.BaseWindowInstance = BaseWindowInstance;
+    window.BaseWindowInstance =
+        BaseWindowInstance;
 })();
 //# sourceMappingURL=base-window-instance.js.map

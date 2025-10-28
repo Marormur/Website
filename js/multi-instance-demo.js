@@ -1,5 +1,7 @@
-'use strict';
-Object.defineProperty(exports, '__esModule', { value: true });
+/* EXPORTS STUB FOR BROWSER */
+var exports = {};
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 // Helper to safely access window managers with casts
 const W = window;
 W.demoCreateTerminals = function demoCreateTerminals() {
@@ -333,11 +335,11 @@ function logDemo(title, description) {
     };
     window.demoKeyboardShortcuts = function () {
         console.group('Keyboard Shortcuts Demo...');
-        const shortcuts = window.KeyboardShortcuts.getAllShortcuts();
+        const shortcuts = window.KeyboardShortcuts.getAllShortcuts?.() || [];
         console.log(`Registered shortcuts: ${shortcuts.length}`);
         shortcuts.forEach((s) => {
             if (s.description) {
-                const display = window.KeyboardShortcuts.getShortcutDisplay(s);
+                const display = window.KeyboardShortcuts.getShortcutDisplay?.(s);
                 console.log(`  ${display}: ${s.description}`);
             }
         });

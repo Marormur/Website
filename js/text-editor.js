@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 /**
  * Text Editor Module
  * Replaces text.html iframe with inline text editor
@@ -102,7 +102,7 @@ const TextEditorSystem = {
         this.updateCSSVariables();
         // Apply i18n translations
         if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
-            window.appI18n.applyTranslations(this.container);
+            window.appI18n.applyTranslations();
         }
     },
     /**
@@ -164,7 +164,8 @@ const TextEditorSystem = {
     applyWrapMode(mode) {
         if (!this.editor)
             return;
-        const normalized = mode === 'soft' ? 'soft' : 'off';
+        const effective = mode ?? this.wrapMode;
+        const normalized = effective === 'soft' ? 'soft' : 'off';
         this.wrapMode = normalized;
         this.editor.wrap = normalized;
         this.editor.style.whiteSpace = normalized === 'soft' ? 'pre-wrap' : 'pre';
@@ -291,7 +292,7 @@ const TextEditorSystem = {
                 this.updateWordCount();
                 this.updateCursorPosition();
             }
-            this.currentRemoteFile = { fileName: file.name };
+            this.currentRemoteFile = { fileName: file.name, content: '' };
             this.updateDocumentTitle();
             this.setStatusPlain(file.name);
             this.syncSaveButtonState();
@@ -404,19 +405,19 @@ const TextEditorSystem = {
     /**
      * Handle paste operation
      */
-    handlePaste() {
+    handlePaste(e) {
         this.focusEditor();
         if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
             navigator.clipboard
                 .readText()
                 .then(text => {
-                    if (text && this.editor) {
-                        this.insertTextAtCursor(text);
-                    }
-                })
+                if (text && this.editor) {
+                    this.insertTextAtCursor(text);
+                }
+            })
                 .catch(() => {
-                    this.execCommand('paste');
-                });
+                this.execCommand('paste');
+            });
         }
         else {
             this.execCommand('paste');
@@ -532,7 +533,7 @@ const TextEditorSystem = {
                     this.statusBar.removeAttribute('data-i18n-params');
                 }
                 if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
-                    window.appI18n.applyTranslations(this.statusBar);
+                    window.appI18n.applyTranslations();
                 }
             }
             else {
@@ -558,36 +559,36 @@ const TextEditorSystem = {
             return { text: '', translated: false };
         const fallbackMessages = {
             'textEditor.documentTitle': () => 'Texteditor',
-            'textEditor.documentTitleWithFile': p => {
+            'textEditor.documentTitleWithFile': (p) => {
                 const fileName = p && p.fileName ? p.fileName : '';
                 return fileName ? `Texteditor – ${fileName}` : 'Texteditor';
             },
             'textEditor.status.loading': () => 'Lade Datei …',
-            'textEditor.status.loadingWithLabel': p => {
+            'textEditor.status.loadingWithLabel': (p) => {
                 const label = p && p.label ? p.label : '';
                 return label ? `${label} (lädt …)` : 'Lade Datei …';
             },
             'textEditor.status.loadError': () => 'Datei konnte nicht geladen werden.',
             'textEditor.status.rateLimit': () => 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
-            'textEditor.status.wordCount': p => {
+            'textEditor.status.wordCount': (p) => {
                 const words = p && typeof p.words === 'number' ? p.words : 0;
                 const chars = p && typeof p.chars === 'number' ? p.chars : 0;
                 return `Words: ${words} | Characters: ${chars}`;
             },
-            'textEditor.status.position': p => {
+            'textEditor.status.position': (p) => {
                 const line = p && typeof p.line === 'number' ? p.line : 1;
                 const col = p && typeof p.col === 'number' ? p.col : 1;
                 return `Line ${line}, Col ${col}`;
             },
             'textEditor.findReplace.noMatch': () => 'No match found',
-            'textEditor.findReplace.replacedCount': p => {
+            'textEditor.findReplace.replacedCount': (p) => {
                 const count = p && typeof p.count === 'number' ? p.count : 0;
                 return `Replaced ${count} occurrence(s)`;
             },
         };
         try {
             if (window.appI18n && typeof window.appI18n.translate === 'function') {
-                const translated = window.appI18n.translate(key, params);
+                const translated = window.appI18n.translate(key);
                 if (translated && translated !== key) {
                     return { text: translated, translated: true };
                 }
@@ -814,13 +815,13 @@ const TextEditorSystem = {
         const end = this.editor.selectionEnd;
         const selectedText = this.editor.value.substring(start, end);
         const urlLabel = this.resolveTranslation('textEditor.insertLink.enterUrl').text || 'Enter URL:';
-        this.showInputModal(urlLabel, 'https://example.com', 'https://').then(url => {
+        this.showInputModal(urlLabel, 'https://example.com', 'https://').then((url) => {
             if (!url)
                 return;
             const linkText = selectedText || 'link text';
             const markdown = `[${linkText}](${url})`;
-            this.editor.setRangeText(markdown, start, end, 'end');
-            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+            this.editor?.setRangeText(markdown, start, end, 'end');
+            this.editor?.dispatchEvent(new Event('input', { bubbles: true }));
             this.focusEditor();
         });
     },
@@ -834,16 +835,11 @@ const TextEditorSystem = {
         const chars = text.length;
         const trimmedText = text.trim();
         const words = trimmedText === '' ? 0 : trimmedText.split(/\s+/).length;
-        // Use i18n if available
-        if (window.appI18n && typeof window.appI18n.translate === 'function') {
-            const translated = window.appI18n.translate('textEditor.status.wordCount', {
-                words,
-                chars,
-            });
-            if (translated && translated !== 'textEditor.status.wordCount') {
-                this.wordCountDisplay.textContent = translated;
-                return;
-            }
+        // Use internal resolver (handles fallback + params)
+        const wc = this.resolveTranslation('textEditor.status.wordCount', { words, chars });
+        if (wc.translated) {
+            this.wordCountDisplay.textContent = wc.text;
+            return;
         }
         // Fallback to English
         this.wordCountDisplay.textContent = `Words: ${words} | Characters: ${chars}`;
@@ -859,17 +855,13 @@ const TextEditorSystem = {
         const textBeforeCursor = text.substring(0, pos);
         const lines = textBeforeCursor.split('\n');
         const line = lines.length;
-        const col = lines[lines.length - 1].length + 1;
-        // Use i18n if available
-        if (window.appI18n && typeof window.appI18n.translate === 'function') {
-            const translated = window.appI18n.translate('textEditor.status.position', {
-                line,
-                col,
-            });
-            if (translated && translated !== 'textEditor.status.position') {
-                this.lineColDisplay.textContent = translated;
-                return;
-            }
+        const lastLine = lines[lines.length - 1] || '';
+        const col = lastLine.length + 1;
+        // Use internal resolver (handles fallback + params)
+        const posMsg = this.resolveTranslation('textEditor.status.position', { line, col });
+        if (posMsg.translated) {
+            this.lineColDisplay.textContent = posMsg.text;
+            return;
         }
         // Fallback to English
         this.lineColDisplay.textContent = `Line ${line}, Col ${col}`;
@@ -1014,7 +1006,7 @@ const TextEditorSystem = {
      * @param {string} defaultValue - Default input value
      * @returns {Promise<string|null>} Resolves with input value or null if cancelled
      */
-    showInputModal(title, placeholder = '', defaultValue = '') {
+    showInputModal(title, defaultValue = '', placeholder = '') {
         return new Promise(resolve => {
             const modal = document.createElement('div');
             modal.className = 'text-editor-modal-overlay';
@@ -1036,19 +1028,24 @@ const TextEditorSystem = {
             const input = modal.querySelector('.text-editor-modal-input');
             const cancelBtn = modal.querySelector('.text-editor-modal-btn-cancel');
             const confirmBtn = modal.querySelector('.text-editor-modal-btn-confirm');
+            if (!input || !cancelBtn || !confirmBtn) {
+                modal.remove();
+                resolve(null);
+                return;
+            }
             // Focus input and select text
             setTimeout(() => {
-                input.focus();
-                input.select();
+                input?.focus();
+                input?.select();
             }, 50);
             const cleanup = () => {
                 modal.classList.add('closing');
                 setTimeout(() => modal.remove(), 200);
             };
             const handleConfirm = () => {
-                const value = input.value.trim();
+                const value = input?.value.trim();
                 cleanup();
-                resolve(value || null);
+                resolve((value || '') || null);
             };
             const handleCancel = () => {
                 cleanup();
@@ -1057,7 +1054,7 @@ const TextEditorSystem = {
             // Event listeners
             confirmBtn.addEventListener('click', handleConfirm);
             cancelBtn.addEventListener('click', handleCancel);
-            input.addEventListener('keydown', e => {
+            input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     handleConfirm();
@@ -1068,7 +1065,7 @@ const TextEditorSystem = {
                 }
             });
             // Click outside to close
-            modal.addEventListener('click', e => {
+            modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     handleCancel();
                 }
