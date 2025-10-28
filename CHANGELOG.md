@@ -2,21 +2,26 @@
 
 ## Unreleased
 
+### Fixed - Storage Restore Bug (Transient Modals) ✅
+  - **Issue**: Transient modal `program-info-modal` was incorrectly restored from localStorage
+  - **Root Cause**: `constants.ts` was not imported in bundle → `window.APP_CONSTANTS.TRANSIENT_MODAL_IDS` was undefined
+  - **Fix**: Added `import '../constants'` to `expose-globals.ts` (bundle entry point)
+  - **Impact**: 
+    - Bundle mode: 19/20 → **20/20 tests ✅**
+    - Scripts mode: Already working (20/20 ✅)
+  - **Bundle size**: 404.7 KB (was 401.8 KB, +2.9 KB for constants)
+
 ### Build - Bundle Migration Complete ✅ (Default)
-  - **Status**: Bundle is now the **default** loading strategy (19/20 E2E tests passing)
+  - **Status**: Bundle is now the **default** loading strategy (**20/20 E2E tests passing**)
   - **Implementation**:
     - All legacy JS modules copied to `src/ts/legacy/` for esbuild compatibility
-    - Complete module graph in bundle: `window-configs`, `finder-instance`, `launchpad`, `multi-instance-integration`, `desktop`, `system`
+    - Complete module graph in bundle: `constants`, `window-configs`, `finder-instance`, `launchpad`, `multi-instance-integration`, `desktop`, `system`
     - Bootstrap order fixed: `base-window-instance` imported before instance subclasses
-    - Bundle size: **401.8 KB** (vs. ~305 KB for TS-only)
+    - Bundle size: **404.7 KB** (vs. ~305 KB for TS-only)
   - **Test Results**:
-    - Bundle default: **19/20 tests ✅** (1 pre-existing storage-restore bug, not bundle-related)
+    - Bundle default: **20/20 tests ✅**
     - Scripts mode (USE_BUNDLE=0): **20/20 tests ✅**
     - Both modes validated and stable
-  - **Known Issue**:
-    - 1 storage-restore test fails in both modes: "should skip transient modals during restore"
-    - Pre-existing bug in storage system, not introduced by bundle migration
-    - Modal `program-info-modal` incorrectly restored despite being transient
   - **Usage**:
     ```bash
     # Default: Bundle mode

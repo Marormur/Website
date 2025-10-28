@@ -107,6 +107,84 @@ var App = (() => {
     }
   });
 
+  // src/ts/constants.ts
+  var THEME_PREFERENCE_KEY, VALID_THEME_PREFERENCES, FINDER_STATE_STORAGE_KEY, OPEN_WINDOWS_KEY, WINDOW_POSITIONS_KEY, MODAL_IDS, TRANSIENT_MODAL_IDS, BASE_Z_INDEX, MENUBAR_Z_INDEX, DOCK_Z_INDEX, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, DOCK_MIN_HEIGHT, DOCK_MAX_HEIGHT, DOCK_MAGNIFICATION_SCALE, DOCK_MAGNIFICATION_RANGE, DESKTOP_ICON_SIZE, DESKTOP_ICON_SPACING, RUBBERBAND_MIN_DISTANCE, WINDOW_ANIMATION_DURATION, DOCK_ANIMATION_DURATION, MENU_ANIMATION_DURATION, GITHUB_CACHE_DURATION, GITHUB_API_BASE, SNAP_THRESHOLD, SNAP_SIDES, APP_CONSTANTS;
+  var init_constants = __esm({
+    "src/ts/constants.ts"() {
+      "use strict";
+      THEME_PREFERENCE_KEY = "themePreference";
+      VALID_THEME_PREFERENCES = ["system", "light", "dark"];
+      FINDER_STATE_STORAGE_KEY = "finderState";
+      OPEN_WINDOWS_KEY = "openWindows";
+      WINDOW_POSITIONS_KEY = "windowPositions";
+      MODAL_IDS = [
+        "finder-modal",
+        "projects-modal",
+        "about-modal",
+        "settings-modal",
+        "text-modal",
+        "terminal-modal",
+        "image-modal",
+        "program-info-modal"
+      ];
+      TRANSIENT_MODAL_IDS = /* @__PURE__ */ new Set(["program-info-modal"]);
+      BASE_Z_INDEX = 1e3;
+      MENUBAR_Z_INDEX = 1e4;
+      DOCK_Z_INDEX = 1e4;
+      MIN_WINDOW_WIDTH = 240;
+      MIN_WINDOW_HEIGHT = 160;
+      DEFAULT_WINDOW_WIDTH = 600;
+      DEFAULT_WINDOW_HEIGHT = 400;
+      DOCK_MIN_HEIGHT = 48;
+      DOCK_MAX_HEIGHT = 96;
+      DOCK_MAGNIFICATION_SCALE = 1.5;
+      DOCK_MAGNIFICATION_RANGE = 100;
+      DESKTOP_ICON_SIZE = 64;
+      DESKTOP_ICON_SPACING = 24;
+      RUBBERBAND_MIN_DISTANCE = 10;
+      WINDOW_ANIMATION_DURATION = 200;
+      DOCK_ANIMATION_DURATION = 150;
+      MENU_ANIMATION_DURATION = 100;
+      GITHUB_CACHE_DURATION = 5 * 60 * 1e3;
+      GITHUB_API_BASE = "https://api.github.com";
+      SNAP_THRESHOLD = 100;
+      SNAP_SIDES = ["left", "right"];
+      APP_CONSTANTS = {
+        THEME_PREFERENCE_KEY,
+        VALID_THEME_PREFERENCES,
+        FINDER_STATE_STORAGE_KEY,
+        OPEN_WINDOWS_KEY,
+        WINDOW_POSITIONS_KEY,
+        MODAL_IDS,
+        TRANSIENT_MODAL_IDS,
+        BASE_Z_INDEX,
+        MENUBAR_Z_INDEX,
+        DOCK_Z_INDEX,
+        MIN_WINDOW_WIDTH,
+        MIN_WINDOW_HEIGHT,
+        DEFAULT_WINDOW_WIDTH,
+        DEFAULT_WINDOW_HEIGHT,
+        DOCK_MIN_HEIGHT,
+        DOCK_MAX_HEIGHT,
+        DOCK_MAGNIFICATION_SCALE,
+        DOCK_MAGNIFICATION_RANGE,
+        DESKTOP_ICON_SIZE,
+        DESKTOP_ICON_SPACING,
+        RUBBERBAND_MIN_DISTANCE,
+        WINDOW_ANIMATION_DURATION,
+        DOCK_ANIMATION_DURATION,
+        MENU_ANIMATION_DURATION,
+        GITHUB_CACHE_DURATION,
+        GITHUB_API_BASE,
+        SNAP_THRESHOLD,
+        SNAP_SIDES
+      };
+      if (typeof window !== "undefined") {
+        window.APP_CONSTANTS = APP_CONSTANTS;
+      }
+    }
+  });
+
   // src/ts/api.ts
   var require_api = __commonJS({
     "src/ts/api.ts"() {
@@ -2647,7 +2725,7 @@ var App = (() => {
           if (window.__zIndexManager) {
             return window.__zIndexManager;
           }
-          const BASE_Z_INDEX = 1e3;
+          const BASE_Z_INDEX2 = 1e3;
           const MAX_WINDOW_Z_INDEX = 2147483500;
           const windowStack = [];
           window.__zIndexManager = {
@@ -2658,7 +2736,7 @@ var App = (() => {
               }
               windowStack.push(windowId);
               windowStack.forEach((id, index) => {
-                const zIndex = BASE_Z_INDEX + index;
+                const zIndex = BASE_Z_INDEX2 + index;
                 const element = document.getElementById(id);
                 if (element) {
                   const clampedZIndex = Math.min(zIndex, MAX_WINDOW_Z_INDEX);
@@ -2670,7 +2748,7 @@ var App = (() => {
                 }
               });
               window.topZIndex = Math.min(
-                BASE_Z_INDEX + windowStack.length,
+                BASE_Z_INDEX2 + windowStack.length,
                 MAX_WINDOW_Z_INDEX
               );
             },
@@ -2685,7 +2763,7 @@ var App = (() => {
             },
             reset() {
               windowStack.length = 0;
-              window.topZIndex = BASE_Z_INDEX;
+              window.topZIndex = BASE_Z_INDEX2;
             }
           };
           return window.__zIndexManager;
@@ -3659,8 +3737,8 @@ var App = (() => {
         "use strict";
         console.log("\u2705 StorageSystem (TS) loaded");
         const w = window;
-        const APP_CONSTANTS = w.APP_CONSTANTS || {};
-        const FINDER_STATE_KEY = APP_CONSTANTS.FINDER_STATE_STORAGE_KEY || "finderState";
+        const APP_CONSTANTS2 = w.APP_CONSTANTS || {};
+        const FINDER_STATE_KEY = APP_CONSTANTS2.FINDER_STATE_STORAGE_KEY || "finderState";
         const OPEN_MODALS_KEY = "openModals";
         const MODAL_POSITIONS_KEY = "modalPositions";
         const getModalIds2 = () => {
@@ -3909,8 +3987,8 @@ var App = (() => {
       (() => {
         "use strict";
         const win = window;
-        const APP_CONSTANTS = win.APP_CONSTANTS || {};
-        const THEME_KEY = APP_CONSTANTS.THEME_PREFERENCE_KEY || "themePreference";
+        const APP_CONSTANTS2 = win.APP_CONSTANTS || {};
+        const THEME_KEY = APP_CONSTANTS2.THEME_PREFERENCE_KEY || "themePreference";
         const validThemePreferences = ["system", "light", "dark"];
         const systemDarkQuery = window.matchMedia("(prefers-color-scheme: dark)");
         let themePreference = (() => {
@@ -9829,6 +9907,7 @@ ${selectedText}
   var require_expose_globals = __commonJS({
     "src/ts/compat/expose-globals.ts"() {
       init_dom_utils();
+      init_constants();
       var import_api = __toESM(require_api());
       var import_window_manager = __toESM(require_window_manager());
       var import_action_bus = __toESM(require_action_bus());

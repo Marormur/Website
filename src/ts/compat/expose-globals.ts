@@ -9,6 +9,9 @@ console.log('[BUNDLE] expose-globals.ts loading...');
 // Import the modern module(s) we want to expose explicitly
 import * as DOMUtils from '../dom-utils';
 
+// Import core constants first (needed by storage, app-init, etc.)
+import '../constants';
+
 // Import legacy/global modules for their side effects so they register on window.*
 import '../api';
 import '../window-manager';
