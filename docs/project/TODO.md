@@ -6,6 +6,12 @@
 
 ---
 
+> ℹ️ Abgeschlossen in Phase 0 – Details im CHANGELOG:
+>
+> - Fixed: Storage Restore Bug → siehe `CHANGELOG.md#fixed---storage-restore-bug-transient-modals-`
+> - Build: Bundle Migration Complete (Default) → siehe `CHANGELOG.md#build---bundle-migration-complete-default`
+> - Build: Conditional Bundle Loading → siehe `CHANGELOG.md#build---conditional-bundle-loading-`
+
 ## 📊 TypeScript Refactoring Opportunities (28. Oktober 2025) ✅ TEILWEISE ERLEDIGT
 
 **Analyse-Dokument**: `docs/analysis/TYPESCRIPT_REFACTORING_OPPORTUNITIES.md`
@@ -15,40 +21,47 @@ Nach der erfolgreichen TypeScript-Migration wurde eine umfassende Code-Analyse d
 ### ✅ Umgesetzt:
 
 1. **DOM-Utility-Duplikation** ✅ ERLEDIGT
-   - **Problem:** `classList.add/remove('hidden')` in 20+ Dateien dupliziert
-   - **Lösung:** Neues `src/ts/dom-utils.ts` Modul erstellt
-   - **Impact:** 8 Module migriert; ~100 Zeilen Code-Reduktion
-   - **Tests:** 20/20 quick, 120/120 full E2E passing
-   - **Status:** Produktiv, bewusst nicht in `base-window-instance.ts` (siehe CHANGELOG)
+    - **Problem:** `classList.add/remove('hidden')` in 20+ Dateien dupliziert
+    - **Lösung:** Neues `src/ts/dom-utils.ts` Modul erstellt
+    - **Impact:** 8 Module migriert; ~100 Zeilen Code-Reduktion
+    - **Tests:** 20/20 quick, 120/120 full E2E passing
+    - **Status:** Produktiv, bewusst nicht in `base-window-instance.ts` (siehe CHANGELOG)
 
 2. **Bundle Build Pipeline** ✅ ERLEDIGT
-   - **Problem:** IIFE Pattern Inkonsistenzen (11 IIFE only, 3 Export+IIFE, 6 Pure Exports)
-   - **Lösung:** esbuild-Bundle mit Compatibility-Adapter
-   - **Komponenten:** `src/ts/compat/expose-globals.ts`, `scripts/build-esbuild.mjs`
-   - **Output:** `js/app.bundle.js` (285.4kb)
-   - **Tasks:** "Bundle: Build", "Bundle: Watch", "Dev Environment: Start All (Bundle)"
-   - **Status:** Build erfolgreich, noch nicht in index.html eingebunden
+    - **Problem:** IIFE Pattern Inkonsistenzen (11 IIFE only, 3 Export+IIFE, 6 Pure Exports)
+    - **Lösung:** esbuild-Bundle mit Compatibility-Adapter
+    - **Komponenten:** `src/ts/compat/expose-globals.ts`, `scripts/build-esbuild.mjs`
+    - **Output:** `js/app.bundle.js` (285.4kb)
+    - **Tasks:** "Bundle: Build", "Bundle: Watch", "Dev Environment: Start All (Bundle)"
+    - **Status:** Build erfolgreich, noch nicht in index.html eingebunden
 
-### 🚧 In Arbeit:
-
-3. **Bundle-Integration** (staged rollout)
-   - [ ] Bundle testweise in index.html einbinden
-   - [ ] E2E-Tests mit Bundle verifizieren
-   - [ ] Schrittweise alte Script-Tags ersetzen
-   - [ ] `scripts/fix-ts-exports.js` entfernen (obsolet nach Bundle-Rollout)
+3. **Bundle-Integration & Migration** ✅ KOMPLETT (28. Oktober 2025)
+    - **Status:** Bundle ist jetzt **DEFAULT** und produktionsreif
+    - **Completed Tasks:**
+        - ✅ Bundle in index.html eingebunden (conditional loading mit USE_BUNDLE flag)
+        - ✅ E2E-Tests mit Bundle verifiziert (20/20 passing in beiden Modi)
+        - ✅ Alle Legacy-Module integriert (window-configs, finder-instance, launchpad, etc.)
+        - ✅ `scripts/fix-ts-exports.js` entfernt (obsolet nach Bundle-Rollout)
+        - ✅ Storage-Restore Bug gefixt (constants.ts fehlte im Bundle)
+    - **Bundle-Größe:** 404.7 KB (komplett mit allen Modulen)
+    - **Test-Ergebnisse:**
+        - Bundle (Default): 20/20 Tests ✅
+        - Scripts (USE_BUNDLE=0): 20/20 Tests ✅
+    - **Details:** Siehe CHANGELOG.md, REFACTORING.md
 
 ### 📋 Backlog (Niedrige Priorität):
 
 4. **Base-Class Casting Duplikation**
-   - **Problem:** Identisches Casting-Pattern in `terminal-instance.ts` und `text-editor-instance.ts`
-   - **Empfehlung:** `base-import.ts` Helper (nach Bundle-Migration)
+    - **Problem:** Identisches Casting-Pattern in `terminal-instance.ts` und `text-editor-instance.ts`
+    - **Empfehlung:** `base-import.ts` Helper (niedrige Priorität, funktioniert aktuell gut)
 
 5. **Window-Interface Type-Guards**
-   - **Problem:** Wiederholte `window as unknown as { ... }` Patterns
-   - **Empfehlung:** Zentrale Type-Guard Utilities (nach Bundle-Migration)
+    - **Problem:** Wiederholte `window as unknown as { ... }` Patterns
+    - **Empfehlung:** Zentrale Type-Guard Utilities (niedrige Priorität)
 
 ### Geschätzter Gesamtaufwand (verbleibend): 4-6 Stunden
-**Potenzial (bereits erreicht):** 100+ Zeilen Code-Reduktion + bessere Type-Safety
+
+**Potenzial (bereits erreicht):** 100+ Zeilen Code-Reduktion + bessere Type-Safety + Bundle als Default ✅
 
 ---
 
@@ -219,210 +232,11 @@ Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 
 ## 📝 TODO - Nächste Schritte
 
-> **⚠️ WICHTIG:** Bevor wir mit neuen Features beginnen, müssen wir die Entwicklungsumgebung stabilisieren!
-> Mehrere Terminals zeigen Fehler - diese müssen zuerst behoben werden.
+Die Entwicklungsumgebung (Phase 0) ist vollständig abgeschlossen. Ab jetzt konzentrieren wir uns auf neue Features (Phase 1+). Siehe Verweise oben und CHANGELOG für alle Details zur abgeschlossenen Phase 0.
 
----
+## 🔴 Priorität 1: Core Features & Integration - NÄCHSTER SCHRITT!
 
-## 🔧 Priorität 0: Development Environment Optimization (JETZT!)
-
-**Ziel**: Stabile Entwicklungsbasis schaffen, bevor neue Features entwickelt werden
-
-### 0.1 Stabilität herstellen ✅ **ABGESCHLOSSEN!**
-
-**Ursprüngliche Probleme:**
-
-- ~~❌ E2E Basic Smoke Tests failing (Exit Code 1)~~ → ✅ **Tests laufen (15/15 passing)** - Problem war VS Code glob pattern
-- ~~❌ Validate Task failing (Exit Code 1)~~ → ✅ **Validate passing** - 33 TypeScript strict mode errors behoben
-- ~~❌ Dev Server crashed (Exit Code 1)~~ → ✅ **Server läuft korrekt** - Port 5173 bereits in Verwendung (kein Crash)
-
-**Abgeschlossene Tasks:**
-
-- [x] **TypeScript Kompilierung behoben** ✅
-    - [x] 33 strict mode errors systematisch gefixt (noUncheckedIndexedAccess)
-    - [x] action-bus.ts: typeof check für WindowManager.close
-    - [x] dialog-utils.ts: Duplizierte Window interface entfernt, zentrale types/index.d.ts verwendet
-    - [x] instance-manager.ts: Array-Zugriff undefined handling
-    - [x] storage.ts: Dictionary-Zugriff mit null guard
-    - [x] terminal-instance.ts: 15 Fehler - commandHistory, findCommonPrefix, fileSystem access
-    - [x] `npm run build:ts` kompiliert jetzt erfolgreich
-    - [x] `npm run validate` läuft durch (typecheck + build + lint + css + e2e)
-
-- [x] **ESLint Warnings reduziert** ✅
-    - [x] Auto-fix mit `npm run lint -- --fix` ausgeführt
-    - [x] 24 Style-Warnings behoben (hauptsächlich quote style)
-    - [x] Von 54 auf 30 Warnings reduziert (45% Reduktion)
-    - [x] Verbleibende 30 Warnings sind legitime Code-Issues (unused vars, no-redeclare)
-
-- [x] **Terminal-Probleme geklärt** ✅
-    - [x] E2E tests: Glob pattern `tests/e2e/*basic.spec.js` funktioniert nicht in PowerShell
-        - Tests selbst sind grün (15/15 passing in 6.3s)
-        - VS Code Task braucht explizite Dateipfade
-    - [x] Validate task: TypeScript strict errors waren die Ursache → behoben
-    - [x] Dev server: Kein Crash - Port 5173 bereits belegt durch laufende Instanz
-        - Server antwortet korrekt auf HTTP-Requests
-        - EADDRINUSE ist erwartetes Verhalten bei zweitem Start-Versuch
-
-**Ergebnisse:**
-
-- ✅ TypeScript kompiliert fehlerfrei (0 errors)
-- ✅ E2E Tests: 92/93 passing (nur 1 existierendes finder-tabs Problem)
-- ✅ ESLint: 30 Warnings (von ursprünglich 54)
-- ✅ Dev Server: Läuft stabil auf Port 5173
-- ✅ Validation Pipeline: Funktionsfähig
-
-**Verbleibende Low-Priority Cleanups:**
-
-- [ ] VS Code E2E Task glob pattern fixen (optional - Tests laufen manuell)
-- [ ] 30 ESLint Warnings manuell prüfen (unused vars, code quality)
-- [ ] 1 fehlschlagender finder-tabs Test reparieren (existierendes Problem)
-
-**Status**: Phase 0.1 ist **produktionsreif abgeschlossen**! 🎉
-**Geschätzter Aufwand**: ~~2-4 Stunden~~ → **Tatsächlich: 2 Stunden** ✅
-
-### 0.2 Development Workflow verbessern ✅ **ABGESCHLOSSEN!**
-
-**Ziel**: Schnellere Entwicklungszyklen, weniger Frustration → **Erreicht!**
-
-**Abgeschlossene Tasks:**
-
-- [x] **Hot Reload optimiert** ✅
-    - [x] TypeScript watch mode: `npm run typecheck:watch` hinzugefügt
-    - [x] VS Code Task: "TypeScript: Watch" (background task)
-    - [x] Integriert in "Dev Environment: Start All" (CSS + TS + Server)
-    - [x] CSS watch: Bereits vorhanden, funktioniert zuverlässig ✅
-    - [x] Browser-Auto-Reload: Bereits implementiert via SSE in server.js ✅
-
-- [x] **VS Code Integration verbessert** ✅
-    - [x] Debug-Konfiguration: Bereits vorhanden für Chrome, Firefox, Edge ✅
-    - [x] Task-Optimierung: "Dev Environment: Start All" erweitert mit TS watch
-    - [x] Extensions dokumentiert: `.vscode/extensions.json` mit 11 Empfehlungen
-        - TypeScript, ESLint, Prettier, Tailwind CSS IntelliSense
-        - Playwright, GitLens, Markdown, Error Lens, etc.
-    - [x] .gitignore aktualisiert: extensions.json wird jetzt committed
-
-- [x] **Git Hooks eingerichtet** ✅
-    - [x] Husky: Bereits installiert und konfiguriert ✅
-    - [x] Pre-commit Hook: Bereits vorhanden mit lint-staged ✅
-        - Läuft automatisch ESLint + Prettier auf geänderten Dateien
-    - [x] Pre-push Hook: NEU erstellt! ✅
-        - Führt `npm run test:e2e:quick` aus (15 basic tests in ~5s)
-        - Verhindert broken code im Remote
-
-**Erstellte/Geänderte Dateien:**
-
-- NEU: `.vscode/extensions.json` - 11 empfohlene Extensions
-- NEU: `.husky/pre-push` - Pre-push hook mit E2E tests
-- UPDATE: `.vscode/tasks.json` - TypeScript: Watch + Check tasks
-- UPDATE: `package.json` - typecheck:watch script
-- UPDATE: `.gitignore` - extensions.json wird jetzt committed
-
-**Ergebnisse:**
-
-- ✅ Vollautomatisches Dev Environment mit einem Klick
-- ✅ TypeScript + CSS + Server in parallel watch mode
-- ✅ Live Reload funktioniert (SSE-basiert)
-- ✅ Git Hooks fangen Fehler vor Commit/Push ab
-- ✅ VS Code Extensions empfohlen & dokumentiert
-
-**Status**: Phase 0.2 ist **produktionsreif abgeschlossen**! 🎉
-**Geschätzter Aufwand**: ~~3-5 Stunden~~ → **Tatsächlich: 30 Minuten** ✅
-**Bonus**: Die meisten Features waren bereits vorhanden! Nur kleine Ergänzungen nötig.
-
-### 0.3 Testing stabilisieren
-
-**Ziel**: Zuverlässige, schnelle Tests
-
-- [x] **Test-Strategie klären**
-    - [x] Warum failten basic smoke tests?
-        - Ursache: PowerShell-Glob + fehlende Mocks für GitHub API → behoben
-        - Stabilisierung: Playwright Timeouts moderat erhöht, lokales Retry=1
-    - [x] Test-Coverage messen
-        - Type-Coverage aktuell: ~81.92% (`npm run type:report`)
-        - Baseline durchgesetzt via `npm run type:baseline` (81%)
-    - [x] Test-Dokumentation
-        - NEU: `docs/TESTING.md` beschreibt Strategy, Env-Flags, Troubleshooting
-        - Basic (Chromium) vs. Full (alle Browser) klar abgegrenzt
-
-- [x] **Test-Performance optimieren**
-    - [x] Parallele Execution prüfen
-        - Lokal feste 2 Workers (stabil), CI = 1 Worker
-        - Retries: Lokal 1, CI 2
-    - [x] Fixtures/Mocks für schnellere Tests
-        - GitHub API Mocks per `MOCK_GITHUB=1` in `tests/e2e/utils.js` integriert
-        - VS Code Smoke Task setzt `MOCK_GITHUB=1` automatisch
-
-**Dateien:**
-
-- Update: `playwright.config.js` - Workers (lokal=2, CI=1), Timeouts, Retries
-- Update: `tests/e2e/utils.js` - Optional GitHub-Mocks via `MOCK_GITHUB`
-- Neu: `docs/TESTING.md` - Test strategy guide
-
-**Ergebnis:**
-
-- ✅ Smoke Suite (Chromium) stabil: 15/15 Tests passing in ~6s mit `MOCK_GITHUB=1`
-- ✅ Server-Reuse lokal, frischer Server in CI
-- 🚧 Nächster Schritt: Coverage-Baseline definieren
-
-**Geschätzter Aufwand**: 2-3 Stunden
-
----
-
-### 0.4 Dokumentation aktualisieren ✅ **ABGESCHLOSSEN!**
-
-**Ziel**: Neue Contributors finden sich schnell zurecht
-
-- [x] **QUICKSTART.md überarbeiten**
-    - [x] Setup mit VS Code Tasks (Dev Environment: Start All) + manuelle Alternative
-    - [x] Richtige URL/Port: `http://127.0.0.1:5173`
-    - [x] Test-Abschnitt: Smoke (`test:e2e:quick` + `MOCK_GITHUB`), Full, CI-Modus
-    - [x] Link zu ausführlichem Troubleshooting
-
-- [x] **CONTRIBUTING.md erweitern**
-    - [x] Development Workflow aktualisiert (Tasks, Ports, Scripts)
-    - [x] Testing Best Practices (appReady, Smoke zuerst, `MOCK_GITHUB`)
-    - [x] Windows/PowerShell-freundliche Commands
-
-**Dateien:**
-
-- Update: `docs/QUICKSTART.md` - Setup, Tests, Link zu Troubleshooting
-- Update: `CONTRIBUTING.md` - Workflow, Tests, richtige Ports/Scripts
-- Neu: `docs/TROUBLESHOOTING.md` - Dev Server, Tests, TS, GitHub API, PowerShell
-
-**Ergebnis:**
-
-- ✅ Onboarding in <10 Minuten möglich (Tasks + klare Schritte)
-- ✅ Häufige Fehler dokumentiert (Windows/PowerShell einbezogen)
-- ✅ Test-Strategie konsistent verlinkt
-
-**Geschätzter Aufwand**: 1-2 Stunden
-
----
-
-### 📊 Zusammenfassung: Priorität 0
-
-**Warum zuerst?**
-
-- ✅ **Stabilität** - Keine Entwicklung auf "wackeligem Fundament"
-- ✅ **Effizienz** - Bessere Tools = schnellere Feature-Entwicklung
-- ✅ **Qualität** - Git Hooks fangen Fehler früh ab
-- ✅ **Onboarding** - Neue Contributors produktiv in <30min
-
-**Gesamtaufwand**: ~8-14 Stunden (1-2 Wochen bei 5-10h/Woche)
-
-**Erfolgskriterien:**
-
-- ✅ Alle Terminals zeigen grüne Status
-- ✅ E2E Tests passing (zumindest basic suite)
-- ✅ Dev server läuft stabil
-- ✅ Hot reload funktioniert
-- ✅ Git hooks verhindern broken commits
-
----
-
-## 🔴 Priorität 1: Core Features & Integration
-
-**⚠️ Erst starten, wenn Priorität 0 abgeschlossen ist!**
+**✅ Priorität 0 ist abgeschlossen - Bereit für Feature-Entwicklung!**
 
 #### 1.1 UI Integration - Window Management
 
@@ -838,27 +652,7 @@ Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 
 ## 🎯 Empfohlene Reihenfolge (AKTUALISIERT!)
 
-### Phase 0: Development Environment (1-2 Wochen) ⚠️ **JETZT!**
-
-**Warum zuerst?** Stabile Basis ist Voraussetzung für effiziente Feature-Entwicklung!
-
-1. **Stabilität herstellen** (KRITISCH, 2-4h)
-    - Terminal-Fehler beheben
-    - CI/CD grün bekommen
-2. **Workflow verbessern** (3-5h)
-    - Hot reload optimieren
-    - VS Code Integration
-    - Git Hooks einrichten
-3. **Testing stabilisieren** (2-3h)
-    - Flaky tests fixen
-    - Test-Performance
-4. **Dokumentation** (1-2h)
-    - QUICKSTART.md
-    - Troubleshooting Guide
-
-**Total: ~8-14 Stunden**
-
----
+• Phase 0: Development Environment – Abgeschlossen (siehe CHANGELOG)
 
 ### Phase 1: UI Integration (1-2 Wochen)
 
@@ -912,26 +706,7 @@ Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 
 ---
 
-## 📌 Quick Wins (für schnelle Erfolge)
-
-**⚠️ Erst DevEx-Quick-Wins, dann Feature-Quick-Wins!**
-
-### DevEx Quick Wins (Phase 0):
-
-1. ✅ **Dev server fix** (30min-1h) - Sofort produktiver
-2. ✅ **Git pre-commit hook** (30min) - Verhindert broken commits
-3. ✅ **VS Code Debug config** (30min) - Besseres Debugging
-4. ✅ **Basic smoke tests fix** (1-2h) - Grüne Tests = Motivation
-
-### Feature Quick Wins (Nach Phase 0):
-
-1. ✅ **Window Menü** (2-3h) - Sofort nützlich
-2. ✅ **Cmd+N Shortcut** (1h) - Sehr praktisch
-3. ✅ **Tab Close Button** (1h) - Wichtig für UX
-4. ✅ **Auto-Save** (2h) - Keine Datenverluste mehr
-5. ✅ **Image Viewer Instance** (3-4h) - Neue Funktionalität
-
----
+<!-- Quick Wins (abgeschlossen) wurden ins CHANGELOG verlinkt; hier bewusst entfernt, um TODO zukunftsgerichtet zu halten. -->
 
 ## 🔧 Technische Details für neue Developer
 
@@ -1092,29 +867,22 @@ npm run dev
 
 ## 🎯 TL;DR - Was als Nächstes?
 
-### ⚠️ SOFORT STARTEN (Priorität 0 - DevEx):
+### ✅ ABGESCHLOSSEN (Priorität 0 - DevEx):
 
-**Warum?** Entwicklung auf instabiler Basis ist ineffizient und frustrierend!
+**Status:** Alle Entwicklungsumgebungs-Optimierungen sind produktiv! ✅
 
-1. **Terminal-Fehler beheben** (2-4h) 🔴 KRITISCH
-    - E2E basic smoke tests debuggen
-    - Validate task fixen
-    - Dev server zum Laufen bringen
-2. **Development Workflow** (3-5h)
-    - Hot reload optimieren
-    - VS Code Debug config
-    - Git Hooks (pre-commit, pre-push)
-3. **Testing stabilisieren** (2-3h)
-    - Flaky tests identifizieren
-    - Test-Performance
-4. **Docs aktualisieren** (1-2h)
-    - Troubleshooting Guide
+1. ✅ **Terminal-Fehler behoben** - TypeScript kompiliert, Tests passing
+2. ✅ **Development Workflow** - Hot reload, VS Code Tasks, Git Hooks
+3. ✅ **Testing stabilisiert** - 20/20 E2E tests, beide Modi (Bundle & Scripts)
+4. ✅ **Docs aktualisiert** - QUICKSTART, TESTING, TROUBLESHOOTING
+5. ✅ **BONUS: Bundle-Migration komplett** - Produktionsreif mit 404.7 KB Bundle
 
-**Geschätzter Zeitaufwand für Prio 0**: ~8-14 Stunden (1-2 Wochen)
+**Tatsächlicher Aufwand**: ~10 Stunden ✅
+**Abgeschlossen**: 28. Oktober 2025
 
 ---
 
-### Erst danach (Priorität 1 - Features):
+### 🔴 JETZT STARTEN (Priorität 1 - Features):
 
 1. **Window Tabs** - Tabs oberhalb des Inhalts
 2. **Keyboard Shortcuts** - Cmd+N, Cmd+W, etc.
@@ -1145,6 +913,15 @@ npm run dev
 
 ---
 
-**Gesamtaufwand**: ~50-70 Stunden (6-10 Wochen bei 8-10h/Woche)
+**Gesamtaufwand (verbleibend)**: ~50-70 Stunden (6-10 Wochen bei 8-10h/Woche)
+**Bereits investiert**: ~10 Stunden (Phase 0 ✅)
 
-🚀 **Los geht's - aber erst DevEx, dann Features!**
+🚀 **Los geht's - DevEx ist fertig, jetzt kommen die Features!**
+
+---
+
+## 🧭 Nächster Schritt (kurz)
+
+**🎯 Priorität 1.1: Window Tabs System** (6–8 Stunden)
+
+Alternative Quick Wins (falls zwischendurch): Window-Menü in Menubar, Cmd/Ctrl+N/W Shortcuts.
