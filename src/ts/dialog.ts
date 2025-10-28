@@ -75,7 +75,15 @@ export class Dialog {
         }
         // preserve original behavior
         (window as any).hideMenuDropdowns?.();
-        this.modal.classList.remove('hidden');
+        
+        // Use DOMUtils if available, fallback to classList
+        const domUtils = (window as any).DOMUtils;
+        if (domUtils && typeof domUtils.show === 'function') {
+            domUtils.show(this.modal);
+        } else {
+            this.modal.classList.remove('hidden');
+        }
+        
         if (this.modal.dataset) delete (this.modal.dataset as any).minimized;
         this.bringToFront();
         this.enforceMenuBarBoundary();
@@ -86,7 +94,14 @@ export class Dialog {
 
     close() {
         if (this.modal.classList.contains('hidden')) return;
-        this.modal.classList.add('hidden');
+        
+        // Use DOMUtils if available, fallback to classList
+        const domUtils = (window as any).DOMUtils;
+        if (domUtils && typeof domUtils.hide === 'function') {
+            domUtils.hide(this.modal);
+        } else {
+            this.modal.classList.add('hidden');
+        }
 
         // Remove from z-index manager stack
         const zIndexManager = (window as any).__zIndexManager;
@@ -101,7 +116,19 @@ export class Dialog {
 
     minimize() {
         if (this.modal.dataset) (this.modal.dataset as any).minimized = 'true';
-        if (!this.modal.classList.contains('hidden')) this.modal.classList.add('hidden');
+        
+        // Use DOMUtils if available, fallback to classList
+        const domUtils = (window as any).DOMUtils;
+        if (domUtils && typeof domUtils.hide === 'function') {
+            if (!this.modal.classList.contains('hidden')) {
+                domUtils.hide(this.modal);
+            }
+        } else {
+            if (!this.modal.classList.contains('hidden')) {
+                this.modal.classList.add('hidden');
+            }
+        }
+        
         (window as any).saveOpenModals?.();
         (window as any).updateDockIndicators?.();
         (window as any).updateProgramLabelByTopModal?.();

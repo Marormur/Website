@@ -66,7 +66,14 @@ class Dialog {
         }
         // preserve original behavior
         window.hideMenuDropdowns?.();
-        this.modal.classList.remove('hidden');
+        // Use DOMUtils if available, fallback to classList
+        const domUtils = window.DOMUtils;
+        if (domUtils && typeof domUtils.show === 'function') {
+            domUtils.show(this.modal);
+        }
+        else {
+            this.modal.classList.remove('hidden');
+        }
         if (this.modal.dataset)
             delete this.modal.dataset.minimized;
         this.bringToFront();
@@ -78,7 +85,14 @@ class Dialog {
     close() {
         if (this.modal.classList.contains('hidden'))
             return;
-        this.modal.classList.add('hidden');
+        // Use DOMUtils if available, fallback to classList
+        const domUtils = window.DOMUtils;
+        if (domUtils && typeof domUtils.hide === 'function') {
+            domUtils.hide(this.modal);
+        }
+        else {
+            this.modal.classList.add('hidden');
+        }
         // Remove from z-index manager stack
         const zIndexManager = window.__zIndexManager;
         if (zIndexManager && typeof zIndexManager.removeWindow === 'function') {
@@ -91,8 +105,18 @@ class Dialog {
     minimize() {
         if (this.modal.dataset)
             this.modal.dataset.minimized = 'true';
-        if (!this.modal.classList.contains('hidden'))
-            this.modal.classList.add('hidden');
+        // Use DOMUtils if available, fallback to classList
+        const domUtils = window.DOMUtils;
+        if (domUtils && typeof domUtils.hide === 'function') {
+            if (!this.modal.classList.contains('hidden')) {
+                domUtils.hide(this.modal);
+            }
+        }
+        else {
+            if (!this.modal.classList.contains('hidden')) {
+                this.modal.classList.add('hidden');
+            }
+        }
         window.saveOpenModals?.();
         window.updateDockIndicators?.();
         window.updateProgramLabelByTopModal?.();
