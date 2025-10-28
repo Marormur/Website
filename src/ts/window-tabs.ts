@@ -300,6 +300,8 @@
             (id) => {
               this.manager.setActiveInstance(id);
               this.opts.onTabSwitch?.(id);
+              // Refresh tabs to update visual state after switching
+              refreshWithHooks();
             },
             (id) => {
               this.opts.onTabClose?.(id);
