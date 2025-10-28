@@ -4,7 +4,7 @@
 This guide provides steps to manually test the session restore functionality.
 
 ## Prerequisites
-- Local dev server running: `npm run dev`
+- Development server running on port 5173 (typically via `npm run dev`)
 - Browser with localStorage enabled
 - Browser DevTools open for console monitoring
 
@@ -103,8 +103,10 @@ This guide provides steps to manually test the session restore functionality.
 ### Test 6: Transient Modal Exclusion
 
 **Steps:**
-1. In Console, inject a session with transient modal:
+1. In Console, inject a session with transient modal (uses example modal IDs):
    ```javascript
+   // Note: 'program-info-modal' is a transient modal in this application
+   // 'about-modal' is a persistent modal - adjust IDs based on your setup
    const sessionData = {
        version: '1.1',
        timestamp: Date.now(),
@@ -120,8 +122,8 @@ This guide provides steps to manually test the session restore functionality.
 2. Reload the page
 
 **Expected Results:**
-- ✅ About modal IS visible
-- ✅ Program Info modal is NOT visible (hidden class)
+- ✅ About modal IS visible (persistent modal restored)
+- ✅ Program Info modal is NOT visible (transient modal skipped, has hidden class)
 - ✅ Console may show warning about skipping transient modal
 
 ### Test 7: Idempotency (Double Restore)

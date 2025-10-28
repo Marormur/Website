@@ -58,7 +58,7 @@ if (fs.existsSync(testPath)) {
     
     // Count test cases
     const testContent = fs.readFileSync(testPath, 'utf-8');
-    const testMatches = testContent.match(/test\(/g);
+    const testMatches = testContent.match(/^\s*test\s*\(/gm);
     if (testMatches) {
         console.log(`   Found ${testMatches.length} test cases`);
     }
