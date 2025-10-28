@@ -33,12 +33,10 @@ function checkServer(timeoutMs = 300) {
     const isUp = await checkServer();
     if (isUp) {
         console.log(READY_LINE);
-        // Server is already running - wait indefinitely so the background task stays active
-        // This allows VS Code's problem matcher to detect readiness and keep the task running
-        // User can terminate the task manually when done debugging
-        console.log('[dev-server-ensure] Server already running, keeping task alive...');
-        // Keep process alive by waiting on stdin
-        process.stdin.resume();
+        // Server is already running - wait briefly for VS Code problem matcher to detect readiness
+        console.log('[dev-server-ensure] Server already running, task complete.');
+        // Wait 500ms to ensure VS Code's problem matcher has time to process the output
+        setTimeout(() => process.exit(0), 500);
         return;
     }
 
