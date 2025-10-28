@@ -92,37 +92,7 @@ interface WindowTabsAPI {
   ): WindowTabsController;
 }
 
-/**
- * Configuration for WindowTabManager constructor.
- */
-interface WindowTabManagerConfig {
-  /** ID of the DOM element to mount the tab bar in */
-  containerId: string;
-  /** The instance manager to bind to */
-  instanceManager: WindowTabInstanceManager;
-  /** Called when a tab is clicked to switch to it */
-  onTabSwitch?: (instanceId: string) => void;
-  /** Called before a tab is closed (destroyed) */
-  onTabClose?: (instanceId: string) => void;
-  /** Called when the "+" button is clicked to create a new tab */
-  onNewTab?: () => void;
-  /** Called when the last tab is closed */
-  onAllTabsClosed?: () => void;
-}
-
-/**
- * Legacy adapter class expected by multi-instance integration code.
- * Provides a higher-level interface with callbacks for tab operations.
- */
-declare class WindowTabManager {
-  constructor(config: WindowTabManagerConfig);
-  
-  /** Add a tab for an instance (triggers refresh) */
-  addTab(instance: WindowTabInstance): void;
-  
-  /** Close a tab by instance ID (calls onTabClose, destroys instance, triggers onAllTabsClosed if last) */
-  closeTab(instanceId: string): void;
-}
+// Legacy WindowTabManager adapter removed; use WindowTabs.create instead.
 
 /**
  * The WindowTabs global API.

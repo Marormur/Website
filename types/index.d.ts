@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/triple-slash-reference */
 /**
  * Centralized Ambient Type Definitions for Window Interface
  *
@@ -98,9 +99,6 @@ declare interface Window {
   // ===== Phase 2 Features =====
   /** WindowTabs - Tab system API for creating tab bars */
   WindowTabs: WindowTabsAPI;
-  
-  /** WindowTabManager - Legacy adapter for tab system with callbacks */
-  WindowTabManager: typeof WindowTabManager;
 
   /** KeyboardShortcuts - Global keyboard shortcut system */
   KeyboardShortcuts: {
