@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+### Added - Auto-Save System for Instance State ✅ (28. Oktober 2025)
+  - Implemented debounced auto-save system for multi-instance window state persistence
+  - **SessionManager** (`src/ts/session-manager.ts`):
+    - Centralizes instance state persistence to localStorage (`session:instances` key)
+    - Debounced saves (default 500ms, configurable) to minimize write operations
+    - Immediate save on window blur and beforeunload events
+    - Graceful quota error handling with console warnings (no blocking UI)
+    - Storage size estimation with 5MB soft limit warning
+    - Version tracking and timestamp for session data
+  - **InstanceManager Integration**:
+    - Auto-save triggered on instance creation and destruction
+    - State change events (`stateChanged`) hooked to trigger debounced saves
+    - No duplicate writes due to intelligent debouncing
+  - **API Exposure** via `API.session`:
+    - `saveAll(options)` - Save all instances with optional debounce control
+    - `loadSession()` - Load saved session data
+    - `clearSession()` - Clear session storage
+    - `setDebounceDelay(ms)` - Configure debounce delay
+    - `setEnabled(bool)` - Enable/disable auto-save
+    - `getConfig()` - Get current configuration
+  - **Test Coverage**: 11 comprehensive E2E tests in `tests/e2e/auto-save.spec.js`
+    - Multi-instance state persistence
+    - Debounce effectiveness (prevents excessive writes)
+    - State change handling
+    - Window blur/unload triggers
+    - Storage quota error handling
+    - Configuration management
+  - **Issue**: Closes #28 (State & Sessions: Auto-Save System)
+
 ### Verified - Window Menu Multi-Instance Integration ✅ (28. Oktober 2025)
   - Confirmed that `src/ts/menu.ts` already implements complete Window menu functionality:
     - Dynamic "Fenster/Window" section in menubar with instance list
