@@ -21,7 +21,10 @@ export default [
             'tests/**/*.spec.js',
             'playwright.config.js',
             'postcss.config.js',
+            'tailwind.config.js',
             'js/**/*.js', // Ignore compiled TypeScript output
+            'docs/**/*.js', // Ignore generated documentation
+            'scripts/**/*.js', // Ignore build scripts
         ],
         languageOptions: {
             ecmaVersion: 'latest',
@@ -238,4 +241,3 @@ export default [
         ],
     },
 ];
-
