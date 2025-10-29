@@ -26,6 +26,7 @@ import '../dialog';
 import '../menubar-utils';
 import '../context-menu';
 import '../storage';
+import '../session-manager'; // Auto-save system for instances
 import '../theme';
 import '../base-window-instance'; // Must come before instance types
 import '../instance-manager';

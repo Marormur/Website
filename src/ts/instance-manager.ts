@@ -81,6 +81,9 @@ console.log('InstanceManager loaded');
         this.activeInstanceId = instanceId;
 
         this._setupInstanceEvents(instance);
+        
+        // Trigger auto-save after instance creation
+        this._triggerAutoSave();
 
         console.log(`Created instance: ${instanceId}`);
         return instance;
@@ -151,6 +154,9 @@ console.log('InstanceManager loaded');
         const lastId = remainingIds.length > 0 ? remainingIds[remainingIds.length - 1] : undefined;
         this.activeInstanceId = lastId ?? null;
       }
+      
+      // Trigger auto-save after instance destruction
+      this._triggerAutoSave();
 
       console.log(`Destroyed instance: ${instanceId}`);
     }
@@ -161,6 +167,9 @@ console.log('InstanceManager loaded');
       });
       this.instances.clear();
       this.activeInstanceId = null;
+      
+      // Trigger auto-save after destroying all instances
+      this._triggerAutoSave();
     }
 
     hasInstances(): boolean {
@@ -215,6 +224,18 @@ console.log('InstanceManager loaded');
       // Replace the instances map
       this.instances = newMap;
       console.log('Instances reordered:', validIds);
+    }
+    
+    private _triggerAutoSave(): void {
+      const w = window as unknown as Record<string, unknown>;
+      const SessionManager = w.SessionManager as Record<string, unknown> | undefined;
+      if (SessionManager && typeof SessionManager.saveInstanceType === 'function') {
+        try {
+          (SessionManager.saveInstanceType as (type: string) => void)(this.type);
+        } catch (error) {
+          console.warn('Failed to trigger auto-save:', error);
+        }
+      }
     }
 
     private _defaultCreateContainer(instanceId: string): HTMLElement {

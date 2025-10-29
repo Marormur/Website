@@ -58,6 +58,42 @@
     - Replaces old simple image viewer with full-featured gallery application
   - **Technical**: TypeScript strict mode compliant, builds successfully with `npm run build:ts`
 
+### Added - Auto-Save System (SessionManager) ✨ (28. Oktober 2025)
+  - **Feature**: Debounced Auto-Save system for window instances
+  - **Implementation**: New `src/ts/session-manager.ts` module
+    - Centralized persistence to localStorage with configurable debounce (default: 750ms)
+    - Storage quota awareness with graceful error handling
+    - Browser lifecycle hooks (blur/beforeunload/visibilitychange) for automatic saves
+    - Session restore on page load
+  - **Integration**:
+    - Auto-save hooks in `BaseWindowInstance.updateState()` trigger saves on state changes
+    - `InstanceManager` triggers saves on create/destroy/destroyAll operations
+    - SessionManager integrated into bundle and API (`API.session.*`)
+    - Automatic initialization in `app-init.ts` with session restore
+  - **API**:
+    - `SessionManager.init()` - Initialize auto-save system
+    - `SessionManager.saveAll(options)` - Save all instances (immediate or debounced)
+    - `SessionManager.saveInstanceType(type, options)` - Save specific instance type
+    - `SessionManager.restoreSession()` - Restore saved session
+    - `SessionManager.setDebounceDelay(ms)` - Configure debounce timing (100-5000ms)
+    - `SessionManager.getStats()` - Get session statistics
+    - `SessionManager.clear()` - Clear saved session
+  - **Features**:
+    - Debounced writes prevent excessive localStorage operations during rapid updates
+    - Automatic save on window blur, page unload, and tab visibility change
+    - Storage quota management (5MB conservative limit with error handling)
+    - Supports multiple instance types (Terminal, TextEditor, etc.)
+  - **Tests**: E2E test suite in `tests/e2e/session-manager-autosave.spec.js` (10 tests)
+    - Module loading and initialization
+    - Session stats and configuration
+    - Auto-save on state changes
+    - Session restore after reload
+    - Browser lifecycle hooks (blur event)
+    - Debounce validation (rapid updates)
+    - Storage quota handling
+    - Session clear/destroy
+  - **Status**: Core auto-save functionality complete; foundation for Priorität 1.3 (State Persistierung & Session Management)
+
 ### Verified - Window Menu Multi-Instance Integration ✅ (28. Oktober 2025)
   - Confirmed that `src/ts/menu.ts` already implements complete Window menu functionality:
     - Dynamic "Fenster/Window" section in menubar with instance list
