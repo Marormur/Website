@@ -140,8 +140,6 @@ console.log('Launchpad loaded');
             `;
             return;
         }
-        if (!appsGrid)
-            return; // Guard again after innerHTML assignment
         filteredApps.forEach(app => {
             const appButton = document.createElement('button');
             appButton.className = 'launchpad-app-button';
