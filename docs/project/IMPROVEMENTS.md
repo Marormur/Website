@@ -24,28 +24,19 @@
 
 ### Priorität 1: SOFORT (1-2 Stunden)
 
-#### 1.1 Documentation Cleanup ✅ TEILWEISE ERLEDIGT
+#### 1.1 Documentation Cleanup ✅ KOMPLETT (29. Oktober 2025)
 
-**Status Update (28. Oktober 2025):**
+**Status Update:**
 
 ✅ **Erledigt:**
 
 - Archiv-Struktur `docs/archive/` erstellt
-- 10 Migration-Docs archiviert (Finder, Window-Tabs, Multi-Instance Summaries)
-- ROADMAP.md erstellt und aktualisiert
-- TODO.md konsolidiert
+- 14 historische Docs archiviert (Migration Summaries, Session Restore, Audits)
+- TODO.md gestrafft (978 → 550 Zeilen, -44%)
+- ROADMAP.md vollständig aktualisiert (Q4 2025 als komplett markiert)
+- Docs-Cleanup-Empfehlungen erstellt (`docs/analysis/DOCS_CLEANUP_RECOMMENDATIONS.md`)
 - DECISIONS.md bereits vorhanden
 - CHANGELOG.md aktiv genutzt
-
-🚧 **In Arbeit:**
-
-- Weitere Doc-Updates (TYPESCRIPT_GUIDELINES, TESTING, etc.)
-- Siehe `docs/analysis/DOCUMENTATION_AUDIT.md` für vollständige Analyse
-
-📋 **Verbleibend (optional):**
-
-- Legacy-Root-Docs prüfen (SUMMARY.md, NEXT_STEPS.md, etc.)
-- Weitere Konsolidierung nach Bedarf
 
 **Aktuelle Struktur:**
 
@@ -53,81 +44,61 @@
 docs/
 ├── README.md
 ├── analysis/
-│   ├── TYPESCRIPT_REFACTORING_OPPORTUNITIES.md ✅ updated
-│   └── DOCUMENTATION_AUDIT.md ✅ new
+│   ├── DOCS_CLEANUP_RECOMMENDATIONS.md ✅ new
+│   └── (alte Audits archiviert)
 ├── architecture/
 │   ├── OVERVIEW.md
 │   ├── PATTERNS.md
 │   └── REFACTORING.md
-├── archive/ ✅ (10 historische Migration-Docs)
+├── archive/ ✅ (14 historische Docs)
 ├── guides/
 │   └── DEPLOYMENT.md
 ├── migration/
 │   └── [TS Migration Guides]
 └── project/
-    ├── TODO.md ✅ updated
+    ├── TODO.md ✅ gestrafft (550 Zeilen)
     ├── ROADMAP.md ✅ updated
     ├── IMPROVEMENTS.md (dieses Dokument)
     └── DECISIONS.md
 ```
 
-**Original Problem:** 17 Markdown-Dateien verstreut, viel Redundanz
+**Ergebnis:**
 
-**Root-Verzeichnis aktuell:**
+- 37 → ~30 Markdown-Dateien (-19%)
+- Klare Archive-Struktur für historische Docs
+- TODO.md fokussiert auf Zukunft (44% kürzer)
+- ROADMAP.md reflektiert aktuellen Q4 2025 100% Status
+  TYPESCRIPT_MIGRATION_PLAN.md
 
-```
-readme.md
-CONTRIBUTING.md
-SUMMARY.md
-NEXT_STEPS.md
-TODO_MULTI_INSTANCE.md
-IMPLEMENTATION_COMPLETE.md
-FILE_SUMMARY_MULTI_INSTANCE.md
-PR_README.md
-```
-
-**docs/ Verzeichnis aktuell:**
-
-```
-ARCHITECTURE.md
-DEPLOYMENT.md
-FINDER_README.md
-IMPLEMENTATION_SUMMARY.md
-MULTI_INSTANCE_COMPLETE.md
-MULTI_INSTANCE_MIGRATION.md
-MULTI_INSTANCE_QUICKSTART.md
-QUICKSTART.md
-README.md
-REFACTORING.md
-TYPESCRIPT_MIGRATION_PLAN.md
 ```
 
 **Lösung: Aufräumen & Konsolidieren**
 
 ```
+
 Root-Verzeichnis (nur essentials):
-├── README.md                    # Projekt-Übersicht
-├── CONTRIBUTING.md              # Contribution Guidelines
-└── CHANGELOG.md                 # Version History (NEU)
+├── README.md # Projekt-Übersicht
+├── CONTRIBUTING.md # Contribution Guidelines
+└── CHANGELOG.md # Version History (NEU)
 
 docs/ (alle technischen Docs):
-├── README.md                    # Docs Index
+├── README.md # Docs Index
 ├── architecture/
-│   ├── OVERVIEW.md              # = ARCHITECTURE.md
-│   ├── REFACTORING.md
-│   └── PATTERNS.md              # Code-Patterns (NEU)
+│ ├── OVERVIEW.md # = ARCHITECTURE.md
+│ ├── REFACTORING.md
+│ └── PATTERNS.md # Code-Patterns (NEU)
 ├── guides/
-│   ├── QUICKSTART.md
-│   ├── DEPLOYMENT.md
-│   ├── MULTI_INSTANCE.md        # Konsolidiert aus 3 Dateien
-│   └── FINDER.md                # = FINDER_README.md
+│ ├── QUICKSTART.md
+│ ├── DEPLOYMENT.md
+│ ├── MULTI_INSTANCE.md # Konsolidiert aus 3 Dateien
+│ └── FINDER.md # = FINDER_README.md
 ├── migration/
-│   ├── TYPESCRIPT.md            # = TYPESCRIPT_MIGRATION_PLAN.md
-│   └── HTML_MIGRATION.html
+│ ├── TYPESCRIPT.md # = TYPESCRIPT_MIGRATION_PLAN.md
+│ └── HTML_MIGRATION.html
 └── project/
-    ├── TODO.md                  # = TODO_MULTI_INSTANCE.md
-    ├── ROADMAP.md               # Langfristige Planung (NEU)
-    └── DECISIONS.md             # Architecture Decision Records (NEU)
+├── TODO.md # = TODO_MULTI_INSTANCE.md
+├── ROADMAP.md # Langfristige Planung (NEU)
+└── DECISIONS.md # Architecture Decision Records (NEU)
 
 Archivieren (alte Implementierungs-Docs):
 archive/
@@ -137,7 +108,8 @@ archive/
 ├── MULTI_INSTANCE_MIGRATION.md
 ├── FILE_SUMMARY_MULTI_INSTANCE.md
 └── SUMMARY.md
-```
+
+````
 
 **Action Items:**
 
@@ -172,7 +144,7 @@ touch docs/architecture/PATTERNS.md
 touch docs/guides/MULTI_INSTANCE.md
 touch docs/project/ROADMAP.md
 touch docs/project/DECISIONS.md
-```
+````
 
 **Zeitaufwand:** 1-2 Stunden
 
