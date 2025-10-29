@@ -20,7 +20,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
         const hasTerminal = await page.evaluate(() => {
             return !!window.TerminalInstanceManager;
         });
-        
+
         if (!hasTerminal) {
             test.skip();
             return;
@@ -28,20 +28,20 @@ test.describe('Session Restore - Full Integration @basic', () => {
 
         // Open terminal modal via Dock
         await clickDockIcon(page, 'terminal-modal');
-        
+
         await page.waitForTimeout(500);
 
         // Create multiple terminal instances
         const createCount = await page.evaluate(() => {
             if (!window.TerminalInstanceManager) return 0;
-            
+
             // Create 3 terminals
             for (let i = 0; i < 3; i++) {
                 window.TerminalInstanceManager.createInstance({
-                    title: `Terminal ${i + 1}`
+                    title: `Terminal ${i + 1}`,
                 });
             }
-            
+
             return window.TerminalInstanceManager.getInstanceCount();
         });
 
@@ -94,7 +94,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
         const hasTextEditor = await page.evaluate(() => {
             return !!window.TextEditorInstanceManager;
         });
-        
+
         if (!hasTextEditor) {
             test.skip();
             return;
@@ -102,23 +102,23 @@ test.describe('Session Restore - Full Integration @basic', () => {
 
         // Open text editor modal via Dock
         await clickDockIcon(page, 'text-modal');
-        
+
         await page.waitForTimeout(500);
 
         // Create multiple text editor instances
         await page.evaluate(() => {
             if (!window.TextEditorInstanceManager) return;
-            
+
             // Create 2 editors with different content
             const editor1 = window.TextEditorInstanceManager.createInstance({
-                title: 'Document 1'
+                title: 'Document 1',
             });
             if (editor1) {
                 editor1.updateState({ content: 'Hello from document 1' });
             }
-            
+
             const editor2 = window.TextEditorInstanceManager.createInstance({
-                title: 'Document 2'
+                title: 'Document 2',
             });
             if (editor2) {
                 editor2.updateState({ content: 'Hello from document 2' });
@@ -157,10 +157,10 @@ test.describe('Session Restore - Full Integration @basic', () => {
         // Open about modal
         const appleMenuButton = page.locator('[aria-controls="apple-menu-dropdown"]').first();
         await appleMenuButton.click();
-        
+
         const aboutTrigger = page.locator('[data-action="openAbout"]').first();
         await aboutTrigger.click();
-        
+
         await page.waitForTimeout(300);
 
         // Verify modal is visible
@@ -195,15 +195,15 @@ test.describe('Session Restore - Full Integration @basic', () => {
                     'program-info-modal': {
                         visible: true,
                         minimized: false,
-                        zIndex: '1001'
+                        zIndex: '1001',
                     },
                     'about-modal': {
                         visible: true,
                         minimized: false,
-                        zIndex: '1000'
-                    }
+                        zIndex: '1000',
+                    },
                 },
-                tabState: {}
+                tabState: {},
             };
             localStorage.setItem('window-session', JSON.stringify(sessionData));
         });
@@ -233,10 +233,10 @@ test.describe('Session Restore - Full Integration @basic', () => {
                     'non-existent-modal': {
                         visible: true,
                         minimized: false,
-                        zIndex: '1001'
-                    }
+                        zIndex: '1001',
+                    },
                 },
-                tabState: {}
+                tabState: {},
             };
             localStorage.setItem('window-session', JSON.stringify(sessionData));
         });
@@ -269,7 +269,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
         const hasTerminal = await page.evaluate(() => {
             return !!window.TerminalInstanceManager;
         });
-        
+
         if (!hasTerminal) {
             test.skip();
             return;
@@ -355,7 +355,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
             const settingsModal = document.getElementById('settings-modal');
             return {
                 about: aboutModal?.style?.zIndex || '',
-                settings: settingsModal?.style?.zIndex || ''
+                settings: settingsModal?.style?.zIndex || '',
             };
         });
 
@@ -374,7 +374,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
             const settingsModal = document.getElementById('settings-modal');
             return {
                 about: aboutModal?.style?.zIndex || '',
-                settings: settingsModal?.style?.zIndex || ''
+                settings: settingsModal?.style?.zIndex || '',
             };
         });
 

@@ -8,9 +8,12 @@ exports.Dialog = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 class Dialog {
     constructor(modalId) {
+        this.modalId = modalId;
         const el = document.getElementById(modalId);
-        if (!el)
+        if (!el) {
+            console.error(`Dialog: No element found with id "${modalId}"`);
             throw new Error(`No dialog with id ${modalId}`);
+        }
         this.modal = el;
         // Legacy helper may provide an element wrapper
         const helper = window.StorageSystem?.getDialogWindowElement;
@@ -59,7 +62,7 @@ class Dialog {
     }
     open() {
         if (!this.modal) {
-            console.error('Cannot open dialog: modal element is undefined');
+            console.error(`Cannot open dialog: modal element is undefined (id: ${this.modalId})`);
             return;
         }
         // preserve original behavior
@@ -72,7 +75,7 @@ class Dialog {
         else {
             this.modal.classList.remove('hidden');
         }
-        if (this.modal.dataset)
+        if (this.modal && this.modal.dataset)
             delete this.modal.dataset.minimized;
         this.bringToFront();
         this.enforceMenuBarBoundary();

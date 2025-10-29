@@ -148,12 +148,17 @@ function initApp(): void {
         modalIds.forEach(id => {
             const modal = document.getElementById(id);
             if (!modal || !win.Dialog) return;
-            const dialogInstance = new win.Dialog(id);
-            dialogs[id] = dialogInstance as unknown as Record<string, unknown>;
+            
+            try {
+                const dialogInstance = new win.Dialog(id);
+                dialogs[id] = dialogInstance as unknown as Record<string, unknown>;
 
-            // Im WindowManager registrieren
-            if (win.WindowManager) {
-                win.WindowManager.setDialogInstance?.(id, dialogInstance);
+                // Im WindowManager registrieren
+                if (win.WindowManager) {
+                    win.WindowManager.setDialogInstance?.(id, dialogInstance);
+                }
+            } catch (err) {
+                console.error(`Failed to create dialog instance for "${id}":`, err);
             }
         });
     }

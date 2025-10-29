@@ -66,6 +66,7 @@ require("../window-tabs");
 require("../terminal-instance");
 require("../text-editor-instance");
 require("../text-editor");
+require("../settings");
 require("../image-viewer-utils");
 require("../logger");
 require("../keyboard-shortcuts");

@@ -118,17 +118,69 @@
                     return;
                 }
             }
-            // Attempt to restore via dialog instance
-            const dialogs = w['dialogs'];
-            const dialogInstance = dialogs && dialogs[id];
-            const openFn = dialogInstance && dialogInstance['open'];
-            if (typeof openFn === 'function') {
+            // Prefer WindowManager.open() to ensure initHandler/openHandler are called
+            const wm = w['WindowManager'];
+            if (wm && typeof wm.open === 'function') {
                 try {
-                    openFn();
+                    wm.open(id);
                 }
                 catch (err) {
-                    console.warn(`Error restoring modal "${id}":`, err);
-                    // Fallback: try to show element directly
+                    console.warn(`Error restoring modal "${id}" via WindowManager:`, err);
+                    // Fallback: try direct dialog open
+                    const dialogs = w['dialogs'];
+                    const dialogInstance = dialogs && dialogs[id];
+                    const openFn = dialogInstance && dialogInstance['open'];
+                    if (typeof openFn === 'function') {
+                        try {
+                            openFn();
+                        }
+                        catch (openErr) {
+                            console.warn(`Error restoring modal "${id}" via dialog.open():`, openErr);
+                            // Final fallback: show element directly
+                            const domUtils = w.DOMUtils;
+                            if (domUtils && typeof domUtils.show === 'function') {
+                                domUtils.show(el);
+                            }
+                            else {
+                                el.classList.remove('hidden');
+                            }
+                        }
+                    }
+                    else {
+                        // No dialog instance, show element directly
+                        const domUtils = w.DOMUtils;
+                        if (domUtils && typeof domUtils.show === 'function') {
+                            domUtils.show(el);
+                        }
+                        else {
+                            el.classList.remove('hidden');
+                        }
+                    }
+                }
+            }
+            else {
+                // No WindowManager, fallback to dialog instance
+                const dialogs = w['dialogs'];
+                const dialogInstance = dialogs && dialogs[id];
+                const openFn = dialogInstance && dialogInstance['open'];
+                if (typeof openFn === 'function') {
+                    try {
+                        openFn();
+                    }
+                    catch (err) {
+                        console.warn(`Error restoring modal "${id}":`, err);
+                        // Fallback: show element directly
+                        const domUtils = w.DOMUtils;
+                        if (domUtils && typeof domUtils.show === 'function') {
+                            domUtils.show(el);
+                        }
+                        else {
+                            el.classList.remove('hidden');
+                        }
+                    }
+                }
+                else {
+                    // No dialog instance, show element directly
                     const domUtils = w.DOMUtils;
                     if (domUtils && typeof domUtils.show === 'function') {
                         domUtils.show(el);
@@ -136,17 +188,6 @@
                     else {
                         el.classList.remove('hidden');
                     }
-                }
-            }
-            else {
-                // Fallback: no dialog instance, just show the element
-                const domUtils = w
-                    .DOMUtils;
-                if (domUtils && typeof domUtils.show === 'function') {
-                    domUtils.show(el);
-                }
-                else {
-                    el.classList.remove('hidden');
                 }
             }
         });

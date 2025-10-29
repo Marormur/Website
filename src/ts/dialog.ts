@@ -7,12 +7,17 @@
 
 export class Dialog {
     modal: HTMLElement;
+    modalId: string;
     windowEl: HTMLElement | null;
     lastDragPointerX: number | null;
 
     constructor(modalId: string) {
+        this.modalId = modalId;
         const el = document.getElementById(modalId);
-        if (!el) throw new Error(`No dialog with id ${modalId}`);
+        if (!el) {
+            console.error(`Dialog: No element found with id "${modalId}"`);
+            throw new Error(`No dialog with id ${modalId}`);
+        }
         this.modal = el as HTMLElement;
         // Legacy helper may provide an element wrapper
         const helper = (window as any).StorageSystem?.getDialogWindowElement;
@@ -70,7 +75,7 @@ export class Dialog {
 
     open() {
         if (!this.modal) {
-            console.error('Cannot open dialog: modal element is undefined');
+            console.error(`Cannot open dialog: modal element is undefined (id: ${this.modalId})`);
             return;
         }
         // preserve original behavior
@@ -84,7 +89,7 @@ export class Dialog {
             this.modal.classList.remove('hidden');
         }
 
-        if (this.modal.dataset) delete (this.modal.dataset as any).minimized;
+        if (this.modal && this.modal.dataset) delete (this.modal.dataset as any).minimized;
         this.bringToFront();
         this.enforceMenuBarBoundary();
         (window as any).saveOpenModals?.();

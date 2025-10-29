@@ -79,7 +79,7 @@ console.log('ActionBus loaded');
                 this.execute(actionName, params, element);
             });
             // Support für data-action-hover
-            this.delegateEvent('mouseenter', '[data-action-hover]', (element) => {
+            this.delegateEvent('mouseenter', '[data-action-hover]', element => {
                 const actionName = element.getAttribute('data-action-hover');
                 const params = this.extractParams(element);
                 this.execute(actionName, params, element);
@@ -176,7 +176,8 @@ console.log('ActionBus loaded');
                 return;
             }
             const g = window;
-            const wm = window.WindowManager;
+            const wm = window
+                .WindowManager;
             if (wm && typeof wm.close === 'function') {
                 wm.close(windowId);
             }
@@ -320,6 +321,16 @@ console.log('ActionBus loaded');
             const wf = window;
             wf.FinderSystem?.openItem?.(name, type);
         },
+        // Settings: Show specific section
+        'settings:showSection': (params) => {
+            const section = params['section'];
+            if (!section) {
+                console.warn('settings:showSection: missing section');
+                return;
+            }
+            const W = window;
+            W.SettingsSystem?.showSection?.(section);
+        },
         // Session: Export current session as JSON file
         'session:export': () => {
             const W = window;
@@ -357,12 +368,12 @@ console.log('ActionBus loaded');
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'application/json,.json';
-            input.onchange = (e) => {
+            input.onchange = e => {
                 const file = e.target.files?.[0];
                 if (!file)
                     return;
                 const reader = new FileReader();
-                reader.onload = (event) => {
+                reader.onload = event => {
                     const json = event.target?.result;
                     if (typeof json !== 'string') {
                         alert(translate('menu.session.importError'));

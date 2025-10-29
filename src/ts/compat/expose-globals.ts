@@ -35,6 +35,7 @@ import '../window-tabs';
 import '../terminal-instance';
 import '../text-editor-instance';
 import '../text-editor';
+import '../settings';
 import '../image-viewer-utils';
 import '../logger';
 import '../keyboard-shortcuts';
@@ -82,4 +83,3 @@ if (typeof w.initApp === 'function') {
 
 // Optional ready flag for tests
 w.__BUNDLE_READY__ = true;
-

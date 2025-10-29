@@ -73,11 +73,16 @@ function initApp() {
             const modal = document.getElementById(id);
             if (!modal || !win.Dialog)
                 return;
-            const dialogInstance = new win.Dialog(id);
-            dialogs[id] = dialogInstance;
-            // Im WindowManager registrieren
-            if (win.WindowManager) {
-                win.WindowManager.setDialogInstance?.(id, dialogInstance);
+            try {
+                const dialogInstance = new win.Dialog(id);
+                dialogs[id] = dialogInstance;
+                // Im WindowManager registrieren
+                if (win.WindowManager) {
+                    win.WindowManager.setDialogInstance?.(id, dialogInstance);
+                }
+            }
+            catch (err) {
+                console.error(`Failed to create dialog instance for "${id}":`, err);
             }
         });
     }

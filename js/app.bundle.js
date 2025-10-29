@@ -781,7 +781,11 @@ var App = (() => {
               if (csv) {
                 const list = csv.split(",").map((s) => s.trim()).filter(Boolean);
                 if (list.length && ((_b = W.PreviewInstanceManager) == null ? void 0 : _b.openImages)) {
-                  W.PreviewInstanceManager.openImages(list, Math.max(0, Math.min(idx, list.length - 1)), path);
+                  W.PreviewInstanceManager.openImages(
+                    list,
+                    Math.max(0, Math.min(idx, list.length - 1)),
+                    path
+                  );
                 }
                 return;
               }
@@ -953,6 +957,17 @@ var App = (() => {
             }
             const wf = window;
             (_b = (_a = wf.FinderSystem) == null ? void 0 : _a.openItem) == null ? void 0 : _b.call(_a, name, type);
+          },
+          // Settings: Show specific section
+          "settings:showSection": (params) => {
+            var _a, _b;
+            const section = params["section"];
+            if (!section) {
+              console.warn("settings:showSection: missing section");
+              return;
+            }
+            const W = window;
+            (_b = (_a = W.SettingsSystem) == null ? void 0 : _a.showSection) == null ? void 0 : _b.call(_a, section);
           },
           // Session: Export current session as JSON file
           "session:export": () => {
@@ -2598,8 +2613,12 @@ var App = (() => {
       Dialog = class {
         constructor(modalId) {
           var _a;
+          this.modalId = modalId;
           const el = document.getElementById(modalId);
-          if (!el) throw new Error(`No dialog with id ${modalId}`);
+          if (!el) {
+            console.error(`Dialog: No element found with id "${modalId}"`);
+            throw new Error(`No dialog with id ${modalId}`);
+          }
           this.modal = el;
           const helper = (_a = window.StorageSystem) == null ? void 0 : _a.getDialogWindowElement;
           this.windowEl = helper ? helper(this.modal) : this.modal.querySelector(".autopointer") || this.modal;
@@ -2652,7 +2671,7 @@ var App = (() => {
         open() {
           var _a, _b, _c, _d;
           if (!this.modal) {
-            console.error("Cannot open dialog: modal element is undefined");
+            console.error(`Cannot open dialog: modal element is undefined (id: ${this.modalId})`);
             return;
           }
           (_a = window.hideMenuDropdowns) == null ? void 0 : _a.call(window);
@@ -2662,7 +2681,7 @@ var App = (() => {
           } else {
             this.modal.classList.remove("hidden");
           }
-          if (this.modal.dataset) delete this.modal.dataset.minimized;
+          if (this.modal && this.modal.dataset) delete this.modal.dataset.minimized;
           this.bringToFront();
           this.enforceMenuBarBoundary();
           (_b = window.saveOpenModals) == null ? void 0 : _b.call(window);
@@ -3972,27 +3991,59 @@ var App = (() => {
                 return;
               }
             }
-            const dialogs = w["dialogs"];
-            const dialogInstance = dialogs && dialogs[id];
-            const openFn = dialogInstance && dialogInstance["open"];
-            if (typeof openFn === "function") {
+            const wm = w["WindowManager"];
+            if (wm && typeof wm.open === "function") {
               try {
-                openFn();
+                wm.open(id);
               } catch (err) {
-                console.warn(`Error restoring modal "${id}":`, err);
+                console.warn(`Error restoring modal "${id}" via WindowManager:`, err);
+                const dialogs = w["dialogs"];
+                const dialogInstance = dialogs && dialogs[id];
+                const openFn = dialogInstance && dialogInstance["open"];
+                if (typeof openFn === "function") {
+                  try {
+                    openFn();
+                  } catch (openErr) {
+                    console.warn(`Error restoring modal "${id}" via dialog.open():`, openErr);
+                    const domUtils = w.DOMUtils;
+                    if (domUtils && typeof domUtils.show === "function") {
+                      domUtils.show(el);
+                    } else {
+                      el.classList.remove("hidden");
+                    }
+                  }
+                } else {
+                  const domUtils = w.DOMUtils;
+                  if (domUtils && typeof domUtils.show === "function") {
+                    domUtils.show(el);
+                  } else {
+                    el.classList.remove("hidden");
+                  }
+                }
+              }
+            } else {
+              const dialogs = w["dialogs"];
+              const dialogInstance = dialogs && dialogs[id];
+              const openFn = dialogInstance && dialogInstance["open"];
+              if (typeof openFn === "function") {
+                try {
+                  openFn();
+                } catch (err) {
+                  console.warn(`Error restoring modal "${id}":`, err);
+                  const domUtils = w.DOMUtils;
+                  if (domUtils && typeof domUtils.show === "function") {
+                    domUtils.show(el);
+                  } else {
+                    el.classList.remove("hidden");
+                  }
+                }
+              } else {
                 const domUtils = w.DOMUtils;
                 if (domUtils && typeof domUtils.show === "function") {
                   domUtils.show(el);
                 } else {
                   el.classList.remove("hidden");
                 }
-              }
-            } else {
-              const domUtils = w.DOMUtils;
-              if (domUtils && typeof domUtils.show === "function") {
-                domUtils.show(el);
-              } else {
-                el.classList.remove("hidden");
               }
             }
           });
@@ -4158,7 +4209,9 @@ var App = (() => {
             const parsed = JSON.parse(raw);
             if (!parsed || typeof parsed !== "object") return null;
             if (parsed.version !== SESSION_VERSION) {
-              console.warn(`SessionManager: Version mismatch (stored: ${parsed.version}, expected: ${SESSION_VERSION})`);
+              console.warn(
+                `SessionManager: Version mismatch (stored: ${parsed.version}, expected: ${SESSION_VERSION})`
+              );
               return null;
             }
             return parsed;
@@ -4172,7 +4225,9 @@ var App = (() => {
           if (!checkStorageQuota(size)) {
             if (!quotaExceeded) {
               console.error("SessionManager: Storage quota exceeded. Auto-save disabled.");
-              console.error(`Attempted to save ${(size / 1024).toFixed(2)}KB, limit is ${(MAX_STORAGE_SIZE / 1024).toFixed(2)}KB`);
+              console.error(
+                `Attempted to save ${(size / 1024).toFixed(2)}KB, limit is ${(MAX_STORAGE_SIZE / 1024).toFixed(2)}KB`
+              );
               quotaExceeded = true;
             }
             return false;
@@ -4204,7 +4259,8 @@ var App = (() => {
           const w = window;
           const knownManagers = [
             "TerminalInstanceManager",
-            "TextEditorInstanceManager"
+            "TextEditorInstanceManager",
+            "FinderInstanceManager"
           ];
           knownManagers.forEach((key) => {
             const manager = w[key];
@@ -4218,21 +4274,35 @@ var App = (() => {
         }
         function serializeAllInstances() {
           const result = {};
+          const active = {};
           const managers = getInstanceManagers();
           managers.forEach((manager, type) => {
             const mgr = manager;
             if (typeof mgr.serializeAll === "function") {
               try {
-                const instances = mgr.serializeAll();
+                const instances = mgr.serializeAll.call(mgr);
                 if (Array.isArray(instances)) {
                   result[type] = instances;
                 }
               } catch (err) {
-                console.error(`SessionManager: Failed to serialize instances for type "${type}":`, err);
+                console.error(
+                  `SessionManager: Failed to serialize instances for type "${type}":`,
+                  err
+                );
               }
             }
+            try {
+              if (typeof mgr.getActiveInstance === "function") {
+                const activeInst = mgr.getActiveInstance.call(mgr);
+                active[type] = (activeInst == null ? void 0 : activeInst.instanceId) || null;
+              } else {
+                active[type] = null;
+              }
+            } catch {
+              active[type] = null;
+            }
           });
-          return result;
+          return { instances: result, active };
         }
         function performSave() {
           if (saveInProgress) {
@@ -4241,16 +4311,22 @@ var App = (() => {
           }
           saveInProgress = true;
           try {
-            const instances = serializeAllInstances();
+            const { instances, active } = serializeAllInstances();
             const session = {
               version: SESSION_VERSION,
               timestamp: Date.now(),
-              instances
+              instances,
+              active
             };
             const success = writeSession(session);
             if (success) {
-              const instanceCount = Object.values(instances).reduce((sum, arr) => sum + arr.length, 0);
-              console.log(`SessionManager: Saved ${instanceCount} instances across ${Object.keys(instances).length} types`);
+              const instanceCount = Object.values(instances).reduce(
+                (sum, arr) => sum + arr.length,
+                0
+              );
+              console.log(
+                `SessionManager: Saved ${instanceCount} instances across ${Object.keys(instances).length} types`
+              );
             }
             pendingSaveTypes.clear();
           } catch (err) {
@@ -4301,6 +4377,7 @@ var App = (() => {
           }
           const managers = getInstanceManagers();
           let restoredCount = 0;
+          const activeMap = session.active || {};
           Object.entries(session.instances).forEach(([type, instances]) => {
             const manager = managers.get(type);
             if (!manager) {
@@ -4313,8 +4390,19 @@ var App = (() => {
                 mgr.deserializeAll(instances);
                 restoredCount += instances.length;
                 console.log(`SessionManager: Restored ${instances.length} "${type}" instances`);
+                const activeId = activeMap[type] || null;
+                if (activeId && typeof mgr.setActiveInstance === "function") {
+                  try {
+                    mgr.setActiveInstance(activeId);
+                  } catch (e) {
+                    console.warn(`SessionManager: Failed to set active instance for ${type}:`, e);
+                  }
+                }
               } catch (err) {
-                console.error(`SessionManager: Failed to restore instances for type "${type}":`, err);
+                console.error(
+                  `SessionManager: Failed to restore instances for type "${type}":`,
+                  err
+                );
               }
             }
           });
@@ -4352,7 +4440,10 @@ var App = (() => {
               sizeBytes: 0
             };
           }
-          const instanceCount = Object.values(session.instances).reduce((sum, arr) => sum + arr.length, 0);
+          const instanceCount = Object.values(session.instances).reduce(
+            (sum, arr) => sum + arr.length,
+            0
+          );
           const types = Object.keys(session.instances);
           const sizeBytes = estimateSize(session);
           return {
@@ -4401,7 +4492,9 @@ var App = (() => {
             return false;
           }
           if (session.version !== SESSION_VERSION) {
-            console.warn(`SessionManager: Version mismatch (imported: ${session.version}, current: ${SESSION_VERSION})`);
+            console.warn(
+              `SessionManager: Version mismatch (imported: ${session.version}, current: ${SESSION_VERSION})`
+            );
             console.error("SessionManager: Cannot import session from different version");
             return false;
           }
@@ -4437,9 +4530,16 @@ var App = (() => {
           });
           console.log(`SessionManager: Initialized with ${debounceDelay}ms debounce`);
         }
+        function registerManager(_type, _manager) {
+          console.log(`SessionManager: registerManager() is deprecated - using auto-discovery`);
+        }
+        function unregisterManager(_type) {
+        }
         const SessionManager = {
           init,
           saveAll,
+          saveAllSessions: saveAll,
+          // Alias for backwards compatibility with tests
           saveInstanceType,
           restoreSession,
           clear,
@@ -4447,7 +4547,11 @@ var App = (() => {
           getDebounceDelay,
           getStats,
           exportSession,
-          importSession
+          importSession,
+          registerManager,
+          // Legacy compatibility
+          unregisterManager
+          // Legacy compatibility
         };
         window.SessionManager = SessionManager;
       })();
@@ -4865,6 +4969,18 @@ var App = (() => {
             }
             this.instanceCounter++;
             const instanceId = config.id || `${this.type}-${this.instanceCounter}`;
+            if (config.id && this.instances.has(instanceId)) {
+              console.warn(`Instance with id ${instanceId} already exists for ${this.type}; reusing existing instance.`);
+              const existing = this.instances.get(instanceId);
+              try {
+                existing.title = config.title || existing.title;
+                existing.metadata = { ...existing.metadata, ...config.metadata || {} };
+              } catch {
+              }
+              this.setActiveInstance(instanceId);
+              this._triggerAutoSave();
+              return existing;
+            }
             const container = this.createContainer(instanceId);
             if (!container) {
               console.error("Failed to create container for instance");
@@ -4881,8 +4997,8 @@ var App = (() => {
             try {
               instance.init(container);
               this.instances.set(instanceId, instance);
-              this.activeInstanceId = instanceId;
               this._setupInstanceEvents(instance);
+              this.setActiveInstance(instanceId);
               this._triggerAutoSave();
               console.log(`Created instance: ${instanceId}`);
               return instance;
@@ -4914,6 +5030,15 @@ var App = (() => {
               const instance = this.instances.get(instanceId);
               if (instance) {
                 instance.focus();
+              }
+              this._triggerAutoSave();
+              try {
+                const KEY = "windowActiveInstances";
+                const raw = localStorage.getItem(KEY);
+                const map = raw ? JSON.parse(raw) : {};
+                map[this.type] = this.activeInstanceId;
+                localStorage.setItem(KEY, JSON.stringify(map));
+              } catch {
               }
             }
           }
@@ -4954,10 +5079,23 @@ var App = (() => {
             return this.instances.size;
           }
           serializeAll() {
-            return this.getAllInstances().map((instance) => instance.serialize());
+            const activeId = this.activeInstanceId;
+            return this.getAllInstances().map((instance) => {
+              const data = instance.serialize();
+              try {
+                const meta = data.metadata || {};
+                if (instance.instanceId === activeId) {
+                  meta.__active = true;
+                }
+                data.metadata = meta;
+              } catch {
+              }
+              return data;
+            });
           }
           deserializeAll(data) {
             if (!Array.isArray(data)) return;
+            let desiredActiveId = null;
             data.forEach((instanceData) => {
               const instance = this.createInstance({
                 id: instanceData.instanceId,
@@ -4967,7 +5105,17 @@ var App = (() => {
               if (instance && instanceData.state) {
                 instance.deserialize(instanceData);
               }
+              try {
+                const meta = instanceData.metadata;
+                if (meta && meta.__active) {
+                  desiredActiveId = instanceData.instanceId || null;
+                }
+              } catch {
+              }
             });
+            if (desiredActiveId) {
+              this.setActiveInstance(desiredActiveId);
+            }
           }
           /**
            * Reorder instances to match the provided array of instance IDs
@@ -7324,6 +7472,324 @@ ${selectedText}
     }
   });
 
+  // src/ts/settings.ts
+  var init_settings = __esm({
+    "src/ts/settings.ts"() {
+      "use strict";
+      console.log("Settings Module loaded");
+      (() => {
+        "use strict";
+        const SettingsSystem = {
+          currentSection: "general",
+          container: null,
+          /**
+           * Initialize settings module in container
+           */
+          init(containerOrId) {
+            const container = typeof containerOrId === "string" ? document.getElementById(containerOrId) : containerOrId;
+            if (!container) {
+              console.error("Settings container not found:", containerOrId);
+              return;
+            }
+            this.container = container;
+            this.render();
+            this.attachListeners();
+            this.syncThemePreference();
+            this.syncLanguagePreference();
+            this.showSection("general");
+          },
+          /**
+           * Render settings UI
+           */
+          render() {
+            if (!this.container) return;
+            this.container.innerHTML = `
+                <div class="flex dialog-content settings-panel rounded-b-xl overflow-hidden h-full">
+                    <!-- Linke Seitenleiste -->
+                    <div class="w-48 bg-gray-100 dark:bg-gray-700 p-4 space-y-1 overflow-auto">
+                        <button type="button" class="w-full text-left cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
+                            data-action="settings:showSection"
+                            data-section="general"
+                            data-settings-page="general"
+                            data-i18n="settingsPage.nav.general">
+                            \u{1F464} Allgemein
+                        </button>
+                        <button type="button" class="w-full text-left cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
+                            data-action="settings:showSection"
+                            data-section="display"
+                            data-settings-page="display"
+                            data-i18n="settingsPage.nav.display">
+                            \u{1F5A5}\uFE0F Darstellung
+                        </button>
+                        <button type="button" class="w-full text-left cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
+                            data-action="settings:showSection"
+                            data-section="language"
+                            data-settings-page="language"
+                            data-i18n="settingsPage.nav.language">
+                            \u{1F310} Sprache
+                        </button>
+                    </div>
+                    <!-- Rechte Hauptansicht -->
+                    <div class="flex-1 p-6 overflow-auto text-gray-800 dark:text-gray-200">
+                        <!-- Sektion: Allgemein -->
+                        <div id="settings-general" class="">
+                            <div class="flex flex-col items-start text-gray-700 dark:text-gray-200 mt-8 w-full space-y-4">
+                                <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-2">
+                                <h2 class="text-xl font-semibold" data-i18n="settingsPage.general.name">Marvin Temmen</h2>
+                                <p class="text-sm" data-i18n="settingsPage.general.birth">M\xE4rz 1999</p>
+                                <div class="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 w-full grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-8">
+                                    <div class="text-gray-600 dark:text-gray-300" data-i18n="settingsPage.general.locationLabel">Wohnort</div>
+                                    <div class="text-gray-800 dark:text-gray-100" data-i18n="settingsPage.general.locationValue">Deutschland</div>
+                                    <div class="text-gray-600 dark:text-gray-300" data-i18n="settingsPage.general.jobLabel">Beruf</div>
+                                    <div class="text-gray-800 dark:text-gray-100" data-i18n="settingsPage.general.jobValue">Softwareentwickler</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Sektion: Darstellung -->
+                        <div id="settings-display" class="hidden">
+                            <div class="flex flex-col gap-6 mt-4 w-full">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100"
+                                        data-i18n="settingsPage.display.title">Darstellung</h2>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mt-1"
+                                        data-i18n="settingsPage.display.description">
+                                        Passe das visuelle Erscheinungsbild der Oberfl\xE4che an.
+                                    </p>
+                                </div>
+                                <fieldset class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+                                    <legend class="text-sm font-medium text-gray-700 dark:text-gray-200 px-1"
+                                        data-i18n="settingsPage.display.legend">Darkmode</legend>
+                                    <label class="flex items-center gap-3 cursor-pointer select-none">
+                                        <input type="radio" name="theme-mode" value="system" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <div>
+                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                                data-i18n="settingsPage.display.options.system.label">System</span>
+                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                                data-i18n="settingsPage.display.options.system.description">Folgt den aktuellen Systemeinstellungen.</span>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-3 cursor-pointer select-none">
+                                        <input type="radio" name="theme-mode" value="light" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <div>
+                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                                data-i18n="settingsPage.display.options.light.label">Hell</span>
+                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                                data-i18n="settingsPage.display.options.light.description">Bleibt immer im hellen Erscheinungsbild.</span>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-3 cursor-pointer select-none">
+                                        <input type="radio" name="theme-mode" value="dark" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <div>
+                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                                data-i18n="settingsPage.display.options.dark.label">Dunkel</span>
+                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                                data-i18n="settingsPage.display.options.dark.description">Bleibt immer im dunklen Erscheinungsbild.</span>
+                                        </div>
+                                    </label>
+                                </fieldset>
+                            </div>
+                        </div>
+                        <!-- Sektion: Sprache -->
+                        <div id="settings-language" class="hidden">
+                            <div class="flex flex-col gap-6 mt-4 w-full">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100"
+                                        data-i18n="settingsPage.language.title">Sprache</h2>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mt-1"
+                                        data-i18n="settingsPage.language.description">
+                                        W\xE4hle, in welcher Sprache die Oberfl\xE4che angezeigt wird.
+                                    </p>
+                                </div>
+                                <fieldset class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+                                    <legend class="text-sm font-medium text-gray-700 dark:text-gray-200 px-1"
+                                        data-i18n="settingsPage.language.legend">Bevorzugte Sprache</legend>
+                                    <label class="flex items-center gap-3 cursor-pointer select-none">
+                                        <input type="radio" name="language-preference" value="system"
+                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <div>
+                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                                data-i18n="settingsPage.language.options.system.label">System</span>
+                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                                data-i18n="settingsPage.language.options.system.description">Verwendet automatisch die Sprache deines Systems.</span>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-3 cursor-pointer select-none">
+                                        <input type="radio" name="language-preference" value="de"
+                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <div>
+                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                                data-i18n="settingsPage.language.options.de.label">Deutsch</span>
+                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                                data-i18n="settingsPage.language.options.de.description">Zeigt Inhalte immer auf Deutsch.</span>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-3 cursor-pointer select-none">
+                                        <input type="radio" name="language-preference" value="en"
+                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <div>
+                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+                                                data-i18n="settingsPage.language.options.en.label">Englisch</span>
+                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
+                                                data-i18n="settingsPage.language.options.en.description">Zeigt Inhalte immer auf Englisch.</span>
+                                        </div>
+                                    </label>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const appI18n = window.appI18n;
+            if (appI18n == null ? void 0 : appI18n.applyTranslations) {
+              appI18n.applyTranslations(this.container);
+            }
+          },
+          /**
+           * Attach event listeners
+           */
+          attachListeners() {
+            if (!this.container) return;
+            const themeRadios = this.container.querySelectorAll('input[name="theme-mode"]');
+            themeRadios.forEach((radio) => {
+              radio.addEventListener("change", () => {
+                var _a;
+                if (!radio.checked) return;
+                const theme = radio.value;
+                const API = window.API;
+                if ((_a = API == null ? void 0 : API.theme) == null ? void 0 : _a.setThemePreference) {
+                  API.theme.setThemePreference(theme);
+                } else {
+                  const ThemeSystem = window.ThemeSystem;
+                  if (ThemeSystem == null ? void 0 : ThemeSystem.setThemePreference) {
+                    ThemeSystem.setThemePreference(theme);
+                  }
+                }
+              });
+            });
+            const languageRadios = this.container.querySelectorAll('input[name="language-preference"]');
+            languageRadios.forEach((radio) => {
+              radio.addEventListener("change", () => {
+                var _a;
+                if (!radio.checked) return;
+                const lang = radio.value;
+                const API = window.API;
+                if ((_a = API == null ? void 0 : API.i18n) == null ? void 0 : _a.setLanguagePreference) {
+                  API.i18n.setLanguagePreference(lang);
+                } else {
+                  const appI18n = window.appI18n;
+                  if (appI18n == null ? void 0 : appI18n.setLanguagePreference) {
+                    appI18n.setLanguagePreference(lang);
+                  }
+                }
+              });
+            });
+          },
+          /**
+           * Sync theme preference from global state
+           */
+          syncThemePreference() {
+            var _a;
+            if (!this.container) return;
+            let preference = "system";
+            const API = window.API;
+            const ThemeSystem = window.ThemeSystem;
+            if ((_a = API == null ? void 0 : API.theme) == null ? void 0 : _a.getThemePreference) {
+              preference = API.theme.getThemePreference();
+            } else if (ThemeSystem == null ? void 0 : ThemeSystem.getThemePreference) {
+              preference = ThemeSystem.getThemePreference();
+            }
+            const themeRadios = this.container.querySelectorAll('input[name="theme-mode"]');
+            themeRadios.forEach((radio) => {
+              radio.checked = radio.value === preference;
+            });
+          },
+          /**
+           * Sync language preference from global state
+           */
+          syncLanguagePreference() {
+            var _a;
+            if (!this.container) return;
+            let preference = "system";
+            const API = window.API;
+            const appI18n = window.appI18n;
+            if ((_a = API == null ? void 0 : API.i18n) == null ? void 0 : _a.getLanguagePreference) {
+              preference = API.i18n.getLanguagePreference();
+            } else if (appI18n == null ? void 0 : appI18n.getLanguagePreference) {
+              preference = appI18n.getLanguagePreference();
+            }
+            const languageRadios = this.container.querySelectorAll('input[name="language-preference"]');
+            languageRadios.forEach((radio) => {
+              radio.checked = radio.value === preference;
+            });
+          },
+          /**
+           * Show specific settings section
+           */
+          showSection(section) {
+            if (!this.container) return;
+            this.currentSection = section;
+            const sections = ["general", "display", "language"];
+            sections.forEach((name) => {
+              var _a;
+              const el = (_a = this.container) == null ? void 0 : _a.querySelector(`#settings-${name}`);
+              if (el) {
+                el.classList.add("hidden");
+              }
+            });
+            const target = this.container.querySelector(`#settings-${section}`);
+            if (target) {
+              target.classList.remove("hidden");
+            }
+            const navItems = this.container.querySelectorAll('[data-action="settings:showSection"]');
+            navItems.forEach((item) => {
+              const itemSection = item.getAttribute("data-section");
+              if (itemSection === section) {
+                item.classList.add(
+                  "bg-white",
+                  "dark:bg-gray-600",
+                  "text-gray-900",
+                  "dark:text-gray-100",
+                  "font-medium"
+                );
+              } else {
+                item.classList.remove(
+                  "bg-white",
+                  "dark:bg-gray-600",
+                  "text-gray-900",
+                  "dark:text-gray-100",
+                  "font-medium"
+                );
+              }
+            });
+          },
+          /**
+           * Destroy settings module
+           */
+          destroy() {
+            if (this.container) {
+              this.container.innerHTML = "";
+              this.container = null;
+            }
+          }
+        };
+        window.SettingsSystem = SettingsSystem;
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", () => {
+            const container = document.getElementById("settings-container");
+            if (container) {
+              SettingsSystem.init(container);
+            }
+          });
+        } else {
+          const container = document.getElementById("settings-container");
+          if (container) {
+            SettingsSystem.init(container);
+          }
+        }
+      })();
+    }
+  });
+
   // src/ts/image-viewer-utils.ts
   var require_image_viewer_utils = __commonJS({
     "src/ts/image-viewer-utils.ts"() {
@@ -9153,6 +9619,12 @@ ${selectedText}
             this.domRefs.contentArea = this.container.querySelector("[data-finder-content]");
             this.domRefs.toolbar = this.container.querySelector("[data-finder-toolbar]");
             this.domRefs.searchInput = this.container.querySelector("[data-finder-search]");
+            try {
+              if (window.appI18n && typeof window.appI18n.applyTranslations === "function") {
+                window.appI18n.applyTranslations(this.container);
+              }
+            } catch {
+            }
           }
           /**
            * Attach event listeners
@@ -9162,7 +9634,9 @@ ${selectedText}
             if (!this.container) return;
             this.container.addEventListener("click", (e) => this._handleClick(e));
             this.container.addEventListener("dblclick", (e) => this._handleDoubleClick(e));
-            this.navigateTo(this.state.currentPath, this.state.currentView);
+            if (!this._skipInitialRender) {
+              this.navigateTo(this.state.currentPath, this.state.currentView);
+            }
           }
           /**
            * Handle click events
@@ -9293,21 +9767,24 @@ ${selectedText}
            * Render breadcrumbs
            */
           renderBreadcrumbs() {
+            var _a, _b, _c;
             if (!this.domRefs.breadcrumbs) return;
             const parts = [];
+            const _lang = (((_b = (_a = window.appI18n) == null ? void 0 : _a.getActiveLanguage) == null ? void 0 : _b.call(_a)) || ((_c = document.documentElement) == null ? void 0 : _c.lang) || "de").toLowerCase();
+            const _isDe = _lang.startsWith("de");
             let viewLabel = "";
             switch (this.currentView) {
               case "computer":
-                viewLabel = "Computer";
+                viewLabel = _isDe ? "Computer" : "Computer";
                 break;
               case "github":
-                viewLabel = "GitHub Projekte";
+                viewLabel = _isDe ? "GitHub Projekte" : "GitHub Projects";
                 break;
               case "favorites":
-                viewLabel = "Favoriten";
+                viewLabel = _isDe ? "Favoriten" : "Favorites";
                 break;
               case "recent":
-                viewLabel = "Zuletzt ge\xF6ffnet";
+                viewLabel = _isDe ? "Zuletzt ge\xF6ffnet" : "Recently opened";
                 break;
             }
             parts.push(
@@ -9329,6 +9806,7 @@ ${selectedText}
            * Render content area
            */
           renderContent() {
+            var _a, _b, _c;
             if (!this.domRefs.contentArea) return;
             if (this.currentView === "github") {
               this.renderGithubContent();
@@ -9336,10 +9814,16 @@ ${selectedText}
             }
             const items = this.getCurrentItems();
             if (items.length === 0) {
+              let emptyText = "Dieser Ordner ist leer";
+              try {
+                const lang = (((_b = (_a = window.appI18n) == null ? void 0 : _a.getActiveLanguage) == null ? void 0 : _b.call(_a)) || ((_c = document.documentElement) == null ? void 0 : _c.lang) || "de").toLowerCase();
+                emptyText = lang.startsWith("de") ? "Dieser Ordner ist leer" : "This folder is empty";
+              } catch {
+              }
               this.domRefs.contentArea.innerHTML = `
                     <div class="finder-empty-state">
                         <div class="text-6xl mb-4">\u{1F4C2}</div>
-                        <div class="text-gray-500 dark:text-gray-400">Dieser Ordner ist leer</div>
+                        <div class="text-gray-500 dark:text-gray-400">${emptyText}</div>
                     </div>
                 `;
               return;
@@ -9739,6 +10223,7 @@ ${selectedText}
            * Restore finder from saved state
            */
           deserialize(data) {
+            this._skipInitialRender = true;
             super.deserialize(data);
             if (data.currentPath) {
               this.currentPath = data.currentPath;
@@ -9787,7 +10272,7 @@ ${selectedText}
               }
               const container = document.createElement("div");
               container.id = `${instanceId}-container`;
-              container.className = "finder-instance-container h-full flex flex-col min-h-0";
+              container.className = "finder-instance-container h-full flex-1 w-full min-w-0 flex flex-col min-h-0";
               container.classList.add("hidden");
               finderModalContainer.appendChild(container);
               return container;
@@ -10033,7 +10518,9 @@ ${selectedText}
                 W.SessionManager.registerManager("text-editor", W.TextEditorInstanceManager);
               if (W.FinderInstanceManager)
                 W.SessionManager.registerManager("finder", W.FinderInstanceManager);
-              W.SessionManager.restoreAllSessions();
+              if (typeof W.SessionManager.restoreSession === "function") {
+                W.SessionManager.restoreSession();
+              }
               this.integrations.forEach((integration2, type) => {
                 var _a;
                 const { manager, tabManager } = integration2;
@@ -10043,10 +10530,22 @@ ${selectedText}
                   if (refreshFn) refreshFn();
                 } catch {
                 }
+                try {
+                  const raw = localStorage.getItem("windowActiveInstances");
+                  if (raw) {
+                    const map = JSON.parse(raw);
+                    const wanted = (map == null ? void 0 : map[type]) || null;
+                    if (wanted && typeof manager.setActiveInstance === "function") {
+                      const exists = manager.getAllInstances().some((i) => i.instanceId === wanted);
+                      if (exists) manager.setActiveInstance(wanted);
+                    }
+                  }
+                } catch {
+                }
                 const active = manager.getActiveInstance();
                 if (active) this.showInstance(type, active.instanceId);
               });
-              W.SessionManager.startAutoSave();
+              W.SessionManager.init();
             }
             if (W.KeyboardShortcuts && typeof W.KeyboardShortcuts.setContextResolver === "function") {
               W.KeyboardShortcuts.setContextResolver(() => {
@@ -11151,10 +11650,14 @@ ${selectedText}
         var _a2, _b2;
         const modal = document.getElementById(id);
         if (!modal || !win.Dialog) return;
-        const dialogInstance = new win.Dialog(id);
-        dialogs[id] = dialogInstance;
-        if (win.WindowManager) {
-          (_b2 = (_a2 = win.WindowManager).setDialogInstance) == null ? void 0 : _b2.call(_a2, id, dialogInstance);
+        try {
+          const dialogInstance = new win.Dialog(id);
+          dialogs[id] = dialogInstance;
+          if (win.WindowManager) {
+            (_b2 = (_a2 = win.WindowManager).setDialogInstance) == null ? void 0 : _b2.call(_a2, id, dialogInstance);
+          }
+        } catch (err) {
+          console.error(`Failed to create dialog instance for "${id}":`, err);
         }
       });
     }
@@ -11391,6 +11894,7 @@ ${selectedText}
       var import_terminal_instance = __toESM(require_terminal_instance());
       var import_text_editor_instance = __toESM(require_text_editor_instance());
       var import_text_editor = __toESM(require_text_editor());
+      init_settings();
       var import_image_viewer_utils = __toESM(require_image_viewer_utils());
       init_logger();
       var import_keyboard_shortcuts = __toESM(require_keyboard_shortcuts());

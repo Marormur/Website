@@ -21,6 +21,24 @@ console.log('InstanceManager loaded');
             }
             this.instanceCounter++;
             const instanceId = config.id || `${this.type}-${this.instanceCounter}`;
+            // Guard: If an instance with this ID already exists, reuse it instead of creating
+            // a new container. This prevents duplicate DOM containers and double-rendering
+            // when restore flows or legacy init handlers accidentally create the same ID twice.
+            if (config.id && this.instances.has(instanceId)) {
+                console.warn(`Instance with id ${instanceId} already exists for ${this.type}; reusing existing instance.`);
+                const existing = this.instances.get(instanceId);
+                // Optionally update title/metadata
+                try {
+                    existing.title = config.title || existing.title;
+                    existing.metadata = { ...existing.metadata, ...(config.metadata || {}) };
+                }
+                catch { }
+                // Make it active to sync with UI
+                this.setActiveInstance(instanceId);
+                // Trigger auto-save to persist consistency
+                this._triggerAutoSave();
+                return existing;
+            }
             const container = this.createContainer(instanceId);
             if (!container) {
                 console.error('Failed to create container for instance');
@@ -37,8 +55,9 @@ console.log('InstanceManager loaded');
             try {
                 instance.init(container);
                 this.instances.set(instanceId, instance);
-                this.activeInstanceId = instanceId;
                 this._setupInstanceEvents(instance);
+                // Set as active instance (triggers focus and events)
+                this.setActiveInstance(instanceId);
                 // Trigger auto-save after instance creation
                 this._triggerAutoSave();
                 console.log(`Created instance: ${instanceId}`);
@@ -75,6 +94,19 @@ console.log('InstanceManager loaded');
                 const instance = this.instances.get(instanceId);
                 if (instance) {
                     instance.focus();
+                }
+                // Persist active tab selection (debounced via SessionManager)
+                this._triggerAutoSave();
+                // Additionally persist active selection per type in localStorage for robust restore
+                try {
+                    const KEY = 'windowActiveInstances';
+                    const raw = localStorage.getItem(KEY);
+                    const map = raw ? JSON.parse(raw) : {};
+                    map[this.type] = this.activeInstanceId;
+                    localStorage.setItem(KEY, JSON.stringify(map));
+                }
+                catch {
+                    // ignore storage failures
                 }
             }
         }
@@ -119,11 +151,27 @@ console.log('InstanceManager loaded');
             return this.instances.size;
         }
         serializeAll() {
-            return this.getAllInstances().map((instance) => instance.serialize());
+            const activeId = this.activeInstanceId;
+            return this.getAllInstances().map((instance) => {
+                const data = instance.serialize();
+                try {
+                    // Mark the active instance in metadata for robust restoration without schema changes
+                    const meta = data.metadata || {};
+                    if (instance.instanceId === activeId) {
+                        meta.__active = true;
+                    }
+                    data.metadata = meta;
+                }
+                catch {
+                    /* ignore */
+                }
+                return data;
+            });
         }
         deserializeAll(data) {
             if (!Array.isArray(data))
                 return;
+            let desiredActiveId = null;
             data.forEach((instanceData) => {
                 const instance = this.createInstance({
                     id: instanceData.instanceId,
@@ -133,7 +181,20 @@ console.log('InstanceManager loaded');
                 if (instance && instanceData.state) {
                     instance.deserialize(instanceData);
                 }
+                // If this instance was marked active previously, remember it for final activation
+                try {
+                    const meta = instanceData.metadata;
+                    if (meta && meta.__active) {
+                        desiredActiveId = instanceData.instanceId || null;
+                    }
+                }
+                catch {
+                    /* ignore */
+                }
             });
+            if (desiredActiveId) {
+                this.setActiveInstance(desiredActiveId);
+            }
         }
         /**
          * Reorder instances to match the provided array of instance IDs

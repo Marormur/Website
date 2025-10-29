@@ -239,6 +239,15 @@ console.log('FinderInstance loaded');
             this.domRefs.contentArea = this.container.querySelector('[data-finder-content]');
             this.domRefs.toolbar = this.container.querySelector('[data-finder-toolbar]');
             this.domRefs.searchInput = this.container.querySelector('[data-finder-search]');
+
+            // Apply translations for this instance immediately after render
+            try {
+                if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
+                    window.appI18n.applyTranslations(this.container);
+                }
+            } catch {
+                /* ignore */
+            }
         }
 
         /**
@@ -252,8 +261,11 @@ console.log('FinderInstance loaded');
             this.container.addEventListener('click', e => this._handleClick(e));
             this.container.addEventListener('dblclick', e => this._handleDoubleClick(e));
 
-            // Initial render
-            this.navigateTo(this.state.currentPath, this.state.currentView);
+            // Initial render - only if not being restored from session
+            // (deserialize() will call navigateTo() after restoring state)
+            if (!this._skipInitialRender) {
+                this.navigateTo(this.state.currentPath, this.state.currentView);
+            }
         }
 
         /**
@@ -400,20 +412,22 @@ console.log('FinderInstance loaded');
 
             const parts = [];
 
-            // View label
+            // View label (localized)
+            const _lang = (window.appI18n?.getActiveLanguage?.() || document.documentElement?.lang || 'de').toLowerCase();
+            const _isDe = _lang.startsWith('de');
             let viewLabel = '';
             switch (this.currentView) {
                 case 'computer':
-                    viewLabel = 'Computer';
+                    viewLabel = _isDe ? 'Computer' : 'Computer';
                     break;
                 case 'github':
-                    viewLabel = 'GitHub Projekte';
+                    viewLabel = _isDe ? 'GitHub Projekte' : 'GitHub Projects';
                     break;
                 case 'favorites':
-                    viewLabel = 'Favoriten';
+                    viewLabel = _isDe ? 'Favoriten' : 'Favorites';
                     break;
                 case 'recent':
-                    viewLabel = 'Zuletzt geöffnet';
+                    viewLabel = _isDe ? 'Zuletzt geöffnet' : 'Recently opened';
                     break;
             }
 
@@ -453,10 +467,15 @@ console.log('FinderInstance loaded');
             const items = this.getCurrentItems();
 
             if (items.length === 0) {
+                let emptyText = 'Dieser Ordner ist leer';
+                try {
+                    const lang = (window.appI18n?.getActiveLanguage?.() || document.documentElement?.lang || 'de').toLowerCase();
+                    emptyText = lang.startsWith('de') ? 'Dieser Ordner ist leer' : 'This folder is empty';
+                } catch {}
                 this.domRefs.contentArea.innerHTML = `
                     <div class="finder-empty-state">
                         <div class="text-6xl mb-4">📂</div>
-                        <div class="text-gray-500 dark:text-gray-400">Dieser Ordner ist leer</div>
+                        <div class="text-gray-500 dark:text-gray-400">${emptyText}</div>
                     </div>
                 `;
                 return;
@@ -910,6 +929,9 @@ console.log('FinderInstance loaded');
          * Restore finder from saved state
          */
         deserialize(data) {
+            // Signal that we're in restore mode to prevent double rendering
+            this._skipInitialRender = true;
+            
             super.deserialize(data);
 
             if (data.currentPath) {
@@ -940,7 +962,7 @@ console.log('FinderInstance loaded');
                 this.recentFiles = data.recentFiles;
             }
 
-            // Re-render
+            // Re-render with restored state (only once)
             this.navigateTo(this.currentPath, this.currentView);
         }
 

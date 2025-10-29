@@ -59,7 +59,10 @@
                 if (W.FinderInstanceManager)
                     W.SessionManager.registerManager('finder', W.FinderInstanceManager);
 
-                W.SessionManager.restoreAllSessions();
+                // Restore session if available
+                if (typeof W.SessionManager.restoreSession === 'function') {
+                    W.SessionManager.restoreSession();
+                }
 
                 // Ensure tabs/controllers reflect restored state and show active instance
                 this.integrations.forEach((integration, type) => {
@@ -75,11 +78,25 @@
                                   : null;
                         if (refreshFn) refreshFn();
                     } catch {}
+                    // Try to restore previously selected tab from a simple localStorage map (fallback)
+                    try {
+                        const raw = localStorage.getItem('windowActiveInstances');
+                        if (raw) {
+                            const map = JSON.parse(raw) as Record<string, string | null>;
+                            const wanted = map?.[type] || null;
+                            if (wanted && typeof (manager as any).setActiveInstance === 'function') {
+                                // Only set if the instance exists to avoid creating new ones
+                                const exists = manager.getAllInstances().some(i => i.instanceId === wanted);
+                                if (exists) (manager as any).setActiveInstance(wanted);
+                            }
+                        }
+                    } catch {}
+
                     const active = manager.getActiveInstance();
                     if (active) this.showInstance(type, active.instanceId);
                 });
 
-                W.SessionManager.startAutoSave();
+                W.SessionManager.init();
             }
 
             // Scope keyboard shortcuts by top window
@@ -302,4 +319,3 @@
     (window as any).multiInstanceIntegration = integration;
     integration.init();
 })();
-

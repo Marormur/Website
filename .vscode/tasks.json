@@ -456,6 +456,12 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "label": "Bundle: Build",
+      "type": "shell",
+      "command": "npm run build:bundle",
+      "group": "build"
     }
   ]
 }

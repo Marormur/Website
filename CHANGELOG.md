@@ -1,5 +1,115 @@
 # 2025-10-29
 
+### fix: Finder new tabs respect active language (29. Oktober 2025)
+  - Problem: Neue Finder-Tabs wurden nicht immer in der aktuellen Sprache erstellt; nach Page-Reload wechselte der Tab-Content auf die Nutzereinstellung
+  - Ursache: Die Übersetzungen wurden beim Rendern neuer Instanzen nicht angewandt; einige Texte waren hartkodiert (DE)
+  - Lösung:
+    - `js/finder-instance.js`: Nach `render()` sofort `appI18n.applyTranslations(container)` ausführen, sodass neue Tabs direkt übersetzt werden
+    - Breadcrumbs-Label und Empty-State-Text dynamisch anhand der aktiven Sprache rendern
+  - Tests:
+    - Neuer E2E-Test `tests/e2e/finder-new-tab-language.spec.js` (verifiziert, dass der neue Tab den aktiven Sprachwert nutzt)
+  - Impact: Neue Finder-Tabs erscheinen direkt in der aktuellen Sprache; nach Reload bleibt Sprache konsistent mit Nutzereinstellung
+
+### fix: Finder Double Content Rendering on Session Restore (29. Oktober 2025)
+  - **Problem**: Nach einem Page Reload wurde beim ersten Finder-Tab der Content doppelt gerendert
+  - **Root Cause**: 
+    - `attachEventListeners()` rief automatisch `navigateTo()` auf, was den Content renderte
+    - `deserialize()` rief danach ebenfalls `navigateTo()` auf, was den Content ein zweites Mal renderte
+    - Resultat: Doppelter Content im ersten Tab (der beim Restore sichtbar war)
+  - **Solution**:
+    - Einführung eines `_skipInitialRender` Flags in FinderInstance
+    - `deserialize()` setzt das Flag vor dem Restore
+    - `attachEventListeners()` prüft das Flag und überspringt automatisches `navigateTo()`, wenn im Restore-Modus
+    - `navigateTo()` wird nur einmal aufgerufen: in `deserialize()` nach Wiederherstellung des vollständigen States
+  - **Files Modified**:
+    - `js/finder-instance.js`: `_skipInitialRender` Flag + conditional `navigateTo()` in `attachEventListeners()`
+    - `js/app.bundle.js`: Rebuilt (493.1 KB)
+  - **Impact**: ✅ Finder-Content wird beim Session-Restore nur noch einmal gerendert, kein doppelter Content mehr
+
+### fix: Multi-Instance Active Tab Persistence (29. Oktober 2025)
+  - **Problem**: Nach einem Page Reload wurde immer der letzte Tab in der Liste ausgewählt, anstatt des vorher aktiven Tabs
+  - **Root Cause**: 
+    - Während der Session-Wiederherstellung wurde `createInstance()` für jede Instanz aufgerufen
+    - Jeder Aufruf setzte die neu erstellte Instanz als aktiv → die zuletzt erstellte Instanz "gewann"
+    - Keine Persistierung der aktiven Instanz-ID im SessionManager
+  - **Solution - Triple-Layer Persistence**:
+    1. **SessionManager.active Field** (`src/ts/session-manager.ts`):
+       - `SessionData` type erweitert um optionales `active?: Record<string, string | null>` Feld
+       - `serializeAllInstances()` erfasst `activeInstanceId` pro Typ via `getActiveInstance()`
+       - `restoreSession()` ruft `setActiveInstance(activeId)` nach `deserializeAll()` auf
+       - Method binding mit `.call(mgr)` für korrekten `this`-Kontext
+    2. **Instance Metadata.__active Flag** (`src/ts/instance-manager.ts`):
+       - `serializeAll()` markiert aktive Instanz mit `metadata.__active = true`
+       - `deserializeAll()` erkennt `__active` Flag und stellt Selektion wieder her
+       - Funktioniert unabhängig von Serialisierungsformat
+    3. **localStorage windowActiveInstances** (`src/ts/instance-manager.ts` + `src/ts/multi-instance-integration.ts`):
+       - `setActiveInstance()` schreibt sofort in localStorage Map
+       - `MultiInstanceIntegration` liest Fallback aus localStorage nach Restore
+       - Synchrone Persistierung bei jedem Tab-Wechsel
+  - **Testing - Comprehensive E2E Coverage**:
+    - ✅ `tests/e2e/finder-session-restore.spec.js`: Finder active tab persistence
+    - ✅ `tests/e2e/terminal-session-restore.spec.js`: Terminal active tab persistence  
+    - ✅ `tests/e2e/text-editor-session-restore.spec.js`: TextEditor active tab persistence
+    - Alle Tests verwenden identisches Pattern: create two instances, switch to first, reload, verify active unchanged
+    - 3/3 specs passed in bundle mode (USE_BUNDLE=1, MOCK_GITHUB=1, USE_NODE_SERVER=1)
+  - **Files Modified**:
+    - `src/ts/session-manager.ts`: SessionData.active field + serialize/restore logic
+    - `src/ts/instance-manager.ts`: metadata.__active serialization + localStorage write
+    - `src/ts/multi-instance-integration.ts`: localStorage fallback read during post-restore
+    - `js/app.bundle.js`: Rebuilt with all fixes (493.1 KB)
+  - **Impact**: ✅ Active tab selection bleibt konsistent über Page Reloads hinweg für alle Multi-Instance-Modals (Finder, Terminal, TextEditor)
+
+### fix: Dialog & SessionManager Error Handling (29. Oktober 2025)
+  - **Problems**:
+    1. `TypeError: SessionManager.restoreAllSessions is not a function` in multi-instance-integration
+    2. `TypeError: Cannot read properties of undefined (reading 'modal')` in Dialog.open()
+  - **Root Causes**:
+    1. `multi-instance-integration.ts` called non-existent `restoreAllSessions()` method (should be `restoreSession()`)
+    2. Dialog instances could fail during construction but error wasn't caught
+    3. `Dialog.modal` was typed as `HTMLElement` (non-null) but could be null in edge cases
+  - **Solutions**:
+    1. **SessionManager API Fix** (`multi-instance-integration.ts`):
+       - Changed `restoreAllSessions()` → `restoreSession()` to match actual SessionManager API
+       - Added type check before calling to prevent errors
+    2. **Dialog Error Handling** (`app-init.ts`):
+       - Wrapped Dialog construction in try-catch to prevent partial initialization
+       - Failed dialogs no longer added to `window.dialogs` registry
+    3. **Type Safety** (`dialog.ts`):
+       - Changed `modal: HTMLElement` → `modal: HTMLElement | null` for safety
+       - Added `modalId` property to class for better error messages
+       - Enhanced null checks in `open()` method
+  - **Files Modified**:
+    - `src/ts/multi-instance-integration.ts`: Fixed SessionManager API call
+    - `src/ts/app-init.ts`: Added try-catch for Dialog construction
+    - `src/ts/dialog.ts`: Improved type safety and null handling
+  - **Impact**: ✅ Eliminates console errors on page load, graceful degradation for missing dialogs
+
+### fix: Finder Session Restore - Empty GitHub View (29. Oktober 2025)
+  - **Problem**: Nach einem Seitenrefresh war das Finder-Fenster leer, weil die Finder-UI-Struktur fehlte
+  - **Root Causes**: 
+    1. **Fehlende HTML-Struktur**: `index.html` hatte nur einen leeren `#finder-container`, aber keine Sidebar, Content-Area, Toolbar
+    2. **Fehlende Event-Listener**: Sidebar-Klicks hatten keine registrierten Handler
+    3. **Cache-Priorität**: GitHub-Repos-Cache wurde zu spät geprüft (nach leerem Array-Check)
+  - **Solution**:
+    1. **HTML-Struktur ergänzt** (`index.html`):
+       - Sidebar mit IDs: `#finder-sidebar-computer`, `#finder-sidebar-github`, `#finder-sidebar-favorites`, `#finder-sidebar-recent`
+       - Content-Bereich: `#finder-content-area`
+       - Toolbar mit Breadcrumbs: `#finder-path-breadcrumbs`
+    2. **Event-Listener hinzugefügt** (`src/ts/finder.ts`):
+       - Click-Handler für alle Sidebar-Items in `init()`
+       - Ruft `navigateTo()` mit entsprechender View auf
+    3. **Cache-Priorität korrigiert** (`src/ts/finder.ts`):
+       - Cache-Check in `getGithubItems()` an den Anfang verschoben
+       - Gecachte Repos werden sofort beim ersten Render verwendet
+  - **Files Modified**:
+    - `index.html`: Finder-UI-Struktur hinzugefügt (Sidebar, Content, Toolbar)
+    - `src/ts/finder.ts`: Event-Listener registriert + Cache-Priorität korrigiert
+  - **Testing**: 
+    - E2E Test erstellt: `tests/e2e/finder-session-restore.spec.js`
+    - Verifiziert Finder-UI-Rendering und Session-Restore
+    - Playwright Browser-Tool zur manuellen Verifikation verwendet
+  - **Impact**: ✅ Finder ist nun vollständig funktionsfähig - UI rendert, Sidebar-Navigation funktioniert, GitHub-Cache wird geladen
+
 ### feat: Phase 7 TypeScript Migration - Complete! ✅ (29. Oktober 2025)
   - **Progress**: 8 of 8 files migrated (100% complete) from JavaScript to TypeScript
   - **Latest Migration**:

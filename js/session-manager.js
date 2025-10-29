@@ -111,16 +111,19 @@ console.log('SessionManager loaded');
     function getInstanceManagers() {
         const managers = new Map();
         const w = window;
-        // Known instance managers (terminal, text-editor, etc.)
+        // Known instance managers (terminal, text-editor, finder, etc.)
         const knownManagers = [
             'TerminalInstanceManager',
             'TextEditorInstanceManager',
+            'FinderInstanceManager',
         ];
         knownManagers.forEach(key => {
             const manager = w[key];
             if (manager && typeof manager === 'object') {
                 const mgr = manager;
-                const type = typeof mgr.type === 'string' ? mgr.type : key.replace('InstanceManager', '').toLowerCase();
+                const type = typeof mgr.type === 'string'
+                    ? mgr.type
+                    : key.replace('InstanceManager', '').toLowerCase();
                 managers.set(type, manager);
             }
         });
@@ -131,12 +134,13 @@ console.log('SessionManager loaded');
      */
     function serializeAllInstances() {
         const result = {};
+        const active = {};
         const managers = getInstanceManagers();
         managers.forEach((manager, type) => {
             const mgr = manager;
             if (typeof mgr.serializeAll === 'function') {
                 try {
-                    const instances = mgr.serializeAll();
+                    const instances = mgr.serializeAll.call(mgr);
                     if (Array.isArray(instances)) {
                         result[type] = instances;
                     }
@@ -145,8 +149,21 @@ console.log('SessionManager loaded');
                     console.error(`SessionManager: Failed to serialize instances for type "${type}":`, err);
                 }
             }
+            // Capture active instanceId per type if available
+            try {
+                if (typeof mgr.getActiveInstance === 'function') {
+                    const activeInst = mgr.getActiveInstance.call(mgr);
+                    active[type] = activeInst?.instanceId || null;
+                }
+                else {
+                    active[type] = null;
+                }
+            }
+            catch {
+                active[type] = null;
+            }
         });
-        return result;
+        return { instances: result, active };
     }
     // ===== Core Save Logic =====
     /**
@@ -159,11 +176,12 @@ console.log('SessionManager loaded');
         }
         saveInProgress = true;
         try {
-            const instances = serializeAllInstances();
+            const { instances, active } = serializeAllInstances();
             const session = {
                 version: SESSION_VERSION,
                 timestamp: Date.now(),
                 instances,
+                active,
             };
             const success = writeSession(session);
             if (success) {
@@ -236,6 +254,7 @@ console.log('SessionManager loaded');
         }
         const managers = getInstanceManagers();
         let restoredCount = 0;
+        const activeMap = session.active || {};
         Object.entries(session.instances).forEach(([type, instances]) => {
             const manager = managers.get(type);
             if (!manager) {
@@ -248,6 +267,16 @@ console.log('SessionManager loaded');
                     mgr.deserializeAll(instances);
                     restoredCount += instances.length;
                     console.log(`SessionManager: Restored ${instances.length} "${type}" instances`);
+                    // Restore previously active instance for this type if present
+                    const activeId = activeMap[type] || null;
+                    if (activeId && typeof mgr.setActiveInstance === 'function') {
+                        try {
+                            mgr.setActiveInstance(activeId);
+                        }
+                        catch (e) {
+                            console.warn(`SessionManager: Failed to set active instance for ${type}:`, e);
+                        }
+                    }
                 }
                 catch (err) {
                     console.error(`SessionManager: Failed to restore instances for type "${type}":`, err);
@@ -412,6 +441,21 @@ console.log('SessionManager loaded');
         console.log(`SessionManager: Initialized with ${debounceDelay}ms debounce`);
     }
     // ===== Global API =====
+    /**
+     * Legacy no-op: Managers are auto-discovered
+     * @deprecated Use automatic discovery instead
+     */
+    function registerManager(_type, _manager) {
+        // No-op: Auto-discovery handles this
+        console.log(`SessionManager: registerManager() is deprecated - using auto-discovery`);
+    }
+    /**
+     * Legacy no-op: Managers are auto-discovered
+     * @deprecated Use automatic discovery instead
+     */
+    function unregisterManager(_type) {
+        // No-op: Auto-discovery handles this
+    }
     const SessionManager = {
         init,
         saveAll,
@@ -424,7 +468,10 @@ console.log('SessionManager loaded');
         getStats,
         exportSession,
         importSession,
+        registerManager, // Legacy compatibility
+        unregisterManager, // Legacy compatibility
     };
-    window.SessionManager = SessionManager;
+    window.SessionManager =
+        SessionManager;
 })();
 //# sourceMappingURL=session-manager.js.map

@@ -1,6 +1,6 @@
 /**
  * SessionManager - Debounced Auto-Save System for Window Instances
- * 
+ *
  * Provides centralized, debounced persistence of window instance state to localStorage.
  * Handles storage quota limits gracefully and coordinates saves across multiple instances.
  */
@@ -23,6 +23,7 @@ console.log('SessionManager loaded');
         version: string;
         timestamp: number;
         instances: Record<string, InstanceData[]>; // Keyed by instance type (terminal, text-editor, etc.)
+        active?: Record<string, string | null>; // Keyed by type -> active instanceId
     };
 
     type SaveOptions = {
@@ -77,7 +78,9 @@ console.log('SessionManager loaded');
             const parsed = JSON.parse(raw) as SessionData;
             if (!parsed || typeof parsed !== 'object') return null;
             if (parsed.version !== SESSION_VERSION) {
-                console.warn(`SessionManager: Version mismatch (stored: ${parsed.version}, expected: ${SESSION_VERSION})`);
+                console.warn(
+                    `SessionManager: Version mismatch (stored: ${parsed.version}, expected: ${SESSION_VERSION})`
+                );
                 return null;
             }
 
@@ -93,11 +96,13 @@ console.log('SessionManager loaded');
      */
     function writeSession(session: SessionData): boolean {
         const size = estimateSize(session);
-        
+
         if (!checkStorageQuota(size)) {
             if (!quotaExceeded) {
                 console.error('SessionManager: Storage quota exceeded. Auto-save disabled.');
-                console.error(`Attempted to save ${(size / 1024).toFixed(2)}KB, limit is ${(MAX_STORAGE_SIZE / 1024).toFixed(2)}KB`);
+                console.error(
+                    `Attempted to save ${(size / 1024).toFixed(2)}KB, limit is ${(MAX_STORAGE_SIZE / 1024).toFixed(2)}KB`
+                );
                 quotaExceeded = true;
             }
             return false;
@@ -139,17 +144,21 @@ console.log('SessionManager loaded');
         const managers = new Map<string, unknown>();
         const w = window as unknown as Record<string, unknown>;
 
-        // Known instance managers (terminal, text-editor, etc.)
+        // Known instance managers (terminal, text-editor, finder, etc.)
         const knownManagers = [
             'TerminalInstanceManager',
             'TextEditorInstanceManager',
+            'FinderInstanceManager',
         ];
 
         knownManagers.forEach(key => {
             const manager = w[key];
             if (manager && typeof manager === 'object') {
                 const mgr = manager as Record<string, unknown>;
-                const type = typeof mgr.type === 'string' ? mgr.type : key.replace('InstanceManager', '').toLowerCase();
+                const type =
+                    typeof mgr.type === 'string'
+                        ? mgr.type
+                        : key.replace('InstanceManager', '').toLowerCase();
                 managers.set(type, manager);
             }
         });
@@ -160,25 +169,41 @@ console.log('SessionManager loaded');
     /**
      * Serialize all instances from all managers
      */
-    function serializeAllInstances(): Record<string, InstanceData[]> {
+    function serializeAllInstances(): { instances: Record<string, InstanceData[]>; active: Record<string, string | null> } {
         const result: Record<string, InstanceData[]> = {};
+        const active: Record<string, string | null> = {};
         const managers = getInstanceManagers();
 
         managers.forEach((manager, type) => {
             const mgr = manager as Record<string, unknown>;
             if (typeof mgr.serializeAll === 'function') {
                 try {
-                    const instances = (mgr.serializeAll as () => unknown)();
+                    const instances = (mgr.serializeAll as unknown as (this: unknown) => unknown).call(mgr);
                     if (Array.isArray(instances)) {
                         result[type] = instances as InstanceData[];
                     }
                 } catch (err) {
-                    console.error(`SessionManager: Failed to serialize instances for type "${type}":`, err);
+                    console.error(
+                        `SessionManager: Failed to serialize instances for type "${type}":`,
+                        err
+                    );
                 }
+            }
+
+            // Capture active instanceId per type if available
+            try {
+                if (typeof (mgr as any).getActiveInstance === 'function') {
+                    const activeInst = (mgr as any).getActiveInstance.call(mgr);
+                    active[type] = activeInst?.instanceId || null;
+                } else {
+                    active[type] = null;
+                }
+            } catch {
+                active[type] = null;
             }
         });
 
-        return result;
+        return { instances: result, active };
     }
 
     // ===== Core Save Logic =====
@@ -195,17 +220,23 @@ console.log('SessionManager loaded');
         saveInProgress = true;
 
         try {
-            const instances = serializeAllInstances();
+            const { instances, active } = serializeAllInstances();
             const session: SessionData = {
                 version: SESSION_VERSION,
                 timestamp: Date.now(),
                 instances,
+                active,
             };
 
             const success = writeSession(session);
             if (success) {
-                const instanceCount = Object.values(instances).reduce((sum, arr) => sum + arr.length, 0);
-                console.log(`SessionManager: Saved ${instanceCount} instances across ${Object.keys(instances).length} types`);
+                const instanceCount = Object.values(instances).reduce(
+                    (sum, arr) => sum + arr.length,
+                    0
+                );
+                console.log(
+                    `SessionManager: Saved ${instanceCount} instances across ${Object.keys(instances).length} types`
+                );
             }
 
             pendingSaveTypes.clear();
@@ -279,6 +310,8 @@ console.log('SessionManager loaded');
         const managers = getInstanceManagers();
         let restoredCount = 0;
 
+        const activeMap = (session as SessionData).active || {};
+
         Object.entries(session.instances).forEach(([type, instances]) => {
             const manager = managers.get(type);
             if (!manager) {
@@ -292,8 +325,20 @@ console.log('SessionManager loaded');
                     (mgr.deserializeAll as (data: InstanceData[]) => void)(instances);
                     restoredCount += instances.length;
                     console.log(`SessionManager: Restored ${instances.length} "${type}" instances`);
+                    // Restore previously active instance for this type if present
+                    const activeId = activeMap[type] || null;
+                    if (activeId && typeof (mgr as any).setActiveInstance === 'function') {
+                        try {
+                            (mgr as any).setActiveInstance(activeId);
+                        } catch (e) {
+                            console.warn(`SessionManager: Failed to set active instance for ${type}:`, e);
+                        }
+                    }
                 } catch (err) {
-                    console.error(`SessionManager: Failed to restore instances for type "${type}":`, err);
+                    console.error(
+                        `SessionManager: Failed to restore instances for type "${type}":`,
+                        err
+                    );
                 }
             }
         });
@@ -349,7 +394,10 @@ console.log('SessionManager loaded');
             };
         }
 
-        const instanceCount = Object.values(session.instances).reduce((sum, arr) => sum + arr.length, 0);
+        const instanceCount = Object.values(session.instances).reduce(
+            (sum, arr) => sum + arr.length,
+            0
+        );
         const types = Object.keys(session.instances);
         const sizeBytes = estimateSize(session);
 
@@ -420,7 +468,9 @@ console.log('SessionManager loaded');
 
         // Version compatibility check
         if (session.version !== SESSION_VERSION) {
-            console.warn(`SessionManager: Version mismatch (imported: ${session.version}, current: ${SESSION_VERSION})`);
+            console.warn(
+                `SessionManager: Version mismatch (imported: ${session.version}, current: ${SESSION_VERSION})`
+            );
             // For now, we're strict about versions. Future: implement migration logic
             console.error('SessionManager: Cannot import session from different version');
             return false;
@@ -513,5 +563,6 @@ console.log('SessionManager loaded');
         unregisterManager, // Legacy compatibility
     };
 
-    (window as unknown as { SessionManager: typeof SessionManager }).SessionManager = SessionManager;
+    (window as unknown as { SessionManager: typeof SessionManager }).SessionManager =
+        SessionManager;
 })();

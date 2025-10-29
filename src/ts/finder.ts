@@ -481,14 +481,14 @@ console.log('Finder.js loaded');
     function getGithubItems(): FinderItem[] {
         // Root der GitHub-Ansicht: Repos anzeigen
         if (finderState.currentPath.length === 0) {
-            // Versuche, Cache direkt zu nutzen
-            if (!finderState.githubRepos.length) {
-                const cachedRepos = readCache('repos');
-                if (Array.isArray(cachedRepos) && cachedRepos.length) {
-                    // cachedRepos sind bereits in gemapptem Format
-                    return cachedRepos as FinderItem[];
-                }
+            // Versuche zuerst, Cache zu nutzen (wichtig für Session-Restore nach Refresh)
+            const cachedRepos = readCache('repos');
+            if (Array.isArray(cachedRepos) && cachedRepos.length) {
+                // Cache gefunden - verwende ihn direkt
+                return cachedRepos as FinderItem[];
             }
+            
+            // Kein Cache gefunden - starte API-Aufruf
             if (
                 !finderState.githubRepos.length &&
                 !finderState.githubLoading &&
@@ -1250,6 +1250,33 @@ console.log('Finder.js loaded');
     function init(): void {
         loadFinderState();
         initDomRefs();
+        
+        // Attach click handlers to sidebar items
+        const refs = initDomRefs();
+        if (refs) {
+            if (refs.sidebarComputer) {
+                refs.sidebarComputer.addEventListener('click', () => {
+                    navigateTo([], 'computer');
+                });
+            }
+            if (refs.sidebarGithub) {
+                refs.sidebarGithub.addEventListener('click', () => {
+                    navigateTo([], 'github');
+                });
+            }
+            if (refs.sidebarFavorites) {
+                refs.sidebarFavorites.addEventListener('click', () => {
+                    navigateTo([], 'favorites');
+                });
+            }
+            if (refs.sidebarRecent) {
+                refs.sidebarRecent.addEventListener('click', () => {
+                    navigateTo([], 'recent');
+                });
+            }
+        }
+        
+        // Initial render with loaded state
         navigateTo(finderState.currentPath, finderState.currentView);
 
         // i18n-Übersetzungen anwenden
