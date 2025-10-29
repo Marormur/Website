@@ -1,4 +1,4 @@
-"use strict";
+import { triggerAutoSave } from './utils/auto-save-helper.js';
 console.log('InstanceManager loaded');
 (function () {
     'use strict';
@@ -157,16 +157,7 @@ console.log('InstanceManager loaded');
             console.log('Instances reordered:', validIds);
         }
         _triggerAutoSave() {
-            const w = window;
-            const SessionManager = w.SessionManager;
-            if (SessionManager && typeof SessionManager.saveInstanceType === 'function') {
-                try {
-                    SessionManager.saveInstanceType(this.type);
-                }
-                catch (error) {
-                    console.warn('Failed to trigger auto-save:', error);
-                }
-            }
+            triggerAutoSave(this.type);
         }
         _defaultCreateContainer(instanceId) {
             const container = document.createElement('div');
@@ -186,4 +177,3 @@ console.log('InstanceManager loaded');
     }
     window.InstanceManager = InstanceManager;
 })();
-//# sourceMappingURL=instance-manager.js.map

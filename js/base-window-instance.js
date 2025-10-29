@@ -1,12 +1,10 @@
-"use strict";
 /**
  * src/ts/base-window-instance.ts
  * Typed port of js/base-window-instance.js
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseWindowInstance = void 0;
-class BaseWindowInstance {
+import { triggerAutoSave } from './utils/auto-save-helper.js';
+export class BaseWindowInstance {
     constructor(config) {
         this.instanceId = config.id || this._generateId();
         this.type = config.type || 'unknown';
@@ -166,13 +164,12 @@ class BaseWindowInstance {
         this.emit('blurred');
     }
 }
-exports.BaseWindowInstance = BaseWindowInstance;
 // Attach to window for legacy compatibility
 // Note: Type declaration is in types/index.d.ts
 if (typeof window !== 'undefined') {
     window.BaseWindowInstance = BaseWindowInstance;
 }
-exports.default = BaseWindowInstance;
+export default BaseWindowInstance;
 console.log('BaseWindowInstance loaded');
 (function () {
     'use strict';
@@ -271,16 +268,7 @@ console.log('BaseWindowInstance loaded');
             this._triggerAutoSave();
         }
         _triggerAutoSave() {
-            const w = window;
-            const SessionManager = w.SessionManager;
-            if (SessionManager && typeof SessionManager.saveInstanceType === 'function') {
-                try {
-                    SessionManager.saveInstanceType(this.type);
-                }
-                catch (error) {
-                    console.warn('Failed to trigger auto-save:', error);
-                }
-            }
+            triggerAutoSave(this.type);
         }
         getState() {
             return { ...this.state };
@@ -347,4 +335,3 @@ console.log('BaseWindowInstance loaded');
     window.BaseWindowInstance =
         BaseWindowInstance;
 })();
-//# sourceMappingURL=base-window-instance.js.map
