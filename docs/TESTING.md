@@ -16,7 +16,9 @@ This project uses Playwright for E2E tests. To keep development fast and reliabl
 
 - **VS Code task**: "E2E: Test (basic smoke)" (includes MOCK_GITHUB=1)
 - **NPM script**: `npm run test:e2e:quick`
-- **Manual with mocks**: `MOCK_GITHUB=1 npm run test:e2e:quick`
+- **Manual with mocks**:
+    - PowerShell (Windows): `$env:MOCK_GITHUB='1'; npm run test:e2e:quick`
+    - Bash/Zsh (macOS/Linux): `MOCK_GITHUB=1 npm run test:e2e:quick`
 
 ### Full E2E Suite
 
@@ -89,9 +91,13 @@ if (window.USE_BUNDLE) {
 npm run build:bundle
 
 # Run E2E tests in bundle mode
+# PowerShell (Windows):
+$env:USE_BUNDLE='1'; $env:MOCK_GITHUB='1'; npm run test:e2e:quick
+
+# Bash/Zsh (macOS/Linux):
 USE_BUNDLE=1 MOCK_GITHUB=1 npm run test:e2e:quick
 
-# VS Code Tasks (bundle mode):
+# VS Code Tasks (cross-platform, recommended):
 # - "E2E: Test (Bundle Mode - Quick)"
 # - "E2E: Test (Bundle Mode - Full)"
 

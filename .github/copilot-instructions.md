@@ -207,6 +207,9 @@ If you find any remaining JavaScript files they are historical; prefer convertin
 - Push frequently to the working branch (develop or a feature branch) to keep CI running early and often.
 - When editing multiple files in a burst, split into separate commits by concern (config, types, code, tests, docs).
 - Before pushing, run: `npm run typecheck`, `npm run lint`, and optionally the basic E2E suite.
+- **Cross-Platform Testing**: All VS Code tasks use `options.env` for environment variables (Windows/macOS/Linux compatible). Manual CLI testing requires platform-specific syntax:
+    - PowerShell (Windows): `$env:MOCK_GITHUB='1'; npm run test:e2e:quick`
+    - Bash/Zsh (macOS/Linux): `MOCK_GITHUB=1 npm run test:e2e:quick`
 
 ### Documentation Maintenance (Markdown)
 

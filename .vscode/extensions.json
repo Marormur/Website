@@ -39,7 +39,17 @@
     "streetsidesoftware.code-spell-checker",
 
     // Import Cost (shows size of imports)
-    "wix.vscode-import-cost"
+    "wix.vscode-import-cost",
+
+    // GitHub Copilot (optional - requires license)
+    "GitHub.copilot",
+    "GitHub.copilot-chat",
+
+    // PostCSS Language Support
+    "csstools.postcss",
+
+    // Markdown Linting
+    "DavidAnson.vscode-markdownlint"
   ],
   "unwantedRecommendations": []
 }

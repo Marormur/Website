@@ -101,7 +101,13 @@
     {
       "label": "E2E: Test (Bundle Mode - Quick)",
       "type": "shell",
-      "command": "USE_BUNDLE=1 MOCK_GITHUB=1 npm run test:e2e:quick",
+      "command": "npm run test:e2e:quick",
+      "options": {
+        "env": {
+          "USE_BUNDLE": "1",
+          "MOCK_GITHUB": "1"
+        }
+      },
       "problemMatcher": [],
       "group": {
         "kind": "test"
@@ -114,7 +120,13 @@
     {
       "label": "E2E: Test (Bundle Mode - Full)",
       "type": "shell",
-      "command": "USE_BUNDLE=1 MOCK_GITHUB=1 npm run test:e2e",
+      "command": "npm run test:e2e",
+      "options": {
+        "env": {
+          "USE_BUNDLE": "1",
+          "MOCK_GITHUB": "1"
+        }
+      },
       "problemMatcher": [],
       "group": {
         "kind": "test"
@@ -380,6 +392,39 @@
       "label": "Pre-Commit: Simulate",
       "type": "shell",
       "command": "npx lint-staged --diff",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Format: All",
+      "type": "shell",
+      "command": "npm run format",
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Lint: Fix All",
+      "type": "shell",
+      "command": "npm run lint:fix",
+      "group": "build",
+      "problemMatcher": "$eslint-stylish",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Type Coverage: Report",
+      "type": "shell",
+      "command": "npm run type:report",
+      "group": "build",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",

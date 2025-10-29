@@ -4,6 +4,7 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "prettier.endOfLine": "auto",
   "files.eol": "auto",
+  "files.autoSave": "onFocusChange",
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
@@ -14,12 +15,17 @@
   "editor.rulers": [80, 100],
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": true,
+  "breadcrumbs.enabled": true,
+  "breadcrumbs.symbolPath": "on",
 
   // TypeScript
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.preferences.importModuleSpecifier": "relative",
   "typescript.suggest.autoImports": true,
   "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.inlayHints.parameterNames.enabled": "all",
+  "typescript.inlayHints.variableTypes.enabled": true,
+  "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
 
   // ESLint
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
@@ -36,6 +42,14 @@
   // File Associations
   "files.associations": {
     "*.config.mjs": "javascript"
+  },
+
+  // File Nesting - Group compiled JS with TypeScript sources
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.ts": "${capture}.js, ${capture}.js.map",
+    "tsconfig.json": "tsconfig.*.json",
+    "package.json": "package-lock.json, .npmrc"
   },
 
   // Search Performance - Exclude generated files

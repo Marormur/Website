@@ -1,5 +1,33 @@
 # 2025-10-29
 
+### chore: Cross-platform VSCode development setup optimization
+  - **Fixed**: Critical cross-platform compatibility issues in build tooling
+  - **Tasks** (`.vscode/tasks.json`):
+    - "E2E: Test (Bundle Mode - Quick)" and "E2E: Test (Bundle Mode - Full)" now use `options.env` instead of Unix-style env var syntax (`USE_BUNDLE=1 MOCK_GITHUB=1`)
+    - Added "Format: All" task (`npm run format`)
+    - Added "Lint: Fix All" task (`npm run lint:fix`)
+    - Added "Type Coverage: Report" task (`npm run type:report`)
+  - **Settings** (`.vscode/settings.json`):
+    - Enabled `files.autoSave: "onFocusChange"` for better DX
+    - Added TypeScript inlay hints for parameters, variable types, and return types
+    - Enabled file nesting patterns (`*.ts` → `*.js/*.js.map`, `tsconfig.json` → `tsconfig.*.json`, `package.json` → `package-lock.json`)
+    - Enabled breadcrumbs with symbol path navigation
+  - **Extensions** (`.vscode/extensions.json`):
+    - Added `GitHub.copilot` and `GitHub.copilot-chat` (optional, requires license)
+    - Added `csstools.postcss` for PostCSS language support
+    - Added `DavidAnson.vscode-markdownlint` for Markdown linting
+  - **Launch** (`.vscode/launch.json`):
+    - Added "Playwright: Debug Current Test" configuration with `MOCK_GITHUB=1` env var
+  - **Prettier** (`.prettierrc.json`):
+    - Changed `endOfLine` from `"crlf"` to `"auto"` for cross-platform compatibility
+  - **lint-staged** (`package.json`):
+    - Replaced bash-dependent filter logic with ESLint's `--ignore-pattern 'js/**/*.js'` for cross-platform support
+  - **Documentation**:
+    - Updated `docs/QUICKSTART.md` with PowerShell/Bash syntax examples for environment variables
+    - Updated `docs/TESTING.md` with platform-specific test command syntax
+    - Updated `.github/copilot-instructions.md` with cross-platform testing note
+  - **Impact**: Windows, macOS, and Linux developers can now use all VSCode tasks without shell compatibility issues; improved developer experience with auto-save, inlay hints, and better file organization
+
 ### chore: Unpin Photos App from Dock; ensure Launchpad-only access
   - **Removed**: Photos App (`image-modal`) from the Dock in `index.html`
   - **Removed**: Dock indicator logic for `image-modal` from `src/ts/dock.ts`
