@@ -30,17 +30,28 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
+            - name: Download build artifacts
+              id: download-build
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-${{ github.sha }}
+              continue-on-error: true
+
             - name: Typecheck
+              if: steps.download-build.outcome == 'failure'
               run: npm run typecheck
 
             - name: Type Coverage Check
+              if: steps.download-build.outcome == 'failure'
               run: npm run type:coverage
               continue-on-error: true
 
             - name: Build TypeScript
+              if: steps.download-build.outcome == 'failure'
               run: npm run build:ts
 
             - name: Build Tailwind CSS
+              if: steps.download-build.outcome == 'failure'
               run: npm run build:css
 
             - name: Upload artifact

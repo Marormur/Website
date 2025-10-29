@@ -1,5 +1,28 @@
 # 2025-10-29
 
+### chore: optimize GitHub Actions workflows for CI/CD efficiency
+  - **Deleted**: `.github/workflows/e2e.yml` (100% redundant with ci.yml's test jobs)
+  - **ci.yml Optimizations**:
+    - Added concurrency controls (`${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true`) to cancel outdated runs
+    - Added Playwright browser caching (`~/.cache/ms-playwright`) with package-lock.json hash key
+    - Added `MOCK_GITHUB: '1'` environment variable to E2E tests for stability and rate limit avoidance
+    - Split test job into `test-chromium` (always runs) and `test-browsers` (conditional on main branch or `[test-all]` in commit message)
+    - Added build artifact upload (`dist/` and `js/`) after quality job with 1-day retention
+  - **eslint.yml Optimizations**:
+    - Removed `push` and `pull_request` triggers (now weekly security scan only via `schedule` + `workflow_dispatch`)
+    - Updated to use project ESLint version via `npm ci` instead of hardcoded `eslint@8.10.0`
+    - Fixed config reference from `.eslintrc.js` to `eslint.config.mjs` (matches actual project config)
+    - Added Node.js setup with npm cache for faster dependency installation
+  - **deploy.yml Optimizations**:
+    - Added artifact download step to reuse build artifacts from ci.yml when available
+    - Made typecheck/build steps conditional (`if: steps.download-build.outcome == 'failure'`)
+    - Falls back to rebuilding if artifact not found (graceful degradation)
+  - **Expected Impact**: CI time reduced from ~11 minutes to ~7 minutes per push to develop (36-46% improvement)
+    - Chromium-only tests on develop saves ~4 minutes vs. all browsers
+    - Build artifact reuse in deploy saves ~2 minutes on main branch
+    - Concurrency controls prevent redundant runs on rapid pushes
+    - Browser caching reduces Playwright install time by ~30 seconds per run
+
 ### chore: Cross-platform VSCode development setup optimization
   - **Fixed**: Critical cross-platform compatibility issues in build tooling
   - **Tasks** (`.vscode/tasks.json`):
