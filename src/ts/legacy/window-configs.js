@@ -171,7 +171,7 @@ console.log('Window Configurations loaded');
             id: 'image-modal',
             type: 'persistent',
             programKey: 'programs.image',
-            icon: './img/imageviewer.png',
+            icon: './img/photos-app-icon.svg',
             closeButtonId: 'close-image-modal',
         },
         {
