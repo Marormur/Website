@@ -37,6 +37,8 @@ console.log('InstanceManager loaded');
                 this.instances.set(instanceId, instance);
                 this.activeInstanceId = instanceId;
                 this._setupInstanceEvents(instance);
+                // Trigger auto-save after instance creation
+                this._triggerAutoSave();
                 console.log(`Created instance: ${instanceId}`);
                 return instance;
             }
@@ -95,6 +97,8 @@ console.log('InstanceManager loaded');
                 const lastId = remainingIds.length > 0 ? remainingIds[remainingIds.length - 1] : undefined;
                 this.activeInstanceId = lastId ?? null;
             }
+            // Trigger auto-save after instance destruction
+            this._triggerAutoSave();
             console.log(`Destroyed instance: ${instanceId}`);
         }
         destroyAllInstances() {
@@ -103,6 +107,8 @@ console.log('InstanceManager loaded');
             });
             this.instances.clear();
             this.activeInstanceId = null;
+            // Trigger auto-save after destroying all instances
+            this._triggerAutoSave();
         }
         hasInstances() {
             return this.instances.size > 0;
@@ -149,6 +155,18 @@ console.log('InstanceManager loaded');
             // Replace the instances map
             this.instances = newMap;
             console.log('Instances reordered:', validIds);
+        }
+        _triggerAutoSave() {
+            const w = window;
+            const SessionManager = w.SessionManager;
+            if (SessionManager && typeof SessionManager.saveInstanceType === 'function') {
+                try {
+                    SessionManager.saveInstanceType(this.type);
+                }
+                catch (error) {
+                    console.warn('Failed to trigger auto-save:', error);
+                }
+            }
         }
         _defaultCreateContainer(instanceId) {
             const container = document.createElement('div');

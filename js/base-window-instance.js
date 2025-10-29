@@ -96,6 +96,19 @@ class BaseWindowInstance {
             modified: Date.now(),
         };
         this.emit('stateChanged', { oldState, newState: this.state });
+        // Trigger auto-save when state changes
+        this._triggerAutoSave();
+    }
+    _triggerAutoSave() {
+        const w = window;
+        if (w.SessionManager && typeof w.SessionManager.saveInstanceType === 'function') {
+            try {
+                w.SessionManager.saveInstanceType(this.type);
+            }
+            catch (error) {
+                console.warn('Failed to trigger auto-save:', error);
+            }
+        }
     }
     getState() {
         return { ...this.state };
@@ -254,6 +267,20 @@ console.log('BaseWindowInstance loaded');
                 modified: Date.now(),
             };
             this.emit('stateChanged', { oldState, newState: this.state });
+            // Trigger auto-save when state changes
+            this._triggerAutoSave();
+        }
+        _triggerAutoSave() {
+            const w = window;
+            const SessionManager = w.SessionManager;
+            if (SessionManager && typeof SessionManager.saveInstanceType === 'function') {
+                try {
+                    SessionManager.saveInstanceType(this.type);
+                }
+                catch (error) {
+                    console.warn('Failed to trigger auto-save:', error);
+                }
+            }
         }
         getState() {
             return { ...this.state };

@@ -158,6 +158,14 @@ console.log('Window Configurations loaded');
             programKey: 'programs.photos',
             icon: './img/photos-app-icon.svg',
             closeButtonId: 'close-image-modal',
+            metadata: {
+                initHandler: function () {
+                    // Initialize Photos App when modal opens
+                    if (window.PhotosApp && typeof window.PhotosApp.init === 'function') {
+                        window.PhotosApp.init();
+                    }
+                },
+            },
         },
         {
             id: 'program-info-modal',
