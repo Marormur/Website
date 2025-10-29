@@ -4051,6 +4051,7 @@ var App = (() => {
         let pendingSaveTypes = /* @__PURE__ */ new Set();
         let quotaExceeded = false;
         let saveInProgress = false;
+        let lastSaveAttempt = 0;
         function estimateSize(data) {
           try {
             return JSON.stringify(data).length * 2;
@@ -4363,11 +4364,30 @@ var App = (() => {
     }
   });
 
+  // src/ts/utils/auto-save-helper.ts
+  function triggerAutoSave(type) {
+    const w = window;
+    const SessionManager = w.SessionManager;
+    if (SessionManager && typeof SessionManager.saveInstanceType === "function") {
+      try {
+        SessionManager.saveInstanceType(type);
+      } catch (error) {
+        console.warn("Failed to trigger auto-save:", error);
+      }
+    }
+  }
+  var init_auto_save_helper = __esm({
+    "src/ts/utils/auto-save-helper.ts"() {
+      "use strict";
+    }
+  });
+
   // src/ts/base-window-instance.ts
   var BaseWindowInstance;
   var init_base_window_instance = __esm({
     "src/ts/base-window-instance.ts"() {
       "use strict";
+      init_auto_save_helper();
       BaseWindowInstance = class {
         constructor(config) {
           this.instanceId = config.id || this._generateId();
@@ -4608,15 +4628,7 @@ var App = (() => {
             this._triggerAutoSave();
           }
           _triggerAutoSave() {
-            const w = window;
-            const SessionManager = w.SessionManager;
-            if (SessionManager && typeof SessionManager.saveInstanceType === "function") {
-              try {
-                SessionManager.saveInstanceType(this.type);
-              } catch (error) {
-                console.warn("Failed to trigger auto-save:", error);
-              }
-            }
+            triggerAutoSave(this.type);
           }
           getState() {
             return { ...this.state };
@@ -4687,6 +4699,7 @@ var App = (() => {
   var require_instance_manager = __commonJS({
     "src/ts/instance-manager.ts"() {
       "use strict";
+      init_auto_save_helper();
       console.log("InstanceManager loaded");
       (function() {
         "use strict";
@@ -4832,15 +4845,7 @@ var App = (() => {
             console.log("Instances reordered:", validIds);
           }
           _triggerAutoSave() {
-            const w = window;
-            const SessionManager = w.SessionManager;
-            if (SessionManager && typeof SessionManager.saveInstanceType === "function") {
-              try {
-                SessionManager.saveInstanceType(this.type);
-              } catch (error) {
-                console.warn("Failed to trigger auto-save:", error);
-              }
-            }
+            triggerAutoSave(this.type);
           }
           _defaultCreateContainer(instanceId) {
             const container = document.createElement("div");
