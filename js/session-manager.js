@@ -1,351 +1,574 @@
-"use strict";
-/**
- * SessionManager - Debounced Auto-Save System for Window Instances
- *
- * Provides centralized, debounced persistence of window instance state to localStorage.
- * Handles storage quota limits gracefully and coordinates saves across multiple instances.
- */
 console.log('SessionManager loaded');
-(() => {
+
+/**
+ * SessionManager - Manages window instance sessions
+ *
+ * Features:
+ * - Auto-save instances to localStorage
+ * - Restore instances on page load
+ * - Export/import sessions
+ * - Session templates
+ */
+(function () {
     'use strict';
-    // ===== Constants =====
-    const SESSION_STORAGE_KEY = 'windowInstancesSession';
-    const SESSION_VERSION = '1.0';
-    const DEFAULT_DEBOUNCE_MS = 750; // Conservative default
-    const MAX_STORAGE_SIZE = 5 * 1024 * 1024; // 5MB conservative limit (most browsers allow 5-10MB)
-    // ===== Module Variables =====
-    let saveTimer = null;
-    let debounceDelay = DEFAULT_DEBOUNCE_MS;
-    let pendingSaveTypes = new Set(); // Track which instance types need saving
-    let quotaExceeded = false;
-    let saveInProgress = false;
-    // ===== Storage Helpers =====
+
     /**
-     * Estimate size of data in bytes (rough approximation)
+     * Session Manager for persisting window instances
      */
-    function estimateSize(data) {
-        try {
-            return JSON.stringify(data).length * 2; // Rough UTF-16 byte estimate
+    class SessionManager {
+        /**
+         * @param {Object} config
+         * @param {number} config.autoSaveInterval - Auto-save interval in milliseconds (default: 30000 = 30s)
+         * @param {boolean} config.autoSaveEnabled - Enable auto-save (default: true)
+         * @param {string} config.storageKey - LocalStorage key prefix (default: 'window-session')
+         */
+        constructor(config = {}) {
+            this.autoSaveInterval = config.autoSaveInterval || 30000; // 30 seconds
+            this.autoSaveEnabled = config.autoSaveEnabled !== false;
+            this.storageKey = config.storageKey || 'window-session';
+
+            this.instanceManagers = new Map();
+            this.autoSaveTimer = null;
+            this.lastSaveTime = null;
         }
-        catch {
-            return 0;
+
+        /**
+         * Register an instance manager for auto-save
+         * @param {string} type - Instance type (e.g., 'terminal', 'text-editor')
+         * @param {InstanceManager} manager - Instance manager
+         */
+        registerManager(type, manager) {
+            this.instanceManagers.set(type, manager);
+            console.log(`SessionManager: Registered manager for ${type}`);
         }
-    }
-    /**
-     * Check if storage quota is available
-     */
-    function checkStorageQuota(dataSize) {
-        if (quotaExceeded) {
-            return false;
+
+        /**
+         * Unregister an instance manager
+         * @param {string} type
+         */
+        unregisterManager(type) {
+            this.instanceManagers.delete(type);
         }
-        return dataSize < MAX_STORAGE_SIZE;
-    }
-    /**
-     * Read session from localStorage
-     */
-    function readSession() {
-        try {
-            const raw = localStorage.getItem(SESSION_STORAGE_KEY);
-            if (!raw)
-                return null;
-            const parsed = JSON.parse(raw);
-            if (!parsed || typeof parsed !== 'object')
-                return null;
-            if (parsed.version !== SESSION_VERSION) {
-                console.warn(`SessionManager: Version mismatch (stored: ${parsed.version}, expected: ${SESSION_VERSION})`);
-                return null;
+
+        /**
+         * Start auto-save
+         */
+        startAutoSave() {
+            if (!this.autoSaveEnabled) return;
+
+            this.stopAutoSave(); // Clear any existing timer
+
+            this.autoSaveTimer = setInterval(() => {
+                this.saveAllSessions();
+            }, this.autoSaveInterval);
+
+            console.log(`SessionManager: Auto-save started (interval: ${this.autoSaveInterval}ms)`);
+        }
+
+        /**
+         * Stop auto-save
+         */
+        stopAutoSave() {
+            if (this.autoSaveTimer) {
+                clearInterval(this.autoSaveTimer);
+                this.autoSaveTimer = null;
             }
-            return parsed;
         }
-        catch (err) {
-            console.warn('SessionManager: Failed to read session:', err);
-            return null;
-        }
-    }
-    /**
-     * Write session to localStorage with quota handling
-     */
-    function writeSession(session) {
-        const size = estimateSize(session);
-        if (!checkStorageQuota(size)) {
-            if (!quotaExceeded) {
-                console.error('SessionManager: Storage quota exceeded. Auto-save disabled.');
-                console.error(`Attempted to save ${(size / 1024).toFixed(2)}KB, limit is ${(MAX_STORAGE_SIZE / 1024).toFixed(2)}KB`);
-                quotaExceeded = true;
-            }
-            return false;
-        }
-        try {
-            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-            quotaExceeded = false; // Reset flag on successful save
-            return true;
-        }
-        catch (err) {
-            if (err instanceof Error && err.name === 'QuotaExceededError') {
-                console.error('SessionManager: Storage quota exceeded:', err);
-                quotaExceeded = true;
-            }
-            else {
-                console.error('SessionManager: Failed to write session:', err);
-            }
-            return false;
-        }
-    }
-    /**
-     * Clear session from localStorage
-     */
-    function clearSession() {
-        try {
-            localStorage.removeItem(SESSION_STORAGE_KEY);
-            console.log('SessionManager: Session cleared');
-        }
-        catch (err) {
-            console.warn('SessionManager: Failed to clear session:', err);
-        }
-    }
-    // ===== Instance Manager Integration =====
-    /**
-     * Get all instance managers registered globally
-     */
-    function getInstanceManagers() {
-        const managers = new Map();
-        const w = window;
-        // Known instance managers (terminal, text-editor, etc.)
-        const knownManagers = [
-            'TerminalInstanceManager',
-            'TextEditorInstanceManager',
-        ];
-        knownManagers.forEach(key => {
-            const manager = w[key];
-            if (manager && typeof manager === 'object') {
-                const mgr = manager;
-                const type = typeof mgr.type === 'string' ? mgr.type : key.replace('InstanceManager', '').toLowerCase();
-                managers.set(type, manager);
-            }
-        });
-        return managers;
-    }
-    /**
-     * Serialize all instances from all managers
-     */
-    function serializeAllInstances() {
-        const result = {};
-        const managers = getInstanceManagers();
-        managers.forEach((manager, type) => {
-            const mgr = manager;
-            if (typeof mgr.serializeAll === 'function') {
+
+        /**
+         * Save all sessions to localStorage
+         */
+        saveAllSessions() {
+            const sessions = {};
+            let totalInstances = 0;
+
+            this.instanceManagers.forEach((manager, type) => {
+                const serialized = manager.serializeAll();
+                if (serialized.length > 0) {
+                    sessions[type] = {
+                        instances: serialized,
+                        activeInstanceId: manager.activeInstanceId,
+                    };
+                    totalInstances += serialized.length;
+                }
+            });
+
+            // Capture modal/window state
+            const modalState = this._captureModalState();
+            
+            // Capture active tabs per window
+            const tabState = this._captureTabState();
+
+            if (totalInstances > 0 || Object.keys(modalState).length > 0) {
+                const sessionData = {
+                    version: '1.1',
+                    timestamp: Date.now(),
+                    sessions,
+                    modalState,
+                    tabState,
+                };
+
                 try {
-                    const instances = mgr.serializeAll();
-                    if (Array.isArray(instances)) {
-                        result[type] = instances;
+                    localStorage.setItem(this.storageKey, JSON.stringify(sessionData));
+                    this.lastSaveTime = Date.now();
+                    console.log(
+                        `SessionManager: Saved ${totalInstances} instances across ${Object.keys(sessions).length} types`
+                    );
+                } catch (error) {
+                    // Provide specific error messages based on error type
+                    if (error.name === 'QuotaExceededError') {
+                        console.error(
+                            'SessionManager: Storage quota exceeded. Cannot save sessions. Consider clearing old data or reducing instance count.'
+                        );
+                    } else if (error.name === 'SecurityError') {
+                        console.error(
+                            'SessionManager: localStorage access denied. Sessions cannot be saved (private browsing mode?).'
+                        );
+                    } else if (error instanceof TypeError) {
+                        console.error(
+                            'SessionManager: Failed to serialize session data. Some instance state may not be JSON-serializable.'
+                        );
+                    } else {
+                        console.error(
+                            'SessionManager: Failed to save sessions:',
+                            error.message || error
+                        );
+                    }
+                    this.handleStorageError(error);
+                }
+            } else {
+                // No instances to save, clear storage
+                localStorage.removeItem(this.storageKey);
+            }
+        }
+
+        /**
+         * Restore all sessions from localStorage
+         */
+        restoreAllSessions() {
+            try {
+                const data = localStorage.getItem(this.storageKey);
+                if (!data) {
+                    console.log('SessionManager: No saved sessions found');
+                    return;
+                }
+
+                const sessionData = JSON.parse(data);
+                if (!sessionData.sessions) {
+                    console.warn('SessionManager: Invalid session data');
+                    return;
+                }
+
+                let totalRestored = 0;
+
+                Object.entries(sessionData.sessions).forEach(([type, typeData]) => {
+                    const manager = this.instanceManagers.get(type);
+                    if (manager) {
+                        manager.deserializeAll(typeData.instances);
+
+                        // Restore active instance
+                        if (typeData.activeInstanceId) {
+                            manager.setActiveInstance(typeData.activeInstanceId);
+                        }
+
+                        totalRestored += typeData.instances.length;
+                    } else {
+                        console.warn(`SessionManager: No manager registered for type ${type}`);
+                    }
+                });
+
+                // Then restore modal state (after a short delay to ensure DOM is ready)
+                if (sessionData.modalState) {
+                    setTimeout(() => {
+                        this._restoreModalState(sessionData.modalState);
+                    }, 100);
+                }
+
+                // Restore tab state
+                if (sessionData.tabState) {
+                    setTimeout(() => {
+                        this._restoreTabState(sessionData.tabState);
+                    }, 150);
+                }
+
+                console.log(`SessionManager: Restored ${totalRestored} instances`);
+            } catch (error) {
+                console.error('SessionManager: Failed to restore sessions:', error);
+            }
+        }
+
+        /**
+         * Export session as JSON
+         * @returns {string} JSON string
+         */
+        exportSession() {
+            const sessions = {};
+
+            this.instanceManagers.forEach((manager, type) => {
+                const serialized = manager.serializeAll();
+                if (serialized.length > 0) {
+                    sessions[type] = {
+                        instances: serialized,
+                        activeInstanceId: manager.activeInstanceId,
+                    };
+                }
+            });
+
+            return JSON.stringify(
+                {
+                    version: '1.0',
+                    timestamp: Date.now(),
+                    sessions,
+                },
+                null,
+                2
+            );
+        }
+
+        /**
+         * Import session from JSON
+         * @param {string} jsonString - JSON session data
+         */
+        importSession(jsonString) {
+            try {
+                const sessionData = JSON.parse(jsonString);
+
+                if (!sessionData.sessions) {
+                    throw new Error('Invalid session format');
+                }
+
+                // Clear existing instances first
+                this.clearAllSessions();
+
+                // Import new sessions
+                Object.entries(sessionData.sessions).forEach(([type, typeData]) => {
+                    const manager = this.instanceManagers.get(type);
+                    if (manager) {
+                        manager.deserializeAll(typeData.instances);
+
+                        if (typeData.activeInstanceId) {
+                            manager.setActiveInstance(typeData.activeInstanceId);
+                        }
+                    }
+                });
+
+                console.log('SessionManager: Session imported successfully');
+            } catch (error) {
+                console.error('SessionManager: Failed to import session:', error);
+                throw error;
+            }
+        }
+
+        /**
+         * Clear all sessions
+         */
+        clearAllSessions() {
+            this.instanceManagers.forEach(manager => {
+                manager.destroyAllInstances();
+            });
+            localStorage.removeItem(this.storageKey);
+            console.log('SessionManager: All sessions cleared');
+        }
+
+        /**
+         * Save a template
+         * @param {string} name - Template name
+         * @param {string} description - Template description
+         */
+        saveAsTemplate(name, description = '') {
+            const templateKey = `${this.storageKey}-template-${name}`;
+            const sessionJson = this.exportSession();
+
+            const templateData = {
+                name,
+                description,
+                created: Date.now(),
+                session: JSON.parse(sessionJson),
+            };
+
+            try {
+                localStorage.setItem(templateKey, JSON.stringify(templateData));
+                console.log(`SessionManager: Template "${name}" saved`);
+            } catch (error) {
+                console.error('SessionManager: Failed to save template:', error);
+                throw error;
+            }
+        }
+
+        /**
+         * Load a template
+         * @param {string} name - Template name
+         */
+        loadTemplate(name) {
+            const templateKey = `${this.storageKey}-template-${name}`;
+
+            try {
+                const data = localStorage.getItem(templateKey);
+                if (!data) {
+                    throw new Error(`Template "${name}" not found`);
+                }
+
+                const templateData = JSON.parse(data);
+                this.importSession(JSON.stringify(templateData.session));
+                console.log(`SessionManager: Template "${name}" loaded`);
+            } catch (error) {
+                console.error('SessionManager: Failed to load template:', error);
+                throw error;
+            }
+        }
+
+        /**
+         * Get all saved templates
+         * @returns {Array<Object>}
+         */
+        getAllTemplates() {
+            const templates = [];
+            const prefix = `${this.storageKey}-template-`;
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith(prefix)) {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        templates.push({
+                            name: data.name,
+                            description: data.description,
+                            created: data.created,
+                        });
+                    } catch (error) {
+                        console.error(`Failed to parse template ${key}:`, error);
                     }
                 }
-                catch (err) {
-                    console.error(`SessionManager: Failed to serialize instances for type "${type}":`, err);
+            }
+
+            return templates;
+        }
+
+        /**
+         * Delete a template
+         * @param {string} name - Template name
+         */
+        deleteTemplate(name) {
+            const templateKey = `${this.storageKey}-template-${name}`;
+            localStorage.removeItem(templateKey);
+            console.log(`SessionManager: Template "${name}" deleted`);
+        }
+
+        /**
+         * Handle storage quota errors
+         * @private
+         */
+        handleStorageError(error) {
+            if (error.name === 'QuotaExceededError') {
+                console.warn('SessionManager: Storage quota exceeded. Consider clearing old data.');
+                // Could implement cleanup strategy here
+            }
+        }
+
+        /**
+         * Capture current modal/window state
+         * @private
+         * @returns {Object} Modal state including visibility and z-index
+         */
+        _captureModalState() {
+            const modalState = {};
+            
+            try {
+                // Get all modal IDs from WindowManager
+                const WindowManager = window.WindowManager;
+                if (!WindowManager || typeof WindowManager.getAllWindowIds !== 'function') {
+                    return modalState;
+                }
+                
+                const modalIds = WindowManager.getAllWindowIds();
+                const transientIds = WindowManager.getTransientWindowIds 
+                    ? new Set(WindowManager.getTransientWindowIds()) 
+                    : new Set();
+                
+                modalIds.forEach(id => {
+                    // Skip transient modals
+                    if (transientIds.has(id)) return;
+                    
+                    const modal = document.getElementById(id);
+                    if (!modal) return;
+                    
+                    const isVisible = !modal.classList.contains('hidden');
+                    const isMinimized = modal.dataset && modal.dataset.minimized === 'true';
+                    const zIndex = modal.style.zIndex || '';
+                    
+                    if (isVisible || isMinimized) {
+                        modalState[id] = {
+                            visible: isVisible,
+                            minimized: isMinimized,
+                            zIndex: zIndex
+                        };
+                    }
+                });
+            } catch (error) {
+                console.warn('SessionManager: Failed to capture modal state:', error);
+            }
+            
+            return modalState;
+        }
+
+        /**
+         * Capture active tabs for each window
+         * @private
+         * @returns {Object} Tab state for windows
+         */
+        _captureTabState() {
+            const tabState = {};
+            
+            try {
+                // For each instance manager, capture active tab
+                this.instanceManagers.forEach((manager, type) => {
+                    const activeId = manager.activeInstanceId;
+                    if (activeId) {
+                        tabState[type] = {
+                            activeInstanceId: activeId
+                        };
+                    }
+                });
+            } catch (error) {
+                console.warn('SessionManager: Failed to capture tab state:', error);
+            }
+            
+            return tabState;
+        }
+
+        /**
+         * Restore modal/window state
+         * @private
+         * @param {Object} modalState - Saved modal state
+         */
+        _restoreModalState(modalState) {
+            try {
+                const WindowManager = window.WindowManager;
+                if (!WindowManager) {
+                    console.warn('SessionManager: WindowManager not available for modal restore');
+                    return;
+                }
+                
+                Object.entries(modalState).forEach(([modalId, state]) => {
+                    // Validate modal exists in DOM
+                    const modal = document.getElementById(modalId);
+                    if (!modal) {
+                        console.warn(`SessionManager: Modal "${modalId}" not found in DOM`);
+                        return;
+                    }
+                    
+                    // Validate modal is registered
+                    if (typeof WindowManager.getConfig === 'function') {
+                        const config = WindowManager.getConfig(modalId);
+                        if (!config) {
+                            console.warn(`SessionManager: Modal "${modalId}" not registered in WindowManager`);
+                            return;
+                        }
+                    }
+                    
+                    // Restore visibility
+                    if (state.visible) {
+                        const dialogs = window.dialogs || {};
+                        const dialogInstance = dialogs[modalId];
+                        
+                        if (dialogInstance && typeof dialogInstance.open === 'function') {
+                            try {
+                                dialogInstance.open();
+                            } catch (error) {
+                                console.warn(`SessionManager: Error opening modal "${modalId}":`, error);
+                                modal.classList.remove('hidden');
+                            }
+                        } else {
+                            modal.classList.remove('hidden');
+                        }
+                    }
+                    
+                    // Restore z-index
+                    if (state.zIndex) {
+                        modal.style.zIndex = state.zIndex;
+                    }
+                    
+                    // Restore minimized state
+                    if (state.minimized && modal.dataset) {
+                        modal.dataset.minimized = 'true';
+                    }
+                });
+                
+                // Update dock indicators
+                if (typeof window.updateDockIndicators === 'function') {
+                    window.updateDockIndicators();
+                }
+            } catch (error) {
+                console.error('SessionManager: Failed to restore modal state:', error);
+            }
+        }
+
+        /**
+         * Restore active tabs
+         * @private
+         * @param {Object} tabState - Saved tab state
+         */
+        _restoreTabState(tabState) {
+            try {
+                Object.entries(tabState).forEach(([type, state]) => {
+                    const manager = this.instanceManagers.get(type);
+                    if (!manager) return;
+                    
+                    if (state.activeInstanceId) {
+                        // Verify instance exists
+                        const instance = manager.getInstance(state.activeInstanceId);
+                        if (instance) {
+                            manager.setActiveInstance(state.activeInstanceId);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('SessionManager: Failed to restore tab state:', error);
+            }
+        }
+
+        /**
+         * Get storage usage info
+         * @returns {Object}
+         */
+        getStorageInfo() {
+            const sessionData = localStorage.getItem(this.storageKey);
+            const sessionSize = sessionData ? sessionData.length : 0;
+
+            let templateCount = 0;
+            let templateSize = 0;
+            const prefix = `${this.storageKey}-template-`;
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith(prefix)) {
+                    templateCount++;
+                    const data = localStorage.getItem(key);
+                    templateSize += data ? data.length : 0;
                 }
             }
-        });
-        return result;
-    }
-    // ===== Core Save Logic =====
-    /**
-     * Perform the actual save operation
-     */
-    function performSave() {
-        if (saveInProgress) {
-            console.warn('SessionManager: Save already in progress, skipping');
-            return;
-        }
-        saveInProgress = true;
-        lastSaveAttempt = Date.now();
-        try {
-            const instances = serializeAllInstances();
-            const session = {
-                version: SESSION_VERSION,
-                timestamp: Date.now(),
-                instances,
-            };
-            const success = writeSession(session);
-            if (success) {
-                const instanceCount = Object.values(instances).reduce((sum, arr) => sum + arr.length, 0);
-                console.log(`SessionManager: Saved ${instanceCount} instances across ${Object.keys(instances).length} types`);
-            }
-            pendingSaveTypes.clear();
-        }
-        catch (err) {
-            console.error('SessionManager: Save failed:', err);
-        }
-        finally {
-            saveInProgress = false;
-        }
-    }
-    /**
-     * Schedule a debounced save
-     */
-    function scheduleSave(instanceType) {
-        if (instanceType) {
-            pendingSaveTypes.add(instanceType);
-        }
-        if (saveTimer !== null) {
-            clearTimeout(saveTimer);
-        }
-        saveTimer = window.setTimeout(() => {
-            saveTimer = null;
-            performSave();
-        }, debounceDelay);
-    }
-    // ===== Public API =====
-    /**
-     * Save all instances immediately (skip debounce)
-     */
-    function saveAll(options = {}) {
-        if (options.immediate) {
-            if (saveTimer !== null) {
-                clearTimeout(saveTimer);
-                saveTimer = null;
-            }
-            performSave();
-        }
-        else {
-            scheduleSave();
-        }
-    }
-    /**
-     * Save instances of a specific type (debounced by default)
-     */
-    function saveInstanceType(instanceType, options = {}) {
-        if (options.immediate) {
-            if (saveTimer !== null) {
-                clearTimeout(saveTimer);
-                saveTimer = null;
-            }
-            performSave();
-        }
-        else {
-            scheduleSave(instanceType);
-        }
-    }
-    /**
-     * Restore session from localStorage
-     */
-    function restoreSession() {
-        const session = readSession();
-        if (!session) {
-            console.log('SessionManager: No session to restore');
-            return false;
-        }
-        const managers = getInstanceManagers();
-        let restoredCount = 0;
-        Object.entries(session.instances).forEach(([type, instances]) => {
-            const manager = managers.get(type);
-            if (!manager) {
-                console.warn(`SessionManager: No manager found for type "${type}"`);
-                return;
-            }
-            const mgr = manager;
-            if (typeof mgr.deserializeAll === 'function') {
-                try {
-                    mgr.deserializeAll(instances);
-                    restoredCount += instances.length;
-                    console.log(`SessionManager: Restored ${instances.length} "${type}" instances`);
-                }
-                catch (err) {
-                    console.error(`SessionManager: Failed to restore instances for type "${type}":`, err);
-                }
-            }
-        });
-        console.log(`SessionManager: Restored ${restoredCount} instances total`);
-        return restoredCount > 0;
-    }
-    /**
-     * Configure debounce delay
-     */
-    function setDebounceDelay(ms) {
-        if (ms < 100 || ms > 5000) {
-            console.warn(`SessionManager: Invalid debounce delay ${ms}ms, must be 100-5000ms`);
-            return;
-        }
-        debounceDelay = ms;
-        console.log(`SessionManager: Debounce delay set to ${ms}ms`);
-    }
-    /**
-     * Get current debounce delay
-     */
-    function getDebounceDelay() {
-        return debounceDelay;
-    }
-    /**
-     * Clear all saved session data
-     */
-    function clear() {
-        if (saveTimer !== null) {
-            clearTimeout(saveTimer);
-            saveTimer = null;
-        }
-        pendingSaveTypes.clear();
-        clearSession();
-        quotaExceeded = false;
-    }
-    /**
-     * Get session statistics
-     */
-    function getStats() {
-        const session = readSession();
-        if (!session) {
+
             return {
-                hasSession: false,
-                instanceCount: 0,
-                types: [],
-                timestamp: null,
-                sizeBytes: 0,
+                sessionSize,
+                templateCount,
+                templateSize,
+                totalSize: sessionSize + templateSize,
+                lastSaveTime: this.lastSaveTime,
             };
         }
-        const instanceCount = Object.values(session.instances).reduce((sum, arr) => sum + arr.length, 0);
-        const types = Object.keys(session.instances);
-        const sizeBytes = estimateSize(session);
-        return {
-            hasSession: true,
-            instanceCount,
-            types,
-            timestamp: session.timestamp,
-            sizeBytes,
-            quotaExceeded,
-        };
+
+        /**
+         * Destroy session manager
+         */
+        destroy() {
+            this.stopAutoSave();
+            this.instanceManagers.clear();
+        }
     }
-    // ===== Lifecycle Hooks =====
-    /**
-     * Initialize auto-save system and browser lifecycle hooks
-     */
-    function init() {
-        console.log('SessionManager: Initializing auto-save system');
-        // Save on window blur (user switching away)
-        window.addEventListener('blur', () => {
-            saveAll({ immediate: true });
-        });
-        // Save on beforeunload (page closing/refreshing)
-        window.addEventListener('beforeunload', () => {
-            // Must be immediate to complete before page unload
-            performSave();
-        });
-        // Save on visibility change (tab hidden)
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                saveAll({ immediate: true });
-            }
-        });
-        console.log(`SessionManager: Initialized with ${debounceDelay}ms debounce`);
-    }
-    // ===== Global API =====
-    const SessionManager = {
-        init,
-        saveAll,
-        saveInstanceType,
-        restoreSession,
-        clear,
-        setDebounceDelay,
-        getDebounceDelay,
-        getStats,
-    };
-    window.SessionManager = SessionManager;
+
+    // Create singleton instance
+    const sessionManager = new SessionManager();
+
+    // Export to global scope
+    window.SessionManager = sessionManager;
 })();
-//# sourceMappingURL=session-manager.js.map
