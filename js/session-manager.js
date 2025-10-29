@@ -19,6 +19,7 @@ console.log('SessionManager loaded');
     let pendingSaveTypes = new Set(); // Track which instance types need saving
     let quotaExceeded = false;
     let saveInProgress = false;
+    let lastSaveAttempt = 0;
     // ===== Storage Helpers =====
     /**
      * Estimate size of data in bytes (rough approximation)

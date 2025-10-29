@@ -4137,6 +4137,7 @@ var App = (() => {
         let pendingSaveTypes = /* @__PURE__ */ new Set();
         let quotaExceeded = false;
         let saveInProgress = false;
+        let lastSaveAttempt = 0;
         function estimateSize(data) {
           try {
             return JSON.stringify(data).length * 2;

@@ -1,27 +1,49 @@
-"use strict";
 /**
  * settings.ts
  * Settings Module - Inline settings UI with theme and language preferences
  */
-Object.defineProperty(exports, "__esModule", { value: true });
+
 console.log('Settings Module loaded');
+
 (() => {
     'use strict';
+
+    // ===== Types =====
+
+    type SectionName = 'general' | 'display' | 'language';
+
+    interface SettingsSystemType {
+        currentSection: SectionName;
+        container: HTMLElement | null;
+        init(containerOrId: HTMLElement | string): void;
+        render(): void;
+        attachListeners(): void;
+        syncThemePreference(): void;
+        syncLanguagePreference(): void;
+        showSection(section: SectionName): void;
+        destroy(): void;
+    }
+
     // ===== Settings System Implementation =====
-    const SettingsSystem = {
+
+    const SettingsSystem: SettingsSystemType = {
         currentSection: 'general',
         container: null,
+
         /**
          * Initialize settings module in container
          */
-        init(containerOrId) {
-            const container = typeof containerOrId === 'string'
-                ? document.getElementById(containerOrId)
-                : containerOrId;
+        init(containerOrId: HTMLElement | string): void {
+            const container =
+                typeof containerOrId === 'string'
+                    ? document.getElementById(containerOrId)
+                    : containerOrId;
+
             if (!container) {
                 console.error('Settings container not found:', containerOrId);
                 return;
             }
+
             this.container = container;
             this.render();
             this.attachListeners();
@@ -29,12 +51,13 @@ console.log('Settings Module loaded');
             this.syncLanguagePreference();
             this.showSection('general');
         },
+
         /**
          * Render settings UI
          */
-        render() {
-            if (!this.container)
-                return;
+        render(): void {
+            if (!this.container) return;
+
             this.container.innerHTML = `
                 <div class="flex dialog-content settings-panel rounded-b-xl overflow-hidden h-full">
                     <!-- Linke Seitenleiste -->
@@ -171,54 +194,55 @@ console.log('Settings Module loaded');
                     </div>
                 </div>
             `;
+
             // Apply i18n translations
-            const appI18n = window.appI18n;
+            const appI18n = (window as Window & { appI18n?: { applyTranslations(el: HTMLElement): void } }).appI18n;
             if (appI18n?.applyTranslations) {
                 appI18n.applyTranslations(this.container);
             }
         },
+
         /**
          * Attach event listeners
          */
-        attachListeners() {
-            if (!this.container)
-                return;
+        attachListeners(): void {
+            if (!this.container) return;
+
             // Theme preference change listeners
-            const themeRadios = this.container.querySelectorAll('input[name="theme-mode"]');
+            const themeRadios = this.container.querySelectorAll<HTMLInputElement>('input[name="theme-mode"]');
             themeRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
-                    if (!radio.checked)
-                        return;
+                    if (!radio.checked) return;
+
                     const theme = radio.value;
                     // Call global API if available
-                    const API = window.API;
+                    const API = (window as Window & { API?: { theme?: { setThemePreference(mode: string): void } } }).API;
                     if (API?.theme?.setThemePreference) {
                         API.theme.setThemePreference(theme);
-                    }
-                    else {
+                    } else {
                         // Fallback to ThemeSystem
-                        const ThemeSystem = window.ThemeSystem;
+                        const ThemeSystem = (window as Window & { ThemeSystem?: { setThemePreference(mode: string): void } }).ThemeSystem;
                         if (ThemeSystem?.setThemePreference) {
                             ThemeSystem.setThemePreference(theme);
                         }
                     }
                 });
             });
+
             // Language preference change listeners
-            const languageRadios = this.container.querySelectorAll('input[name="language-preference"]');
+            const languageRadios = this.container.querySelectorAll<HTMLInputElement>('input[name="language-preference"]');
             languageRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
-                    if (!radio.checked)
-                        return;
+                    if (!radio.checked) return;
+
                     const lang = radio.value;
                     // Call global API if available
-                    const API = window.API;
+                    const API = (window as Window & { API?: { i18n?: { setLanguagePreference(lang: string): void } } }).API;
                     if (API?.i18n?.setLanguagePreference) {
                         API.i18n.setLanguagePreference(lang);
-                    }
-                    else {
+                    } else {
                         // Fallback to appI18n
-                        const appI18n = window.appI18n;
+                        const appI18n = (window as Window & { appI18n?: { setLanguagePreference(lang: string): void } }).appI18n;
                         if (appI18n?.setLanguagePreference) {
                             appI18n.setLanguagePreference(lang);
                         }
@@ -226,90 +250,112 @@ console.log('Settings Module loaded');
                 });
             });
         },
+
         /**
          * Sync theme preference from global state
          */
-        syncThemePreference() {
-            if (!this.container)
-                return;
+        syncThemePreference(): void {
+            if (!this.container) return;
+
             let preference = 'system';
-            const API = window.API;
-            const ThemeSystem = window.ThemeSystem;
+            const API = (window as Window & { API?: { theme?: { getThemePreference(): string } } }).API;
+            const ThemeSystem = (window as Window & { ThemeSystem?: { getThemePreference(): string } }).ThemeSystem;
+
             if (API?.theme?.getThemePreference) {
                 preference = API.theme.getThemePreference();
-            }
-            else if (ThemeSystem?.getThemePreference) {
+            } else if (ThemeSystem?.getThemePreference) {
                 preference = ThemeSystem.getThemePreference();
             }
-            const themeRadios = this.container.querySelectorAll('input[name="theme-mode"]');
+
+            const themeRadios = this.container.querySelectorAll<HTMLInputElement>('input[name="theme-mode"]');
             themeRadios.forEach(radio => {
                 radio.checked = radio.value === preference;
             });
         },
+
         /**
          * Sync language preference from global state
          */
-        syncLanguagePreference() {
-            if (!this.container)
-                return;
+        syncLanguagePreference(): void {
+            if (!this.container) return;
+
             let preference = 'system';
-            const API = window.API;
-            const appI18n = window.appI18n;
+            const API = (window as Window & { API?: { i18n?: { getLanguagePreference(): string } } }).API;
+            const appI18n = (window as Window & { appI18n?: { getLanguagePreference(): string } }).appI18n;
+
             if (API?.i18n?.getLanguagePreference) {
                 preference = API.i18n.getLanguagePreference();
-            }
-            else if (appI18n?.getLanguagePreference) {
+            } else if (appI18n?.getLanguagePreference) {
                 preference = appI18n.getLanguagePreference();
             }
-            const languageRadios = this.container.querySelectorAll('input[name="language-preference"]');
+
+            const languageRadios = this.container.querySelectorAll<HTMLInputElement>('input[name="language-preference"]');
             languageRadios.forEach(radio => {
                 radio.checked = radio.value === preference;
             });
         },
+
         /**
          * Show specific settings section
          */
-        showSection(section) {
-            if (!this.container)
-                return;
+        showSection(section: SectionName): void {
+            if (!this.container) return;
+
             this.currentSection = section;
+
             // Hide all sections
-            const sections = ['general', 'display', 'language'];
+            const sections: SectionName[] = ['general', 'display', 'language'];
             sections.forEach(name => {
                 const el = this.container?.querySelector(`#settings-${name}`);
                 if (el) {
                     el.classList.add('hidden');
                 }
             });
+
             // Show target section
             const target = this.container.querySelector(`#settings-${section}`);
             if (target) {
                 target.classList.remove('hidden');
             }
+
             // Update nav highlighting
             const navItems = this.container.querySelectorAll('[data-action="settings:showSection"]');
             navItems.forEach(item => {
                 const itemSection = item.getAttribute('data-section');
                 if (itemSection === section) {
-                    item.classList.add('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-gray-100', 'font-medium');
-                }
-                else {
-                    item.classList.remove('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-gray-100', 'font-medium');
+                    item.classList.add(
+                        'bg-white',
+                        'dark:bg-gray-600',
+                        'text-gray-900',
+                        'dark:text-gray-100',
+                        'font-medium'
+                    );
+                } else {
+                    item.classList.remove(
+                        'bg-white',
+                        'dark:bg-gray-600',
+                        'text-gray-900',
+                        'dark:text-gray-100',
+                        'font-medium'
+                    );
                 }
             });
         },
+
         /**
          * Destroy settings module
          */
-        destroy() {
+        destroy(): void {
             if (this.container) {
                 this.container.innerHTML = '';
                 this.container = null;
             }
         },
     };
+
     // Export to global scope
-    window.SettingsSystem = SettingsSystem;
+    (window as Window & { SettingsSystem: SettingsSystemType }).SettingsSystem = SettingsSystem;
+
     // Auto-init if container exists on load
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
@@ -318,12 +364,12 @@ console.log('Settings Module loaded');
                 SettingsSystem.init(container);
             }
         });
-    }
-    else {
+    } else {
         const container = document.getElementById('settings-container');
         if (container) {
             SettingsSystem.init(container);
         }
     }
 })();
-//# sourceMappingURL=settings.js.map
+
+export {};
