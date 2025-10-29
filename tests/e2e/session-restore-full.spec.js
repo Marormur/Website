@@ -2,7 +2,7 @@
 // Validates restoration of instances, modals, active tabs, and UI state
 
 const { test, expect } = require('@playwright/test');
-const { waitForAppReady } = require('./utils');
+const { waitForAppReady, clickDockIcon } = require('./utils');
 
 test.describe('Session Restore - Full Integration @basic', () => {
     test.beforeEach(async ({ page }) => {
@@ -26,9 +26,8 @@ test.describe('Session Restore - Full Integration @basic', () => {
             return;
         }
 
-        // Open terminal modal
-        const terminalItem = page.locator('[data-item-id="terminal"]').first();
-        await terminalItem.click();
+        // Open terminal modal via Dock
+        await clickDockIcon(page, 'terminal-modal');
         
         await page.waitForTimeout(500);
 
@@ -101,9 +100,8 @@ test.describe('Session Restore - Full Integration @basic', () => {
             return;
         }
 
-        // Open text editor modal
-        const textEditorItem = page.locator('[data-item-id="text"]').first();
-        await textEditorItem.click();
+        // Open text editor modal via Dock
+        await clickDockIcon(page, 'text-modal');
         
         await page.waitForTimeout(500);
 
@@ -277,9 +275,8 @@ test.describe('Session Restore - Full Integration @basic', () => {
             return;
         }
 
-        // Create a terminal instance
-        const terminalItem = page.locator('[data-item-id="terminal"]').first();
-        await terminalItem.click();
+        // Create a terminal instance via Dock
+        await clickDockIcon(page, 'terminal-modal');
         await page.waitForTimeout(300);
 
         await page.evaluate(() => {
