@@ -203,7 +203,12 @@ console.log('Finder.js loaded');
         if (!refs)
             return;
         // Entferne alle aktiven Markierungen
-        [refs.sidebarComputer, refs.sidebarGithub, refs.sidebarFavorites, refs.sidebarRecent].forEach((el) => {
+        [
+            refs.sidebarComputer,
+            refs.sidebarGithub,
+            refs.sidebarFavorites,
+            refs.sidebarRecent,
+        ].forEach(el => {
             if (el)
                 el.classList.remove('finder-sidebar-active');
         });
@@ -321,9 +326,9 @@ console.log('Finder.js loaded');
                     })
                     : fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`, {
                         headers: getGithubHeaders(),
-                    }).then((r) => (r.ok ? r.json() : Promise.reject(r))))
+                    }).then(r => (r.ok ? r.json() : Promise.reject(r))))
                     .then((repos) => {
-                    const list = (Array.isArray(repos) ? repos : []).map((r) => ({
+                    const list = (Array.isArray(repos) ? repos : []).map(r => ({
                         name: r.name ||
                             (global.translate
                                 ? global.translate('finder.repoUnnamed')
@@ -393,7 +398,7 @@ console.log('Finder.js loaded');
                     },
                 ];
             }
-            return finderState.githubRepos.map((r) => ({
+            return finderState.githubRepos.map(r => ({
                 name: r.name ||
                     (global.translate
                         ? global.translate('finder.repoUnnamed')
@@ -427,9 +432,9 @@ console.log('Finder.js loaded');
                 ? global.GitHubAPI.fetchRepoContents(GITHUB_USERNAME, repo, subPath || '')
                 : fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${encodeURIComponent(repo)}/contents${pathPart}`, {
                     headers: getGithubHeaders(),
-                }).then((r) => (r.ok ? r.json() : Promise.reject(r))))
+                }).then(r => (r.ok ? r.json() : Promise.reject(r))))
                 .then((items) => {
-                const mapped = (Array.isArray(items) ? items : [items]).map((it) => {
+                const mapped = (Array.isArray(items) ? items : [items]).map(it => {
                     const isDir = it.type === 'dir';
                     return {
                         name: it.name,
@@ -504,7 +509,7 @@ console.log('Finder.js loaded');
         return list;
     }
     function getFavoriteItems() {
-        return Array.from(finderState.favorites).map((path) => ({
+        return Array.from(finderState.favorites).map(path => ({
             name: path.split('/').pop() || '',
             type: 'favorite',
             icon: '⭐',
@@ -512,7 +517,7 @@ console.log('Finder.js loaded');
         }));
     }
     function getRecentItems() {
-        return finderState.recentFiles.map((file) => ({
+        return finderState.recentFiles.map(file => ({
             name: file.name,
             type: 'recent',
             icon: file.icon || '📄',
@@ -568,8 +573,7 @@ console.log('Finder.js loaded');
                     break;
                 case 'date':
                     comparison =
-                        new Date(b.modified || 0).getTime() -
-                            new Date(a.modified || 0).getTime();
+                        new Date(b.modified || 0).getTime() - new Date(a.modified || 0).getTime();
                     break;
                 case 'type':
                     comparison = (a.type || '').localeCompare(b.type || '');
@@ -594,7 +598,7 @@ console.log('Finder.js loaded');
                 </thead>
                 <tbody>
                     ${items
-            .map((item) => `
+            .map(item => `
                         <tr class="finder-list-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                             <td>
                                 <span class="finder-item-icon">${item.icon}</span>
@@ -617,7 +621,7 @@ console.log('Finder.js loaded');
         const html = `
             <div class="finder-grid-container">
                 ${items
-            .map((item) => `
+            .map(item => `
                     <div class="finder-grid-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                         <div class="finder-grid-icon">${item.icon}</div>
                         <div class="finder-grid-name">${item.name}</div>
@@ -641,7 +645,7 @@ console.log('Finder.js loaded');
         }
         else if (type === 'action') {
             const items = getCurrentItems();
-            const item = items.find((i) => i.name === name);
+            const item = items.find(i => i.name === name);
             if (item && item.action) {
                 item.action();
             }
@@ -656,7 +660,7 @@ console.log('Finder.js loaded');
         // GitHub-spezifische Datei-Öffnung (inline)
         if (finderState.currentView === 'github') {
             const items = getCurrentItems();
-            const entry = items.find((i) => i && i.name === name);
+            const entry = items.find(i => i && i.name === name);
             const isImage = isImageFile(name);
             const isText = isProbablyTextFile(name);
             if (entry && (isImage || isText)) {
@@ -766,13 +770,13 @@ console.log('Finder.js loaded');
         if (!filename)
             return false;
         const lower = String(filename).toLowerCase();
-        return textFileExtensions.some((ext) => lower.endsWith(ext));
+        return textFileExtensions.some(ext => lower.endsWith(ext));
     }
     function isImageFile(filename) {
         if (!filename)
             return false;
         const lower = String(filename).toLowerCase();
-        return imageFileExtensions.some((ext) => lower.endsWith(ext));
+        return imageFileExtensions.some(ext => lower.endsWith(ext));
     }
     function ensureImageViewerOpen() {
         const dlg = global.dialogs && global.dialogs['image-modal'];
@@ -833,7 +837,7 @@ console.log('Finder.js loaded');
                 ? global.GitHubAPI.fetchJSON(entry.url)
                 : fetch(entry.url, {
                     headers: { Accept: 'application/vnd.github.v3+json' },
-                }).then((r) => (r.ok ? r.json() : Promise.reject(r)));
+                }).then(r => (r.ok ? r.json() : Promise.reject(r)));
             p.then((data) => {
                 if (data && typeof data.download_url === 'string') {
                     finalize(data.download_url);
@@ -855,7 +859,7 @@ console.log('Finder.js loaded');
         }
         const fetchText = () => {
             if (entry.download_url) {
-                return fetch(entry.download_url).then((r) => {
+                return fetch(entry.download_url).then(r => {
                     if (!r.ok)
                         throw new Error('Download failed');
                     return r.text();
@@ -866,16 +870,18 @@ console.log('Finder.js loaded');
                     ? global.GitHubAPI.fetchJSON(entry.url)
                     : fetch(entry.url, {
                         headers: { Accept: 'application/vnd.github.v3+json' },
-                    }).then((r) => (r.ok ? r.json() : Promise.reject(r)));
+                    }).then(r => (r.ok ? r.json() : Promise.reject(r)));
                 return p.then((data) => {
                     if (data && typeof data.download_url === 'string') {
-                        return fetch(data.download_url).then((r) => {
+                        return fetch(data.download_url).then(r => {
                             if (!r.ok)
                                 throw new Error('Download failed');
                             return r.text();
                         });
                     }
-                    if (data && data.encoding === 'base64' && typeof data.content === 'string') {
+                    if (data &&
+                        data.encoding === 'base64' &&
+                        typeof data.content === 'string') {
                         try {
                             return atob(data.content.replace(/\s/g, ''));
                         }
@@ -889,7 +895,7 @@ console.log('Finder.js loaded');
             return Promise.reject(new Error('No source'));
         };
         fetchText()
-            .then((content) => {
+            .then(content => {
             // Load remote file via direct API call
             if (global.API && global.API.textEditor) {
                 global.API.textEditor.loadRemoteFile(Object.assign({}, payloadBase, { content }));

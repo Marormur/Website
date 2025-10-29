@@ -24,6 +24,7 @@ console.log('SessionManager loaded');
         timestamp: number;
         instances: Record<string, InstanceData[]>; // Keyed by instance type (terminal, text-editor, etc.)
         active?: Record<string, string | null>; // Keyed by type -> active instanceId
+        windowStack?: string[]; // Z-index order of windows (bottom to top)
     };
 
     type SaveOptions = {
@@ -169,7 +170,10 @@ console.log('SessionManager loaded');
     /**
      * Serialize all instances from all managers
      */
-    function serializeAllInstances(): { instances: Record<string, InstanceData[]>; active: Record<string, string | null> } {
+    function serializeAllInstances(): {
+        instances: Record<string, InstanceData[]>;
+        active: Record<string, string | null>;
+    } {
         const result: Record<string, InstanceData[]> = {};
         const active: Record<string, string | null> = {};
         const managers = getInstanceManagers();
@@ -178,7 +182,9 @@ console.log('SessionManager loaded');
             const mgr = manager as Record<string, unknown>;
             if (typeof mgr.serializeAll === 'function') {
                 try {
-                    const instances = (mgr.serializeAll as unknown as (this: unknown) => unknown).call(mgr);
+                    const instances = (
+                        mgr.serializeAll as unknown as (this: unknown) => unknown
+                    ).call(mgr);
                     if (Array.isArray(instances)) {
                         result[type] = instances as InstanceData[];
                     }
@@ -221,11 +227,20 @@ console.log('SessionManager loaded');
 
         try {
             const { instances, active } = serializeAllInstances();
+
+            // Capture current window z-index order from Dialog's __zIndexManager
+            const zIndexManager = (window as any).__zIndexManager;
+            const windowStack =
+                zIndexManager && typeof zIndexManager.getWindowStack === 'function'
+                    ? zIndexManager.getWindowStack()
+                    : [];
+
             const session: SessionData = {
                 version: SESSION_VERSION,
                 timestamp: Date.now(),
                 instances,
                 active,
+                windowStack,
             };
 
             const success = writeSession(session);
@@ -331,7 +346,10 @@ console.log('SessionManager loaded');
                         try {
                             (mgr as any).setActiveInstance(activeId);
                         } catch (e) {
-                            console.warn(`SessionManager: Failed to set active instance for ${type}:`, e);
+                            console.warn(
+                                `SessionManager: Failed to set active instance for ${type}:`,
+                                e
+                            );
                         }
                     }
                 } catch (err) {
@@ -342,6 +360,22 @@ console.log('SessionManager loaded');
                 }
             }
         });
+
+        // Restore z-index order from saved windowStack
+        const windowStack = session.windowStack || [];
+        if (windowStack.length > 0) {
+            const zIndexManager = (window as any).__zIndexManager;
+            if (zIndexManager && typeof zIndexManager.restoreWindowStack === 'function') {
+                try {
+                    zIndexManager.restoreWindowStack(windowStack);
+                    console.log(
+                        `SessionManager: Restored z-index order for ${windowStack.length} windows`
+                    );
+                } catch (err) {
+                    console.warn('SessionManager: Failed to restore window z-index order:', err);
+                }
+            }
+        }
 
         console.log(`SessionManager: Restored ${restoredCount} instances total`);
         return restoredCount > 0;

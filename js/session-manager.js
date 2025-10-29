@@ -177,11 +177,17 @@ console.log('SessionManager loaded');
         saveInProgress = true;
         try {
             const { instances, active } = serializeAllInstances();
+            // Capture current window z-index order from Dialog's __zIndexManager
+            const zIndexManager = window.__zIndexManager;
+            const windowStack = zIndexManager && typeof zIndexManager.getWindowStack === 'function'
+                ? zIndexManager.getWindowStack()
+                : [];
             const session = {
                 version: SESSION_VERSION,
                 timestamp: Date.now(),
                 instances,
                 active,
+                windowStack,
             };
             const success = writeSession(session);
             if (success) {
@@ -283,6 +289,20 @@ console.log('SessionManager loaded');
                 }
             }
         });
+        // Restore z-index order from saved windowStack
+        const windowStack = session.windowStack || [];
+        if (windowStack.length > 0) {
+            const zIndexManager = window.__zIndexManager;
+            if (zIndexManager && typeof zIndexManager.restoreWindowStack === 'function') {
+                try {
+                    zIndexManager.restoreWindowStack(windowStack);
+                    console.log(`SessionManager: Restored z-index order for ${windowStack.length} windows`);
+                }
+                catch (err) {
+                    console.warn('SessionManager: Failed to restore window z-index order:', err);
+                }
+            }
+        }
         console.log(`SessionManager: Restored ${restoredCount} instances total`);
         return restoredCount > 0;
     }

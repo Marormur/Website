@@ -318,6 +318,58 @@ console.log('FinderInstance loaded');
         }
 
         /**
+         * Get current folder name for tab title
+         */
+        getCurrentFolderName() {
+            const _lang = (
+                window.appI18n?.getActiveLanguage?.() ||
+                document.documentElement?.lang ||
+                'de'
+            ).toLowerCase();
+            const _isDe = _lang.startsWith('de');
+
+            // If at root of a view, use view name
+            if (this.currentPath.length === 0) {
+                switch (this.currentView) {
+                    case 'computer':
+                        return _isDe ? 'Computer' : 'Computer';
+                    case 'github':
+                        return _isDe ? 'GitHub Projekte' : 'GitHub Projects';
+                    case 'favorites':
+                        return _isDe ? 'Favoriten' : 'Favorites';
+                    case 'recent':
+                        return _isDe ? 'Zuletzt geöffnet' : 'Recently opened';
+                    default:
+                        return 'Finder';
+                }
+            }
+
+            // Return last path segment (current folder name)
+            return this.currentPath[this.currentPath.length - 1];
+        }
+
+        /**
+         * Update tab title to reflect current folder
+         */
+        updateTabTitle() {
+            const folderName = this.getCurrentFolderName();
+            this.title = folderName;
+            
+            // Notify tab controller if available
+            try {
+                const tabController = document.querySelector(`#finder-tabs-container`);
+                if (tabController && window.multiInstanceIntegration) {
+                    const integration = window.multiInstanceIntegration.integrations?.get?.('finder');
+                    if (integration?.tabManager?.setTitle) {
+                        integration.tabManager.setTitle(this.instanceId, folderName);
+                    }
+                }
+            } catch (e) {
+                // Ignore - tab controller might not be available yet
+            }
+        }
+
+        /**
          * Navigate to path
          */
         navigateTo(path, view = null) {
@@ -334,6 +386,7 @@ console.log('FinderInstance loaded');
             this.updateSidebarSelection();
             this.renderBreadcrumbs();
             this.renderContent();
+            this.updateTabTitle();
             this.updateState({
                 currentPath: this.currentPath,
                 currentView: this.currentView,
@@ -413,7 +466,11 @@ console.log('FinderInstance loaded');
             const parts = [];
 
             // View label (localized)
-            const _lang = (window.appI18n?.getActiveLanguage?.() || document.documentElement?.lang || 'de').toLowerCase();
+            const _lang = (
+                window.appI18n?.getActiveLanguage?.() ||
+                document.documentElement?.lang ||
+                'de'
+            ).toLowerCase();
             const _isDe = _lang.startsWith('de');
             let viewLabel = '';
             switch (this.currentView) {
@@ -469,8 +526,14 @@ console.log('FinderInstance loaded');
             if (items.length === 0) {
                 let emptyText = 'Dieser Ordner ist leer';
                 try {
-                    const lang = (window.appI18n?.getActiveLanguage?.() || document.documentElement?.lang || 'de').toLowerCase();
-                    emptyText = lang.startsWith('de') ? 'Dieser Ordner ist leer' : 'This folder is empty';
+                    const lang = (
+                        window.appI18n?.getActiveLanguage?.() ||
+                        document.documentElement?.lang ||
+                        'de'
+                    ).toLowerCase();
+                    emptyText = lang.startsWith('de')
+                        ? 'Dieser Ordner ist leer'
+                        : 'This folder is empty';
                 } catch {}
                 this.domRefs.contentArea.innerHTML = `
                     <div class="finder-empty-state">
@@ -622,8 +685,8 @@ console.log('FinderInstance loaded');
                     </thead>
                     <tbody>
                         ${items
-        .map(
-            item => `
+                            .map(
+                                item => `
                             <tr class="finder-list-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                                 <td>
                                     <span class="finder-item-icon">${item.icon}</span>
@@ -633,8 +696,8 @@ console.log('FinderInstance loaded');
                                 <td>${this.formatDate(item.modified)}</td>
                             </tr>
                         `
-        )
-        .join('')}
+                            )
+                            .join('')}
                     </tbody>
                 </table>
                 </div>
@@ -651,15 +714,15 @@ console.log('FinderInstance loaded');
                 <div id="finder-list-container">
                 <div class="finder-grid-container">
                     ${items
-        .map(
-            item => `
+                        .map(
+                            item => `
                         <div class="finder-grid-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                             <div class="finder-grid-icon">${item.icon}</div>
                             <div class="finder-grid-name">${item.name}</div>
                         </div>
                     `
-        )
-        .join('')}
+                        )
+                        .join('')}
                 </div>
                 </div>
             `;
@@ -931,7 +994,7 @@ console.log('FinderInstance loaded');
         deserialize(data) {
             // Signal that we're in restore mode to prevent double rendering
             this._skipInitialRender = true;
-            
+
             super.deserialize(data);
 
             if (data.currentPath) {

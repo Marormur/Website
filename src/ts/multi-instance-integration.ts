@@ -84,9 +84,14 @@
                         if (raw) {
                             const map = JSON.parse(raw) as Record<string, string | null>;
                             const wanted = map?.[type] || null;
-                            if (wanted && typeof (manager as any).setActiveInstance === 'function') {
+                            if (
+                                wanted &&
+                                typeof (manager as any).setActiveInstance === 'function'
+                            ) {
                                 // Only set if the instance exists to avoid creating new ones
-                                const exists = manager.getAllInstances().some(i => i.instanceId === wanted);
+                                const exists = manager
+                                    .getAllInstances()
+                                    .some(i => i.instanceId === wanted);
                                 if (exists) (manager as any).setActiveInstance(wanted);
                             }
                         }

@@ -52,4 +52,3 @@ test.describe('Finder active tab persistence across reload', () => {
         expect(afterId).toBe(beforeId);
     });
 });
- 

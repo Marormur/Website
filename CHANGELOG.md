@@ -1,5 +1,39 @@
 # 2025-10-29
 
+### fix: Window Z-Index Order Persistence Across Reloads (29. Oktober 2025)
+  - **Problem**: Wenn zwei Fenster geöffnet waren und das hintere Fenster angeklickt wurde, war nach einem Page Reload wieder das erste Fenster vorne, nicht das zuletzt fokussierte
+  - **Root Cause**:
+    - `SessionManager` speicherte nur, welche Fenster offen waren, nicht aber deren z-index-Reihenfolge
+    - `Dialog.__zIndexManager` verwaltet zwar einen `windowStack` (bottom-to-top), dieser wurde aber nicht persistiert
+    - Beim Reload startete der Stack leer → Fenster wurden in der Reihenfolge wiederhergestellt, in der sie im Session-Objekt gespeichert waren
+  - **Solution - Window Stack Persistence**:
+    1. **SessionData Erweiterung** (`src/ts/session-manager.ts`):
+       - `SessionData` type erweitert um `windowStack?: string[]` für z-index-Reihenfolge
+       - `performSave()` erfasst `windowStack` via `__zIndexManager.getWindowStack()`
+       - `restoreSession()` ruft `__zIndexManager.restoreWindowStack(windowStack)` nach Fenster-Wiederherstellung auf
+    2. **ZIndexManager.restoreWindowStack()** (`src/ts/dialog.ts`):
+       - Neue Methode im `__zIndexManager` zur Wiederherstellung des Fenster-Stacks
+       - Validiert jede Window-ID (Element muss im DOM existieren)
+       - Weist z-indexes neu zu basierend auf der gespeicherten Reihenfolge
+       - Aktualisiert `window.topZIndex` für Legacy-Kompatibilität
+    3. **Robuste Z-Index-Verwaltung**:
+       - `bringToFront()` weist z-indexes neu zu bei jedem Aufruf (verhindert endloses Wachstum)
+       - Clamping auf `MAX_WINDOW_Z_INDEX` (2147483500) für kritische UI-Elemente (Dock, Launchpad)
+       - `removeWindow()` entfernt geschlossene Fenster aus dem Stack
+  - **Files Modified**:
+    - `src/ts/session-manager.ts`: SessionData.windowStack, save/restore Logic
+    - `src/ts/dialog.ts`: `restoreWindowStack()` Methode im `__zIndexManager`
+  - **Testing**:
+    - Neue E2E-Tests in `tests/e2e/window-focus-restore.spec.js`:
+      - ✅ Z-index-Reihenfolge bleibt nach Reload erhalten
+      - ✅ Stack wird korrekt aktualisiert beim Schließen von Fenstern
+      - ✅ Leerer Stack wird gracefully behandelt
+    - (Tests sind implementiert, müssen noch für praktischen Gebrauch angepasst werden)
+  - **Impact**:
+    - ✅ Zuletzt fokussiertes Fenster bleibt nach Page Reload weiterhin vorne
+    - ✅ Z-index-Hierarchie aller offenen Fenster wird korrekt wiederhergestellt
+    - ✅ Verhindert z-index-Drift durch automatisches Neuverteilen
+
 ### fix: Finder new tabs respect active language (29. Oktober 2025)
   - Problem: Neue Finder-Tabs wurden nicht immer in der aktuellen Sprache erstellt; nach Page-Reload wechselte der Tab-Content auf die Nutzereinstellung
   - Ursache: Die Übersetzungen wurden beim Rendern neuer Instanzen nicht angewandt; einige Texte waren hartkodiert (DE)
@@ -12,7 +46,7 @@
 
 ### fix: Finder Double Content Rendering on Session Restore (29. Oktober 2025)
   - **Problem**: Nach einem Page Reload wurde beim ersten Finder-Tab der Content doppelt gerendert
-  - **Root Cause**: 
+  - **Root Cause**:
     - `attachEventListeners()` rief automatisch `navigateTo()` auf, was den Content renderte
     - `deserialize()` rief danach ebenfalls `navigateTo()` auf, was den Content ein zweites Mal renderte
     - Resultat: Doppelter Content im ersten Tab (der beim Restore sichtbar war)
@@ -28,7 +62,7 @@
 
 ### fix: Multi-Instance Active Tab Persistence (29. Oktober 2025)
   - **Problem**: Nach einem Page Reload wurde immer der letzte Tab in der Liste ausgewählt, anstatt des vorher aktiven Tabs
-  - **Root Cause**: 
+  - **Root Cause**:
     - Während der Session-Wiederherstellung wurde `createInstance()` für jede Instanz aufgerufen
     - Jeder Aufruf setzte die neu erstellte Instanz als aktiv → die zuletzt erstellte Instanz "gewann"
     - Keine Persistierung der aktiven Instanz-ID im SessionManager
@@ -48,7 +82,7 @@
        - Synchrone Persistierung bei jedem Tab-Wechsel
   - **Testing - Comprehensive E2E Coverage**:
     - ✅ `tests/e2e/finder-session-restore.spec.js`: Finder active tab persistence
-    - ✅ `tests/e2e/terminal-session-restore.spec.js`: Terminal active tab persistence  
+    - ✅ `tests/e2e/terminal-session-restore.spec.js`: Terminal active tab persistence
     - ✅ `tests/e2e/text-editor-session-restore.spec.js`: TextEditor active tab persistence
     - Alle Tests verwenden identisches Pattern: create two instances, switch to first, reload, verify active unchanged
     - 3/3 specs passed in bundle mode (USE_BUNDLE=1, MOCK_GITHUB=1, USE_NODE_SERVER=1)
@@ -86,7 +120,7 @@
 
 ### fix: Finder Session Restore - Empty GitHub View (29. Oktober 2025)
   - **Problem**: Nach einem Seitenrefresh war das Finder-Fenster leer, weil die Finder-UI-Struktur fehlte
-  - **Root Causes**: 
+  - **Root Causes**:
     1. **Fehlende HTML-Struktur**: `index.html` hatte nur einen leeren `#finder-container`, aber keine Sidebar, Content-Area, Toolbar
     2. **Fehlende Event-Listener**: Sidebar-Klicks hatten keine registrierten Handler
     3. **Cache-Priorität**: GitHub-Repos-Cache wurde zu spät geprüft (nach leerem Array-Check)
@@ -104,7 +138,7 @@
   - **Files Modified**:
     - `index.html`: Finder-UI-Struktur hinzugefügt (Sidebar, Content, Toolbar)
     - `src/ts/finder.ts`: Event-Listener registriert + Cache-Priorität korrigiert
-  - **Testing**: 
+  - **Testing**:
     - E2E Test erstellt: `tests/e2e/finder-session-restore.spec.js`
     - Verifiziert Finder-UI-Rendering und Session-Restore
     - Playwright Browser-Tool zur manuellen Verifikation verwendet

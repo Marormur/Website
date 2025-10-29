@@ -148,7 +148,7 @@ function initApp(): void {
         modalIds.forEach(id => {
             const modal = document.getElementById(id);
             if (!modal || !win.Dialog) return;
-            
+
             try {
                 const dialogInstance = new win.Dialog(id);
                 dialogs[id] = dialogInstance as unknown as Record<string, unknown>;
@@ -241,7 +241,7 @@ function initApp(): void {
     if (win.DockSystem && typeof win.DockSystem.initDockDragDrop === 'function') {
         win.DockSystem.initDockDragDrop();
     }
-    
+
     // Initialize SessionManager for auto-save and restore session if available
     if (win.SessionManager) {
         try {
@@ -416,7 +416,9 @@ function initApp(): void {
         // make sure tests can proceed by marking ready after a short grace period.
         setTimeout(() => {
             if (!gw.__APP_READY) {
-                console.warn('[APP-INIT] load event not observed within timeout; forcing __APP_READY');
+                console.warn(
+                    '[APP-INIT] load event not observed within timeout; forcing __APP_READY'
+                );
                 markReady();
             }
         }, 4000);

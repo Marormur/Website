@@ -348,6 +348,41 @@ export class Dialog {
                 return [...windowStack];
             },
 
+            restoreWindowStack(savedStack: string[]) {
+                // Clear current stack
+                windowStack.length = 0;
+
+                // Restore stack in order, validating each window exists
+                savedStack.forEach(windowId => {
+                    const element = document.getElementById(windowId);
+                    if (element) {
+                        windowStack.push(windowId);
+                    }
+                });
+
+                // Reassign z-indexes based on restored order
+                windowStack.forEach((id, index) => {
+                    const zIndex = BASE_Z_INDEX + index;
+                    const element = document.getElementById(id);
+
+                    if (element) {
+                        const clampedZIndex = Math.min(zIndex, MAX_WINDOW_Z_INDEX);
+                        element.style.zIndex = clampedZIndex.toString();
+
+                        const win = element.querySelector('.window-container') as HTMLElement;
+                        if (win) {
+                            win.style.zIndex = clampedZIndex.toString();
+                        }
+                    }
+                });
+
+                // Update legacy topZIndex
+                (window as any).topZIndex = Math.min(
+                    BASE_Z_INDEX + windowStack.length,
+                    MAX_WINDOW_Z_INDEX
+                );
+            },
+
             reset() {
                 windowStack.length = 0;
                 (window as any).topZIndex = BASE_Z_INDEX;
@@ -733,4 +768,3 @@ export class Dialog {
 // Note: Type declaration is in types/index.d.ts
 (window as any).Dialog = Dialog;
 export default Dialog;
-

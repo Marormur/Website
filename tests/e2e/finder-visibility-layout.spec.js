@@ -16,9 +16,9 @@ async function getVisibleAndParentWidths(page) {
     return await page.evaluate(() => {
         const parent = document.getElementById('finder-container');
         if (!parent) return { parent: 0, visible: 0 };
-        const visible = Array.from(
-            parent.querySelectorAll('.finder-instance-container')
-        ).find(el => !el.classList.contains('hidden'));
+        const visible = Array.from(parent.querySelectorAll('.finder-instance-container')).find(
+            el => !el.classList.contains('hidden')
+        );
         if (!visible) return { parent: parent.getBoundingClientRect().width, visible: 0 };
         const parentWidth = parent.getBoundingClientRect().width;
         const visibleWidth = visible.getBoundingClientRect().width;

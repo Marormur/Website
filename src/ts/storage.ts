@@ -154,7 +154,10 @@
                         try {
                             openFn();
                         } catch (openErr) {
-                            console.warn(`Error restoring modal "${id}" via dialog.open():`, openErr);
+                            console.warn(
+                                `Error restoring modal "${id}" via dialog.open():`,
+                                openErr
+                            );
                             // Final fallback: show element directly
                             const domUtils = (
                                 w as unknown as { DOMUtils?: { show?: (el: Element) => void } }
@@ -375,4 +378,3 @@
 
     w['StorageSystem'] = api;
 })();
-

@@ -2906,6 +2906,31 @@ var App = (() => {
             getWindowStack() {
               return [...windowStack];
             },
+            restoreWindowStack(savedStack) {
+              windowStack.length = 0;
+              savedStack.forEach((windowId) => {
+                const element = document.getElementById(windowId);
+                if (element) {
+                  windowStack.push(windowId);
+                }
+              });
+              windowStack.forEach((id, index) => {
+                const zIndex = BASE_Z_INDEX2 + index;
+                const element = document.getElementById(id);
+                if (element) {
+                  const clampedZIndex = Math.min(zIndex, MAX_WINDOW_Z_INDEX);
+                  element.style.zIndex = clampedZIndex.toString();
+                  const win = element.querySelector(".window-container");
+                  if (win) {
+                    win.style.zIndex = clampedZIndex.toString();
+                  }
+                }
+              });
+              window.topZIndex = Math.min(
+                BASE_Z_INDEX2 + windowStack.length,
+                MAX_WINDOW_Z_INDEX
+              );
+            },
             reset() {
               windowStack.length = 0;
               window.topZIndex = BASE_Z_INDEX2;
@@ -4004,7 +4029,10 @@ var App = (() => {
                   try {
                     openFn();
                   } catch (openErr) {
-                    console.warn(`Error restoring modal "${id}" via dialog.open():`, openErr);
+                    console.warn(
+                      `Error restoring modal "${id}" via dialog.open():`,
+                      openErr
+                    );
                     const domUtils = w.DOMUtils;
                     if (domUtils && typeof domUtils.show === "function") {
                       domUtils.show(el);
@@ -4312,11 +4340,14 @@ var App = (() => {
           saveInProgress = true;
           try {
             const { instances, active } = serializeAllInstances();
+            const zIndexManager = window.__zIndexManager;
+            const windowStack = zIndexManager && typeof zIndexManager.getWindowStack === "function" ? zIndexManager.getWindowStack() : [];
             const session = {
               version: SESSION_VERSION,
               timestamp: Date.now(),
               instances,
-              active
+              active,
+              windowStack
             };
             const success = writeSession(session);
             if (success) {
@@ -4395,7 +4426,10 @@ var App = (() => {
                   try {
                     mgr.setActiveInstance(activeId);
                   } catch (e) {
-                    console.warn(`SessionManager: Failed to set active instance for ${type}:`, e);
+                    console.warn(
+                      `SessionManager: Failed to set active instance for ${type}:`,
+                      e
+                    );
                   }
                 }
               } catch (err) {
@@ -4406,6 +4440,20 @@ var App = (() => {
               }
             }
           });
+          const windowStack = session.windowStack || [];
+          if (windowStack.length > 0) {
+            const zIndexManager = window.__zIndexManager;
+            if (zIndexManager && typeof zIndexManager.restoreWindowStack === "function") {
+              try {
+                zIndexManager.restoreWindowStack(windowStack);
+                console.log(
+                  `SessionManager: Restored z-index order for ${windowStack.length} windows`
+                );
+              } catch (err) {
+                console.warn("SessionManager: Failed to restore window z-index order:", err);
+              }
+            }
+          }
           console.log(`SessionManager: Restored ${restoredCount} instances total`);
           return restoredCount > 0;
         }
@@ -4970,11 +5018,16 @@ var App = (() => {
             this.instanceCounter++;
             const instanceId = config.id || `${this.type}-${this.instanceCounter}`;
             if (config.id && this.instances.has(instanceId)) {
-              console.warn(`Instance with id ${instanceId} already exists for ${this.type}; reusing existing instance.`);
+              console.warn(
+                `Instance with id ${instanceId} already exists for ${this.type}; reusing existing instance.`
+              );
               const existing = this.instances.get(instanceId);
               try {
                 existing.title = config.title || existing.title;
-                existing.metadata = { ...existing.metadata, ...config.metadata || {} };
+                existing.metadata = {
+                  ...existing.metadata,
+                  ...config.metadata || {}
+                };
               } catch {
               }
               this.setActiveInstance(instanceId);
@@ -5124,7 +5177,9 @@ var App = (() => {
           reorderInstances(newOrder) {
             const validIds = newOrder.filter((id) => this.instances.has(id));
             if (validIds.length !== this.instances.size) {
-              console.warn("Invalid reorder: not all instance IDs provided or some IDs do not exist");
+              console.warn(
+                "Invalid reorder: not all instance IDs provided or some IDs do not exist"
+              );
               return;
             }
             const newMap = /* @__PURE__ */ new Map();
@@ -9688,6 +9743,47 @@ ${selectedText}
             }
           }
           /**
+           * Get current folder name for tab title
+           */
+          getCurrentFolderName() {
+            var _a, _b, _c;
+            const _lang = (((_b = (_a = window.appI18n) == null ? void 0 : _a.getActiveLanguage) == null ? void 0 : _b.call(_a)) || ((_c = document.documentElement) == null ? void 0 : _c.lang) || "de").toLowerCase();
+            const _isDe = _lang.startsWith("de");
+            if (this.currentPath.length === 0) {
+              switch (this.currentView) {
+                case "computer":
+                  return _isDe ? "Computer" : "Computer";
+                case "github":
+                  return _isDe ? "GitHub Projekte" : "GitHub Projects";
+                case "favorites":
+                  return _isDe ? "Favoriten" : "Favorites";
+                case "recent":
+                  return _isDe ? "Zuletzt ge\xF6ffnet" : "Recently opened";
+                default:
+                  return "Finder";
+              }
+            }
+            return this.currentPath[this.currentPath.length - 1];
+          }
+          /**
+           * Update tab title to reflect current folder
+           */
+          updateTabTitle() {
+            var _a, _b, _c;
+            const folderName = this.getCurrentFolderName();
+            this.title = folderName;
+            try {
+              const tabController = document.querySelector(`#finder-tabs-container`);
+              if (tabController && window.multiInstanceIntegration) {
+                const integration = (_b = (_a = window.multiInstanceIntegration.integrations) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a, "finder");
+                if ((_c = integration == null ? void 0 : integration.tabManager) == null ? void 0 : _c.setTitle) {
+                  integration.tabManager.setTitle(this.instanceId, folderName);
+                }
+              }
+            } catch (e) {
+            }
+          }
+          /**
            * Navigate to path
            */
           navigateTo(path, view = null) {
@@ -9702,6 +9798,7 @@ ${selectedText}
             this.updateSidebarSelection();
             this.renderBreadcrumbs();
             this.renderContent();
+            this.updateTabTitle();
             this.updateState({
               currentPath: this.currentPath,
               currentView: this.currentView
@@ -11845,7 +11942,9 @@ ${selectedText}
       window.addEventListener("load", markReady, { once: true });
       setTimeout(() => {
         if (!gw.__APP_READY) {
-          console.warn("[APP-INIT] load event not observed within timeout; forcing __APP_READY");
+          console.warn(
+            "[APP-INIT] load event not observed within timeout; forcing __APP_READY"
+          );
           markReady();
         }
       }, 4e3);

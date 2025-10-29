@@ -9,7 +9,8 @@ console.log('InstanceManager loaded');
             this.type = config.type;
             this.instanceClass = config.instanceClass;
             this.maxInstances = config.maxInstances || 0;
-            this.createContainer = config.createContainer || this._defaultCreateContainer.bind(this);
+            this.createContainer =
+                config.createContainer || this._defaultCreateContainer.bind(this);
             this.instances = new Map();
             this.activeInstanceId = null;
             this.instanceCounter = 0;
@@ -30,7 +31,10 @@ console.log('InstanceManager loaded');
                 // Optionally update title/metadata
                 try {
                     existing.title = config.title || existing.title;
-                    existing.metadata = { ...existing.metadata, ...(config.metadata || {}) };
+                    existing.metadata = {
+                        ...existing.metadata,
+                        ...(config.metadata || {}),
+                    };
                 }
                 catch { }
                 // Make it active to sync with UI
@@ -136,7 +140,7 @@ console.log('InstanceManager loaded');
             console.log(`Destroyed instance: ${instanceId}`);
         }
         destroyAllInstances() {
-            this.instances.forEach((instance) => {
+            this.instances.forEach(instance => {
                 instance.destroy();
             });
             this.instances.clear();
@@ -152,7 +156,7 @@ console.log('InstanceManager loaded');
         }
         serializeAll() {
             const activeId = this.activeInstanceId;
-            return this.getAllInstances().map((instance) => {
+            return this.getAllInstances().map(instance => {
                 const data = instance.serialize();
                 try {
                     // Mark the active instance in metadata for robust restoration without schema changes
@@ -238,6 +242,7 @@ console.log('InstanceManager loaded');
             });
         }
     }
-    window.InstanceManager = InstanceManager;
+    window.InstanceManager =
+        InstanceManager;
 })();
 //# sourceMappingURL=instance-manager.js.map
