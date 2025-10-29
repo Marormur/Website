@@ -1,4 +1,6 @@
-import { triggerAutoSave } from './utils/auto-save-helper.js';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const auto_save_helper_js_1 = require("./utils/auto-save-helper.js");
 console.log('InstanceManager loaded');
 (function () {
     'use strict';
@@ -157,7 +159,7 @@ console.log('InstanceManager loaded');
             console.log('Instances reordered:', validIds);
         }
         _triggerAutoSave() {
-            triggerAutoSave(this.type);
+            (0, auto_save_helper_js_1.triggerAutoSave)(this.type);
         }
         _defaultCreateContainer(instanceId) {
             const container = document.createElement('div');
@@ -177,3 +179,4 @@ console.log('InstanceManager loaded');
     }
     window.InstanceManager = InstanceManager;
 })();
+//# sourceMappingURL=instance-manager.js.map
