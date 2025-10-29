@@ -1,5 +1,33 @@
 # 2025-10-29
 
+### feat: Session Export/Import (JSON)
+  - **Feature**: User-facing actions to export and import sessions as JSON files
+  - **SessionManager API**:
+    - `exportSession()`: Returns current session as formatted JSON string
+    - `importSession(json)`: Validates and restores session from JSON string
+    - Schema validation with version checking (currently v1.0)
+    - Graceful error handling for invalid/incompatible sessions
+  - **UI Integration**:
+    - ActionBus actions: `session:export` and `session:import`
+    - Menu items in Finder's "Ablage/File" menu
+    - File download with timestamp-based naming (e.g., `session-2025-10-29.json`)
+    - File picker for import with JSON validation
+  - **i18n Support** (DE/EN):
+    - `menu.session.export`, `menu.session.import`
+    - User feedback messages for success/error states
+  - **E2E Tests** (`tests/e2e/session-export-import.spec.js`):
+    - Export current session as downloadable JSON
+    - Import session and verify instance restoration
+    - Preserve instance state (titles, custom state) during round-trip
+    - Handle version mismatches and invalid JSON gracefully
+    - Empty session export validation
+  - **Files Modified**:
+    - `src/ts/session-manager.ts`: Added export/import methods
+    - `src/ts/action-bus.ts`: Added session actions
+    - `src/ts/menu.ts`: Added menu entries in Finder menu
+    - `i18n.js`: Added translations (DE/EN)
+  - **Use Cases**: Portable workflows, session templates, recovery, device migration
+
 ### chore: Unpin Photos App from Dock; ensure Launchpad-only access
   - **Removed**: Photos App (`image-modal`) from the Dock in `index.html`
   - **Removed**: Dock indicator logic for `image-modal` from `src/ts/dock.ts`

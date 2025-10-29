@@ -192,7 +192,6 @@ console.log('SessionManager loaded');
         }
 
         saveInProgress = true;
-        lastSaveAttempt = Date.now();
 
         try {
             const instances = serializeAllInstances();
@@ -363,6 +362,92 @@ console.log('SessionManager loaded');
         };
     }
 
+    /**
+     * Export current session as JSON string
+     * @returns JSON string of current session or null if no session exists
+     */
+    function exportSession(): string | null {
+        // First save current state to ensure we export the latest
+        performSave();
+
+        const session = readSession();
+        if (!session) {
+            console.warn('SessionManager: No session to export');
+            return null;
+        }
+
+        try {
+            // Pretty-print for human readability
+            const json = JSON.stringify(session, null, 2);
+            console.log(`SessionManager: Exported session (${(json.length / 1024).toFixed(2)}KB)`);
+            return json;
+        } catch (err) {
+            console.error('SessionManager: Failed to export session:', err);
+            return null;
+        }
+    }
+
+    /**
+     * Import session from JSON string
+     * @param json - JSON string containing session data
+     * @returns true if import successful, false otherwise
+     */
+    function importSession(json: string): boolean {
+        if (!json || typeof json !== 'string') {
+            console.error('SessionManager: Invalid import data (must be non-empty string)');
+            return false;
+        }
+
+        let session: SessionData;
+        try {
+            session = JSON.parse(json) as SessionData;
+        } catch (err) {
+            console.error('SessionManager: Failed to parse import JSON:', err);
+            return false;
+        }
+
+        // Validate schema
+        if (!session || typeof session !== 'object') {
+            console.error('SessionManager: Invalid session data (must be object)');
+            return false;
+        }
+
+        if (!session.version || typeof session.version !== 'string') {
+            console.error('SessionManager: Missing or invalid version field');
+            return false;
+        }
+
+        // Version compatibility check
+        if (session.version !== SESSION_VERSION) {
+            console.warn(`SessionManager: Version mismatch (imported: ${session.version}, current: ${SESSION_VERSION})`);
+            // For now, we're strict about versions. Future: implement migration logic
+            console.error('SessionManager: Cannot import session from different version');
+            return false;
+        }
+
+        if (!session.instances || typeof session.instances !== 'object') {
+            console.error('SessionManager: Missing or invalid instances field');
+            return false;
+        }
+
+        // Write to localStorage (will validate quota)
+        const success = writeSession(session);
+        if (!success) {
+            console.error('SessionManager: Failed to save imported session to storage');
+            return false;
+        }
+
+        // Restore the imported session
+        const restored = restoreSession();
+        if (!restored) {
+            console.warn('SessionManager: Imported session saved but restoration failed');
+            return false;
+        }
+
+        console.log('SessionManager: Successfully imported and restored session');
+        return true;
+    }
+
     // ===== Lifecycle Hooks =====
 
     /**
@@ -403,6 +488,8 @@ console.log('SessionManager loaded');
         setDebounceDelay,
         getDebounceDelay,
         getStats,
+        exportSession,
+        importSession,
     };
 
     (window as unknown as { SessionManager: typeof SessionManager }).SessionManager = SessionManager;
