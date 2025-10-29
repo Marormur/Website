@@ -508,6 +508,14 @@
                     newEditor: 'Neuer Editor',
                     closeAllConfirm: 'Alle {count} {type}-Instanzen schließen?',
                 },
+                session: {
+                    export: 'Session exportieren …',
+                    import: 'Session importieren …',
+                    exportSuccess: 'Session erfolgreich exportiert',
+                    importSuccess: 'Session erfolgreich importiert',
+                    importError: 'Session konnte nicht importiert werden',
+                    noSession: 'Keine Session zum Exportieren vorhanden',
+                },
                 help: {
                     showHelp: 'Programmhilfe anzeigen',
                 },
@@ -1072,6 +1080,14 @@
                     newTerminal: 'New Terminal',
                     newEditor: 'New Editor',
                     closeAllConfirm: 'Close all {count} {type} instances?',
+                },
+                session: {
+                    export: 'Export Session…',
+                    import: 'Import Session…',
+                    exportSuccess: 'Session successfully exported',
+                    importSuccess: 'Session successfully imported',
+                    importError: 'Failed to import session',
+                    noSession: 'No session available to export',
                 },
                 help: {
                     showHelp: 'Show app help',

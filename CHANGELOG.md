@@ -1,7 +1,7 @@
 # 2025-10-29
 
 ### feat: Phase 7 TypeScript Migration - Complete! ✅ (29. Oktober 2025)
-  - **Progress**: 10 of 10 files migrated (100% complete) from JavaScript to TypeScript
+  - **Progress**: 8 of 8 files migrated (100% complete) from JavaScript to TypeScript
   - **Latest Migration**:
     - `finder.js` → `src/ts/finder.ts` (1284 lines)
       - Comprehensive interface definitions for virtual filesystem
@@ -25,7 +25,47 @@
     - ✅ Zero type errors after migration
     - ✅ E2E tests passing (21/28 Finder & multi-instance tests green)
     - ✅ Type coverage maintained at 81%+ baseline
+  - **Total TypeScript Code**: 3,664 lines across 8 core modules
   - **Status**: Phase 7 migration complete! Ready for PR merge.
+
+### feat: Session Export/Import (JSON)
+  - **Feature**: User-facing actions to export and import sessions as JSON files
+  - **SessionManager API**:
+    - `exportSession()`: Returns current session as formatted JSON string
+    - `importSession(json)`: Validates and restores session from JSON string
+    - Schema validation with version checking (currently v1.0)
+    - Graceful error handling for invalid/incompatible sessions
+  - **UI Integration**:
+    - ActionBus actions: `session:export` and `session:import`
+    - Menu items in Finder's "Ablage/File" menu
+    - File download with timestamp-based naming (e.g., `session-2025-10-29.json`)
+    - File picker for import with JSON validation
+  - **i18n Support** (DE/EN):
+    - `menu.session.export`, `menu.session.import`
+    - User feedback messages for success/error states
+  - **E2E Tests** (`tests/e2e/session-export-import.spec.js`):
+    - Export current session as downloadable JSON
+    - Import session and verify instance restoration
+    - Preserve instance state (titles, custom state) during round-trip
+    - Handle version mismatches and invalid JSON gracefully
+    - Empty session export validation
+  - **Files Modified**:
+    - `src/ts/session-manager.ts`: Added export/import methods
+    - `src/ts/action-bus.ts`: Added session actions
+    - `src/ts/menu.ts`: Added menu entries in Finder menu
+    - `i18n.js`: Added translations (DE/EN)
+  - **Use Cases**: Portable workflows, session templates, recovery, device migration
+
+### chore: optimize GitHub Actions workflows for CI/CD efficiency
+  - **Deleted**: `.github/workflows/e2e.yml` (100% redundant with ci.yml's test jobs)
+  - **ci.yml Optimizations**:
+    - Added concurrency controls (`${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true`) to cancel outdated runs
+    - Added Playwright browser caching (`~/.cache/ms-playwright`) with package-lock.json hash key
+    - Added `MOCK_GITHUB: '1'` environment variable to E2E tests for stability and rate limit avoidance
+    - Split test job into `test-chromium` (always runs) and `test-browsers` (conditional on main branch or `[test-all]` in commit message)
+    - Added build artifact upload (`dist/` and `js/`) after quality job with 1-day retention
+  - **eslint.yml Optimizations**:
+    - Removed `push` and `pull_request` triggers (now weekly security scan only via `schedule` + `workflow_dispatch`)
 
 ### feat: Phase 7 TypeScript Migration - Part 1 ✅ (Earlier - 29. Oktober 2025)
   - **Progress**: 4 of 10 files migrated (40% complete) from JavaScript to TypeScript

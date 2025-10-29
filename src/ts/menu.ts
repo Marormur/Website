@@ -106,6 +106,29 @@ function buildFinderMenuDefinition(context: MenuContext) {
                 },
                 { type: 'separator' },
                 {
+                    id: 'session-export',
+                    label: () => translate('menu.session.export'),
+                    icon: 'save',
+                    action: () => {
+                        const actionBus = window['ActionBus'];
+                        if (actionBus && typeof actionBus.execute === 'function') {
+                            actionBus.execute('session:export');
+                        }
+                    },
+                },
+                {
+                    id: 'session-import',
+                    label: () => translate('menu.session.import'),
+                    icon: 'open',
+                    action: () => {
+                        const actionBus = window['ActionBus'];
+                        if (actionBus && typeof actionBus.execute === 'function') {
+                            actionBus.execute('session:import');
+                        }
+                    },
+                },
+                { type: 'separator' },
+                {
                     id: 'finder-close',
                     label: () => translate('menu.finder.close'),
                     shortcut: '⌘W',

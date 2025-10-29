@@ -953,6 +953,69 @@ var App = (() => {
             }
             const wf = window;
             (_b = (_a = wf.FinderSystem) == null ? void 0 : _a.openItem) == null ? void 0 : _b.call(_a, name, type);
+          },
+          // Session: Export current session as JSON file
+          "session:export": () => {
+            var _a, _b;
+            const W = window;
+            const translate2 = ((_a = W.appI18n) == null ? void 0 : _a.translate) || ((k) => k);
+            if (!((_b = W.SessionManager) == null ? void 0 : _b.exportSession)) {
+              console.error("SessionManager not available");
+              return;
+            }
+            const json = W.SessionManager.exportSession();
+            if (!json) {
+              alert(translate2("menu.session.noSession"));
+              return;
+            }
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `session-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            console.log("Session exported successfully");
+          },
+          // Session: Import session from JSON file
+          "session:import": () => {
+            var _a, _b;
+            const W = window;
+            const translate2 = ((_a = W.appI18n) == null ? void 0 : _a.translate) || ((k) => k);
+            if (!((_b = W.SessionManager) == null ? void 0 : _b.importSession)) {
+              console.error("SessionManager not available");
+              return;
+            }
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = "application/json,.json";
+            input.onchange = (e) => {
+              var _a2;
+              const file = (_a2 = e.target.files) == null ? void 0 : _a2[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                var _a3, _b2, _c;
+                const json = (_a3 = event.target) == null ? void 0 : _a3.result;
+                if (typeof json !== "string") {
+                  alert(translate2("menu.session.importError"));
+                  return;
+                }
+                const success = (_c = (_b2 = W.SessionManager) == null ? void 0 : _b2.importSession) == null ? void 0 : _c.call(_b2, json);
+                if (success) {
+                  console.log("Session imported successfully");
+                } else {
+                  alert(translate2("menu.session.importError"));
+                }
+              };
+              reader.onerror = () => {
+                alert(translate2("menu.session.importError"));
+              };
+              reader.readAsText(file);
+            };
+            input.click();
           }
         });
         window.ActionBus = ActionBus;
@@ -1497,6 +1560,29 @@ var App = (() => {
                 } catch (e) {
                   console.warn("Finder reload failed", e);
                 }
+              }
+            }
+          },
+          { type: "separator" },
+          {
+            id: "session-export",
+            label: () => translate("menu.session.export"),
+            icon: "save",
+            action: () => {
+              const actionBus = window["ActionBus"];
+              if (actionBus && typeof actionBus.execute === "function") {
+                actionBus.execute("session:export");
+              }
+            }
+          },
+          {
+            id: "session-import",
+            label: () => translate("menu.session.import"),
+            icon: "open",
+            action: () => {
+              const actionBus = window["ActionBus"];
+              if (actionBus && typeof actionBus.execute === "function") {
+                actionBus.execute("session:import");
               }
             }
           },
@@ -4154,7 +4240,6 @@ var App = (() => {
             return;
           }
           saveInProgress = true;
-          lastSaveAttempt = Date.now();
           try {
             const instances = serializeAllInstances();
             const session = {
@@ -4279,6 +4364,64 @@ var App = (() => {
             quotaExceeded
           };
         }
+        function exportSession() {
+          performSave();
+          const session = readSession();
+          if (!session) {
+            console.warn("SessionManager: No session to export");
+            return null;
+          }
+          try {
+            const json = JSON.stringify(session, null, 2);
+            console.log(`SessionManager: Exported session (${(json.length / 1024).toFixed(2)}KB)`);
+            return json;
+          } catch (err) {
+            console.error("SessionManager: Failed to export session:", err);
+            return null;
+          }
+        }
+        function importSession(json) {
+          if (!json || typeof json !== "string") {
+            console.error("SessionManager: Invalid import data (must be non-empty string)");
+            return false;
+          }
+          let session;
+          try {
+            session = JSON.parse(json);
+          } catch (err) {
+            console.error("SessionManager: Failed to parse import JSON:", err);
+            return false;
+          }
+          if (!session || typeof session !== "object") {
+            console.error("SessionManager: Invalid session data (must be object)");
+            return false;
+          }
+          if (!session.version || typeof session.version !== "string") {
+            console.error("SessionManager: Missing or invalid version field");
+            return false;
+          }
+          if (session.version !== SESSION_VERSION) {
+            console.warn(`SessionManager: Version mismatch (imported: ${session.version}, current: ${SESSION_VERSION})`);
+            console.error("SessionManager: Cannot import session from different version");
+            return false;
+          }
+          if (!session.instances || typeof session.instances !== "object") {
+            console.error("SessionManager: Missing or invalid instances field");
+            return false;
+          }
+          const success = writeSession(session);
+          if (!success) {
+            console.error("SessionManager: Failed to save imported session to storage");
+            return false;
+          }
+          const restored = restoreSession();
+          if (!restored) {
+            console.warn("SessionManager: Imported session saved but restoration failed");
+            return false;
+          }
+          console.log("SessionManager: Successfully imported and restored session");
+          return true;
+        }
         function init() {
           console.log("SessionManager: Initializing auto-save system");
           window.addEventListener("blur", () => {
@@ -4302,7 +4445,9 @@ var App = (() => {
           clear,
           setDebounceDelay,
           getDebounceDelay,
-          getStats
+          getStats,
+          exportSession,
+          importSession
         };
         window.SessionManager = SessionManager;
       })();
