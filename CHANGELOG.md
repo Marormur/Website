@@ -1,3 +1,27 @@
+# 2025-10-29
+
+### chore: Unpin Photos App from Dock; ensure Launchpad-only access
+  - **Removed**: Photos App (`image-modal`) from the Dock in `index.html`
+  - **Removed**: Dock indicator logic for `image-modal` from `src/ts/dock.ts`
+  - **Access**: Photos App now accessible only via Launchpad (not pinned in Dock)
+  - **Tests**: Added `tests/e2e/photos-launchpad-only.spec.js` to verify:
+    - Photos does NOT appear in Dock by default
+    - Photos DOES appear in Launchpad
+    - Photos can be opened from Launchpad
+    - Photos is searchable in Launchpad
+  - **Impact**: Cleaner Dock with fewer pinned apps; Launchpad becomes primary discovery surface for Photos
+
+### docs: Remove Photos desktop shortcut
+  - **Removed**: Photos desktop shortcut from `src/ts/desktop.ts`
+  - **Reason**: Photos App is accessible via Dock and Launchpad; desktop shortcut is redundant
+  - **i18n**: `desktop.photos` key retained in `src/ts/i18n.ts` for potential future use or Launchpad entries
+  - **Tests**: No desktop-specific Photos tests existed (only GitHub shortcut tested)
+  - **Impact**: Desktop area now empty by default; shortcuts can be added on demand
+
+### feat: Add desktop shortcut for Photos App
+  - Neuer Shortcut auf dem Desktop für die Photos App (TypeScript, i18n, HTML)
+  - **Note**: Reverted in same day - see "Remove Photos desktop shortcut" above
+
 # Changelog
 
 ## Unreleased
@@ -35,6 +59,38 @@
     - ✅ Backward compatibility if no prior session exists
     - ✅ Idempotent restore logic
     - ✅ E2E test validation
+
+### Fix - Photos App missing in bundle (29. Oktober 2025)
+- Root cause: `window.PhotosApp` was undefined in E2E tests when running in bundle mode because `src/ts/photos-app.ts` was not included in the esbuild entry graph. In bundle mode, only `js/app.bundle.js` was loaded, so `js/photos-app.js` never executed.
+- Implementation:
+  - Added Photos App to the bundle by importing the compiled module in `src/ts/compat/expose-globals.ts`:
+    - `import '../../../js/photos-app.js';`
+  - Rationale: Avoids a UTF-16 encoding issue in `src/ts/photos-app.ts` that caused esbuild to fail ("Unexpected \xff"). Using the compiled JS guarantees identical runtime behavior and ensures `window.PhotosApp` is defined in bundle mode.
+- Tests:
+  - `tests/e2e/photos-app.spec.js` now passes in bundle mode (3/3 ✅).
+  - Verified via debug spec that `photos-app.js` is present in the loaded scripts when `USE_BUNDLE=1`.
+- Notes:
+  - Long-term follow-up: Convert `src/ts/photos-app.ts` to UTF-8 (file appears to be UTF-16 LE), then switch the bundle import back to the TS source.
+
+### Added - Photos App with macOS-Style Gallery 📸 (28. Oktober 2025)
+  - **New Application**: Photos App with Picsum API integration
+    - Three view modes: **Moments** (by photographer), **Collections** (by orientation), **Years** (2014-2024)
+    - Filtering: All Photos, Favorites, Landscape, Portrait, Square
+    - Search by photographer name
+    - Detail view with navigation (prev/next), favorite toggle, download, external link
+    - Full **i18n support** (German/English) with 90+ translation keys
+    - External image support for Finder integration
+    - Client-side favorite management (session-only)
+  - **Files Added**:
+    - `src/ts/photos-app.ts` (1,006 lines) - TypeScript source with Picsum API client
+    - `js/photos-app.js` + source map - Compiled JavaScript
+    - Photos-specific CSS components in `src/css/style.css`
+    - Complete German and English translations in `i18n.js`
+    - Photos App modal HTML in `index.html` (247 lines)
+  - **Integration**:
+    - Finder now notifies Photos App when opening images via `window.PhotosApp.showExternalImage()`
+    - Replaces old simple image viewer with full-featured gallery application
+  - **Technical**: TypeScript strict mode compliant, builds successfully with `npm run build:ts`
 
 ### Added - Auto-Save System (SessionManager) ✨ (28. Oktober 2025)
   - **Feature**: Debounced Auto-Save system for window instances
@@ -359,3 +415,11 @@ Summary of notable changes in progress & recent work:
 
   - ### Security
     - Initial security audit completed
+
+## Unreleased
+
+### chore: Convert Photos App TypeScript to UTF-8 and update bundle import (29. Oktober 2025)
+- Konvertiert `src/ts/photos-app.ts` von UTF-16 auf UTF-8 (ohne BOM), Encoding-Fehler behoben (z.B. „ΓÇô“, „L├ñdt“ → „–“, „Lädt“).
+- Import in `src/ts/compat/expose-globals.ts` aktualisiert: Die TypeScript-Quelle wird jetzt direkt gebündelt (`import '../photos-app'` statt `js/photos-app.js`).
+- Build (`npm run build:bundle`) und E2E-Tests (`tests/e2e/photos-app.spec.js`) laufen fehlerfrei.
+- Keine funktionalen Änderungen, nur Encoding und Bundle-Integration.

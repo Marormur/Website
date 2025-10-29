@@ -134,9 +134,19 @@ console.log('TerminalInstance (TS) loaded');
             // noUncheckedIndexedAccess: array destructuring may return undefined
             if (partialCmd === undefined)
                 return;
-            const availableCommands = ['help', 'clear', 'ls', 'pwd', 'cd', 'cat', 'echo', 'date', 'whoami'];
+            const availableCommands = [
+                'help',
+                'clear',
+                'ls',
+                'pwd',
+                'cd',
+                'cat',
+                'echo',
+                'date',
+                'whoami',
+            ];
             if (args.length === 0) {
-                const matches = availableCommands.filter((cmd) => cmd.startsWith(partialCmd));
+                const matches = availableCommands.filter(cmd => cmd.startsWith(partialCmd));
                 if (matches.length === 1) {
                     const match = matches[0];
                     if (match !== undefined) {
@@ -187,17 +197,19 @@ console.log('TerminalInstance (TS) loaded');
             const items = Object.keys(currentDir.contents);
             let matches;
             if (cmd === 'cd') {
-                matches = items.filter((item) => currentDir.contents[item].type === 'directory' && item.startsWith(partial));
+                matches = items.filter(item => currentDir.contents[item].type === 'directory' &&
+                    item.startsWith(partial));
             }
             else {
-                matches = items.filter((item) => currentDir.contents[item].type === 'file' && item.startsWith(partial));
+                matches = items.filter(item => currentDir.contents[item].type === 'file' &&
+                    item.startsWith(partial));
             }
             if (matches.length === 1) {
                 this.inputElement.value = `${cmd} ${matches[0]}`;
             }
             else if (matches.length > 1) {
                 this.addOutput(`guest@marvin:${this.currentPath}$ ${this.inputElement.value}`, 'command');
-                const formatted = matches.map((item) => {
+                const formatted = matches.map(item => {
                     // noUncheckedIndexedAccess: dictionary access may return undefined
                     const itemObj = currentDir.contents[item];
                     if (!itemObj)
@@ -282,7 +294,7 @@ console.log('TerminalInstance (TS) loaded');
                 '  ↑/↓          - Durchsuche Befehlshistorie',
                 '  Tab          - Vervollständige Befehle und Pfade',
             ];
-            helpText.forEach((l) => this.addOutput(l, 'info'));
+            helpText.forEach(l => this.addOutput(l, 'info'));
         }
         listDirectory(path) {
             const targetPath = path ? this.normalizePath(path) : this.currentPath;
@@ -299,7 +311,7 @@ console.log('TerminalInstance (TS) loaded');
             if (items.length === 0)
                 this.addOutput('(leer)', 'output');
             else {
-                items.forEach((item) => {
+                items.forEach(item => {
                     // noUncheckedIndexedAccess: dictionary access may return undefined
                     const itemObj = targetDir.contents[item];
                     if (!itemObj)
@@ -339,7 +351,7 @@ console.log('TerminalInstance (TS) loaded');
             }
             if (filename.includes('/')) {
                 const normalizedPath = this.normalizePath(filename);
-                const pathParts = normalizedPath.split('/').filter((p) => p !== '');
+                const pathParts = normalizedPath.split('/').filter(p => p !== '');
                 const fileName = pathParts.pop();
                 const dirPath = pathParts.length > 0 ? pathParts.join('/') : '~';
                 const dir = this.resolvePath(dirPath);
@@ -392,7 +404,7 @@ console.log('TerminalInstance (TS) loaded');
             const parts = normalizedPath
                 .replace(/^~\/?/, '')
                 .split('/')
-                .filter((p) => p);
+                .filter(p => p);
             for (const part of parts) {
                 if (current.type !== 'directory')
                     return null;
@@ -419,8 +431,9 @@ console.log('TerminalInstance (TS) loaded');
             else if (path.startsWith('/'))
                 workingPath = '~' + path;
             else
-                workingPath = this.currentPath === '~' ? `~/${path}` : `${this.currentPath}/${path}`;
-            const parts = workingPath.split('/').filter((p) => p !== '' && p !== '.');
+                workingPath =
+                    this.currentPath === '~' ? `~/${path}` : `${this.currentPath}/${path}`;
+            const parts = workingPath.split('/').filter(p => p !== '' && p !== '.');
             const resolved = [];
             for (const part of parts) {
                 if (part === '..') {
@@ -476,7 +489,8 @@ console.log('TerminalInstance (TS) loaded');
                 this.inputElement.focus();
         }
     }
-    window.TerminalInstance = TerminalInstance;
+    window.TerminalInstance =
+        TerminalInstance;
     // Create Terminal Instance Manager
     const G = window;
     const InstanceManager = G['InstanceManager'];
@@ -495,8 +509,7 @@ console.log('TerminalInstance (TS) loaded');
                 container.id = `${instanceId}-container`;
                 container.className = 'terminal-instance-container h-full';
                 // Use DOMUtils if available to hide initially, else fallback
-                const domUtils = window
-                    .DOMUtils;
+                const domUtils = window.DOMUtils;
                 if (domUtils && typeof domUtils.hide === 'function') {
                     domUtils.hide(container);
                 }

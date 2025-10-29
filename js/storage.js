@@ -73,7 +73,7 @@
     function saveOpenModals() {
         const modalIds = getModalIds();
         const transientModalIds = getTransientModalIds();
-        const openModals = modalIds.filter((id) => {
+        const openModals = modalIds.filter(id => {
             if (transientModalIds.has(id))
                 return false;
             const el = document.getElementById(id);
@@ -99,7 +99,7 @@
             console.warn('Open modals konnte nicht gelesen werden:', err);
             return;
         }
-        openModals.forEach((id) => {
+        openModals.forEach(id => {
             // Skip transient modals
             if (transientModalIds.has(id))
                 return;
@@ -129,8 +129,7 @@
                 catch (err) {
                     console.warn(`Error restoring modal "${id}":`, err);
                     // Fallback: try to show element directly
-                    const domUtils = w
-                        .DOMUtils;
+                    const domUtils = w.DOMUtils;
                     if (domUtils && typeof domUtils.show === 'function') {
                         domUtils.show(el);
                     }
@@ -169,18 +168,18 @@
         const modalIds = getModalIds();
         const transientModalIds = getTransientModalIds();
         const positions = {};
-        modalIds.forEach((id) => {
+        modalIds.forEach(id => {
             if (transientModalIds.has(id))
                 return;
             const el = document.getElementById(id);
             const windowEl = getDialogWindowElement(el);
             if (el && windowEl) {
                 positions[id] = {
-                    left: (windowEl.style.left || ''),
-                    top: (windowEl.style.top || ''),
-                    width: (windowEl.style.width || ''),
-                    height: (windowEl.style.height || ''),
-                    position: (windowEl.style.position || ''),
+                    left: windowEl.style.left || '',
+                    top: windowEl.style.top || '',
+                    width: windowEl.style.width || '',
+                    height: windowEl.style.height || '',
+                    position: windowEl.style.position || '',
                 };
             }
         });
@@ -201,7 +200,7 @@
             console.warn('Window positions konnte nicht gelesen werden:', err);
             return;
         }
-        Object.keys(positions).forEach((id) => {
+        Object.keys(positions).forEach(id => {
             if (transientModalIds.has(id))
                 return;
             const el = document.getElementById(id);
@@ -235,7 +234,7 @@
     // ===== Layout Reset =====
     function resetWindowLayout() {
         const modalIds = getModalIds();
-        modalIds.forEach((id) => {
+        modalIds.forEach(id => {
             const modal = document.getElementById(id);
             const windowEl = getDialogWindowElement(modal);
             if (modal) {
@@ -267,7 +266,7 @@
             syncTopZIndexWithDOM();
         const dialogs = w['dialogs'];
         if (dialogs) {
-            Object.values(dialogs).forEach((dialog) => {
+            Object.values(dialogs).forEach(dialog => {
                 const enforce = dialog['enforceMenuBarBoundary'];
                 if (typeof enforce === 'function')
                     enforce();

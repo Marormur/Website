@@ -24,7 +24,8 @@ console.log('TextEditorInstance (TS) loaded');
             this.replaceInput = null;
             this.wrapMode = 'off';
             this.currentRemoteFile = null;
-            this.currentFilename = config.filename || 'Untitled.txt';
+            this.currentFilename =
+                config.filename || 'Untitled.txt';
             this.isDirty = false;
         }
         render() {
@@ -84,7 +85,7 @@ console.log('TextEditorInstance (TS) loaded');
                 return;
             const isDark = document.documentElement.classList.contains('dark');
             const buttons = this.container.querySelectorAll('.text-editor-btn');
-            buttons.forEach((btn) => {
+            buttons.forEach(btn => {
                 btn.style.cssText = `
                     padding: 6px 12px;
                     font-size: 13px;
@@ -97,7 +98,7 @@ console.log('TextEditorInstance (TS) loaded');
                 `;
             });
             const separators = this.container.querySelectorAll('.toolbar-separator');
-            separators.forEach((sep) => {
+            separators.forEach(sep => {
                 sep.style.cssText = `
                     width: 1px;
                     height: 20px;
@@ -125,7 +126,7 @@ console.log('TextEditorInstance (TS) loaded');
             this.editor?.addEventListener('click', () => this._updateCursorPosition());
             this.editor?.addEventListener('keyup', () => this._updateCursorPosition());
             this.editor?.addEventListener('select', () => this._updateCursorPosition());
-            this.container.addEventListener('click', (e) => {
+            this.container.addEventListener('click', e => {
                 const target = e.target;
                 const btn = target?.closest('[data-action]');
                 if (!btn)
@@ -134,7 +135,7 @@ console.log('TextEditorInstance (TS) loaded');
                 this._handleAction(action);
             });
             if (this.fileInput) {
-                this.fileInput.addEventListener('change', (e) => this._handleFileOpen(e));
+                this.fileInput.addEventListener('change', e => this._handleFileOpen(e));
             }
             this._updateWordCount();
             this._updateCursorPosition();
@@ -223,7 +224,7 @@ console.log('TextEditorInstance (TS) loaded');
             if (!file)
                 return;
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = e => {
                 const result = e.target.result;
                 if (this.editor)
                     this.editor.value = result;
@@ -412,7 +413,8 @@ console.log('TextEditorInstance (TS) loaded');
             }
         }
     }
-    window.TextEditorInstance = TextEditorInstance;
+    window.TextEditorInstance =
+        TextEditorInstance;
     const G = window;
     const InstanceManager = G['InstanceManager'];
     if (InstanceManager) {
@@ -430,8 +432,7 @@ console.log('TextEditorInstance (TS) loaded');
                 container.id = `${instanceId}-container`;
                 container.className = 'text-editor-instance-container h-full';
                 // Use DOMUtils if available to hide initially, else fallback
-                const domUtils = window
-                    .DOMUtils;
+                const domUtils = window.DOMUtils;
                 if (domUtils && typeof domUtils.hide === 'function') {
                     domUtils.hide(container);
                 }
