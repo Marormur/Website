@@ -25,20 +25,22 @@ Die TypeScript-Migration ist technisch erfolgreich. Mehrere Verbesserungspotenzi
 - ✅ Modul `src/ts/dom-utils.ts` erstellt mit `show()`, `hide()`, `toggle()`, `isVisible()`, `query()`
 - ✅ Exponiert als `window.DOMUtils` für Legacy-Kompatibilität
 - ✅ Migriert in 8 Modulen:
-  - `dialog.ts` (3 Vorkommen)
-  - `menubar-utils.ts` (2 Vorkommen)
-  - `context-menu.ts` (4 Vorkommen)
-  - `terminal-instance.ts` (1 Vorkommen)
-  - `text-editor-instance.ts` (1 Vorkommen)
-  - `storage.ts` (2 Vorkommen)
-  - `image-viewer-utils.ts` (3 Vorkommen)
+    - `dialog.ts` (3 Vorkommen)
+    - `menubar-utils.ts` (2 Vorkommen)
+    - `context-menu.ts` (4 Vorkommen)
+    - `terminal-instance.ts` (1 Vorkommen)
+    - `text-editor-instance.ts` (1 Vorkommen)
+    - `storage.ts` (2 Vorkommen)
+    - `image-viewer-utils.ts` (3 Vorkommen)
 
 **Test-Ergebnisse:**
+
 - Quick E2E: 20/20 passing (MOCK_GITHUB=1)
 - Full E2E: 120/120 passing
 - TypeScript: Build erfolgreich, keine Fehler
 
 **Pattern verwendet:**
+
 ```typescript
 // Graceful fallback für Legacy-Compat
 const domUtils = (window as any).DOMUtils;
@@ -50,6 +52,7 @@ if (domUtils && typeof domUtils.show === 'function') {
 ```
 
 **Bewusst nicht migriert:**
+
 - `base-window-instance.ts` - Dual Export+IIFE Pattern; wird mit Bundle-Migration angegangen
 
 **Siehe:** `CHANGELOG.md` Abschnitt "DOM Utils Migration (Complete)"
@@ -199,12 +202,14 @@ Statt schrittweise einzelne Module umzustellen, wurde eine **esbuild-basierte Bu
 - ✅ Verifiziert: Quick E2E 20/20, TypeScript build erfolgreich
 
 **Nächste Schritte:**
+
 - [ ] Bundle kontrolliert in `index.html` einbinden (staged rollout)
 - [ ] Nach Verifikation: alte Script-Tags durch Bundle ersetzen
 - [ ] `scripts/fix-ts-exports.js` entfernen (obsolet mit Bundle)
 - [ ] Alle Module auf Pure Exports umstellen (Bundle übernimmt IIFE)
 
 **Vorteile:**
+
 - Vereinheitlicht Module-Pattern langfristig
 - Reduziert <script>-Tags in index.html
 - Ermöglicht Tree-Shaking und Optimierung
