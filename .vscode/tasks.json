@@ -46,6 +46,26 @@
       }
     },
     {
+      "label": "TypeScript: Build",
+      "type": "shell",
+      "command": "npm run build:ts",
+      "problemMatcher": "$tsc",
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "TypeScript: Build Watch",
+      "type": "shell",
+      "command": "npm run build:ts:watch",
+      "problemMatcher": "$tsc-watch",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
       "label": "E2E: Install Playwright browsers",
       "type": "shell",
       "command": "npm run pw:install",
@@ -179,7 +199,12 @@
     },
     {
       "label": "Dev Environment: Start All",
-      "dependsOn": ["Tailwind CSS: Watch", "TypeScript: Watch", "Start Dev Server"],
+      "dependsOn": [
+        "Tailwind CSS: Watch",
+        "TypeScript: Watch",
+        "TypeScript: Build Watch",
+        "Start Dev Server"
+      ],
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
@@ -341,6 +366,7 @@
       "dependsOn": [
         "Tailwind CSS: Watch",
         "TypeScript: Watch",
+        "TypeScript: Build Watch",
         "Bundle: Watch",
         "Start Dev Server"
       ],

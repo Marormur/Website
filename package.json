@@ -21,6 +21,7 @@
     "type:baseline": "type-coverage --at-least 81",
     "type:coverage": "type-coverage --at-least 90 --detail",
     "build:ts": "tsc -p tsconfig.tsbuild.json",
+    "build:ts:watch": "tsc -p tsconfig.tsbuild.json --watch",
     "build:bundle": "node scripts/build-esbuild.mjs",
     "dev:bundle": "node scripts/build-esbuild.mjs --watch",
     "lint": "eslint js/**/*.js app.js i18n.js",
