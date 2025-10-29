@@ -93,11 +93,19 @@ console.log('SessionManager loaded');
                 }
             });
 
-            if (totalInstances > 0) {
+            // Capture modal/window state
+            const modalState = this._captureModalState();
+            
+            // Capture active tabs per window
+            const tabState = this._captureTabState();
+
+            if (totalInstances > 0 || Object.keys(modalState).length > 0) {
                 const sessionData = {
-                    version: '1.0',
+                    version: '1.1',
                     timestamp: Date.now(),
                     sessions,
+                    modalState,
+                    tabState,
                 };
 
                 try {
@@ -168,6 +176,20 @@ console.log('SessionManager loaded');
                         console.warn(`SessionManager: No manager registered for type ${type}`);
                     }
                 });
+
+                // Then restore modal state (after a short delay to ensure DOM is ready)
+                if (sessionData.modalState) {
+                    setTimeout(() => {
+                        this._restoreModalState(sessionData.modalState);
+                    }, 100);
+                }
+
+                // Restore tab state
+                if (sessionData.tabState) {
+                    setTimeout(() => {
+                        this._restoreTabState(sessionData.tabState);
+                    }, 150);
+                }
 
                 console.log(`SessionManager: Restored ${totalRestored} instances`);
             } catch (error) {
@@ -340,6 +362,168 @@ console.log('SessionManager loaded');
             if (error.name === 'QuotaExceededError') {
                 console.warn('SessionManager: Storage quota exceeded. Consider clearing old data.');
                 // Could implement cleanup strategy here
+            }
+        }
+
+        /**
+         * Capture current modal/window state
+         * @private
+         * @returns {Object} Modal state including visibility and z-index
+         */
+        _captureModalState() {
+            const modalState = {};
+            
+            try {
+                // Get all modal IDs from WindowManager
+                const WindowManager = window.WindowManager;
+                if (!WindowManager || typeof WindowManager.getAllWindowIds !== 'function') {
+                    return modalState;
+                }
+                
+                const modalIds = WindowManager.getAllWindowIds();
+                const transientIds = WindowManager.getTransientWindowIds 
+                    ? new Set(WindowManager.getTransientWindowIds()) 
+                    : new Set();
+                
+                modalIds.forEach(id => {
+                    // Skip transient modals
+                    if (transientIds.has(id)) return;
+                    
+                    const modal = document.getElementById(id);
+                    if (!modal) return;
+                    
+                    const isVisible = !modal.classList.contains('hidden');
+                    const isMinimized = modal.dataset && modal.dataset.minimized === 'true';
+                    const zIndex = modal.style.zIndex || '';
+                    
+                    if (isVisible || isMinimized) {
+                        modalState[id] = {
+                            visible: isVisible,
+                            minimized: isMinimized,
+                            zIndex: zIndex
+                        };
+                    }
+                });
+            } catch (error) {
+                console.warn('SessionManager: Failed to capture modal state:', error);
+            }
+            
+            return modalState;
+        }
+
+        /**
+         * Capture active tabs for each window
+         * @private
+         * @returns {Object} Tab state for windows
+         */
+        _captureTabState() {
+            const tabState = {};
+            
+            try {
+                // For each instance manager, capture active tab
+                this.instanceManagers.forEach((manager, type) => {
+                    const activeId = manager.activeInstanceId;
+                    if (activeId) {
+                        tabState[type] = {
+                            activeInstanceId: activeId
+                        };
+                    }
+                });
+            } catch (error) {
+                console.warn('SessionManager: Failed to capture tab state:', error);
+            }
+            
+            return tabState;
+        }
+
+        /**
+         * Restore modal/window state
+         * @private
+         * @param {Object} modalState - Saved modal state
+         */
+        _restoreModalState(modalState) {
+            try {
+                const WindowManager = window.WindowManager;
+                if (!WindowManager) {
+                    console.warn('SessionManager: WindowManager not available for modal restore');
+                    return;
+                }
+                
+                Object.entries(modalState).forEach(([modalId, state]) => {
+                    // Validate modal exists in DOM
+                    const modal = document.getElementById(modalId);
+                    if (!modal) {
+                        console.warn(`SessionManager: Modal "${modalId}" not found in DOM`);
+                        return;
+                    }
+                    
+                    // Validate modal is registered
+                    if (typeof WindowManager.getConfig === 'function') {
+                        const config = WindowManager.getConfig(modalId);
+                        if (!config) {
+                            console.warn(`SessionManager: Modal "${modalId}" not registered in WindowManager`);
+                            return;
+                        }
+                    }
+                    
+                    // Restore visibility
+                    if (state.visible) {
+                        const dialogs = window.dialogs || {};
+                        const dialogInstance = dialogs[modalId];
+                        
+                        if (dialogInstance && typeof dialogInstance.open === 'function') {
+                            try {
+                                dialogInstance.open();
+                            } catch (error) {
+                                console.warn(`SessionManager: Error opening modal "${modalId}":`, error);
+                                modal.classList.remove('hidden');
+                            }
+                        } else {
+                            modal.classList.remove('hidden');
+                        }
+                    }
+                    
+                    // Restore z-index
+                    if (state.zIndex) {
+                        modal.style.zIndex = state.zIndex;
+                    }
+                    
+                    // Restore minimized state
+                    if (state.minimized && modal.dataset) {
+                        modal.dataset.minimized = 'true';
+                    }
+                });
+                
+                // Update dock indicators
+                if (typeof window.updateDockIndicators === 'function') {
+                    window.updateDockIndicators();
+                }
+            } catch (error) {
+                console.error('SessionManager: Failed to restore modal state:', error);
+            }
+        }
+
+        /**
+         * Restore active tabs
+         * @private
+         * @param {Object} tabState - Saved tab state
+         */
+        _restoreTabState(tabState) {
+            try {
+                Object.entries(tabState).forEach(([type, state]) => {
+                    const manager = this.instanceManagers.get(type);
+                    if (!manager) return;
+                    
+                    if (state.activeInstanceId) {
+                        // Verify instance exists
+                        const instance = manager.getInstance(state.activeInstanceId);
+                        if (instance) {
+                            manager.setActiveInstance(state.activeInstanceId);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('SessionManager: Failed to restore tab state:', error);
             }
         }
 

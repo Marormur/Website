@@ -26,6 +26,40 @@
 
 ## Unreleased
 
+### Added - Session Restore on Load ✅ (28. Oktober 2025)
+  - **Feature**: Full session state persistence and restoration across page reloads
+  - **Implementation**:
+    - Enhanced `SessionManager` to track modal visibility, z-order, and minimized state
+    - Added tab state persistence (active tab per window/instance manager)
+    - Bumped session format version from 1.0 to 1.1 for backward compatibility
+  - **Modal State Tracking**:
+    - `_captureModalState()`: Records open modals, z-index, minimized state
+    - `_restoreModalState()`: Restores modal visibility with DOM/WindowManager validation
+    - Automatically skips transient modals (e.g., program-info-modal)
+  - **Tab State Tracking**:
+    - `_captureTabState()`: Stores active instance ID per manager type
+    - `_restoreTabState()`: Restores active tabs with existence checks
+  - **Safety Features**:
+    - Validates DOM elements exist before restore
+    - Validates WindowManager registration before restore
+    - Graceful error handling with console warnings
+    - Delayed restore (100-150ms) to ensure DOM readiness
+  - **E2E Test Coverage** (`tests/e2e/session-restore-full.spec.js`):
+    - Terminal/Text Editor instance restoration with active tab preservation
+    - Modal visibility state restoration
+    - Transient modal exclusion validation
+    - Missing modal element graceful handling
+    - Idempotent restore verification (running twice yields same result)
+    - Empty session handling without errors
+    - Z-index ordering preservation across modals
+  - **Integration**: Already hooked into `multi-instance-integration.ts` via `restoreAllSessions()` and `startAutoSave()`
+  - **Deliverables**:
+    - ✅ Session restore pipeline executing after core systems initialize
+    - ✅ Defensive guards if referenced programs/components are unavailable
+    - ✅ Backward compatibility if no prior session exists
+    - ✅ Idempotent restore logic
+    - ✅ E2E test validation
+
 ### Fix - Photos App missing in bundle (29. Oktober 2025)
 - Root cause: `window.PhotosApp` was undefined in E2E tests when running in bundle mode because `src/ts/photos-app.ts` was not included in the esbuild entry graph. In bundle mode, only `js/app.bundle.js` was loaded, so `js/photos-app.js` never executed.
 - Implementation:

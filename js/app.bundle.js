@@ -4050,7 +4050,6 @@ var App = (() => {
         let debounceDelay = DEFAULT_DEBOUNCE_MS;
         let pendingSaveTypes = /* @__PURE__ */ new Set();
         let quotaExceeded = false;
-        let lastSaveAttempt = 0;
         let saveInProgress = false;
         function estimateSize(data) {
           try {
