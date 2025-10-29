@@ -70,9 +70,9 @@ test.describe('Photos App: Launchpad Only (Not in Dock)', () => {
         const initialCount = await appButtons.count();
         expect(initialCount).toBeGreaterThan(0);
 
-        // Search for Photos (try different possible labels)
+        // Search for Photos (use partial term that works in both EN/DE)
         const searchInput = page.locator('#launchpad-search-input');
-        await searchInput.fill('Fotos');
+        await searchInput.fill('phot');
 
         // Wait for filtering to take effect by checking the grid updates
         await page.waitForFunction(

@@ -28,12 +28,16 @@ test.describe('Photos App', () => {
         await expect(page.locator('#photos-gallery')).toHaveCount(1);
     });
 
-    test('Photos App modal can be opened', async ({ page }) => {
+    test('Photos App can be opened from Launchpad', async ({ page }) => {
         const modal = page.locator('#image-modal');
         await expect(modal).toHaveClass(/hidden/);
 
-        const dockIcon = page.locator('#dock .dock-item[data-window-id="image-modal"]');
-        await dockIcon.click();
+        // Open Launchpad
+        await page.locator('#dock .dock-item[data-window-id="launchpad-modal"]').click();
+        await page.waitForSelector('#launchpad-modal:not(.hidden)', { timeout: 5000 });
+
+        // Click Photos app in Launchpad
+        await page.locator('.launchpad-app-button[data-window-id="image-modal"]').click();
 
         await expect(modal).not.toHaveClass(/hidden/);
     });
