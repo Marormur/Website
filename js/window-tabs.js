@@ -20,7 +20,8 @@
         tab.draggable = true;
         const title = document.createElement('span');
         title.className = 'wt-tab-title';
-        title.textContent = instance.title || instance.instanceId;
+        const tabLabel = instance.metadata?.tabLabel;
+        title.textContent = tabLabel || instance.title || instance.instanceId;
         tab.appendChild(title);
         const close = document.createElement('span');
         close.className = 'wt-tab-close ml-1 text-xs opacity-70 hover:opacity-100';
@@ -182,7 +183,7 @@
             setTitle(instanceId, title) {
                 const inst = wrapped.getInstance(instanceId);
                 if (inst) {
-                    inst.title = title;
+                    inst.metadata = { ...(inst.metadata || {}), tabLabel: title };
                     this.refresh();
                 }
             },

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const auto_save_helper_js_1 = require("./utils/auto-save-helper.js");
+const storage_utils_js_1 = require("./storage-utils.js");
 console.log('InstanceManager loaded');
 (function () {
     'use strict';
@@ -104,10 +105,9 @@ console.log('InstanceManager loaded');
                 // Additionally persist active selection per type in localStorage for robust restore
                 try {
                     const KEY = 'windowActiveInstances';
-                    const raw = localStorage.getItem(KEY);
-                    const map = raw ? JSON.parse(raw) : {};
+                    const map = (0, storage_utils_js_1.getJSON)(KEY, {});
                     map[this.type] = this.activeInstanceId;
-                    localStorage.setItem(KEY, JSON.stringify(map));
+                    (0, storage_utils_js_1.setJSON)(KEY, map);
                 }
                 catch {
                     // ignore storage failures

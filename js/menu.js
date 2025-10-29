@@ -10,6 +10,8 @@ exports.renderApplicationMenu = renderApplicationMenu;
 exports.handleMenuActionActivation = handleMenuActionActivation;
 exports.refreshCurrentMenu = refreshCurrentMenu;
 exports.setupInstanceManagerListeners = setupInstanceManagerListeners;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const i18n_js_1 = require("./i18n.js");
 const menuActionHandlers = new Map();
 let menuActionIdCounter = 0;
 function registerMenuAction(handler) {
@@ -57,11 +59,11 @@ function buildFinderMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: () => translate('menu.sections.file'),
+            label: () => (0, i18n_js_1.translate)('menu.sections.file'),
             items: [
                 {
                     id: 'finder-new-window',
-                    label: () => translate('menu.finder.newWindow'),
+                    label: () => (0, i18n_js_1.translate)('menu.finder.newWindow'),
                     shortcut: '⌘N',
                     icon: 'new',
                     action: () => {
@@ -76,7 +78,7 @@ function buildFinderMenuDefinition(context) {
                 },
                 {
                     id: 'finder-reload',
-                    label: () => translate('menu.finder.reload'),
+                    label: () => (0, i18n_js_1.translate)('menu.finder.reload'),
                     shortcut: '⌘R',
                     icon: 'reload',
                     action: () => {
@@ -98,7 +100,7 @@ function buildFinderMenuDefinition(context) {
                 { type: 'separator' },
                 {
                     id: 'session-export',
-                    label: () => translate('menu.session.export'),
+                    label: () => (0, i18n_js_1.translate)('menu.session.export'),
                     icon: 'save',
                     action: () => {
                         const actionBus = window['ActionBus'];
@@ -109,7 +111,7 @@ function buildFinderMenuDefinition(context) {
                 },
                 {
                     id: 'session-import',
-                    label: () => translate('menu.session.import'),
+                    label: () => (0, i18n_js_1.translate)('menu.session.import'),
                     icon: 'open',
                     action: () => {
                         const actionBus = window['ActionBus'];
@@ -121,7 +123,7 @@ function buildFinderMenuDefinition(context) {
                 { type: 'separator' },
                 {
                     id: 'finder-close',
-                    label: () => translate('menu.finder.close'),
+                    label: () => (0, i18n_js_1.translate)('menu.finder.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
                     icon: 'close',
@@ -141,11 +143,11 @@ function buildSettingsMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: () => translate('menu.sections.file'),
+            label: () => (0, i18n_js_1.translate)('menu.sections.file'),
             items: [
                 {
                     id: 'settings-close',
-                    label: () => translate('menu.settings.close'),
+                    label: () => (0, i18n_js_1.translate)('menu.settings.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
                     icon: 'close',
@@ -165,25 +167,25 @@ function buildTextEditorMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: () => translate('menu.sections.file'),
+            label: () => (0, i18n_js_1.translate)('menu.sections.file'),
             items: [
                 {
                     id: 'text-new',
-                    label: () => translate('menu.text.newFile'),
+                    label: () => (0, i18n_js_1.translate)('menu.text.newFile'),
                     shortcut: '⌘N',
                     icon: 'newFile',
                     action: () => sendTextEditorMenuAction('file:new'),
                 },
                 {
                     id: 'text-open',
-                    label: () => translate('menu.text.open'),
+                    label: () => (0, i18n_js_1.translate)('menu.text.open'),
                     shortcut: '⌘O',
                     icon: 'open',
                     action: () => sendTextEditorMenuAction('file:open'),
                 },
                 {
                     id: 'text-save',
-                    label: () => translate('menu.text.save'),
+                    label: () => (0, i18n_js_1.translate)('menu.text.save'),
                     shortcut: '⌘S',
                     icon: 'save',
                     action: () => sendTextEditorMenuAction('file:save'),
@@ -192,18 +194,18 @@ function buildTextEditorMenuDefinition(context) {
         },
         {
             id: 'edit',
-            label: () => translate('menu.sections.edit'),
+            label: () => (0, i18n_js_1.translate)('menu.sections.edit'),
             items: [
                 {
                     id: 'text-undo',
-                    label: () => translate('menu.text.undo'),
+                    label: () => (0, i18n_js_1.translate)('menu.text.undo'),
                     shortcut: '⌘Z',
                     icon: 'undo',
                     action: () => sendTextEditorMenuAction('edit:undo'),
                 },
                 {
                     id: 'text-redo',
-                    label: () => translate('menu.text.redo'),
+                    label: () => (0, i18n_js_1.translate)('menu.text.redo'),
                     shortcut: '⇧⌘Z',
                     icon: 'redo',
                     action: () => sendTextEditorMenuAction('edit:redo'),
@@ -211,21 +213,21 @@ function buildTextEditorMenuDefinition(context) {
                 { type: 'separator' },
                 {
                     id: 'text-cut',
-                    label: () => translate('menu.text.cut'),
+                    label: () => (0, i18n_js_1.translate)('menu.text.cut'),
                     shortcut: '⌘X',
                     icon: 'cut',
                     action: () => sendTextEditorMenuAction('edit:cut'),
                 },
                 {
                     id: 'text-copy',
-                    label: () => translate('menu.text.copy'),
+                    label: () => (0, i18n_js_1.translate)('menu.text.copy'),
                     shortcut: '⌘C',
                     icon: 'copy',
                     action: () => sendTextEditorMenuAction('edit:copy'),
                 },
                 {
                     id: 'text-paste',
-                    label: () => translate('menu.text.paste'),
+                    label: () => (0, i18n_js_1.translate)('menu.text.paste'),
                     shortcut: '⌘V',
                     icon: 'paste',
                     action: () => sendTextEditorMenuAction('edit:paste'),
@@ -233,7 +235,7 @@ function buildTextEditorMenuDefinition(context) {
                 { type: 'separator' },
                 {
                     id: 'text-select-all',
-                    label: () => translate('menu.text.selectAll'),
+                    label: () => (0, i18n_js_1.translate)('menu.text.selectAll'),
                     shortcut: '⌘A',
                     icon: 'selectAll',
                     action: () => sendTextEditorMenuAction('edit:selectAll'),
@@ -242,11 +244,11 @@ function buildTextEditorMenuDefinition(context) {
         },
         {
             id: 'view',
-            label: () => translate('menu.sections.view'),
+            label: () => (0, i18n_js_1.translate)('menu.sections.view'),
             items: [
                 {
                     id: 'text-toggle-wrap',
-                    label: () => translate('menu.text.toggleWrap'),
+                    label: () => (0, i18n_js_1.translate)('menu.text.toggleWrap'),
                     shortcut: '⌥⌘W',
                     icon: 'wrap',
                     action: () => sendTextEditorMenuAction('view:toggleWrap'),
@@ -268,11 +270,11 @@ function buildImageViewerMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: () => translate('menu.sections.file'),
+            label: () => (0, i18n_js_1.translate)('menu.sections.file'),
             items: [
                 {
                     id: 'image-open-tab',
-                    label: () => translate('menu.image.openInTab'),
+                    label: () => (0, i18n_js_1.translate)('menu.image.openInTab'),
                     disabled: !state.hasImage,
                     icon: 'imageOpen',
                     action: () => {
@@ -282,7 +284,7 @@ function buildImageViewerMenuDefinition(context) {
                 },
                 {
                     id: 'image-download',
-                    label: () => translate('menu.image.saveImage'),
+                    label: () => (0, i18n_js_1.translate)('menu.image.saveImage'),
                     disabled: !state.hasImage,
                     icon: 'download',
                     action: () => {
@@ -293,7 +295,7 @@ function buildImageViewerMenuDefinition(context) {
                 { type: 'separator' },
                 {
                     id: 'image-close',
-                    label: () => translate('menu.image.close'),
+                    label: () => (0, i18n_js_1.translate)('menu.image.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
                     icon: 'close',
@@ -313,11 +315,11 @@ function buildAboutMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: () => translate('menu.sections.file'),
+            label: () => (0, i18n_js_1.translate)('menu.sections.file'),
             items: [
                 {
                     id: 'about-close',
-                    label: () => translate('menu.about.close'),
+                    label: () => (0, i18n_js_1.translate)('menu.about.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
                     icon: 'close',
@@ -337,11 +339,11 @@ function buildProgramInfoMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: () => translate('menu.sections.file'),
+            label: () => (0, i18n_js_1.translate)('menu.sections.file'),
             items: [
                 {
                     id: 'program-info-close',
-                    label: () => translate('menu.programInfo.close'),
+                    label: () => (0, i18n_js_1.translate)('menu.programInfo.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
                     icon: 'close',
@@ -356,11 +358,11 @@ function buildTerminalMenuDefinition(context) {
     return [
         {
             id: 'file',
-            label: () => translate('menu.sections.file'),
+            label: () => (0, i18n_js_1.translate)('menu.sections.file'),
             items: [
                 {
                     id: 'terminal-new-window',
-                    label: () => translate('menu.terminal.newWindow'),
+                    label: () => (0, i18n_js_1.translate)('menu.terminal.newWindow'),
                     shortcut: '⌘N',
                     icon: 'terminal',
                     action: () => {
@@ -372,7 +374,7 @@ function buildTerminalMenuDefinition(context) {
                 { type: 'separator' },
                 {
                     id: 'terminal-close',
-                    label: () => translate('menu.terminal.close'),
+                    label: () => (0, i18n_js_1.translate)('menu.terminal.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
                     icon: 'close',
@@ -382,11 +384,11 @@ function buildTerminalMenuDefinition(context) {
         },
         {
             id: 'edit',
-            label: () => translate('menu.sections.edit'),
+            label: () => (0, i18n_js_1.translate)('menu.sections.edit'),
             items: [
                 {
                     id: 'terminal-clear',
-                    label: () => translate('menu.terminal.clear'),
+                    label: () => (0, i18n_js_1.translate)('menu.terminal.clear'),
                     shortcut: '⌘K',
                     icon: 'clear',
                     action: () => {
@@ -410,7 +412,7 @@ function buildTerminalMenuDefinition(context) {
 function createWindowMenuSection(context) {
     return {
         id: 'window',
-        label: () => translate('menu.sections.window'),
+        label: () => (0, i18n_js_1.translate)('menu.sections.window'),
         items: getWindowMenuItems(context),
     };
 }
@@ -420,7 +422,7 @@ function getWindowMenuItems(context) {
     const items = [
         {
             id: 'window-minimize',
-            label: () => translate('menu.window.minimize'),
+            label: () => (0, i18n_js_1.translate)('menu.window.minimize'),
             shortcut: '⌘M',
             disabled: !hasDialog,
             icon: 'windowMinimize',
@@ -431,7 +433,7 @@ function getWindowMenuItems(context) {
         },
         {
             id: 'window-zoom',
-            label: () => translate('menu.window.zoom'),
+            label: () => (0, i18n_js_1.translate)('menu.window.zoom'),
             shortcut: '⌃⌘F',
             disabled: !hasDialog,
             icon: 'windowZoom',
@@ -448,7 +450,7 @@ function getWindowMenuItems(context) {
     }
     items.push({ type: 'separator' }, {
         id: 'window-all-front',
-        label: () => translate('menu.window.bringToFront'),
+        label: () => (0, i18n_js_1.translate)('menu.window.bringToFront'),
         disabled: !hasAnyVisibleDialog(),
         icon: 'windowFront',
         action: () => {
@@ -457,7 +459,7 @@ function getWindowMenuItems(context) {
         },
     }, { type: 'separator' }, {
         id: 'window-close',
-        label: () => translate('menu.window.close'),
+        label: () => (0, i18n_js_1.translate)('menu.window.close'),
         shortcut: '⌘W',
         disabled: !hasDialog,
         icon: 'close',
@@ -491,7 +493,7 @@ function getMultiInstanceMenuItems(context) {
         return items;
     items.push({
         id: 'window-new-instance',
-        label: () => translate(newInstanceKey || 'menu.window.newWindow'),
+        label: () => (0, i18n_js_1.translate)(newInstanceKey || 'menu.window.newWindow'),
         shortcut: '⌘N',
         icon: 'new',
         action: () => {
@@ -532,10 +534,10 @@ function getMultiInstanceMenuItems(context) {
         });
         items.push({ type: 'separator' }, {
             id: 'window-close-all',
-            label: () => translate('menu.window.closeAll'),
+            label: () => (0, i18n_js_1.translate)('menu.window.closeAll'),
             icon: 'close',
             action: () => {
-                const base = translate('menu.window.closeAllConfirm');
+                const base = (0, i18n_js_1.translate)('menu.window.closeAllConfirm');
                 const confirmMsg = typeof base === 'string' && base !== 'menu.window.closeAllConfirm'
                     ? base
                     : `Close all ${typeLabel} (${instances.length})?`;
@@ -572,11 +574,11 @@ function createHelpMenuSection(context, overrides = {}) {
     const infoModalId = overrides.infoModalId || context.modalId || null;
     return {
         id: overrides.id || 'help',
-        label: () => translate(sectionKey),
+        label: () => (0, i18n_js_1.translate)(sectionKey),
         items: [
             {
                 id: 'help-show-info',
-                label: () => translate(itemKey),
+                label: () => (0, i18n_js_1.translate)(itemKey),
                 icon: overrides.itemIcon || 'help',
                 action: () => {
                     if (window['openProgramInfoFromMenu'])
@@ -770,15 +772,7 @@ function createMenuContext(modalId) {
     }
     return { modalId: modalId, dialog: null };
 }
-function translate(key, fallback) {
-    if (window.appI18n && typeof window.appI18n.translate === 'function') {
-        const result = window.appI18n.translate(key);
-        if (result === key && fallback)
-            return fallback;
-        return result;
-    }
-    return fallback || key;
-}
+// translate() wird zentral aus i18n.ts importiert
 function refreshCurrentMenu() {
     renderApplicationMenu(currentMenuModalId);
 }

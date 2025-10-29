@@ -1,5 +1,13 @@
 # 2025-10-29
 
+### docs: Copilot-Anleitung stark gekürzt (29. Oktober 2025)
+- `.github/copilot-instructions.md` zu kompaktem Leitfaden verdichtet (TL;DR, Kernsysteme, Must-Do/Anti-Patterns, Workflow, Tests, Deployment, Forking, Quick Wins).
+- Keine Codeänderungen; nur Doku. Ergebnis: deutlich weniger Kontextverbrauch für Copilot.
+
+### docs: Copilot-Anleitung – MCP-Tools-Hinweis ergänzt (29. Oktober 2025)
+- Kurze Sektion zu MCP-Tools hinzugefügt: GitHub MCP Server ("github/github-mcp-server") und Playwright MCP ("microsoft/playwright-mcp").
+- Enthält: Zweck, wann nutzen, wichtige Review-/Test-Hinweise (pending→comments→submit, `__APP_READY`, explizite Waits, `MOCK_GITHUB`).
+
 ### fix: Window Z-Index Order Persistence Across Reloads (29. Oktober 2025)
   - **Problem**: Wenn zwei Fenster geöffnet waren und das hintere Fenster angeklickt wurde, war nach einem Page Reload wieder das erste Fenster vorne, nicht das zuletzt fokussierte
   - **Root Cause**:

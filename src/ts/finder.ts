@@ -237,7 +237,7 @@ console.log('Finder.js loaded');
         }
         const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' };
         try {
-            const token = localStorage.getItem('githubToken');
+            const token = getString('githubToken');
             if (token && token.trim()) {
                 headers['Authorization'] = `token ${token.trim()}`;
             }
@@ -273,7 +273,7 @@ console.log('Finder.js loaded');
         const key = makeCacheKey(kind, repo, subPath);
         try {
             const payload: CachePayload = { t: Date.now(), d: data };
-            localStorage.setItem(key, JSON.stringify(payload));
+            setJSON(key, payload);
         } catch {
             /* ignore */
         }
@@ -286,9 +286,7 @@ console.log('Finder.js loaded');
         }
         const key = makeCacheKey(kind, repo, subPath);
         try {
-            const raw = localStorage.getItem(key);
-            if (!raw) return null;
-            const parsed = JSON.parse(raw) as CachePayload;
+            const parsed = getJSON<CachePayload | null>(key, null);
             if (!parsed || typeof parsed !== 'object') return null;
             const ttl = getCacheTtl();
             if (typeof parsed.t !== 'number' || Date.now() - parsed.t > ttl) return null;
@@ -1225,7 +1223,7 @@ console.log('Finder.js loaded');
                 favorites: Array.from(finderState.favorites),
                 recentFiles: finderState.recentFiles,
             };
-            localStorage.setItem('finderAdvancedState', JSON.stringify(state));
+            setJSON('finderAdvancedState', state);
         } catch (e) {
             console.warn('Could not save finder state:', e);
         }
@@ -1233,9 +1231,8 @@ console.log('Finder.js loaded');
 
     function loadFinderState(): void {
         try {
-            const saved = localStorage.getItem('finderAdvancedState');
-            if (saved) {
-                const state = JSON.parse(saved) as Partial<SavedFinderState>;
+            const state = getJSON<Partial<SavedFinderState>>('finderAdvancedState', {});
+            if (state && typeof state === 'object') {
                 finderState.currentPath = state.currentPath || [];
                 finderState.currentView = state.currentView || 'computer';
                 finderState.viewMode = state.viewMode || 'list';

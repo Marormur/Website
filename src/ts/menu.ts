@@ -5,6 +5,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { translate } from './i18n.js';
+
 // Allow dynamic access on window via string keys for legacy globals
 declare global {
     interface Window {
@@ -789,14 +791,7 @@ function createMenuContext(modalId: string | null) {
     return { modalId: modalId, dialog: null };
 }
 
-function translate(key: string, fallback?: string) {
-    if ((window as any).appI18n && typeof (window as any).appI18n.translate === 'function') {
-        const result = (window as any).appI18n.translate(key);
-        if (result === key && fallback) return fallback;
-        return result;
-    }
-    return fallback || key;
-}
+// translate() wird zentral aus i18n.ts importiert
 
 export function refreshCurrentMenu() {
     renderApplicationMenu(currentMenuModalId);
@@ -853,4 +848,3 @@ declare global {
 console.log('✅ MenuSystem loaded');
 
 export default {};
-

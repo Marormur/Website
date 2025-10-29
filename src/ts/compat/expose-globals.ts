@@ -44,10 +44,11 @@ import '../github-api';
 // Using the compiled JS avoids TS encoding issues and ensures identical runtime behavior
 import '../photos-app';
 
-// Legacy JS modules (copied to src/ts/legacy/ for esbuild compatibility)
-import '../legacy/window-configs.js'; // Must load before windows are registered
-import '../legacy/finder-instance.js';
-import '../legacy/launchpad.js';
+// Window configurations (now in TypeScript)
+import '../window-configs'; // Must load before windows are registered
+// Remaining legacy JS modules (to be ported)
+import '../finder-instance';
+import '../launchpad';
 import '../multi-instance-integration';
 import '../legacy/desktop.js';
 import '../legacy/system.js';

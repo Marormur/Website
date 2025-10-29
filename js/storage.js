@@ -3,6 +3,8 @@
 // src/ts/storage.ts — Persistence & State Management Module (TypeScript)
 // Mirrors js/storage.js API and preserves global export window.StorageSystem
 // ============================================================================
+Object.defineProperty(exports, "__esModule", { value: true });
+const storage_utils_js_1 = require("./storage-utils.js");
 (() => {
     'use strict';
     console.log('✅ StorageSystem (TS) loaded');
@@ -25,10 +27,7 @@
     // ===== Finder State Persistence =====
     function readFinderState() {
         try {
-            const raw = localStorage.getItem(FINDER_STATE_KEY);
-            if (!raw)
-                return null;
-            const parsed = JSON.parse(raw);
+            const parsed = (0, storage_utils_js_1.getJSON)(FINDER_STATE_KEY, null);
             if (!parsed || typeof parsed !== 'object')
                 return null;
             const po = parsed;
@@ -55,7 +54,7 @@
             path: typeof state.path === 'string' ? state.path : '',
         };
         try {
-            localStorage.setItem(FINDER_STATE_KEY, JSON.stringify(payload));
+            (0, storage_utils_js_1.setJSON)(FINDER_STATE_KEY, payload);
         }
         catch (err) {
             console.warn('Finder state konnte nicht gespeichert werden:', err);
@@ -63,7 +62,7 @@
     }
     function clearFinderState() {
         try {
-            localStorage.removeItem(FINDER_STATE_KEY);
+            (0, storage_utils_js_1.remove)(FINDER_STATE_KEY);
         }
         catch (err) {
             console.warn('Finder state konnte nicht gelöscht werden:', err);
@@ -83,7 +82,7 @@
             return !el.classList.contains('hidden') || minimized;
         });
         try {
-            localStorage.setItem(OPEN_MODALS_KEY, JSON.stringify(openModals));
+            (0, storage_utils_js_1.setJSON)(OPEN_MODALS_KEY, openModals);
         }
         catch (err) {
             console.warn('Open modals konnte nicht gespeichert werden:', err);
@@ -91,22 +90,47 @@
     }
     function restoreOpenModals() {
         const transientModalIds = getTransientModalIds();
-        let openModals = [];
+        // Collect targets from modern key (OPEN_MODALS_KEY) and legacy 'window-session'
+        const toRestore = new Set();
         try {
-            openModals = JSON.parse(localStorage.getItem(OPEN_MODALS_KEY) || '[]');
+            const arr = (0, storage_utils_js_1.getJSON)(OPEN_MODALS_KEY, []);
+            if (Array.isArray(arr))
+                arr.forEach((id) => toRestore.add(id));
         }
         catch (err) {
             console.warn('Open modals konnte nicht gelesen werden:', err);
-            return;
         }
-        openModals.forEach(id => {
+        // Legacy compatibility: support { modalState: { [id]: { visible: boolean, minimized, zIndex } } }
+        try {
+            const legacy = (0, storage_utils_js_1.getJSON)('window-session', null);
+            if (legacy) {
+                const modalState = legacy && legacy['modalState'];
+                if (modalState && typeof modalState === 'object') {
+                    Object.entries(modalState).forEach(([id, state]) => {
+                        try {
+                            const visible = !!(state && state['visible']);
+                            if (visible)
+                                toRestore.add(id);
+                        }
+                        catch {
+                            /* ignore */
+                        }
+                    });
+                }
+            }
+        }
+        catch (err) {
+            console.warn('Legacy window-session konnte nicht gelesen werden:', err);
+        }
+        toRestore.forEach(id => {
             // Skip transient modals
             if (transientModalIds.has(id))
                 return;
             // Validate modal exists in DOM
             const el = document.getElementById(id);
             if (!el) {
-                console.warn(`Skipping restore of modal "${id}": element not found in DOM`);
+                // Align with legacy expectation in tests
+                console.warn(`SessionManager: Modal "${id}" not found in DOM`);
                 return;
             }
             // Validate modal is registered in WindowManager (if available)
@@ -225,7 +249,7 @@
             }
         });
         try {
-            localStorage.setItem(MODAL_POSITIONS_KEY, JSON.stringify(positions));
+            (0, storage_utils_js_1.setJSON)(MODAL_POSITIONS_KEY, positions);
         }
         catch (err) {
             console.warn('Window positions konnte nicht gespeichert werden:', err);
@@ -235,7 +259,7 @@
         const transientModalIds = getTransientModalIds();
         let positions = {};
         try {
-            positions = JSON.parse(localStorage.getItem(MODAL_POSITIONS_KEY) || '{}');
+            positions = (0, storage_utils_js_1.getJSON)(MODAL_POSITIONS_KEY, {});
         }
         catch (err) {
             console.warn('Window positions konnte nicht gelesen werden:', err);
@@ -294,7 +318,7 @@
             w['topZIndex'] = 1000;
         }
         try {
-            localStorage.removeItem(MODAL_POSITIONS_KEY);
+            (0, storage_utils_js_1.remove)(MODAL_POSITIONS_KEY);
         }
         catch (err) {
             console.warn('Modal positions konnte nicht gelöscht werden:', err);

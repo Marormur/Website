@@ -1,5 +1,7 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 console.log('TextEditorInstance (TS) loaded');
+const storage_utils_js_1 = require("./storage-utils.js");
 /**
  * TextEditorInstance - Multi-Instance capable text editor
  * TypeScript migration preserving global API and behavior.
@@ -272,7 +274,7 @@ console.log('TextEditorInstance (TS) loaded');
                 this.editor.style.whiteSpace = this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
             }
             try {
-                localStorage.setItem(`textEditorWrapMode_${this.instanceId}`, this.wrapMode);
+                (0, storage_utils_js_1.setString)(`textEditorWrapMode_${this.instanceId}`, this.wrapMode);
             }
             catch (e) {
                 console.warn('Could not save wrap mode', e);
@@ -283,7 +285,7 @@ console.log('TextEditorInstance (TS) loaded');
         _loadWrapPreference() {
             try {
                 const id = this.instanceId;
-                const saved = localStorage.getItem(`textEditorWrapMode_${id}`);
+                const saved = (0, storage_utils_js_1.getString)(`textEditorWrapMode_${id}`);
                 if (saved && this.editor) {
                     this.wrapMode = saved;
                     this.editor.wrap = this.wrapMode;

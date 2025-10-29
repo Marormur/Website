@@ -34,6 +34,10 @@ console.log('FinderInstance loaded');
             this.lastGithubItemsMap = new Map();
             this.favorites = new Set();
             this.recentFiles = [];
+            // Selection state
+            this.selectedItems = new Set();
+            this._lastSelectedIndex = null;
+            this._renderedItems = [];
             // DOM References (per instance)
             this.domRefs = {
                 sidebarComputer: null,
@@ -249,6 +253,34 @@ console.log('FinderInstance loaded');
          * @private
          */
         _handleClick(e) {
+            // 1) If click happened in content area but not on an item: clear selection
+            const contentRoot = this.domRefs?.contentArea || this.container;
+            if (contentRoot && contentRoot.contains(e.target)) {
+                const itemEl = e.target.closest?.('.finder-list-item, .finder-grid-item');
+                if (!itemEl) {
+                    if (this.selectedItems.size) {
+                        this.selectedItems.clear();
+                        this._lastSelectedIndex = null;
+                        this.renderContent();
+                    }
+                }
+            }
+            // 2) Selection handling for list/grid items on simple click
+            const clickedItem = e.target.closest?.('.finder-list-item, .finder-grid-item');
+            if (clickedItem && clickedItem.dataset) {
+                const name = clickedItem.dataset.itemName;
+                const type = clickedItem.dataset.itemType;
+                const idxStr = clickedItem.dataset.index;
+                const index = typeof idxStr === 'string' ? parseInt(idxStr, 10) : NaN;
+                if (name && type) {
+                    this._handleItemSelection({ name, type, index, event: e });
+                    // Do not treat as data-action click
+                    e.stopPropagation?.();
+                    e.preventDefault?.();
+                    return;
+                }
+            }
+            // 3) ActionBus-style data-action handling
             const action = e.target.closest('[data-action]')?.dataset.action;
             if (!action)
                 return;
@@ -295,6 +327,44 @@ console.log('FinderInstance loaded');
             }
         }
         /**
+         * Handle single-click selection logic (supports Ctrl/Cmd toggle and Shift range)
+         * @private
+         */
+        _handleItemSelection({ name, type, index, event }) {
+            const isShift = !!event.shiftKey;
+            const isToggle = !!(event.metaKey || event.ctrlKey);
+            // Ensure we have an index map
+            const count = Array.isArray(this._renderedItems) ? this._renderedItems.length : 0;
+            if (isShift && count > 0 && this._lastSelectedIndex !== null && !Number.isNaN(index)) {
+                const start = Math.max(0, Math.min(this._lastSelectedIndex, index));
+                const end = Math.min(count - 1, Math.max(this._lastSelectedIndex, index));
+                if (!isToggle)
+                    this.selectedItems.clear();
+                for (let i = start; i <= end; i++) {
+                    const it = this._renderedItems[i];
+                    if (it && it.name)
+                        this.selectedItems.add(it.name);
+                }
+            }
+            else if (isToggle) {
+                if (this.selectedItems.has(name)) {
+                    this.selectedItems.delete(name);
+                }
+                else {
+                    this.selectedItems.add(name);
+                }
+                this._lastSelectedIndex = Number.isNaN(index) ? null : index;
+            }
+            else {
+                // Single select
+                this.selectedItems.clear();
+                this.selectedItems.add(name);
+                this._lastSelectedIndex = Number.isNaN(index) ? null : index;
+            }
+            // Re-render to reflect selection
+            this.renderContent();
+        }
+        /**
          * Get current folder name for tab title
          */
         getCurrentFolderName() {
@@ -328,7 +398,7 @@ console.log('FinderInstance loaded');
             this.title = folderName;
             // Notify tab controller if available
             try {
-                const tabController = document.querySelector(`#finder-tabs-container`);
+                const tabController = document.querySelector('#finder-tabs-container');
                 if (tabController && window.multiInstanceIntegration) {
                     const integration = window.multiInstanceIntegration.integrations?.get?.('finder');
                     if (integration?.tabManager?.setTitle) {
@@ -353,6 +423,9 @@ console.log('FinderInstance loaded');
             else if (Array.isArray(path)) {
                 this.currentPath = [...path];
             }
+            // Reset selection on navigation
+            this.selectedItems.clear();
+            this._lastSelectedIndex = null;
             this.updateSidebarSelection();
             this.renderBreadcrumbs();
             this.renderContent();
@@ -611,6 +684,8 @@ console.log('FinderInstance loaded');
          * Render list view
          */
         renderListView(items) {
+            // Remember order for shift-selection
+            this._renderedItems = items;
             const html = `
                 <div id="finder-list-container">
                 <table class="finder-list-table">
@@ -623,8 +698,11 @@ console.log('FinderInstance loaded');
                     </thead>
                     <tbody>
                         ${items
-                .map(item => `
-                            <tr class="finder-list-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
+                .map((item, i) => {
+                const isSelected = this.selectedItems.has(item.name);
+                const selectedCls = isSelected ? 'bg-blue-100 dark:bg-blue-900' : '';
+                return `
+                            <tr class="finder-list-item ${selectedCls}" data-index="${i}" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                                 <td>
                                     <span class="finder-item-icon">${item.icon}</span>
                                     <span class="finder-item-name">${item.name}</span>
@@ -632,7 +710,8 @@ console.log('FinderInstance loaded');
                                 <td>${this.formatSize(item.size)}</td>
                                 <td>${this.formatDate(item.modified)}</td>
                             </tr>
-                        `)
+                        `;
+            })
                 .join('')}
                     </tbody>
                 </table>
@@ -644,16 +723,22 @@ console.log('FinderInstance loaded');
          * Render grid view
          */
         renderGridView(items) {
+            // Remember order for shift-selection
+            this._renderedItems = items;
             const html = `
                 <div id="finder-list-container">
                 <div class="finder-grid-container">
                     ${items
-                .map(item => `
-                        <div class="finder-grid-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
+                .map((item, i) => {
+                const isSelected = this.selectedItems.has(item.name);
+                const selectedCls = isSelected ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 bg-blue-100/60 dark:bg-blue-900/40' : '';
+                return `
+                        <div class="finder-grid-item ${selectedCls}" data-index="${i}" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                             <div class="finder-grid-icon">${item.icon}</div>
                             <div class="finder-grid-name">${item.name}</div>
                         </div>
-                    `)
+                    `;
+            })
                 .join('')}
                 </div>
                 </div>

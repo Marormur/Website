@@ -1,8 +1,6 @@
 "use strict";
-/**
- * Text Editor Module
- * Replaces text.html iframe with inline text editor
- */
+Object.defineProperty(exports, "__esModule", { value: true });
+const storage_utils_js_1 = require("./storage-utils.js");
 const TextEditorSystem = {
     container: null,
     editor: null,
@@ -153,7 +151,7 @@ const TextEditorSystem = {
      * Load wrap mode preference
      */
     loadWrapPreference() {
-        const storedWrapMode = localStorage.getItem('textEditorWrapMode');
+        const storedWrapMode = (0, storage_utils_js_1.getString)('textEditorWrapMode');
         this.wrapMode = storedWrapMode === 'soft' ? 'soft' : 'off';
         this.applyWrapMode(this.wrapMode);
     },
@@ -170,7 +168,7 @@ const TextEditorSystem = {
         this.editor.wrap = normalized;
         this.editor.style.whiteSpace = normalized === 'soft' ? 'pre-wrap' : 'pre';
         try {
-            localStorage.setItem('textEditorWrapMode', normalized);
+            (0, storage_utils_js_1.setString)('textEditorWrapMode', normalized);
         }
         catch (err) {
             console.warn('Wrap preference could not be stored:', err);
@@ -269,7 +267,7 @@ const TextEditorSystem = {
         if (!this.editor)
             return;
         try {
-            localStorage.setItem('textEditorContent', this.editor.value);
+            (0, storage_utils_js_1.setString)('textEditorContent', this.editor.value);
         }
         catch (err) {
             console.warn('Could not save editor content to localStorage:', err);
@@ -311,7 +309,7 @@ const TextEditorSystem = {
         if (!this.editor)
             return;
         try {
-            const saved = localStorage.getItem('textEditorContent');
+            const saved = (0, storage_utils_js_1.getString)('textEditorContent');
             if (saved) {
                 this.editor.value = saved;
                 this.updateWordCount();
@@ -347,7 +345,7 @@ const TextEditorSystem = {
         this.editor.value = '';
         this.updateWordCount();
         this.updateCursorPosition();
-        localStorage.removeItem('textEditorContent');
+        (0, storage_utils_js_1.remove)('textEditorContent');
         this.currentRemoteFile = null;
         this.updateDocumentTitle();
         this.clearStatus();
@@ -633,7 +631,7 @@ const TextEditorSystem = {
         this.updateDocumentTitle();
         this.setStatusPlain(label);
         try {
-            localStorage.setItem('textEditorContent', remotePayload.content);
+            (0, storage_utils_js_1.setString)('textEditorContent', remotePayload.content);
         }
         catch (err) {
             console.warn('Could not save to localStorage:', err);
@@ -961,13 +959,12 @@ const TextEditorSystem = {
             const newText = parts.join(replaceText);
             this.editor.value = newText;
             this.editor.dispatchEvent(new Event('input', { bubbles: true }));
-            const message = this.resolveTranslation('textEditor.findReplace.replacedCount', { count })
-                .text || `Replaced ${count} occurrence(s)`;
+            const message = this.resolveTranslation('textEditor.findReplace.replacedCount', { count }).text ||
+                `Replaced ${count} occurrence(s)`;
             this.showToast(message, 'success');
         }
         else {
-            const message = this.resolveTranslation('textEditor.findReplace.noMatch').text ||
-                'No match found';
+            const message = this.resolveTranslation('textEditor.findReplace.noMatch').text || 'No match found';
             this.showToast(message, 'info');
         }
         this.focusEditor();

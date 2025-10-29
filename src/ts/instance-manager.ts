@@ -1,4 +1,5 @@
 import { triggerAutoSave } from './utils/auto-save-helper.js';
+import { getJSON, setJSON } from './storage-utils.js';
 
 console.log('InstanceManager loaded');
 
@@ -161,10 +162,9 @@ console.log('InstanceManager loaded');
                 // Additionally persist active selection per type in localStorage for robust restore
                 try {
                     const KEY = 'windowActiveInstances';
-                    const raw = localStorage.getItem(KEY);
-                    const map = raw ? (JSON.parse(raw) as Record<string, string | null>) : {};
+                    const map = getJSON<Record<string, string | null>>(KEY, {});
                     map[this.type] = this.activeInstanceId;
-                    localStorage.setItem(KEY, JSON.stringify(map));
+                    setJSON(KEY, map);
                 } catch {
                     // ignore storage failures
                 }

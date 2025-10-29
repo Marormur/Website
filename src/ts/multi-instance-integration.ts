@@ -5,6 +5,8 @@
  * Wires up keyboard shortcuts and session management
  */
 
+import { getJSON } from './storage-utils.js';
+
 (() => {
     'use strict';
 
@@ -51,58 +53,36 @@
             if (W.TextEditorInstanceManager) this.setupTextEditorIntegration();
             if (W.FinderInstanceManager) this.setupFinderIntegration();
 
-            if (W.SessionManager) {
-                if (W.TerminalInstanceManager)
-                    W.SessionManager.registerManager('terminal', W.TerminalInstanceManager);
-                if (W.TextEditorInstanceManager)
-                    W.SessionManager.registerManager('text-editor', W.TextEditorInstanceManager);
-                if (W.FinderInstanceManager)
-                    W.SessionManager.registerManager('finder', W.FinderInstanceManager);
+            // Ensure tabs/controllers reflect any pre-existing state and show active instance.
+            // Session restoration is orchestrated by app-init; we intentionally do not call
+            // SessionManager.restoreSession() or init() here to avoid duplicate restores.
+            this.integrations.forEach((integration, type) => {
+                const { manager, tabManager } = integration;
+                // Support both legacy adapter ({controller: {refresh}}) and new controller ({refresh})
+                try {
+                    const maybe = tabManager as any;
+                    const refreshFn =
+                        typeof maybe?.refresh === 'function'
+                            ? maybe.refresh.bind(maybe)
+                            : typeof maybe?.controller?.refresh === 'function'
+                              ? maybe.controller.refresh.bind(maybe.controller)
+                              : null;
+                    if (refreshFn) refreshFn();
+                } catch {}
+                // Try to restore previously selected tab from a simple localStorage map (fallback)
+                try {
+                    const map = getJSON<Record<string, string | null>>('windowActiveInstances', {});
+                    const wanted = map?.[type] || null;
+                    if (wanted && typeof (manager as any).setActiveInstance === 'function') {
+                        // Only set if the instance exists to avoid creating new ones
+                        const exists = manager.getAllInstances().some(i => i.instanceId === wanted);
+                        if (exists) (manager as any).setActiveInstance(wanted);
+                    }
+                } catch {}
 
-                // Restore session if available
-                if (typeof W.SessionManager.restoreSession === 'function') {
-                    W.SessionManager.restoreSession();
-                }
-
-                // Ensure tabs/controllers reflect restored state and show active instance
-                this.integrations.forEach((integration, type) => {
-                    const { manager, tabManager } = integration;
-                    // Support both legacy adapter ({controller: {refresh}}) and new controller ({refresh})
-                    try {
-                        const maybe = tabManager as any;
-                        const refreshFn =
-                            typeof maybe?.refresh === 'function'
-                                ? maybe.refresh.bind(maybe)
-                                : typeof maybe?.controller?.refresh === 'function'
-                                  ? maybe.controller.refresh.bind(maybe.controller)
-                                  : null;
-                        if (refreshFn) refreshFn();
-                    } catch {}
-                    // Try to restore previously selected tab from a simple localStorage map (fallback)
-                    try {
-                        const raw = localStorage.getItem('windowActiveInstances');
-                        if (raw) {
-                            const map = JSON.parse(raw) as Record<string, string | null>;
-                            const wanted = map?.[type] || null;
-                            if (
-                                wanted &&
-                                typeof (manager as any).setActiveInstance === 'function'
-                            ) {
-                                // Only set if the instance exists to avoid creating new ones
-                                const exists = manager
-                                    .getAllInstances()
-                                    .some(i => i.instanceId === wanted);
-                                if (exists) (manager as any).setActiveInstance(wanted);
-                            }
-                        }
-                    } catch {}
-
-                    const active = manager.getActiveInstance();
-                    if (active) this.showInstance(type, active.instanceId);
-                });
-
-                W.SessionManager.init();
-            }
+                const active = manager.getActiveInstance();
+                if (active) this.showInstance(type, active.instanceId);
+            });
 
             // Scope keyboard shortcuts by top window
             if (

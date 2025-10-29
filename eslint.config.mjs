@@ -235,6 +235,7 @@ export default [
         ignores: [
             'node_modules/**',
             'dist/**',
+            'js/**',
             'test-results/**',
             'playwright-report/**',
             '.playwright-mcp/**',

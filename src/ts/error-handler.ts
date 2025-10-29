@@ -3,6 +3,8 @@
  * Global error handler with logging and export capabilities
  */
 
+import { getJSON, setJSON } from './storage-utils.js';
+
 console.log('ErrorHandler loaded');
 
 (() => {
@@ -62,8 +64,7 @@ console.log('ErrorHandler loaded');
 
     function readLogs(): ErrorLogEntry[] {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            return raw ? (JSON.parse(raw) as ErrorLogEntry[]) : [];
+            return getJSON<ErrorLogEntry[]>(STORAGE_KEY, []);
         } catch (_e) {
             void _e;
             return [];
@@ -72,7 +73,7 @@ console.log('ErrorHandler loaded');
 
     function writeLogs(logs: ErrorLogEntry[]): void {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(logs.slice(-MAX_LOGS)));
+            setJSON(STORAGE_KEY, logs.slice(-MAX_LOGS));
         } catch (_e) {
             void _e;
             // ignore storage errors (quota, private mode, etc.)

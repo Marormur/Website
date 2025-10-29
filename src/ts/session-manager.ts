@@ -7,6 +7,8 @@
 
 console.log('SessionManager loaded');
 
+import { getJSON, setJSON, remove } from './storage-utils.js';
+
 (() => {
     'use strict';
 
@@ -43,7 +45,6 @@ console.log('SessionManager loaded');
     let pendingSaveTypes = new Set<string>(); // Track which instance types need saving
     let quotaExceeded = false;
     let saveInProgress = false;
-    let lastSaveAttempt = 0;
 
     // ===== Storage Helpers =====
 
@@ -73,10 +74,7 @@ console.log('SessionManager loaded');
      */
     function readSession(): SessionData | null {
         try {
-            const raw = localStorage.getItem(SESSION_STORAGE_KEY);
-            if (!raw) return null;
-
-            const parsed = JSON.parse(raw) as SessionData;
+            const parsed = getJSON<SessionData | null>(SESSION_STORAGE_KEY, null);
             if (!parsed || typeof parsed !== 'object') return null;
             if (parsed.version !== SESSION_VERSION) {
                 console.warn(
@@ -84,7 +82,6 @@ console.log('SessionManager loaded');
                 );
                 return null;
             }
-
             return parsed;
         } catch (err) {
             console.warn('SessionManager: Failed to read session:', err);
@@ -110,7 +107,7 @@ console.log('SessionManager loaded');
         }
 
         try {
-            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+            setJSON(SESSION_STORAGE_KEY, session);
             quotaExceeded = false; // Reset flag on successful save
             return true;
         } catch (err) {
@@ -129,7 +126,7 @@ console.log('SessionManager loaded');
      */
     function clearSession(): void {
         try {
-            localStorage.removeItem(SESSION_STORAGE_KEY);
+            remove(SESSION_STORAGE_KEY);
             console.log('SessionManager: Session cleared');
         } catch (err) {
             console.warn('SessionManager: Failed to clear session:', err);

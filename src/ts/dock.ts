@@ -3,6 +3,8 @@
  * Typed port of js/dock.js
  */
 
+import { getJSON, setJSON } from './storage-utils.js';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 // getDockReservedBottom
@@ -104,8 +106,7 @@ const DOCK_ORDER_STORAGE_KEY = 'dock:order:v1';
 
 export function loadDockOrder(): string[] | null {
     try {
-        const raw = localStorage.getItem(DOCK_ORDER_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : null;
+        const parsed = getJSON<string[] | null>(DOCK_ORDER_STORAGE_KEY, null);
         return Array.isArray(parsed) ? parsed : null;
     } catch {
         return null;
@@ -114,7 +115,7 @@ export function loadDockOrder(): string[] | null {
 
 export function saveDockOrder(order: string[] | null | undefined): void {
     try {
-        localStorage.setItem(DOCK_ORDER_STORAGE_KEY, JSON.stringify(order || []));
+        setJSON(DOCK_ORDER_STORAGE_KEY, order || []);
     } catch {
         // ignore
     }
@@ -388,4 +389,3 @@ if (typeof window !== 'undefined') {
 }
 
 export default {};
-

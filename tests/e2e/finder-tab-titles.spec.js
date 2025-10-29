@@ -29,7 +29,9 @@ test.describe('Finder tab titles show folder names', () => {
         expect(titles[0]).toMatch(/Computer|GitHub/i); // Should be a view name
 
         // Navigate to Documents folder (if in computer view)
-        const documentsBtn = page.locator('[data-finder-content] [data-item-name="Documents"]').first();
+        const documentsBtn = page
+            .locator('[data-finder-content] [data-item-name="Documents"]')
+            .first();
         if (await documentsBtn.isVisible().catch(() => false)) {
             await documentsBtn.dblclick();
             await page.waitForTimeout(300);
@@ -77,7 +79,9 @@ test.describe('Finder tab titles show folder names', () => {
         await page.waitForTimeout(300);
 
         // Try to navigate to Documents
-        const documentsBtn = page.locator('[data-finder-content] [data-item-name="Documents"]').first();
+        const documentsBtn = page
+            .locator('[data-finder-content] [data-item-name="Documents"]')
+            .first();
         let navigatedToDocuments = false;
         if (await documentsBtn.isVisible().catch(() => false)) {
             await documentsBtn.dblclick();
@@ -100,7 +104,7 @@ test.describe('Finder tab titles show folder names', () => {
         // Tab title should be restored (not "Finder 1")
         const titles = await getTabTitles(page);
         expect(titles[0]).not.toMatch(/^Finder \d+$/);
-        
+
         if (navigatedToDocuments) {
             // If we navigated to Documents before reload, title should still be Documents
             expect(titles[0]).toBe('Documents');

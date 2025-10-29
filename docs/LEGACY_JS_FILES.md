@@ -1,30 +1,98 @@
-# Legacy JS files touched during lint-maintenance (2025-10-27)
+# TypeScript Migration Status (2025-10-29)
 
-> **NOTE:** Diese Dateien sind historisch oder kompilierte Ausgaben. Verwende diese NICHT als primären Ort für neue Entwicklung. Bevorzuge `src/ts/` TypeScript-Quellen für allen neuen Code und Änderungen. Das `js/`-Verzeichnis enthält generiertes JS (Runtime-Ausgabe) und Legacy-Artefakte, die nur für Referenz oder Kompatibilität beibehalten werden.
+> **STATUS:** TypeScript-Migration **vollständig abgeschlossen** ✅
 
-> **UPDATE (2025-10-29):** Die TypeScript-Migration ist **vollständig abgeschlossen** (Phase 7: 100%). Alle Kern-Module (finder, terminal, system, settings, launchpad, icons, error-handler, perf-monitor) wurden erfolgreich zu TypeScript migriert. Insgesamt 26+ TypeScript-Module mit 6,000+ Zeilen Code in `src/ts/`. Der esbuild-Bundle-Pipeline (`scripts/build-esbuild.mjs` → `js/app.bundle.js`) ersetzt viele dieser einzelnen JS-Dateien. Das Bundle nutzt einen Kompatibilitäts-Adapter (`src/ts/compat/expose-globals.ts`), um Module auf `window.*` für Legacy-Consumer bereitzustellen. Siehe CHANGELOG.md Abschnitt "Build - Esbuild bundle (compat adapter) ✅" für Details.
+## Migration abgeschlossen
 
-The following files were edited as part of a targeted lint-maintenance pass. Many of these are legacy JavaScript sources. If a TypeScript source exists under `src/ts/`, prefer editing that file and rebuilding the project instead of changing emitted JS.
+Die TypeScript-Migration des Projekts ist zu 100% abgeschlossen. Alle Kern-Module wurden erfolgreich von JavaScript nach TypeScript migriert.
 
-Files edited:
+### Statistiken
 
-- js/desktop.js — desktop selection & icons
-- js/context-menu.js — custom context menu
-- js/base-window-instance.js — base class for multi-instance windows
-- js/dialog.js — dialog utilities
-- js/dock.js — dock magnification & drag/drop
-- js/github-api.js — GitHub API helpers
-- js/menu.js — menubar and menu wiring
-- js/multi-instance-demo.js — demo helpers
-- js/system.js — system UI helpers
+- **40+ Module** zu TypeScript migriert
+- **6,000+ Zeilen** TypeScript-Code in `src/ts/`
+- **Bundle-Pipeline** aktiv (`scripts/build-esbuild.mjs` → `js/app.bundle.js`)
+- **Kompatibilität** via `src/ts/compat/expose-globals.ts` für `window.*` API
 
-Why these edits were made
+### Module-Übersicht
 
-- Small lint-driven fixes (remove unused catch params, strict equality, unused vars) were applied to reduce ESLint noise and make CI/lint output clearer.
-- These changes aim to be low-risk and behavior-preserving. However, if these files are generated from TypeScript sources, these edits should be ported to the corresponding `.ts` files to avoid being overwritten by future builds.
+Alle folgenden Module sind jetzt TypeScript-Quellen in `src/ts/`:
 
-Next steps
+**Core Systems:**
 
-1. Detect generated JS files and map them to TS sources.
-2. If TS source exists for any of the files above, port changes to TS and run `npm run build:ts`.
-3. If not, keep the JS edits and schedule those files for eventual TypeScript migration.
+- `action-bus.ts`, `api.ts`, `app-init.ts`, `storage.ts`, `session-manager.ts`
+- `window-manager.ts`, `window-configs.ts`, `window-chrome.ts`, `window-tabs.ts`
+
+**Instance Management:**
+
+- `base-window-instance.ts`, `instance-manager.ts`
+- `finder-instance.ts`, `terminal-instance.ts`, `text-editor-instance.ts`
+- `multi-instance-integration.ts`, `keyboard-shortcuts.ts`
+
+**UI Systems:**
+
+- `desktop.ts`, `dock.ts`, `dialog.ts`, `dialog-utils.ts`, `context-menu.ts`
+- `launchpad.ts`, `settings.ts`, `system.ts`, `menu.ts`, `menubar-utils.ts`
+- `icons.ts`, `theme.ts`, `photos-app.ts`
+
+**Content Systems:**
+
+- `finder.ts`, `terminal.ts`, `text-editor.ts`
+- `github-api.ts`, `i18n.ts`
+
+**Utilities & Helpers:**
+
+- `constants.ts`, `logger.ts`, `error-handler.ts`, `perf-monitor.ts`
+- `snap-utils.ts`, `dom-utils.ts`, `image-viewer-utils.ts`
+- `program-actions.ts`, `program-menu-sync.ts`, `multi-instance-demo.ts`
+
+### Build-System
+
+**Bundle-Mode (Standard):**
+
+```bash
+npm run build:bundle  # Baut js/app.bundle.js aus allen TS-Modulen
+```
+
+**Individual Scripts (Fallback):**
+
+```bash
+npm run build:ts      # Kompiliert einzelne JS-Dateien in js/
+```
+
+**Index.html lädt:**
+
+- Standard: `js/app.bundle.js` (wenn `USE_BUNDLE=true`, Default)
+- Fallback: Einzelne `js/*.js` Dateien (wenn `USE_BUNDLE=false`)
+
+### Archiv-Bereinigung (2025-10-29)
+
+**Gelöscht:** `src/ts/legacy/` Ordner und alle archivierten Legacy-Dateien
+
+- ~~`desktop.js`~~ → `src/ts/desktop.ts` ✅
+- ~~`finder-instance.js`~~ → `src/ts/finder-instance.ts` ✅
+- ~~`launchpad.js`~~ → `src/ts/launchpad.ts` ✅
+- ~~`multi-instance-integration.js`~~ → `src/ts/multi-instance-integration.ts` ✅
+- ~~`system.js`~~ → `src/ts/system.ts` ✅
+- ~~`window-configs.js`~~ → `src/ts/window-configs.ts` ✅
+
+### Entwicklung
+
+**Neue Features entwickeln:**
+
+1. Bearbeite TypeScript-Quellen in `src/ts/`
+2. Lasse TypeScript-Watch laufen: `npm run typecheck:watch`
+3. Bundle automatisch neu bauen: `npm run dev:bundle` (watch mode)
+4. Teste mit Bundle: `USE_BUNDLE=1 npm run dev`
+
+**WICHTIG:** Bearbeite **nie** direkt Dateien in `js/` – diese werden aus `src/ts/` generiert!
+
+### Legacy-Status
+
+**Noch vorhanden:**
+
+- `app.js` (33 Zeilen, minimaler globaler Wrapper, außerhalb des Bundles)
+    - Stellt `window.translate` Helfer bereit
+    - Wird in `index.html` separat geladen
+    - **Kein Migrationsbedarf**
+
+Alle anderen JavaScript-Dateien in `js/` sind **kompilierte Ausgaben** aus TypeScript-Quellen.

@@ -5,6 +5,8 @@
 
 console.log('PerfMonitor loaded');
 
+import { getString, setString } from './storage-utils.js';
+
 (() => {
     'use strict';
 
@@ -56,7 +58,7 @@ console.log('PerfMonitor loaded');
         enable() {
             this.enabled = true;
             try {
-                localStorage.setItem(STORAGE_KEY, 'true');
+                setString(STORAGE_KEY, 'true');
             } catch (_e) {
                 void _e;
             }
@@ -67,7 +69,7 @@ console.log('PerfMonitor loaded');
         disable() {
             this.enabled = false;
             try {
-                localStorage.setItem(STORAGE_KEY, 'false');
+                setString(STORAGE_KEY, 'false');
             } catch (_e) {
                 void _e;
             }
@@ -76,7 +78,11 @@ console.log('PerfMonitor loaded');
         },
 
         toggle() {
-            this.enabled ? this.disable() : this.enable();
+            if (this.enabled) {
+                this.disable();
+            } else {
+                this.enable();
+            }
         },
 
         mark(name: string) {
@@ -172,8 +178,7 @@ console.log('PerfMonitor loaded');
     // ===== Global Export =====
 
     if (typeof window !== 'undefined') {
-        (window as typeof window & { PerfMonitor: PerfMonitorInstance }).PerfMonitor =
-            PerfMonitor;
+        (window as typeof window & { PerfMonitor: PerfMonitorInstance }).PerfMonitor = PerfMonitor;
     }
 })();
 

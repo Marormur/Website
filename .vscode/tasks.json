@@ -462,6 +462,36 @@
       "type": "shell",
       "command": "npm run build:bundle",
       "group": "build"
+    },
+    {
+      "label": "Quick Check (typecheck+lint)",
+      "type": "shell",
+      "command": "npm run typecheck ; npm run lint",
+      "group": "build"
+    },
+    {
+      "label": "Bundle: Build (on-demand)",
+      "type": "shell",
+      "command": "npm run build:bundle",
+      "group": "build"
+    },
+    {
+      "label": "Bundle: Build",
+      "type": "shell",
+      "command": "npm run build:bundle",
+      "group": "build"
+    },
+    {
+      "label": "Bundle: Build",
+      "type": "shell",
+      "command": "npm run build:bundle",
+      "group": "build"
+    },
+    {
+      "label": "Bundle: Build",
+      "type": "shell",
+      "command": "npm run build:bundle",
+      "group": "build"
     }
   ]
 }

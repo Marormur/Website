@@ -5,6 +5,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 console.log('PerfMonitor loaded');
+const storage_utils_js_1 = require("./storage-utils.js");
 (() => {
     'use strict';
     const STORAGE_KEY = 'app.perfMonitor.enabled';
@@ -34,7 +35,7 @@ console.log('PerfMonitor loaded');
         enable() {
             this.enabled = true;
             try {
-                localStorage.setItem(STORAGE_KEY, 'true');
+                (0, storage_utils_js_1.setString)(STORAGE_KEY, 'true');
             }
             catch (_e) {
                 void _e;
@@ -45,7 +46,7 @@ console.log('PerfMonitor loaded');
         disable() {
             this.enabled = false;
             try {
-                localStorage.setItem(STORAGE_KEY, 'false');
+                (0, storage_utils_js_1.setString)(STORAGE_KEY, 'false');
             }
             catch (_e) {
                 void _e;
@@ -54,7 +55,12 @@ console.log('PerfMonitor loaded');
             logger.info('PerfMonitor', 'Disabled');
         },
         toggle() {
-            this.enabled ? this.disable() : this.enable();
+            if (this.enabled) {
+                this.disable();
+            }
+            else {
+                this.enable();
+            }
         },
         mark(name) {
             if (!this.enabled || !name)
@@ -145,8 +151,7 @@ console.log('PerfMonitor loaded');
     }
     // ===== Global Export =====
     if (typeof window !== 'undefined') {
-        window.PerfMonitor =
-            PerfMonitor;
+        window.PerfMonitor = PerfMonitor;
     }
 })();
 //# sourceMappingURL=perf-monitor.js.map

@@ -3,6 +3,8 @@
 // Mirrors js/storage.js API and preserves global export window.StorageSystem
 // ============================================================================
 
+import { getJSON, setJSON, getString, remove } from './storage-utils.js';
+
 (() => {
     'use strict';
 
@@ -38,9 +40,7 @@
 
     function readFinderState(): FinderState {
         try {
-            const raw = localStorage.getItem(FINDER_STATE_KEY);
-            if (!raw) return null;
-            const parsed = JSON.parse(raw);
+            const parsed = getJSON<Record<string, unknown> | null>(FINDER_STATE_KEY, null);
             if (!parsed || typeof parsed !== 'object') return null;
             const po = parsed as Record<string, unknown>;
             const repo = typeof po.repo === 'string' ? po.repo.trim() : '';
@@ -65,7 +65,7 @@
             path: typeof state.path === 'string' ? state.path : '',
         };
         try {
-            localStorage.setItem(FINDER_STATE_KEY, JSON.stringify(payload));
+            setJSON(FINDER_STATE_KEY, payload);
         } catch (err) {
             console.warn('Finder state konnte nicht gespeichert werden:', err);
         }
@@ -73,7 +73,7 @@
 
     function clearFinderState(): void {
         try {
-            localStorage.removeItem(FINDER_STATE_KEY);
+            remove(FINDER_STATE_KEY);
         } catch (err) {
             console.warn('Finder state konnte nicht gelöscht werden:', err);
         }
@@ -94,7 +94,7 @@
         });
 
         try {
-            localStorage.setItem(OPEN_MODALS_KEY, JSON.stringify(openModals));
+            setJSON(OPEN_MODALS_KEY, openModals);
         } catch (err) {
             console.warn('Open modals konnte nicht gespeichert werden:', err);
         }
@@ -102,23 +102,48 @@
 
     function restoreOpenModals(): void {
         const transientModalIds = getTransientModalIds();
-        let openModals: string[] = [];
 
+        // Collect targets from modern key (OPEN_MODALS_KEY) and legacy 'window-session'
+        const toRestore = new Set<string>();
         try {
-            openModals = JSON.parse(localStorage.getItem(OPEN_MODALS_KEY) || '[]');
+            const arr = getJSON<string[]>(OPEN_MODALS_KEY, []);
+            if (Array.isArray(arr)) arr.forEach((id: string) => toRestore.add(id));
         } catch (err) {
             console.warn('Open modals konnte nicht gelesen werden:', err);
-            return;
         }
 
-        openModals.forEach(id => {
+        // Legacy compatibility: support { modalState: { [id]: { visible: boolean, minimized, zIndex } } }
+        try {
+            const legacy = getJSON<Record<string, unknown> | null>('window-session', null);
+            if (legacy) {
+                const modalState =
+                    legacy && (legacy['modalState'] as Record<string, unknown> | null);
+                if (modalState && typeof modalState === 'object') {
+                    Object.entries(modalState).forEach(([id, state]) => {
+                        try {
+                            const visible = !!(
+                                state && (state as Record<string, unknown>)['visible']
+                            );
+                            if (visible) toRestore.add(id);
+                        } catch {
+                            /* ignore */
+                        }
+                    });
+                }
+            }
+        } catch (err) {
+            console.warn('Legacy window-session konnte nicht gelesen werden:', err);
+        }
+
+        toRestore.forEach(id => {
             // Skip transient modals
             if (transientModalIds.has(id)) return;
 
             // Validate modal exists in DOM
             const el = document.getElementById(id);
             if (!el) {
-                console.warn(`Skipping restore of modal "${id}": element not found in DOM`);
+                // Align with legacy expectation in tests
+                console.warn(`SessionManager: Modal "${id}" not found in DOM`);
                 return;
             }
 
@@ -253,7 +278,7 @@
         });
 
         try {
-            localStorage.setItem(MODAL_POSITIONS_KEY, JSON.stringify(positions));
+            setJSON(MODAL_POSITIONS_KEY, positions);
         } catch (err) {
             console.warn('Window positions konnte nicht gespeichert werden:', err);
         }
@@ -264,7 +289,7 @@
         let positions: Positions = {};
 
         try {
-            positions = JSON.parse(localStorage.getItem(MODAL_POSITIONS_KEY) || '{}');
+            positions = getJSON<Positions>(MODAL_POSITIONS_KEY, {});
         } catch (err) {
             console.warn('Window positions konnte nicht gelesen werden:', err);
             return;
@@ -325,7 +350,7 @@
         }
 
         try {
-            localStorage.removeItem(MODAL_POSITIONS_KEY);
+            remove(MODAL_POSITIONS_KEY);
         } catch (err) {
             console.warn('Modal positions konnte nicht gelöscht werden:', err);
         }

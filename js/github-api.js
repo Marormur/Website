@@ -1,4 +1,6 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const storage_utils_js_1 = require("./storage-utils.js");
 (function () {
     'use strict';
     const GITHUB_CACHE_NS = 'finderGithubCacheV1:';
@@ -23,7 +25,7 @@
         const key = makeCacheKey(kind, repo, subPath);
         try {
             const payload = { t: Date.now(), d: data };
-            localStorage.setItem(key, JSON.stringify(payload));
+            (0, storage_utils_js_1.setJSON)(key, payload);
         }
         catch {
             /* ignore */
@@ -32,10 +34,7 @@
     function readCache(kind, repo = '', subPath = '') {
         const key = makeCacheKey(kind, repo, subPath);
         try {
-            const raw = localStorage.getItem(key);
-            if (!raw)
-                return null;
-            const parsed = JSON.parse(raw);
+            const parsed = (0, storage_utils_js_1.getJSON)(key, null);
             if (!parsed || typeof parsed !== 'object')
                 return null;
             const ttl = getCacheTtl();
@@ -50,7 +49,7 @@
     function getHeaders() {
         const headers = { Accept: 'application/vnd.github.v3+json' };
         try {
-            const token = localStorage.getItem('githubToken');
+            const token = (0, storage_utils_js_1.getString)('githubToken');
             if (token && token.trim()) {
                 headers['Authorization'] = `token ${token.trim()}`;
             }

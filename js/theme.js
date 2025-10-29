@@ -3,6 +3,8 @@
  * src/ts/theme.ts
  * Theme management (dark/light/system) with safe typing and legacy compatibility.
  */
+Object.defineProperty(exports, "__esModule", { value: true });
+const storage_utils_js_1 = require("./storage-utils.js");
 (() => {
     'use strict';
     // Constants from global config if available
@@ -12,21 +14,18 @@
     const validThemePreferences = ['system', 'light', 'dark'];
     const systemDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
     let themePreference = (() => {
-        const fromStorage = localStorage.getItem(THEME_KEY);
-        return (fromStorage && validThemePreferences.includes(fromStorage)
-            ? fromStorage
-            : 'system');
+        const fromStorage = (0, storage_utils_js_1.getString)(THEME_KEY);
+        return (fromStorage && validThemePreferences.includes(fromStorage) ? fromStorage : 'system');
     })();
     function updateThemeFromPreference() {
-        const useDark = themePreference === 'dark' ||
-            (themePreference === 'system' && systemDarkQuery.matches);
+        const useDark = themePreference === 'dark' || (themePreference === 'system' && systemDarkQuery.matches);
         document.documentElement.classList.toggle('dark', useDark);
     }
     function setThemePreference(pref) {
         if (!validThemePreferences.includes(pref))
             return;
         themePreference = pref;
-        localStorage.setItem(THEME_KEY, pref);
+        (0, storage_utils_js_1.setString)(THEME_KEY, pref);
         updateThemeFromPreference();
         // Notify other modules
         window.dispatchEvent(new CustomEvent('themePreferenceChange', {

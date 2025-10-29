@@ -5,7 +5,9 @@
  * Provides centralized, debounced persistence of window instance state to localStorage.
  * Handles storage quota limits gracefully and coordinates saves across multiple instances.
  */
+Object.defineProperty(exports, "__esModule", { value: true });
 console.log('SessionManager loaded');
+const storage_utils_js_1 = require("./storage-utils.js");
 (() => {
     'use strict';
     // ===== Constants =====
@@ -19,7 +21,6 @@ console.log('SessionManager loaded');
     let pendingSaveTypes = new Set(); // Track which instance types need saving
     let quotaExceeded = false;
     let saveInProgress = false;
-    let lastSaveAttempt = 0;
     // ===== Storage Helpers =====
     /**
      * Estimate size of data in bytes (rough approximation)
@@ -46,10 +47,7 @@ console.log('SessionManager loaded');
      */
     function readSession() {
         try {
-            const raw = localStorage.getItem(SESSION_STORAGE_KEY);
-            if (!raw)
-                return null;
-            const parsed = JSON.parse(raw);
+            const parsed = (0, storage_utils_js_1.getJSON)(SESSION_STORAGE_KEY, null);
             if (!parsed || typeof parsed !== 'object')
                 return null;
             if (parsed.version !== SESSION_VERSION) {
@@ -77,7 +75,7 @@ console.log('SessionManager loaded');
             return false;
         }
         try {
-            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+            (0, storage_utils_js_1.setJSON)(SESSION_STORAGE_KEY, session);
             quotaExceeded = false; // Reset flag on successful save
             return true;
         }
@@ -97,7 +95,7 @@ console.log('SessionManager loaded');
      */
     function clearSession() {
         try {
-            localStorage.removeItem(SESSION_STORAGE_KEY);
+            (0, storage_utils_js_1.remove)(SESSION_STORAGE_KEY);
             console.log('SessionManager: Session cleared');
         }
         catch (err) {

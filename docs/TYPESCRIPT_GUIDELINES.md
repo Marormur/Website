@@ -412,6 +412,37 @@ strings.add('hello');
 
 ## Common Patterns
 
+### Initialization pattern (DOMContentLoaded) ✅
+
+Keep modules self-initializing. Prefer a tiny helper over duplicating boilerplate:
+
+```ts
+// src/ts/app-ready.ts
+export function onAppReady(fn: () => void): void {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fn, { once: true });
+    } else {
+        Promise.resolve().then(fn);
+    }
+}
+```
+
+Usage in a module:
+
+```ts
+import { onAppReady } from './app-ready.js';
+
+onAppReady(() => {
+    // module init here
+});
+```
+
+Rationale:
+
+- Preserves modularity (each module owns its init)
+- No central registry needed
+- Consistent timing without hand-written checks
+
 ### Window Interface Extensions
 
 **⚠️ IMPORTANT:** All Window interface extensions MUST go in `types/index.d.ts` only!

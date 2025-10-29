@@ -5,6 +5,7 @@
     type Instance = {
         instanceId: string;
         title: string;
+        metadata?: Record<string, unknown>;
         focus?: () => void;
         blur?: () => void;
         destroy?: () => void;
@@ -66,7 +67,8 @@
 
         const title = document.createElement('span');
         title.className = 'wt-tab-title';
-        title.textContent = instance.title || instance.instanceId;
+        const tabLabel = (instance as any).metadata?.tabLabel as string | undefined;
+        title.textContent = tabLabel || instance.title || instance.instanceId;
         tab.appendChild(title);
 
         const close = document.createElement('span');
@@ -258,9 +260,9 @@
                 mountEl.innerHTML = '';
             },
             setTitle(instanceId: string, title: string) {
-                const inst = wrapped.getInstance(instanceId);
+                const inst = wrapped.getInstance(instanceId) as any;
                 if (inst) {
-                    inst.title = title;
+                    inst.metadata = { ...(inst.metadata || {}), tabLabel: title };
                     this.refresh();
                 }
             },
@@ -285,4 +287,3 @@
 
     (window as unknown as { [k: string]: unknown }).WindowTabs = WindowTabs;
 })();
-

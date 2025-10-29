@@ -1,34 +1,34 @@
 {
-  "folders": [
-    {
-      "name": "🏠 Website (Root)",
-      "path": "."
+    "folders": [
+        {
+            "name": "🏠 Website (Root)",
+            "path": ".",
+        },
+        {
+            "name": "📚 Documentation",
+            "path": "docs",
+        },
+        {
+            "name": "🧪 Tests",
+            "path": "tests",
+        },
+    ],
+    "settings": {
+        // Root-level settings apply to all folders
+        // See .vscode/settings.json for main configuration
     },
-    {
-      "name": "📚 Documentation",
-      "path": "docs"
+    "tasks": {
+        // All tasks are defined in .vscode/tasks.json
+        // They remain accessible from all workspace folders
+        "version": "2.0.0",
     },
-    {
-      "name": "🧪 Tests",
-      "path": "tests"
-    }
-  ],
-  "settings": {
-    // Root-level settings apply to all folders
-    // See .vscode/settings.json for main configuration
-  },
-  "tasks": {
-    // All tasks are defined in .vscode/tasks.json
-    // They remain accessible from all workspace folders
-    "version": "2.0.0"
-  },
-  "launch": {
-    // All debug configurations are defined in .vscode/launch.json
-    // They remain accessible from all workspace folders
-    "version": "0.2.0"
-  },
-  "extensions": {
-    // Extension recommendations from .vscode/extensions.json apply workspace-wide
-    "recommendations": []
-  }
+    "launch": {
+        // All debug configurations are defined in .vscode/launch.json
+        // They remain accessible from all workspace folders
+        "version": "0.2.0",
+    },
+    "extensions": {
+        // Extension recommendations from .vscode/extensions.json apply workspace-wide
+        "recommendations": [],
+    },
 }

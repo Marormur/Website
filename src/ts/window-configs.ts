@@ -1,13 +1,31 @@
-"use strict";
 /*
  * src/ts/window-configs.ts
  * Single source of truth for all window/modal definitions.
  * Replaces legacy src/ts/legacy/window-configs.js
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.windowConfigurations = void 0;
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+type WindowType = 'persistent' | 'transient';
+
+export interface WindowConfiguration {
+    id: string;
+    type: WindowType;
+    programKey: string; // i18n key root for program label
+    icon: string;
+    closeButtonId: string;
+    // Use a broad shape to align with WindowManager expectations
+    metadata?: Record<string, unknown>;
+}
+
+declare global {
+    interface Window {
+        windowConfigurations?: WindowConfiguration[];
+    }
+}
+
 // Build the configurations list. Keep order stable; WindowManager load order matters.
-exports.windowConfigurations = [
+export const windowConfigurations: WindowConfiguration[] = [
     {
         id: 'finder-modal',
         type: 'persistent',
@@ -20,23 +38,22 @@ exports.windowConfigurations = [
                 try {
                     const integ = window.MultiInstanceIntegration?.getIntegration?.('finder');
                     integ?.tabManager?.controller?.refresh?.();
-                }
-                catch (e) {
+                } catch (e) {
                     console.warn('Finder init refresh failed:', e);
                 }
             },
             openHandler: function () {
                 // Do NOT auto-create Finder instances on open; only ensure active is shown
                 try {
-                    const activeId = window.FinderInstanceManager?.getActiveInstance?.()?.instanceId;
+                    const activeId =
+                        window.FinderInstanceManager?.getActiveInstance?.()?.instanceId;
                     if (activeId && window.MultiInstanceIntegration) {
                         window.MultiInstanceIntegration.showInstance?.('finder', activeId);
                         const integ = window.MultiInstanceIntegration.getIntegration?.('finder');
                         // Force tab UI refresh to ensure tab visibility
                         integ?.tabManager?.controller?.refresh?.();
                     }
-                }
-                catch (e) {
+                } catch (e) {
                     console.warn('Finder open refresh failed:', e);
                 }
             },
@@ -52,14 +69,12 @@ exports.windowConfigurations = [
             skipMenubarUpdate: true,
             initHandler: function () {
                 // Initialize Launchpad module if not already
-                if (window.LaunchpadSystem && !window.LaunchpadSystem?.container) {
+                if (window.LaunchpadSystem && !(window as any).LaunchpadSystem?.container) {
                     const container = document.getElementById('launchpad-container');
-                    if (container)
-                        window.LaunchpadSystem.init(container);
+                    if (container) window.LaunchpadSystem.init(container);
                 }
                 // Refresh apps when opening
-                if (window.LaunchpadSystem?.refresh)
-                    window.LaunchpadSystem.refresh();
+                if (window.LaunchpadSystem?.refresh) window.LaunchpadSystem.refresh();
             },
         },
     },
@@ -85,10 +100,9 @@ exports.windowConfigurations = [
         closeButtonId: 'close-settings-modal',
         metadata: {
             initHandler: function () {
-                if (window.SettingsSystem && !window.SettingsSystem?.container) {
+                if (window.SettingsSystem && !(window as any).SettingsSystem?.container) {
                     const container = document.getElementById('settings-container');
-                    if (container)
-                        window.SettingsSystem.init(container);
+                    if (container) window.SettingsSystem.init(container);
                 }
             },
         },
@@ -103,12 +117,13 @@ exports.windowConfigurations = [
             initHandler: function () {
                 // Do NOT auto-create instances when multi-instance manager is available
                 // Fallback legacy editor init only
-                if (!window.TextEditorInstanceManager &&
+                if (
+                    !window.TextEditorInstanceManager &&
                     window.TextEditorSystem &&
-                    !window.TextEditorSystem?.container) {
+                    !(window as any).TextEditorSystem?.container
+                ) {
                     const container = document.getElementById('text-editor-container');
-                    if (container)
-                        window.TextEditorSystem.init(container);
+                    if (container) window.TextEditorSystem.init(container);
                 }
             },
         },
@@ -121,8 +136,7 @@ exports.windowConfigurations = [
         closeButtonId: 'close-image-modal',
         metadata: {
             initHandler: function () {
-                if (window.PhotosApp?.init)
-                    window.PhotosApp.init();
+                if (window.PhotosApp?.init) window.PhotosApp.init();
             },
         },
     },
@@ -143,32 +157,36 @@ exports.windowConfigurations = [
             initHandler: function () {
                 // Do NOT auto-create instances when multi-instance manager is available
                 // Fallback legacy terminal init only
-                if (!window.TerminalInstanceManager &&
+                if (
+                    !window.TerminalInstanceManager &&
                     window.TerminalSystem &&
-                    !window.TerminalSystem?.container) {
+                    !(window as any).TerminalSystem?.container
+                ) {
                     const container = document.getElementById('terminal-container');
-                    if (container)
-                        window.TerminalSystem.init(container);
+                    if (container) window.TerminalSystem.init(container);
                 }
             },
         },
     },
 ];
+
 // Auto-register with WindowManager when available (module load time)
 if (window.WindowManager) {
-    window.WindowManager.registerAll(exports.windowConfigurations);
-    console.log(`[WindowConfigs] Registered ${exports.windowConfigurations.length} windows`);
-}
-else {
+    window.WindowManager.registerAll(windowConfigurations);
+    console.log(`[WindowConfigs] Registered ${windowConfigurations.length} windows`);
+} else {
     // Fallback: register after DOMContentLoaded if WindowManager loads later
     document.addEventListener('DOMContentLoaded', () => {
         if (window.WindowManager) {
-            window.WindowManager.registerAll(exports.windowConfigurations);
-            console.log(`[WindowConfigs] Registered ${exports.windowConfigurations.length} windows (delayed)`);
+            window.WindowManager.registerAll(windowConfigurations);
+            console.log(
+                `[WindowConfigs] Registered ${windowConfigurations.length} windows (delayed)`
+            );
         }
     });
 }
+
 // Expose configs for diagnostics and external tools
-window.windowConfigurations = exports.windowConfigurations;
-exports.default = exports.windowConfigurations;
-//# sourceMappingURL=window-configs.js.map
+window.windowConfigurations = windowConfigurations;
+
+export default windowConfigurations;

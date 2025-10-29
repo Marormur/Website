@@ -1,3 +1,5 @@
+import { getJSON, setJSON, getString } from './storage-utils.js';
+
 (function () {
     'use strict';
 
@@ -30,7 +32,7 @@
         const key = makeCacheKey(kind, repo, subPath);
         try {
             const payload = { t: Date.now(), d: data };
-            localStorage.setItem(key, JSON.stringify(payload));
+            setJSON(key, payload);
         } catch {
             /* ignore */
         }
@@ -39,9 +41,7 @@
     function readCache<T = unknown>(kind: 'repos' | 'contents', repo = '', subPath = ''): T | null {
         const key = makeCacheKey(kind, repo, subPath);
         try {
-            const raw = localStorage.getItem(key);
-            if (!raw) return null;
-            const parsed = JSON.parse(raw);
+            const parsed = getJSON<{ t: number; d: T } | null>(key, null);
             if (!parsed || typeof parsed !== 'object') return null;
             const ttl = getCacheTtl();
             if (typeof parsed.t !== 'number' || Date.now() - parsed.t > ttl) return null;
@@ -54,7 +54,7 @@
     function getHeaders(): Record<string, string> {
         const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' };
         try {
-            const token = localStorage.getItem('githubToken');
+            const token = getString('githubToken');
             if (token && token.trim()) {
                 headers['Authorization'] = `token ${token.trim()}`;
             }

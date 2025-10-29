@@ -1,433 +1,86 @@
-# Copilot Instructions - macOS-Style Portfolio Website
+# Copilot Quick Guide - macOS-Style Portfolio
 
-**Hinweis:** Wichtige Updates, neue Features, Bugfixes und relevante Änderungen sollten immer auch in die `CHANGELOG.md` eingetragen werden. Dadurch stehen sie Copilot als Informationsquelle zur Verfügung und erleichtern die Nachverfolgung von Änderungen und die Automatisierung von Aufgaben.
+Kurz und praxisnah: So arbeitest du mit diesem Projekt effizient, ohne das Kontextfenster mit Doku zu sprengen.
 
-## Architecture Overview
+## TL;DR
 
-This is a **desktop-metaphor web application** built with TypeScript (compiled to JavaScript), featuring a macOS-inspired UI with windows, modals, dock, and menubar. The codebase was refactored from a large monolith into a modular TypeScript architecture with specialized systems.
+- TypeScript-Quellcode unter `src/ts/` ist die Wahrheit. Schreib neue Features nur dort.
+- Fenster nur in `src/ts/window-configs.ts` registrieren – keine manuellen Dialoge, keine ID-Arrays.
+- UI-Aktionen deklarativ per `data-action` + ActionBus statt `addEventListener`.
+- Module über `API.*` verwenden (z. B. `API.theme.setThemePreference('dark')`).
+- Wiederverwendbare UI mit `WindowChrome` (Titlebar/Toolbar/Statusbar).
+- Multi-Instanzen über `InstanceManager` + `BaseWindowInstance`.
 
-**✅ MIGRATION COMPLETE**: The codebase has been migrated to TypeScript. Prefer the modern TypeScript module patterns and the `src/ts/` sources when adding or updating code.
+## Kernsysteme (Ladereihenfolge)
 
-### Core Systems (Load Order Matters!)
+1. WindowManager · 2) ActionBus · 3) WindowConfigs · 4) API · 5) InstanceManager · 6) BaseWindowInstance · 7) WindowChrome
 
-1. **WindowManager** (`src/ts/window-manager.ts`) - Central window registry, z-index management, program metadata
-2. **ActionBus** (`src/ts/action-bus.ts`) - Declarative event system via `data-action` attributes
-3. **WindowConfigs** (`src/ts/window-configs.ts`) - Single source of truth for all window definitions
-4. **API** (`src/ts/api.ts`) - Unified interface to all modules with compatibility helpers
-5. **InstanceManager** (`src/ts/instance-manager.ts`) - Multi-instance window support (multiple terminals, editors)
-6. **BaseWindowInstance** (`src/ts/base-window-instance.ts`) - Base class for window instances
-7. **WindowChrome** (`src/ts/window-chrome.ts`) - Reusable UI components (titlebars, toolbars, status bars)
+## Must-Do Patterns
 
-### Supporting Modules
+- Fenster hinzufügen (nur WindowConfigs):
+    - `id`, `type` (persistent/transient), `programKey`, `icon`, `closeButtonId`, optional `metadata.initHandler`.
+- Aktionen: `<button data-action="openWindow" data-window-id="finder-modal">…</button>`
+- API statt Direktaufrufe: `API.window.open('finder-modal')`, `API.storage.saveWindowPositions()`
+- Multi-Instanzen: neue Typen von `BaseWindowInstance` ableiten; Erstellung/Destroy übernimmt `InstanceManager`.
+- Konsistente UI: `WindowChrome.createTitlebar/Toolbar/StatusBar`, `WindowChrome.updateTitle()`.
 
-- `theme.ts` - Dark/light mode (system, light, dark)
-- `i18n.ts` - Internationalization (DE/EN) with system/manual language selection
-- `dock.ts` - macOS-style dock with magnification effect
-- `menu.ts` - Dynamic menu system
-- `finder.ts` - File browser for GitHub repositories
-- `storage.ts` - localStorage persistence for window positions, Finder state
-- `desktop.ts` - Desktop icon system
+## Anti-Patterns (nicht verwenden)
 
-## Critical Patterns
+- Manuelle `addEventListener` für Standardaktionen
+- Direkte `new Dialog(...)`-Erzeugung
+- Hartkodierte Modal-ID-Arrays oder Legacy-Direktaufrufe statt `API.*`
 
-### Adding New Windows
+## Dev-Workflow (Kurz)
 
-**ONE STEP ONLY** - Add to `src/ts/window-configs.ts`:
+- Build: `npm run build:css`, `npm run build:ts`
+- Watch: `npm run watch:css`, `npm run typecheck:watch`
+- Dev-Server: `npm run dev` (http://127.0.0.1:5173)
+- VS Code Tasks bündeln das ("Dev Environment: Start All").
 
-```javascript
-{
-    id: 'new-window-modal',
-    type: 'persistent', // or 'transient'
-    programKey: 'programs.newApp', // i18n key
-    icon: './img/icon.png',
-    closeButtonId: 'close-new-window-modal',
-    metadata: {
-        initHandler: function() { /* optional init */ }
-    }
-}
-```
+## Tests (Playwright)
 
-NO need to modify arrays, add event listeners, or create Dialog instances manually - WindowManager handles everything.
+- Schnell: `npm run test:e2e:quick` (lokal Chromium)
+- Voll: `npm run test:e2e`
+- Stabilität: `MOCK_GITHUB=1`; auf Readiness warten (`window.__APP_READY`).
+- Schreibe für neue Features mindestens einen E2E-Test (Smoke + 1 Edge Case).
 
-### Event Handling via ActionBus
+## Deployment (GitHub Pages)
 
-**Don't use addEventListener** for standard actions. Use declarative HTML:
+- Auto-Deploy auf Push nach `main`.
+- CSS wird in CI gebaut; `dist/output.css` nicht committen.
 
-```html
-<button data-action="closeWindow" data-window-id="finder-modal">Close</button>
-<button data-action="openDesktopItem" data-item-id="projects">Projects</button>
-```
+## Forking (schnell anpassen)
 
-Available actions: `closeWindow`, `openWindow`, `closeTopWindow`, `resetWindowLayout`, `openProgramInfo`, `openAbout`, `openSettings`, `openDesktopItem`
+- GitHub User: `src/ts/finder.ts` -> `const GITHUB_USERNAME = '…'`
+- Tests: `tests/e2e/utils.js` Mock-URLs aktualisieren
+- Profilbild: `img/profil.jpg`
+- Texte: `src/ts/i18n.ts` (DE/EN pflegen)
 
-Register custom actions:
+## Wichtige Dateien
 
-```javascript
-ActionBus.register('myAction', (params, element) => {
-    // params contains all data-* attributes
-});
-```
+- `src/ts/window-configs.ts` – alle Fensterdefinitionen
+- `src/ts/app.ts` – App-Bootstrap
+- `src/ts/i18n.ts` – Übersetzungen und Helpers
 
-### Multi-Instance Windows
+## Quick Wins für Copilot
 
-Create multiple windows of the same type (terminals, editors):
+- Fenster hinzufügen/ändern -> nur `window-configs.ts` anpassen
+- UI-Aktion ergänzen -> ActionBus registrieren + `data-action`
+- Texte -> in `i18n.ts` für DE/EN ergänzen
+- Multi-Instanz-Typ -> von `BaseWindowInstance` ableiten und im `InstanceManager` registrieren
 
-```javascript
-// Create instance
-const term1 = window.TerminalInstanceManager.createInstance({
-    title: 'Dev Terminal',
-    initialState: { currentPath: '/home' },
-});
+## Pflegehinweis
 
-// Each instance has isolated state
-term1.state.commandHistory = ['ls', 'cd /var'];
+- Bei Doku-Änderungen kurzen Eintrag unter `docs:` in `CHANGELOG.md` ergänzen.
 
-// Instances are managed automatically
-term1.destroy(); // cleanup
-```
+## MCP-Tools (kurz)
 
-New instance types extend `BaseWindowInstance` and register with `InstanceManager`.
+- GitHub MCP Server ("github/github-mcp-server")
+    - Wofür: PRs/Reviews, Issues, Branches, Repo-Änderungen und Suchen auf GitHub.
+    - Wie: Bei Reviews erst eine pending Review anlegen, Kommentare hinzufügen, dann Review submitten. Vor dem Erstellen von Issues/PRs zuerst suchen, Pagination nutzen.
+    - Nutzen, wenn: PR-Status prüfen, Review-Kommentare verfassen, Branch/PR/Issue anlegen oder Dateien im Repo ändern.
 
-### WindowChrome for Reusable UI Components
-
-Use `WindowChrome` to build consistent window UI:
-
-```javascript
-// Create titlebar with controls
-const titlebar = WindowChrome.createTitlebar({
-    title: 'My Window',
-    icon: './img/icon.png',
-    showClose: true,
-    showMinimize: true,
-    showMaximize: false,
-    onClose: () => instance.close(),
-    onMinimize: () => instance.minimize(),
-});
-
-// Create toolbar with buttons
-const toolbar = WindowChrome.createToolbar([
-    { label: 'New', icon: '➕', onClick: () => createNew() },
-    { type: 'separator' },
-    { label: 'Save', icon: '💾', onClick: () => save() },
-]);
-
-// Create status bar
-const statusBar = WindowChrome.createStatusBar({
-    leftContent: 'Ready',
-    rightContent: 'Line 1, Col 1',
-});
-
-// Update titlebar dynamically
-WindowChrome.updateTitle(titlebar, 'New Title');
-```
-
-WindowChrome provides: `createTitlebar()`, `createToolbar()`, `createStatusBar()`, `updateTitle()`, and private helpers for consistent UI components.
-
-### API Access Pattern
-
-**Prefer** unified API access:
-
-```javascript
-API.theme.setThemePreference('dark');
-API.window.open('finder-modal');
-API.storage.saveWindowPositions();
-```
-
-Legacy wrapper functions exist for backwards compatibility but new code should use `API.*`
-
-## Deprecated Patterns (Historical)
-
-**⚠️ DO NOT use these patterns** - they are kept for historical reference only and should not be used in new TypeScript code:
-
-### ❌ Manual addEventListener for UI actions
-
-```javascript
-// OLD - Don't do this
-closeBtn.addEventListener('click', () => closeWindow('finder-modal'));
-
-// NEW - Use ActionBus
-<button data-action="closeWindow" data-window-id="finder-modal">
-    Close
-</button>;
-```
-
-### ❌ Direct Dialog instance creation
-
-```javascript
-// OLD - Don't do this
-const dialog = new Dialog('my-modal', { closeButton: 'close-btn' });
-
-// NEW - Register in src/ts/window-configs.ts, WindowManager handles creation
-```
-
-### ❌ Hard-coded modal ID arrays
-
-```javascript
-// OLD - Don't modify these arrays
-var modalIds = ["finder-modal", "about-modal", ...];
-
-// NEW - Register windows in src/ts/window-configs.ts
-```
-
-### ❌ Direct module function calls
-
-```javascript
-// OLD - Direct calls
-setThemePreference('dark');
-
-// NEW - Use API namespace
-API.theme.setThemePreference('dark');
-```
-
-### ✅ Preferred Modern Patterns
-
-- **Windows**: Define in `window-configs.js`
-- **Events**: Use `data-action` attributes + ActionBus
-- **Module access**: Use `API.*` namespace
-- **Multi-instance**: Extend `BaseWindowInstance` + use InstanceManager
-- **UI components**: Use WindowChrome helpers
-
-## Development Workflow
-
-### TypeScript
-
-This project uses **TypeScript with strict mode** throughout the codebase:
-
-- **New features**: Write in TypeScript (`src/ts/*.ts`)
-- **Build process**: `npm run build:ts` compiles TS → JS, with automatic export fixing
-- **Type checking**: Always run `npm run typecheck` before committing
-- **Watch mode**: Use `npm run typecheck:watch` during development
-
-If you find any remaining JavaScript files they are historical; prefer converting or adding functionality in `src/ts/`.
-
-### Git workflow & commit cadence
-
-- Prefer small, atomic commits with clear messages (conventional commits recommended, e.g., `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`, `build:`).
-- Commit after each logically complete step (e.g., add types for one module, then commit; wire a shortcut, then commit).
-- Push frequently to the working branch (develop or a feature branch) to keep CI running early and often.
-- When editing multiple files in a burst, split into separate commits by concern (config, types, code, tests, docs).
-- Before pushing, run: `npm run typecheck`, `npm run lint`, and optionally the basic E2E suite.
-- **Cross-Platform Testing**: All VS Code tasks use `options.env` for environment variables (Windows/macOS/Linux compatible). Manual CLI testing requires platform-specific syntax:
-    - PowerShell (Windows): `$env:MOCK_GITHUB='1'; npm run test:e2e:quick`
-    - Bash/Zsh (macOS/Linux): `MOCK_GITHUB=1 npm run test:e2e:quick`
-
-### Documentation Maintenance (Markdown)
-
-- Copilot soll die Markdown-Dokumentation regelmäßig auf Aktualität und Korrektheit prüfen.
-- Auslöser: wöchentlich, vor Releases, nach größeren Refactorings, sowie immer wenn sich Build-Skripte, VS Code Tasks oder öffentliche APIs ändern.
-- Umfang: `docs/**/*.md`, `README.md`, Dateien in `docs/guides/`, `docs/architecture/`, `docs/TESTING.md`, `docs/QUICKSTART.md`, sowie `CHANGELOG.md`.
-- Prüfpunkte:
-    - Befehle in Codeblöcken stimmen mit `package.json`-Skripten und vorhandenen VS Code Tasks überein.
-    - Dateipfade/Modulnamen existieren und spiegeln die aktuelle `src/ts/`-Struktur wider (TypeScript-Migration berücksichtigen).
-    - Links funktionieren (interne Anker, relative Pfade, Referenzen auf vorhandene Dateien/Abschnitte).
-    - Testanleitungen entsprechen der aktuellen Playwright-Konfiguration und Umgebungsvariablen (`MOCK_GITHUB`, `USE_BUNDLE`, `USE_NODE_SERVER`).
-    - Deploy-Schritte passen zur aktuellen GitHub-Pages-Pipeline.
-- Maßnahmen bei Abweichungen:
-    - Betroffene Markdown-Dateien in kleinen, thematisch getrennten Commits aktualisieren.
-    - Einen Eintrag in `CHANGELOG.md` unter `docs:` ergänzen (kurze, präzise Beschreibung).
-    - Bei größeren Lücken ein Issue mit Checkliste eröffnen.
-- Nützliche Tasks zur Unterstützung:
-    - "Docs: Generate" (sofern relevant) zum Aktualisieren generierter API-Dokumente.
-    - "Validate: All" vor dem Pushen ausführen, um Inkonsistenzen früh zu erkennen.
-
-### Build & Run
-
-```bash
-npm run build:css          # Build Tailwind CSS (required first time)
-npm run build:ts           # Build TypeScript to JavaScript
-npm run watch:css          # Watch CSS changes (run in separate terminal)
-npm run typecheck:watch    # Watch TypeScript errors (run in separate terminal)
-npm run dev                # Start dev server on http://127.0.0.1:5173
-```
-
-**Note**: VS Code tasks automate this - "Dev Environment: Start All" task runs CSS watch, TypeScript watch, and dev server in parallel.
-
-### Testing
-
-E2E tests use **Playwright** for browser automation across Chromium, Firefox, and WebKit:
-
-```bash
-npm run pw:install         # Install browsers (once)
-npm run test:e2e           # Run all E2E tests (headless, Chromium only locally)
-npm run test:e2e:quick     # Quick smoke tests (~5s, Chromium only)
-npm run test:e2e:headed    # Run with browser visible
-npm run test:e2e:ui        # Run with Playwright UI
-npm run test:e2e:chromium  # Explicit Chromium-only run
-npm run test:e2e:all-browsers # Force all browsers (Chromium/Firefox/WebKit)
-```
-
-Tests are in `tests/e2e/*.spec.js`.
-
-**Important Testing Guidelines:**
-
-1. **Always test new features with Playwright** - Don't just manually verify in browser
-2. **Use Playwright tools directly** - Available via `mcp_playwright_*` tools for browser automation
-3. **Prefer explicit waits** - Use `page.waitForSelector()` or wait for `window.__APP_READY` instead of arbitrary timeouts
-4. **Mock GitHub API for stability** - Use `MOCK_GITHUB=1` env var to avoid rate limiting in tests
-5. **Test isolation** - Each test should be independent and clean up after itself
-
-#### Test Strategy Differences
-
-**`*-basic.spec.js`** - Simple, fast smoke tests:
-
-- Uses `window.__APP_READY` signal instead of `networkidle`
-- Suitable for CI environments with flaky networks
-- Tests basic module availability and instance creation
-- Runs faster (~5s for 15 tests)
-- **Use for**: Quick verification during development
-
-**Full test suites** - Comprehensive tests:
-
-- Tests complex interactions and state isolation
-- More realistic but slower (~13s for 85 tests locally)
-- May fail if GitHub API is rate-limited (use `MOCK_GITHUB=1`)
-- **Use for**: Pre-commit validation and CI
-
-**When to use which**:
-
-- Use quick tests (`npm run test:e2e:quick`) during development
-- Use full tests before pushing to ensure comprehensive coverage
-- CI runs all browsers; local defaults to Chromium only for speed
-
-#### Test Environment
-
-Test patterns use `utils.js` for shared setup. Server configuration:
-
-- **Dev and Tests**: Always run on `http://127.0.0.1:5173` via `node server.js`
-- `playwright.config.js` starts the Node server automatically if not running
-- Tests expect GitHub username "Marormur" - if changing username, update test mocks in `tests/e2e/utils.js`
-- **Mocking**: Set `MOCK_GITHUB=1` to enable GitHub API mocks (avoids rate limiting)
-
-**Playwright Testing Best Practices:**
-
-- **Write tests for all new features** - Use Playwright tools (`mcp_playwright_*`) to automate browser interactions
-- **Test edge cases** - Multi-instance limits, keyboard shortcuts, window management
-- **Use descriptive test names** - `test('should create multiple terminal instances', ...)`
-- **Clean up state** - Close windows/instances created during tests
-- **Check for console errors** - Tests should verify no JavaScript errors occurred
-- **Use page object pattern** - Share common selectors and actions in `utils.js`
-
-### Deployment
-
-**GitHub Pages** auto-deploys on push to `main` branch:
-
-1. GitHub Actions runs `npm run build:css`
-2. Site publishes to https://marormur.github.io/Website/
-3. `.nojekyll` file ensures all assets are served
-
-**Critical**:
-
-- `dist/output.css` is **NOT committed** - GitHub Actions builds it automatically
-- Locally: Use `npm run watch:css` task during development
-- CSS changes go in `src/input.css` or `src/css/*.css`, never edit `dist/output.css`
-- Repository Settings → Pages → Source must be "GitHub Actions"
-
-## Project-Specific Conventions
-
-### Internationalization (i18n)
-
-All user-facing text goes through `src/ts/i18n.ts`:
-
-```javascript
-translate('programs.finder.label'); // Returns localized string
-appI18n.applyTranslations(); // Re-render all translations
-```
-
-Add new translations to BOTH `de` and `en` objects in `src/ts/i18n.ts`. Use dotted keys like `context.finder.openItem`.
-
-### GitHub Integration
-
-Finder loads public repos from GitHub API for user **"Marormur"**.
-
-**To customize for another user**:
-
-1. Edit `src/ts/finder.ts`: Change `const GITHUB_USERNAME = 'Marormur';` (primary location)
-2. Update test mocks in `tests/e2e/utils.js` (search for "Marormur" API URLs)
-3. Note: No authentication token is used
-
-**Rate limiting**:
-
-- Unauthenticated GitHub API: 60 requests/hour per IP
-- Failed loads are common in development - check browser console for 403 errors
-- Consider adding a GitHub token for development (would increase limit to 5000/hour)
-- No error UI is shown to users on API failures
-
-### CSS & Styling
-
-- **Tailwind CSS** classes in HTML (`src/input.css` → `dist/output.css`)
-- **Custom CSS** in `src/css/style.css` and `src/css/dialog.css`
-- **Dark mode** via `class="dark"` on `<html>` element
-- Run `npm run build:css` after changing Tailwind config or `src/input.css`
-
-### Storage & Persistence
-
-Uses localStorage for:
-
-- Window positions/z-indexes
-- Finder state (current repo, path)
-- Theme preference (system/light/dark)
-- Language preference (system/de/en)
-
-Access via `API.storage.*` methods. Reset with "Fenster zurücksetzen" menu item.
-
-### Dialog/Modal System
-
-All modals are managed by the WindowManager and backed by the internal `Dialog` class (`src/ts/dialog.ts`). Do not create `Dialog` instances manually. Instead, register windows in `src/ts/window-configs.ts`; the WindowManager will instantiate and manage dialogs automatically (z-index, focus, cleanup).
-
-## Common Pitfalls
-
-1. **Module load order**: Core systems must load before `app.js`. Check `index.html` script order if seeing undefined errors.
-
-2. **i18n keys**: Missing translation keys fall back to key name. Always add to both DE and EN.
-
-3. **CSS not updating**: Run `npm run build:css` or ensure `watch:css` task is running.
-
-4. **Instance cleanup**: Multi-instance windows need explicit `destroy()` or use InstanceManager methods to avoid memory leaks.
-
-5. **GitHub API fails silently**: Check browser console for 403 rate limit errors. No error UI shown to user.
-
-6. **Editing `dist/output.css` directly**: This file is generated by Tailwind. Changes go in `src/input.css` or `src/css/*.css` only.
-
-7. **Using old event patterns**: Don't add manual `addEventListener` for standard UI actions - use ActionBus `data-action` instead.
-
-8. **Changing GitHub username**: Remember to update `src/ts/finder.ts` (primary), and test mocks in `tests/e2e/utils.js` to avoid test failures.
-
-9. **TypeScript errors**: Always run `npm run typecheck` before committing. Strict mode catches runtime bugs early (null/undefined access, array bounds).
-
-10. **Testing manually only**: Don't skip E2E tests - use `mcp_playwright_*` tools to write automated tests for new features before pushing.
-
-## Configuration for Forking
-
-If you're forking this project for your own portfolio:
-
-1. **GitHub Username**:
-    - Primary: Edit `src/ts/finder.ts` - change `const GITHUB_USERNAME = 'Marormur';` to your username
-    - Legacy (if used): Also update `const username` in `app.js` and `projekte.html`
-    - Tests: Update API URL mocks in `tests/e2e/utils.js` (search/replace "Marormur")
-2. **Profile Image**: Replace `img/profil.jpg` with your photo
-3. **Translations**: Update personal info in `src/ts/i18n.ts` (both `de` and `en` objects)
-4. **GitHub Pages URL**: Update `docs/guides/DEPLOYMENT.md` with your repository URL
-5. **Repository Settings**: Enable GitHub Pages with source "GitHub Actions"
-6. **Branding**: Replace icons in `img/` directory as needed
-
-## Key Files for Reference
-
--- `docs/architecture/OVERVIEW.md` - Visual architecture diagrams and data flow
--- `docs/architecture/PATTERNS.md` - Design patterns and best practices
--- `docs/architecture/REFACTORING.md` - Migration guide and notes for the TypeScript refactor
--- `docs/QUICKSTART.md` - Quick start guide for developers
--- `docs/TYPESCRIPT_GUIDELINES.md` - TypeScript usage, strict mode, and migration patterns
--- `docs/TESTING.md` - Testing strategy, environment variables, and troubleshooting
--- `docs/archive/MULTI_INSTANCE_QUICKSTART.md` - Multi-instance system guide with examples (archived)
--- `docs/guides/DEPLOYMENT.md` - GitHub Pages deployment setup
--- `src/ts/window-configs.ts` - All window definitions (single source of truth)
--- `src/ts/app.ts` - Main application bootstrap (TypeScript entry)
--- `src/ts/i18n.ts` - Translation dictionary and helpers
-
-## Quick Wins for AI Agents
-
-- Adding windows? Edit `src/ts/window-configs.ts` only
-- Adding UI actions? Register in ActionBus, use `data-action` in HTML
-- Adding translations? Add to both `de` and `en` in `src/ts/i18n.ts`
-- Need new instance type? Extend `BaseWindowInstance`, create manager
-- Modifying styles? Check if Tailwind class exists before custom CSS
+- Playwright MCP ("microsoft/playwright-mcp")
+    - Wofür: Browserautomation und E2E-Tests direkt aus der Session.
+    - Wie: Auf `window.__APP_READY` warten, explizite `waitForSelector` statt Timeouts, `MOCK_GITHUB=1` für Stabilität.
+    - Nutzen, wenn: Neue Features verifizieren, Smoke-Checks fahren, reproduzierbare UI-Flows testen (headed/UI/quick).

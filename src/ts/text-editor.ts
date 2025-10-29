@@ -1,3 +1,5 @@
+import { getString, setString, remove } from './storage-utils.js';
+
 /**
  * Text Editor Module
  * Replaces text.html iframe with inline text editor
@@ -38,55 +40,59 @@ interface TextEditorSystemInternal extends TextEditorSystemAPI {
     findInput: HTMLInputElement | null;
     replaceInput: HTMLInputElement | null;
     toastContainer: HTMLElement | null;
-    
+
     // Internal methods
     init(containerOrId: HTMLElement | string): void;
-        render(): void;
-        cacheElements(): void;
-        loadWrapPreference(): void;
-        attachListeners(): void;
-        loadSavedContent(): void;
-        syncSaveButtonState(): void;
-        registerActions(): void;
-        updateCSSVariables(): void;
-        applyWrapMode(mode?: string): void;
-        setStatusPlain(msg: string): void;
-        focusEditor(): void;
-        handleEditorInput(): void;
-        updateWordCount(): void;
-        updateCursorPosition(): void;
-        handleFileSelect(event: Event): void;
-        updateDocumentTitle(): void;
-        clearStatus(): void;
-        toggleWrapMode(): void;
-        execCommand(cmd: string): void;
-            handlePaste(e?: Event): void;
-        selectAll(): void;
-        wrapSelection(before: string, after: string): void;
-        insertHeading(level: number): void;
-        insertList(type: string): void;
-        alignText(align: string): void;
-        insertLink(): void;
-        toggleFindReplace(): void;
-        findNext(): void;
-        replaceOne(): void;
-        replaceAll(): void;
-        closeFindReplace(): void;
-            formatFileLabel(meta?: unknown): string;
-        setStatusLocalized(key: string, params?: unknown): void;
-            resolveTranslation(key: string, params?: unknown): { text: string; translated: boolean };
-        showToast(msg: string, type?: string): void;
-        insertTextAtCursor(text: string): void;
-        showInputModal(title: string, defaultValue?: string, placeholder?: string): Promise<string | null>;
-            applyStatusState(state?: StatusState): void;
-            clearEditor(): void;
-            openFile(): void;
-            saveFile(): void;
-        loadRemoteFile(payload: Partial<RemoteFilePayload>): void;
-        showLoading(payload?: unknown): void;
-        showLoadError(payload?: unknown): void;
-        handleMenuAction(action: string): void;
-        destroy(): void;
+    render(): void;
+    cacheElements(): void;
+    loadWrapPreference(): void;
+    attachListeners(): void;
+    loadSavedContent(): void;
+    syncSaveButtonState(): void;
+    registerActions(): void;
+    updateCSSVariables(): void;
+    applyWrapMode(mode?: string): void;
+    setStatusPlain(msg: string): void;
+    focusEditor(): void;
+    handleEditorInput(): void;
+    updateWordCount(): void;
+    updateCursorPosition(): void;
+    handleFileSelect(event: Event): void;
+    updateDocumentTitle(): void;
+    clearStatus(): void;
+    toggleWrapMode(): void;
+    execCommand(cmd: string): void;
+    handlePaste(e?: Event): void;
+    selectAll(): void;
+    wrapSelection(before: string, after: string): void;
+    insertHeading(level: number): void;
+    insertList(type: string): void;
+    alignText(align: string): void;
+    insertLink(): void;
+    toggleFindReplace(): void;
+    findNext(): void;
+    replaceOne(): void;
+    replaceAll(): void;
+    closeFindReplace(): void;
+    formatFileLabel(meta?: unknown): string;
+    setStatusLocalized(key: string, params?: unknown): void;
+    resolveTranslation(key: string, params?: unknown): { text: string; translated: boolean };
+    showToast(msg: string, type?: string): void;
+    insertTextAtCursor(text: string): void;
+    showInputModal(
+        title: string,
+        defaultValue?: string,
+        placeholder?: string
+    ): Promise<string | null>;
+    applyStatusState(state?: StatusState): void;
+    clearEditor(): void;
+    openFile(): void;
+    saveFile(): void;
+    loadRemoteFile(payload: Partial<RemoteFilePayload>): void;
+    showLoading(payload?: unknown): void;
+    showLoadError(payload?: unknown): void;
+    handleMenuAction(action: string): void;
+    destroy(): void;
 }
 
 const TextEditorSystem: TextEditorSystemInternal = {
@@ -105,42 +111,42 @@ const TextEditorSystem: TextEditorSystemInternal = {
     replaceInput: null,
     toastContainer: null,
 
-        /**
-         * Initialize text editor in container
-         * @param {HTMLElement|string} containerOrId - Container element or ID
-         */
-        init(containerOrId: HTMLElement | string): void {
-            const container =
-                typeof containerOrId === 'string'
-                    ? document.getElementById(containerOrId)
-                    : containerOrId;
+    /**
+     * Initialize text editor in container
+     * @param {HTMLElement|string} containerOrId - Container element or ID
+     */
+    init(containerOrId: HTMLElement | string): void {
+        const container =
+            typeof containerOrId === 'string'
+                ? document.getElementById(containerOrId)
+                : containerOrId;
 
-            if (!container) {
-                console.error('Text editor container not found:', containerOrId);
-                return;
-            }
+        if (!container) {
+            console.error('Text editor container not found:', containerOrId);
+            return;
+        }
 
-            this.container = container;
-            this.render();
-            this.cacheElements();
-            this.loadWrapPreference();
-            this.attachListeners();
-            this.loadSavedContent();
-            this.syncSaveButtonState();
+        this.container = container;
+        this.render();
+        this.cacheElements();
+        this.loadWrapPreference();
+        this.attachListeners();
+        this.loadSavedContent();
+        this.syncSaveButtonState();
 
-            // Register text editor actions with ActionBus
-            if (window.ActionBus) {
-                this.registerActions();
-            }
-        },
+        // Register text editor actions with ActionBus
+        if (window.ActionBus) {
+            this.registerActions();
+        }
+    },
 
-        /**
-         * Render text editor UI
-         */
-        render(): void {
-            if (!this.container) return;
+    /**
+     * Render text editor UI
+     */
+    render(): void {
+        if (!this.container) return;
 
-            this.container.innerHTML = `
+        this.container.innerHTML = `
                 <div class="dialog-content flex flex-col h-full" style="background: var(--editor-body-bg, #fafafa); color: var(--editor-text, #111827);">
                     <!-- File Operations Toolbar -->
                     <div id="text-toolbar" class="flex-none" style="background: var(--editor-toolbar-bg, #f5f5f5); padding: 8px 12px; border-bottom: 1px solid var(--editor-toolbar-border, #d1d5db); display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -191,824 +197,815 @@ const TextEditorSystem: TextEditorSystemInternal = {
                 </div>
             `;
 
-            // Apply CSS variables for dark mode support
+        // Apply CSS variables for dark mode support
+        this.updateCSSVariables();
+
+        // Apply i18n translations
+        if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
+            window.appI18n.applyTranslations();
+        }
+    },
+
+    /**
+     * Update CSS variables for dark mode
+     */
+    updateCSSVariables(): void {
+        if (!this.container) return;
+
+        const isDark = document.documentElement.classList.contains('dark');
+
+        this.container.style.setProperty('--editor-body-bg', isDark ? '#0f172a' : '#fafafa');
+        this.container.style.setProperty('--editor-text', isDark ? '#e5e7eb' : '#111827');
+        this.container.style.setProperty('--editor-toolbar-bg', isDark ? '#1f2937' : '#f5f5f5');
+        this.container.style.setProperty('--editor-toolbar-border', isDark ? '#374151' : '#d1d5db');
+        this.container.style.setProperty(
+            '--editor-toolbar-button-bg',
+            isDark ? '#111827' : '#ffffff'
+        );
+        this.container.style.setProperty(
+            '--editor-toolbar-button-hover',
+            isDark ? '#1f2937' : '#e5e7eb'
+        );
+        this.container.style.setProperty(
+            '--editor-toolbar-button-border',
+            isDark ? '#475569' : '#d1d5db'
+        );
+        this.container.style.setProperty('--editor-surface-bg', isDark ? '#111827' : '#ffffff');
+
+        // Apply button styles
+        const buttons = this.container.querySelectorAll<HTMLElement>('.text-editor-btn');
+        buttons.forEach(btn => {
+            btn.style.margin = '0';
+            btn.style.padding = '6px 12px';
+            btn.style.fontSize = '14px';
+            btn.style.border = `1px solid ${isDark ? '#475569' : '#d1d5db'}`;
+            btn.style.background = isDark ? '#111827' : '#ffffff';
+            btn.style.cursor = 'pointer';
+            btn.style.color = 'inherit';
+            btn.style.borderRadius = '6px';
+        });
+    },
+
+    /**
+     * Cache DOM elements
+     */
+    cacheElements(): void {
+        if (!this.container) return;
+
+        this.editor = this.container.querySelector<HTMLTextAreaElement>('#text-editor-textarea');
+        this.statusBar = this.container.querySelector<HTMLElement>('#text-file-status');
+        this.saveButton = this.container.querySelector<HTMLButtonElement>('#text-save-button');
+        this.fileInput = this.container.querySelector<HTMLInputElement>('#text-file-input');
+        this.wordCountDisplay = this.container.querySelector<HTMLElement>('#word-count-display');
+        this.lineColDisplay = this.container.querySelector<HTMLElement>('#line-col-display');
+        this.findReplacePanel = this.container.querySelector<HTMLElement>('#find-replace-panel');
+        this.findInput = this.container.querySelector<HTMLInputElement>('#find-input');
+        this.replaceInput = this.container.querySelector<HTMLInputElement>('#replace-input');
+    },
+
+    /**
+     * Load wrap mode preference
+     */
+    loadWrapPreference(): void {
+        const storedWrapMode = getString('textEditorWrapMode');
+        this.wrapMode = storedWrapMode === 'soft' ? 'soft' : 'off';
+        this.applyWrapMode(this.wrapMode);
+    },
+
+    /**
+     * Apply wrap mode
+     * @param {string} mode - Wrap mode (soft|off)
+     */
+    applyWrapMode(mode?: string): void {
+        if (!this.editor) return;
+        const effective = mode ?? this.wrapMode;
+        const normalized = effective === 'soft' ? 'soft' : 'off';
+        this.wrapMode = normalized;
+        this.editor.wrap = normalized;
+        this.editor.style.whiteSpace = normalized === 'soft' ? 'pre-wrap' : 'pre';
+
+        try {
+            setString('textEditorWrapMode', normalized);
+        } catch (err) {
+            console.warn('Wrap preference could not be stored:', err);
+        }
+    },
+
+    /**
+     * Toggle wrap mode
+     */
+    toggleWrapMode(): void {
+        const next = this.wrapMode === 'soft' ? 'off' : 'soft';
+        this.applyWrapMode(next);
+        this.setStatusPlain(
+            next === 'soft' ? 'Zeilenumbruch aktiviert' : 'Zeilenumbruch deaktiviert'
+        );
+        this.focusEditor();
+    },
+
+    /**
+     * Attach event listeners
+     */
+    attachListeners(): void {
+        if (!this.editor || !this.fileInput) return;
+
+        // Editor input listener for auto-save and word count
+        this.editor.addEventListener('input', () => {
+            this.handleEditorInput();
+            this.updateWordCount();
+        });
+
+        // Editor selection and cursor listener
+        this.editor.addEventListener('click', () => {
+            this.updateCursorPosition();
+        });
+
+        this.editor.addEventListener('keyup', () => {
+            this.updateCursorPosition();
+        });
+
+        // File input change listener
+        this.fileInput.addEventListener('change', event => {
+            this.handleFileSelect(event);
+        });
+
+        // Listen for theme changes to update CSS variables
+        const themeObserver = new MutationObserver(() => {
             this.updateCSSVariables();
+        });
+        themeObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class'],
+        });
 
-            // Apply i18n translations
-            if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
-                window.appI18n.applyTranslations();
-            }
-        },
-
-        /**
-         * Update CSS variables for dark mode
-         */
-        updateCSSVariables(): void {
-            if (!this.container) return;
-
-            const isDark = document.documentElement.classList.contains('dark');
-
-            this.container.style.setProperty('--editor-body-bg', isDark ? '#0f172a' : '#fafafa');
-            this.container.style.setProperty('--editor-text', isDark ? '#e5e7eb' : '#111827');
-            this.container.style.setProperty('--editor-toolbar-bg', isDark ? '#1f2937' : '#f5f5f5');
-            this.container.style.setProperty(
-                '--editor-toolbar-border',
-                isDark ? '#374151' : '#d1d5db'
-            );
-            this.container.style.setProperty(
-                '--editor-toolbar-button-bg',
-                isDark ? '#111827' : '#ffffff'
-            );
-            this.container.style.setProperty(
-                '--editor-toolbar-button-hover',
-                isDark ? '#1f2937' : '#e5e7eb'
-            );
-            this.container.style.setProperty(
-                '--editor-toolbar-button-border',
-                isDark ? '#475569' : '#d1d5db'
-            );
-            this.container.style.setProperty('--editor-surface-bg', isDark ? '#111827' : '#ffffff');
-
-            // Apply button styles
-            const buttons = this.container.querySelectorAll<HTMLElement>('.text-editor-btn');
-            buttons.forEach(btn => {
-                btn.style.margin = '0';
-                btn.style.padding = '6px 12px';
-                btn.style.fontSize = '14px';
-                btn.style.border = `1px solid ${isDark ? '#475569' : '#d1d5db'}`;
-                btn.style.background = isDark ? '#111827' : '#ffffff';
-                btn.style.cursor = 'pointer';
-                btn.style.color = 'inherit';
-                btn.style.borderRadius = '6px';
-            });
-        },
-
-        /**
-         * Cache DOM elements
-         */
-        cacheElements(): void {
-            if (!this.container) return;
-
-            this.editor = this.container.querySelector<HTMLTextAreaElement>(
-                '#text-editor-textarea'
-            );
-            this.statusBar = this.container.querySelector<HTMLElement>('#text-file-status');
-            this.saveButton = this.container.querySelector<HTMLButtonElement>('#text-save-button');
-            this.fileInput = this.container.querySelector<HTMLInputElement>('#text-file-input');
-            this.wordCountDisplay = this.container.querySelector<HTMLElement>(
-                '#word-count-display'
-            );
-            this.lineColDisplay = this.container.querySelector<HTMLElement>('#line-col-display');
-            this.findReplacePanel = this.container.querySelector<HTMLElement>(
-                '#find-replace-panel'
-            );
-            this.findInput = this.container.querySelector<HTMLInputElement>('#find-input');
-            this.replaceInput = this.container.querySelector<HTMLInputElement>('#replace-input');
-        },
-
-        /**
-         * Load wrap mode preference
-         */
-        loadWrapPreference(): void {
-            const storedWrapMode = localStorage.getItem('textEditorWrapMode');
-            this.wrapMode = storedWrapMode === 'soft' ? 'soft' : 'off';
-            this.applyWrapMode(this.wrapMode);
-        },
-
-        /**
-         * Apply wrap mode
-         * @param {string} mode - Wrap mode (soft|off)
-         */
-        applyWrapMode(mode?: string): void {
-            if (!this.editor) return;
-            const effective = mode ?? this.wrapMode;
-            const normalized = effective === 'soft' ? 'soft' : 'off';
-            this.wrapMode = normalized;
-            this.editor.wrap = normalized;
-            this.editor.style.whiteSpace = normalized === 'soft' ? 'pre-wrap' : 'pre';
-
-            try {
-                localStorage.setItem('textEditorWrapMode', normalized);
-            } catch (err) {
-                console.warn('Wrap preference could not be stored:', err);
-            }
-        },
-
-        /**
-         * Toggle wrap mode
-         */
-        toggleWrapMode(): void {
-            const next = this.wrapMode === 'soft' ? 'off' : 'soft';
-            this.applyWrapMode(next);
-            this.setStatusPlain(
-                next === 'soft' ? 'Zeilenumbruch aktiviert' : 'Zeilenumbruch deaktiviert'
-            );
-            this.focusEditor();
-        },
-
-        /**
-         * Attach event listeners
-         */
-        attachListeners(): void {
-            if (!this.editor || !this.fileInput) return;
-
-            // Editor input listener for auto-save and word count
-            this.editor.addEventListener('input', () => {
-                this.handleEditorInput();
-                this.updateWordCount();
-            });
-
-            // Editor selection and cursor listener
-            this.editor.addEventListener('click', () => {
-                this.updateCursorPosition();
-            });
-
-            this.editor.addEventListener('keyup', () => {
-                this.updateCursorPosition();
-            });
-
-            // File input change listener
-            this.fileInput.addEventListener('change', event => {
-                this.handleFileSelect(event);
-            });
-
-            // Listen for theme changes to update CSS variables
-            const themeObserver = new MutationObserver(() => {
-                this.updateCSSVariables();
-            });
-            themeObserver.observe(document.documentElement, {
-                attributes: true,
-                attributeFilter: ['class'],
-            });
-
-            // Listen for language changes
-            window.addEventListener('languagePreferenceChange', () => {
-                this.updateDocumentTitle();
-                this.applyStatusState();
-            });
-
-            // Initial word count and cursor position
-            this.updateWordCount();
-            this.updateCursorPosition();
-        },
-
-        /**
-         * Register actions with ActionBus
-         */
-        registerActions(): void {
-            if (!window.ActionBus) return;
-
-            window.ActionBus.registerAll({
-                'textEditor:clear': () => this.clearEditor(),
-                'textEditor:open': () => this.openFile(),
-                'textEditor:save': () => this.saveFile(),
-                'textEditor:toggleWrap': () => this.toggleWrapMode(),
-                'textEditor:undo': () => this.execCommand('undo'),
-                'textEditor:redo': () => this.execCommand('redo'),
-                'textEditor:cut': () => this.execCommand('cut'),
-                'textEditor:copy': () => this.execCommand('copy'),
-                'textEditor:paste': () => this.handlePaste(),
-                'textEditor:selectAll': () => this.selectAll(),
-                // New formatting actions
-                'textEditor:bold': () => this.wrapSelection('**', '**'),
-                'textEditor:italic': () => this.wrapSelection('*', '*'),
-                'textEditor:underline': () => this.wrapSelection('<u>', '</u>'),
-                'textEditor:strikethrough': () => this.wrapSelection('~~', '~~'),
-                'textEditor:heading1': () => this.insertHeading(1),
-                'textEditor:heading2': () => this.insertHeading(2),
-                'textEditor:heading3': () => this.insertHeading(3),
-                'textEditor:unorderedList': () => this.insertList('unordered'),
-                'textEditor:orderedList': () => this.insertList('ordered'),
-                'textEditor:alignLeft': () => this.alignText('left'),
-                'textEditor:alignCenter': () => this.alignText('center'),
-                'textEditor:alignRight': () => this.alignText('right'),
-                'textEditor:insertLink': () => this.insertLink(),
-                'textEditor:findReplace': () => this.toggleFindReplace(),
-                'textEditor:findNext': () => this.findNext(),
-                'textEditor:replaceOne': () => this.replaceOne(),
-                'textEditor:replaceAll': () => this.replaceAll(),
-                'textEditor:closeFindReplace': () => this.closeFindReplace(),
-            });
-        },
-
-        /**
-         * Handle editor input
-         */
-        handleEditorInput(): void {
-            if (!this.editor) return;
-
-            try {
-                localStorage.setItem('textEditorContent', this.editor.value);
-            } catch (err) {
-                console.warn('Could not save editor content to localStorage:', err);
-            }
-
-            this.syncSaveButtonState();
-        },
-
-        /**
-         * Handle file selection
-         */
-        handleFileSelect(event: Event): void {
-            const input = event.target as HTMLInputElement | null;
-            const file = input?.files?.[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e: ProgressEvent<FileReader>) => {
-                const content = e.target?.result;
-                if (typeof content === 'string' && this.editor) {
-                    this.editor.value = content;
-                    this.updateWordCount();
-                    this.updateCursorPosition();
-                }
-                    this.currentRemoteFile = { fileName: file.name, content: '' };
-                this.updateDocumentTitle();
-                this.setStatusPlain(file.name);
-                this.syncSaveButtonState();
-                this.focusEditor();
-            };
-            reader.readAsText(file);
-
-            // Reset input for future opens
-            if (input) {
-                input.value = '';
-            }
-        },
-
-        /**
-         * Load saved content from localStorage
-         */
-        loadSavedContent(): void {
-            if (!this.editor) return;
-
-            try {
-                const saved = localStorage.getItem('textEditorContent');
-                if (saved) {
-                    this.editor.value = saved;
-                    this.updateWordCount();
-                    this.updateCursorPosition();
-                }
-            } catch (err) {
-                console.warn('Could not load saved content:', err);
-            }
-        },
-
-        /**
-         * Sync save button state
-         */
-        syncSaveButtonState(): void {
-            if (!this.saveButton || !this.editor) return;
-
-            this.saveButton.disabled = this.editor.value.length === 0;
-        },
-
-        /**
-         * Focus editor
-         */
-        focusEditor(): void {
-            if (this.editor) {
-                this.editor.focus();
-            }
-        },
-
-        /**
-         * Clear editor
-         */
-        clearEditor(): void {
-            if (!this.editor) return;
-
-            this.editor.value = '';
-            this.updateWordCount();
-            this.updateCursorPosition();
-            localStorage.removeItem('textEditorContent');
-            this.currentRemoteFile = null;
+        // Listen for language changes
+        window.addEventListener('languagePreferenceChange', () => {
             this.updateDocumentTitle();
-            this.clearStatus();
+            this.applyStatusState();
+        });
+
+        // Initial word count and cursor position
+        this.updateWordCount();
+        this.updateCursorPosition();
+    },
+
+    /**
+     * Register actions with ActionBus
+     */
+    registerActions(): void {
+        if (!window.ActionBus) return;
+
+        window.ActionBus.registerAll({
+            'textEditor:clear': () => this.clearEditor(),
+            'textEditor:open': () => this.openFile(),
+            'textEditor:save': () => this.saveFile(),
+            'textEditor:toggleWrap': () => this.toggleWrapMode(),
+            'textEditor:undo': () => this.execCommand('undo'),
+            'textEditor:redo': () => this.execCommand('redo'),
+            'textEditor:cut': () => this.execCommand('cut'),
+            'textEditor:copy': () => this.execCommand('copy'),
+            'textEditor:paste': () => this.handlePaste(),
+            'textEditor:selectAll': () => this.selectAll(),
+            // New formatting actions
+            'textEditor:bold': () => this.wrapSelection('**', '**'),
+            'textEditor:italic': () => this.wrapSelection('*', '*'),
+            'textEditor:underline': () => this.wrapSelection('<u>', '</u>'),
+            'textEditor:strikethrough': () => this.wrapSelection('~~', '~~'),
+            'textEditor:heading1': () => this.insertHeading(1),
+            'textEditor:heading2': () => this.insertHeading(2),
+            'textEditor:heading3': () => this.insertHeading(3),
+            'textEditor:unorderedList': () => this.insertList('unordered'),
+            'textEditor:orderedList': () => this.insertList('ordered'),
+            'textEditor:alignLeft': () => this.alignText('left'),
+            'textEditor:alignCenter': () => this.alignText('center'),
+            'textEditor:alignRight': () => this.alignText('right'),
+            'textEditor:insertLink': () => this.insertLink(),
+            'textEditor:findReplace': () => this.toggleFindReplace(),
+            'textEditor:findNext': () => this.findNext(),
+            'textEditor:replaceOne': () => this.replaceOne(),
+            'textEditor:replaceAll': () => this.replaceAll(),
+            'textEditor:closeFindReplace': () => this.closeFindReplace(),
+        });
+    },
+
+    /**
+     * Handle editor input
+     */
+    handleEditorInput(): void {
+        if (!this.editor) return;
+
+        try {
+            setString('textEditorContent', this.editor.value);
+        } catch (err) {
+            console.warn('Could not save editor content to localStorage:', err);
+        }
+
+        this.syncSaveButtonState();
+    },
+
+    /**
+     * Handle file selection
+     */
+    handleFileSelect(event: Event): void {
+        const input = event.target as HTMLInputElement | null;
+        const file = input?.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+            const content = e.target?.result;
+            if (typeof content === 'string' && this.editor) {
+                this.editor.value = content;
+                this.updateWordCount();
+                this.updateCursorPosition();
+            }
+            this.currentRemoteFile = { fileName: file.name, content: '' };
+            this.updateDocumentTitle();
+            this.setStatusPlain(file.name);
             this.syncSaveButtonState();
             this.focusEditor();
-        },
+        };
+        reader.readAsText(file);
 
-        /**
-         * Open file picker
-         */
-        openFile(): void {
-            if (this.fileInput) {
-                this.fileInput.click();
+        // Reset input for future opens
+        if (input) {
+            input.value = '';
+        }
+    },
+
+    /**
+     * Load saved content from localStorage
+     */
+    loadSavedContent(): void {
+        if (!this.editor) return;
+
+        try {
+            const saved = getString('textEditorContent');
+            if (saved) {
+                this.editor.value = saved;
+                this.updateWordCount();
+                this.updateCursorPosition();
             }
-        },
+        } catch (err) {
+            console.warn('Could not load saved content:', err);
+        }
+    },
 
-        /**
-         * Save file
-         */
-        saveFile(): void {
-            if (!this.editor) return;
+    /**
+     * Sync save button state
+     */
+    syncSaveButtonState(): void {
+        if (!this.saveButton || !this.editor) return;
 
-            const content = this.editor.value;
-            const blob = new Blob([content], {
-                type: 'text/plain;charset=utf-8',
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
+        this.saveButton.disabled = this.editor.value.length === 0;
+    },
 
-            const firstLine = content.split('\n')[0] || 'text';
-            const sanitized =
-                firstLine
-                    .trim()
-                    .substring(0, 20)
-                    .replace(/[^a-zA-Z0-9-_]/g, '') || 'text';
-            a.download = `${sanitized}.txt`;
+    /**
+     * Focus editor
+     */
+    focusEditor(): void {
+        if (this.editor) {
+            this.editor.focus();
+        }
+    },
 
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        },
+    /**
+     * Clear editor
+     */
+    clearEditor(): void {
+        if (!this.editor) return;
 
-        /**
-         * Execute document command
-         * @param {string} command - Command to execute
-         */
-        execCommand(command: string): void {
-            this.focusEditor();
-            try {
-                if (!document.execCommand(command)) {
-                    this.setStatusPlain(`Command ${command} not available`);
-                }
-            } catch (err) {
-                console.warn(`Command ${command} failed:`, err);
-                this.setStatusPlain(`Command ${command} failed`);
+        this.editor.value = '';
+        this.updateWordCount();
+        this.updateCursorPosition();
+        remove('textEditorContent');
+        this.currentRemoteFile = null;
+        this.updateDocumentTitle();
+        this.clearStatus();
+        this.syncSaveButtonState();
+        this.focusEditor();
+    },
+
+    /**
+     * Open file picker
+     */
+    openFile(): void {
+        if (this.fileInput) {
+            this.fileInput.click();
+        }
+    },
+
+    /**
+     * Save file
+     */
+    saveFile(): void {
+        if (!this.editor) return;
+
+        const content = this.editor.value;
+        const blob = new Blob([content], {
+            type: 'text/plain;charset=utf-8',
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        const firstLine = content.split('\n')[0] || 'text';
+        const sanitized =
+            firstLine
+                .trim()
+                .substring(0, 20)
+                .replace(/[^a-zA-Z0-9-_]/g, '') || 'text';
+        a.download = `${sanitized}.txt`;
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    },
+
+    /**
+     * Execute document command
+     * @param {string} command - Command to execute
+     */
+    execCommand(command: string): void {
+        this.focusEditor();
+        try {
+            if (!document.execCommand(command)) {
+                this.setStatusPlain(`Command ${command} not available`);
             }
-        },
+        } catch (err) {
+            console.warn(`Command ${command} failed:`, err);
+            this.setStatusPlain(`Command ${command} failed`);
+        }
+    },
 
-        /**
-         * Handle paste operation
-         */
+    /**
+     * Handle paste operation
+     */
     handlePaste(e?: Event): void {
-            this.focusEditor();
+        this.focusEditor();
 
-            if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
-                navigator.clipboard
-                    .readText()
-                    .then(text => {
-                        if (text && this.editor) {
-                            this.insertTextAtCursor(text);
-                        }
-                    })
-                    .catch(() => {
-                        this.execCommand('paste');
-                    });
-            } else {
-                this.execCommand('paste');
-            }
-        },
-
-        /**
-         * Select all text
-         */
-        selectAll(): void {
-            this.focusEditor();
-            if (this.editor) {
-                this.editor.select();
-            }
-        },
-
-        /**
-         * Insert text at cursor position
-         * @param {string} text - Text to insert
-         */
-        insertTextAtCursor(text: string): void {
-            if (!this.editor || typeof text !== 'string') return;
-
-            const start =
-                typeof this.editor.selectionStart === 'number'
-                    ? this.editor.selectionStart
-                    : this.editor.value.length;
-            const end =
-                typeof this.editor.selectionEnd === 'number' ? this.editor.selectionEnd : start;
-
-            this.editor.setRangeText(text, start, end, 'end');
-            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
-        },
-
-        /**
-         * Update document title
-         */
-        updateDocumentTitle(): void {
-            const titleKey =
-                this.currentRemoteFile && this.currentRemoteFile.fileName
-                    ? 'textEditor.documentTitleWithFile'
-                    : 'textEditor.documentTitle';
-
-            const params =
-                this.currentRemoteFile && this.currentRemoteFile.fileName
-                    ? { fileName: this.currentRemoteFile.fileName }
-                    : undefined;
-
-            const { text } = this.resolveTranslation(titleKey, params);
-            document.title = text;
-        },
-
-        /**
-         * Format file label for display
-         * @param {Object} meta - File metadata
-         * @returns {string} Formatted label
-         */
-        formatFileLabel(meta: FileMeta = {}): string {
-            const parts = [];
-            if (meta.repo) parts.push(meta.repo);
-            if (meta.path) {
-                parts.push(meta.path);
-            } else if (meta.fileName) {
-                parts.push(meta.fileName);
-            }
-            return parts.join(' / ');
-        },
-
-        /**
-         * Set plain text status
-         * @param {string} text - Status text
-         */
-        setStatusPlain(text: string | null | undefined): void {
-            if (!text) {
-                this.clearStatus();
-                return;
-            }
-            this.statusState = { type: 'plain', text };
-            this.applyStatusState();
-        },
-
-        /**
-         * Set localized status
-         * @param {string} key - Translation key
-         * @param {Object} params - Translation parameters
-         */
-        setStatusLocalized(key: string, params?: Record<string, unknown>): void {
-            this.statusState = {
-                type: 'i18n',
-                key,
-                params: params || undefined,
-            };
-            this.applyStatusState();
-        },
-
-        /**
-         * Clear status
-         */
-        clearStatus(): void {
-            this.statusState = null;
-            this.applyStatusState();
-        },
-
-        /**
-         * Apply status state to UI
-         */
-        applyStatusState(): void {
-            if (!this.statusBar) return;
-
-            if (!this.statusState) {
-                this.statusBar.textContent = '';
-                this.statusBar.style.display = 'none';
-                this.statusBar.removeAttribute('data-i18n');
-                this.statusBar.removeAttribute('data-i18n-params');
-                return;
-            }
-
-            if (this.statusState.type === 'i18n') {
-                const { text, translated } = this.resolveTranslation(
-                    this.statusState.key,
-                    this.statusState.params
-                );
-                this.statusBar.textContent = text;
-
-                if (translated) {
-                    this.statusBar.setAttribute('data-i18n', this.statusState.key);
-                    if (this.statusState.params) {
-                        this.statusBar.setAttribute(
-                            'data-i18n-params',
-                            JSON.stringify(this.statusState.params)
-                        );
-                    } else {
-                        this.statusBar.removeAttribute('data-i18n-params');
+        if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
+            navigator.clipboard
+                .readText()
+                .then(text => {
+                    if (text && this.editor) {
+                        this.insertTextAtCursor(text);
                     }
+                })
+                .catch(() => {
+                    this.execCommand('paste');
+                });
+        } else {
+            this.execCommand('paste');
+        }
+    },
 
-                    if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
-                        window.appI18n.applyTranslations();
-                    }
+    /**
+     * Select all text
+     */
+    selectAll(): void {
+        this.focusEditor();
+        if (this.editor) {
+            this.editor.select();
+        }
+    },
+
+    /**
+     * Insert text at cursor position
+     * @param {string} text - Text to insert
+     */
+    insertTextAtCursor(text: string): void {
+        if (!this.editor || typeof text !== 'string') return;
+
+        const start =
+            typeof this.editor.selectionStart === 'number'
+                ? this.editor.selectionStart
+                : this.editor.value.length;
+        const end = typeof this.editor.selectionEnd === 'number' ? this.editor.selectionEnd : start;
+
+        this.editor.setRangeText(text, start, end, 'end');
+        this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+    },
+
+    /**
+     * Update document title
+     */
+    updateDocumentTitle(): void {
+        const titleKey =
+            this.currentRemoteFile && this.currentRemoteFile.fileName
+                ? 'textEditor.documentTitleWithFile'
+                : 'textEditor.documentTitle';
+
+        const params =
+            this.currentRemoteFile && this.currentRemoteFile.fileName
+                ? { fileName: this.currentRemoteFile.fileName }
+                : undefined;
+
+        const { text } = this.resolveTranslation(titleKey, params);
+        document.title = text;
+    },
+
+    /**
+     * Format file label for display
+     * @param {Object} meta - File metadata
+     * @returns {string} Formatted label
+     */
+    formatFileLabel(meta: FileMeta = {}): string {
+        const parts = [];
+        if (meta.repo) parts.push(meta.repo);
+        if (meta.path) {
+            parts.push(meta.path);
+        } else if (meta.fileName) {
+            parts.push(meta.fileName);
+        }
+        return parts.join(' / ');
+    },
+
+    /**
+     * Set plain text status
+     * @param {string} text - Status text
+     */
+    setStatusPlain(text: string | null | undefined): void {
+        if (!text) {
+            this.clearStatus();
+            return;
+        }
+        this.statusState = { type: 'plain', text };
+        this.applyStatusState();
+    },
+
+    /**
+     * Set localized status
+     * @param {string} key - Translation key
+     * @param {Object} params - Translation parameters
+     */
+    setStatusLocalized(key: string, params?: Record<string, unknown>): void {
+        this.statusState = {
+            type: 'i18n',
+            key,
+            params: params || undefined,
+        };
+        this.applyStatusState();
+    },
+
+    /**
+     * Clear status
+     */
+    clearStatus(): void {
+        this.statusState = null;
+        this.applyStatusState();
+    },
+
+    /**
+     * Apply status state to UI
+     */
+    applyStatusState(): void {
+        if (!this.statusBar) return;
+
+        if (!this.statusState) {
+            this.statusBar.textContent = '';
+            this.statusBar.style.display = 'none';
+            this.statusBar.removeAttribute('data-i18n');
+            this.statusBar.removeAttribute('data-i18n-params');
+            return;
+        }
+
+        if (this.statusState.type === 'i18n') {
+            const { text, translated } = this.resolveTranslation(
+                this.statusState.key,
+                this.statusState.params
+            );
+            this.statusBar.textContent = text;
+
+            if (translated) {
+                this.statusBar.setAttribute('data-i18n', this.statusState.key);
+                if (this.statusState.params) {
+                    this.statusBar.setAttribute(
+                        'data-i18n-params',
+                        JSON.stringify(this.statusState.params)
+                    );
                 } else {
-                    this.statusBar.removeAttribute('data-i18n');
                     this.statusBar.removeAttribute('data-i18n-params');
                 }
+
+                if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
+                    window.appI18n.applyTranslations();
+                }
             } else {
                 this.statusBar.removeAttribute('data-i18n');
                 this.statusBar.removeAttribute('data-i18n-params');
-                this.statusBar.textContent = this.statusState.text;
             }
+        } else {
+            this.statusBar.removeAttribute('data-i18n');
+            this.statusBar.removeAttribute('data-i18n-params');
+            this.statusBar.textContent = this.statusState.text;
+        }
 
-            this.statusBar.style.display = 'block';
-        },
+        this.statusBar.style.display = 'block';
+    },
 
-        /**
-         * Resolve translation
-         * @param {string} key - Translation key
-         * @param {Object} params - Translation parameters
-         * @returns {Object} Resolved translation
-         */
-        resolveTranslation(
-            key: string,
-            params?: Record<string, unknown>
-        ): { text: string; translated: boolean } {
-            if (!key) return { text: '', translated: false };
+    /**
+     * Resolve translation
+     * @param {string} key - Translation key
+     * @param {Object} params - Translation parameters
+     * @returns {Object} Resolved translation
+     */
+    resolveTranslation(
+        key: string,
+        params?: Record<string, unknown>
+    ): { text: string; translated: boolean } {
+        if (!key) return { text: '', translated: false };
 
-            const fallbackMessages = {
-                'textEditor.documentTitle': () => 'Texteditor',
-                    'textEditor.documentTitleWithFile': (p: unknown) => {
-                        const fileName = p && (p as any).fileName ? (p as any).fileName : '';
-                    return fileName ? `Texteditor – ${fileName}` : 'Texteditor';
-                },
-                'textEditor.status.loading': () => 'Lade Datei …',
-                    'textEditor.status.loadingWithLabel': (p: unknown) => {
-                        const label = p && (p as any).label ? (p as any).label : '';
-                    return label ? `${label} (lädt …)` : 'Lade Datei …';
-                },
-                'textEditor.status.loadError': () => 'Datei konnte nicht geladen werden.',
-                'textEditor.status.rateLimit': () =>
-                    'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
-                    'textEditor.status.wordCount': (p: unknown) => {
-                        const words = p && typeof (p as any).words === 'number' ? (p as any).words : 0;
-                        const chars = p && typeof (p as any).chars === 'number' ? (p as any).chars : 0;
-                    return `Words: ${words} | Characters: ${chars}`;
-                },
-                    'textEditor.status.position': (p: unknown) => {
-                        const line = p && typeof (p as any).line === 'number' ? (p as any).line : 1;
-                        const col = p && typeof (p as any).col === 'number' ? (p as any).col : 1;
-                    return `Line ${line}, Col ${col}`;
-                },
-                'textEditor.findReplace.noMatch': () => 'No match found',
-                    'textEditor.findReplace.replacedCount': (p: unknown) => {
-                        const count = p && typeof (p as any).count === 'number' ? (p as any).count : 0;
-                    return `Replaced ${count} occurrence(s)`;
-                },
-                } as Record<string, ((...args: unknown[]) => string) | (() => string)>;
+        const fallbackMessages = {
+            'textEditor.documentTitle': () => 'Texteditor',
+            'textEditor.documentTitleWithFile': (p: unknown) => {
+                const fileName = p && (p as any).fileName ? (p as any).fileName : '';
+                return fileName ? `Texteditor – ${fileName}` : 'Texteditor';
+            },
+            'textEditor.status.loading': () => 'Lade Datei …',
+            'textEditor.status.loadingWithLabel': (p: unknown) => {
+                const label = p && (p as any).label ? (p as any).label : '';
+                return label ? `${label} (lädt …)` : 'Lade Datei …';
+            },
+            'textEditor.status.loadError': () => 'Datei konnte nicht geladen werden.',
+            'textEditor.status.rateLimit': () =>
+                'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
+            'textEditor.status.wordCount': (p: unknown) => {
+                const words = p && typeof (p as any).words === 'number' ? (p as any).words : 0;
+                const chars = p && typeof (p as any).chars === 'number' ? (p as any).chars : 0;
+                return `Words: ${words} | Characters: ${chars}`;
+            },
+            'textEditor.status.position': (p: unknown) => {
+                const line = p && typeof (p as any).line === 'number' ? (p as any).line : 1;
+                const col = p && typeof (p as any).col === 'number' ? (p as any).col : 1;
+                return `Line ${line}, Col ${col}`;
+            },
+            'textEditor.findReplace.noMatch': () => 'No match found',
+            'textEditor.findReplace.replacedCount': (p: unknown) => {
+                const count = p && typeof (p as any).count === 'number' ? (p as any).count : 0;
+                return `Replaced ${count} occurrence(s)`;
+            },
+        } as Record<string, ((...args: unknown[]) => string) | (() => string)>;
 
-            try {
-                if (window.appI18n && typeof window.appI18n.translate === 'function') {
-                    const translated = window.appI18n.translate(key);
-                    if (translated && translated !== key) {
-                        return { text: translated, translated: true };
-                    }
+        try {
+            if (window.appI18n && typeof window.appI18n.translate === 'function') {
+                const translated = window.appI18n.translate(key);
+                if (translated && translated !== key) {
+                    return { text: translated, translated: true };
                 }
-            } catch (err) {
-                console.warn('Translation failed, falling back:', err);
             }
+        } catch (err) {
+            console.warn('Translation failed, falling back:', err);
+        }
 
-            const fallbackFn = fallbackMessages[key];
-            if (typeof fallbackFn === 'function') {
-                return { text: fallbackFn(params || {}), translated: false };
-            }
+        const fallbackFn = fallbackMessages[key];
+        if (typeof fallbackFn === 'function') {
+            return { text: fallbackFn(params || {}), translated: false };
+        }
 
-            return { text: key, translated: false };
-        },
+        return { text: key, translated: false };
+    },
 
-        // ==================== Public API for Finder Integration ====================
+    // ==================== Public API for Finder Integration ====================
 
-        /**
-         * Load remote file into editor
-         * @param {Object} payload - File payload
-         * @param {string} payload.content - File content
-         * @param {string} [payload.fileName] - File name
-         * @param {string} [payload.repo] - Repository name
-         * @param {string} [payload.path] - File path
-         */
-        loadRemoteFile(payload: Partial<RemoteFilePayload>): void {
-            if (typeof payload.content !== 'string') {
-                console.warn('Invalid payload for loadRemoteFile:', payload);
-                return;
-            }
+    /**
+     * Load remote file into editor
+     * @param {Object} payload - File payload
+     * @param {string} payload.content - File content
+     * @param {string} [payload.fileName] - File name
+     * @param {string} [payload.repo] - Repository name
+     * @param {string} [payload.path] - File path
+     */
+    loadRemoteFile(payload: Partial<RemoteFilePayload>): void {
+        if (typeof payload.content !== 'string') {
+            console.warn('Invalid payload for loadRemoteFile:', payload);
+            return;
+        }
 
-            const remotePayload: RemoteFilePayload = {
-                content: payload.content,
-                fileName: payload.fileName,
-                repo: payload.repo,
-                path: payload.path,
-            };
+        const remotePayload: RemoteFilePayload = {
+            content: payload.content,
+            fileName: payload.fileName,
+            repo: payload.repo,
+            path: payload.path,
+        };
 
-            if (this.editor) {
-                this.editor.value = remotePayload.content;
-                this.updateWordCount();
-                this.updateCursorPosition();
-            }
+        if (this.editor) {
+            this.editor.value = remotePayload.content;
+            this.updateWordCount();
+            this.updateCursorPosition();
+        }
 
-            this.currentRemoteFile = remotePayload;
-            const label = this.formatFileLabel(remotePayload);
-            this.updateDocumentTitle();
-            this.setStatusPlain(label);
+        this.currentRemoteFile = remotePayload;
+        const label = this.formatFileLabel(remotePayload);
+        this.updateDocumentTitle();
+        this.setStatusPlain(label);
 
-            try {
-                localStorage.setItem('textEditorContent', remotePayload.content);
-            } catch (err) {
-                console.warn('Could not save to localStorage:', err);
-            }
+        try {
+            setString('textEditorContent', remotePayload.content);
+        } catch (err) {
+            console.warn('Could not save to localStorage:', err);
+        }
 
-            this.syncSaveButtonState();
-            this.focusEditor();
-        },
+        this.syncSaveButtonState();
+        this.focusEditor();
+    },
 
-        /**
-         * Show loading state
-         * @param {Object} payload - Loading payload
-         * @param {string} [payload.fileName] - File name
-         * @param {string} [payload.repo] - Repository name
-         * @param {string} [payload.path] - File path
-         */
-        showLoading(payload: FileMeta = {}): void {
-            const label = this.formatFileLabel(payload);
-            if (label) {
-                this.setStatusLocalized('textEditor.status.loadingWithLabel', {
-                    label,
-                });
-            } else {
-                this.setStatusLocalized('textEditor.status.loading');
-            }
-        },
-
-        /**
-         * Show load error
-         * @param {Object} payload - Error payload
-         * @param {string} [payload.message] - Error message
-         * @param {string} [payload.fileName] - File name
-         * @param {string} [payload.repo] - Repository name
-         * @param {string} [payload.path] - File path
-         */
-        showLoadError(payload: LoadErrorPayload = {}): void {
-            const label = this.formatFileLabel(payload);
-            const fallback = this.resolveTranslation('textEditor.status.loadError');
-            const message = payload && payload.message ? payload.message : fallback.text;
-
-            if (label) {
-                this.setStatusPlain(`${label} — ${message}`);
-            } else {
-                this.setStatusPlain(message);
-            }
-        },
-
-        /**
-         * Handle menu action
-         * @param {string} action - Action name
-         */
-        handleMenuAction(action: string): void {
-            if (!action) return;
-
-            const actionMap: Record<string, string> = {
-                'file:new': 'textEditor:clear',
-                'file:open': 'textEditor:open',
-                'file:save': 'textEditor:save',
-                'edit:undo': 'textEditor:undo',
-                'edit:redo': 'textEditor:redo',
-                'edit:cut': 'textEditor:cut',
-                'edit:copy': 'textEditor:copy',
-                'edit:paste': 'textEditor:paste',
-                'edit:selectAll': 'textEditor:selectAll',
-                'view:toggleWrap': 'textEditor:toggleWrap',
-            };
-
-            const mappedAction = actionMap[action];
-            if (mappedAction && window.ActionBus) {
-                window.ActionBus.execute(mappedAction);
-            } else {
-                console.warn('Unknown menu action:', action);
-            }
-        },
-
-        // ==================== New Formatting Methods ====================
-
-        /**
-         * Wrap selected text with prefix and suffix
-         * @param {string} prefix - Text to insert before selection
-         * @param {string} suffix - Text to insert after selection
-         */
-        wrapSelection(prefix: string, suffix: string): void {
-            if (!this.editor) return;
-
-            const start = this.editor.selectionStart;
-            const end = this.editor.selectionEnd;
-            const selectedText = this.editor.value.substring(start, end);
-            const wrappedText = prefix + selectedText + suffix;
-
-            this.editor.setRangeText(wrappedText, start, end, 'select');
-            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
-            this.focusEditor();
-        },
-
-        /**
-         * Insert heading at current line
-         * @param {number} level - Heading level (1-3)
-         */
-        insertHeading(level: number): void {
-            if (!this.editor) return;
-
-            const start = this.editor.selectionStart;
-            const text = this.editor.value;
-
-            // Find the start of the current line
-            const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-            let lineEnd = text.indexOf('\n', start);
-            if (lineEnd === -1) lineEnd = text.length;
-
-            const currentLine = text.substring(lineStart, lineEnd);
-            const prefix = '#'.repeat(level) + ' ';
-
-            // Check if line already starts with heading markers
-            const headingMatch = currentLine.match(/^#+\s/);
-            let newLine;
-
-            if (headingMatch) {
-                // Replace existing heading
-                newLine = prefix + currentLine.substring(headingMatch[0].length);
-            } else {
-                // Add new heading
-                newLine = prefix + currentLine;
-            }
-
-            this.editor.setRangeText(newLine, lineStart, lineEnd, 'end');
-            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
-            this.focusEditor();
-        },
-
-        /**
-         * Insert list at current line or for selected lines
-         * @param {string} type - List type ('ordered' or 'unordered')
-         */
-        insertList(type: 'ordered' | 'unordered'): void {
-            if (!this.editor) return;
-
-            const start = this.editor.selectionStart;
-            const end = this.editor.selectionEnd;
-            const text = this.editor.value;
-
-            // Find the start and end of affected lines
-            const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-            let lineEnd = text.indexOf('\n', end);
-            if (lineEnd === -1) lineEnd = text.length;
-
-            const selectedLines = text.substring(lineStart, lineEnd).split('\n');
-            const prefix = type === 'ordered' ? null : '- ';
-
-            const newLines = selectedLines.map((line, index) => {
-                // Remove existing list markers
-                const cleanLine = line.replace(/^(?:\d+\.\s|-\s|\*\s)/, '');
-
-                if (type === 'ordered') {
-                    return `${index + 1}. ${cleanLine}`;
-                }
-                // use prefix for unordered lists
-                return `${prefix}${cleanLine}`;
+    /**
+     * Show loading state
+     * @param {Object} payload - Loading payload
+     * @param {string} [payload.fileName] - File name
+     * @param {string} [payload.repo] - Repository name
+     * @param {string} [payload.path] - File path
+     */
+    showLoading(payload: FileMeta = {}): void {
+        const label = this.formatFileLabel(payload);
+        if (label) {
+            this.setStatusLocalized('textEditor.status.loadingWithLabel', {
+                label,
             });
+        } else {
+            this.setStatusLocalized('textEditor.status.loading');
+        }
+    },
 
-            const newText = newLines.join('\n');
-            this.editor.setRangeText(newText, lineStart, lineEnd, 'end');
-            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
-            this.focusEditor();
-        },
+    /**
+     * Show load error
+     * @param {Object} payload - Error payload
+     * @param {string} [payload.message] - Error message
+     * @param {string} [payload.fileName] - File name
+     * @param {string} [payload.repo] - Repository name
+     * @param {string} [payload.path] - File path
+     */
+    showLoadError(payload: LoadErrorPayload = {}): void {
+        const label = this.formatFileLabel(payload);
+        const fallback = this.resolveTranslation('textEditor.status.loadError');
+        const message = payload && payload.message ? payload.message : fallback.text;
 
-        /**
-         * Align text (add HTML alignment tags)
-         * @param {string} alignment - Alignment type ('left', 'center', 'right')
-         */
-        alignText(alignment: 'left' | 'center' | 'right'): void {
-            if (!this.editor) return;
+        if (label) {
+            this.setStatusPlain(`${label} — ${message}`);
+        } else {
+            this.setStatusPlain(message);
+        }
+    },
 
-            const start = this.editor.selectionStart;
-            const end = this.editor.selectionEnd;
-            const text = this.editor.value;
+    /**
+     * Handle menu action
+     * @param {string} action - Action name
+     */
+    handleMenuAction(action: string): void {
+        if (!action) return;
 
-            // Find the start and end of affected lines
-            const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-            let lineEnd = text.indexOf('\n', end);
-            if (lineEnd === -1) lineEnd = text.length;
+        const actionMap: Record<string, string> = {
+            'file:new': 'textEditor:clear',
+            'file:open': 'textEditor:open',
+            'file:save': 'textEditor:save',
+            'edit:undo': 'textEditor:undo',
+            'edit:redo': 'textEditor:redo',
+            'edit:cut': 'textEditor:cut',
+            'edit:copy': 'textEditor:copy',
+            'edit:paste': 'textEditor:paste',
+            'edit:selectAll': 'textEditor:selectAll',
+            'view:toggleWrap': 'textEditor:toggleWrap',
+        };
 
-            const selectedText = text.substring(lineStart, lineEnd);
-            const alignedText = `<div style="text-align: ${alignment};">\n${selectedText}\n</div>`;
+        const mappedAction = actionMap[action];
+        if (mappedAction && window.ActionBus) {
+            window.ActionBus.execute(mappedAction);
+        } else {
+            console.warn('Unknown menu action:', action);
+        }
+    },
 
-            this.editor.setRangeText(alignedText, lineStart, lineEnd, 'end');
-            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
-            this.focusEditor();
-        },
+    // ==================== New Formatting Methods ====================
 
-        /**
-         * Insert link at cursor or wrap selection
-         */
-        insertLink(): void {
-            if (!this.editor) return;
+    /**
+     * Wrap selected text with prefix and suffix
+     * @param {string} prefix - Text to insert before selection
+     * @param {string} suffix - Text to insert after selection
+     */
+    wrapSelection(prefix: string, suffix: string): void {
+        if (!this.editor) return;
 
-            const start = this.editor.selectionStart;
-            const end = this.editor.selectionEnd;
-            const selectedText = this.editor.value.substring(start, end);
+        const start = this.editor.selectionStart;
+        const end = this.editor.selectionEnd;
+        const selectedText = this.editor.value.substring(start, end);
+        const wrappedText = prefix + selectedText + suffix;
 
-            const urlLabel =
-                this.resolveTranslation('textEditor.insertLink.enterUrl').text || 'Enter URL:';
-            this.showInputModal(urlLabel, 'https://example.com', 'https://').then((url: string | null) => {
+        this.editor.setRangeText(wrappedText, start, end, 'select');
+        this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+        this.focusEditor();
+    },
+
+    /**
+     * Insert heading at current line
+     * @param {number} level - Heading level (1-3)
+     */
+    insertHeading(level: number): void {
+        if (!this.editor) return;
+
+        const start = this.editor.selectionStart;
+        const text = this.editor.value;
+
+        // Find the start of the current line
+        const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+        let lineEnd = text.indexOf('\n', start);
+        if (lineEnd === -1) lineEnd = text.length;
+
+        const currentLine = text.substring(lineStart, lineEnd);
+        const prefix = '#'.repeat(level) + ' ';
+
+        // Check if line already starts with heading markers
+        const headingMatch = currentLine.match(/^#+\s/);
+        let newLine;
+
+        if (headingMatch) {
+            // Replace existing heading
+            newLine = prefix + currentLine.substring(headingMatch[0].length);
+        } else {
+            // Add new heading
+            newLine = prefix + currentLine;
+        }
+
+        this.editor.setRangeText(newLine, lineStart, lineEnd, 'end');
+        this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+        this.focusEditor();
+    },
+
+    /**
+     * Insert list at current line or for selected lines
+     * @param {string} type - List type ('ordered' or 'unordered')
+     */
+    insertList(type: 'ordered' | 'unordered'): void {
+        if (!this.editor) return;
+
+        const start = this.editor.selectionStart;
+        const end = this.editor.selectionEnd;
+        const text = this.editor.value;
+
+        // Find the start and end of affected lines
+        const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+        let lineEnd = text.indexOf('\n', end);
+        if (lineEnd === -1) lineEnd = text.length;
+
+        const selectedLines = text.substring(lineStart, lineEnd).split('\n');
+        const prefix = type === 'ordered' ? null : '- ';
+
+        const newLines = selectedLines.map((line, index) => {
+            // Remove existing list markers
+            const cleanLine = line.replace(/^(?:\d+\.\s|-\s|\*\s)/, '');
+
+            if (type === 'ordered') {
+                return `${index + 1}. ${cleanLine}`;
+            }
+            // use prefix for unordered lists
+            return `${prefix}${cleanLine}`;
+        });
+
+        const newText = newLines.join('\n');
+        this.editor.setRangeText(newText, lineStart, lineEnd, 'end');
+        this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+        this.focusEditor();
+    },
+
+    /**
+     * Align text (add HTML alignment tags)
+     * @param {string} alignment - Alignment type ('left', 'center', 'right')
+     */
+    alignText(alignment: 'left' | 'center' | 'right'): void {
+        if (!this.editor) return;
+
+        const start = this.editor.selectionStart;
+        const end = this.editor.selectionEnd;
+        const text = this.editor.value;
+
+        // Find the start and end of affected lines
+        const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+        let lineEnd = text.indexOf('\n', end);
+        if (lineEnd === -1) lineEnd = text.length;
+
+        const selectedText = text.substring(lineStart, lineEnd);
+        const alignedText = `<div style="text-align: ${alignment};">\n${selectedText}\n</div>`;
+
+        this.editor.setRangeText(alignedText, lineStart, lineEnd, 'end');
+        this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+        this.focusEditor();
+    },
+
+    /**
+     * Insert link at cursor or wrap selection
+     */
+    insertLink(): void {
+        if (!this.editor) return;
+
+        const start = this.editor.selectionStart;
+        const end = this.editor.selectionEnd;
+        const selectedText = this.editor.value.substring(start, end);
+
+        const urlLabel =
+            this.resolveTranslation('textEditor.insertLink.enterUrl').text || 'Enter URL:';
+        this.showInputModal(urlLabel, 'https://example.com', 'https://').then(
+            (url: string | null) => {
                 if (!url) return;
 
                 const linkText = selectedText || 'link text';
@@ -1017,225 +1014,217 @@ const TextEditorSystem: TextEditorSystemInternal = {
                 this.editor?.setRangeText(markdown, start, end, 'end');
                 this.editor?.dispatchEvent(new Event('input', { bubbles: true }));
                 this.focusEditor();
-            });
-        },
-
-        /**
-         * Update word and character count
-         */
-        updateWordCount(): void {
-            if (!this.editor || !this.wordCountDisplay) return;
-
-            const text = this.editor.value;
-            const chars = text.length;
-            const trimmedText = text.trim();
-            const words = trimmedText === '' ? 0 : trimmedText.split(/\s+/).length;
-
-            // Use internal resolver (handles fallback + params)
-            const wc = this.resolveTranslation('textEditor.status.wordCount', { words, chars });
-            if (wc.translated) {
-                this.wordCountDisplay.textContent = wc.text;
-                return;
             }
+        );
+    },
 
-            // Fallback to English
-            this.wordCountDisplay.textContent = `Words: ${words} | Characters: ${chars}`;
-        },
+    /**
+     * Update word and character count
+     */
+    updateWordCount(): void {
+        if (!this.editor || !this.wordCountDisplay) return;
 
-        /**
-         * Update cursor position display
-         */
-        updateCursorPosition(): void {
-            if (!this.editor || !this.lineColDisplay) return;
+        const text = this.editor.value;
+        const chars = text.length;
+        const trimmedText = text.trim();
+        const words = trimmedText === '' ? 0 : trimmedText.split(/\s+/).length;
 
-            const text = this.editor.value;
-            const pos = this.editor.selectionStart;
+        // Use internal resolver (handles fallback + params)
+        const wc = this.resolveTranslation('textEditor.status.wordCount', { words, chars });
+        if (wc.translated) {
+            this.wordCountDisplay.textContent = wc.text;
+            return;
+        }
 
-            const textBeforeCursor = text.substring(0, pos);
-            const lines = textBeforeCursor.split('\n');
-            const line = lines.length;
-            const lastLine = lines[lines.length - 1] || '';
-            const col = lastLine.length + 1;
+        // Fallback to English
+        this.wordCountDisplay.textContent = `Words: ${words} | Characters: ${chars}`;
+    },
 
-            // Use internal resolver (handles fallback + params)
-            const posMsg = this.resolveTranslation('textEditor.status.position', { line, col });
-            if (posMsg.translated) {
-                this.lineColDisplay.textContent = posMsg.text;
-                return;
+    /**
+     * Update cursor position display
+     */
+    updateCursorPosition(): void {
+        if (!this.editor || !this.lineColDisplay) return;
+
+        const text = this.editor.value;
+        const pos = this.editor.selectionStart;
+
+        const textBeforeCursor = text.substring(0, pos);
+        const lines = textBeforeCursor.split('\n');
+        const line = lines.length;
+        const lastLine = lines[lines.length - 1] || '';
+        const col = lastLine.length + 1;
+
+        // Use internal resolver (handles fallback + params)
+        const posMsg = this.resolveTranslation('textEditor.status.position', { line, col });
+        if (posMsg.translated) {
+            this.lineColDisplay.textContent = posMsg.text;
+            return;
+        }
+
+        // Fallback to English
+        this.lineColDisplay.textContent = `Line ${line}, Col ${col}`;
+    },
+
+    /**
+     * Toggle find and replace panel
+     */
+    toggleFindReplace(): void {
+        if (!this.findReplacePanel) return;
+
+        if (this.findReplacePanel.style.display === 'none') {
+            this.findReplacePanel.style.display = 'flex';
+            if (this.findInput) {
+                this.findInput.focus();
             }
-
-            // Fallback to English
-            this.lineColDisplay.textContent = `Line ${line}, Col ${col}`;
-        },
-
-        /**
-         * Toggle find and replace panel
-         */
-        toggleFindReplace(): void {
-            if (!this.findReplacePanel) return;
-
-            if (this.findReplacePanel.style.display === 'none') {
-                this.findReplacePanel.style.display = 'flex';
-                if (this.findInput) {
-                    this.findInput.focus();
-                }
-            } else {
-                this.findReplacePanel.style.display = 'none';
-                this.focusEditor();
-            }
-        },
-
-        /**
-         * Close find and replace panel
-         */
-        closeFindReplace(): void {
-            if (!this.findReplacePanel) return;
+        } else {
             this.findReplacePanel.style.display = 'none';
             this.focusEditor();
-        },
+        }
+    },
 
-        /**
-         * Find next occurrence
-         */
-        findNext(): void {
-            if (!this.editor || !this.findInput) return;
+    /**
+     * Close find and replace panel
+     */
+    closeFindReplace(): void {
+        if (!this.findReplacePanel) return;
+        this.findReplacePanel.style.display = 'none';
+        this.focusEditor();
+    },
 
-            const searchText = this.findInput.value;
-            if (!searchText) return;
+    /**
+     * Find next occurrence
+     */
+    findNext(): void {
+        if (!this.editor || !this.findInput) return;
 
-            const text = this.editor.value;
-            const start = this.editor.selectionEnd;
-            const index = text.indexOf(searchText, start);
+        const searchText = this.findInput.value;
+        if (!searchText) return;
 
-            if (index !== -1) {
-                this.editor.setSelectionRange(index, index + searchText.length);
+        const text = this.editor.value;
+        const start = this.editor.selectionEnd;
+        const index = text.indexOf(searchText, start);
+
+        if (index !== -1) {
+            this.editor.setSelectionRange(index, index + searchText.length);
+            this.editor.focus();
+        } else {
+            // Wrap around to beginning
+            const firstIndex = text.indexOf(searchText);
+            if (firstIndex !== -1) {
+                this.editor.setSelectionRange(firstIndex, firstIndex + searchText.length);
                 this.editor.focus();
-            } else {
-                // Wrap around to beginning
-                const firstIndex = text.indexOf(searchText);
-                if (firstIndex !== -1) {
-                    this.editor.setSelectionRange(firstIndex, firstIndex + searchText.length);
-                    this.editor.focus();
-                } else {
-                    const message =
-                        this.resolveTranslation('textEditor.findReplace.noMatch').text ||
-                        'No match found';
-                    this.showToast(message, 'info');
-                }
-            }
-        },
-
-        /**
-         * Replace one occurrence
-         */
-        replaceOne(): void {
-            if (!this.editor || !this.findInput || !this.replaceInput) return;
-
-            const searchText = this.findInput.value;
-            const replaceText = this.replaceInput.value;
-
-            if (!searchText) return;
-
-            const start = this.editor.selectionStart;
-            const end = this.editor.selectionEnd;
-            const selectedText = this.editor.value.substring(start, end);
-
-            if (selectedText === searchText) {
-                this.editor.setRangeText(replaceText, start, end, 'end');
-                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
-                this.findNext(); // Find next occurrence
-            } else {
-                this.findNext(); // Find first occurrence
-            }
-        },
-
-        /**
-         * Replace all occurrences
-         */
-        replaceAll(): void {
-            if (!this.editor || !this.findInput || !this.replaceInput) return;
-
-            const searchText = this.findInput.value;
-            const replaceText = this.replaceInput.value;
-
-            if (!searchText) return;
-
-            const text = this.editor.value;
-            const parts = text.split(searchText);
-            const count = parts.length - 1;
-
-            if (count > 0) {
-                const newText = parts.join(replaceText);
-                this.editor.value = newText;
-                this.editor.dispatchEvent(new Event('input', { bubbles: true }));
-
-                const message =
-                    this.resolveTranslation('textEditor.findReplace.replacedCount', { count })
-                        .text || `Replaced ${count} occurrence(s)`;
-                this.showToast(message, 'success');
             } else {
                 const message =
                     this.resolveTranslation('textEditor.findReplace.noMatch').text ||
                     'No match found';
                 this.showToast(message, 'info');
             }
+        }
+    },
 
-            this.focusEditor();
-        },
+    /**
+     * Replace one occurrence
+     */
+    replaceOne(): void {
+        if (!this.editor || !this.findInput || !this.replaceInput) return;
 
-        /**
-         * Show toast notification
-         * @param {string} message - Message to display
-         * @param {string} type - Toast type: 'info', 'success', 'error'
-         * @param {number} duration - Display duration in ms (default: 3000)
-         */
-        showToast(
-            message: string,
-            type: 'info' | 'success' | 'error' = 'info',
-            duration = 3000
-        ): void {
-            if (!this.container) return;
+        const searchText = this.findInput.value;
+        const replaceText = this.replaceInput.value;
 
-            const toast = document.createElement('div');
-            toast.className = `text-editor-toast text-editor-toast-${type}`;
-            toast.textContent = message;
+        if (!searchText) return;
 
-            // Add to container
-            if (!this.toastContainer) {
-                this.toastContainer = document.createElement('div');
-                this.toastContainer.className = 'text-editor-toast-container';
-                this.container.appendChild(this.toastContainer);
-            }
+        const start = this.editor.selectionStart;
+        const end = this.editor.selectionEnd;
+        const selectedText = this.editor.value.substring(start, end);
 
-            this.toastContainer.appendChild(toast);
+        if (selectedText === searchText) {
+            this.editor.setRangeText(replaceText, start, end, 'end');
+            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+            this.findNext(); // Find next occurrence
+        } else {
+            this.findNext(); // Find first occurrence
+        }
+    },
 
-            // Trigger animation
-            setTimeout(() => toast.classList.add('show'), 10);
+    /**
+     * Replace all occurrences
+     */
+    replaceAll(): void {
+        if (!this.editor || !this.findInput || !this.replaceInput) return;
 
-            // Auto-remove
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, duration);
-        },
+        const searchText = this.findInput.value;
+        const replaceText = this.replaceInput.value;
 
-        /**
-         * Show input modal dialog
-         * @param {string} title - Modal title
-         * @param {string} placeholder - Input placeholder
-         * @param {string} defaultValue - Default input value
-         * @returns {Promise<string|null>} Resolves with input value or null if cancelled
-         */
-        showInputModal(
-            title: string,
-            defaultValue = '',
-            placeholder = ''
-        ): Promise<string | null> {
-            return new Promise(resolve => {
-                const modal = document.createElement('div');
-                modal.className = 'text-editor-modal-overlay';
+        if (!searchText) return;
 
-                modal.innerHTML = `
+        const text = this.editor.value;
+        const parts = text.split(searchText);
+        const count = parts.length - 1;
+
+        if (count > 0) {
+            const newText = parts.join(replaceText);
+            this.editor.value = newText;
+            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+
+            const message =
+                this.resolveTranslation('textEditor.findReplace.replacedCount', { count }).text ||
+                `Replaced ${count} occurrence(s)`;
+            this.showToast(message, 'success');
+        } else {
+            const message =
+                this.resolveTranslation('textEditor.findReplace.noMatch').text || 'No match found';
+            this.showToast(message, 'info');
+        }
+
+        this.focusEditor();
+    },
+
+    /**
+     * Show toast notification
+     * @param {string} message - Message to display
+     * @param {string} type - Toast type: 'info', 'success', 'error'
+     * @param {number} duration - Display duration in ms (default: 3000)
+     */
+    showToast(message: string, type: 'info' | 'success' | 'error' = 'info', duration = 3000): void {
+        if (!this.container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `text-editor-toast text-editor-toast-${type}`;
+        toast.textContent = message;
+
+        // Add to container
+        if (!this.toastContainer) {
+            this.toastContainer = document.createElement('div');
+            this.toastContainer.className = 'text-editor-toast-container';
+            this.container.appendChild(this.toastContainer);
+        }
+
+        this.toastContainer.appendChild(toast);
+
+        // Trigger animation
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        // Auto-remove
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    },
+
+    /**
+     * Show input modal dialog
+     * @param {string} title - Modal title
+     * @param {string} placeholder - Input placeholder
+     * @param {string} defaultValue - Default input value
+     * @returns {Promise<string|null>} Resolves with input value or null if cancelled
+     */
+    showInputModal(title: string, defaultValue = '', placeholder = ''): Promise<string | null> {
+        return new Promise(resolve => {
+            const modal = document.createElement('div');
+            modal.className = 'text-editor-modal-overlay';
+
+            modal.innerHTML = `
                     <div class="text-editor-modal">
                         <div class="text-editor-modal-header">
                             <h3>${title}</h3>
@@ -1250,101 +1239,107 @@ const TextEditorSystem: TextEditorSystemInternal = {
                     </div>
                 `;
 
-                document.body.appendChild(modal);
+            document.body.appendChild(modal);
 
-                const input = modal.querySelector('.text-editor-modal-input') as HTMLInputElement | null;
-                const cancelBtn = modal.querySelector('.text-editor-modal-btn-cancel') as HTMLButtonElement | null;
-                const confirmBtn = modal.querySelector('.text-editor-modal-btn-confirm') as HTMLButtonElement | null;
+            const input = modal.querySelector(
+                '.text-editor-modal-input'
+            ) as HTMLInputElement | null;
+            const cancelBtn = modal.querySelector(
+                '.text-editor-modal-btn-cancel'
+            ) as HTMLButtonElement | null;
+            const confirmBtn = modal.querySelector(
+                '.text-editor-modal-btn-confirm'
+            ) as HTMLButtonElement | null;
 
-                if (!input || !cancelBtn || !confirmBtn) {
-                    modal.remove();
-                    resolve(null);
-                    return;
+            if (!input || !cancelBtn || !confirmBtn) {
+                modal.remove();
+                resolve(null);
+                return;
+            }
+
+            // Focus input and select text
+            setTimeout(() => {
+                input?.focus();
+                input?.select();
+            }, 50);
+
+            const cleanup = () => {
+                modal.classList.add('closing');
+                setTimeout(() => modal.remove(), 200);
+            };
+
+            const handleConfirm = () => {
+                const value = input?.value.trim();
+                cleanup();
+                resolve(((value || '') as string) || null);
+            };
+
+            const handleCancel = () => {
+                cleanup();
+                resolve(null);
+            };
+
+            // Event listeners
+            confirmBtn.addEventListener('click', handleConfirm);
+            cancelBtn.addEventListener('click', handleCancel);
+            input.addEventListener('keydown', (e: KeyboardEvent) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleConfirm();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    handleCancel();
                 }
-
-                // Focus input and select text
-                setTimeout(() => {
-                    input?.focus();
-                    input?.select();
-                }, 50);
-
-                const cleanup = () => {
-                    modal.classList.add('closing');
-                    setTimeout(() => modal.remove(), 200);
-                };
-
-                const handleConfirm = () => {
-                    const value = input?.value.trim();
-                    cleanup();
-                    resolve((value || '') as string || null);
-                };
-
-                const handleCancel = () => {
-                    cleanup();
-                    resolve(null);
-                };
-
-                // Event listeners
-                confirmBtn.addEventListener('click', handleConfirm);
-                cancelBtn.addEventListener('click', handleCancel);
-                input.addEventListener('keydown', (e: KeyboardEvent) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleConfirm();
-                    } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        handleCancel();
-                    }
-                });
-
-                // Click outside to close
-                modal.addEventListener('click', (e: MouseEvent) => {
-                    if (e.target === modal) {
-                        handleCancel();
-                    }
-                });
-
-                // Trigger animation
-                setTimeout(() => modal.classList.add('show'), 10);
             });
-        },
 
-        /**
-         * Destroy text editor
-         */
-        destroy(): void {
-            if (this.container) {
-                this.container.innerHTML = '';
-                this.container = null;
-            }
-            this.editor = null;
-            this.statusBar = null;
-            this.saveButton = null;
-            this.fileInput = null;
-            this.wordCountDisplay = null;
-            this.lineColDisplay = null;
-            this.findReplacePanel = null;
-            this.findInput = null;
-            this.replaceInput = null;
-            this.toastContainer = null;
-        },
-    };
+            // Click outside to close
+            modal.addEventListener('click', (e: MouseEvent) => {
+                if (e.target === modal) {
+                    handleCancel();
+                }
+            });
 
-    // Export to global scope
-    window.TextEditorSystem = TextEditorSystem;
-
-    // Auto-init if container exists on load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('text-editor-container');
-            if (container) {
-                TextEditorSystem.init(container);
-            }
+            // Trigger animation
+            setTimeout(() => modal.classList.add('show'), 10);
         });
-    } else {
+    },
+
+    /**
+     * Destroy text editor
+     */
+    destroy(): void {
+        if (this.container) {
+            this.container.innerHTML = '';
+            this.container = null;
+        }
+        this.editor = null;
+        this.statusBar = null;
+        this.saveButton = null;
+        this.fileInput = null;
+        this.wordCountDisplay = null;
+        this.lineColDisplay = null;
+        this.findReplacePanel = null;
+        this.findInput = null;
+        this.replaceInput = null;
+        this.toastContainer = null;
+    },
+};
+
+// Export to global scope
+window.TextEditorSystem = TextEditorSystem;
+
+// Auto-init if container exists on load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('text-editor-container');
         if (container) {
             TextEditorSystem.init(container);
         }
+    });
+} else {
+    const container = document.getElementById('text-editor-container');
+    if (container) {
+        TextEditorSystem.init(container);
     }
+}
 // End of TextEditorSystem module

@@ -4,6 +4,7 @@
  * Global error handler with logging and export capabilities
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+const storage_utils_js_1 = require("./storage-utils.js");
 console.log('ErrorHandler loaded');
 (() => {
     'use strict';
@@ -30,8 +31,7 @@ console.log('ErrorHandler loaded');
     }
     function readLogs() {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            return raw ? JSON.parse(raw) : [];
+            return (0, storage_utils_js_1.getJSON)(STORAGE_KEY, []);
         }
         catch (_e) {
             void _e;
@@ -40,7 +40,7 @@ console.log('ErrorHandler loaded');
     }
     function writeLogs(logs) {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(logs.slice(-MAX_LOGS)));
+            (0, storage_utils_js_1.setJSON)(STORAGE_KEY, logs.slice(-MAX_LOGS));
         }
         catch (_e) {
             void _e;

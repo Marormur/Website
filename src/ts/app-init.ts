@@ -203,6 +203,10 @@ function initApp(): void {
 
     funcs.syncTopZIndexWithDOM?.();
     funcs.restoreWindowPositions?.();
+    // Suppress default init handlers while we restore previously open modals
+    (
+        window as unknown as { __SESSION_RESTORE_IN_PROGRESS?: boolean }
+    ).__SESSION_RESTORE_IN_PROGRESS = true;
     funcs.restoreOpenModals?.();
     funcs.initSystemStatusControls?.();
     funcs.initDesktop?.();
@@ -249,8 +253,21 @@ function initApp(): void {
             // Attempt to restore session after all managers are initialized
             // This happens after Terminal/TextEditor managers are ready
             setTimeout(() => {
-                if (win.SessionManager?.restoreSession) {
-                    win.SessionManager.restoreSession();
+                try {
+                    if (win.SessionManager?.restoreSession) {
+                        win.SessionManager.restoreSession();
+                    }
+                } finally {
+                    // Mark restore finished so initHandlers can run normally again
+                    (
+                        window as unknown as {
+                            __SESSION_RESTORE_IN_PROGRESS?: boolean;
+                            __SESSION_RESTORE_DONE?: boolean;
+                        }
+                    ).__SESSION_RESTORE_IN_PROGRESS = false;
+                    (
+                        window as unknown as { __SESSION_RESTORE_DONE?: boolean }
+                    ).__SESSION_RESTORE_DONE = true;
                 }
             }, 100); // Small delay to ensure all managers are ready
         } catch (err) {

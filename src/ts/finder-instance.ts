@@ -1,49 +1,93 @@
-"use strict";
 /*
  * finder-instance.ts
  * TypeScript port of the multi-instance Finder implementation.
  * Exposes window.FinderInstance and window.FinderInstanceManager for compatibility.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+declare global {
+    interface Window {
+        FinderInstance?: any;
+        FinderInstanceManager?: any;
+    }
+}
+
 const ROOT_FOLDER_NAME = 'Computer';
-class FinderInstance extends (window.BaseWindowInstance || class {
-}) {
-    constructor(config) {
+
+type ViewMode = 'list' | 'grid' | 'columns';
+type ViewKind = 'computer' | 'github' | 'favorites' | 'recent';
+
+interface FileItem {
+    name: string;
+    type: 'folder' | 'file' | 'favorite' | 'recent' | string;
+    icon?: string;
+    size?: number;
+    modified?: string;
+    download_url?: string | null;
+    path?: string;
+}
+
+interface FinderState {
+    currentPath: string[];
+    currentView: ViewKind;
+    viewMode: ViewMode;
+    sortBy: 'name' | 'date' | 'size' | 'type';
+    sortOrder: 'asc' | 'desc';
+    favorites: string[];
+    recentFiles: Array<{ name: string; path: string; icon?: string; modified: string }>;
+}
+
+class FinderInstance extends (window.BaseWindowInstance || class {}) {
+    currentPath: string[] = [];
+    currentView: ViewKind = 'computer';
+    selectedItems: Set<string> = new Set();
+    viewMode: ViewMode = 'list';
+    sortBy: 'name' | 'date' | 'size' | 'type' = 'name';
+    sortOrder: 'asc' | 'desc' = 'asc';
+    githubRepos: any[] = [];
+    githubLoading = false;
+    githubError = false;
+    githubErrorMessage = '';
+    lastGithubItemsMap: Map<string, any> = new Map();
+    favorites: Set<string> = new Set();
+    recentFiles: Array<{ name: string; path: string; icon?: string; modified: string }> = [];
+    _lastSelectedIndex: number | null = null;
+    _renderedItems: FileItem[] = [];
+    domRefs: {
+        sidebarComputer: HTMLElement | null;
+        sidebarGithub: HTMLElement | null;
+        sidebarFavorites: HTMLElement | null;
+        sidebarRecent: HTMLElement | null;
+        breadcrumbs: HTMLElement | null;
+        contentArea: HTMLElement | null;
+        toolbar: HTMLElement | null;
+        searchInput: HTMLInputElement | null;
+    } = {
+        sidebarComputer: null,
+        sidebarGithub: null,
+        sidebarFavorites: null,
+        sidebarRecent: null,
+        breadcrumbs: null,
+        contentArea: null,
+        toolbar: null,
+        searchInput: null,
+    };
+
+    githubContentCache: Map<string, any[]> = new Map();
+    virtualFileSystem: Record<string, any> = {};
+    _skipInitialRender?: boolean;
+
+    constructor(config: any) {
         super({ ...config, type: 'finder' });
-        this.currentPath = [];
-        this.currentView = 'computer';
-        this.selectedItems = new Set();
-        this.viewMode = 'list';
-        this.sortBy = 'name';
-        this.sortOrder = 'asc';
-        this.githubRepos = [];
-        this.githubLoading = false;
-        this.githubError = false;
-        this.githubErrorMessage = '';
-        this.lastGithubItemsMap = new Map();
-        this.favorites = new Set();
-        this.recentFiles = [];
-        this._lastSelectedIndex = null;
-        this._renderedItems = [];
-        this.domRefs = {
-            sidebarComputer: null,
-            sidebarGithub: null,
-            sidebarFavorites: null,
-            sidebarRecent: null,
-            breadcrumbs: null,
-            contentArea: null,
-            toolbar: null,
-            searchInput: null,
-        };
-        this.githubContentCache = new Map();
-        this.virtualFileSystem = {};
         this.selectedItems = new Set();
         this._lastSelectedIndex = null;
         this._renderedItems = [];
         this.githubContentCache = new Map();
         this.virtualFileSystem = this._createVirtualFileSystem();
     }
-    _createVirtualFileSystem() {
+
+    private _createVirtualFileSystem() {
         const rootFolder = {
             type: 'folder',
             icon: '💻',
@@ -55,7 +99,8 @@ class FinderInstance extends (window.BaseWindowInstance || class {
                         'README.md': {
                             type: 'file',
                             icon: '📝',
-                            content: '# Willkommen im Finder\n\nDies ist ein virtuelles Dateisystem.',
+                            content:
+                                '# Willkommen im Finder\n\nDies ist ein virtuelles Dateisystem.',
                             size: 1024,
                         },
                     },
@@ -68,20 +113,21 @@ class FinderInstance extends (window.BaseWindowInstance || class {
         };
         return { [ROOT_FOLDER_NAME]: rootFolder };
     }
-    _initializeState(initialState) {
+
+    protected _initializeState(initialState: Partial<FinderState>) {
         return {
             currentPath: initialState.currentPath || [],
-            currentView: initialState.currentView || 'computer',
-            viewMode: initialState.viewMode || 'list',
-            sortBy: initialState.sortBy || 'name',
-            sortOrder: initialState.sortOrder || 'asc',
+            currentView: (initialState.currentView as ViewKind) || 'computer',
+            viewMode: (initialState.viewMode as ViewMode) || 'list',
+            sortBy: (initialState.sortBy as FinderState['sortBy']) || 'name',
+            sortOrder: (initialState.sortOrder as FinderState['sortOrder']) || 'asc',
             favorites: initialState.favorites || [],
             recentFiles: initialState.recentFiles || [],
-        };
+        } as FinderState;
     }
+
     render() {
-        if (!this.container)
-            return;
+        if (!this.container) return;
         const html = `
             <div class="finder-instance-wrapper flex-1 flex gap-0 min-h-0 overflow-hidden">
                 <aside class="w-48 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
@@ -130,39 +176,50 @@ class FinderInstance extends (window.BaseWindowInstance || class {
                     <div id="finder-content-area" data-finder-content class="flex-1 overflow-auto bg-white dark:bg-gray-800 p-4"></div>
                 </div>
             </div>`;
+
         this.container.innerHTML = html;
-        this.domRefs.sidebarComputer = this.container.querySelector('[data-finder-sidebar-computer]');
+
+        this.domRefs.sidebarComputer = this.container.querySelector(
+            '[data-finder-sidebar-computer]'
+        );
         this.domRefs.sidebarGithub = this.container.querySelector('[data-finder-sidebar-github]');
-        this.domRefs.sidebarFavorites = this.container.querySelector('[data-finder-sidebar-favorites]');
+        this.domRefs.sidebarFavorites = this.container.querySelector(
+            '[data-finder-sidebar-favorites]'
+        );
         this.domRefs.sidebarRecent = this.container.querySelector('[data-finder-sidebar-recent]');
         this.domRefs.breadcrumbs = this.container.querySelector('[data-finder-breadcrumbs]');
         this.domRefs.contentArea = this.container.querySelector('[data-finder-content]');
         this.domRefs.toolbar = this.container.querySelector('[data-finder-toolbar]');
         this.domRefs.searchInput = this.container.querySelector('[data-finder-search]');
+
         try {
             if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
                 window.appI18n.applyTranslations();
             }
-        }
-        catch {
+        } catch {
             /* noop */
         }
     }
+
     attachEventListeners() {
-        if (!this.container)
-            return;
-        this.container.addEventListener('click', (e) => this._handleClick(e));
-        this.container.addEventListener('dblclick', (e) => this._handleDoubleClick(e));
-        if (!this._skipInitialRender) {
-            this.navigateTo(this.state?.currentPath || [], this.state?.currentView || this.currentView);
+        if (!this.container) return;
+        this.container.addEventListener('click', (e: Event) => this._handleClick(e));
+        this.container.addEventListener('dblclick', (e: Event) => this._handleDoubleClick(e));
+        if (!(this as any)._skipInitialRender) {
+            this.navigateTo(
+                (this as any).state?.currentPath || [],
+                (this as any).state?.currentView || this.currentView
+            );
         }
     }
-    _handleClick(e) {
-        const contentRoot = this.domRefs?.contentArea || this.container;
+
+    private _handleClick(e: any) {
+        const contentRoot: HTMLElement | null = this.domRefs?.contentArea || this.container;
         if (contentRoot && contentRoot.contains(e.target)) {
-            const itemEl = e.target.closest?.('.finder-list-item, .finder-grid-item') || null;
-            const isEmptySpacer = e.target.id === 'finder-empty-spacer';
-            const isContainerClick = e.target.id === 'finder-list-container';
+            const itemEl: HTMLElement | null =
+                e.target.closest?.('.finder-list-item, .finder-grid-item') || null;
+            const isEmptySpacer = (e.target as HTMLElement).id === 'finder-empty-spacer';
+            const isContainerClick = (e.target as HTMLElement).id === 'finder-list-container';
             if (!itemEl || isEmptySpacer || isContainerClick) {
                 if (this.selectedItems.size) {
                     this.selectedItems.clear();
@@ -170,11 +227,10 @@ class FinderInstance extends (window.BaseWindowInstance || class {
                     // Optimistically remove selection classes before re-render
                     try {
                         const rows = contentRoot.querySelectorAll('.finder-list-item');
-                        rows.forEach((r) => {
-                            r.classList.remove('bg-blue-100', 'dark:bg-blue-900');
+                        rows.forEach((r: Element) => {
+                            (r as HTMLElement).classList.remove('bg-blue-100', 'dark:bg-blue-900');
                         });
-                    }
-                    catch { }
+                    } catch {}
                     this.renderContent();
                 }
                 // If click did not hit an item, treat as background click and stop further handling
@@ -185,11 +241,13 @@ class FinderInstance extends (window.BaseWindowInstance || class {
                 }
             }
         }
-        const clickedItem = e.target.closest?.('.finder-list-item, .finder-grid-item') || null;
-        if (clickedItem && clickedItem.dataset) {
-            const name = clickedItem.dataset.itemName;
-            const type = clickedItem.dataset.itemType;
-            const idxStr = clickedItem.dataset.index;
+
+        const clickedItem: HTMLElement | null =
+            e.target.closest?.('.finder-list-item, .finder-grid-item') || null;
+        if (clickedItem && (clickedItem as any).dataset) {
+            const name = (clickedItem as any).dataset.itemName as string;
+            const type = (clickedItem as any).dataset.itemType as string;
+            const idxStr = (clickedItem as any).dataset.index as string;
             const index = typeof idxStr === 'string' ? parseInt(idxStr, 10) : NaN;
             if (name && type) {
                 this._handleItemSelection({ name, type, index, event: e });
@@ -198,79 +256,84 @@ class FinderInstance extends (window.BaseWindowInstance || class {
                 return;
             }
         }
-        const action = e.target.closest?.('[data-action]')?.dataset.action;
-        if (!action)
-            return;
-        const handlers = {
+
+        const action = e.target.closest?.('[data-action]')?.dataset.action as string | undefined;
+        if (!action) return;
+
+        const handlers: Record<string, () => void> = {
             'finder:switchView': () => {
-                const view = e.target.closest('[data-finder-view]')?.dataset.finderView;
-                if (view)
-                    this.switchView(view);
+                const view = e.target.closest('[data-finder-view]')?.dataset.finderView as ViewKind;
+                if (view) this.switchView(view);
             },
             'finder:navigateUp': () => this.navigateUp(),
             'finder:goRoot': () => this.navigateTo([], this.currentView),
             'finder:navigateToPath': () => {
-                const path = e.target.closest('[data-path]')?.dataset.path;
-                if (path !== undefined)
-                    this.navigateTo(path);
+                const path = e.target.closest('[data-path]')?.dataset.path as string;
+                if (path !== undefined) this.navigateTo(path);
             },
             'finder:setSortBy': () => {
                 const sortBy = e.target.closest('[data-sort-by]')?.dataset
-                    .sortBy;
-                if (sortBy)
-                    this.setSortBy(sortBy);
+                    .sortBy as FinderState['sortBy'];
+                if (sortBy) this.setSortBy(sortBy);
             },
             'finder:setViewMode': () => {
-                const mode = e.target.closest('[data-view-mode]')?.dataset.viewMode;
-                if (mode)
-                    this.setViewMode(mode);
+                const mode = e.target.closest('[data-view-mode]')?.dataset.viewMode as ViewMode;
+                if (mode) this.setViewMode(mode);
             },
         };
-        if (handlers[action])
-            handlers[action]();
+
+        if (handlers[action]) handlers[action]();
     }
-    _handleDoubleClick(e) {
+
+    private _handleDoubleClick(e: any) {
         const item = e.target.closest?.('[data-action-dblclick]');
-        if (!item || item.dataset.actionDblclick !== 'finder:openItem')
-            return;
-        const name = item.dataset.itemName;
-        const type = item.dataset.itemType;
-        if (name && type)
-            this.openItem(name, type);
+        if (!item || item.dataset.actionDblclick !== 'finder:openItem') return;
+        const name = item.dataset.itemName as string;
+        const type = item.dataset.itemType as string;
+        if (name && type) this.openItem(name, type);
     }
-    _handleItemSelection({ name, type: _type, index, event, }) {
+
+    private _handleItemSelection({
+        name,
+        type: _type,
+        index,
+        event,
+    }: {
+        name: string;
+        type: string;
+        index: number;
+        event: any;
+    }) {
         const isShift = !!event.shiftKey;
         const isToggle = !!(event.metaKey || event.ctrlKey);
         const count = Array.isArray(this._renderedItems) ? this._renderedItems.length : 0;
+
         if (isShift && count > 0 && this._lastSelectedIndex !== null && !Number.isNaN(index)) {
             const start = Math.max(0, Math.min(this._lastSelectedIndex, index));
             const end = Math.min(count - 1, Math.max(this._lastSelectedIndex, index));
-            if (!isToggle)
-                this.selectedItems.clear();
+            if (!isToggle) this.selectedItems.clear();
             for (let i = start; i <= end; i++) {
                 const it = this._renderedItems[i];
-                if (it && it.name)
-                    this.selectedItems.add(it.name);
+                if (it && it.name) this.selectedItems.add(it.name);
             }
-        }
-        else if (isToggle) {
-            if (this.selectedItems.has(name))
-                this.selectedItems.delete(name);
-            else
-                this.selectedItems.add(name);
+        } else if (isToggle) {
+            if (this.selectedItems.has(name)) this.selectedItems.delete(name);
+            else this.selectedItems.add(name);
             this._lastSelectedIndex = Number.isNaN(index) ? null : index;
-        }
-        else {
+        } else {
             this.selectedItems.clear();
             this.selectedItems.add(name);
             this._lastSelectedIndex = Number.isNaN(index) ? null : index;
         }
         this.renderContent();
     }
+
     getCurrentFolderName() {
-        const _lang = (window.appI18n?.getActiveLanguage?.() ||
+        const _lang = (
+            window.appI18n?.getActiveLanguage?.() ||
             document.documentElement?.lang ||
-            'de').toLowerCase();
+            'de'
+        ).toLowerCase();
         const _isDe = _lang.startsWith('de');
         if (this.currentPath.length === 0) {
             switch (this.currentView) {
@@ -288,67 +351,69 @@ class FinderInstance extends (window.BaseWindowInstance || class {
         }
         return this.currentPath[this.currentPath.length - 1];
     }
+
     updateTabTitle() {
         const folderName = this.getCurrentFolderName();
         // Only update the visible tab label, do not overwrite the instance title
-        this.metadata = { ...(this.metadata || {}), tabLabel: folderName };
+        (this as any).metadata = { ...((this as any).metadata || {}), tabLabel: folderName };
         try {
             const tabController = document.querySelector('#finder-tabs-container');
-            if (tabController && window.multiInstanceIntegration) {
-                const integration = window.multiInstanceIntegration.integrations?.get?.('finder');
+            if (tabController && (window as any).multiInstanceIntegration) {
+                const integration = (window as any).multiInstanceIntegration.integrations?.get?.(
+                    'finder'
+                );
                 if (integration?.tabManager?.setTitle) {
-                    integration.tabManager.setTitle(this.instanceId, folderName);
+                    integration.tabManager.setTitle((this as any).instanceId, folderName);
                 }
             }
-        }
-        catch {
+        } catch {
             /* ignore */
         }
     }
-    navigateTo(path, view = null) {
-        if (view !== null)
-            this.currentView = view;
-        if (typeof path === 'string')
-            this.currentPath = path === '' ? [] : path.split('/');
-        else if (Array.isArray(path))
-            this.currentPath = [...path];
+
+    navigateTo(path: string | string[], view: ViewKind | null = null) {
+        if (view !== null) this.currentView = view;
+        if (typeof path === 'string') this.currentPath = path === '' ? [] : path.split('/');
+        else if (Array.isArray(path)) this.currentPath = [...path];
         this.selectedItems.clear();
         this._lastSelectedIndex = null;
         this.updateSidebarSelection();
         this.renderBreadcrumbs();
         this.renderContent();
         this.updateTabTitle();
-        this.updateState?.({
+        (this as any).updateState?.({
             currentPath: this.currentPath,
             currentView: this.currentView,
         });
     }
+
     navigateUp() {
         if (this.currentPath.length > 0) {
             this.currentPath.pop();
             this.navigateTo(this.currentPath);
         }
     }
-    navigateToFolder(folderName) {
+
+    navigateToFolder(folderName: string) {
         this.currentPath.push(folderName);
         this.navigateTo(this.currentPath);
     }
-    switchView(view) {
+
+    switchView(view: ViewKind) {
         this.currentPath = [];
         this.navigateTo([], view);
     }
+
     updateSidebarSelection() {
         const refs = this.domRefs;
-        if (!refs)
-            return;
+        if (!refs) return;
         [
             refs.sidebarComputer,
             refs.sidebarGithub,
             refs.sidebarFavorites,
             refs.sidebarRecent,
         ].forEach(el => {
-            if (el)
-                el.classList.remove('finder-sidebar-active');
+            if (el) el.classList.remove('finder-sidebar-active');
         });
         switch (this.currentView) {
             case 'computer':
@@ -365,13 +430,15 @@ class FinderInstance extends (window.BaseWindowInstance || class {
                 break;
         }
     }
+
     renderBreadcrumbs() {
-        if (!this.domRefs.breadcrumbs)
-            return;
-        const parts = [];
-        const _lang = (window.appI18n?.getActiveLanguage?.() ||
+        if (!this.domRefs.breadcrumbs) return;
+        const parts: string[] = [];
+        const _lang = (
+            window.appI18n?.getActiveLanguage?.() ||
             document.documentElement?.lang ||
-            'de').toLowerCase();
+            'de'
+        ).toLowerCase();
         const _isDe = _lang.startsWith('de');
         let viewLabel = '';
         switch (this.currentView) {
@@ -388,19 +455,22 @@ class FinderInstance extends (window.BaseWindowInstance || class {
                 viewLabel = _isDe ? 'Zuletzt geöffnet' : 'Recently opened';
                 break;
         }
-        parts.push(`<button class="finder-breadcrumb-item" data-action="finder:goRoot">${viewLabel}</button>`);
+        parts.push(
+            `<button class="finder-breadcrumb-item" data-action="finder:goRoot">${viewLabel}</button>`
+        );
         this.currentPath.forEach((part, index) => {
-            if (index === 0 && this.currentView === 'computer' && part === ROOT_FOLDER_NAME)
-                return;
+            if (index === 0 && this.currentView === 'computer' && part === ROOT_FOLDER_NAME) return;
             const pathUpToHere = this.currentPath.slice(0, index + 1);
             parts.push('<span class="finder-breadcrumb-separator">›</span>');
-            parts.push(`<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join('/')}">${part}</button>`);
+            parts.push(
+                `<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join('/')}">${part}</button>`
+            );
         });
         this.domRefs.breadcrumbs.innerHTML = parts.join('');
     }
+
     renderContent() {
-        if (!this.domRefs.contentArea)
-            return;
+        if (!this.domRefs.contentArea) return;
         if (this.currentView === 'github') {
             this.renderGithubContent();
             return;
@@ -409,14 +479,15 @@ class FinderInstance extends (window.BaseWindowInstance || class {
         if (items.length === 0) {
             let emptyText = 'Dieser Ordner ist leer';
             try {
-                const lang = (window.appI18n?.getActiveLanguage?.() ||
+                const lang = (
+                    window.appI18n?.getActiveLanguage?.() ||
                     document.documentElement?.lang ||
-                    'de').toLowerCase();
+                    'de'
+                ).toLowerCase();
                 emptyText = lang.startsWith('de')
                     ? 'Dieser Ordner ist leer'
                     : 'This folder is empty';
-            }
-            catch { }
+            } catch {}
             this.domRefs.contentArea.innerHTML = `<div class="finder-empty-state"><div class="text-6xl mb-4">📂</div><div class="text-gray-500 dark:text-gray-400">${emptyText}</div></div>`;
             return;
         }
@@ -433,7 +504,8 @@ class FinderInstance extends (window.BaseWindowInstance || class {
                 break;
         }
     }
-    getCurrentItems() {
+
+    getCurrentItems(): FileItem[] {
         switch (this.currentView) {
             case 'computer':
                 return this.getComputerItems();
@@ -447,15 +519,15 @@ class FinderInstance extends (window.BaseWindowInstance || class {
                 return [];
         }
     }
-    getComputerItems() {
-        let current = this.virtualFileSystem;
+
+    getComputerItems(): FileItem[] {
+        let current: any = this.virtualFileSystem;
         for (const pathPart of this.currentPath) {
             if (current[pathPart] && current[pathPart].children)
                 current = current[pathPart].children;
-            else
-                return [];
+            else return [];
         }
-        return Object.entries(current).map(([name, item]) => ({
+        return Object.entries(current).map(([name, item]: [string, any]) => ({
             name,
             type: item.type,
             icon: item.icon || (item.type === 'folder' ? '📁' : '📄'),
@@ -463,10 +535,12 @@ class FinderInstance extends (window.BaseWindowInstance || class {
             modified: item.modified || new Date().toISOString(),
         }));
     }
-    getGithubItems() {
+
+    getGithubItems(): FileItem[] {
         return [];
     }
-    getFavoriteItems() {
+
+    getFavoriteItems(): FileItem[] {
         return Array.from(this.favorites).map(path => ({
             name: path.split('/').pop() || path,
             type: 'favorite',
@@ -474,7 +548,8 @@ class FinderInstance extends (window.BaseWindowInstance || class {
             path,
         }));
     }
-    getRecentItems() {
+
+    getRecentItems(): FileItem[] {
         return this.recentFiles.map(file => ({
             name: file.name,
             type: 'recent',
@@ -483,13 +558,12 @@ class FinderInstance extends (window.BaseWindowInstance || class {
             modified: file.modified,
         }));
     }
-    sortItems(items) {
+
+    sortItems(items: FileItem[]): FileItem[] {
         const sorted = [...items];
         sorted.sort((a, b) => {
-            if (a.type === 'folder' && b.type !== 'folder')
-                return -1;
-            if (a.type !== 'folder' && b.type === 'folder')
-                return 1;
+            if (a.type === 'folder' && b.type !== 'folder') return -1;
+            if (a.type !== 'folder' && b.type === 'folder') return 1;
             let comparison = 0;
             switch (this.sortBy) {
                 case 'name':
@@ -512,21 +586,22 @@ class FinderInstance extends (window.BaseWindowInstance || class {
         });
         return sorted;
     }
-    renderListView(items) {
+
+    renderListView(items: FileItem[]) {
         this._renderedItems = items;
         const rows = items
             .map((item, i) => {
-            const isSelected = this.selectedItems.has(item.name);
-            const selectedCls = isSelected ? 'bg-blue-100 dark:bg-blue-900' : '';
-            return `
+                const isSelected = this.selectedItems.has(item.name);
+                const selectedCls = isSelected ? 'bg-blue-100 dark:bg-blue-900' : '';
+                return `
                 <tr class="finder-list-item ${selectedCls}" data-index="${i}" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                     <td><span class="finder-item-icon">${item.icon || ''}</span><span class="finder-item-name">${item.name}</span></td>
                     <td>${this.formatSize(item.size)}</td>
                     <td>${this.formatDate(item.modified)}</td>
                 </tr>`;
-        })
+            })
             .join('');
-        this.domRefs.contentArea.innerHTML = `
+        this.domRefs.contentArea!.innerHTML = `
                         <div id="finder-list-container">
                             <table class="finder-list-table">
                 <thead>
@@ -541,34 +616,35 @@ class FinderInstance extends (window.BaseWindowInstance || class {
                             <div id="finder-empty-spacer" style="height: 32px;"></div>
             </div>`;
     }
-    renderGridView(items) {
+
+    renderGridView(items: FileItem[]) {
         this._renderedItems = items;
         const tiles = items
             .map((item, i) => {
-            const isSelected = this.selectedItems.has(item.name);
-            const selectedCls = isSelected
-                ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 bg-blue-100/60 dark:bg-blue-900/40'
-                : '';
-            return `
+                const isSelected = this.selectedItems.has(item.name);
+                const selectedCls = isSelected
+                    ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 bg-blue-100/60 dark:bg-blue-900/40'
+                    : '';
+                return `
               <div class="finder-grid-item ${selectedCls}" data-index="${i}" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
                 <div class="finder-grid-icon">${item.icon || ''}</div>
                 <div class="finder-grid-name">${item.name}</div>
               </div>`;
-        })
+            })
             .join('');
-        this.domRefs.contentArea.innerHTML = `
+        this.domRefs.contentArea!.innerHTML = `
                     <div id="finder-list-container">
                         <div class="finder-grid-container">${tiles}</div>
                         <div id="finder-empty-spacer" style="height: 32px;"></div>
                     </div>`;
     }
-    openItem(name, type) {
+
+    openItem(name: string, type: string) {
         if (type === 'folder') {
             this.navigateToFolder(name);
-        }
-        else if (type === 'file') {
+        } else if (type === 'file') {
             this.addToRecent(name);
-            this.emit?.('fileOpened', {
+            (this as any).emit?.('fileOpened', {
                 name,
                 path: [...this.currentPath, name].join('/'),
             });
@@ -581,29 +657,27 @@ class FinderInstance extends (window.BaseWindowInstance || class {
             }
         }
     }
+
     async renderGithubContent() {
         const el = this.domRefs.contentArea;
-        if (!el)
-            return;
+        if (!el) return;
         if (this.currentPath.length === 0) {
             el.innerHTML = '<div class="finder-empty-state">Lade Repositories…</div>';
             const repos = await this.fetchGithubRepos();
             this.lastGithubItemsMap.clear();
-            const items = (repos || []).map((repo) => ({
+            const items = (repos || []).map((repo: any) => ({
                 name: repo.name,
                 type: 'folder',
                 icon: '📦',
             }));
-            items.forEach((it) => this.lastGithubItemsMap.set(it.name, it));
+            items.forEach((it: any) => this.lastGithubItemsMap.set(it.name, it));
             if (this.githubError && items.length === 0) {
                 el.innerHTML =
                     '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">⚠️</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
-            }
-            else if (items.length === 0) {
+            } else if (items.length === 0) {
                 el.innerHTML =
                     '<div class="finder-empty-state text-center">Keine öffentlichen Repositories gefunden</div>';
-            }
-            else {
+            } else {
                 this.renderListView(items);
             }
             return;
@@ -617,7 +691,7 @@ class FinderInstance extends (window.BaseWindowInstance || class {
         el.innerHTML = '<div class="finder-empty-state">Lade Inhalte…</div>';
         const contents = await this.fetchGithubContents(repo, subPath);
         this.lastGithubItemsMap.clear();
-        const items = (contents || []).map((entry) => {
+        const items = (contents || []).map((entry: any) => {
             const isDir = entry.type === 'dir';
             return {
                 name: entry.name,
@@ -625,87 +699,81 @@ class FinderInstance extends (window.BaseWindowInstance || class {
                 icon: isDir ? '📁' : '📄',
                 size: entry.size || 0,
                 download_url: entry.download_url || null,
-            };
+            } as FileItem;
         });
-        items.forEach((it) => this.lastGithubItemsMap.set(it.name, it));
+        items.forEach((it: any) => this.lastGithubItemsMap.set(it.name, it));
         if (this.githubError && items.length === 0) {
             el.innerHTML =
                 '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">⚠️</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
-        }
-        else if (items.length === 0) {
+        } else if (items.length === 0) {
             el.innerHTML =
                 '<div class="finder-empty-state text-center">Dieser Ordner ist leer</div>';
-        }
-        else {
+        } else {
             this.renderListView(items);
         }
     }
+
     async fetchGithubRepos() {
         const GITHUB_USERNAME = 'Marormur';
         try {
-            if (Array.isArray(this.githubRepos) && this.githubRepos.length)
-                return this.githubRepos;
+            if (Array.isArray(this.githubRepos) && this.githubRepos.length) return this.githubRepos;
             const res = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos`, {
                 headers: { Accept: 'application/vnd.github.v3+json' },
             });
-            if (!res.ok)
-                throw new Error('GitHub repos fetch failed');
+            if (!res.ok) throw new Error('GitHub repos fetch failed');
             const data = await res.json();
             this.githubRepos = data || [];
             this.githubError = false;
             this.githubErrorMessage = '';
             return this.githubRepos;
-        }
-        catch (e) {
+        } catch (e) {
             console.warn('GitHub repos error:', e);
             this.githubError = true;
             this.githubErrorMessage = 'Repositories could not be loaded';
             return [];
         }
     }
-    async fetchGithubContents(repo, subPath = '') {
+
+    async fetchGithubContents(repo: string, subPath = '') {
         try {
             const key = `${repo}:${subPath}`;
-            if (this.githubContentCache.has(key))
-                return this.githubContentCache.get(key);
+            if (this.githubContentCache.has(key)) return this.githubContentCache.get(key);
             const base = `https://api.github.com/repos/Marormur/${repo}/contents`;
             const url = subPath ? `${base}/${this._encodeGithubPath(subPath)}` : base;
             const res = await fetch(url, { headers: { Accept: 'application/vnd.github.v3+json' } });
-            if (!res.ok)
-                throw new Error('GitHub contents fetch failed');
+            if (!res.ok) throw new Error('GitHub contents fetch failed');
             const data = await res.json();
             this.githubContentCache.set(key, data || []);
             this.githubError = false;
             this.githubErrorMessage = '';
             return data;
-        }
-        catch (e) {
+        } catch (e) {
             console.warn('GitHub contents error:', e);
             this.githubError = true;
             this.githubErrorMessage = 'Repositories could not be loaded';
             return [];
         }
     }
-    _encodeGithubPath(subPath) {
-        if (!subPath)
-            return '';
+
+    private _encodeGithubPath(subPath: string) {
+        if (!subPath) return '';
         return subPath
             .split('/')
             .filter(Boolean)
             .map(seg => encodeURIComponent(seg))
             .join('/');
     }
-    openImageViewer({ src, name }) {
+
+    openImageViewer({ src, name }: { src: string; name: string }) {
         try {
-            const img = document.getElementById('image-viewer');
+            const img = document.getElementById('image-viewer') as HTMLImageElement | null;
             const info = document.getElementById('image-info');
             const placeholder = document.getElementById('image-placeholder');
             if (info) {
                 info.textContent = name || '';
                 info.classList.remove('hidden');
             }
-            if (placeholder)
-                placeholder.classList.add('hidden');
+            if (placeholder) placeholder.classList.add('hidden');
             if (img) {
                 img.src = src;
                 img.classList.remove('hidden');
@@ -715,18 +783,16 @@ class FinderInstance extends (window.BaseWindowInstance || class {
             }
             if (window.API?.window?.open) {
                 window.API.window.open('image-modal');
-            }
-            else {
+            } else {
                 const modal = document.getElementById('image-modal');
-                if (modal)
-                    modal.classList.remove('hidden');
+                if (modal) modal.classList.remove('hidden');
             }
-        }
-        catch (e) {
+        } catch (e) {
             console.warn('Failed to open image viewer:', e);
         }
     }
-    addToRecent(name) {
+
+    addToRecent(name: string) {
         const fullPath = [...this.currentPath, name].join('/');
         this.recentFiles.unshift({
             name,
@@ -735,35 +801,34 @@ class FinderInstance extends (window.BaseWindowInstance || class {
             modified: new Date().toISOString(),
         });
         this.recentFiles = this.recentFiles.slice(0, 20);
-        this.updateState?.({ recentFiles: this.recentFiles });
+        (this as any).updateState?.({ recentFiles: this.recentFiles });
     }
-    setSortBy(field) {
-        if (this.sortBy === field)
-            this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+
+    setSortBy(field: FinderState['sortBy']) {
+        if (this.sortBy === field) this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
         else {
             this.sortBy = field;
             this.sortOrder = 'asc';
         }
         this.renderContent();
-        this.updateState?.({ sortBy: this.sortBy, sortOrder: this.sortOrder });
+        (this as any).updateState?.({ sortBy: this.sortBy, sortOrder: this.sortOrder });
     }
-    setViewMode(mode) {
+
+    setViewMode(mode: ViewMode) {
         this.viewMode = mode;
         this.renderContent();
-        this.updateState?.({ viewMode: this.viewMode });
+        (this as any).updateState?.({ viewMode: this.viewMode });
     }
-    formatSize(bytes) {
-        if (!bytes || bytes === 0)
-            return '-';
-        if (bytes < 1024)
-            return bytes + ' B';
-        if (bytes < 1024 * 1024)
-            return (bytes / 1024).toFixed(1) + ' KB';
+
+    formatSize(bytes?: number) {
+        if (!bytes || bytes === 0) return '-';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
-    formatDate(dateStr) {
-        if (!dateStr)
-            return '-';
+
+    formatDate(dateStr?: string) {
+        if (!dateStr) return '-';
         const date = new Date(dateStr);
         return date.toLocaleDateString('de-DE', {
             day: '2-digit',
@@ -771,6 +836,7 @@ class FinderInstance extends (window.BaseWindowInstance || class {
             year: 'numeric',
         });
     }
+
     serialize() {
         return {
             ...(super.serialize?.() || {}),
@@ -783,38 +849,35 @@ class FinderInstance extends (window.BaseWindowInstance || class {
             recentFiles: this.recentFiles,
         };
     }
-    deserialize(data) {
-        this._skipInitialRender = true;
+
+    deserialize(data: any) {
+        (this as any)._skipInitialRender = true;
         super.deserialize?.(data);
-        if (data.currentPath)
-            this.currentPath = data.currentPath;
-        if (data.currentView)
-            this.currentView = data.currentView;
-        if (data.viewMode)
-            this.viewMode = data.viewMode;
-        if (data.sortBy)
-            this.sortBy = data.sortBy;
-        if (data.sortOrder)
-            this.sortOrder = data.sortOrder;
-        if (data.favorites)
-            this.favorites = new Set(data.favorites);
-        if (data.recentFiles)
-            this.recentFiles = data.recentFiles;
+        if (data.currentPath) this.currentPath = data.currentPath;
+        if (data.currentView) this.currentView = data.currentView;
+        if (data.viewMode) this.viewMode = data.viewMode;
+        if (data.sortBy) this.sortBy = data.sortBy;
+        if (data.sortOrder) this.sortOrder = data.sortOrder;
+        if (data.favorites) this.favorites = new Set(data.favorites);
+        if (data.recentFiles) this.recentFiles = data.recentFiles;
         this.navigateTo(this.currentPath, this.currentView);
     }
+
     focus() {
         super.focus?.();
         // Do not autofocus search input automatically
     }
 }
+
 // Expose on window for compatibility with the integration layer
-window.FinderInstance = FinderInstance;
+window.FinderInstance = FinderInstance as any;
+
 if (window.InstanceManager) {
     window.FinderInstanceManager = new window.InstanceManager({
         type: 'finder',
         instanceClass: FinderInstance,
         maxInstances: 0,
-        createContainer: function (instanceId) {
+        createContainer: function (instanceId: string): HTMLElement {
             const finderModalContainer = document.getElementById('finder-container');
             const container = document.createElement('div');
             container.id = `${instanceId}-container`;
@@ -823,8 +886,7 @@ if (window.InstanceManager) {
             container.classList.add('hidden');
             if (finderModalContainer) {
                 finderModalContainer.appendChild(container);
-            }
-            else {
+            } else {
                 console.error('Finder container not found; using document.body as fallback');
                 document.body.appendChild(container);
             }
@@ -832,4 +894,5 @@ if (window.InstanceManager) {
         },
     });
 }
-//# sourceMappingURL=finder-instance.js.map
+
+export {};

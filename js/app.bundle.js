@@ -534,7 +534,8 @@ var App = (() => {
           },
           open(windowId) {
             const config = this.getConfig(windowId);
-            if (config && config.metadata && typeof config.metadata.initHandler === "function") {
+            const g = window;
+            if (config && config.metadata && typeof config.metadata.initHandler === "function" && !g.__SESSION_RESTORE_IN_PROGRESS) {
               try {
                 const md = config.metadata;
                 if (typeof md.initHandler === "function") md.initHandler();
@@ -3992,18 +3993,36 @@ var App = (() => {
         }
         function restoreOpenModals() {
           const transientModalIds = getTransientModalIds();
-          let openModals = [];
+          const toRestore = /* @__PURE__ */ new Set();
           try {
-            openModals = JSON.parse(localStorage.getItem(OPEN_MODALS_KEY) || "[]");
+            const arr = JSON.parse(localStorage.getItem(OPEN_MODALS_KEY) || "[]");
+            if (Array.isArray(arr)) arr.forEach((id) => toRestore.add(id));
           } catch (err) {
             console.warn("Open modals konnte nicht gelesen werden:", err);
-            return;
           }
-          openModals.forEach((id) => {
+          try {
+            const legacyRaw = localStorage.getItem("window-session");
+            if (legacyRaw) {
+              const legacy = JSON.parse(legacyRaw);
+              const modalState = legacy && legacy["modalState"];
+              if (modalState && typeof modalState === "object") {
+                Object.entries(modalState).forEach(([id, state]) => {
+                  try {
+                    const visible = !!(state && state["visible"]);
+                    if (visible) toRestore.add(id);
+                  } catch {
+                  }
+                });
+              }
+            }
+          } catch (err) {
+            console.warn("Legacy window-session konnte nicht gelesen werden:", err);
+          }
+          toRestore.forEach((id) => {
             if (transientModalIds.has(id)) return;
             const el = document.getElementById(id);
             if (!el) {
-              console.warn(`Skipping restore of modal "${id}": element not found in DOM`);
+              console.warn(`SessionManager: Modal "${id}" not found in DOM`);
               return;
             }
             const WindowManager = w["WindowManager"];
@@ -5385,6 +5404,7 @@ var App = (() => {
         let draggedTab = null;
         let draggedInstanceId = null;
         function createTabEl(instance, isActive) {
+          var _a;
           const tab = document.createElement("button");
           tab.type = "button";
           tab.className = [
@@ -5397,7 +5417,8 @@ var App = (() => {
           tab.draggable = true;
           const title = document.createElement("span");
           title.className = "wt-tab-title";
-          title.textContent = instance.title || instance.instanceId;
+          const tabLabel = (_a = instance.metadata) == null ? void 0 : _a.tabLabel;
+          title.textContent = tabLabel || instance.title || instance.instanceId;
           tab.appendChild(title);
           const close = document.createElement("span");
           close.className = "wt-tab-close ml-1 text-xs opacity-70 hover:opacity-100";
@@ -5553,7 +5574,7 @@ var App = (() => {
             setTitle(instanceId, title) {
               const inst = wrapped.getInstance(instanceId);
               if (inst) {
-                inst.title = title;
+                inst.metadata = { ...inst.metadata || {}, tabLabel: title };
                 this.refresh();
               }
             }
@@ -9263,1129 +9284,887 @@ ${selectedText}
     }
   });
 
-  // src/ts/legacy/window-configs.js
-  var require_window_configs = __commonJS({
-    "src/ts/legacy/window-configs.js"() {
+  // src/ts/window-configs.ts
+  var windowConfigurations;
+  var init_window_configs = __esm({
+    "src/ts/window-configs.ts"() {
       "use strict";
-      console.log("Window Configurations loaded");
-      (function() {
-        "use strict";
-        const windowConfigurations = [
-          {
-            id: "finder-modal",
-            type: "persistent",
-            programKey: "programs.finder",
-            icon: "./img/sucher.png",
-            closeButtonId: "close-finder-modal",
-            metadata: {
-              initHandler: function() {
-                var _a, _b, _c, _d, _e, _f, _g, _h;
-                if (window.FinderInstanceManager && !window.FinderInstanceManager.hasInstances()) {
-                  const inst = window.FinderInstanceManager.createInstance({
-                    title: "Finder"
-                  });
-                  try {
-                    const active = inst && inst.instanceId ? inst : (_b = (_a = window.FinderInstanceManager).getActiveInstance) == null ? void 0 : _b.call(_a);
-                    if (active && window.MultiInstanceIntegration) {
-                      window.MultiInstanceIntegration.showInstance(
-                        "finder",
-                        active.instanceId
-                      );
-                      const integ = (_d = (_c = window.MultiInstanceIntegration).getIntegration) == null ? void 0 : _d.call(_c, "finder");
-                      (_f = (_e = integ == null ? void 0 : integ.tabManager) == null ? void 0 : _e.addTab) == null ? void 0 : _f.call(_e, active);
-                      if ((_h = (_g = integ == null ? void 0 : integ.tabManager) == null ? void 0 : _g.controller) == null ? void 0 : _h.refresh) {
-                        integ.tabManager.controller.refresh();
-                      }
-                    }
-                  } catch (e) {
-                    console.warn("Finder init post-create sync failed:", e);
-                  }
-                }
-              },
-              openHandler: function() {
-                var _a, _b, _c, _d, _e, _f, _g;
-                if (window.FinderInstanceManager && !window.FinderInstanceManager.hasInstances()) {
-                  const inst = window.FinderInstanceManager.createInstance({
-                    title: "Finder"
-                  });
-                  try {
-                    const activeId = inst && inst.instanceId || ((_c = (_b = (_a = window.FinderInstanceManager).getActiveInstance) == null ? void 0 : _b.call(_a)) == null ? void 0 : _c.instanceId);
-                    if (activeId && window.MultiInstanceIntegration) {
-                      window.MultiInstanceIntegration.showInstance("finder", activeId);
-                      const integ = (_e = (_d = window.MultiInstanceIntegration).getIntegration) == null ? void 0 : _e.call(_d, "finder");
-                      if (integ && integ.tabManager && typeof integ.tabManager.addTab === "function") {
-                        integ.tabManager.addTab(inst || { instanceId: activeId });
-                      }
-                      if ((_g = (_f = integ == null ? void 0 : integ.tabManager) == null ? void 0 : _f.controller) == null ? void 0 : _g.refresh) {
-                        integ.tabManager.controller.refresh();
-                      }
-                    }
-                  } catch (e) {
-                    console.warn("Finder open post-create sync failed:", e);
-                  }
-                }
+      windowConfigurations = [
+        {
+          id: "finder-modal",
+          type: "persistent",
+          programKey: "programs.finder",
+          icon: "./img/sucher.png",
+          closeButtonId: "close-finder-modal",
+          metadata: {
+            initHandler: function() {
+              var _a, _b, _c, _d, _e;
+              try {
+                const integ = (_b = (_a = window.MultiInstanceIntegration) == null ? void 0 : _a.getIntegration) == null ? void 0 : _b.call(_a, "finder");
+                (_e = (_d = (_c = integ == null ? void 0 : integ.tabManager) == null ? void 0 : _c.controller) == null ? void 0 : _d.refresh) == null ? void 0 : _e.call(_d);
+              } catch (e) {
+                console.warn("Finder init refresh failed:", e);
               }
-            }
-          },
-          {
-            id: "launchpad-modal",
-            type: "persistent",
-            programKey: "programs.launchpad",
-            icon: "./img/launchpad.png",
-            closeButtonId: "close-launchpad-modal",
-            metadata: {
-              skipMenubarUpdate: true,
-              // Don't update menubar when launchpad is focused
-              initHandler: function() {
-                if (window.LaunchpadSystem && !window.LaunchpadSystem.container) {
-                  const container = document.getElementById("launchpad-container");
-                  if (container) {
-                    window.LaunchpadSystem.init(container);
-                  }
+            },
+            openHandler: function() {
+              var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
+              try {
+                const activeId = (_c = (_b = (_a = window.FinderInstanceManager) == null ? void 0 : _a.getActiveInstance) == null ? void 0 : _b.call(_a)) == null ? void 0 : _c.instanceId;
+                if (activeId && window.MultiInstanceIntegration) {
+                  (_e = (_d = window.MultiInstanceIntegration).showInstance) == null ? void 0 : _e.call(_d, "finder", activeId);
+                  const integ = (_g = (_f = window.MultiInstanceIntegration).getIntegration) == null ? void 0 : _g.call(_f, "finder");
+                  (_j = (_i = (_h = integ == null ? void 0 : integ.tabManager) == null ? void 0 : _h.controller) == null ? void 0 : _i.refresh) == null ? void 0 : _j.call(_i);
                 }
-                if (window.LaunchpadSystem && typeof window.LaunchpadSystem.refresh === "function") {
-                  window.LaunchpadSystem.refresh();
-                }
-              }
-            }
-          },
-          {
-            id: "projects-modal",
-            type: "persistent",
-            programKey: "programs.projects",
-            icon: "./img/sucher.png",
-            closeButtonId: "close-projects-modal"
-          },
-          {
-            id: "about-modal",
-            type: "persistent",
-            programKey: "programs.about",
-            icon: "./img/profil.jpg",
-            closeButtonId: "close-about-modal"
-          },
-          {
-            id: "settings-modal",
-            type: "persistent",
-            programKey: "programs.settings",
-            icon: "./img/settings.png",
-            closeButtonId: "close-settings-modal",
-            metadata: {
-              initHandler: function() {
-                if (window.SettingsSystem && !window.SettingsSystem.container) {
-                  const container = document.getElementById("settings-container");
-                  if (container) {
-                    window.SettingsSystem.init(container);
-                  }
-                }
-              }
-            }
-          },
-          {
-            id: "text-modal",
-            type: "persistent",
-            programKey: "programs.text",
-            icon: "./img/notepad.png",
-            closeButtonId: "close-text-modal",
-            metadata: {
-              initHandler: function() {
-                if (window.TextEditorInstanceManager && !window.TextEditorInstanceManager.hasInstances()) {
-                  window.TextEditorInstanceManager.createInstance({
-                    title: "Editor"
-                  });
-                } else if (window.TextEditorSystem && !window.TextEditorSystem.container) {
-                  const container = document.getElementById("text-editor-container");
-                  if (container) {
-                    window.TextEditorSystem.init(container);
-                  }
-                }
-              }
-            }
-          },
-          {
-            id: "image-modal",
-            type: "persistent",
-            programKey: "programs.photos",
-            icon: "./img/photos-app-icon.svg",
-            closeButtonId: "close-image-modal",
-            metadata: {
-              initHandler: function() {
-                if (window.PhotosApp && typeof window.PhotosApp.init === "function") {
-                  window.PhotosApp.init();
-                }
-              }
-            }
-          },
-          {
-            id: "program-info-modal",
-            type: "transient",
-            programKey: "programs.default",
-            icon: "./img/sucher.png",
-            closeButtonId: "close-program-info-modal"
-          },
-          {
-            id: "terminal-modal",
-            type: "persistent",
-            programKey: "programs.terminal",
-            icon: "./img/terminal.png",
-            closeButtonId: "close-terminal-modal",
-            metadata: {
-              initHandler: function() {
-                if (window.TerminalInstanceManager && !window.TerminalInstanceManager.hasInstances()) {
-                  window.TerminalInstanceManager.createInstance({
-                    title: "Terminal"
-                  });
-                } else if (window.TerminalSystem && !window.TerminalSystem.container) {
-                  const container = document.getElementById("terminal-container");
-                  if (container) {
-                    window.TerminalSystem.init(container);
-                  }
-                }
+              } catch (e) {
+                console.warn("Finder open refresh failed:", e);
               }
             }
           }
-        ];
-        if (window.WindowManager) {
-          window.WindowManager.registerAll(windowConfigurations);
-          console.log(`Registered ${windowConfigurations.length} windows`);
-        } else {
-          document.addEventListener("DOMContentLoaded", () => {
-            if (window.WindowManager) {
-              window.WindowManager.registerAll(windowConfigurations);
-              console.log(`Registered ${windowConfigurations.length} windows (delayed)`);
+        },
+        {
+          id: "launchpad-modal",
+          type: "persistent",
+          programKey: "programs.launchpad",
+          icon: "./img/launchpad.png",
+          closeButtonId: "close-launchpad-modal",
+          metadata: {
+            skipMenubarUpdate: true,
+            initHandler: function() {
+              var _a, _b;
+              if (window.LaunchpadSystem && !((_a = window.LaunchpadSystem) == null ? void 0 : _a.container)) {
+                const container = document.getElementById("launchpad-container");
+                if (container) window.LaunchpadSystem.init(container);
+              }
+              if ((_b = window.LaunchpadSystem) == null ? void 0 : _b.refresh) window.LaunchpadSystem.refresh();
             }
-          });
+          }
+        },
+        {
+          id: "projects-modal",
+          type: "persistent",
+          programKey: "programs.projects",
+          icon: "./img/sucher.png",
+          closeButtonId: "close-projects-modal"
+        },
+        {
+          id: "about-modal",
+          type: "persistent",
+          programKey: "programs.about",
+          icon: "./img/profil.jpg",
+          closeButtonId: "close-about-modal"
+        },
+        {
+          id: "settings-modal",
+          type: "persistent",
+          programKey: "programs.settings",
+          icon: "./img/settings.png",
+          closeButtonId: "close-settings-modal",
+          metadata: {
+            initHandler: function() {
+              var _a;
+              if (window.SettingsSystem && !((_a = window.SettingsSystem) == null ? void 0 : _a.container)) {
+                const container = document.getElementById("settings-container");
+                if (container) window.SettingsSystem.init(container);
+              }
+            }
+          }
+        },
+        {
+          id: "text-modal",
+          type: "persistent",
+          programKey: "programs.text",
+          icon: "./img/notepad.png",
+          closeButtonId: "close-text-modal",
+          metadata: {
+            initHandler: function() {
+              var _a;
+              if (!window.TextEditorInstanceManager && window.TextEditorSystem && !((_a = window.TextEditorSystem) == null ? void 0 : _a.container)) {
+                const container = document.getElementById("text-editor-container");
+                if (container) window.TextEditorSystem.init(container);
+              }
+            }
+          }
+        },
+        {
+          id: "image-modal",
+          type: "persistent",
+          programKey: "programs.photos",
+          icon: "./img/photos-app-icon.svg",
+          closeButtonId: "close-image-modal",
+          metadata: {
+            initHandler: function() {
+              var _a;
+              if ((_a = window.PhotosApp) == null ? void 0 : _a.init) window.PhotosApp.init();
+            }
+          }
+        },
+        {
+          id: "program-info-modal",
+          type: "transient",
+          programKey: "programs.default",
+          icon: "./img/sucher.png",
+          closeButtonId: "close-program-info-modal"
+        },
+        {
+          id: "terminal-modal",
+          type: "persistent",
+          programKey: "programs.terminal",
+          icon: "./img/terminal.png",
+          closeButtonId: "close-terminal-modal",
+          metadata: {
+            initHandler: function() {
+              var _a;
+              if (!window.TerminalInstanceManager && window.TerminalSystem && !((_a = window.TerminalSystem) == null ? void 0 : _a.container)) {
+                const container = document.getElementById("terminal-container");
+                if (container) window.TerminalSystem.init(container);
+              }
+            }
+          }
         }
-        window.windowConfigurations = windowConfigurations;
-      })();
+      ];
+      if (window.WindowManager) {
+        window.WindowManager.registerAll(windowConfigurations);
+        console.log(`[WindowConfigs] Registered ${windowConfigurations.length} windows`);
+      } else {
+        document.addEventListener("DOMContentLoaded", () => {
+          if (window.WindowManager) {
+            window.WindowManager.registerAll(windowConfigurations);
+            console.log(`[WindowConfigs] Registered ${windowConfigurations.length} windows (delayed)`);
+          }
+        });
+      }
+      window.windowConfigurations = windowConfigurations;
     }
   });
 
-  // src/ts/legacy/finder-instance.js
-  var require_finder_instance = __commonJS({
-    "src/ts/legacy/finder-instance.js"() {
+  // src/ts/finder-instance.ts
+  var ROOT_FOLDER_NAME, FinderInstance;
+  var init_finder_instance = __esm({
+    "src/ts/finder-instance.ts"() {
       "use strict";
-      console.log("FinderInstance loaded");
-      (function() {
-        "use strict";
-        const ROOT_FOLDER_NAME = "Computer";
-        class FinderInstance extends window.BaseWindowInstance {
-          constructor(config) {
-            super({
-              ...config,
-              type: "finder"
-            });
-            this.currentPath = [];
-            this.currentView = "computer";
-            this.selectedItems = /* @__PURE__ */ new Set();
-            this.viewMode = "list";
-            this.sortBy = "name";
-            this.sortOrder = "asc";
-            this.githubRepos = [];
-            this.githubLoading = false;
-            this.githubError = false;
-            this.githubErrorMessage = "";
-            this.lastGithubItemsMap = /* @__PURE__ */ new Map();
-            this.favorites = /* @__PURE__ */ new Set();
-            this.recentFiles = [];
-            this.domRefs = {
-              sidebarComputer: null,
-              sidebarGithub: null,
-              sidebarFavorites: null,
-              sidebarRecent: null,
-              breadcrumbs: null,
-              contentArea: null,
-              toolbar: null,
-              searchInput: null
-            };
-            this.githubContentCache = /* @__PURE__ */ new Map();
-            this.virtualFileSystem = this._createVirtualFileSystem();
-          }
-          /**
-           * Create virtual file system for this instance
-           * @private
-           */
-          _createVirtualFileSystem() {
-            const rootFolder = {
-              type: "folder",
-              icon: "\u{1F4BB}",
-              children: {
-                Documents: {
-                  type: "folder",
-                  icon: "\u{1F4C4}",
-                  children: {
-                    "README.md": {
-                      type: "file",
-                      icon: "\u{1F4DD}",
-                      content: "# Willkommen im Finder\n\nDies ist ein virtuelles Dateisystem.",
-                      size: 1024
-                    }
+      ROOT_FOLDER_NAME = "Computer";
+      FinderInstance = class extends (window.BaseWindowInstance || class {
+      }) {
+        constructor(config) {
+          super({ ...config, type: "finder" });
+          this.currentPath = [];
+          this.currentView = "computer";
+          this.selectedItems = /* @__PURE__ */ new Set();
+          this.viewMode = "list";
+          this.sortBy = "name";
+          this.sortOrder = "asc";
+          this.githubRepos = [];
+          this.githubLoading = false;
+          this.githubError = false;
+          this.githubErrorMessage = "";
+          this.lastGithubItemsMap = /* @__PURE__ */ new Map();
+          this.favorites = /* @__PURE__ */ new Set();
+          this.recentFiles = [];
+          this._lastSelectedIndex = null;
+          this._renderedItems = [];
+          this.domRefs = {
+            sidebarComputer: null,
+            sidebarGithub: null,
+            sidebarFavorites: null,
+            sidebarRecent: null,
+            breadcrumbs: null,
+            contentArea: null,
+            toolbar: null,
+            searchInput: null
+          };
+          this.githubContentCache = /* @__PURE__ */ new Map();
+          this.virtualFileSystem = {};
+          this.selectedItems = /* @__PURE__ */ new Set();
+          this._lastSelectedIndex = null;
+          this._renderedItems = [];
+          this.githubContentCache = /* @__PURE__ */ new Map();
+          this.virtualFileSystem = this._createVirtualFileSystem();
+        }
+        _createVirtualFileSystem() {
+          const rootFolder = {
+            type: "folder",
+            icon: "\u{1F4BB}",
+            children: {
+              Documents: {
+                type: "folder",
+                icon: "\u{1F4C4}",
+                children: {
+                  "README.md": {
+                    type: "file",
+                    icon: "\u{1F4DD}",
+                    content: "# Willkommen im Finder\n\nDies ist ein virtuelles Dateisystem.",
+                    size: 1024
                   }
-                },
-                Downloads: {
-                  type: "folder",
-                  icon: "\u2B07\uFE0F",
-                  children: {}
-                },
-                Pictures: {
-                  type: "folder",
-                  icon: "\u{1F5BC}\uFE0F",
-                  children: {}
-                },
-                Music: {
-                  type: "folder",
-                  icon: "\u{1F3B5}",
-                  children: {}
-                },
-                Videos: {
-                  type: "folder",
-                  icon: "\u{1F3AC}",
-                  children: {}
                 }
-              }
-            };
-            return {
-              [ROOT_FOLDER_NAME]: rootFolder
-            };
-          }
-          /**
-           * Initialize instance state
-           * @protected
-           */
-          _initializeState(initialState) {
-            return {
-              ...super._initializeState(initialState),
-              currentPath: initialState.currentPath || [],
-              currentView: initialState.currentView || "computer",
-              viewMode: initialState.viewMode || "list",
-              sortBy: initialState.sortBy || "name",
-              sortOrder: initialState.sortOrder || "asc",
-              favorites: initialState.favorites || [],
-              recentFiles: initialState.recentFiles || []
-            };
-          }
-          /**
-           * Render finder UI
-           * @protected
-           */
-          render() {
-            if (!this.container) return;
-            const html = `
-                <div class="finder-instance-wrapper flex-1 flex gap-0 min-h-0 overflow-hidden">
-                    <!-- Sidebar -->
-                    <aside class="w-48 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
-                        <div class="py-2">
-                            <!-- Favoriten Section -->
-                            <div class="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
-                                data-i18n="finder.sidebar.favorites">
-                                Favoriten
-                            </div>
-                            <button id="finder-sidebar-computer" data-finder-sidebar-computer data-action="finder:switchView" data-finder-view="computer"
-                                class="finder-sidebar-item finder-sidebar-active">
-                                <span class="finder-sidebar-icon">\u{1F4BB}</span>
-                                <span data-i18n="finder.sidebar.computer">Computer</span>
-                            </button>
-                            <button id="finder-sidebar-recent" data-finder-sidebar-recent data-action="finder:switchView" data-finder-view="recent"
-                                class="finder-sidebar-item">
-                                <span class="finder-sidebar-icon">\u{1F552}</span>
-                                <span data-i18n="finder.sidebar.recent">Zuletzt ge\xF6ffnet</span>
-                            </button>
-
-                            <!-- Orte Section -->
-                            <div class="px-3 py-1 mt-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
-                                data-i18n="finder.sidebar.locations">
-                                Orte
-                            </div>
-                            <button id="finder-sidebar-github" data-finder-sidebar-github data-action="finder:switchView" data-finder-view="github"
-                                class="finder-sidebar-item">
-                                <span class="finder-sidebar-icon">\u{1F4C2}</span>
-                                <span data-i18n="finder.sidebar.github">GitHub Projekte</span>
-                            </button>
-                            <button id="finder-sidebar-favorites" data-finder-sidebar-favorites data-action="finder:switchView"
-                                data-finder-view="favorites" class="finder-sidebar-item">
-                                <span class="finder-sidebar-icon">\u2B50</span>
-                                <span data-i18n="finder.sidebar.starred">Mit Stern</span>
-                            </button>
-                        </div>
-                    </aside>
-
-                    <!-- Main Content Area -->
-                    <div class="flex-1 flex flex-col min-h-0">
-                        <!-- Toolbar -->
-                        <div id="finder-toolbar" data-finder-toolbar
-                            class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                            <button data-action="finder:navigateUp" class="finder-toolbar-btn" title="Zur\xFCck"
-                                data-i18n-title="finder.toolbar.back">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M19 12H5M12 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                            <button data-action="finder:goRoot" class="finder-toolbar-btn" title="Vorw\xE4rts"
-                                data-i18n-title="finder.toolbar.forward">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M5 12h14M12 5l7 7-7 7" />
-                                </svg>
-                            </button>
-                            <div class="flex-1 mx-2">
-                                <div id="finder-path-breadcrumbs" data-finder-breadcrumbs
-                                    class="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
-                                    <!-- Breadcrumbs werden dynamisch generiert -->
-                                </div>
-                            </div>
-                            <div class="flex gap-1">
-                                <button data-action="finder:setViewMode" data-view-mode="list" class="finder-toolbar-btn"
-                                    title="Listenansicht" data-i18n-title="finder.toolbar.listView">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M3 4h18v2H3V4m0 7h18v2H3v-2m0 7h18v2H3v-2Z" />
-                                    </svg>
-                                </button>
-                                <button data-action="finder:setViewMode" data-view-mode="grid" class="finder-toolbar-btn"
-                                    title="Rasteransicht" data-i18n-title="finder.toolbar.gridView">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M3 3h8v8H3V3m10 0h8v8h-8V3M3 13h8v8H3v-8m10 0h8v8h-8v-8Z" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <input id="finder-search-input" data-finder-search type="text" placeholder="Suchen"
-                                data-i18n-placeholder="finder.toolbar.search"
-                                class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        </div>
-
-                        <!-- Content Area -->
-                        <div id="finder-content-area" data-finder-content class="flex-1 overflow-auto bg-white dark:bg-gray-800 p-4">
-                            <!-- Content wird dynamisch generiert -->
-                        </div>
+              },
+              Downloads: { type: "folder", icon: "\u2B07\uFE0F", children: {} },
+              Pictures: { type: "folder", icon: "\u{1F5BC}\uFE0F", children: {} },
+              Music: { type: "folder", icon: "\u{1F3B5}", children: {} },
+              Videos: { type: "folder", icon: "\u{1F3AC}", children: {} }
+            }
+          };
+          return { [ROOT_FOLDER_NAME]: rootFolder };
+        }
+        _initializeState(initialState) {
+          return {
+            currentPath: initialState.currentPath || [],
+            currentView: initialState.currentView || "computer",
+            viewMode: initialState.viewMode || "list",
+            sortBy: initialState.sortBy || "name",
+            sortOrder: initialState.sortOrder || "asc",
+            favorites: initialState.favorites || [],
+            recentFiles: initialState.recentFiles || []
+          };
+        }
+        render() {
+          if (!this.container) return;
+          const html = `
+            <div class="finder-instance-wrapper flex-1 flex gap-0 min-h-0 overflow-hidden">
+                <aside class="w-48 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+                    <div class="py-2">
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide" data-i18n="finder.sidebar.favorites">Favoriten</div>
+                        <button id="finder-sidebar-computer" data-finder-sidebar-computer data-action="finder:switchView" data-finder-view="computer" class="finder-sidebar-item finder-sidebar-active">
+                            <span class="finder-sidebar-icon">\u{1F4BB}</span>
+                            <span data-i18n="finder.sidebar.computer">Computer</span>
+                        </button>
+                        <button id="finder-sidebar-recent" data-finder-sidebar-recent data-action="finder:switchView" data-finder-view="recent" class="finder-sidebar-item">
+                            <span class="finder-sidebar-icon">\u{1F552}</span>
+                            <span data-i18n="finder.sidebar.recent">Zuletzt ge\xF6ffnet</span>
+                        </button>
+                        <div class="px-3 py-1 mt-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide" data-i18n="finder.sidebar.locations">Orte</div>
+                        <button id="finder-sidebar-github" data-finder-sidebar-github data-action="finder:switchView" data-finder-view="github" class="finder-sidebar-item">
+                            <span class="finder-sidebar-icon">\u{1F4C2}</span>
+                            <span data-i18n="finder.sidebar.github">GitHub Projekte</span>
+                        </button>
+                        <button id="finder-sidebar-favorites" data-finder-sidebar-favorites data-action="finder:switchView" data-finder-view="favorites" class="finder-sidebar-item">
+                            <span class="finder-sidebar-icon">\u2B50</span>
+                            <span data-i18n="finder.sidebar.starred">Mit Stern</span>
+                        </button>
                     </div>
+                </aside>
+                <div class="flex-1 flex flex-col min-h-0">
+                    <div id="finder-toolbar" data-finder-toolbar class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                        <button data-action="finder:navigateUp" class="finder-toolbar-btn" title="Zur\xFCck" data-i18n-title="finder.toolbar.back">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+                        </button>
+                        <button data-action="finder:goRoot" class="finder-toolbar-btn" title="Vorw\xE4rts" data-i18n-title="finder.toolbar.forward">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                        </button>
+                        <div class="flex-1 mx-2">
+                            <div id="finder-path-breadcrumbs" data-finder-breadcrumbs class="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400"></div>
+                        </div>
+                        <div class="flex gap-1">
+                            <button data-action="finder:setViewMode" data-view-mode="list" class="finder-toolbar-btn" title="Listenansicht" data-i18n-title="finder.toolbar.listView">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v2H3V4m0 7h18v2H3v-2m0 7h18v2H3v-2Z" /></svg>
+                            </button>
+                            <button data-action="finder:setViewMode" data-view-mode="grid" class="finder-toolbar-btn" title="Rasteransicht" data-i18n-title="finder.toolbar.gridView">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3m10 0h8v8h-8V3M3 13h8v8H3v-8m10 0h8v8h-8v-8Z" /></svg>
+                            </button>
+                        </div>
+                        <input id="finder-search-input" data-finder-search type="text" placeholder="Suchen" data-i18n-placeholder="finder.toolbar.search" class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div id="finder-content-area" data-finder-content class="flex-1 overflow-auto bg-white dark:bg-gray-800 p-4"></div>
                 </div>
-            `;
-            this.container.innerHTML = html;
-            this.domRefs.sidebarComputer = this.container.querySelector(
-              "[data-finder-sidebar-computer]"
-            );
-            this.domRefs.sidebarGithub = this.container.querySelector(
-              "[data-finder-sidebar-github]"
-            );
-            this.domRefs.sidebarFavorites = this.container.querySelector(
-              "[data-finder-sidebar-favorites]"
-            );
-            this.domRefs.sidebarRecent = this.container.querySelector(
-              "[data-finder-sidebar-recent]"
-            );
-            this.domRefs.breadcrumbs = this.container.querySelector("[data-finder-breadcrumbs]");
-            this.domRefs.contentArea = this.container.querySelector("[data-finder-content]");
-            this.domRefs.toolbar = this.container.querySelector("[data-finder-toolbar]");
-            this.domRefs.searchInput = this.container.querySelector("[data-finder-search]");
-            try {
-              if (window.appI18n && typeof window.appI18n.applyTranslations === "function") {
-                window.appI18n.applyTranslations(this.container);
-              }
-            } catch {
+            </div>`;
+          this.container.innerHTML = html;
+          this.domRefs.sidebarComputer = this.container.querySelector("[data-finder-sidebar-computer]");
+          this.domRefs.sidebarGithub = this.container.querySelector("[data-finder-sidebar-github]");
+          this.domRefs.sidebarFavorites = this.container.querySelector("[data-finder-sidebar-favorites]");
+          this.domRefs.sidebarRecent = this.container.querySelector("[data-finder-sidebar-recent]");
+          this.domRefs.breadcrumbs = this.container.querySelector("[data-finder-breadcrumbs]");
+          this.domRefs.contentArea = this.container.querySelector("[data-finder-content]");
+          this.domRefs.toolbar = this.container.querySelector("[data-finder-toolbar]");
+          this.domRefs.searchInput = this.container.querySelector("[data-finder-search]");
+          try {
+            if (window.appI18n && typeof window.appI18n.applyTranslations === "function") {
+              window.appI18n.applyTranslations();
             }
+          } catch {
           }
-          /**
-           * Attach event listeners
-           * @protected
-           */
-          attachEventListeners() {
-            if (!this.container) return;
-            this.container.addEventListener("click", (e) => this._handleClick(e));
-            this.container.addEventListener("dblclick", (e) => this._handleDoubleClick(e));
-            if (!this._skipInitialRender) {
-              this.navigateTo(this.state.currentPath, this.state.currentView);
-            }
+        }
+        attachEventListeners() {
+          var _a, _b;
+          if (!this.container) return;
+          this.container.addEventListener("click", (e) => this._handleClick(e));
+          this.container.addEventListener("dblclick", (e) => this._handleDoubleClick(e));
+          if (!this._skipInitialRender) {
+            this.navigateTo(((_a = this.state) == null ? void 0 : _a.currentPath) || [], ((_b = this.state) == null ? void 0 : _b.currentView) || this.currentView);
           }
-          /**
-           * Handle click events
-           * @private
-           */
-          _handleClick(e) {
-            var _a;
-            const action = (_a = e.target.closest("[data-action]")) == null ? void 0 : _a.dataset.action;
-            if (!action) return;
-            const handlers = {
-              "finder:switchView": () => {
-                var _a2;
-                const view = (_a2 = e.target.closest("[data-finder-view]")) == null ? void 0 : _a2.dataset.finderView;
-                if (view) this.switchView(view);
-              },
-              "finder:navigateUp": () => this.navigateUp(),
-              "finder:goRoot": () => this.navigateTo([], this.currentView),
-              "finder:navigateToPath": () => {
-                var _a2;
-                const path = (_a2 = e.target.closest("[data-path]")) == null ? void 0 : _a2.dataset.path;
-                if (path) this.navigateTo(path);
-              },
-              "finder:setSortBy": () => {
-                var _a2;
-                const sortBy = (_a2 = e.target.closest("[data-sort-by]")) == null ? void 0 : _a2.dataset.sortBy;
-                if (sortBy) this.setSortBy(sortBy);
-              },
-              "finder:setViewMode": () => {
-                var _a2;
-                const mode = (_a2 = e.target.closest("[data-view-mode]")) == null ? void 0 : _a2.dataset.viewMode;
-                if (mode) this.setViewMode(mode);
-              }
-            };
-            if (handlers[action]) {
-              handlers[action]();
-            }
-          }
-          /**
-           * Handle double click events
-           * @private
-           */
-          _handleDoubleClick(e) {
-            const item = e.target.closest("[data-action-dblclick]");
-            if (!item || item.dataset.actionDblclick !== "finder:openItem") return;
-            const name = item.dataset.itemName;
-            const type = item.dataset.itemType;
-            if (name && type) {
-              this.openItem(name, type);
-            }
-          }
-          /**
-           * Get current folder name for tab title
-           */
-          getCurrentFolderName() {
-            var _a, _b, _c;
-            const _lang = (((_b = (_a = window.appI18n) == null ? void 0 : _a.getActiveLanguage) == null ? void 0 : _b.call(_a)) || ((_c = document.documentElement) == null ? void 0 : _c.lang) || "de").toLowerCase();
-            const _isDe = _lang.startsWith("de");
-            if (this.currentPath.length === 0) {
-              switch (this.currentView) {
-                case "computer":
-                  return _isDe ? "Computer" : "Computer";
-                case "github":
-                  return _isDe ? "GitHub Projekte" : "GitHub Projects";
-                case "favorites":
-                  return _isDe ? "Favoriten" : "Favorites";
-                case "recent":
-                  return _isDe ? "Zuletzt ge\xF6ffnet" : "Recently opened";
-                default:
-                  return "Finder";
-              }
-            }
-            return this.currentPath[this.currentPath.length - 1];
-          }
-          /**
-           * Update tab title to reflect current folder
-           */
-          updateTabTitle() {
-            var _a, _b, _c;
-            const folderName = this.getCurrentFolderName();
-            this.title = folderName;
-            try {
-              const tabController = document.querySelector(`#finder-tabs-container`);
-              if (tabController && window.multiInstanceIntegration) {
-                const integration = (_b = (_a = window.multiInstanceIntegration.integrations) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a, "finder");
-                if ((_c = integration == null ? void 0 : integration.tabManager) == null ? void 0 : _c.setTitle) {
-                  integration.tabManager.setTitle(this.instanceId, folderName);
+        }
+        _handleClick(e) {
+          var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l;
+          const contentRoot = ((_a = this.domRefs) == null ? void 0 : _a.contentArea) || this.container;
+          if (contentRoot && contentRoot.contains(e.target)) {
+            const itemEl = ((_c = (_b = e.target).closest) == null ? void 0 : _c.call(_b, ".finder-list-item, .finder-grid-item")) || null;
+            const isEmptySpacer = e.target.id === "finder-empty-spacer";
+            const isContainerClick = e.target.id === "finder-list-container";
+            if (!itemEl || isEmptySpacer || isContainerClick) {
+              if (this.selectedItems.size) {
+                this.selectedItems.clear();
+                this._lastSelectedIndex = null;
+                try {
+                  const rows = contentRoot.querySelectorAll(".finder-list-item");
+                  rows.forEach((r) => {
+                    r.classList.remove("bg-blue-100", "dark:bg-blue-900");
+                  });
+                } catch {
                 }
+                this.renderContent();
               }
-            } catch (e) {
-            }
-          }
-          /**
-           * Navigate to path
-           */
-          navigateTo(path, view = null) {
-            if (view !== null) {
-              this.currentView = view;
-            }
-            if (typeof path === "string") {
-              this.currentPath = path === "" ? [] : path.split("/");
-            } else if (Array.isArray(path)) {
-              this.currentPath = [...path];
-            }
-            this.updateSidebarSelection();
-            this.renderBreadcrumbs();
-            this.renderContent();
-            this.updateTabTitle();
-            this.updateState({
-              currentPath: this.currentPath,
-              currentView: this.currentView
-            });
-          }
-          /**
-           * Navigate up one level
-           */
-          navigateUp() {
-            if (this.currentPath.length > 0) {
-              this.currentPath.pop();
-              this.navigateTo(this.currentPath);
-            }
-          }
-          /**
-           * Navigate to folder
-           */
-          navigateToFolder(folderName) {
-            this.currentPath.push(folderName);
-            this.navigateTo(this.currentPath);
-          }
-          /**
-           * Switch view
-           */
-          switchView(view) {
-            this.currentPath = [];
-            this.navigateTo([], view);
-          }
-          /**
-           * Update sidebar selection
-           */
-          updateSidebarSelection() {
-            const refs = this.domRefs;
-            if (!refs) return;
-            [
-              refs.sidebarComputer,
-              refs.sidebarGithub,
-              refs.sidebarFavorites,
-              refs.sidebarRecent
-            ].forEach((el) => {
-              if (el) el.classList.remove("finder-sidebar-active");
-            });
-            switch (this.currentView) {
-              case "computer":
-                if (refs.sidebarComputer)
-                  refs.sidebarComputer.classList.add("finder-sidebar-active");
-                break;
-              case "github":
-                if (refs.sidebarGithub)
-                  refs.sidebarGithub.classList.add("finder-sidebar-active");
-                break;
-              case "favorites":
-                if (refs.sidebarFavorites)
-                  refs.sidebarFavorites.classList.add("finder-sidebar-active");
-                break;
-              case "recent":
-                if (refs.sidebarRecent)
-                  refs.sidebarRecent.classList.add("finder-sidebar-active");
-                break;
-            }
-          }
-          /**
-           * Render breadcrumbs
-           */
-          renderBreadcrumbs() {
-            var _a, _b, _c;
-            if (!this.domRefs.breadcrumbs) return;
-            const parts = [];
-            const _lang = (((_b = (_a = window.appI18n) == null ? void 0 : _a.getActiveLanguage) == null ? void 0 : _b.call(_a)) || ((_c = document.documentElement) == null ? void 0 : _c.lang) || "de").toLowerCase();
-            const _isDe = _lang.startsWith("de");
-            let viewLabel = "";
-            switch (this.currentView) {
-              case "computer":
-                viewLabel = _isDe ? "Computer" : "Computer";
-                break;
-              case "github":
-                viewLabel = _isDe ? "GitHub Projekte" : "GitHub Projects";
-                break;
-              case "favorites":
-                viewLabel = _isDe ? "Favoriten" : "Favorites";
-                break;
-              case "recent":
-                viewLabel = _isDe ? "Zuletzt ge\xF6ffnet" : "Recently opened";
-                break;
-            }
-            parts.push(
-              `<button class="finder-breadcrumb-item" data-action="finder:goRoot">${viewLabel}</button>`
-            );
-            this.currentPath.forEach((part, index) => {
-              if (index === 0 && this.currentView === "computer" && part === ROOT_FOLDER_NAME) {
+              if (!itemEl || isEmptySpacer || isContainerClick) {
+                (_d = e.stopPropagation) == null ? void 0 : _d.call(e);
+                (_e = e.preventDefault) == null ? void 0 : _e.call(e);
                 return;
               }
-              const pathUpToHere = this.currentPath.slice(0, index + 1);
-              parts.push('<span class="finder-breadcrumb-separator">\u203A</span>');
-              parts.push(
-                `<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join("/")}">${part}</button>`
-              );
-            });
-            this.domRefs.breadcrumbs.innerHTML = parts.join("");
-          }
-          /**
-           * Render content area
-           */
-          renderContent() {
-            var _a, _b, _c;
-            if (!this.domRefs.contentArea) return;
-            if (this.currentView === "github") {
-              this.renderGithubContent();
-              return;
-            }
-            const items = this.getCurrentItems();
-            if (items.length === 0) {
-              let emptyText = "Dieser Ordner ist leer";
-              try {
-                const lang = (((_b = (_a = window.appI18n) == null ? void 0 : _a.getActiveLanguage) == null ? void 0 : _b.call(_a)) || ((_c = document.documentElement) == null ? void 0 : _c.lang) || "de").toLowerCase();
-                emptyText = lang.startsWith("de") ? "Dieser Ordner ist leer" : "This folder is empty";
-              } catch {
-              }
-              this.domRefs.contentArea.innerHTML = `
-                    <div class="finder-empty-state">
-                        <div class="text-6xl mb-4">\u{1F4C2}</div>
-                        <div class="text-gray-500 dark:text-gray-400">${emptyText}</div>
-                    </div>
-                `;
-              return;
-            }
-            const sortedItems = this.sortItems(items);
-            switch (this.viewMode) {
-              case "list":
-                this.renderListView(sortedItems);
-                break;
-              case "grid":
-                this.renderGridView(sortedItems);
-                break;
-              case "columns":
-                this.renderListView(sortedItems);
-                break;
             }
           }
-          /**
-           * Get current items based on view and path
-           */
-          getCurrentItems() {
+          const clickedItem = ((_g = (_f = e.target).closest) == null ? void 0 : _g.call(_f, ".finder-list-item, .finder-grid-item")) || null;
+          if (clickedItem && clickedItem.dataset) {
+            const name = clickedItem.dataset.itemName;
+            const type = clickedItem.dataset.itemType;
+            const idxStr = clickedItem.dataset.index;
+            const index = typeof idxStr === "string" ? parseInt(idxStr, 10) : NaN;
+            if (name && type) {
+              this._handleItemSelection({ name, type, index, event: e });
+              (_h = e.stopPropagation) == null ? void 0 : _h.call(e);
+              (_i = e.preventDefault) == null ? void 0 : _i.call(e);
+              return;
+            }
+          }
+          const action = (_l = (_k = (_j = e.target).closest) == null ? void 0 : _k.call(_j, "[data-action]")) == null ? void 0 : _l.dataset.action;
+          if (!action) return;
+          const handlers = {
+            "finder:switchView": () => {
+              var _a2;
+              const view = (_a2 = e.target.closest("[data-finder-view]")) == null ? void 0 : _a2.dataset.finderView;
+              if (view) this.switchView(view);
+            },
+            "finder:navigateUp": () => this.navigateUp(),
+            "finder:goRoot": () => this.navigateTo([], this.currentView),
+            "finder:navigateToPath": () => {
+              var _a2;
+              const path = (_a2 = e.target.closest("[data-path]")) == null ? void 0 : _a2.dataset.path;
+              if (path !== void 0) this.navigateTo(path);
+            },
+            "finder:setSortBy": () => {
+              var _a2;
+              const sortBy = (_a2 = e.target.closest("[data-sort-by]")) == null ? void 0 : _a2.dataset.sortBy;
+              if (sortBy) this.setSortBy(sortBy);
+            },
+            "finder:setViewMode": () => {
+              var _a2;
+              const mode = (_a2 = e.target.closest("[data-view-mode]")) == null ? void 0 : _a2.dataset.viewMode;
+              if (mode) this.setViewMode(mode);
+            }
+          };
+          if (handlers[action]) handlers[action]();
+        }
+        _handleDoubleClick(e) {
+          var _a, _b;
+          const item = (_b = (_a = e.target).closest) == null ? void 0 : _b.call(_a, "[data-action-dblclick]");
+          if (!item || item.dataset.actionDblclick !== "finder:openItem") return;
+          const name = item.dataset.itemName;
+          const type = item.dataset.itemType;
+          if (name && type) this.openItem(name, type);
+        }
+        _handleItemSelection({ name, type: _type, index, event }) {
+          const isShift = !!event.shiftKey;
+          const isToggle = !!(event.metaKey || event.ctrlKey);
+          const count = Array.isArray(this._renderedItems) ? this._renderedItems.length : 0;
+          if (isShift && count > 0 && this._lastSelectedIndex !== null && !Number.isNaN(index)) {
+            const start = Math.max(0, Math.min(this._lastSelectedIndex, index));
+            const end = Math.min(count - 1, Math.max(this._lastSelectedIndex, index));
+            if (!isToggle) this.selectedItems.clear();
+            for (let i = start; i <= end; i++) {
+              const it = this._renderedItems[i];
+              if (it && it.name) this.selectedItems.add(it.name);
+            }
+          } else if (isToggle) {
+            if (this.selectedItems.has(name)) this.selectedItems.delete(name);
+            else this.selectedItems.add(name);
+            this._lastSelectedIndex = Number.isNaN(index) ? null : index;
+          } else {
+            this.selectedItems.clear();
+            this.selectedItems.add(name);
+            this._lastSelectedIndex = Number.isNaN(index) ? null : index;
+          }
+          this.renderContent();
+        }
+        getCurrentFolderName() {
+          var _a, _b, _c;
+          const _lang = (((_b = (_a = window.appI18n) == null ? void 0 : _a.getActiveLanguage) == null ? void 0 : _b.call(_a)) || ((_c = document.documentElement) == null ? void 0 : _c.lang) || "de").toLowerCase();
+          const _isDe = _lang.startsWith("de");
+          if (this.currentPath.length === 0) {
             switch (this.currentView) {
               case "computer":
-                return this.getComputerItems();
+                return _isDe ? "Computer" : "Computer";
               case "github":
-                return this.getGithubItems();
+                return _isDe ? "GitHub Projekte" : "GitHub Projects";
               case "favorites":
-                return this.getFavoriteItems();
+                return _isDe ? "Favoriten" : "Favorites";
               case "recent":
-                return this.getRecentItems();
+                return _isDe ? "Zuletzt ge\xF6ffnet" : "Recently opened";
               default:
-                return [];
+                return "Finder";
             }
           }
-          /**
-           * Get computer items
-           */
-          getComputerItems() {
-            let current = this.virtualFileSystem;
-            for (const pathPart of this.currentPath) {
-              if (current[pathPart] && current[pathPart].children) {
-                current = current[pathPart].children;
-              } else {
-                return [];
+          return this.currentPath[this.currentPath.length - 1];
+        }
+        updateTabTitle() {
+          var _a, _b, _c;
+          const folderName = this.getCurrentFolderName();
+          this.metadata = { ...this.metadata || {}, tabLabel: folderName };
+          try {
+            const tabController = document.querySelector("#finder-tabs-container");
+            if (tabController && window.multiInstanceIntegration) {
+              const integration = (_b = (_a = window.multiInstanceIntegration.integrations) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a, "finder");
+              if ((_c = integration == null ? void 0 : integration.tabManager) == null ? void 0 : _c.setTitle) {
+                integration.tabManager.setTitle(this.instanceId, folderName);
               }
             }
-            return Object.entries(current).map(([name, item]) => ({
-              name,
-              type: item.type,
-              icon: item.icon || (item.type === "folder" ? "\u{1F4C1}" : "\u{1F4C4}"),
-              size: item.size || 0,
-              modified: item.modified || (/* @__PURE__ */ new Date()).toISOString()
-            }));
+          } catch {
           }
-          /**
-           * Get GitHub items (placeholder - simplified from finder.js)
-           */
-          getGithubItems() {
+        }
+        navigateTo(path, view = null) {
+          var _a;
+          if (view !== null) this.currentView = view;
+          if (typeof path === "string") this.currentPath = path === "" ? [] : path.split("/");
+          else if (Array.isArray(path)) this.currentPath = [...path];
+          this.selectedItems.clear();
+          this._lastSelectedIndex = null;
+          this.updateSidebarSelection();
+          this.renderBreadcrumbs();
+          this.renderContent();
+          this.updateTabTitle();
+          (_a = this.updateState) == null ? void 0 : _a.call(this, { currentPath: this.currentPath, currentView: this.currentView });
+        }
+        navigateUp() {
+          if (this.currentPath.length > 0) {
+            this.currentPath.pop();
+            this.navigateTo(this.currentPath);
+          }
+        }
+        navigateToFolder(folderName) {
+          this.currentPath.push(folderName);
+          this.navigateTo(this.currentPath);
+        }
+        switchView(view) {
+          this.currentPath = [];
+          this.navigateTo([], view);
+        }
+        updateSidebarSelection() {
+          var _a, _b, _c, _d;
+          const refs = this.domRefs;
+          if (!refs) return;
+          [refs.sidebarComputer, refs.sidebarGithub, refs.sidebarFavorites, refs.sidebarRecent].forEach((el) => {
+            if (el) el.classList.remove("finder-sidebar-active");
+          });
+          switch (this.currentView) {
+            case "computer":
+              (_a = refs.sidebarComputer) == null ? void 0 : _a.classList.add("finder-sidebar-active");
+              break;
+            case "github":
+              (_b = refs.sidebarGithub) == null ? void 0 : _b.classList.add("finder-sidebar-active");
+              break;
+            case "favorites":
+              (_c = refs.sidebarFavorites) == null ? void 0 : _c.classList.add("finder-sidebar-active");
+              break;
+            case "recent":
+              (_d = refs.sidebarRecent) == null ? void 0 : _d.classList.add("finder-sidebar-active");
+              break;
+          }
+        }
+        renderBreadcrumbs() {
+          var _a, _b, _c;
+          if (!this.domRefs.breadcrumbs) return;
+          const parts = [];
+          const _lang = (((_b = (_a = window.appI18n) == null ? void 0 : _a.getActiveLanguage) == null ? void 0 : _b.call(_a)) || ((_c = document.documentElement) == null ? void 0 : _c.lang) || "de").toLowerCase();
+          const _isDe = _lang.startsWith("de");
+          let viewLabel = "";
+          switch (this.currentView) {
+            case "computer":
+              viewLabel = _isDe ? "Computer" : "Computer";
+              break;
+            case "github":
+              viewLabel = _isDe ? "GitHub Projekte" : "GitHub Projects";
+              break;
+            case "favorites":
+              viewLabel = _isDe ? "Favoriten" : "Favorites";
+              break;
+            case "recent":
+              viewLabel = _isDe ? "Zuletzt ge\xF6ffnet" : "Recently opened";
+              break;
+          }
+          parts.push(`<button class="finder-breadcrumb-item" data-action="finder:goRoot">${viewLabel}</button>`);
+          this.currentPath.forEach((part, index) => {
+            if (index === 0 && this.currentView === "computer" && part === ROOT_FOLDER_NAME) return;
+            const pathUpToHere = this.currentPath.slice(0, index + 1);
+            parts.push('<span class="finder-breadcrumb-separator">\u203A</span>');
+            parts.push(`<button class="finder-breadcrumb-item" data-action="finder:navigateToPath" data-path="${pathUpToHere.join("/")}">${part}</button>`);
+          });
+          this.domRefs.breadcrumbs.innerHTML = parts.join("");
+        }
+        renderContent() {
+          var _a, _b, _c;
+          if (!this.domRefs.contentArea) return;
+          if (this.currentView === "github") {
+            this.renderGithubContent();
+            return;
+          }
+          const items = this.getCurrentItems();
+          if (items.length === 0) {
+            let emptyText = "Dieser Ordner ist leer";
+            try {
+              const lang = (((_b = (_a = window.appI18n) == null ? void 0 : _a.getActiveLanguage) == null ? void 0 : _b.call(_a)) || ((_c = document.documentElement) == null ? void 0 : _c.lang) || "de").toLowerCase();
+              emptyText = lang.startsWith("de") ? "Dieser Ordner ist leer" : "This folder is empty";
+            } catch {
+            }
+            this.domRefs.contentArea.innerHTML = `<div class="finder-empty-state"><div class="text-6xl mb-4">\u{1F4C2}</div><div class="text-gray-500 dark:text-gray-400">${emptyText}</div></div>`;
+            return;
+          }
+          const sortedItems = this.sortItems(items);
+          switch (this.viewMode) {
+            case "list":
+              this.renderListView(sortedItems);
+              break;
+            case "grid":
+              this.renderGridView(sortedItems);
+              break;
+            case "columns":
+              this.renderListView(sortedItems);
+              break;
+          }
+        }
+        getCurrentItems() {
+          switch (this.currentView) {
+            case "computer":
+              return this.getComputerItems();
+            case "github":
+              return this.getGithubItems();
+            case "favorites":
+              return this.getFavoriteItems();
+            case "recent":
+              return this.getRecentItems();
+            default:
+              return [];
+          }
+        }
+        getComputerItems() {
+          let current = this.virtualFileSystem;
+          for (const pathPart of this.currentPath) {
+            if (current[pathPart] && current[pathPart].children) current = current[pathPart].children;
+            else return [];
+          }
+          return Object.entries(current).map(([name, item]) => ({
+            name,
+            type: item.type,
+            icon: item.icon || (item.type === "folder" ? "\u{1F4C1}" : "\u{1F4C4}"),
+            size: item.size || 0,
+            modified: item.modified || (/* @__PURE__ */ new Date()).toISOString()
+          }));
+        }
+        getGithubItems() {
+          return [];
+        }
+        getFavoriteItems() {
+          return Array.from(this.favorites).map((path) => ({ name: path.split("/").pop() || path, type: "favorite", icon: "\u2B50", path }));
+        }
+        getRecentItems() {
+          return this.recentFiles.map((file) => ({ name: file.name, type: "recent", icon: file.icon || "\u{1F4C4}", path: file.path, modified: file.modified }));
+        }
+        sortItems(items) {
+          const sorted = [...items];
+          sorted.sort((a, b) => {
+            if (a.type === "folder" && b.type !== "folder") return -1;
+            if (a.type !== "folder" && b.type === "folder") return 1;
+            let comparison = 0;
+            switch (this.sortBy) {
+              case "name":
+                comparison = a.name.localeCompare(b.name);
+                break;
+              case "size":
+                comparison = (a.size || 0) - (b.size || 0);
+                break;
+              case "date": {
+                const aTime = a.modified ? Date.parse(a.modified) : 0;
+                const bTime = b.modified ? Date.parse(b.modified) : 0;
+                comparison = bTime - aTime;
+                break;
+              }
+              case "type":
+                comparison = (a.type || "").localeCompare(b.type || "");
+                break;
+            }
+            return this.sortOrder === "asc" ? comparison : -comparison;
+          });
+          return sorted;
+        }
+        renderListView(items) {
+          this._renderedItems = items;
+          const rows = items.map((item, i) => {
+            const isSelected = this.selectedItems.has(item.name);
+            const selectedCls = isSelected ? "bg-blue-100 dark:bg-blue-900" : "";
+            return `
+                <tr class="finder-list-item ${selectedCls}" data-index="${i}" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
+                    <td><span class="finder-item-icon">${item.icon || ""}</span><span class="finder-item-name">${item.name}</span></td>
+                    <td>${this.formatSize(item.size)}</td>
+                    <td>${this.formatDate(item.modified)}</td>
+                </tr>`;
+          }).join("");
+          this.domRefs.contentArea.innerHTML = `
+                        <div id="finder-list-container">
+                            <table class="finder-list-table">
+                <thead>
+                  <tr>
+                    <th data-action="finder:setSortBy" data-sort-by="name">Name</th>
+                    <th data-action="finder:setSortBy" data-sort-by="size">Gr\xF6\xDFe</th>
+                    <th data-action="finder:setSortBy" data-sort-by="date">Ge\xE4ndert</th>
+                  </tr>
+                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                            <div id="finder-empty-spacer" style="height: 32px;"></div>
+            </div>`;
+        }
+        renderGridView(items) {
+          this._renderedItems = items;
+          const tiles = items.map((item, i) => {
+            const isSelected = this.selectedItems.has(item.name);
+            const selectedCls = isSelected ? "ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 bg-blue-100/60 dark:bg-blue-900/40" : "";
+            return `
+              <div class="finder-grid-item ${selectedCls}" data-index="${i}" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
+                <div class="finder-grid-icon">${item.icon || ""}</div>
+                <div class="finder-grid-name">${item.name}</div>
+              </div>`;
+          }).join("");
+          this.domRefs.contentArea.innerHTML = `
+                    <div id="finder-list-container">
+                        <div class="finder-grid-container">${tiles}</div>
+                        <div id="finder-empty-spacer" style="height: 32px;"></div>
+                    </div>`;
+        }
+        openItem(name, type) {
+          var _a;
+          if (type === "folder") {
+            this.navigateToFolder(name);
+          } else if (type === "file") {
+            this.addToRecent(name);
+            (_a = this.emit) == null ? void 0 : _a.call(this, "fileOpened", { name, path: [...this.currentPath, name].join("/") });
+            if (this.currentView === "github") {
+              const item = this.lastGithubItemsMap.get(name);
+              const isImage = /\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(name);
+              if (item && isImage && item.download_url) {
+                this.openImageViewer({ src: item.download_url, name });
+              }
+            }
+          }
+        }
+        async renderGithubContent() {
+          const el = this.domRefs.contentArea;
+          if (!el) return;
+          if (this.currentPath.length === 0) {
+            el.innerHTML = '<div class="finder-empty-state">Lade Repositories\u2026</div>';
+            const repos = await this.fetchGithubRepos();
+            this.lastGithubItemsMap.clear();
+            const items2 = (repos || []).map((repo2) => ({ name: repo2.name, type: "folder", icon: "\u{1F4E6}" }));
+            items2.forEach((it) => this.lastGithubItemsMap.set(it.name, it));
+            if (this.githubError && items2.length === 0) {
+              el.innerHTML = '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">\u26A0\uFE0F</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
+            } else if (items2.length === 0) {
+              el.innerHTML = '<div class="finder-empty-state text-center">Keine \xF6ffentlichen Repositories gefunden</div>';
+            } else {
+              this.renderListView(items2);
+            }
+            return;
+          }
+          const repo = this.currentPath[0];
+          if (!repo) {
+            return;
+          }
+          const subPathParts = this.currentPath.slice(1);
+          const subPath = subPathParts.join("/");
+          el.innerHTML = '<div class="finder-empty-state">Lade Inhalte\u2026</div>';
+          const contents = await this.fetchGithubContents(repo, subPath);
+          this.lastGithubItemsMap.clear();
+          const items = (contents || []).map((entry) => {
+            const isDir = entry.type === "dir";
+            return { name: entry.name, type: isDir ? "folder" : "file", icon: isDir ? "\u{1F4C1}" : "\u{1F4C4}", size: entry.size || 0, download_url: entry.download_url || null };
+          });
+          items.forEach((it) => this.lastGithubItemsMap.set(it.name, it));
+          if (this.githubError && items.length === 0) {
+            el.innerHTML = '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">\u26A0\uFE0F</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
+          } else if (items.length === 0) {
+            el.innerHTML = '<div class="finder-empty-state text-center">Dieser Ordner ist leer</div>';
+          } else {
+            this.renderListView(items);
+          }
+        }
+        async fetchGithubRepos() {
+          const GITHUB_USERNAME = "Marormur";
+          try {
+            if (Array.isArray(this.githubRepos) && this.githubRepos.length) return this.githubRepos;
+            const res = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos`, { headers: { Accept: "application/vnd.github.v3+json" } });
+            if (!res.ok) throw new Error("GitHub repos fetch failed");
+            const data = await res.json();
+            this.githubRepos = data || [];
+            this.githubError = false;
+            this.githubErrorMessage = "";
+            return this.githubRepos;
+          } catch (e) {
+            console.warn("GitHub repos error:", e);
+            this.githubError = true;
+            this.githubErrorMessage = "Repositories could not be loaded";
             return [];
           }
-          /**
-           * Get favorite items
-           */
-          getFavoriteItems() {
-            return Array.from(this.favorites).map((path) => ({
-              name: path.split("/").pop(),
-              type: "favorite",
-              icon: "\u2B50",
-              path
-            }));
-          }
-          /**
-           * Get recent items
-           */
-          getRecentItems() {
-            return this.recentFiles.map((file) => ({
-              name: file.name,
-              type: "recent",
-              icon: file.icon || "\u{1F4C4}",
-              path: file.path,
-              modified: file.modified
-            }));
-          }
-          /**
-           * Sort items
-           */
-          sortItems(items) {
-            const sorted = [...items];
-            sorted.sort((a, b) => {
-              if (a.type === "folder" && b.type !== "folder") return -1;
-              if (a.type !== "folder" && b.type === "folder") return 1;
-              let comparison = 0;
-              switch (this.sortBy) {
-                case "name":
-                  comparison = a.name.localeCompare(b.name);
-                  break;
-                case "size":
-                  comparison = (a.size || 0) - (b.size || 0);
-                  break;
-                case "date":
-                  comparison = new Date(b.modified || 0) - new Date(a.modified || 0);
-                  break;
-                case "type":
-                  comparison = (a.type || "").localeCompare(b.type || "");
-                  break;
-              }
-              return this.sortOrder === "asc" ? comparison : -comparison;
-            });
-            return sorted;
-          }
-          /**
-           * Render list view
-           */
-          renderListView(items) {
-            const html = `
-                <div id="finder-list-container">
-                <table class="finder-list-table">
-                    <thead>
-                        <tr>
-                            <th data-action="finder:setSortBy" data-sort-by="name">Name</th>
-                            <th data-action="finder:setSortBy" data-sort-by="size">Gr\xF6\xDFe</th>
-                            <th data-action="finder:setSortBy" data-sort-by="date">Ge\xE4ndert</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${items.map(
-              (item) => `
-                            <tr class="finder-list-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
-                                <td>
-                                    <span class="finder-item-icon">${item.icon}</span>
-                                    <span class="finder-item-name">${item.name}</span>
-                                </td>
-                                <td>${this.formatSize(item.size)}</td>
-                                <td>${this.formatDate(item.modified)}</td>
-                            </tr>
-                        `
-            ).join("")}
-                    </tbody>
-                </table>
-                </div>
-            `;
-            this.domRefs.contentArea.innerHTML = html;
-          }
-          /**
-           * Render grid view
-           */
-          renderGridView(items) {
-            const html = `
-                <div id="finder-list-container">
-                <div class="finder-grid-container">
-                    ${items.map(
-              (item) => `
-                        <div class="finder-grid-item" data-action-dblclick="finder:openItem" data-item-name="${item.name}" data-item-type="${item.type}">
-                            <div class="finder-grid-icon">${item.icon}</div>
-                            <div class="finder-grid-name">${item.name}</div>
-                        </div>
-                    `
-            ).join("")}
-                </div>
-                </div>
-            `;
-            this.domRefs.contentArea.innerHTML = html;
-          }
-          /**
-           * Open item
-           */
-          openItem(name, type) {
-            if (type === "folder") {
-              this.navigateToFolder(name);
-            } else if (type === "file") {
-              this.addToRecent(name);
-              this.emit("fileOpened", { name, path: [...this.currentPath, name].join("/") });
-              if (this.currentView === "github") {
-                const item = this.lastGithubItemsMap.get(name);
-                const isImage = /\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(name);
-                if (item && isImage && item.download_url) {
-                  this.openImageViewer({
-                    src: item.download_url,
-                    name
-                  });
-                }
-              }
-            }
-          }
-          /**
-           * Render GitHub view with async fetching and caching
-           */
-          async renderGithubContent() {
-            const el = this.domRefs.contentArea;
-            if (!el) return;
-            if (this.currentPath.length === 0) {
-              el.innerHTML = '<div class="finder-empty-state">Lade Repositories\u2026</div>';
-              const repos = await this.fetchGithubRepos();
-              this.lastGithubItemsMap.clear();
-              const items2 = (repos || []).map((repo2) => ({
-                name: repo2.name,
-                type: "folder",
-                icon: "\u{1F4E6}"
-              }));
-              items2.forEach((it) => this.lastGithubItemsMap.set(it.name, it));
-              if (this.githubError && items2.length === 0) {
-                el.innerHTML = '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">\u26A0\uFE0F</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
-              } else if (items2.length === 0) {
-                el.innerHTML = '<div class="finder-empty-state text-center">Keine \xF6ffentlichen Repositories gefunden</div>';
-              } else {
-                this.renderListView(items2);
-              }
-              return;
-            }
-            const repo = this.currentPath[0];
-            const subPathParts = this.currentPath.slice(1);
-            const subPath = subPathParts.join("/");
-            el.innerHTML = '<div class="finder-empty-state">Lade Inhalte\u2026</div>';
-            const contents = await this.fetchGithubContents(repo, subPath);
-            this.lastGithubItemsMap.clear();
-            const items = (contents || []).map((entry) => {
-              const isDir = entry.type === "dir";
-              return {
-                name: entry.name,
-                type: isDir ? "folder" : "file",
-                icon: isDir ? "\u{1F4C1}" : "\u{1F4C4}",
-                size: entry.size || 0,
-                download_url: entry.download_url || null
-              };
-            });
-            items.forEach((it) => this.lastGithubItemsMap.set(it.name, it));
-            if (this.githubError && items.length === 0) {
-              el.innerHTML = '<div class="finder-empty-state text-center"><div class="text-2xl mb-2">\u26A0\uFE0F</div><div>Repositories could not be loaded (Repos konnten nicht geladen werden). Possible Rate Limit.</div></div>';
-            } else if (items.length === 0) {
-              el.innerHTML = '<div class="finder-empty-state text-center">Dieser Ordner ist leer</div>';
-            } else {
-              this.renderListView(items);
-            }
-          }
-          /**
-           * Fetch GitHub repos for configured user
-           */
-          async fetchGithubRepos() {
-            const GITHUB_USERNAME = "Marormur";
-            try {
-              if (Array.isArray(this.githubRepos) && this.githubRepos.length) {
-                return this.githubRepos;
-              }
-              const res = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos`, {
-                headers: { Accept: "application/vnd.github.v3+json" }
-              });
-              if (!res.ok) throw new Error("GitHub repos fetch failed");
-              const data = await res.json();
-              this.githubRepos = data || [];
-              this.githubError = false;
-              this.githubErrorMessage = "";
-              return this.githubRepos;
-            } catch (e) {
-              console.warn("GitHub repos error:", e);
-              this.githubError = true;
-              this.githubErrorMessage = "Repositories could not be loaded";
-              return [];
-            }
-          }
-          /**
-           * Fetch contents (files/folders) for a given repo and subPath
-           */
-          async fetchGithubContents(repo, subPath = "") {
-            try {
-              const key = `${repo}:${subPath}`;
-              if (this.githubContentCache.has(key)) {
-                return this.githubContentCache.get(key);
-              }
-              const base = `https://api.github.com/repos/Marormur/${repo}/contents`;
-              const url = subPath ? `${base}/${this._encodeGithubPath(subPath)}` : base;
-              const res = await fetch(url, {
-                headers: { Accept: "application/vnd.github.v3+json" }
-              });
-              if (!res.ok) throw new Error("GitHub contents fetch failed");
-              const data = await res.json();
-              this.githubContentCache.set(key, data || []);
-              this.githubError = false;
-              this.githubErrorMessage = "";
-              return data;
-            } catch (e) {
-              console.warn("GitHub contents error:", e);
-              this.githubError = true;
-              this.githubErrorMessage = "Repositories could not be loaded";
-              return [];
-            }
-          }
-          /**
-           * Encode a GitHub path by encoding segments but keeping '/'
-           */
-          _encodeGithubPath(subPath) {
-            if (!subPath) return "";
-            return subPath.split("/").filter(Boolean).map((seg) => encodeURIComponent(seg)).join("/");
-          }
-          /**
-           * Open image viewer modal with given src
-           */
-          openImageViewer({ src, name }) {
-            var _a, _b;
-            try {
-              const img = document.getElementById("image-viewer");
-              const info = document.getElementById("image-info");
-              const placeholder = document.getElementById("image-placeholder");
-              if (info) {
-                info.textContent = name || "";
-                info.classList.remove("hidden");
-              }
-              if (placeholder) placeholder.classList.add("hidden");
-              if (img) {
-                img.src = src;
-                img.classList.remove("hidden");
-              }
-              if (window.PhotosApp && typeof window.PhotosApp.showExternalImage === "function") {
-                window.PhotosApp.showExternalImage({ src, name });
-              }
-              if ((_b = (_a = window.API) == null ? void 0 : _a.window) == null ? void 0 : _b.open) {
-                window.API.window.open("image-modal");
-              } else {
-                const modal = document.getElementById("image-modal");
-                if (modal) modal.classList.remove("hidden");
-              }
-            } catch (e) {
-              console.warn("Failed to open image viewer:", e);
-            }
-          }
-          /**
-           * Add to recent files
-           */
-          addToRecent(name) {
-            const fullPath = [...this.currentPath, name].join("/");
-            this.recentFiles.unshift({
-              name,
-              path: fullPath,
-              icon: "\u{1F4C4}",
-              modified: (/* @__PURE__ */ new Date()).toISOString()
-            });
-            this.recentFiles = this.recentFiles.slice(0, 20);
-            this.updateState({ recentFiles: this.recentFiles });
-          }
-          /**
-           * Set sort by
-           */
-          setSortBy(field) {
-            if (this.sortBy === field) {
-              this.sortOrder = this.sortOrder === "asc" ? "desc" : "asc";
-            } else {
-              this.sortBy = field;
-              this.sortOrder = "asc";
-            }
-            this.renderContent();
-            this.updateState({ sortBy: this.sortBy, sortOrder: this.sortOrder });
-          }
-          /**
-           * Set view mode
-           */
-          setViewMode(mode) {
-            this.viewMode = mode;
-            this.renderContent();
-            this.updateState({ viewMode: this.viewMode });
-          }
-          /**
-           * Format size
-           */
-          formatSize(bytes) {
-            if (!bytes || bytes === 0) return "-";
-            if (bytes < 1024) return bytes + " B";
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-            return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-          }
-          /**
-           * Format date
-           */
-          formatDate(dateStr) {
-            if (!dateStr) return "-";
-            const date = new Date(dateStr);
-            return date.toLocaleDateString("de-DE", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric"
-            });
-          }
-          /**
-           * Serialize finder state
-           */
-          serialize() {
-            return {
-              ...super.serialize(),
-              currentPath: this.currentPath,
-              currentView: this.currentView,
-              viewMode: this.viewMode,
-              sortBy: this.sortBy,
-              sortOrder: this.sortOrder,
-              favorites: Array.from(this.favorites),
-              recentFiles: this.recentFiles
-            };
-          }
-          /**
-           * Restore finder from saved state
-           */
-          deserialize(data) {
-            this._skipInitialRender = true;
-            super.deserialize(data);
-            if (data.currentPath) {
-              this.currentPath = data.currentPath;
-            }
-            if (data.currentView) {
-              this.currentView = data.currentView;
-            }
-            if (data.viewMode) {
-              this.viewMode = data.viewMode;
-            }
-            if (data.sortBy) {
-              this.sortBy = data.sortBy;
-            }
-            if (data.sortOrder) {
-              this.sortOrder = data.sortOrder;
-            }
-            if (data.favorites) {
-              this.favorites = new Set(data.favorites);
-            }
-            if (data.recentFiles) {
-              this.recentFiles = data.recentFiles;
-            }
-            this.navigateTo(this.currentPath, this.currentView);
-          }
-          /**
-           * Focus finder
-           */
-          focus() {
-            super.focus();
-            if (this.domRefs.searchInput) {
-            }
+        }
+        async fetchGithubContents(repo, subPath = "") {
+          try {
+            const key = `${repo}:${subPath}`;
+            if (this.githubContentCache.has(key)) return this.githubContentCache.get(key);
+            const base = `https://api.github.com/repos/Marormur/${repo}/contents`;
+            const url = subPath ? `${base}/${this._encodeGithubPath(subPath)}` : base;
+            const res = await fetch(url, { headers: { Accept: "application/vnd.github.v3+json" } });
+            if (!res.ok) throw new Error("GitHub contents fetch failed");
+            const data = await res.json();
+            this.githubContentCache.set(key, data || []);
+            this.githubError = false;
+            this.githubErrorMessage = "";
+            return data;
+          } catch (e) {
+            console.warn("GitHub contents error:", e);
+            this.githubError = true;
+            this.githubErrorMessage = "Repositories could not be loaded";
+            return [];
           }
         }
-        window.FinderInstance = FinderInstance;
-        if (window.InstanceManager) {
-          window.FinderInstanceManager = new window.InstanceManager({
-            type: "finder",
-            instanceClass: FinderInstance,
-            maxInstances: 0,
-            // Unlimited
-            createContainer: function(instanceId) {
-              const finderModalContainer = document.getElementById("finder-container");
-              if (!finderModalContainer) {
-                console.error("Finder container not found");
-                return null;
-              }
-              const container = document.createElement("div");
-              container.id = `${instanceId}-container`;
-              container.className = "finder-instance-container h-full flex-1 w-full min-w-0 flex flex-col min-h-0";
-              container.classList.add("hidden");
+        _encodeGithubPath(subPath) {
+          if (!subPath) return "";
+          return subPath.split("/").filter(Boolean).map((seg) => encodeURIComponent(seg)).join("/");
+        }
+        openImageViewer({ src, name }) {
+          var _a, _b;
+          try {
+            const img = document.getElementById("image-viewer");
+            const info = document.getElementById("image-info");
+            const placeholder = document.getElementById("image-placeholder");
+            if (info) {
+              info.textContent = name || "";
+              info.classList.remove("hidden");
+            }
+            if (placeholder) placeholder.classList.add("hidden");
+            if (img) {
+              img.src = src;
+              img.classList.remove("hidden");
+            }
+            if (window.PhotosApp && typeof window.PhotosApp.showExternalImage === "function") {
+              window.PhotosApp.showExternalImage({ src, name });
+            }
+            if ((_b = (_a = window.API) == null ? void 0 : _a.window) == null ? void 0 : _b.open) {
+              window.API.window.open("image-modal");
+            } else {
+              const modal = document.getElementById("image-modal");
+              if (modal) modal.classList.remove("hidden");
+            }
+          } catch (e) {
+            console.warn("Failed to open image viewer:", e);
+          }
+        }
+        addToRecent(name) {
+          var _a;
+          const fullPath = [...this.currentPath, name].join("/");
+          this.recentFiles.unshift({ name, path: fullPath, icon: "\u{1F4C4}", modified: (/* @__PURE__ */ new Date()).toISOString() });
+          this.recentFiles = this.recentFiles.slice(0, 20);
+          (_a = this.updateState) == null ? void 0 : _a.call(this, { recentFiles: this.recentFiles });
+        }
+        setSortBy(field) {
+          var _a;
+          if (this.sortBy === field) this.sortOrder = this.sortOrder === "asc" ? "desc" : "asc";
+          else {
+            this.sortBy = field;
+            this.sortOrder = "asc";
+          }
+          this.renderContent();
+          (_a = this.updateState) == null ? void 0 : _a.call(this, { sortBy: this.sortBy, sortOrder: this.sortOrder });
+        }
+        setViewMode(mode) {
+          var _a;
+          this.viewMode = mode;
+          this.renderContent();
+          (_a = this.updateState) == null ? void 0 : _a.call(this, { viewMode: this.viewMode });
+        }
+        formatSize(bytes) {
+          if (!bytes || bytes === 0) return "-";
+          if (bytes < 1024) return bytes + " B";
+          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+          return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+        }
+        formatDate(dateStr) {
+          if (!dateStr) return "-";
+          const date = new Date(dateStr);
+          return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+        }
+        serialize() {
+          var _a;
+          return {
+            ...((_a = super.serialize) == null ? void 0 : _a.call(this)) || {},
+            currentPath: this.currentPath,
+            currentView: this.currentView,
+            viewMode: this.viewMode,
+            sortBy: this.sortBy,
+            sortOrder: this.sortOrder,
+            favorites: Array.from(this.favorites),
+            recentFiles: this.recentFiles
+          };
+        }
+        deserialize(data) {
+          var _a;
+          this._skipInitialRender = true;
+          (_a = super.deserialize) == null ? void 0 : _a.call(this, data);
+          if (data.currentPath) this.currentPath = data.currentPath;
+          if (data.currentView) this.currentView = data.currentView;
+          if (data.viewMode) this.viewMode = data.viewMode;
+          if (data.sortBy) this.sortBy = data.sortBy;
+          if (data.sortOrder) this.sortOrder = data.sortOrder;
+          if (data.favorites) this.favorites = new Set(data.favorites);
+          if (data.recentFiles) this.recentFiles = data.recentFiles;
+          this.navigateTo(this.currentPath, this.currentView);
+        }
+        focus() {
+          var _a;
+          (_a = super.focus) == null ? void 0 : _a.call(this);
+        }
+      };
+      window.FinderInstance = FinderInstance;
+      if (window.InstanceManager) {
+        window.FinderInstanceManager = new window.InstanceManager({
+          type: "finder",
+          instanceClass: FinderInstance,
+          maxInstances: 0,
+          createContainer: function(instanceId) {
+            const finderModalContainer = document.getElementById("finder-container");
+            const container = document.createElement("div");
+            container.id = `${instanceId}-container`;
+            container.className = "finder-instance-container h-full flex-1 w-full min-w-0 flex flex-col min-h-0";
+            container.classList.add("hidden");
+            if (finderModalContainer) {
               finderModalContainer.appendChild(container);
-              return container;
+            } else {
+              console.error("Finder container not found; using document.body as fallback");
+              document.body.appendChild(container);
             }
-          });
-        }
-      })();
+            return container;
+          }
+        });
+      }
     }
   });
 
-  // src/ts/legacy/launchpad.js
+  // src/ts/launchpad.ts
   var require_launchpad = __commonJS({
-    "src/ts/legacy/launchpad.js"() {
+    "src/ts/launchpad.ts"() {
       "use strict";
-      console.log("Launchpad loaded");
-      (function(global) {
+      console.log("Launchpad (TS) loaded");
+      (() => {
         "use strict";
         let container = null;
         let searchInput = null;
@@ -10393,12 +10172,14 @@ ${selectedText}
         let allApps = [];
         let filteredApps = [];
         function translate2(key, fallback) {
-          if (!global.appI18n || typeof global.appI18n.translate !== "function") {
+          try {
+            const i18n = window.appI18n;
+            if (!i18n || typeof i18n.translate !== "function") return fallback || key;
+            const res = i18n.translate(key);
+            return res === key && fallback ? fallback : res;
+          } catch {
             return fallback || key;
           }
-          const result = global.appI18n.translate(key);
-          if (result === key && fallback) return fallback;
-          return result;
         }
         function init(containerElement) {
           if (!containerElement) {
@@ -10425,52 +10206,41 @@ ${selectedText}
                         class="launchpad-search-input"
                     />
                 </div>
-                <div id="launchpad-apps-grid" class="launchpad-apps-grid">
-                    <!-- Apps will be rendered here -->
-                </div>
+                <div id="launchpad-apps-grid" class="launchpad-apps-grid"></div>
             </div>
         `;
           searchInput = container.querySelector("#launchpad-search-input");
           appsGrid = container.querySelector("#launchpad-apps-grid");
-          if (searchInput) {
-            searchInput.addEventListener("input", handleSearch);
-          }
+          if (searchInput) searchInput.addEventListener("input", handleSearch);
         }
         function loadApps() {
-          if (!global.WindowManager) {
+          const WM = window.WindowManager;
+          if (!WM) {
             console.warn("LaunchpadSystem: WindowManager not available");
             return;
           }
-          const windowIds = global.WindowManager.getAllWindowIds();
+          const windowIds = WM.getAllWindowIds();
           allApps = [];
-          windowIds.forEach((windowId) => {
-            const config = global.WindowManager.getConfig(windowId);
-            const programInfo = global.WindowManager.getProgramInfo(windowId);
-            if (config && config.type === "transient") {
-              return;
-            }
-            if (windowId === "launchpad-modal") {
-              return;
-            }
-            if (programInfo) {
+          windowIds.forEach((id) => {
+            const cfg = WM.getConfig(id);
+            const info = WM.getProgramInfo(id);
+            if (cfg && cfg.type === "transient") return;
+            if (id === "launchpad-modal") return;
+            if (info) {
               allApps.push({
-                id: windowId,
-                name: programInfo.programLabel || translate2("programs.default.label", "App"),
-                icon: programInfo.icon || "./img/sucher.png",
-                programKey: config ? config.programKey : null
+                id,
+                name: info.programLabel || translate2("programs.default.label", "App"),
+                icon: info.icon || "./img/sucher.png",
+                programKey: cfg ? cfg.programKey : null
               });
             }
           });
           filteredApps = [...allApps];
           renderApps();
         }
-        function handleSearch(event) {
-          const query2 = event.target.value.toLowerCase().trim();
-          if (!query2) {
-            filteredApps = [...allApps];
-          } else {
-            filteredApps = allApps.filter((app) => app.name.toLowerCase().includes(query2));
-          }
+        function handleSearch(e) {
+          const q = e.target.value.toLowerCase().trim();
+          filteredApps = q ? allApps.filter((a) => a.name.toLowerCase().includes(q)) : [...allApps];
           renderApps();
         }
         function renderApps() {
@@ -10484,66 +10254,67 @@ ${selectedText}
             `;
             return;
           }
+          const grid = appsGrid;
+          if (!grid) return;
           filteredApps.forEach((app) => {
-            const appButton = document.createElement("button");
-            appButton.className = "launchpad-app-button";
-            appButton.setAttribute("data-window-id", app.id);
-            appButton.setAttribute("data-action", "launchpadOpenWindow");
-            appButton.title = app.name;
-            const iconContainer = document.createElement("div");
-            iconContainer.className = "launchpad-app-icon";
-            const isImagePath = typeof app.icon === "string" && /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(app.icon);
-            if (isImagePath || typeof app.icon === "string" && (app.icon.startsWith("./") || app.icon.startsWith("http"))) {
-              const icon = document.createElement("img");
-              icon.src = app.icon;
-              icon.alt = app.name;
-              icon.draggable = false;
-              iconContainer.appendChild(icon);
-            } else if (typeof app.icon === "string" && app.icon.trim().length) {
+            const btn = document.createElement("button");
+            btn.className = "launchpad-app-button";
+            btn.setAttribute("data-window-id", app.id);
+            btn.setAttribute("data-action", "launchpadOpenWindow");
+            btn.title = app.name;
+            const iconWrap = document.createElement("div");
+            iconWrap.className = "launchpad-app-icon";
+            const icon = app.icon;
+            const isImg = typeof icon === "string" && /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(icon);
+            if (isImg || typeof icon === "string" && (icon.startsWith("./") || icon.startsWith("http"))) {
+              const img = document.createElement("img");
+              img.src = icon;
+              img.alt = app.name;
+              img.draggable = false;
+              iconWrap.appendChild(img);
+            } else if (typeof icon === "string" && icon.trim().length) {
               const emoji = document.createElement("div");
               emoji.className = "launchpad-app-emoji";
-              emoji.textContent = app.icon;
-              iconContainer.appendChild(emoji);
+              emoji.textContent = icon;
+              iconWrap.appendChild(emoji);
             } else {
               const fallback = document.createElement("img");
               fallback.src = "./img/sucher.png";
               fallback.alt = app.name;
               fallback.draggable = false;
-              iconContainer.appendChild(fallback);
+              iconWrap.appendChild(fallback);
             }
             const label = document.createElement("span");
             label.className = "launchpad-app-label";
             label.textContent = app.name;
-            appButton.appendChild(iconContainer);
-            appButton.appendChild(label);
-            appsGrid.appendChild(appButton);
+            btn.appendChild(iconWrap);
+            btn.appendChild(label);
+            grid.appendChild(btn);
           });
         }
         function openApp(windowId) {
+          var _a, _b, _c, _d;
           if (!windowId) return;
+          const w = window;
           const launchpadModal = document.getElementById("launchpad-modal");
-          if (launchpadModal && global.dialogs && global.dialogs["launchpad-modal"]) {
-            global.dialogs["launchpad-modal"].close();
+          if (launchpadModal && w.dialogs && w.dialogs["launchpad-modal"]) {
+            (_b = (_a = w.dialogs["launchpad-modal"]).close) == null ? void 0 : _b.call(_a);
           } else if (launchpadModal) {
             launchpadModal.classList.add("hidden");
           }
-          if (global.WindowManager && typeof global.WindowManager.open === "function") {
-            global.WindowManager.open(windowId);
+          const WM = w.WindowManager;
+          if (WM == null ? void 0 : WM.open) {
+            WM.open(windowId);
             return;
           }
-          const dialog = global.dialogs && global.dialogs[windowId];
-          if (dialog && typeof dialog.open === "function") {
-            dialog.open();
-          } else {
+          const dialog = w.dialogs && w.dialogs[windowId];
+          if (dialog == null ? void 0 : dialog.open) dialog.open();
+          else {
             const modalElement = document.getElementById(windowId);
             if (modalElement) {
               modalElement.classList.remove("hidden");
-              if (typeof global.bringDialogToFront === "function") {
-                global.bringDialogToFront(windowId);
-              }
-              if (typeof global.updateProgramLabelByTopModal === "function") {
-                global.updateProgramLabelByTopModal();
-              }
+              (_c = w.bringDialogToFront) == null ? void 0 : _c.call(w, windowId);
+              (_d = w.updateProgramLabelByTopModal) == null ? void 0 : _d.call(w);
             }
           }
         }
@@ -10551,24 +10322,21 @@ ${selectedText}
           loadApps();
         }
         function clearSearch() {
-          if (searchInput) {
-            searchInput.value = "";
-          }
+          if (searchInput) searchInput.value = "";
           filteredApps = [...allApps];
           renderApps();
         }
-        global.addEventListener("languagePreferenceChange", () => {
-          if (container) {
-            loadApps();
-          }
+        window.addEventListener("languagePreferenceChange", () => {
+          if (container) loadApps();
         });
-        if (global.ActionBus && typeof global.ActionBus.register === "function") {
-          global.ActionBus.register("launchpadOpenWindow", (params) => {
+        const AB = window.ActionBus;
+        if (typeof (AB == null ? void 0 : AB.register) === "function") {
+          AB.register("launchpadOpenWindow", (params) => {
             const id = (params == null ? void 0 : params.windowId) || (params == null ? void 0 : params.windowid) || (params == null ? void 0 : params.window) || (params == null ? void 0 : params.id);
             if (id) openApp(id);
           });
         }
-        global.LaunchpadSystem = {
+        window.LaunchpadSystem = {
           init,
           refresh,
           clearSearch,
@@ -10576,7 +10344,7 @@ ${selectedText}
             return container;
           }
         };
-      })(window);
+      })();
     }
   });
 
@@ -10608,42 +10376,30 @@ ${selectedText}
             if (W.TerminalInstanceManager) this.setupTerminalIntegration();
             if (W.TextEditorInstanceManager) this.setupTextEditorIntegration();
             if (W.FinderInstanceManager) this.setupFinderIntegration();
-            if (W.SessionManager) {
-              if (W.TerminalInstanceManager)
-                W.SessionManager.registerManager("terminal", W.TerminalInstanceManager);
-              if (W.TextEditorInstanceManager)
-                W.SessionManager.registerManager("text-editor", W.TextEditorInstanceManager);
-              if (W.FinderInstanceManager)
-                W.SessionManager.registerManager("finder", W.FinderInstanceManager);
-              if (typeof W.SessionManager.restoreSession === "function") {
-                W.SessionManager.restoreSession();
+            this.integrations.forEach((integration2, type) => {
+              var _a;
+              const { manager, tabManager } = integration2;
+              try {
+                const maybe = tabManager;
+                const refreshFn = typeof (maybe == null ? void 0 : maybe.refresh) === "function" ? maybe.refresh.bind(maybe) : typeof ((_a = maybe == null ? void 0 : maybe.controller) == null ? void 0 : _a.refresh) === "function" ? maybe.controller.refresh.bind(maybe.controller) : null;
+                if (refreshFn) refreshFn();
+              } catch {
               }
-              this.integrations.forEach((integration2, type) => {
-                var _a;
-                const { manager, tabManager } = integration2;
-                try {
-                  const maybe = tabManager;
-                  const refreshFn = typeof (maybe == null ? void 0 : maybe.refresh) === "function" ? maybe.refresh.bind(maybe) : typeof ((_a = maybe == null ? void 0 : maybe.controller) == null ? void 0 : _a.refresh) === "function" ? maybe.controller.refresh.bind(maybe.controller) : null;
-                  if (refreshFn) refreshFn();
-                } catch {
-                }
-                try {
-                  const raw = localStorage.getItem("windowActiveInstances");
-                  if (raw) {
-                    const map = JSON.parse(raw);
-                    const wanted = (map == null ? void 0 : map[type]) || null;
-                    if (wanted && typeof manager.setActiveInstance === "function") {
-                      const exists = manager.getAllInstances().some((i) => i.instanceId === wanted);
-                      if (exists) manager.setActiveInstance(wanted);
-                    }
+              try {
+                const raw = localStorage.getItem("windowActiveInstances");
+                if (raw) {
+                  const map = JSON.parse(raw);
+                  const wanted = (map == null ? void 0 : map[type]) || null;
+                  if (wanted && typeof manager.setActiveInstance === "function") {
+                    const exists = manager.getAllInstances().some((i) => i.instanceId === wanted);
+                    if (exists) manager.setActiveInstance(wanted);
                   }
-                } catch {
                 }
-                const active = manager.getActiveInstance();
-                if (active) this.showInstance(type, active.instanceId);
-              });
-              W.SessionManager.init();
-            }
+              } catch {
+              }
+              const active = manager.getActiveInstance();
+              if (active) this.showInstance(type, active.instanceId);
+            });
             if (W.KeyboardShortcuts && typeof W.KeyboardShortcuts.setContextResolver === "function") {
               W.KeyboardShortcuts.setContextResolver(() => {
                 try {
@@ -11791,6 +11547,8 @@ ${selectedText}
     }
     (_c = funcs.syncTopZIndexWithDOM) == null ? void 0 : _c.call(funcs);
     (_d = funcs.restoreWindowPositions) == null ? void 0 : _d.call(funcs);
+    ;
+    window.__SESSION_RESTORE_IN_PROGRESS = true;
     (_e = funcs.restoreOpenModals) == null ? void 0 : _e.call(funcs);
     (_f = funcs.initSystemStatusControls) == null ? void 0 : _f.call(funcs);
     (_g = funcs.initDesktop) == null ? void 0 : _g.call(funcs);
@@ -11824,8 +11582,13 @@ ${selectedText}
         (_p = (_o = win.SessionManager).init) == null ? void 0 : _p.call(_o);
         setTimeout(() => {
           var _a2;
-          if ((_a2 = win.SessionManager) == null ? void 0 : _a2.restoreSession) {
-            win.SessionManager.restoreSession();
+          try {
+            if ((_a2 = win.SessionManager) == null ? void 0 : _a2.restoreSession) {
+              win.SessionManager.restoreSession();
+            }
+          } finally {
+            window.__SESSION_RESTORE_IN_PROGRESS = false;
+            window.__SESSION_RESTORE_DONE = true;
           }
         }, 100);
       } catch (err) {
@@ -11999,8 +11762,8 @@ ${selectedText}
       var import_keyboard_shortcuts = __toESM(require_keyboard_shortcuts());
       var import_github_api = __toESM(require_github_api());
       var import_photos_app = __toESM(require_photos_app());
-      var import_window_configs = __toESM(require_window_configs());
-      var import_finder_instance = __toESM(require_finder_instance());
+      init_window_configs();
+      init_finder_instance();
       var import_launchpad = __toESM(require_launchpad());
       var import_multi_instance_integration = __toESM(require_multi_instance_integration());
       var import_desktop = __toESM(require_desktop());

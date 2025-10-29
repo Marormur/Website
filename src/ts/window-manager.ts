@@ -166,10 +166,14 @@
             const config = this.getConfig(windowId);
             // Run the configured initHandler on every open. Some windows rely on
             // per-open initialization (e.g., Finder multi-instance recreation).
+            const g = window as unknown as {
+                __SESSION_RESTORE_IN_PROGRESS?: boolean;
+            };
             if (
                 config &&
                 config.metadata &&
-                typeof (config.metadata as Record<string, unknown>).initHandler === 'function'
+                typeof (config.metadata as Record<string, unknown>).initHandler === 'function' &&
+                !g.__SESSION_RESTORE_IN_PROGRESS
             ) {
                 try {
                     const md = config.metadata as Record<string, unknown> & {
@@ -288,4 +292,3 @@
         },
     });
 })();
-

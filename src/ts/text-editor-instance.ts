@@ -1,5 +1,7 @@
 console.log('TextEditorInstance (TS) loaded');
 
+import { getString, setString } from './storage-utils.js';
+
 /**
  * TextEditorInstance - Multi-Instance capable text editor
  * TypeScript migration preserving global API and behavior.
@@ -330,7 +332,7 @@ console.log('TextEditorInstance (TS) loaded');
                 this.editor.style.whiteSpace = this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
             }
             try {
-                localStorage.setItem(
+                setString(
                     `textEditorWrapMode_${(this as unknown as { instanceId: string }).instanceId}`,
                     this.wrapMode
                 );
@@ -346,7 +348,7 @@ console.log('TextEditorInstance (TS) loaded');
         private _loadWrapPreference(): void {
             try {
                 const id = (this as unknown as { instanceId: string }).instanceId;
-                const saved = localStorage.getItem(`textEditorWrapMode_${id}`) as WrapMode | null;
+                const saved = getString(`textEditorWrapMode_${id}`) as WrapMode | null;
                 if (saved && this.editor) {
                     this.wrapMode = saved;
                     this.editor.wrap = this.wrapMode;
@@ -521,4 +523,3 @@ console.log('TextEditorInstance (TS) loaded');
         });
     }
 })();
-

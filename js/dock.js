@@ -14,6 +14,7 @@ exports.applyDockOrder = applyDockOrder;
 exports.createPlaceholder = createPlaceholder;
 exports.initDockDragDrop = initDockDragDrop;
 exports.updateDockIndicators = updateDockIndicators;
+const storage_utils_js_1 = require("./storage-utils.js");
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // getDockReservedBottom
 function getDockReservedBottom() {
@@ -104,8 +105,7 @@ function initDockMagnification() {
 const DOCK_ORDER_STORAGE_KEY = 'dock:order:v1';
 function loadDockOrder() {
     try {
-        const raw = localStorage.getItem(DOCK_ORDER_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : null;
+        const parsed = (0, storage_utils_js_1.getJSON)(DOCK_ORDER_STORAGE_KEY, null);
         return Array.isArray(parsed) ? parsed : null;
     }
     catch {
@@ -114,7 +114,7 @@ function loadDockOrder() {
 }
 function saveDockOrder(order) {
     try {
-        localStorage.setItem(DOCK_ORDER_STORAGE_KEY, JSON.stringify(order || []));
+        (0, storage_utils_js_1.setJSON)(DOCK_ORDER_STORAGE_KEY, order || []);
     }
     catch {
         // ignore
