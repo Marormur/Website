@@ -415,6 +415,7 @@ console.log('SessionManager loaded');
     const SessionManager = {
         init,
         saveAll,
+        saveAllSessions: saveAll, // Alias for backwards compatibility with tests
         saveInstanceType,
         restoreSession,
         clear,
