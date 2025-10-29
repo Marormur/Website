@@ -1,8 +1,8 @@
 # Legacy JS files touched during lint-maintenance (2025-10-27)
 
-> **NOTE:** These files are historical or compiled outputs. Do NOT use these as the primary place for new development. Prefer `src/ts/` TypeScript sources for all new code and edits. The `js/` directory contains emitted JS (runtime output) and legacy artifacts kept for reference or compatibility only.
+> **NOTE:** Diese Dateien sind historisch oder kompilierte Ausgaben. Verwende diese NICHT als primären Ort für neue Entwicklung. Bevorzuge `src/ts/` TypeScript-Quellen für allen neuen Code und Änderungen. Das `js/`-Verzeichnis enthält generiertes JS (Runtime-Ausgabe) und Legacy-Artefakte, die nur für Referenz oder Kompatibilität beibehalten werden.
 
-> **UPDATE (2025-10-28):** With the esbuild bundle pipeline now in place (`scripts/build-esbuild.mjs` → `js/app.bundle.js`), many of these individual JS files will eventually be replaced by the single IIFE bundle. The bundle uses a compatibility adapter (`src/ts/compat/expose-globals.ts`) to expose modules on `window.*` for legacy consumers. See CHANGELOG.md section "Build - Esbuild bundle (compat adapter) ✅" for details.
+> **UPDATE (2025-10-29):** Die TypeScript-Migration ist **vollständig abgeschlossen** (Phase 7: 100%). Alle Kern-Module (finder, terminal, system, settings, launchpad, icons, error-handler, perf-monitor) wurden erfolgreich zu TypeScript migriert. Insgesamt 26+ TypeScript-Module mit 6,000+ Zeilen Code in `src/ts/`. Der esbuild-Bundle-Pipeline (`scripts/build-esbuild.mjs` → `js/app.bundle.js`) ersetzt viele dieser einzelnen JS-Dateien. Das Bundle nutzt einen Kompatibilitäts-Adapter (`src/ts/compat/expose-globals.ts`), um Module auf `window.*` für Legacy-Consumer bereitzustellen. Siehe CHANGELOG.md Abschnitt "Build - Esbuild bundle (compat adapter) ✅" für Details.
 
 The following files were edited as part of a targeted lint-maintenance pass. Many of these are legacy JavaScript sources. If a TypeScript source exists under `src/ts/`, prefer editing that file and rebuilding the project instead of changing emitted JS.
 

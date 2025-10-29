@@ -2,7 +2,7 @@
 
 Schnell lauffähig werden und die wichtigsten Konzepte der neuen Architektur nutzen.
 
-> NOTE: The codebase has been migrated to TypeScript. Prefer edits in `src/ts/` (e.g. `src/ts/window-configs.ts`). The `js/` directory contains emitted runtime output and legacy artifacts — only edit `js/` when fixing generated output.
+> NOTE: Das Projekt ist **vollständig zu TypeScript migriert** (100% Complete! ✅). Alle Änderungen sollten in `src/ts/` erfolgen (z.B. `src/ts/window-configs.ts`). Das `js/`-Verzeichnis enthält generierte Runtime-Ausgaben und Legacy-Artefakte – bearbeite `js/` nur beim Fixen generierter Ausgaben.
 
 ## Lokales Setup
 
