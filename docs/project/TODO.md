@@ -240,7 +240,41 @@ Erfolgskriterien: Strict(er) Types, keine Runtime-Regressions, Tests grün
 
 ## 📝 TODO - Nächste Schritte
 
-Die Entwicklungsumgebung (Phase 0) ist vollständig abgeschlossen. Ab jetzt konzentrieren wir uns auf neue Features (Phase 1+). Siehe Verweise oben und CHANGELOG für alle Details zur abgeschlossenen Phase 0.
+Die Entwicklungsumgebung (Phase 0) ist vollständig abgeschlossen. Ab jetzt konzentrieren wir uns auf neue Features (Phase 1+). Siehe Verweise oben und CHANGELOG für alle Details zur abgeschlossenen Phase 0.
+
+## 🔧 Priorität 0.5: Infrastructure & CI/CD Optimization - ✅ ABGESCHLOSSEN!
+
+#### 0.5.1 GitHub Actions Workflow Optimization (29. Oktober 2025)
+
+**Ziel**: Reduce CI/CD time by 36-46% through consolidation, caching, and concurrency controls
+
+- [x] **Delete redundant workflows**
+    - [x] Delete `.github/workflows/e2e.yml` (100% redundant with ci.yml)
+- [x] **Update eslint.yml to weekly security scan only**
+    - [x] Remove push/pull_request triggers, keep schedule + workflow_dispatch
+    - [x] Use project ESLint version via npm ci
+    - [x] Fix config reference to match actual project config
+- [x] **Add concurrency controls to ci.yml**
+    - [x] Add workflow-level concurrency group
+    - [x] Enable cancel-in-progress for outdated runs
+- [x] **Add Playwright browser caching to ci.yml**
+    - [x] Cache ~/.cache/ms-playwright directory
+- [x] **Add MOCK_GITHUB to ci.yml tests**
+    - [x] Set env var for stability
+- [x] **Add build artifact upload to ci.yml**
+    - [x] Upload dist/ and js/ after build
+- [x] **Make cross-browser tests conditional in ci.yml**
+    - [x] Split chromium (always) from firefox/webkit (conditional)
+- [x] **Update deploy.yml to reuse artifacts**
+    - [x] Download build artifacts from ci.yml when available
+- [x] **Update CHANGELOG.md**
+    - [x] Document all workflow optimizations
+
+**Tatsächlicher Zeitaufwand**: ~30 Minuten ✅
+**Erwartete Verbesserung**: CI Zeit von ~11min → ~7min pro Push (36-46% Reduktion)
+**Abgeschlossen**: 29. Oktober 2025
+
+---
 
 ## 🔴 Priorität 1: Core Features & Integration - NÄCHSTER SCHRITT!
 

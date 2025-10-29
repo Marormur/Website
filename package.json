@@ -34,7 +34,7 @@
   },
   "lint-staged": {
     "*.js": [
-      "bash -c 'files=\"$@\"; filtered=$(echo \"$files\" | tr \" \" \"\\n\" | grep -v \"^js/\"); [ -n \"$filtered\" ] && eslint --fix $filtered || true' _"
+      "eslint --fix --ignore-pattern 'js/**/*.js'"
     ],
     "*.{css,md,html,json}": [
       "prettier --write"

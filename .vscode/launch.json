@@ -93,6 +93,18 @@
       "request": "attach",
       "url": "http://127.0.0.1:5173",
       "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "Playwright: Debug Current Test",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+      "args": ["test", "${file}", "--headed"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {
+        "MOCK_GITHUB": "1"
+      }
     }
   ]
 }

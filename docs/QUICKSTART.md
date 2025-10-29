@@ -38,6 +38,10 @@ Hinweise:
 
 - Der Dev-Server nutzt SSE für Live-Reload.
 - Der Port 5173 wird wiederverwendet; das Start-Task ist idempotent (kein Crash, wenn bereits aktiv).
+- **Cross-Platform Umgebungsvariablen:**
+    - PowerShell (Windows): `$env:MOCK_GITHUB='1'; npm run test:e2e:quick`
+    - Bash/Zsh (macOS/Linux): `MOCK_GITHUB=1 npm run test:e2e:quick`
+    - VS Code Tasks: Nutzen `options.env` für plattformübergreifende Kompatibilität
 
 ## Was wurde gemacht?
 
