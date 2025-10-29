@@ -660,12 +660,28 @@ console.log('FinderInstance loaded');
                 // Emit event for file opening (can be handled by parent)
                 this.emit('fileOpened', { name, path: [...this.currentPath, name].join('/') });
 
-                // If in GitHub view and image file, open image viewer
+                // If in GitHub view and image file, open Preview
                 if (this.currentView === 'github') {
                     const item = this.lastGithubItemsMap.get(name);
                     const isImage = /\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(name);
                     if (item && isImage && item.download_url) {
-                        this.openImageViewer({ src: item.download_url, name });
+                        // Collect all images in current folder
+                        const allImages = [];
+                        let startIndex = 0;
+                        let idx = 0;
+                        this.lastGithubItemsMap.forEach((entry, key) => {
+                            if (/\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(key) && entry.download_url) {
+                                if (key === name) startIndex = idx;
+                                allImages.push(entry.download_url);
+                                idx++;
+                            }
+                        });
+
+                        // Open Preview with all images
+                        if (window.PreviewInstanceManager && typeof window.PreviewInstanceManager.openImages === 'function') {
+                            const fullPath = [...this.currentPath, name].join('/');
+                            window.PreviewInstanceManager.openImages(allImages, startIndex, fullPath);
+                        }
                     }
                 }
             }
@@ -815,6 +831,10 @@ console.log('FinderInstance loaded');
                 if (img) {
                     img.src = src;
                     img.classList.remove('hidden');
+                }
+                // Notify Photos App about external image if available
+                if (window.PhotosApp && typeof window.PhotosApp.showExternalImage === 'function') {
+                    window.PhotosApp.showExternalImage({ src, name });
                 }
                 if (window.API?.window?.open) {
                     window.API.window.open('image-modal');

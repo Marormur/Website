@@ -41,6 +41,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 console.log('[BUNDLE] expose-globals.ts loading...');
 // Import the modern module(s) we want to expose explicitly
 const DOMUtils = __importStar(require("../dom-utils"));
+// Import core constants first (needed by storage, app-init, etc.)
+require("../constants");
 // Import legacy/global modules for their side effects so they register on window.*
 require("../api");
 require("../window-manager");
@@ -67,11 +69,14 @@ require("../image-viewer-utils");
 require("../logger");
 require("../keyboard-shortcuts");
 require("../github-api");
+// Include compiled Photos App JS into the bundle to expose window.PhotosApp
+// Using the compiled JS avoids TS encoding issues and ensures identical runtime behavior
+require("../photos-app");
 // Legacy JS modules (copied to src/ts/legacy/ for esbuild compatibility)
 require("../legacy/window-configs.js"); // Must load before windows are registered
 require("../legacy/finder-instance.js");
 require("../legacy/launchpad.js");
-require("../legacy/multi-instance-integration.js");
+require("../multi-instance-integration");
 require("../legacy/desktop.js");
 require("../legacy/system.js");
 // Finally, include the TypeScript app initialization to bootstrap and signal readiness

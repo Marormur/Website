@@ -30,8 +30,8 @@
   ],
 
   // Playwright Testing
-  "playwright.reuseBrowser": true,
-  "playwright.showTrace": "on-failure",
+  "playwright.reuseBrowser": false,
+  "playwright.showTrace": false,
 
   // File Associations
   "files.associations": {

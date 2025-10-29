@@ -1,411 +1,281 @@
-console.log('MultiInstanceIntegration loaded');
-
+"use strict";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * Multi-Instance Modal Integration
- *
- * Integrates the tab system with existing modals (Terminal, TextEditor)
+ * Multi-Instance Modal Integration (TypeScript)
+ * Integrates the tab system with existing modals (Terminal, TextEditor, Finder)
  * Wires up keyboard shortcuts and session management
  */
-(function () {
+(() => {
     'use strict';
-
-    /**
-     * Integration manager for multi-instance modals
-     */
     class MultiInstanceIntegration {
         constructor() {
             this.integrations = new Map();
             this.isInitialized = false;
         }
-
-        /**
-         * Initialize multi-instance integration
-         */
         init() {
-            if (this.isInitialized) {
-                console.warn('MultiInstanceIntegration already initialized');
+            if (this.isInitialized)
                 return;
-            }
-
-            // Wait for DOM and all dependencies to be ready
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => {
-                    this.setup();
-                });
-            } else {
+                document.addEventListener('DOMContentLoaded', () => this.setup());
+            }
+            else {
                 this.setup();
             }
         }
-
-        /**
-         * Setup integrations
-         */
         setup() {
-            console.log('MultiInstanceIntegration: Setting up...');
-
-            // Check if required dependencies are available
-            if (!window.InstanceManager || !window.WindowTabManager || !window.KeyboardShortcuts) {
+            const W = window;
+            if (!W.InstanceManager || !W.WindowTabs || !W.KeyboardShortcuts) {
                 console.error('MultiInstanceIntegration: Required dependencies not loaded');
                 return;
             }
-
-            // Setup Terminal integration if available
-            if (window.TerminalInstanceManager) {
+            if (W.TerminalInstanceManager)
                 this.setupTerminalIntegration();
-            }
-
-            // Setup Text Editor integration if available
-            if (window.TextEditorInstanceManager) {
+            if (W.TextEditorInstanceManager)
                 this.setupTextEditorIntegration();
-            }
-
-            // Setup Finder integration if available
-            if (window.FinderInstanceManager) {
+            if (W.FinderInstanceManager)
                 this.setupFinderIntegration();
-            }
-
-            // Register managers with session manager
-            if (window.SessionManager) {
-                if (window.TerminalInstanceManager) {
-                    window.SessionManager.registerManager(
-                        'terminal',
-                        window.TerminalInstanceManager
-                    );
-                }
-                if (window.TextEditorInstanceManager) {
-                    window.SessionManager.registerManager(
-                        'text-editor',
-                        window.TextEditorInstanceManager
-                    );
-                }
-                if (window.FinderInstanceManager) {
-                    window.SessionManager.registerManager('finder', window.FinderInstanceManager);
-                }
-
-                // Restore saved sessions before starting auto-save
-                window.SessionManager.restoreAllSessions();
-
-                // After restoring sessions (or on fresh start), ensure all integrations
-                // have their tabs properly set up and active instances visible
+            if (W.SessionManager) {
+                if (W.TerminalInstanceManager)
+                    W.SessionManager.registerManager('terminal', W.TerminalInstanceManager);
+                if (W.TextEditorInstanceManager)
+                    W.SessionManager.registerManager('text-editor', W.TextEditorInstanceManager);
+                if (W.FinderInstanceManager)
+                    W.SessionManager.registerManager('finder', W.FinderInstanceManager);
+                W.SessionManager.restoreAllSessions();
+                // Ensure tabs/controllers reflect restored state and show active instance
                 this.integrations.forEach((integration, type) => {
                     const { manager, tabManager } = integration;
-                    const instances = manager.getAllInstances();
-
-                    // Refresh tabs to reflect current instances
-                    // (works for both restored instances and fresh starts)
-                    if (tabManager && tabManager.controller) {
-                        tabManager.controller.refresh();
-                    }
-
-                    // Show the active instance if any exist
-                    if (instances.length > 0) {
-                        const activeInstance = manager.getActiveInstance();
-                        if (activeInstance) {
-                            this.showInstance(type, activeInstance.instanceId);
-                        }
-                    }
-                });
-
-                // Start auto-save
-                window.SessionManager.startAutoSave();
-            }
-
-            // Provide a precise context resolver to KeyboardShortcuts
-            if (
-                window.KeyboardShortcuts &&
-                typeof window.KeyboardShortcuts.setContextResolver === 'function'
-            ) {
-                window.KeyboardShortcuts.setContextResolver(() => {
+                    // Support both legacy adapter ({controller: {refresh}}) and new controller ({refresh})
                     try {
-                        const wm = window.WindowManager;
-                        const top =
-                            wm && typeof wm.getTopWindow === 'function' ? wm.getTopWindow() : null;
+                        const maybe = tabManager;
+                        const refreshFn = typeof maybe?.refresh === 'function'
+                            ? maybe.refresh.bind(maybe)
+                            : typeof maybe?.controller?.refresh === 'function'
+                                ? maybe.controller.refresh.bind(maybe.controller)
+                                : null;
+                        if (refreshFn)
+                            refreshFn();
+                    }
+                    catch { }
+                    const active = manager.getActiveInstance();
+                    if (active)
+                        this.showInstance(type, active.instanceId);
+                });
+                W.SessionManager.startAutoSave();
+            }
+            // Scope keyboard shortcuts by top window
+            if (W.KeyboardShortcuts &&
+                typeof W.KeyboardShortcuts.setContextResolver === 'function') {
+                W.KeyboardShortcuts.setContextResolver(() => {
+                    try {
+                        const wm = W.WindowManager;
+                        const top = wm && typeof wm.getTopWindow === 'function' ? wm.getTopWindow() : null;
                         const topId = top?.id || '';
-                        // Find matching integration by modalId
                         let match = 'global';
                         this.integrations.forEach((val, key) => {
-                            if (val && val.modalId === topId) {
+                            if (val && val.modalId === topId)
                                 match = key;
-                            }
                         });
                         return match;
-                    } catch {
+                    }
+                    catch {
                         return 'global';
                     }
                 });
             }
-
             this.isInitialized = true;
-            console.log('MultiInstanceIntegration: Setup complete');
         }
-
-        /**
-         * Setup Terminal modal integration
-         */
         setupTerminalIntegration() {
-            console.log('Setting up Terminal integration...');
-
-            // Create tab manager for terminal
-            const terminalTabManager = new window.WindowTabManager({
-                containerId: 'terminal-tabs-container',
-                instanceManager: window.TerminalInstanceManager,
-                onTabSwitch: instanceId => {
-                    // Set as active in manager first
-                    window.TerminalInstanceManager.setActiveInstance(instanceId);
-                    // Then show/hide instances
-                    this.showInstance('terminal', instanceId);
-                },
-                onTabClose: _instanceId => {
-                    // Instance will be destroyed by tab manager
-                },
-                onNewTab: () => {
-                    // Create a new terminal instance
-                    const count = window.TerminalInstanceManager.getInstanceCount();
-                    window.TerminalInstanceManager.createInstance({
-                        title: `Terminal ${count + 1}`,
-                    });
-                },
+            const W = window;
+            const manager = W.TerminalInstanceManager;
+            // Hook active switch to also update visibility
+            const origSetActive = manager.setActiveInstance.bind(manager);
+            manager.setActiveInstance = (id) => {
+                origSetActive(id);
+                this.showInstance('terminal', id);
+            };
+            // Hook destroy to ensure visibility and state stay consistent
+            const origDestroy = manager.destroyInstance.bind(manager);
+            manager.destroyInstance = (id) => {
+                origDestroy(id);
+                const remaining = manager.getAllInstances().length;
+                if (remaining > 0) {
+                    const active = manager.getActiveInstance();
+                    if (active)
+                        this.showInstance('terminal', active.instanceId);
+                }
+            };
+            const mount = document.getElementById('terminal-tabs-container');
+            if (!mount)
+                return;
+            const controller = W.WindowTabs.create(manager, mount, {
+                addButton: true,
+                onCreateInstanceTitle: () => `Terminal ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
             });
-
-            // Store integration info
             this.integrations.set('terminal', {
-                manager: window.TerminalInstanceManager,
-                tabManager: terminalTabManager,
+                manager,
+                tabManager: controller,
                 modalId: 'terminal-modal',
                 containerId: 'terminal-container',
             });
-
-            // Register keyboard shortcuts for Terminal (after integration is stored)
-            this.registerShortcutsForType('terminal', window.TerminalInstanceManager);
-
-            // Listen for new instances and add tabs
+            this.registerShortcutsForType('terminal', manager);
+            // Ensure the current active instance is visible in the UI
+            this.updateInstanceVisibility('terminal');
+            // Ensure visibility after future instance creations
             this.setupInstanceListeners('terminal');
         }
-
-        /**
-         * Setup Text Editor modal integration
-         */
         setupTextEditorIntegration() {
-            console.log('Setting up TextEditor integration...');
-
-            // Create tab manager for text editor
-            const editorTabManager = new window.WindowTabManager({
-                containerId: 'text-editor-tabs-container',
-                instanceManager: window.TextEditorInstanceManager,
-                onTabSwitch: instanceId => {
-                    // Set as active in manager first
-                    window.TextEditorInstanceManager.setActiveInstance(instanceId);
-                    // Then show/hide instances
-                    this.showInstance('text-editor', instanceId);
-                },
-                onTabClose: _instanceId => {
-                    // Instance will be destroyed by tab manager
-                },
-                onNewTab: () => {
-                    // Create a new text editor instance
-                    const count = window.TextEditorInstanceManager.getInstanceCount();
-                    window.TextEditorInstanceManager.createInstance({
-                        title: `Editor ${count + 1}`,
-                    });
-                },
+            const W = window;
+            const manager = W.TextEditorInstanceManager;
+            const origSetActive = manager.setActiveInstance.bind(manager);
+            manager.setActiveInstance = (id) => {
+                origSetActive(id);
+                this.showInstance('text-editor', id);
+            };
+            const origDestroy = manager.destroyInstance.bind(manager);
+            manager.destroyInstance = (id) => {
+                origDestroy(id);
+                const remaining = manager.getAllInstances().length;
+                if (remaining > 0) {
+                    const active = manager.getActiveInstance();
+                    if (active)
+                        this.showInstance('text-editor', active.instanceId);
+                }
+            };
+            const mount = document.getElementById('text-editor-tabs-container');
+            if (!mount)
+                return;
+            const controller = W.WindowTabs.create(manager, mount, {
+                addButton: true,
+                onCreateInstanceTitle: () => `Editor ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
             });
-
-            // Store integration info
             this.integrations.set('text-editor', {
-                manager: window.TextEditorInstanceManager,
-                tabManager: editorTabManager,
+                manager,
+                tabManager: controller,
                 modalId: 'text-modal',
                 containerId: 'text-editor-container',
             });
-
-            // Register keyboard shortcuts for Text Editor (after integration is stored)
-            this.registerShortcutsForType('text-editor', window.TextEditorInstanceManager);
-
-            // Listen for new instances and add tabs
+            this.registerShortcutsForType('text-editor', manager);
+            this.updateInstanceVisibility('text-editor');
             this.setupInstanceListeners('text-editor');
         }
-
-        /**
-         * Setup Finder modal integration
-         */
         setupFinderIntegration() {
-            console.log('Setting up Finder integration...');
-
-            // Create tab manager for finder
-            const finderTabManager = new window.WindowTabManager({
-                containerId: 'finder-tabs-container',
-                instanceManager: window.FinderInstanceManager,
-                onTabSwitch: instanceId => {
-                    // Set as active in manager first
-                    window.FinderInstanceManager.setActiveInstance(instanceId);
-                    // Then show/hide instances
-                    this.showInstance('finder', instanceId);
-                },
-                onTabClose: _instanceId => {
-                    // Instance will be destroyed by tab manager
-                },
-                onNewTab: () => {
-                    // Create a new finder instance
-                    const count = window.FinderInstanceManager.getInstanceCount();
-                    window.FinderInstanceManager.createInstance({
-                        title: `Finder ${count + 1}`,
-                    });
-                },
-                // Close the Finder modal if the last tab was closed
-                onAllTabsClosed: () => {
-                    if (window.API?.window?.close) {
-                        window.API.window.close('finder-modal');
-                    } else {
-                        const modal = document.getElementById('finder-modal');
-                        if (modal) modal.classList.add('hidden');
+            const W = window;
+            const manager = W.FinderInstanceManager;
+            const origSetActive = manager.setActiveInstance.bind(manager);
+            manager.setActiveInstance = (id) => {
+                origSetActive(id);
+                this.showInstance('finder', id);
+            };
+            const origDestroy = manager.destroyInstance.bind(manager);
+            manager.destroyInstance = (id) => {
+                origDestroy(id);
+                const remaining = manager.getAllInstances().length;
+                if (remaining === 0) {
+                    try {
+                        const API = window.API;
+                        if (API?.window?.close)
+                            API.window.close('finder-modal');
+                        else
+                            document.getElementById('finder-modal')?.classList.add('hidden');
                     }
-                },
+                    catch { }
+                }
+                else {
+                    const active = manager.getActiveInstance();
+                    if (active)
+                        this.showInstance('finder', active.instanceId);
+                }
+            };
+            const mount = document.getElementById('finder-tabs-container');
+            if (!mount)
+                return;
+            const controller = W.WindowTabs.create(manager, mount, {
+                addButton: true,
+                onCreateInstanceTitle: () => `Finder ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
             });
-
-            // Store integration info
             this.integrations.set('finder', {
-                manager: window.FinderInstanceManager,
-                tabManager: finderTabManager,
+                manager,
+                tabManager: controller,
                 modalId: 'finder-modal',
                 containerId: 'finder-container',
             });
-
-            // Register keyboard shortcuts for Finder (after integration is stored)
-            this.registerShortcutsForType('finder', window.FinderInstanceManager);
-
-            // Listen for new instances and add tabs
+            this.registerShortcutsForType('finder', manager);
+            this.updateInstanceVisibility('finder');
             this.setupInstanceListeners('finder');
         }
-
-        /**
-         * Setup listeners for instance creation/destruction
-         * @param {string} type - Instance type
-         */
         setupInstanceListeners(type) {
             const integration = this.integrations.get(type);
-            if (!integration) return;
-
-            const { manager, tabManager, containerId: _containerId } = integration;
-
-            // Listen for instance creation (via manager)
+            if (!integration)
+                return;
+            const { manager } = integration;
             const originalCreate = manager.createInstance.bind(manager);
-            manager.createInstance = config => {
+            manager.createInstance = (config) => {
                 const instance = originalCreate(config);
-                if (instance) {
-                    // Add tab for this instance
-                    tabManager.addTab(instance);
-
-                    // Show/hide instances based on active state
-                    this.updateInstanceVisibility(type);
+                // After create, prefer showing the active; otherwise show the created one
+                const active = manager.getActiveInstance();
+                if (active) {
+                    this.showInstance(type, active.instanceId);
+                }
+                else if (instance) {
+                    this.showInstance(type, instance.instanceId);
                 }
                 return instance;
             };
-
-            // Listen for instance destruction (via manager)
-            const originalDestroy = manager.destroyInstance.bind(manager);
-            manager.destroyInstance = instanceId => {
-                originalDestroy(instanceId);
-                // After destruction, force tab UI refresh to ensure sync
-                if (
-                    tabManager &&
-                    tabManager.controller &&
-                    typeof tabManager.controller.refresh === 'function'
-                ) {
-                    tabManager.controller.refresh();
-                }
-            };
         }
-
-        /**
-         * Show a specific instance and hide others
-         * @param {string} type - Instance type
-         * @param {string} instanceId - Instance ID to show
-         */
         showInstance(type, instanceId) {
             const integration = this.integrations.get(type);
-            if (!integration) return;
-
+            if (!integration)
+                return;
             const instances = integration.manager.getAllInstances();
-            instances.forEach(instance => {
-                if (instance.instanceId === instanceId) {
-                    instance.show();
-                } else {
-                    instance.hide();
-                }
+            instances.forEach(inst => {
+                if (inst.instanceId === instanceId)
+                    inst.show?.();
+                else
+                    inst.hide?.();
             });
         }
-
-        /**
-         * Update visibility of all instances for a type
-         * @param {string} type - Instance type
-         */
         updateInstanceVisibility(type) {
             const integration = this.integrations.get(type);
-            if (!integration) return;
-
-            const activeInstance = integration.manager.getActiveInstance();
-            if (activeInstance) {
-                this.showInstance(type, activeInstance.instanceId);
+            if (!integration)
+                return;
+            const active = integration.manager.getActiveInstance();
+            if (active) {
+                this.showInstance(type, active.instanceId);
+            }
+            else {
+                const all = integration.manager.getAllInstances();
+                if (all.length > 0) {
+                    const firstId = all[0]?.instanceId;
+                    if (firstId) {
+                        // Ensure a consistent active selection
+                        integration.manager.setActiveInstance(firstId);
+                        this.showInstance(type, firstId);
+                    }
+                }
             }
         }
-
-        /**
-         * Register keyboard shortcuts for a window type
-         * @param {string} type - Window type
-         * @param {InstanceManager} manager - Instance manager
-         */
         registerShortcutsForType(type, manager) {
-            // Get the modal element to scope shortcuts to
-            const integration = this.integrations.get(type);
-            const modalId = integration?.modalId;
-            if (!modalId) {
-                console.error(`Cannot register shortcuts for ${type}: no modalId found`);
+            const W = window;
+            const modalId = this.integrations.get(type)?.modalId;
+            const modalEl = modalId ? document.getElementById(modalId) : null;
+            if (!modalEl) {
+                console.error(`Cannot register shortcuts for ${type}: modal ${modalId} not found`);
                 return;
             }
-
-            const modalElement = document.getElementById(modalId);
-            if (!modalElement) {
-                console.error(
-                    `Cannot register shortcuts for ${type}: modal element ${modalId} not found`
-                );
-                return;
-            }
-
-            console.log(`Registering shortcuts for ${type} on modal ${modalId}`, modalElement);
-
-            // Use manager-style registration scoped to document
-            // Modal-scoped registration doesn't work because keyboard events require element focus
-            // Instead, we rely on the manager's instance state to determine if shortcuts should fire
-            const unregister = window.KeyboardShortcuts.register(manager, {
+            const unregister = W.KeyboardShortcuts.register(manager, {
                 scope: document,
                 newTitleFactory: () => `${type} ${manager.getInstanceCount() + 1}`,
             });
-
-            console.log(`Successfully registered shortcuts for ${type}`);
-
-            // Store unregister function for cleanup if needed
-            if (integration) {
-                integration.unregisterShortcuts = unregister;
-            }
-        }
-
-        /**
-         * Get integration for a type
-         * @param {string} type
-         * @returns {Object|null}
-         */
-        getIntegration(type) {
-            return this.integrations.get(type) || null;
+            const rec = this.integrations.get(type);
+            if (rec)
+                rec.unregisterShortcuts = unregister;
         }
     }
-
-    // Create singleton instance
+    // Create and expose singleton (retain both names for compatibility)
     const integration = new MultiInstanceIntegration();
-
-    // Export to global scope
     window.MultiInstanceIntegration = integration;
-
-    // Auto-initialize
+    window.multiInstanceIntegration = integration;
     integration.init();
 })();
-
+//# sourceMappingURL=multi-instance-integration.js.map

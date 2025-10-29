@@ -39,6 +39,9 @@ import '../image-viewer-utils';
 import '../logger';
 import '../keyboard-shortcuts';
 import '../github-api';
+// Include compiled Photos App JS into the bundle to expose window.PhotosApp
+// Using the compiled JS avoids TS encoding issues and ensures identical runtime behavior
+import '../photos-app';
 
 // Legacy JS modules (copied to src/ts/legacy/ for esbuild compatibility)
 import '../legacy/window-configs.js'; // Must load before windows are registered

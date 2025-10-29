@@ -129,6 +129,45 @@ console.log('ActionBus loaded');
     };
     // Standard-Actions registrieren
     ActionBus.registerAll({
+        // Preview: generischer Öffnen-Handler (unterstützt direkte URLs oder Delegation an Finder)
+        openWithPreview: (params) => {
+            try {
+                // 1) Direkte URL-Übergabe (ein Bild)
+                const single = (params['url'] || params['src'] || params['imageUrl']);
+                // 2) Liste als CSV
+                const csv = (params['urls'] || params['images']);
+                // 3) Startindex
+                const idx = parseInt((params['index'] || '0'), 10) || 0;
+                // 4) Pfad (Anzeigezwecke)
+                const path = (params['path'] || params['imagePath']);
+                const W = window;
+                if (single) {
+                    const list = [single];
+                    if (W.PreviewInstanceManager?.openImages) {
+                        W.PreviewInstanceManager.openImages(list, 0, path);
+                    }
+                    return;
+                }
+                if (csv) {
+                    const list = csv
+                        .split(',')
+                        .map(s => s.trim())
+                        .filter(Boolean);
+                    if (list.length && W.PreviewInstanceManager?.openImages) {
+                        W.PreviewInstanceManager.openImages(list, Math.max(0, Math.min(idx, list.length - 1)), path);
+                    }
+                    return;
+                }
+                // Fallback: Falls aus Finder mit Item-Name aufgerufen
+                const itemName = (params['itemName'] || params['name']);
+                if (itemName && W.FinderSystem?.openItem) {
+                    W.FinderSystem.openItem(itemName, 'file');
+                }
+            }
+            catch (e) {
+                console.warn('openWithPreview failed:', e);
+            }
+        },
         // Fenster schließen
         closeWindow: (params) => {
             const windowId = params.windowId;
