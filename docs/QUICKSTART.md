@@ -6,27 +6,45 @@ Schnell lauffähig werden und die wichtigsten Konzepte der neuen Architektur nut
 
 ## Lokales Setup
 
-Option A – VS Code Tasks (empfohlen):
+### Option A – VS Code Tasks (empfohlen):
 
-1. Öffne den Befehlspaletten-Eintrag "Tasks: Run Task" → "Dev Environment: Start All"
-    - Startet: Tailwind Watch, TypeScript Watch, Dev Server
-2. Öffne http://127.0.0.1:5173
+**Vollautomatisch**: Task **"Dev Environment: Start All (Bundle)"** starten
 
-Option B – Manuell in Terminals:
+- ✅ Tailwind CSS Watch (automatisches CSS-Build)
+- ✅ TypeScript Type-Check Watch (Fehlerprüfung)
+- ✅ **TypeScript Build Watch (TS → JS auto-compile)**
+- ✅ **Bundle Watch (app.bundle.js auto-build)**
+- ✅ Dev Server (Live-Reload auf http://127.0.0.1:5173)
 
-1. CSS Watch
+**Alle .ts-Änderungen werden automatisch kompiliert!**
+
+### Option B – Manuell in Terminals:
+
+1. **TypeScript Build Watch** (wichtig!)
+
+```bash
+npm run build:ts:watch
+```
+
+2. CSS Watch
 
 ```bash
 npm run watch:css
 ```
 
-2. TypeScript Watch (nur wenn du TS-Quellcode änderst)
+3. TypeScript Type-Check (optional, nur für Fehlerprüfung)
 
 ```bash
 npm run typecheck:watch
 ```
 
-3. Dev Server
+4. Bundle Watch (optional, für E2E-Tests)
+
+```bash
+npm run dev:bundle
+```
+
+5. Dev Server
 
 ```bash
 npm run dev
