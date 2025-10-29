@@ -4,6 +4,8 @@
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { triggerAutoSave } from './utils/auto-save-helper.js';
+
 export type EventCallback = (data?: any) => void;
 
 export interface BaseWindowConfig {
@@ -348,15 +350,7 @@ console.log('BaseWindowInstance loaded');
         }
         
         private _triggerAutoSave(): void {
-            const w = window as unknown as Record<string, unknown>;
-            const SessionManager = w.SessionManager as Record<string, unknown> | undefined;
-            if (SessionManager && typeof SessionManager.saveInstanceType === 'function') {
-                try {
-                    (SessionManager.saveInstanceType as (type: string) => void)(this.type);
-                } catch (error) {
-                    console.warn('Failed to trigger auto-save:', error);
-                }
-            }
+            triggerAutoSave(this.type);
         }
 
         getState(): Record<string, unknown> {

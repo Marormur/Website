@@ -660,28 +660,16 @@ console.log('FinderInstance loaded');
                 // Emit event for file opening (can be handled by parent)
                 this.emit('fileOpened', { name, path: [...this.currentPath, name].join('/') });
 
-                // If in GitHub view and image file, open Preview
+                // If in GitHub view and image file, open image viewer
                 if (this.currentView === 'github') {
                     const item = this.lastGithubItemsMap.get(name);
                     const isImage = /\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(name);
                     if (item && isImage && item.download_url) {
-                        // Collect all images in current folder
-                        const allImages = [];
-                        let startIndex = 0;
-                        let idx = 0;
-                        this.lastGithubItemsMap.forEach((entry, key) => {
-                            if (/\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(key) && entry.download_url) {
-                                if (key === name) startIndex = idx;
-                                allImages.push(entry.download_url);
-                                idx++;
-                            }
+                        // Open image viewer with the image
+                        this.openImageViewer({
+                            src: item.download_url,
+                            name: name
                         });
-
-                        // Open Preview with all images
-                        if (window.PreviewInstanceManager && typeof window.PreviewInstanceManager.openImages === 'function') {
-                            const fullPath = [...this.currentPath, name].join('/');
-                            window.PreviewInstanceManager.openImages(allImages, startIndex, fullPath);
-                        }
                     }
                 }
             }

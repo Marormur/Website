@@ -8672,6 +8672,9 @@ ${selectedText}
                     window.LaunchpadSystem.init(container);
                   }
                 }
+                if (window.LaunchpadSystem && typeof window.LaunchpadSystem.refresh === "function") {
+                  window.LaunchpadSystem.refresh();
+                }
               }
             }
           },
@@ -8732,7 +8735,14 @@ ${selectedText}
             type: "persistent",
             programKey: "programs.photos",
             icon: "./img/photos-app-icon.svg",
-            closeButtonId: "close-image-modal"
+            closeButtonId: "close-image-modal",
+            metadata: {
+              initHandler: function() {
+                if (window.PhotosApp && typeof window.PhotosApp.init === "function") {
+                  window.PhotosApp.init();
+                }
+              }
+            }
           },
           {
             id: "program-info-modal",
@@ -9356,20 +9366,10 @@ ${selectedText}
                 const item = this.lastGithubItemsMap.get(name);
                 const isImage = /\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(name);
                 if (item && isImage && item.download_url) {
-                  const allImages = [];
-                  let startIndex = 0;
-                  let idx = 0;
-                  this.lastGithubItemsMap.forEach((entry, key) => {
-                    if (/\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(key) && entry.download_url) {
-                      if (key === name) startIndex = idx;
-                      allImages.push(entry.download_url);
-                      idx++;
-                    }
+                  this.openImageViewer({
+                    src: item.download_url,
+                    name
                   });
-                  if (window.PreviewInstanceManager && typeof window.PreviewInstanceManager.openImages === "function") {
-                    const fullPath = [...this.currentPath, name].join("/");
-                    window.PreviewInstanceManager.openImages(allImages, startIndex, fullPath);
-                  }
                 }
               }
             }

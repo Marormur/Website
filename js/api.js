@@ -141,6 +141,16 @@ console.log('API loaded');
             getActiveLanguage: () => callWindowMethod('appI18n', 'getActiveLanguage') || 'en',
             applyTranslations: () => callWindowMethod('appI18n', 'applyTranslations'),
         },
+        session: createModuleProxy('SessionManager', [
+            'init',
+            'saveAll',
+            'saveInstanceType',
+            'restoreSession',
+            'clear',
+            'setDebounceDelay',
+            'getDebounceDelay',
+            'getStats',
+        ]),
         helpers: {
             getMenuBarBottom: () => {
                 const header = document.querySelector('body > header');

@@ -57,6 +57,7 @@ require("../dialog");
 require("../menubar-utils");
 require("../context-menu");
 require("../storage");
+require("../session-manager"); // Auto-save system for instances
 require("../theme");
 require("../base-window-instance"); // Must come before instance types
 require("../instance-manager");

@@ -92,6 +92,10 @@ console.log('Window Configurations loaded');
                             window.LaunchpadSystem.init(container);
                         }
                     }
+                    // Refresh apps list every time Launchpad opens to ensure current state
+                    if (window.LaunchpadSystem && typeof window.LaunchpadSystem.refresh === 'function') {
+                        window.LaunchpadSystem.refresh();
+                    }
                 },
             },
         },
@@ -158,6 +162,14 @@ console.log('Window Configurations loaded');
             programKey: 'programs.photos',
             icon: './img/photos-app-icon.svg',
             closeButtonId: 'close-image-modal',
+            metadata: {
+                initHandler: function () {
+                    // Initialize Photos App when modal opens
+                    if (window.PhotosApp && typeof window.PhotosApp.init === 'function') {
+                        window.PhotosApp.init();
+                    }
+                },
+            },
         },
         {
             id: 'program-info-modal',
