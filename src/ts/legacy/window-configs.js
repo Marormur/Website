@@ -105,6 +105,10 @@ console.log('Window Configurations loaded');
                             window.LaunchpadSystem.init(container);
                         }
                     }
+                    // Refresh apps list every time Launchpad opens to ensure current state
+                    if (window.LaunchpadSystem && typeof window.LaunchpadSystem.refresh === 'function') {
+                        window.LaunchpadSystem.refresh();
+                    }
                 },
             },
         },
