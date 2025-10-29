@@ -32,7 +32,7 @@ function t(key, fallback, params) {
         orientationCounts: { landscape: 0, portrait: 0, square: 0 },
     };
     const elements = {
-        modal: null,
+        container: null,
         sidebar: null,
         gallery: null,
         loading: null,
@@ -67,17 +67,204 @@ function t(key, fallback, params) {
         countLandscape: null,
         countPortrait: null,
         countSquare: null,
+        titlebar: null,
+        statusbar: null,
     };
     function isExternalPhoto(photo) {
         return photo.isExternal === true;
+    }
+    function renderWindow() {
+        const WindowChrome = globalWindow.WindowChrome;
+        if (!WindowChrome) {
+            console.error('WindowChrome not available');
+            return null;
+        }
+        const { frame, titlebar, content, statusbar } = WindowChrome.createWindowFrame({
+            title: t('photos.title', 'Fotos'),
+            icon: './img/fotos.png',
+            showClose: true,
+            showMinimize: false,
+            showMaximize: false,
+            onClose: () => {
+                globalWindow.API?.window?.close?.('photos-window');
+            },
+            toolbar: [
+                {
+                    label: '',
+                    icon: `<div class="relative flex-1 sm:flex-initial min-w-[200px]">
+                        <input id="photos-search" type="search" placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}" 
+                            class="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                        <button id="photos-search-clear" type="button" class="absolute inset-y-0 right-2 flex items-center text-xl text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 invisible pointer-events-none" 
+                            title="${t('photos.search.clear', 'Suche löschen')}">×</button>
+                    </div>`,
+                },
+                { type: 'separator' },
+                {
+                    label: '',
+                    icon: `<div class="flex bg-gray-200 dark:bg-gray-800 rounded-full p-1 text-sm font-medium text-gray-600 dark:text-gray-300 shadow-inner" role="group">
+                        <button type="button" data-photos-segment="moments" class="photos-segment-button">${t('photos.segments.moments', 'Momente')}</button>
+                        <button type="button" data-photos-segment="collections" class="photos-segment-button">${t('photos.segments.collections', 'Sammlungen')}</button>
+                        <button type="button" data-photos-segment="years" class="photos-segment-button">${t('photos.segments.years', 'Jahre')}</button>
+                    </div>`,
+                },
+            ],
+            showStatusBar: true,
+            statusBarLeft: t('photos.status.countPlaceholder', '– Fotos'),
+            statusBarRight: '',
+        });
+        // Store references
+        elements.titlebar = titlebar;
+        elements.statusbar = statusbar;
+        // Build sidebar
+        const sidebar = document.createElement('aside');
+        sidebar.className = 'hidden md:flex flex-col w-56 border-r border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/60';
+        sidebar.innerHTML = `
+            <div class="px-5 pt-6 pb-4">
+                <p class="text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">${t('photos.sidebar.library', 'Bibliothek')}</p>
+                <nav class="mt-4 space-y-1" id="photos-sidebar">
+                    <button type="button" data-photos-filter="all" class="photos-sidebar-button">
+                        <span>${t('photos.sidebar.items.all', 'Alle Fotos')}</span>
+                        <span id="photos-count-all" class="photos-sidebar-count">–</span>
+                    </button>
+                    <button type="button" data-photos-filter="favorites" class="photos-sidebar-button">
+                        <span>${t('photos.sidebar.items.favorites', 'Favoriten')}</span>
+                        <span id="photos-count-favorites" class="photos-sidebar-count">0</span>
+                    </button>
+                </nav>
+                <p class="text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mt-6">${t('photos.sidebar.filters', 'Filter')}</p>
+                <nav class="mt-4 space-y-1">
+                    <button type="button" data-photos-filter="landscape" class="photos-sidebar-button">
+                        <span>${t('photos.sidebar.items.landscape', 'Querformat')}</span>
+                        <span id="photos-count-landscape" class="photos-sidebar-count">–</span>
+                    </button>
+                    <button type="button" data-photos-filter="portrait" class="photos-sidebar-button">
+                        <span>${t('photos.sidebar.items.portrait', 'Hochformat')}</span>
+                        <span id="photos-count-portrait" class="photos-sidebar-count">–</span>
+                    </button>
+                    <button type="button" data-photos-filter="square" class="photos-sidebar-button">
+                        <span>${t('photos.sidebar.items.square', 'Quadratisch')}</span>
+                        <span id="photos-count-square" class="photos-sidebar-count">–</span>
+                    </button>
+                </nav>
+            </div>
+            <div class="px-5 pb-6 mt-auto">
+                <button id="photos-refresh" type="button" class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 transition hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-400 dark:hover:text-blue-300">
+                    <span aria-hidden="true">↻</span>
+                    <span>${t('photos.sidebar.refresh', 'Neu laden')}</span>
+                </button>
+                <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-3 leading-relaxed">${t('photos.sidebar.sourceNote', 'Quelle: Lorem Picsum – zufällige kuratierte Fotokollektionen.')}</p>
+            </div>
+        `;
+        // Build main area
+        const mainArea = document.createElement('div');
+        mainArea.className = 'flex-1 flex flex-col min-h-0 relative';
+        mainArea.innerHTML = `
+            <div class="flex-1 relative min-h-0">
+                <div id="photos-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 hidden">
+                    <div class="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300">
+                        <span class="h-10 w-10 border-4 border-gray-300 dark:border-gray-700 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin"></span>
+                        <span class="text-sm font-medium">${t('photos.status.loading', 'Lade Fotos…')}</span>
+                    </div>
+                </div>
+                <div id="photos-error" class="absolute inset-x-0 top-6 mx-auto max-w-lg bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-200 rounded-2xl shadow px-5 py-4 hidden">
+                    <p class="font-semibold mb-1">${t('photos.errors.heading', 'Fehler beim Laden')}</p>
+                    <p class="text-sm">${t('photos.errors.description', 'Bitte überprüfe deine Verbindung und versuche es erneut.')}</p>
+                    <button id="photos-error-retry" type="button" class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-100 underline decoration-dotted">${t('photos.buttons.retry', 'Erneut versuchen')}</button>
+                </div>
+                <div id="photos-gallery" class="absolute inset-0 overflow-y-auto px-5 sm:px-6 py-6 space-y-8"></div>
+                <div id="photos-empty" class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 hidden px-6">
+                    <div>
+                        <p class="text-lg font-semibold">${t('photos.empty.title', 'Keine Fotos gefunden')}</p>
+                        <p class="text-sm mt-1">${t('photos.empty.description', 'Passe Suche oder Filter an, um weitere Ergebnisse zu sehen.')}</p>
+                    </div>
+                </div>
+                <div id="image-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 hidden pointer-events-none">${t('photos.placeholder', 'Wähle ein Foto aus, um Details zu sehen.')}</div>
+            </div>
+        `;
+        // Detail overlay
+        const detailOverlay = document.createElement('div');
+        detailOverlay.id = 'photo-detail-overlay';
+        detailOverlay.className = 'absolute inset-0 hidden items-center justify-center px-4 py-10 bg-black/50 backdrop-blur-sm z-30';
+        detailOverlay.innerHTML = `
+            <div class="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full h-full flex flex-col">
+                <div class="flex items-center gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+                    <div class="flex-1 min-w-0">
+                        <p id="photo-detail-title" class="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">${t('photos.detail.titleFallback', 'Foto')}</p>
+                        <p id="photo-detail-meta" class="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate"></p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="photo-detail-favorite" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-medium transition hover:bg-gray-200 dark:hover:bg-gray-700">
+                            <span aria-hidden="true">♡</span>
+                            <span>${t('photos.detail.favoriteAdd', 'Zu Favoriten')}</span>
+                        </button>
+                        <a id="photo-detail-download" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-600 text-white text-sm font-medium transition hover:bg-blue-500" href="#" target="_blank" rel="noreferrer">${t('photos.detail.download', 'Herunterladen')}</a>
+                        <button id="photo-detail-close" type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-lg leading-none transition hover:bg-gray-200 dark:hover:bg-gray-700" title="${t('common.close', 'Schließen')}">×</button>
+                    </div>
+                </div>
+                <div class="flex-1 flex overflow-hidden">
+                    <button id="photo-detail-prev" type="button" class="hidden sm:flex items-center justify-center w-14 bg-transparent text-3xl text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition" title="${t('photos.detail.prev', 'Vorheriges Foto')}">‹</button>
+                    <div class="flex-1 relative bg-gray-50 dark:bg-gray-950 flex items-center justify-center overflow-hidden">
+                        <img id="image-viewer" class="max-w-full max-h-full object-contain" alt="${t('photos.detail.imageAlt', 'Ausgewähltes Foto')}" />
+                        <div id="photo-detail-loader" class="absolute inset-0 flex items-center justify-center bg-gray-900/40 text-white text-sm font-medium hidden">${t('photos.detail.loader', 'Foto wird geladen…')}</div>
+                    </div>
+                    <button id="photo-detail-next" type="button" class="hidden sm:flex items-center justify-center w-14 bg-transparent text-3xl text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition" title="${t('photos.detail.next', 'Nächstes Foto')}">›</button>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-800 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <div class="flex-1 min-w-[200px]">
+                        <p id="image-info" class="font-medium text-gray-700 dark:text-gray-200"></p>
+                        <p id="photo-detail-dimensions" class="text-xs text-gray-500 dark:text-gray-400 mt-1"></p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="photo-detail-counter" class="text-xs font-medium"></span>
+                        <a id="photo-detail-open" href="#" target="_blank" rel="noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">${t('photos.detail.openInBrowser', 'Im Browser öffnen')}</a>
+                    </div>
+                </div>
+            </div>
+        `;
+        // Combine layout
+        const container = document.createElement('div');
+        container.className = 'flex h-full';
+        container.appendChild(sidebar);
+        container.appendChild(mainArea);
+        content.appendChild(container);
+        content.appendChild(detailOverlay);
+        return frame;
     }
     function init() {
         if (state.initialized) {
             return;
         }
         state.initialized = true;
+        // Check if we're in WindowChrome mode
+        const photosWindow = document.getElementById('photos-window');
+        if (!photosWindow) {
+            // Create and inject WindowChrome UI
+            const frame = renderWindow();
+            if (!frame) {
+                console.error('Failed to render photos window');
+                return;
+            }
+            // Find or create container
+            let container = document.getElementById('photos-window');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'photos-window';
+                container.className = 'fixed inset-0 flex items-center justify-center hidden modal relative';
+                container.style.zIndex = '1000';
+                document.body.appendChild(container);
+            }
+            // Inject frame
+            const wrapper = document.createElement('div');
+            wrapper.className = 'w-[min(90vw,1100px)] h-[min(85vh,780px)]';
+            wrapper.appendChild(frame);
+            container.appendChild(wrapper);
+            elements.container = container;
+        }
+        else {
+            elements.container = photosWindow;
+        }
         cacheElements();
-        if (!elements.modal || !elements.gallery) {
+        if (!elements.gallery) {
             return;
         }
         wireSidebar();
@@ -85,46 +272,48 @@ function t(key, fallback, params) {
         wireSearch();
         wireGallery();
         wireDetail();
-        globalWindow.appI18n?.applyTranslations?.(elements.modal ?? undefined);
+        globalWindow.appI18n?.applyTranslations?.(elements.container ?? undefined);
         void fetchPhotos();
     }
     function cacheElements() {
-        elements.modal = document.getElementById('image-modal');
-        elements.sidebar = document.getElementById('photos-sidebar');
-        elements.gallery = document.getElementById('photos-gallery');
-        elements.loading = document.getElementById('photos-loading');
-        elements.error = document.getElementById('photos-error');
-        elements.errorRetry = document.getElementById('photos-error-retry');
-        elements.empty = document.getElementById('photos-empty');
-        elements.placeholder = document.getElementById('image-placeholder');
-        elements.photoCount = document.getElementById('photo-count');
-        elements.refreshButton = document.getElementById('photos-refresh');
-        elements.searchInput = document.getElementById('photos-search');
-        elements.searchClear = document.getElementById('photos-search-clear');
-        elements.overlay = document.getElementById('photo-detail-overlay');
-        elements.detailTitle = document.getElementById('photo-detail-title');
-        elements.detailMeta = document.getElementById('photo-detail-meta');
-        elements.detailDimensions = document.getElementById('photo-detail-dimensions');
-        elements.detailCounter = document.getElementById('photo-detail-counter');
-        elements.detailOpen = document.getElementById('photo-detail-open');
-        elements.detailDownload = document.getElementById('photo-detail-download');
-        elements.detailFavorite = document.getElementById('photo-detail-favorite');
+        if (!elements.container) {
+            return;
+        }
+        elements.sidebar = elements.container.querySelector('#photos-sidebar') ?? null;
+        elements.gallery = elements.container.querySelector('#photos-gallery') ?? null;
+        elements.loading = elements.container.querySelector('#photos-loading') ?? null;
+        elements.error = elements.container.querySelector('#photos-error') ?? null;
+        elements.errorRetry = elements.container.querySelector('#photos-error-retry');
+        elements.empty = elements.container.querySelector('#photos-empty') ?? null;
+        elements.placeholder = elements.container.querySelector('#image-placeholder') ?? null;
+        elements.photoCount = elements.statusbar?.querySelector('.statusbar-left') ?? null;
+        elements.refreshButton = elements.container.querySelector('#photos-refresh');
+        elements.searchInput = elements.container.querySelector('#photos-search');
+        elements.searchClear = elements.container.querySelector('#photos-search-clear');
+        elements.overlay = elements.container.querySelector('#photo-detail-overlay') ?? null;
+        elements.detailTitle = elements.container.querySelector('#photo-detail-title') ?? null;
+        elements.detailMeta = elements.container.querySelector('#photo-detail-meta') ?? null;
+        elements.detailDimensions = elements.container.querySelector('#photo-detail-dimensions') ?? null;
+        elements.detailCounter = elements.container.querySelector('#photo-detail-counter') ?? null;
+        elements.detailOpen = elements.container.querySelector('#photo-detail-open');
+        elements.detailDownload = elements.container.querySelector('#photo-detail-download');
+        elements.detailFavorite = elements.container.querySelector('#photo-detail-favorite');
         elements.detailFavoriteLabel = elements.detailFavorite?.querySelector('span:last-child') ?? null;
         elements.detailFavoriteIcon = elements.detailFavorite?.querySelector('span[aria-hidden="true"]') ?? null;
-        elements.detailClose = document.getElementById('photo-detail-close');
-        elements.detailPrev = document.getElementById('photo-detail-prev');
-        elements.detailNext = document.getElementById('photo-detail-next');
-        elements.image = document.getElementById('image-viewer');
-        elements.imageInfo = document.getElementById('image-info');
-        elements.loader = document.getElementById('photo-detail-loader');
-        elements.countAll = document.getElementById('photos-count-all');
-        elements.countFavorites = document.getElementById('photos-count-favorites');
-        elements.countLandscape = document.getElementById('photos-count-landscape');
-        elements.countPortrait = document.getElementById('photos-count-portrait');
-        elements.countSquare = document.getElementById('photos-count-square');
+        elements.detailClose = elements.container.querySelector('#photo-detail-close');
+        elements.detailPrev = elements.container.querySelector('#photo-detail-prev');
+        elements.detailNext = elements.container.querySelector('#photo-detail-next');
+        elements.image = elements.container.querySelector('#image-viewer');
+        elements.imageInfo = elements.container.querySelector('#image-info') ?? null;
+        elements.loader = elements.container.querySelector('#photo-detail-loader') ?? null;
+        elements.countAll = elements.container.querySelector('#photos-count-all') ?? null;
+        elements.countFavorites = elements.container.querySelector('#photos-count-favorites') ?? null;
+        elements.countLandscape = elements.container.querySelector('#photos-count-landscape') ?? null;
+        elements.countPortrait = elements.container.querySelector('#photos-count-portrait') ?? null;
+        elements.countSquare = elements.container.querySelector('#photos-count-square') ?? null;
         const sidebarButtons = elements.sidebar?.querySelectorAll('button[data-photos-filter]') ?? [];
         elements.sidebarButtons = Array.from(sidebarButtons);
-        const segmentButtons = document.querySelectorAll('button[data-photos-segment]');
+        const segmentButtons = elements.container.querySelectorAll('button[data-photos-segment]');
         elements.segmentButtons = Array.from(segmentButtons);
     }
     function wireSidebar() {
@@ -476,9 +665,6 @@ function t(key, fallback, params) {
         elements.empty?.classList.toggle('hidden', !shouldShow);
     }
     function updatePhotoCount() {
-        if (!elements.photoCount) {
-            return;
-        }
         const total = state.filteredPhotos.length;
         const labelKey = total === 1 ? 'photos.labels.photoSingular' : 'photos.labels.photoPlural';
         const label = t(labelKey, total === 1 ? 'Photo' : 'Photos');
@@ -493,7 +679,15 @@ function t(key, fallback, params) {
                 ? 'Years'
                 : 'Moments';
         const segmentLabel = t(segmentKey, segmentFallback);
-        elements.photoCount.textContent = t('photos.status.count', `${total} ${label} ΓÇó ${segmentLabel}`, { count: total, label, segment: segmentLabel });
+        const statusText = t('photos.status.count', `${total} ${label} ΓÇó ${segmentLabel}`, { count: total, label, segment: segmentLabel });
+        // Update statusbar if available
+        if (elements.statusbar && globalWindow.WindowChrome) {
+            globalWindow.WindowChrome.updateStatusBar(elements.statusbar, 'left', statusText);
+        }
+        // Fallback for old photo-count element
+        if (elements.photoCount) {
+            elements.photoCount.textContent = statusText;
+        }
     }
     function updateSidebarCounts() {
         if (elements.countAll) {
@@ -799,7 +993,7 @@ function t(key, fallback, params) {
         else {
             updateCounter();
         }
-        globalWindow.appI18n?.applyTranslations?.(elements.modal ?? undefined);
+        globalWindow.appI18n?.applyTranslations?.(elements.container ?? undefined);
     }
     const api = {
         init,
@@ -807,11 +1001,11 @@ function t(key, fallback, params) {
     };
     globalWindow.PhotosApp = api;
     window.addEventListener('languagePreferenceChange', handleLanguageChange);
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init, { once: true });
-    }
-    else {
-        init();
-    }
+    // Don't auto-init - let WindowManager handle it
+    // if (document.readyState === 'loading') {
+    //     document.addEventListener('DOMContentLoaded', init, { once: true });
+    // } else {
+    //     init();
+    // }
 })();
 //# sourceMappingURL=photos-app.js.map

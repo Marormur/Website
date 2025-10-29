@@ -333,7 +333,6 @@ function updateDockIndicators() {
         { modalId: 'projects-modal', indicatorId: 'projects-indicator' },
         { modalId: 'settings-modal', indicatorId: 'settings-indicator' },
         { modalId: 'text-modal', indicatorId: 'text-indicator' },
-        { modalId: 'image-modal', indicatorId: 'image-indicator' },
     ];
     indicatorMappings.forEach(mapping => {
         const modal = document.getElementById(mapping.modalId);

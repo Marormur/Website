@@ -168,6 +168,23 @@ if ((window as any)[guardKey]) {
                                 (window as any).FinderSystem.openItem(itemName, itemType);
                         },
                     });
+
+                    // "Open with Preview" for image files
+                    const isImage = /\.(png|jpe?g|gif|bmp|webp|svg)$/i.test(itemName);
+                    if (isImage && itemType === 'file') {
+                        items.push({
+                            id: 'finder-open-with-preview',
+                            label: i18n.translate('context.finder.openWithPreview') || 'Öffnen mit Vorschau',
+                            action: () => {
+                                // Use ActionBus for simplicity
+                                const ab = (window as any).ActionBus;
+                                if (ab && typeof ab.execute === 'function') {
+                                    ab.execute('openWithPreview', { itemName });
+                                }
+                            },
+                        });
+                    }
+
                     items.push({ type: 'separator' });
                     items.push({
                         id: 'finder-get-info',

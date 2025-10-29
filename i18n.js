@@ -58,6 +58,7 @@
                 github: 'GitHub Projekte',
                 text: 'Texteditor',
                 image: 'Bildbetrachter',
+                photos: 'Fotos',
                 settings: 'Systemeinstellungen',
                 about: 'Über Marvin',
                 launchpad: 'Launchpad',
@@ -359,6 +360,16 @@
                         copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
                     },
                 },
+                photos: {
+                    label: 'Fotos',
+                    infoLabel: 'Über Fotos',
+                    about: {
+                        name: 'Fotos',
+                        tagline: 'Deine Bilder auf einen Klick.',
+                        version: 'Version 1.0',
+                        copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+                    },
+                },
                 about: {
                     label: 'Über Marvin',
                     infoLabel: 'Über dieses Fenster',
@@ -616,6 +627,7 @@
                 github: 'GitHub Projects',
                 text: 'Text editor',
                 image: 'Image viewer',
+                photos: 'Photos',
                 settings: 'System settings',
                 about: 'About Marvin',
                 launchpad: 'Launchpad',
@@ -875,6 +887,16 @@
                     about: {
                         name: 'Image viewer',
                         tagline: 'Preview screenshots and photos with ease.',
+                        version: 'Version 1.0',
+                        copyright: '© Marvin Temmen. All rights reserved.',
+                    },
+                },
+                photos: {
+                    label: 'Photos',
+                    infoLabel: 'About Photos',
+                    about: {
+                        name: 'Photos',
+                        tagline: 'Your images at a click.',
                         version: 'Version 1.0',
                         copyright: '© Marvin Temmen. All rights reserved.',
                     },

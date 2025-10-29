@@ -1,5 +1,16 @@
 # 2025-10-29
 
+### chore: Unpin Photos App from Dock; ensure Launchpad-only access
+  - **Removed**: Photos App (`image-modal`) from the Dock in `index.html`
+  - **Removed**: Dock indicator logic for `image-modal` from `src/ts/dock.ts`
+  - **Access**: Photos App now accessible only via Launchpad (not pinned in Dock)
+  - **Tests**: Added `tests/e2e/photos-launchpad-only.spec.js` to verify:
+    - Photos does NOT appear in Dock by default
+    - Photos DOES appear in Launchpad
+    - Photos can be opened from Launchpad
+    - Photos is searchable in Launchpad
+  - **Impact**: Cleaner Dock with fewer pinned apps; Launchpad becomes primary discovery surface for Photos
+
 ### docs: Remove Photos desktop shortcut
   - **Removed**: Photos desktop shortcut from `src/ts/desktop.ts`
   - **Reason**: Photos App is accessible via Dock and Launchpad; desktop shortcut is redundant
