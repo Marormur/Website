@@ -42,13 +42,10 @@
             console.log('[Module Loader] USE_BUNDLE:', window.USE_BUNDLE);
         </script>
 
-        <!-- i18n System -->
-        <script src="i18n.js"></script>
-
         <script>
             // Conditional loading: Either bundle OR individual scripts
             if (window.USE_BUNDLE) {
-                console.log('[Module Loader] Loading esbuild bundle...');
+                console.log('[Module Loader] Loading esbuild bundle (includes i18n)...');
                 document.write('<script src="./js/app.bundle.js"><\/script>');
             } else {
                 console.log('[Module Loader] Loading individual scripts...');
@@ -177,17 +174,7 @@
                             </button>
                         </li>
                         <li class="menu-separator" role="separator" aria-hidden="true"></li>
-                        <li role="none">
-                            <a
-                                href="./docs/api/index.html"
-                                target="_blank"
-                                class="menu-item menu-item-link"
-                                role="menuitem"
-                                tabindex="-1"
-                            >
-                                📖 API Docs
-                            </a>
-                        </li>
+                        <!-- API Docs Link entfernt: JSDoc wurde aus dem Build entfernt -->
                         <li role="none">
                             <a
                                 href="https://www.linkedin.com/in/marvin-temmen-788537216"
@@ -795,11 +782,6 @@
             >
                 <!-- Desktop icons are rendered dynamically -->
             </div>
-            <script type="module">
-                import { renderDesktopShortcuts } from './src/ts/desktop.ts';
-                const container = document.getElementById('desktop-icons');
-                if (container) renderDesktopShortcuts(container);
-            </script>
         </div>
         <!-- Finder Modal - Erweiterte Dateimanager -->
         <div id="finder-modal" class="fixed inset-0 hidden modal">
@@ -1622,10 +1604,7 @@
                         Finder
                     </span>
                     <img src="./img/sucher.png" alt="Finder Icon" class="dock-icon" />
-                    <span
-                        id="finder-indicator"
-                        class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"
-                    ></span>
+                    <span id="finder-indicator" class="hidden dock-indicator"></span>
                 </div>
                 <!-- Launchpad -->
                 <div
@@ -1640,10 +1619,7 @@
                         Launchpad
                     </span>
                     <img src="./img/launchpad.png" alt="Launchpad Icon" class="dock-icon" />
-                    <span
-                        id="launchpad-indicator"
-                        class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"
-                    ></span>
+                    <span id="launchpad-indicator" class="hidden dock-indicator"></span>
                 </div>
                 <!-- Texteditor -->
                 <div
@@ -1658,10 +1634,7 @@
                         Texteditor
                     </span>
                     <img src="./img/notepad.png" alt="Texteditor Icon" class="dock-icon" />
-                    <span
-                        id="text-indicator"
-                        class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"
-                    ></span>
+                    <span id="text-indicator" class="hidden dock-indicator"></span>
                 </div>
                 <!-- Terminal -->
                 <div
@@ -1676,10 +1649,7 @@
                         Terminal
                     </span>
                     <img src="./img/terminal.png" alt="Settings Icon" class="dock-icon" />
-                    <span
-                        id="terminal-indicator"
-                        class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"
-                    ></span>
+                    <span id="terminal-indicator" class="hidden dock-indicator"></span>
                 </div>
                 <!-- Einstellungen -->
                 <div
@@ -1694,10 +1664,7 @@
                         Systemeinstellungen
                     </span>
                     <img src="./img/settings.png" alt="Settings Icon" class="dock-icon" />
-                    <span
-                        id="settings-indicator"
-                        class="hidden absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-200"
-                    ></span>
+                    <span id="settings-indicator" class="hidden dock-indicator"></span>
                 </div>
             </div>
         </div>

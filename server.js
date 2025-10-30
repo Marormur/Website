@@ -172,6 +172,20 @@ server.listen(PORT, HOST, () => {
             }
         }, 30000).unref();
         console.log('[LR] Live reload enabled (SSE).');
+
+        // Graceful shutdown for Playwright tests
+        const cleanup = () => {
+            console.log('[LR] Shutting down file watcher...');
+            watcher.close();
+            for (const client of sseClients) {
+                try {
+                    client.end();
+                } catch (_) {}
+            }
+            sseClients.clear();
+        };
+        process.on('SIGTERM', cleanup);
+        process.on('SIGINT', cleanup);
     } catch (err) {
         console.log(
             '[LR] Live reload disabled (chokidar not installed). Run "npm i -D chokidar" to enable.'
