@@ -155,5 +155,56 @@ test.describe('Terminal Multi-Instance Tabs', () => {
             .getAttribute('data-instance-id');
         expect(firstTabId).toBe(initialOrder[2]);
     });
-});
 
+    test('Closing last Terminal tab closes the modal', async ({ page }) => {
+        // Terminal should be open with one tab
+        const tabs = page.locator('#terminal-tabs-container .wt-tab');
+        await expect(tabs).toHaveCount(1);
+
+        // Close the last tab
+        const closeBtn = tabs.nth(0).locator('.wt-tab-close');
+        await closeBtn.click();
+
+        // Modal should be hidden
+        await expect(page.locator('#terminal-modal')).toBeHidden({ timeout: 5000 });
+
+        // Verify no instances remain
+        const managerInfo = await page.evaluate(() => {
+            const mgr = window.TerminalInstanceManager;
+            return {
+                count: mgr ? mgr.getInstanceCount?.() || mgr.getAllInstances().length : -1,
+            };
+        });
+        expect(managerInfo.count).toBe(0);
+    });
+
+    test('Reopening Terminal after closing all tabs creates a new instance', async ({ page }) => {
+        // Close the initial tab
+        const tabs = page.locator('#terminal-tabs-container .wt-tab');
+        await expect(tabs).toHaveCount(1);
+        const closeBtn = tabs.nth(0).locator('.wt-tab-close');
+        await closeBtn.click();
+
+        // Modal should be hidden
+        await expect(page.locator('#terminal-modal')).toBeHidden({ timeout: 5000 });
+
+        // Reopen Terminal via Dock
+        const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
+        await terminalDockItem.click();
+        await expect(page.locator('#terminal-modal')).toBeVisible();
+
+        // Should have a new tab
+        await expect(page.locator('#terminal-tabs-container .wt-tab')).toHaveCount(1, {
+            timeout: 5000,
+        });
+
+        // Verify instance was created
+        const managerInfo = await page.evaluate(() => {
+            const mgr = window.TerminalInstanceManager;
+            return {
+                count: mgr ? mgr.getInstanceCount?.() || mgr.getAllInstances().length : -1,
+            };
+        });
+        expect(managerInfo.count).toBe(1);
+    });
+});

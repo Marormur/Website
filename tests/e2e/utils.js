@@ -21,24 +21,27 @@ async function gotoHome(page, baseURL) {
         }
     }
 
-    await page.goto(baseURL + '/index.html');
-    await page.waitForLoadState('load');
+    // Use networkidle for bundle mode to ensure large JS finishes loading
+    const waitUntil = process.env.USE_BUNDLE === '1' ? 'networkidle' : 'load';
+    await page.goto(baseURL + '/index.html', { waitUntil, timeout: 30000 });
 
+    // Wait for critical DOM elements
     await page.waitForSelector('#dock .dock-tray .dock-item', {
-        timeout: 10000,
+        timeout: 15000,
     });
 }
 
 // Wait for application readiness signaled by app-init.js
-async function waitForAppReady(page, timeout = 15000) {
+async function waitForAppReady(page, timeout = 20000) {
     // Optional: enable GitHub API mocks for smoke tests to avoid rate limits/flakiness
     await ensureGithubMocksIfRequested(page);
     // First ensure DOMContentLoaded at least
     try {
-        await page.waitForLoadState('domcontentloaded', { timeout: Math.min(timeout, 5000) });
+        await page.waitForLoadState('domcontentloaded', { timeout: Math.min(timeout, 8000) });
     } catch {
         /* ignore */
     }
+    // Wait for app readiness flag with extended timeout for bundle mode
     await page.waitForFunction(
         () => {
             // Prefer a strict boolean check
@@ -376,4 +379,3 @@ module.exports = {
     mockGithubRepoImageFlow,
     ensureGithubMocksIfRequested,
 };
-
