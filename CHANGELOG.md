@@ -1,3 +1,88 @@
+# CHANGELOG
+
+## [Unreleased]
+
+### Added
+### Docs
+
+- Entfernt: JSDoc aus Build und Dev-Setup. Keine API-HTML-Dokumentation mehr unter `./docs/api/`.
+- Entfernt: In-App-Link „📖 API Docs“ aus `index.html`.
+- Entfernt: VS Code Launch-Konfiguration "Chrome: Open API Docs".
+- Beibehalten: `npm run docs:clean` zum Aufräumen von `docs/api` (falls Altbestände vorhanden sind).
+
+
+- **Multi-Window Session Management** (Phase 6 - 30. Oktober 2025)
+  - Neues Session-System für Multi-Window-Architektur (`src/ts/multi-window-session.ts`)
+  - Schema `MultiWindowSession` mit vollständiger Window/Tab-Hierarchie, Positionen und Z-Index
+  - Automatisches Speichern bei Window/Tab-Änderungen (debounced, 2s)
+  - Session Restore beim Page Load (Windows in korrekter Reihenfolge, Tabs adoptieren, State wiederherstellen)
+  - Legacy-Migration von `windowInstancesSession` (altes Single-Instance-System) zu Multi-Window-Format
+  - Export/Import von Sessions als JSON
+  - Integration in `app-init.ts` mit Auto-Restore nach 150ms Delay
+  - Test-Controls in `test-multi-window.html` (Save/Load/Info/Clear Session Buttons)
+  - Bundle-Größe: 626.8 KB (vorher 611.0 KB, +15.8 KB für Session-Management)
+
+### Removed
+
+- `i18n.js` - Vollständig durch TypeScript-Version ersetzt
+  - Legacy-Fallback nicht mehr benötigt, da Bundle-Modus Standard ist
+  - Übersetzungen jetzt modular in `src/ts/i18n/de.ts` und `src/ts/i18n/en.ts`
+  - Non-bundle Modus lädt keine separate i18n.js mehr
+
+### Chore
+
+- Legacy-Root-Dateien aufgeräumt/entfernt:
+  - `.eslintignore` (Flat-Config verwendet; Ignorierungen liegen in `eslint.config.mjs`)
+  - `.eslintrc.json` (nicht mehr genutzt)
+  - `jsdoc.json`, `typedoc.json` (Dokugeneratoren entfernt)
+  - `debug-window-focus.js` (manuelles Debugging-Artefakt)
+  - `test-multi-window.html`, `test-window-focus.html` (ad-hoc Testseiten, durch E2E ersetzt)
+  - `verify-session-restore.js` (veraltetes Verifikationsskript)
+  - Hinweis: Referenzen in historischen Doku-Dateien bleiben als Archiv erhalten.
+
+# 2025-10-30
+
+### refactor: i18n System Migration - TypeScript Single Source of Truth (30. Oktober 2025)
+  - **Problem**: Duplikation und Inkonsistenz durch parallele Existenz von `i18n.js` (1300+ Zeilen) und `src/ts/i18n.ts` (delegierendes TypeScript-Modul)
+  - **Root Cause**:
+    - `i18n.js` war Legacy-Code, direkt im `<head>` geladen als globales `window.appI18n`
+    - `src/ts/i18n.ts` war Wrapper für TypeScript-Module mit eigenen Preview/Photos-Übersetzungen
+    - `src/ts/i18n.ts::translate()` musste an `window.appI18n.translate()` delegieren → fragiler Workaround
+    - Entwickler mussten entscheiden, wo neue Übersetzungen hinzugefügt werden → Verwirrung und Fehlerquelle
+  - **Solution - Complete TypeScript Migration**:
+    1. **i18n.ts als zentrale Source of Truth** (`src/ts/i18n.ts`):
+       - Komplette Migration von `i18n.js` → TypeScript (alle ~1300 Zeilen Übersetzungen)
+       - Vollständige Type-Safety: `LanguageCode`, `LanguagePreference`, `TranslationParams`, `AppI18n` Interface
+       - Behält alle Features: System Language Detection, localStorage Persistence, DOM Auto-Translation, Template Substitution
+       - Exponiert `window.appI18n` automatisch beim Modulload
+    2. **esbuild Bundle Integration** (`src/ts/compat/expose-globals.ts`):
+       - i18n.ts wird als ERSTES Modul geladen (vor constants, vor allen anderen Modulen)
+       - Sichert frühe Verfügbarkeit von `window.appI18n` für alle nachfolgenden Module
+    3. **Conditional Loading in index.html**:
+       - Bundle-Modus: TypeScript i18n.ts aus Bundle (keine separate i18n.js)
+       - Legacy-Modus: Weiterhin i18n.js laden (Backward-Kompatibilität)
+       - Kommentar dokumentiert, dass Bundle TypeScript-Version nutzt
+  - **Files Modified**:
+    - `src/ts/i18n.ts`: Komplett neu geschrieben – vollständige TypeScript-Migration aller Übersetzungen
+    - `src/ts/compat/expose-globals.ts`: `import '../i18n'` als erste Zeile hinzugefügt
+    - `index.html`: `i18n.js` nur im Legacy-Modus laden, Bundle enthält TypeScript-Version
+  - **Files Preserved (für Legacy-Modus)**:
+    - `i18n.js`: Bleibt für `?bundle=0` Modus erhalten (no-bundle Fallback)
+  - **Benefits**:
+    - ✅ **Single Source of Truth**: Alle Übersetzungen in einer Datei (`src/ts/i18n.ts`)
+    - ✅ **Type Safety**: Vollständige TypeScript-Typisierung für alle i18n-Calls
+    - ✅ **Keine Duplikation**: Keine parallelen Übersetzungs-Datenbanken mehr
+    - ✅ **Konsistenz**: Entwickler wissen genau, wo neue Übersetzungen hinzugefügt werden
+    - ✅ **Bessere Wartbarkeit**: TypeScript-Refactoring-Tools funktionieren jetzt für i18n-Keys
+  - **Impact**:
+    - Bundle-Modus (`?bundle=1`, Standard): Nutzt TypeScript i18n aus Bundle
+    - Legacy-Modus (`?bundle=0`): Nutzt weiterhin `i18n.js` (keine Breaking Changes)
+    - Alle bestehenden Übersetzungen bleiben identisch (1:1 Migration)
+  - **Migration Notes**:
+    - Backup erstellt: `src/ts/i18n.ts.backup` (alte Delegation-Version)
+    - i18n.js wird NICHT gelöscht (Legacy-Support für `?bundle=0`)
+    - Zukünftige Übersetzungen NUR in `src/ts/i18n.ts` hinzufügen
+
 # 2025-10-29
 
 ### docs: Copilot-Anleitung stark gekürzt (29. Oktober 2025)
