@@ -30,6 +30,6 @@
       "@/*": ["./js/*"]
     }
   },
-  "include": ["js/**/*.js", "js/**/*.ts", "app.js", "i18n.js", "types/**/*.d.ts"],
+  "include": ["js/**/*.js", "js/**/*.ts", "app.js", "types/**/*.d.ts"],
   "exclude": ["node_modules", "dist", "test-results", "tests"]
 }

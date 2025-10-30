@@ -1,17 +1,5 @@
 {
-  "plugins": [],
-  "source": {
-    "include": ["js"],
-    "includePattern": ".*\\.js$",
-    "excludePattern": "(node_modules|docs/api)"
-  },
-  "opts": {
-    "encoding": "utf8",
-    "destination": "docs/api",
-    "recurse": true
-  },
-  "templates": {
-    "cleverLinks": true,
-    "monospaceLinks": true
-  }
+  "deprecated": true,
+  "note": "JSDoc wurde aus dem Build entfernt. Diese Datei bleibt nur erhalten, um Tools nicht zu brechen, wird aber nicht mehr verwendet.",
+  "doNotUse": true
 }

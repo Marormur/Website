@@ -13,21 +13,22 @@ const BASE_URL = 'http://127.0.0.1:5173';
 
 export default defineConfig({
     testDir: './tests',
-    // Global timeouts kept modest to avoid long hangs while allowing for slower CI
+    // Reduced timeout for faster feedback - individual tests can override if needed
     timeout: 30 * 1000,
-    expect: { timeout: 7000 },
-    fullyParallel: true,
+    expect: { timeout: 8000 },
+    // Disable fullyParallel to ensure clean sequential execution with single worker
+    fullyParallel: false,
     forbidOnly: !!process.env.CI,
     // Mild retry locally to smooth out rare flakes; CI keeps 2
     retries: process.env.CI ? 2 : 1,
-    // Avoid excessive local parallelism which can cause flakiness with a simple dev server
-    workers: process.env.CI ? 1 : 2,
+    // Single worker to avoid server port conflicts
+    workers: 1,
     reporter: process.env.CI ? 'list' : 'line', // Less verbose output locally
     use: {
         baseURL: BASE_URL,
-        // Slightly more generous per-action/navigation timeouts for stability
+        // Balanced timeouts for bundle mode without excessive waiting
         actionTimeout: 10_000,
-        navigationTimeout: 20_000,
+        navigationTimeout: 25_000,
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
@@ -56,11 +57,14 @@ export default defineConfig({
               },
           ],
     // Always start the Node server on port 5173 for tests
-    // In CI, we need a fresh server; locally, we can reuse an existing one
+    // Reuse existing server locally for faster startup and shutdown
     webServer: {
         command: 'node server.js',
         url: 'http://127.0.0.1:5173',
         reuseExistingServer: !process.env.CI,
         timeout: 60 * 1000,
+        // Pipe output for debugging but don't wait indefinitely
+        stdout: 'pipe',
+        stderr: 'pipe',
     },
 });
