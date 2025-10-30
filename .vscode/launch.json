@@ -67,13 +67,6 @@
       "console": "integratedTerminal"
     },
     {
-      "name": "Chrome: Open API Docs",
-      "type": "chrome",
-      "request": "launch",
-      "url": "http://127.0.0.1:5173/docs/api/index.html",
-      "webRoot": "${workspaceFolder}"
-    },
-    {
       "name": "Firefox: Launch (File Protocol)",
       "type": "firefox",
       "request": "launch",

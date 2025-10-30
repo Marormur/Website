@@ -46,26 +46,6 @@
       }
     },
     {
-      "label": "TypeScript: Build",
-      "type": "shell",
-      "command": "npm run build:ts",
-      "problemMatcher": "$tsc",
-      "group": {
-        "kind": "build"
-      }
-    },
-    {
-      "label": "TypeScript: Build Watch",
-      "type": "shell",
-      "command": "npm run build:ts:watch",
-      "problemMatcher": "$tsc-watch",
-      "isBackground": true,
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
       "label": "E2E: Install Playwright browsers",
       "type": "shell",
       "command": "npm run pw:install",
@@ -121,13 +101,7 @@
     {
       "label": "E2E: Test (Bundle Mode - Quick)",
       "type": "shell",
-      "command": "npm run test:e2e:quick",
-      "options": {
-        "env": {
-          "USE_BUNDLE": "1",
-          "MOCK_GITHUB": "1"
-        }
-      },
+      "command": "USE_BUNDLE=1 MOCK_GITHUB=1 npm run test:e2e:quick",
       "problemMatcher": [],
       "group": {
         "kind": "test"
@@ -140,13 +114,7 @@
     {
       "label": "E2E: Test (Bundle Mode - Full)",
       "type": "shell",
-      "command": "npm run test:e2e",
-      "options": {
-        "env": {
-          "USE_BUNDLE": "1",
-          "MOCK_GITHUB": "1"
-        }
-      },
+      "command": "USE_BUNDLE=1 MOCK_GITHUB=1 npm run test:e2e",
       "problemMatcher": [],
       "group": {
         "kind": "test"
@@ -199,12 +167,7 @@
     },
     {
       "label": "Dev Environment: Start All",
-      "dependsOn": [
-        "Tailwind CSS: Watch",
-        "TypeScript: Watch",
-        "TypeScript: Build Watch",
-        "Start Dev Server"
-      ],
+      "dependsOn": ["Tailwind CSS: Watch", "TypeScript: Watch", "Start Dev Server"],
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
@@ -366,7 +329,6 @@
       "dependsOn": [
         "Tailwind CSS: Watch",
         "TypeScript: Watch",
-        "TypeScript: Build Watch",
         "Bundle: Watch",
         "Start Dev Server"
       ],
@@ -423,75 +385,6 @@
         "reveal": "always",
         "panel": "shared"
       }
-    },
-    {
-      "label": "Format: All",
-      "type": "shell",
-      "command": "npm run format",
-      "group": "build",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Lint: Fix All",
-      "type": "shell",
-      "command": "npm run lint:fix",
-      "group": "build",
-      "problemMatcher": "$eslint-stylish",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Type Coverage: Report",
-      "type": "shell",
-      "command": "npm run type:report",
-      "group": "build",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Bundle: Build",
-      "type": "shell",
-      "command": "npm run build:bundle",
-      "group": "build"
-    },
-    {
-      "label": "Quick Check (typecheck+lint)",
-      "type": "shell",
-      "command": "npm run typecheck ; npm run lint",
-      "group": "build"
-    },
-    {
-      "label": "Bundle: Build (on-demand)",
-      "type": "shell",
-      "command": "npm run build:bundle",
-      "group": "build"
-    },
-    {
-      "label": "Bundle: Build",
-      "type": "shell",
-      "command": "npm run build:bundle",
-      "group": "build"
-    },
-    {
-      "label": "Bundle: Build",
-      "type": "shell",
-      "command": "npm run build:bundle",
-      "group": "build"
-    },
-    {
-      "label": "Bundle: Build",
-      "type": "shell",
-      "command": "npm run build:bundle",
-      "group": "build"
     }
   ]
 }
