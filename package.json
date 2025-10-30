@@ -30,7 +30,7 @@
     "format:check": "prettier --check \"**/*.{js,css,html,md,json}\"",
     "validate": "npm run typecheck && npm run type:baseline && npm run build:ts && npm run lint && npm run build:css && npm run test:e2e",
     "docs:clean": "rimraf docs/api",
-    "docs:generate": "jsdoc -c jsdoc.json -r js/ -d docs/api",
+    "clean:legacy": "rimraf js/legacy",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -66,8 +66,6 @@
     "esbuild": "^0.23.0",
     "eslint": "^9.38.0",
     "husky": "^9.1.7",
-    "jsdoc": "^4.0.5",
-    "jsdoc-to-markdown": "^8.0.3",
     "lint-staged": "^16.2.6",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
