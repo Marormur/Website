@@ -40,6 +40,11 @@ logs/**
 # Tailwind CSS output is built by GitHub Actions during deployment
 dist/output.css
 
+# Generated JavaScript files (built in CI from src/ts/)
+js/**/*.js
+js/**/*.js.map
+!js/README.md
+
 # Logs
 *.log
 npm-debug.log*
