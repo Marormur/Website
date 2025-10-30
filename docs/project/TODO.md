@@ -126,6 +126,129 @@ Das Multi-Instance Window System ermöglicht mehrere Fenster des gleichen Typs g
 
 ---
 
+## ARCHITEKTUR-REFACTOR: Multi-Window System (30. Oktober 2025)
+
+> **Ziel**: Mehrere unabhängige Fenster mit je mehreren Tabs + Tab-Transfer zwischen Fenstern
+> **Scope**: Terminal, TextEditor, Finder
+> **Strategie**: Schrittweise Migration mit Parallel-System
+
+### Neue Architektur
+
+**Vorher (Single-Window mit Tabs):**
+
+```
+InstanceManager (global)
+  └─ Modal (1 Window)
+      ├─ Tab 1 (Instance)
+      ├─ Tab 2 (Instance)
+      └─ Tab 3 (Instance)
+```
+
+**Nachher (Multi-Window mit Tabs):**
+
+```
+WindowManager
+  ├─ Window #1 (Terminal)
+  │   ├─ TabManager (window-local)
+  │   ├─ Tab 1 (Terminal Session)
+  │   └─ Tab 2 (Terminal Session)
+  │
+  ├─ Window #2 (Terminal)
+  │   └─ Tab 1 (Terminal Session)
+  │
+  └─ Window #3 (TextEditor)
+      ├─ Tab 1 (Document)
+      └─ Tab 2 (Document)
+```
+
+### Kernkomponenten
+
+1. **BaseWindow** - Fenster-Basisklasse
+    - Position, Size, Z-Index
+    - Titlebar, Toolbar, Statusbar (WindowChrome)
+    - Window-lokaler TabManager
+    - Drag & Drop Handler
+
+2. **WindowTabManager** - Tab-Manager pro Fenster
+    - Tabs innerhalb eines Windows verwalten
+    - Tab-Transfer zwischen Windows
+    - Tab-Reordering (bereits da)
+
+3. **BaseTab** - Tab-Basisklasse
+    - Content-Instanz (Terminal/Editor/Finder)
+    - Tab-Metadata (title, icon, state)
+    - Serialize/Deserialize für Session
+
+4. **Spezifische Window-Typen**
+    - `TerminalWindow extends BaseWindow`
+    - `TextEditorWindow extends BaseWindow`
+    - `FinderWindow extends BaseWindow`
+
+5. **Tab-Content-Instanzen**
+    - `TerminalSession extends BaseTab`
+    - `TextEditorDocument extends BaseTab`
+    - `FinderView extends BaseTab`
+
+### Migration-Strategie
+
+**Phase 1: Foundation (3-4h)** ✅ ABGESCHLOSSEN (30. Okt 2025)
+
+- [x] BaseWindow Klasse erstellen (441 Zeilen - src/ts/base-window.ts)
+- [x] WindowTabManager (pro Window) erstellen (integriert in BaseWindow)
+- [x] BaseTab Basisklasse erstellen (224 Zeilen - src/ts/base-tab.ts)
+- [x] WindowRegistry für Window-Verwaltung (180 Zeilen - src/ts/window-registry.ts)
+
+**Phase 2: Terminal Migration (2-3h)** ✅ ABGESCHLOSSEN (30. Okt 2025)
+
+- [x] TerminalWindow implementieren (130 Zeilen - src/ts/terminal-window.ts)
+- [x] TerminalSession (BaseTab) extrahieren (380 Zeilen - src/ts/terminal-session.ts)
+- [x] Multi-Window Terminal Tests (test-multi-window.html)
+- [ ] Backwards-Compat für Session Restore (verschoben zu Phase 6)
+
+**Phase 3: TextEditor Migration (2-3h)** ✅ ABGESCHLOSSEN (30. Okt 2025)
+
+- [x] TextEditorWindow implementieren
+- [x] TextEditorDocument (BaseTab) extrahieren
+- [x] Multi-Window Editor Tests
+
+**Phase 4: Finder Migration (3-4h)** ✅ ABGESCHLOSSEN (30. Okt 2025)
+
+- [x] FinderWindow implementieren
+- [x] FinderView (BaseTab) extrahieren (Computer-Ansicht, einfache Navigation)
+- [x] GitHub-Integration pro Tab (Repos/Contents, Caching) – Grundfunktion (Repos + Contents, Caching, Breadcrumbs)
+
+**Phase 5: Tab-Transfer (2-3h)** ✅ ABGESCHLOSSEN (30. Okt 2025)
+
+- [x] Drag Tab aus Window → Neues Window (Drop auf Desktop erzeugt neues Window und adoptiert Tab)
+- [x] Drag Tab auf anderes Window → Transfer (Drop auf fremde Tabbar adoptiert Tab)
+- [x] Tab-State beim Transfer erhalten (keine Zerstörung des Tabs; detach/adopt)
+
+**Phase 6: Session Management (2-3h)** ✅ ABGESCHLOSSEN (30. Okt 2025)
+
+- [x] Multi-Window Session Schema (MultiWindowSession mit windows[], tabs[], metadata)
+- [x] Window-Positionen speichern (Position/Size/Z-Index in WindowSessionData)
+- [x] Tab-Window-Zuordnung speichern (Tabs pro Window mit serialize/deserialize)
+- [x] Multi-Window Session Restore (restoreSession() mit Window-Factory und Tab-Adoption)
+- [x] Legacy Session Migration (Auto-Migration von windowInstancesSession zu multi-window-session)
+- [x] Integration & Auto-Save (app-init.ts Integration, debounced saves bei Window/Tab-Änderungen)
+
+**Total geschätzt**: 14-20 Stunden
+
+### Implementation-Reihenfolge
+
+1. **Jetzt**: Phase 1 - Foundation (BaseWindow, WindowTabManager, BaseTab)
+2. **Dann**: Phase 2 - Terminal als Proof-of-Concept
+3. **Weiter**: Phasen 3-4 parallel (TextEditor + Finder)
+4. **Abschluss**: Phasen 5-6 (Tab-Transfer + Session)
+
+### Backwards Compatibility
+
+- Feature-Flag: `MULTI_WINDOW_ENABLED` (default: true)
+- Legacy Session Migration: Auto-convert single-window → multi-window
+- Fallback: Bei Fehler auf Single-Window zurück
+
+---
+
 ## Priorität 1: Core Features & Integration
 
 ### 1.1 UI Integration - Window Management ABGESCHLOSSEN!
@@ -313,5 +436,5 @@ Auto-Save System für Instanzen:
 ---
 
 **Erstellt**: 25. Oktober 2025
-**Letzte Aktualisierung**: 29. Oktober 2025
-**Version**: 2.0 (gestrafft von 978 auf ~550 Zeilen)
+**Letzte Aktualisierung**: 30. Oktober 2025 (Multi-Window Architektur)
+**Version**: 3.0 (Multi-Window Refactor Strategy)
