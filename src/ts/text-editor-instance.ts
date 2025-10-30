@@ -156,7 +156,13 @@ import { getString, setString } from './storage-utils.js';
                 '.replace-input'
             ) as HTMLInputElement | null;
 
-            if (this.state && (this.state as Record<string, unknown>).content && this.editor) {
+            // Lade gespeicherten Content nur beim ersten Rendern (nicht bei Restore)
+            if (
+                !this._skipInitialRender &&
+                this.state &&
+                (this.state as Record<string, unknown>).content &&
+                this.editor
+            ) {
                 this.editor.value = (this.state as Record<string, unknown>).content as string;
             }
 
@@ -431,6 +437,25 @@ import { getString, setString } from './storage-utils.js';
 
         private _hideStatusBar(): void {
             if (this.statusBar) this.statusBar.style.display = 'none';
+        }
+
+        show(): void {
+            const baseShow = (Base.prototype as unknown as { show: () => void }).show;
+            baseShow.call(this);
+
+            // Beim Tab-Wechsel die Editor-Referenz neu holen, da jede Instanz ihren eigenen Container hat
+            if (this.container) {
+                this.editor = this.container.querySelector(
+                    '.text-editor-textarea'
+                ) as HTMLTextAreaElement | null;
+            }
+
+            // Dann den gespeicherten Content laden
+            if (this.editor && this.state && typeof (this.state as any).content === 'string') {
+                this.editor.value = (this.state as any).content;
+                this._updateWordCount();
+                this._updateCursorPosition();
+            }
         }
 
         focus(): void {

@@ -27,6 +27,7 @@ export class BaseWindowInstance {
     isInitialized: boolean;
     isVisible: boolean;
     metadata: Record<string, any>;
+    protected _skipInitialRender: boolean;
 
     constructor(config: BaseWindowConfig) {
         this.instanceId = config.id || this._generateId();
@@ -39,6 +40,7 @@ export class BaseWindowInstance {
         this.isInitialized = false;
         this.isVisible = false;
         this.metadata = config.metadata || {};
+        this._skipInitialRender = false;
     }
 
     private _generateId(): string {
@@ -123,11 +125,11 @@ export class BaseWindowInstance {
             modified: Date.now(),
         };
         this.emit('stateChanged', { oldState, newState: this.state });
-        
+
         // Trigger auto-save when state changes
         this._triggerAutoSave();
     }
-    
+
     private _triggerAutoSave(): void {
         const w = window as any;
         if (w.SessionManager && typeof w.SessionManager.saveInstanceType === 'function') {
@@ -154,6 +156,9 @@ export class BaseWindowInstance {
     }
 
     deserialize(data: any) {
+        // Setze Flag, um doppeltes Rendern bei Session Restore zu verhindern
+        this._skipInitialRender = true;
+
         if (data.state) this.state = data.state;
         if (data.title) this.title = data.title;
         if (data.metadata) this.metadata = { ...this.metadata, ...data.metadata };
@@ -242,6 +247,7 @@ console.log('BaseWindowInstance loaded');
         isInitialized: boolean;
         isVisible: boolean;
         metadata: Record<string, unknown>;
+        protected _skipInitialRender: boolean;
 
         constructor(config: InstanceConfig) {
             this.instanceId = config.id || this._generateId();
@@ -254,6 +260,7 @@ console.log('BaseWindowInstance loaded');
             this.isInitialized = false;
             this.isVisible = false;
             this.metadata = config.metadata || {};
+            this._skipInitialRender = false;
         }
 
         protected _generateId(): string {
@@ -344,11 +351,11 @@ console.log('BaseWindowInstance loaded');
                 modified: Date.now(),
             };
             this.emit('stateChanged', { oldState, newState: this.state } as StateChangeEvent);
-            
+
             // Trigger auto-save when state changes
             this._triggerAutoSave();
         }
-        
+
         private _triggerAutoSave(): void {
             triggerAutoSave(this.type);
         }
@@ -368,6 +375,9 @@ console.log('BaseWindowInstance loaded');
         }
 
         deserialize(data: Partial<SerializedInstance>): void {
+            // Setze Flag, um doppeltes Rendern bei Session Restore zu verhindern
+            this._skipInitialRender = true;
+
             if (data.state) {
                 this.state = data.state;
             }

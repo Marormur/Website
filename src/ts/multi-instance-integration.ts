@@ -123,7 +123,13 @@ import { getJSON } from './storage-utils.js';
             manager.destroyInstance = (id: string) => {
                 origDestroy(id);
                 const remaining = manager.getAllInstances().length;
-                if (remaining > 0) {
+                if (remaining === 0) {
+                    try {
+                        const API = (window as any).API;
+                        if (API?.window?.close) API.window.close('terminal-modal');
+                        else document.getElementById('terminal-modal')?.classList.add('hidden');
+                    } catch {}
+                } else {
                     const active = manager.getActiveInstance();
                     if (active) this.showInstance('terminal', active.instanceId);
                 }
@@ -154,6 +160,18 @@ import { getJSON } from './storage-utils.js';
         private setupTextEditorIntegration() {
             const W = window as unknown as Record<string, any>;
             const manager = W.TextEditorInstanceManager as Manager;
+
+            // Create WindowTabs first so it wraps the original setActiveInstance
+            const mount = document.getElementById('text-editor-tabs-container');
+            if (!mount) return;
+            const controller = W.WindowTabs.create(manager, mount, {
+                addButton: true,
+                onCreateInstanceTitle: () =>
+                    `Editor ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
+            });
+
+            // Now wrap setActiveInstance to add showInstance() call
+            // This wraps the WindowTabs version, which already triggers refresh
             const origSetActive = manager.setActiveInstance.bind(manager);
             manager.setActiveInstance = (id: string) => {
                 origSetActive(id);
@@ -163,19 +181,17 @@ import { getJSON } from './storage-utils.js';
             manager.destroyInstance = (id: string) => {
                 origDestroy(id);
                 const remaining = manager.getAllInstances().length;
-                if (remaining > 0) {
+                if (remaining === 0) {
+                    try {
+                        const API = (window as any).API;
+                        if (API?.window?.close) API.window.close('text-modal');
+                        else document.getElementById('text-modal')?.classList.add('hidden');
+                    } catch {}
+                } else {
                     const active = manager.getActiveInstance();
                     if (active) this.showInstance('text-editor', active.instanceId);
                 }
             };
-
-            const mount = document.getElementById('text-editor-tabs-container');
-            if (!mount) return;
-            const controller = W.WindowTabs.create(manager, mount, {
-                addButton: true,
-                onCreateInstanceTitle: () =>
-                    `Editor ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
-            });
 
             this.integrations.set('text-editor', {
                 manager,

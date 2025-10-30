@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { translate } from './i18n.js';
+import { translate } from './i18n';
 
 // Allow dynamic access on window via string keys for legacy globals
 declare global {
@@ -75,12 +75,25 @@ function buildFinderMenuDefinition(context: MenuContext) {
                     shortcut: '⌘N',
                     icon: 'new',
                     action: () => {
-                        const mgr = window['FinderInstanceManager'];
-                        if (mgr && typeof mgr.createInstance === 'function') {
-                            const count = mgr.getInstanceCount
-                                ? mgr.getInstanceCount()
-                                : mgr.getAllInstances?.().length || 0;
-                            mgr.createInstance({ title: `Finder ${count + 1}` });
+                        // Create new multi-window Finder
+                        if (
+                            window['FinderWindow'] &&
+                            typeof window['FinderWindow'].create === 'function'
+                        ) {
+                            const registry = window['WindowRegistry'];
+                            const count = registry?.getWindowCount?.('finder') || 0;
+                            window['FinderWindow'].create({
+                                title: `Finder ${count + 1}`,
+                            });
+                        } else {
+                            // Fallback to legacy instance manager
+                            const mgr = window['FinderInstanceManager'];
+                            if (mgr && typeof mgr.createInstance === 'function') {
+                                const count = mgr.getInstanceCount
+                                    ? mgr.getInstanceCount()
+                                    : mgr.getAllInstances?.().length || 0;
+                                mgr.createInstance({ title: `Finder ${count + 1}` });
+                            }
                         }
                     },
                 },
@@ -185,7 +198,22 @@ function buildTextEditorMenuDefinition(context: MenuContext) {
                     label: () => translate('menu.text.newFile'),
                     shortcut: '⌘N',
                     icon: 'newFile',
-                    action: () => sendTextEditorMenuAction('file:new'),
+                    action: () => {
+                        // Create new multi-window TextEditor
+                        if (
+                            window['TextEditorWindow'] &&
+                            typeof window['TextEditorWindow'].create === 'function'
+                        ) {
+                            const registry = window['WindowRegistry'];
+                            const count = registry?.getWindowCount?.('text-editor') || 0;
+                            window['TextEditorWindow'].create({
+                                title: `Untitled ${count + 1}`,
+                            });
+                        } else {
+                            // Fallback to legacy action
+                            sendTextEditorMenuAction('file:new');
+                        }
+                    },
                 },
                 {
                     id: 'text-open',
@@ -379,11 +407,25 @@ function buildTerminalMenuDefinition(context: any) {
                     shortcut: '⌘N',
                     icon: 'terminal',
                     action: () => {
+                        // Create new multi-window Terminal
                         if (
-                            window['TerminalInstanceManager'] &&
-                            typeof window['TerminalInstanceManager'].createInstance === 'function'
-                        )
-                            window['TerminalInstanceManager'].createInstance();
+                            window['TerminalWindow'] &&
+                            typeof window['TerminalWindow'].create === 'function'
+                        ) {
+                            const registry = window['WindowRegistry'];
+                            const count = registry?.getWindowCount?.('terminal') || 0;
+                            window['TerminalWindow'].create({
+                                title: `Terminal ${count + 1}`,
+                            });
+                        } else {
+                            // Fallback to legacy instance manager
+                            if (
+                                window['TerminalInstanceManager'] &&
+                                typeof window['TerminalInstanceManager'].createInstance ===
+                                    'function'
+                            )
+                                window['TerminalInstanceManager'].createInstance();
+                        }
                     },
                 },
                 { type: 'separator' },

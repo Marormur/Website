@@ -6,6 +6,9 @@
 
 console.log('[BUNDLE] expose-globals.ts loading...');
 
+// i18n must load FIRST - provides window.appI18n for all modules
+import '../i18n';
+
 // Import the modern module(s) we want to expose explicitly
 import * as DOMUtils from '../dom-utils';
 
@@ -31,6 +34,27 @@ import '../theme';
 import '../base-window-instance'; // Must come before instance types
 import '../instance-manager';
 import '../window-chrome';
+
+// Multi-window system (Phase 1: Foundation)
+import '../base-tab'; // Base class for tab content
+import '../base-window'; // Base class for windows
+import '../window-registry'; // Central window management
+
+// Multi-window system (Phase 2: Terminal)
+import '../terminal-session'; // Terminal session tab
+import '../terminal-window'; // Terminal window
+
+// Multi-window system (Phase 3: TextEditor)
+import '../text-editor-document'; // Text editor document tab
+import '../text-editor-window'; // Text editor window
+
+// Multi-window system (Phase 4: Finder)
+import '../finder-view'; // Finder view tab
+import '../finder-window'; // Finder window
+
+// Multi-window system (Phase 6: Session Management)
+import '../multi-window-session'; // Multi-window session persistence
+
 import '../window-tabs';
 import '../terminal-instance';
 import '../text-editor-instance';
@@ -50,8 +74,9 @@ import '../window-configs'; // Must load before windows are registered
 import '../finder-instance';
 import '../launchpad';
 import '../multi-instance-integration';
-import '../legacy/desktop.js';
-import '../legacy/system.js';
+import '../desktop'; // Now in TypeScript
+// Use modern TypeScript module instead of legacy JS
+import '../system';
 
 // Finally, include the TypeScript app initialization to bootstrap and signal readiness
 // This sets window.__APP_READY = true when the app finishes loading. It must come

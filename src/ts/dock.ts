@@ -339,6 +339,7 @@ export function updateDockIndicators(): void {
         { modalId: 'projects-modal', indicatorId: 'projects-indicator' },
         { modalId: 'settings-modal', indicatorId: 'settings-indicator' },
         { modalId: 'text-modal', indicatorId: 'text-indicator' },
+        { modalId: 'terminal-modal', indicatorId: 'terminal-indicator' },
     ];
 
     indicatorMappings.forEach(mapping => {

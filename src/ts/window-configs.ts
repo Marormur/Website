@@ -34,29 +34,18 @@ export const windowConfigurations: WindowConfiguration[] = [
         closeButtonId: 'close-finder-modal',
         metadata: {
             initHandler: function () {
-                // Do NOT auto-create Finder instances on init; just refresh UI if available
+                // This handler runs on every window open, UNLESS __SESSION_RESTORE_IN_PROGRESS is set.
+                // To handle race conditions (opening Finder before session restore completes),
+                // we defer instance creation to a separate check that always runs.
                 try {
                     const integ = window.MultiInstanceIntegration?.getIntegration?.('finder');
                     integ?.tabManager?.controller?.refresh?.();
                 } catch (e) {
-                    console.warn('Finder init refresh failed:', e);
+                    console.warn('[Finder] init handler failed:', e);
                 }
             },
-            openHandler: function () {
-                // Do NOT auto-create Finder instances on open; only ensure active is shown
-                try {
-                    const activeId =
-                        window.FinderInstanceManager?.getActiveInstance?.()?.instanceId;
-                    if (activeId && window.MultiInstanceIntegration) {
-                        window.MultiInstanceIntegration.showInstance?.('finder', activeId);
-                        const integ = window.MultiInstanceIntegration.getIntegration?.('finder');
-                        // Force tab UI refresh to ensure tab visibility
-                        integ?.tabManager?.controller?.refresh?.();
-                    }
-                } catch (e) {
-                    console.warn('Finder open refresh failed:', e);
-                }
-            },
+            // This flag tells Dialog.open() to always ensure at least one instance exists
+            ensureInstanceOnOpen: true,
         },
     },
     {
@@ -115,9 +104,17 @@ export const windowConfigurations: WindowConfiguration[] = [
         closeButtonId: 'close-text-modal',
         metadata: {
             initHandler: function () {
-                // Do NOT auto-create instances when multi-instance manager is available
-                // Fallback legacy editor init only
+                // Primary: Create first TextEditor instance when modal opens if none exist
                 if (
+                    window.TextEditorInstanceManager &&
+                    !window.TextEditorInstanceManager.hasInstances()
+                ) {
+                    window.TextEditorInstanceManager.createInstance({
+                        title: 'Editor',
+                    });
+                }
+                // Fallback: Initialize old editor module if instance manager not available
+                else if (
                     !window.TextEditorInstanceManager &&
                     window.TextEditorSystem &&
                     !(window as any).TextEditorSystem?.container
@@ -155,9 +152,17 @@ export const windowConfigurations: WindowConfiguration[] = [
         closeButtonId: 'close-terminal-modal',
         metadata: {
             initHandler: function () {
-                // Do NOT auto-create instances when multi-instance manager is available
-                // Fallback legacy terminal init only
+                // Primary: Create first Terminal instance when modal opens if none exist
                 if (
+                    window.TerminalInstanceManager &&
+                    !window.TerminalInstanceManager.hasInstances()
+                ) {
+                    window.TerminalInstanceManager.createInstance({
+                        title: 'Terminal',
+                    });
+                }
+                // Fallback: Initialize old terminal module if instance manager not available
+                else if (
                     !window.TerminalInstanceManager &&
                     window.TerminalSystem &&
                     !(window as any).TerminalSystem?.container

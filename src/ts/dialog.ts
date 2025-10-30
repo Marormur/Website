@@ -78,6 +78,10 @@ export class Dialog {
             console.error(`Cannot open dialog: modal element is undefined (id: ${this.modalId})`);
             return;
         }
+
+        // Ensure instance creation for windows that need it
+        this._ensureInstanceIfNeeded();
+
         // preserve original behavior
         (window as any).hideMenuDropdowns?.();
 
@@ -95,6 +99,26 @@ export class Dialog {
         (window as any).saveOpenModals?.();
         (window as any).updateDockIndicators?.();
         (window as any).updateProgramLabelByTopModal?.();
+    }
+
+    private _ensureInstanceIfNeeded() {
+        // Check if this window has the ensureInstanceOnOpen flag
+        const win = window as any;
+        const config = win.WindowManager?.getConfig?.(this.modalId);
+        if (!config || !config.metadata?.ensureInstanceOnOpen) return;
+
+        // For Finder: use Multi-Window FinderWindow instead of legacy system
+        if (this.modalId === 'finder-modal') {
+            // Open via new Multi-Window system
+            if (win.FinderWindow && typeof win.FinderWindow.create === 'function') {
+                const existing = win.WindowRegistry?.getWindowsByType?.('finder') || [];
+                if (existing.length === 0) {
+                    console.log('[Finder] Creating initial FinderWindow via multi-window system');
+                    win.FinderWindow.create();
+                }
+            }
+            return; // Don't proceed with legacy finder-modal
+        }
     }
 
     close() {

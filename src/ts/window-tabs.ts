@@ -1,3 +1,20 @@
+/**
+ * WindowTabs – generische Tab-Leiste für Fenster
+ *
+ * Dieses Modul kapselt Rendering und Interaktion einer Tabbar, die an einen
+ * beliebigen Instanz-Manager gekoppelt wird. Der Manager muss ein schmales
+ * Interface bereitstellen (getAllInstances, setActiveInstance, destroyInstance, ...).
+ *
+ * Features
+ * --------
+ * - Reordering der Tabs via Drag&Drop
+ * - Cross‑Window‑Drag: Tabs können auf eine andere Tabbar gezogen werden
+ *   (Manager.adoptInstance/detachInstance).
+ * - Desktop‑Drop: Tab auf freien Desktop-Bereich ziehen -> neues Fenster wird
+ *   erzeugt (FinderWindow/TextEditorWindow/TerminalWindow je nach Typ).
+ * - Add‑Button für neue Instanzen (+)
+ * - setTitle(instanceId, title) um Tab‑Labels dynamisch zu aktualisieren
+ */
 (function () {
     'use strict';
 
@@ -31,6 +48,8 @@
         destroyInstance(id: string): void;
         getInstanceCount?: () => number;
         reorderInstances?: (newOrder: string[]) => void;
+        detachInstance?: (id: string) => Instance | null;
+        adoptInstance?: (inst: Instance) => Instance | null;
     };
 
     interface WindowTabsOptions {
@@ -47,9 +66,11 @@
 
     // (reserved) helper could be added later to skip shortcuts in inputs
 
-    // Drag state for tab reordering
+    // Drag state for tab reordering and cross-window moves
     let draggedTab: HTMLElement | null = null;
     let draggedInstanceId: string | null = null;
+    let draggedManager: Manager | null = null;
+    let draggedInstanceObj: Instance | null = null;
 
     function createTabEl(instance: Instance, isActive: boolean): HTMLElement {
         const tab = document.createElement('button');
@@ -94,6 +115,34 @@
         const bar = document.createElement('div');
         bar.className = 'window-tabs flex items-center gap-1 px-2 pt-2 select-none';
 
+        // Allow dropping on bar background (append) and cross-window transfer
+        bar.addEventListener('dragover', (e: DragEvent) => {
+            if (draggedInstanceId) {
+                e.preventDefault();
+                if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+            }
+        });
+        bar.addEventListener('drop', (e: DragEvent) => {
+            if (!draggedInstanceId) return;
+            e.preventDefault();
+            e.stopPropagation();
+            // Cross-window adopt if source differs
+            if (
+                draggedManager &&
+                draggedManager !== manager &&
+                manager.adoptInstance &&
+                draggedManager.detachInstance
+            ) {
+                const inst = draggedManager.detachInstance(draggedInstanceId);
+                if (inst) {
+                    const adopted = manager.adoptInstance(inst);
+                    if (adopted?.instanceId) {
+                        manager.setActiveInstance(adopted.instanceId);
+                    }
+                }
+            }
+        });
+
         const instances = manager.getAllInstances();
         const active = manager.getActiveInstance();
         const activeId = active?.instanceId ?? null;
@@ -124,9 +173,11 @@
             tab.addEventListener('dragstart', (e: DragEvent) => {
                 draggedTab = tab;
                 draggedInstanceId = inst.instanceId;
+                draggedManager = manager;
+                draggedInstanceObj = inst;
                 if (e.dataTransfer) {
                     e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', inst.instanceId);
+                    e.dataTransfer.setData('text/plain', inst.instanceId || '');
                 }
                 tab.style.opacity = '0.5';
             });
@@ -134,6 +185,8 @@
                 tab.style.opacity = '1';
                 draggedTab = null;
                 draggedInstanceId = null;
+                draggedManager = null;
+                draggedInstanceObj = null;
                 // Remove any drop indicators
                 const allTabs = bar.querySelectorAll('.wt-tab');
                 allTabs.forEach(t => {
@@ -271,6 +324,39 @@
         controller.refresh();
         return controller;
     }
+
+    // Desktop-level drop: create a new window when dropped outside any tab bar
+    document.addEventListener('dragover', (e: DragEvent) => {
+        if (draggedInstanceId) {
+            e.preventDefault();
+        }
+    });
+    document.addEventListener('drop', (e: DragEvent) => {
+        if (!draggedInstanceId || !draggedManager) return;
+        const tgt = e.target as HTMLElement;
+        if (tgt.closest('.window-tabs')) return; // handled by bar
+        e.preventDefault();
+        e.stopPropagation();
+        if (!draggedManager.detachInstance) return;
+        const inst = draggedManager.detachInstance(draggedInstanceId) as any;
+        if (!inst) return;
+        const tab = (inst as any).__tab || inst;
+        const ttype = (tab && tab.type) || '';
+        const W = window as any;
+        let NewWinCtor: any = null;
+        if (ttype.includes('terminal')) NewWinCtor = W.TerminalWindow;
+        else if (ttype.includes('text-editor')) NewWinCtor = W.TextEditorWindow;
+        else if (ttype.includes('finder')) NewWinCtor = W.FinderWindow;
+
+        if (!NewWinCtor) return;
+        const newWin = new NewWinCtor({ title: (tab?.parentWindow?.type || '').toString() });
+        if (typeof newWin.show === 'function') newWin.show();
+        if (W.WindowRegistry) W.WindowRegistry.registerWindow(newWin);
+        if (typeof newWin.addTab === 'function') {
+            newWin.addTab(tab);
+            newWin.setActiveTab?.(tab.id);
+        }
+    });
 
     const WindowTabs = {
         /**

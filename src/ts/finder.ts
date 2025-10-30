@@ -10,6 +10,8 @@
  * - Dateiverwaltung (Ordner erstellen, umbenennen, löschen)
  */
 
+import { getString, getJSON, setJSON } from './storage-utils.js';
+
 console.log('Finder.js loaded');
 
 (() => {

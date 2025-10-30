@@ -22,7 +22,6 @@ console.log('ActionBus loaded');
         updateProgramLabelByTopModal?: () => void;
         saveOpenModals?: () => void;
         updateDockIndicators?: () => void;
-        openDesktopItemById?: (id: string) => void;
     };
 
     // Helper type to access the subset of FinderSystem APIs we call here
@@ -262,6 +261,15 @@ console.log('ActionBus loaded');
                 g.dialogs?.['launchpad-modal']?.close?.();
             }
 
+            // SPECIAL: Use Multi-Window system for Finder instead of legacy modal
+            if (windowId === 'finder-modal') {
+                const win = window as any;
+                if (win.FinderWindow && typeof win.FinderWindow.create === 'function') {
+                    win.FinderWindow.create();
+                    return;
+                }
+            }
+
             (
                 window as Window & { WindowManager?: { open?: (id: string) => void } }
             ).WindowManager?.open?.(windowId);
@@ -332,8 +340,15 @@ console.log('ActionBus loaded');
                 console.warn('openDesktopItem: missing itemId');
                 return;
             }
-            const g = window as unknown as Window & GlobalExtras;
-            g.openDesktopItemById?.(itemId);
+            // Lazy import to avoid circular dependency
+            import('./desktop.js').then(({ DESKTOP_SHORTCUTS }) => {
+                const shortcut = DESKTOP_SHORTCUTS.find(s => s.id === itemId);
+                if (shortcut?.onOpen) {
+                    shortcut.onOpen();
+                } else {
+                    console.warn(`openDesktopItem: no shortcut found for id "${itemId}"`);
+                }
+            });
         },
 
         // Finder: eine Ebene nach oben

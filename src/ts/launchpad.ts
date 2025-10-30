@@ -5,7 +5,7 @@
 
 console.log('Launchpad (TS) loaded');
 
-import { translate } from './i18n.js';
+import { translate } from './i18n';
 
 (() => {
     'use strict';

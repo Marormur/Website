@@ -267,8 +267,26 @@ console.log('InstanceManager loaded');
                 }
             });
 
+            // Set active instance and ensure visibility is updated
             if (desiredActiveId) {
                 this.setActiveInstance(desiredActiveId);
+            } else if (this.instances.size > 0) {
+                // If no active instance was marked, activate the first one
+                const firstInstance = Array.from(this.instances.values())[0];
+                if (firstInstance) {
+                    this.setActiveInstance(firstInstance.instanceId);
+                }
+            }
+
+            // Trigger visibility update after all instances are restored
+            this._updateVisibilityAfterRestore();
+        }
+
+        private _updateVisibilityAfterRestore(): void {
+            const w = window as any;
+            const integration = w.multiInstanceIntegration || w.MultiInstanceIntegration;
+            if (integration && typeof integration.updateInstanceVisibility === 'function') {
+                integration.updateInstanceVisibility(this.type);
             }
         }
 

@@ -83,6 +83,21 @@
     let topZIndex = 1000;
 
     const WindowManager = {
+        /**
+         * Get current top z-index for synchronization
+         */
+        getTopZIndex(): number {
+            return topZIndex;
+        },
+
+        /**
+         * Update top z-index from external source (e.g., WindowRegistry)
+         */
+        updateTopZIndex(newZIndex: number): void {
+            if (newZIndex > topZIndex) {
+                topZIndex = newZIndex;
+            }
+        },
         register(config: WindowConfigOptions): WindowConfig {
             const windowConfig = new WindowConfig(config);
             windowRegistry.set(config.id, windowConfig);
@@ -219,7 +234,22 @@
         },
 
         getNextZIndex(): number {
+            // Sync with WindowRegistry if available
+            const W = window as any;
+            if (W.WindowRegistry && typeof W.WindowRegistry.getNextZIndex === 'function') {
+                const registryZ = W.WindowRegistry.getTopZIndex?.() || 0;
+                if (registryZ >= topZIndex) {
+                    topZIndex = registryZ;
+                }
+            }
+
             topZIndex++;
+
+            // Notify WindowRegistry of our new z-index
+            if (W.WindowRegistry && typeof W.WindowRegistry.updateTopZIndex === 'function') {
+                W.WindowRegistry.updateTopZIndex?.(topZIndex);
+            }
+
             return topZIndex;
         },
 

@@ -38,7 +38,16 @@ interface FinderState {
     recentFiles: Array<{ name: string; path: string; icon?: string; modified: string }>;
 }
 
-class FinderInstance extends (window.BaseWindowInstance || class {}) {
+type BaseLike = {
+    container: HTMLElement | null;
+    updateState: (u: Record<string, unknown>) => void;
+    instanceId: string;
+    state: Record<string, unknown>;
+} & Record<string, unknown>;
+type BaseCtor = new (cfg: Record<string, unknown>) => BaseLike;
+const Base = (window as unknown as { BaseWindowInstance: BaseCtor }).BaseWindowInstance;
+
+class FinderInstance extends Base {
     currentPath: string[] = [];
     currentView: ViewKind = 'computer';
     selectedItems: Set<string> = new Set();
@@ -76,7 +85,6 @@ class FinderInstance extends (window.BaseWindowInstance || class {}) {
 
     githubContentCache: Map<string, any[]> = new Map();
     virtualFileSystem: Record<string, any> = {};
-    _skipInitialRender?: boolean;
 
     constructor(config: any) {
         super({ ...config, type: 'finder' });
@@ -778,11 +786,15 @@ class FinderInstance extends (window.BaseWindowInstance || class {}) {
                 img.src = src;
                 img.classList.remove('hidden');
             }
-            if (window.PhotosApp && typeof window.PhotosApp.showExternalImage === 'function') {
-                window.PhotosApp.showExternalImage({ src, name });
+            const w = window as unknown as {
+                PhotosApp?: { showExternalImage?: (params: { src: string; name: string }) => void };
+                API?: { window?: { open?: (id: string) => void } };
+            };
+            if (w.PhotosApp && typeof w.PhotosApp.showExternalImage === 'function') {
+                w.PhotosApp.showExternalImage({ src, name });
             }
-            if (window.API?.window?.open) {
-                window.API.window.open('image-modal');
+            if (w.API?.window?.open) {
+                w.API.window.open('image-modal');
             } else {
                 const modal = document.getElementById('image-modal');
                 if (modal) modal.classList.remove('hidden');
@@ -837,9 +849,13 @@ class FinderInstance extends (window.BaseWindowInstance || class {}) {
         });
     }
 
-    serialize() {
+    serialize(): Record<string, unknown> {
+        const baseSerialize = (
+            Base.prototype as unknown as { serialize: () => Record<string, unknown> }
+        ).serialize;
+        const baseObj = baseSerialize.call(this) as Record<string, unknown>;
         return {
-            ...(super.serialize?.() || {}),
+            ...baseObj,
             currentPath: this.currentPath,
             currentView: this.currentView,
             viewMode: this.viewMode,
@@ -850,30 +866,44 @@ class FinderInstance extends (window.BaseWindowInstance || class {}) {
         };
     }
 
-    deserialize(data: any) {
-        (this as any)._skipInitialRender = true;
-        super.deserialize?.(data);
-        if (data.currentPath) this.currentPath = data.currentPath;
-        if (data.currentView) this.currentView = data.currentView;
-        if (data.viewMode) this.viewMode = data.viewMode;
-        if (data.sortBy) this.sortBy = data.sortBy;
-        if (data.sortOrder) this.sortOrder = data.sortOrder;
-        if (data.favorites) this.favorites = new Set(data.favorites);
-        if (data.recentFiles) this.recentFiles = data.recentFiles;
+    deserialize(data: Record<string, unknown>): void {
+        const baseDeserialize = (
+            Base.prototype as unknown as { deserialize: (d: Record<string, unknown>) => void }
+        ).deserialize;
+        baseDeserialize.call(this, data);
+        const d = data as {
+            currentPath?: string[];
+            currentView?: ViewKind;
+            viewMode?: ViewMode;
+            sortBy?: 'name' | 'date' | 'size' | 'type';
+            sortOrder?: 'asc' | 'desc';
+            favorites?: string[];
+            recentFiles?: Array<{ name: string; path: string; icon?: string; modified: string }>;
+        };
+        if (d.currentPath) this.currentPath = d.currentPath;
+        if (d.currentView) this.currentView = d.currentView;
+        if (d.viewMode) this.viewMode = d.viewMode;
+        if (d.sortBy) this.sortBy = d.sortBy;
+        if (d.sortOrder) this.sortOrder = d.sortOrder;
+        if (d.favorites) this.favorites = new Set(d.favorites);
+        if (d.recentFiles) this.recentFiles = d.recentFiles;
         this.navigateTo(this.currentPath, this.currentView);
     }
 
-    focus() {
-        super.focus?.();
+    focus(): void {
+        const baseFocus = (Base.prototype as unknown as { focus: () => void }).focus;
+        baseFocus.call(this);
         // Do not autofocus search input automatically
     }
 }
 
-// Expose on window for compatibility with the integration layer
-window.FinderInstance = FinderInstance as any;
+(window as unknown as { FinderInstance: typeof FinderInstance }).FinderInstance = FinderInstance;
 
-if (window.InstanceManager) {
-    window.FinderInstanceManager = new window.InstanceManager({
+const G = window as unknown as Record<string, unknown>;
+type InstanceManagerCtor = new (cfg: Record<string, unknown>) => unknown;
+const InstanceManager = G['InstanceManager'] as unknown as InstanceManagerCtor | undefined;
+if (InstanceManager) {
+    (G['FinderInstanceManager'] as unknown) = new (InstanceManager as InstanceManagerCtor)({
         type: 'finder',
         instanceClass: FinderInstance,
         maxInstances: 0,

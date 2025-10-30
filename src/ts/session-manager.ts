@@ -142,12 +142,9 @@ import { getJSON, setJSON, remove } from './storage-utils.js';
         const managers = new Map<string, unknown>();
         const w = window as unknown as Record<string, unknown>;
 
-        // Known instance managers (terminal, text-editor, finder, etc.)
-        const knownManagers = [
-            'TerminalInstanceManager',
-            'TextEditorInstanceManager',
-            'FinderInstanceManager',
-        ];
+        // Known instance managers (terminal, text-editor)
+        // NOTE: Finder is now handled by MultiWindowSessionManager, not legacy SessionManager
+        const knownManagers = ['TerminalInstanceManager', 'TextEditorInstanceManager'];
 
         knownManagers.forEach(key => {
             const manager = w[key];
@@ -544,10 +541,11 @@ import { getJSON, setJSON, remove } from './storage-utils.js';
         });
 
         // Save on beforeunload (page closing/refreshing)
-        window.addEventListener('beforeunload', () => {
-            // Must be immediate to complete before page unload
-            performSave();
-        });
+        // DISABLED: Causes corrupted session, multi-window-session handles persistence
+        // window.addEventListener('beforeunload', () => {
+        //     // Must be immediate to complete before page unload
+        //     performSave();
+        // });
 
         // Save on visibility change (tab hidden)
         document.addEventListener('visibilitychange', () => {

@@ -3,10 +3,12 @@
 import { translate } from './i18n';
 
 // Access the global API exposed on window (no module export)
-type WindowWithAPI = { API?: {
-    window: { open: (id: unknown) => unknown }
-} };
-const API = ((window as unknown as WindowWithAPI).API);
+type WindowWithAPI = {
+    API?: {
+        window: { open: (id: unknown) => unknown };
+    };
+};
+const API = (window as unknown as WindowWithAPI).API;
 
 export interface DesktopShortcut {
     id: string;
@@ -18,14 +20,28 @@ export interface DesktopShortcut {
 }
 
 export const DESKTOP_SHORTCUTS: DesktopShortcut[] = [
-    // Desktop shortcuts can be added here
-    // Example:
+    {
+        id: 'projects',
+        emoji: '📁',
+        labelKey: 'desktop.projects',
+        fallbackLabel: 'Projekte',
+        onOpen: () => {
+            API?.window.open('finder-modal');
+            // Navigiere zum Projects-Ordner
+            const w = window as unknown as {
+                FinderSystem?: { navigateTo?: (path: string) => void };
+            };
+            if (w.FinderSystem?.navigateTo) {
+                w.FinderSystem.navigateTo('projects');
+            }
+        },
+    },
     // {
-    //     id: 'example',
-    //     icon: './img/example.svg',
-    //     labelKey: 'desktop.example',
-    //     fallbackLabel: 'Example',
-    //     onOpen: () => API?.window.open('example-modal'),
+    //     id: 'settings',
+    //     emoji: '⚙️',
+    //     labelKey: 'desktop.settings',
+    //     fallbackLabel: 'Einstellungen',
+    //     onOpen: () => API?.window.open('settings-modal'),
     // },
 ];
 
@@ -33,23 +49,34 @@ export function renderDesktopShortcuts(container: HTMLElement) {
     container.innerHTML = '';
     DESKTOP_SHORTCUTS.forEach(shortcut => {
         const el = document.createElement('button');
-        el.className = 'desktop-shortcut';
+        el.className = 'desktop-icon-button';
         el.setAttribute('data-action', 'openDesktopItem');
         el.setAttribute('data-item-id', shortcut.id);
-        el.setAttribute('aria-label', translate(shortcut.labelKey, shortcut.fallbackLabel));
+        el.setAttribute(
+            'aria-label',
+            translate(shortcut.labelKey, {}, { fallback: shortcut.fallbackLabel })
+        );
+
+        // Create the icon/emoji container
+        const graphicDiv = document.createElement('div');
+        graphicDiv.className = 'desktop-icon-graphic';
+
         if (shortcut.icon) {
             const img = document.createElement('img');
             img.src = shortcut.icon;
-            img.alt = translate(shortcut.labelKey, shortcut.fallbackLabel);
-            img.className = 'desktop-shortcut-icon';
-            el.appendChild(img);
+            img.alt = translate(shortcut.labelKey, {}, { fallback: shortcut.fallbackLabel });
+            graphicDiv.appendChild(img);
         } else if (shortcut.emoji) {
-            el.textContent = shortcut.emoji;
+            graphicDiv.textContent = shortcut.emoji;
         }
+
+        el.appendChild(graphicDiv);
+
         const label = document.createElement('span');
-        label.className = 'desktop-shortcut-label';
-        label.textContent = translate(shortcut.labelKey, shortcut.fallbackLabel);
+        label.className = 'desktop-icon-label';
+        label.textContent = translate(shortcut.labelKey, {}, { fallback: shortcut.fallbackLabel });
         el.appendChild(label);
+
         container.appendChild(el);
     });
 }
@@ -59,4 +86,29 @@ export function handleDesktopShortcutClick(id: string) {
     if (shortcut && shortcut.onOpen) {
         shortcut.onOpen();
     }
+}
+
+/**
+ * Initialize desktop shortcuts - called by app-init
+ */
+export function initDesktop() {
+    const container = document.getElementById('desktop-icons');
+    if (container) {
+        renderDesktopShortcuts(container);
+    }
+}
+
+// Export to window for app-init.ts
+declare global {
+    interface Window {
+        DesktopSystem?: {
+            initDesktop: () => void;
+        };
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.DesktopSystem = {
+        initDesktop,
+    };
 }
