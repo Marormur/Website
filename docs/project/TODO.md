@@ -1,7 +1,7 @@
 ﻿# Multi-Instance System - TODO Liste
 
-> **Status**: Multi-Instance Basis-System ist implementiert und getestet
-> **Letzte Aktualisierung**: 29. Oktober 2025
+> **Status**: Multi-Window System vollständig implementiert, Session Restore aktiv
+> **Letzte Aktualisierung**: 31. Oktober 2025
 > **Branch**: develop
 
 ---
@@ -232,7 +232,15 @@ WindowManager
 - [x] Legacy Session Migration (Auto-Migration von windowInstancesSession zu multi-window-session)
 - [x] Integration & Auto-Save (app-init.ts Integration, debounced saves bei Window/Tab-Änderungen)
 
-**Total geschätzt**: 14-20 Stunden
+**Total geschätzt**: 14-20 Stunden | **Tatsächlich**: ~18 Stunden
+
+### ✅ MULTI-WINDOW SYSTEM VOLLSTÄNDIG (31. Oktober 2025)
+
+**Status**: Alle 6 Phasen abgeschlossen, System produktiv einsetzbar!
+- BaseWindow, BaseTab, WindowRegistry: 845 Zeilen
+- Terminal/TextEditor/Finder: Multi-Window + Tab-Transfer
+- Session Restore: Automatisch bei Reload, Legacy-Migration
+- E2E Tests: Grundfunktionen getestet (einige failing Tests zu fixen)
 
 ### Implementation-Reihenfolge
 
@@ -249,9 +257,64 @@ WindowManager
 
 ---
 
-## Priorität 1: Core Features & Integration
+## Priorität 1: Virtual File System & Finder Enhancement 🆕
 
-### 1.1 UI Integration - Window Management ABGESCHLOSSEN!
+### 1.1 Virtual File System Erweiterung (HIGH PRIORITY)
+
+**Ziel**: Finder mit persistentem, editierbarem Virtual File System ausstatten
+
+**Aktueller Stand:**
+- ✅ Basis Virtual FS existiert (Computer/Documents/Downloads/Pictures/Music)
+- ✅ Read-only Dateien (README.md mit 1024 bytes)
+- ✅ GitHub-Integration für Remote-Repos
+- ❌ Keine Persistenz (Reset bei Reload)
+- ❌ Keine CRUD-Operationen (Create/Update/Delete)
+- ❌ Keine Upload/Download-Integration
+
+**Zu implementieren:**
+
+#### 1.1.1 Persistente FS-Struktur (3-4h)
+- [ ] **LocalStorage Backend** - VFS in `localStorage` speichern
+- [ ] **Auto-Save on Change** - Debounced save bei Änderungen
+- [ ] **Restore on Load** - VFS beim App-Start laden
+- [ ] **Migration System** - Schema-Versioning für Future Updates
+
+#### 1.1.2 File Operations (4-5h)
+- [ ] **Create File** - Neue Datei erstellen (Name, Content, Icon)
+- [ ] **Create Folder** - Neuen Ordner erstellen
+- [ ] **Rename** - Dateien/Ordner umbenennen
+- [ ] **Delete** - Dateien/Ordner löschen (mit Confirm-Dialog)
+- [ ] **Move** - Drag & Drop zwischen Ordnern
+- [ ] **Copy** - Dateien/Ordner duplizieren
+
+#### 1.1.3 File Upload/Download (3-4h)
+- [ ] **File Upload** - Lokale Dateien ins VFS hochladen
+  - Drag & Drop auf Finder-Window
+  - File-Picker Dialog
+  - Größenlimit & Type-Validierung
+- [ ] **File Download** - VFS-Dateien als echte Files speichern
+  - Download-Button in Toolbar
+  - Batch-Download (ZIP für Ordner)
+- [ ] **Import/Export VFS** - Gesamtes VFS exportieren/importieren (Backup)
+
+#### 1.1.4 Advanced Features (Optional, 3-4h)
+- [ ] **File Preview** - Text/Bild/Markdown-Preview im Finder
+- [ ] **Search** - Dateisuche im gesamten VFS
+- [ ] **Favoriten & Recents** - Schnellzugriff auf oft genutzte Dateien
+- [ ] **Trash/Papierkorb** - Gelöschte Dateien wiederherstellen
+
+**Geschätzter Aufwand**: 13-17 Stunden (Kern: 10-13h, Optional: 3-4h)
+
+**Dateien**:
+- `src/ts/finder.ts` (erweitern)
+- `src/ts/finder-view.ts` (erweitern)
+- `src/ts/virtual-fs.ts` (neu - VFS Manager)
+- `src/ts/file-operations.ts` (neu - CRUD Operations)
+
+**Dependencies**:
+- LocalStorage API (bereits vorhanden)
+- File API (Upload/Download)
+- Dialogs (Confirm, File Picker)
 
 - [x] **Window Tabs System** - Tab-Leiste, Add/Close, Switch, Reordering, Shortcuts
 - [x] **Window Menü in Menubar** - Liste aller Instanzen, Wechsel, Alle schließen, Neue Instanz
@@ -278,9 +341,35 @@ WindowManager
 
 ---
 
-## Priorität 2: Weitere Module
+## Priorität 2: Testing & Bug Fixes (AKUT)
 
-### 2.1 Finder Multi-Instance
+### 2.1 E2E Tests stabilisieren (HIGH PRIORITY)
+
+**Status**: 10/30 Tests failing nach neuesten Änderungen
+
+**Failing Tests:**
+1. Desktop Icons (2 Tests) - Nur `projects` Icon wird gerendert
+2. Launchpad (5 Tests) - UI-Elemente nicht gefunden (`#launchpad-apps-grid`, `#launchpad-search-input`)
+3. Session Restore (3 Tests) - Terminal/Editor-Instanzen werden nicht wiederhergestellt
+
+**To Do:**
+- [ ] Desktop Icons Fix - `about`, `settings`, `github` Icons fehlen
+- [ ] Launchpad DOM Fix - Prüfe HTML-Struktur vs. Test-Selektoren
+- [ ] Session Restore Debug - Multi-Window Session vs. Legacy Session
+
+**Geschätzter Aufwand**: 4-6 Stunden
+
+---
+
+## Priorität 3: Weitere Module (TEILWEISE ERLEDIGT)
+
+### 3.1 Finder Multi-Instance ✅ ABGESCHLOSSEN
+
+- [x] FinderInstance erstellen (Basis-Struktur, Virtual FS, Navigation/Selection State)
+- [x] GitHub Integration (Cache-Strategie, API-Calls, Fehlerbehandlung)
+- [x] Favoriten & Recents (global vs. pro Instanz)
+
+### 3.2 Image Viewer Multi-Instance (Niedrige Priorität)
 
 - [ ] FinderInstance erstellen (Basis-Struktur, Virtual FS, Navigation/Selection State)
 - [ ] GitHub Integration (Cache-Strategie, API-Calls, Fehlerbehandlung)
@@ -297,9 +386,9 @@ WindowManager
 
 ---
 
-## Priorität 3: Advanced Features (Optional)
+## Priorität 4: Advanced Features (Optional, Niedrige Priorität)
 
-### 3.1 Window Tiling & Split View
+### 4.1 Window Tiling & Split View
 
 - [ ] Split View System (Horizontal/Vertical, Resizable Splitter, Drag & Drop)
 - [ ] Tiling Layouts (Grid 2x2/3x3, Sidebar+Main, Custom Layouts)
@@ -323,9 +412,9 @@ WindowManager
 
 ---
 
-## Priorität 4: Testing & Quality
+## Priorität 5: Testing & Quality (Teilweise erledigt)
 
-### 4.1 E2E Tests erweitern
+### 5.1 E2E Tests erweitern
 
 - [ ] Stabilisiere verbleibende 7 failing Tests (Finder-reopen, Keyboard-Shortcuts, Window-Menu)
 - [ ] UI Tests (Tab-System, Window-Menü, Shortcuts)
@@ -351,9 +440,9 @@ WindowManager
 
 ---
 
-## Priorität 5: Documentation & Polish
+## Priorität 6: Documentation & Polish
 
-### 5.1 User Documentation
+### 6.1 User Documentation
 
 - [ ] User Guide (Mehrere Fenster öffnen, Wechseln, Sessions speichern)
 - [ ] Keyboard Shortcuts Cheatsheet (In-App Hilfe)
@@ -421,20 +510,31 @@ WindowManager
 
 ---
 
-## Nächster Schritt
+## Nächster Schritt - Empfehlung
 
-**Priorität 1.3: State Persistierung & Session Management**
+### Option A: Virtual File System Enhancement (NEUE FEATURE)
+**Aufwand**: 13-17 Stunden
+**Impact**: Finder wird vollwertiger Dateimanager mit Persistenz & CRUD
+**Siehe**: Priorität 1.1
 
-Auto-Save System für Instanzen:
+### Option B: E2E Tests stabilisieren (BUG FIXES)
+**Aufwand**: 4-6 Stunden  
+**Impact**: CI/CD wieder grün, Push-Hook reaktivierbar
+**Siehe**: Priorität 2.1
 
-- Alle Instanzen periodisch speichern (debounced)
-- LocalStorage/SessionStorage Integration
-- Restore beim Reload (Instanzen, Modal-State, Active Tab, Cursor)
+### Option C: TypeScript Refactoring (CODE QUALITY)
+**Aufwand**: 4-6 Stunden
+**Impact**: Duplikation reduzieren, bessere Type-Safety
+**Siehe**: Backlog - TypeScript Refactoring
 
-**Geschätzter Aufwand**: 3-4 Stunden
+---
+
+**Empfehlung**: **Option B** (E2E Tests) → dann **Option A** (Virtual FS)
+
+Tests sollten stabil sein, bevor neue Features entwickelt werden.
 
 ---
 
 **Erstellt**: 25. Oktober 2025
-**Letzte Aktualisierung**: 30. Oktober 2025 (Multi-Window Architektur)
-**Version**: 3.0 (Multi-Window Refactor Strategy)
+**Letzte Aktualisierung**: 31. Oktober 2025 (Virtual FS Roadmap, Prioritäten neu sortiert)
+**Version**: 4.0 (Virtual File System Enhancement)
