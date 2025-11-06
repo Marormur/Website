@@ -359,6 +359,7 @@ module.exports = {
     // Navigation / Settings / Apple menu
     gotoHome,
     waitForAppReady,
+    openFinderWindow,
     openAppleMenu,
     closeAppleMenuIfOpen,
     openSettingsViaAppleMenu,
@@ -379,3 +380,26 @@ module.exports = {
     mockGithubRepoImageFlow,
     ensureGithubMocksIfRequested,
 };
+
+// --- Window helpers ---
+/**
+ * Öffnet das neue FinderWindow (BaseWindow) über das Dock‑Icon und gibt den Fenster‑Locator zurück.
+ * Nutzt die BaseWindow‑Struktur: .modal.multi-window[id^="window-finder-"]
+ */
+async function openFinderWindow(page) {
+    // Click dock icon by accessible name
+    await page.getByRole('img', { name: 'Finder Icon' }).click();
+    // Prefer new BaseWindow Finder
+    const newWin = page.locator('.modal.multi-window[id^="window-finder-"]');
+    try {
+        await newWin.first().waitFor({ state: 'visible', timeout: 6000 });
+        return newWin.first();
+    } catch (_) {
+        // Fallback: locate a visible dialog whose heading is "Finder" and return its modal container
+        const heading = page.getByRole('heading', { name: /^Finder$/ });
+        await heading.waitFor({ state: 'visible', timeout: 6000 });
+        const modal = page.locator('.modal', { has: heading });
+        await modal.first().waitFor({ state: 'visible', timeout: 4000 });
+        return modal.first();
+    }
+}
