@@ -89,8 +89,9 @@ export class BaseWindow {
     };
 
     constructor(config: WindowConfig) {
-        this.id = config.id || this._generateId();
+        // Set type FIRST, before generating ID (ID generation uses this.type)
         this.type = config.type;
+        this.id = config.id || this._generateId();
         this.element = null;
         this.titlebarElement = null;
         this.contentElement = null;
@@ -569,8 +570,14 @@ export class BaseWindow {
      */
     close(): void {
         this.hide();
-        // WindowRegistry will handle cleanup
+        
+        // Remove from z-index manager stack
         const W = window as any;
+        if (W.__zIndexManager && typeof W.__zIndexManager.removeWindow === 'function') {
+            W.__zIndexManager.removeWindow(this.id);
+        }
+        
+        // WindowRegistry will handle cleanup
         if (W.WindowRegistry) {
             W.WindowRegistry.removeWindow(this.id);
         }
@@ -614,15 +621,20 @@ export class BaseWindow {
     bringToFront(): void {
         const W = window as any;
 
-        // Prefer Dialog z-index manager if available (used by legacy modals)
+        // Initialize __zIndexManager if not exists (needed for proper z-index stacking)
+        if (!W.__zIndexManager) {
+            this._ensureZIndexManager();
+        }
+
+        // Use __zIndexManager for consistent z-index management across all windows
         if (W.__zIndexManager && typeof W.__zIndexManager.bringToFront === 'function') {
             W.__zIndexManager.bringToFront(this.id, this.element, this.element);
-            // Notify menubar about focus change even when using legacy z-index manager
+            // Notify menubar about focus change
             W.updateProgramLabelByTopModal?.();
             return;
         }
 
-        // Fallback to WindowRegistry
+        // Fallback to WindowRegistry (should rarely happen now)
         if (W.WindowRegistry) {
             this.zIndex = W.WindowRegistry.getNextZIndex();
             if (this.element) {
@@ -632,6 +644,98 @@ export class BaseWindow {
 
         // Notify menubar about focus change
         W.updateProgramLabelByTopModal?.();
+    }
+
+    /**
+     * Ensure __zIndexManager exists. This is normally initialized by Dialog class,
+     * but BaseWindow instances may be created before any Dialog, so we initialize it here.
+     */
+    private _ensureZIndexManager(): void {
+        const W = window as any;
+        if (W.__zIndexManager) return;
+
+        const BASE_Z_INDEX = 1000;
+        const MAX_WINDOW_Z_INDEX = 2147483500; // Below Dock (2147483550) and Launchpad (2147483600)
+        const windowStack: string[] = []; // Ordered list of window IDs (bottom to top)
+
+        W.__zIndexManager = {
+            bringToFront(windowId: string, _modal: HTMLElement, _windowEl?: HTMLElement | null) {
+                // Remove from current position if exists
+                const currentIndex = windowStack.indexOf(windowId);
+                if (currentIndex !== -1) {
+                    windowStack.splice(currentIndex, 1);
+                }
+
+                // Add to top of stack
+                windowStack.push(windowId);
+
+                // Reassign z-indexes to all windows in stack
+                // This prevents z-index from growing indefinitely
+                windowStack.forEach((id, index) => {
+                    const zIndex = BASE_Z_INDEX + index;
+                    const element = document.getElementById(id);
+
+                    if (element) {
+                        // Clamp to maximum to ensure critical UI elements stay on top
+                        const clampedZIndex = Math.min(zIndex, MAX_WINDOW_Z_INDEX);
+                        element.style.zIndex = clampedZIndex.toString();
+
+                        // Also update windowEl if it's a separate element
+                        const win = element.querySelector('.window-container') as HTMLElement;
+                        if (win) {
+                            win.style.zIndex = clampedZIndex.toString();
+                        }
+                    }
+                });
+
+                // Update legacy topZIndex for compatibility
+                W.topZIndex = Math.min(BASE_Z_INDEX + windowStack.length, MAX_WINDOW_Z_INDEX);
+            },
+
+            removeWindow(windowId: string) {
+                const index = windowStack.indexOf(windowId);
+                if (index !== -1) {
+                    windowStack.splice(index, 1);
+                }
+            },
+
+            getWindowStack() {
+                return [...windowStack];
+            },
+
+            restoreWindowStack(savedStack: string[]) {
+                // Clear current stack
+                windowStack.length = 0;
+
+                // Restore stack in order, validating each window exists
+                savedStack.forEach(windowId => {
+                    const element = document.getElementById(windowId);
+                    if (element) {
+                        windowStack.push(windowId);
+                    }
+                });
+
+                // Reassign z-indexes based on restored order
+                windowStack.forEach((id, index) => {
+                    const zIndex = BASE_Z_INDEX + index;
+                    const element = document.getElementById(id);
+
+                    if (element) {
+                        const clampedZIndex = Math.min(zIndex, MAX_WINDOW_Z_INDEX);
+                        element.style.zIndex = clampedZIndex.toString();
+
+                        const win = element.querySelector('.window-container') as HTMLElement;
+                        if (win) {
+                            win.style.zIndex = clampedZIndex.toString();
+                        }
+                    }
+                });
+            },
+
+            reset() {
+                windowStack.length = 0;
+            },
+        };
     }
 
     /**
