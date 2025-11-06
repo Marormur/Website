@@ -44,7 +44,6 @@ export const OPEN_WINDOWS_KEY = 'openWindows';
 export const WINDOW_POSITIONS_KEY = 'windowPositions';
 
 export const MODAL_IDS = [
-    'finder-modal',
     'projects-modal',
     'about-modal',
     'settings-modal',

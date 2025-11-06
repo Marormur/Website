@@ -205,7 +205,7 @@ export class BaseWindow {
         const controls = document.createElement('div');
         controls.className = 'flex space-x-2';
 
-        // Close button (red dot) - match old finder-modal structure
+        // Close button (red dot)
         const closeBtn = document.createElement('button');
         closeBtn.className = 'ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300';
         closeBtn.title = 'Schließen';
@@ -550,6 +550,7 @@ export class BaseWindow {
         // Update menubar to reflect new active window
         const W = window as any;
         W.updateProgramLabelByTopModal?.();
+        W.updateDockIndicators?.();
         this._saveState();
     }
 
@@ -570,17 +571,20 @@ export class BaseWindow {
      */
     close(): void {
         this.hide();
-        
+
         // Remove from z-index manager stack
         const W = window as any;
         if (W.__zIndexManager && typeof W.__zIndexManager.removeWindow === 'function') {
             W.__zIndexManager.removeWindow(this.id);
         }
-        
+
         // WindowRegistry will handle cleanup
         if (W.WindowRegistry) {
             W.WindowRegistry.removeWindow(this.id);
         }
+
+        // Update dock indicators after window is closed
+        W.updateDockIndicators?.();
     }
 
     /**

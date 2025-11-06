@@ -218,11 +218,7 @@ import { getJSON } from './storage-utils.js';
                 origDestroy(id);
                 const remaining = manager.getAllInstances().length;
                 if (remaining === 0) {
-                    try {
-                        const API = (window as any).API;
-                        if (API?.window?.close) API.window.close('finder-modal');
-                        else document.getElementById('finder-modal')?.classList.add('hidden');
-                    } catch {}
+                    // All legacy finder instances destroyed - this is now handled by multi-window system
                 } else {
                     const active = manager.getActiveInstance();
                     if (active) this.showInstance('finder', active.instanceId);
@@ -240,7 +236,7 @@ import { getJSON } from './storage-utils.js';
             this.integrations.set('finder', {
                 manager,
                 tabManager: controller,
-                modalId: 'finder-modal',
+                modalId: null, // Legacy finder-modal removed
                 containerId: 'finder-container',
             });
 

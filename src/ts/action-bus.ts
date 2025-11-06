@@ -2,7 +2,7 @@
  * ActionBus - Declarative event system to wire UI actions via data-action attributes.
  *
  * Example:
- *   <button data-action="closeWindow" data-window-id="finder-modal">Close</button>
+ *   <button data-action="closeWindow" data-window-id="text-modal">Close</button>
  *   ActionBus.register('closeWindow', (params, el) => { ... })
  */
 console.log('ActionBus loaded');
@@ -249,10 +249,6 @@ console.log('ActionBus loaded');
         // Fenster öffnen
         openWindow: (params: Params) => {
             const windowId = params.windowId;
-            if (!windowId) {
-                console.warn('openWindow: missing windowId');
-                return;
-            }
 
             // Close launchpad if it's open (clicking dock icon while launchpad is visible)
             const launchpadModal = document.getElementById('launchpad-modal');
@@ -261,13 +257,18 @@ console.log('ActionBus loaded');
                 g.dialogs?.['launchpad-modal']?.close?.();
             }
 
-            // SPECIAL: Use Multi-Window system for Finder instead of legacy modal
-            if (windowId === 'finder-modal') {
+            // SPECIAL: Finder uses Multi-Window system (no windowId needed for dock icon)
+            // If no windowId is provided, assume it's the Finder dock icon click
+            if (!windowId) {
                 const win = window as any;
-                if (win.FinderWindow && typeof win.FinderWindow.create === 'function') {
-                    win.FinderWindow.create();
+                if (win.FinderWindow && typeof win.FinderWindow.focusOrCreate === 'function') {
+                    win.FinderWindow.focusOrCreate();
                     return;
                 }
+                console.warn(
+                    '[ActionBus] openWindow called without windowId and FinderWindow not available'
+                );
+                return;
             }
 
             (

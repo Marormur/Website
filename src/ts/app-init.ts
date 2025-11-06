@@ -96,7 +96,6 @@ function initModalIds(): { modalIds: string[]; transientModalIds: Set<string> } 
     } else {
         // Fallback
         const modalIds = win.APP_CONSTANTS?.MODAL_IDS || [
-            'finder-modal',
             'projects-modal',
             'about-modal',
             'settings-modal',

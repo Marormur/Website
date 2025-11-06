@@ -106,19 +106,6 @@ export class Dialog {
         const win = window as any;
         const config = win.WindowManager?.getConfig?.(this.modalId);
         if (!config || !config.metadata?.ensureInstanceOnOpen) return;
-
-        // For Finder: use Multi-Window FinderWindow instead of legacy system
-        if (this.modalId === 'finder-modal') {
-            // Open via new Multi-Window system
-            if (win.FinderWindow && typeof win.FinderWindow.create === 'function') {
-                const existing = win.WindowRegistry?.getWindowsByType?.('finder') || [];
-                if (existing.length === 0) {
-                    console.log('[Finder] Creating initial FinderWindow via multi-window system');
-                    win.FinderWindow.create();
-                }
-            }
-            return; // Don't proceed with legacy finder-modal
-        }
     }
 
     close() {

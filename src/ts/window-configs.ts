@@ -27,28 +27,6 @@ declare global {
 // Build the configurations list. Keep order stable; WindowManager load order matters.
 export const windowConfigurations: WindowConfiguration[] = [
     {
-        id: 'finder-modal',
-        type: 'persistent',
-        programKey: 'programs.finder',
-        icon: './img/sucher.png',
-        closeButtonId: 'close-finder-modal',
-        metadata: {
-            initHandler: function () {
-                // This handler runs on every window open, UNLESS __SESSION_RESTORE_IN_PROGRESS is set.
-                // To handle race conditions (opening Finder before session restore completes),
-                // we defer instance creation to a separate check that always runs.
-                try {
-                    const integ = window.MultiInstanceIntegration?.getIntegration?.('finder');
-                    integ?.tabManager?.controller?.refresh?.();
-                } catch (e) {
-                    console.warn('[Finder] init handler failed:', e);
-                }
-            },
-            // This flag tells Dialog.open() to always ensure at least one instance exists
-            ensureInstanceOnOpen: true,
-        },
-    },
-    {
         id: 'launchpad-modal',
         type: 'persistent',
         programKey: 'programs.launchpad',

@@ -156,7 +156,6 @@ function buildFinderMenuDefinition(context: MenuContext) {
         createWindowMenuSection(context),
         createHelpMenuSection(context, {
             itemKey: 'menu.finder.help',
-            infoModalId: 'finder-modal',
             itemIcon: 'help',
         }),
     ];
@@ -536,10 +535,7 @@ function getMultiInstanceMenuItems(context: MenuContext) {
     let typeLabel: string | null = null;
     let newInstanceKey: string | null = null;
     const modalId = context?.modalId;
-    if (
-        (modalId === 'finder-modal' || modalId === 'projects-modal') &&
-        window['FinderInstanceManager']
-    ) {
+    if (modalId === 'projects-modal' && window['FinderInstanceManager']) {
         manager = window['FinderInstanceManager'];
         typeLabel = 'Finder';
         newInstanceKey = 'menu.window.newFinder';
@@ -657,7 +653,6 @@ function createHelpMenuSection(context: any, overrides: any = {}) {
 // --- Rendering ---
 const menuDefinitions: any = {
     default: buildDefaultMenuDefinition,
-    'finder-modal': buildFinderMenuDefinition,
     'projects-modal': buildFinderMenuDefinition,
     'settings-modal': buildSettingsMenuDefinition,
     'text-modal': buildTextEditorMenuDefinition,

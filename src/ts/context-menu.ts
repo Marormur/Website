@@ -100,11 +100,6 @@ if ((window as any)[guardKey]) {
             (target as Element).closest &&
             (target as Element).closest('#image-modal')
         );
-        const inFinderModal = !!(
-            target &&
-            (target as Element).closest &&
-            (target as Element).closest('#finder-modal')
-        );
 
         if (inDockItem) {
             const dockItem = (target as Element).closest('#dock .dock-item') as Element | null;
@@ -174,7 +169,9 @@ if ((window as any)[guardKey]) {
                     if (isImage && itemType === 'file') {
                         items.push({
                             id: 'finder-open-with-preview',
-                            label: i18n.translate('context.finder.openWithPreview') || 'Öffnen mit Vorschau',
+                            label:
+                                i18n.translate('context.finder.openWithPreview') ||
+                                'Öffnen mit Vorschau',
                             action: () => {
                                 // Use ActionBus for simplicity
                                 const ab = (window as any).ActionBus;
@@ -290,7 +287,10 @@ if ((window as any)[guardKey]) {
             items.push({
                 id: 'open-finder',
                 label: i18n.translate('context.openFinder') || 'Finder öffnen',
-                action: () => openModal('finder-modal'),
+                action: () => {
+                    const W = window as any;
+                    W.FinderWindow?.focusOrCreate();
+                },
             });
             items.push({
                 id: 'open-text',
@@ -325,7 +325,10 @@ if ((window as any)[guardKey]) {
         items.push({
             id: 'open-finder',
             label: i18n.translate('context.openFinder') || 'Finder öffnen',
-            action: () => openModal('finder-modal'),
+            action: () => {
+                const W = window as any;
+                W.FinderWindow?.focusOrCreate();
+            },
         });
         items.push({
             id: 'open-text',
@@ -568,4 +571,3 @@ if ((window as any)[guardKey]) {
 }
 
 export {};
-

@@ -26,7 +26,10 @@ export const DESKTOP_SHORTCUTS: DesktopShortcut[] = [
         labelKey: 'desktop.projects',
         fallbackLabel: 'Projekte',
         onOpen: () => {
-            API?.window.open('finder-modal');
+            const W = window as any;
+            if (W.FinderWindow?.focusOrCreate) {
+                W.FinderWindow.focusOrCreate();
+            }
             // Navigiere zum Projects-Ordner
             const w = window as unknown as {
                 FinderSystem?: { navigateTo?: (path: string) => void };
