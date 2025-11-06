@@ -29,7 +29,7 @@ export class FinderWindow extends BaseWindow {
             this.contentElement.remove();
         }
 
-        // Tab bar (like old finder-modal structure)
+        // Tab bar
         const tabBar = document.createElement('div');
         tabBar.id = `${this.id}-tabs`;
         tabBar.className = 'window-tab-bar';
@@ -152,10 +152,46 @@ export class FinderWindow extends BaseWindow {
     static create(config?: Partial<WindowConfig>): FinderWindow {
         const window = new FinderWindow(config);
         window.createView('Computer');
-        window.show();
+
+        // Register window BEFORE showing it, so updateDockIndicators() can find it
         const W = globalThis as any;
         if (W.WindowRegistry) W.WindowRegistry.registerWindow(window);
+
+        window.show();
         return window;
+    }
+
+    /**
+     * Focus existing Finder window or create new one (macOS-like Dock behavior)
+     * - If no Finder window exists, create a new one
+     * - If Finder windows exist, focus the most recently active one
+     */
+    static focusOrCreate(config?: Partial<WindowConfig>): FinderWindow {
+        const W = globalThis as any;
+        if (!W.WindowRegistry) {
+            // Fallback: create new if registry unavailable
+            return FinderWindow.create(config);
+        }
+
+        // Get all existing Finder windows
+        const finderWindows = W.WindowRegistry.getWindowsByType('finder');
+
+        if (finderWindows.length === 0) {
+            // No Finder window exists → create new one
+            return FinderWindow.create(config);
+        }
+
+        // Find the most recently active Finder window (highest z-index)
+        let mostRecentWindow = finderWindows[0];
+        for (const win of finderWindows) {
+            if (win.zIndex > mostRecentWindow.zIndex) {
+                mostRecentWindow = win;
+            }
+        }
+
+        // Focus the most recent Finder window
+        mostRecentWindow.bringToFront();
+        return mostRecentWindow;
     }
 }
 

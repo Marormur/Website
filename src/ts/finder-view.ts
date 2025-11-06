@@ -21,6 +21,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BaseTab, type TabConfig } from './base-tab.js';
+import { VirtualFS } from './virtual-fs.js';
 
 const ROOT_FOLDER_NAME = 'Computer';
 
@@ -32,6 +33,7 @@ interface FileItem {
     icon?: string;
     size?: number;
     modified?: string;
+    path?: string; // Full path for recent files navigation
 }
 
 interface RecentFile {
@@ -51,9 +53,8 @@ export class FinderView extends BaseTab {
     sortOrder: 'asc' | 'desc';
     selectedItems: Set<string>;
     _renderedItems: FileItem[];
-
-    // Simple in-memory virtual FS for the Computer view
-    virtualFileSystem: Record<string, any>;
+    _eventHandlersAttached: boolean;
+    sidebarWidth: number;
 
     // Favorites and Recent Files
     favorites: Set<string>;
@@ -73,6 +74,8 @@ export class FinderView extends BaseTab {
         content: HTMLElement | null;
         viewListBtn: HTMLButtonElement | null;
         viewGridBtn: HTMLButtonElement | null;
+        sidebar: HTMLElement | null;
+        resizer: HTMLElement | null;
     };
 
     githubRepos: any[];
@@ -95,16 +98,19 @@ export class FinderView extends BaseTab {
         this.sortOrder = 'asc';
         this.selectedItems = new Set();
         this._renderedItems = [];
+        this._eventHandlersAttached = false;
+        this.sidebarWidth = config?.content?.sidebarWidth ?? 192; // default 12rem
 
-        this.virtualFileSystem = this._createVirtualFileSystem();
         this.githubRepos = [];
         this.lastGithubItemsMap = new Map();
 
-        // Initialize Favorites and Recent Files from saved state
+        // Initialize Favorites from saved state
         const savedFavorites = config?.content?.favorites || [];
         this.favorites = new Set(savedFavorites);
-        this.recentFiles = config?.content?.recentFiles || [];
-        this.maxRecentFiles = 20;
+
+        // Load recent files from global storage (shared across all tabs/windows)
+        this.recentFiles = FinderView.loadRecentFiles();
+        this.maxRecentFiles = FinderView.MAX_RECENT_FILES;
 
         // Initialize Search
         this.searchTerm = '';
@@ -119,33 +125,9 @@ export class FinderView extends BaseTab {
             content: null,
             viewListBtn: null,
             viewGridBtn: null,
+            sidebar: null,
+            resizer: null,
         };
-    }
-
-    private _createVirtualFileSystem() {
-        const rootFolder = {
-            type: 'folder',
-            icon: '💻',
-            children: {
-                Documents: {
-                    type: 'folder',
-                    icon: '📄',
-                    children: {
-                        'README.md': {
-                            type: 'file',
-                            icon: '📝',
-                            size: 1024,
-                            modified: new Date().toISOString(),
-                        },
-                    },
-                },
-                Downloads: { type: 'folder', icon: '⬇️', children: {} },
-                Pictures: { type: 'folder', icon: '🖼️', children: {} },
-                Music: { type: 'folder', icon: '🎵', children: {} },
-                Videos: { type: 'folder', icon: '🎬', children: {} },
-            },
-        };
-        return { [ROOT_FOLDER_NAME]: rootFolder } as Record<string, any>;
     }
 
     createDOM(): HTMLElement {
@@ -155,10 +137,14 @@ export class FinderView extends BaseTab {
 
         const isGithub = this.source === 'github';
         container.innerHTML = `
-            <div class="flex-1 flex gap-0 min-h-0 overflow-hidden">
-                <aside class="w-48 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+            <div class="flex-1 flex gap-0 min-h-0 min-w-0 overflow-hidden">
+                <aside id="finder-sidebar" class="shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto" style="width: ${this.sidebarWidth}px;">
                     <div class="py-2">
                         <div class="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide" data-i18n="finder.sidebar.favorites">FAVORITEN</div>
+                        <button class="finder-sidebar-item" id="finder-sidebar-home" data-sidebar-action="home">
+                            <span class="finder-sidebar-icon">🏠</span>
+                            <span data-i18n="finder.sidebar.home">Home</span>
+                        </button>
                         <button class="finder-sidebar-item finder-sidebar-active" id="finder-sidebar-computer" data-sidebar-action="computer">
                             <span class="finder-sidebar-icon">💻</span>
                             <span data-i18n="finder.sidebar.computer">Computer</span>
@@ -178,7 +164,8 @@ export class FinderView extends BaseTab {
                         </button>
                     </div>
                 </aside>
-                <div class="flex-1 flex flex-col min-h-0">
+                <div class="finder-resizer shrink-0 w-1 md:w-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-blue-400 cursor-col-resize" role="separator" aria-orientation="vertical" title="Größe ändern"></div>
+                <div class="flex-1 flex flex-col min-h-0 min-w-0">
                     <div class="finder-toolbar px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
                         <!-- Back / Root like old Finder -->
                         <button class="finder-toolbar-btn" data-action="navigate-up" data-i18n-title="finder.toolbar.back" title="Zurück">
@@ -188,8 +175,8 @@ export class FinderView extends BaseTab {
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                         </button>
                         <!-- Breadcrumbs centered/left grow -->
-                        <div class="flex-1 mx-2">
-                            <div class="breadcrumbs text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1"></div>
+                        <div class="flex-1 mx-2 min-w-0">
+                            <div class="breadcrumbs text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1 overflow-hidden"></div>
                         </div>
                         <!-- Optional: sort menu next to view controls -->
                         <div class="relative hidden md:block">
@@ -212,9 +199,9 @@ export class FinderView extends BaseTab {
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3m10 0h8v8h-8V3M3 13h8v8H3v-8m10 0h8v8h-8v-8Z" /></svg>
                             </button>
                         </div>
-                        <input type="text" class="finder-search px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" data-i18n-placeholder="finder.toolbar.search" placeholder="Suchen" style="width: 180px;" />
+                        <input type="text" class="finder-search px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0 w-28 sm:w-40 md:w-56 lg:w-72 xl:w-80" data-i18n-placeholder="finder.toolbar.search" placeholder="Suchen" />
                     </div>
-                    <div class="finder-content flex-1 overflow-auto bg-white dark:bg-gray-800" data-finder-content></div>
+                    <div class="finder-content flex-1 overflow-auto bg-white dark:bg-gray-800 min-w-0" data-finder-content></div>
                 </div>
             </div>
         `;
@@ -223,12 +210,15 @@ export class FinderView extends BaseTab {
         this.dom.toolbar = container.querySelector('.finder-toolbar');
         this.dom.breadcrumbs = container.querySelector('.breadcrumbs');
         this.dom.content = container.querySelector('.finder-content');
+        this.dom.sidebar = container.querySelector('#finder-sidebar');
+        this.dom.resizer = container.querySelector('.finder-resizer');
         this.dom.viewListBtn = null;
         this.dom.viewGridBtn = null;
 
         // Toolbar/Sidebar/Content Interaktionen anbinden
         this._attachEvents();
         this._attachSidebarEvents();
+        this._attachResizeHandlers();
         this._setupContentEventHandlers();
         this._renderAll();
 
@@ -239,6 +229,58 @@ export class FinderView extends BaseTab {
         }
 
         return container;
+    }
+
+    private _attachResizeHandlers(): void {
+        const sidebar = this.dom.sidebar;
+        const resizer = this.dom.resizer;
+        const contentArea = this.element?.querySelector(
+            '.flex-1.flex.gap-0.min-h-0.overflow-hidden'
+        ) as HTMLElement | null;
+        if (!sidebar || !resizer) return;
+
+        const minWidth = 160; // px
+        const maxWidth = 480; // px
+
+        let startX = 0;
+        let startWidth = 0;
+        let dragging = false;
+
+        const onMouseMove = (e: MouseEvent) => {
+            if (!dragging) return;
+            const dx = e.clientX - startX;
+            let newWidth = Math.max(minWidth, Math.min(startWidth + dx, maxWidth));
+
+            // Also ensure there's room for content (min 360px)
+            const container = this.element as HTMLElement;
+            if (container) {
+                const total = container.clientWidth;
+                const minContent = 360;
+                newWidth = Math.min(newWidth, Math.max(total - minContent, minWidth));
+            }
+
+            sidebar.style.width = `${newWidth}px`;
+            this.sidebarWidth = newWidth;
+        };
+
+        const stopDragging = () => {
+            if (!dragging) return;
+            dragging = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', stopDragging);
+            document.body.classList.remove('select-none');
+            this._persistState();
+        };
+
+        resizer.addEventListener('mousedown', (e: MouseEvent) => {
+            e.preventDefault();
+            dragging = true;
+            startX = e.clientX;
+            startWidth = sidebar.getBoundingClientRect().width;
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', stopDragging);
+            document.body.classList.add('select-none');
+        });
     }
 
     private _attachEvents(): void {
@@ -318,12 +360,14 @@ export class FinderView extends BaseTab {
         sidebarButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const action = btn.dataset.sidebarAction;
-                // Update active state
-                sidebarButtons.forEach(b => b.classList.remove('finder-sidebar-active'));
-                btn.classList.add('finder-sidebar-active');
 
                 // Handle action
-                if (action === 'computer') {
+                if (action === 'home') {
+                    this.source = 'computer';
+                    this.currentPath = ['home', 'marvin'];
+                    this._persistState();
+                    this._renderAll();
+                } else if (action === 'computer') {
                     this.source = 'computer';
                     this.goRoot();
                 } else if (action === 'github') {
@@ -336,11 +380,19 @@ export class FinderView extends BaseTab {
                     this.source = 'starred';
                     this.goRoot();
                 }
+
+                // Stelle sicher, dass das aktive Highlight dem finalen Zustand entspricht
+                this._updateSidebarActiveHighlight();
             });
         });
     }
 
     private _setupContentEventHandlers(): void {
+        if (this._eventHandlersAttached) {
+            console.log('[FinderView] Event handlers already attached, skipping');
+            return;
+        }
+        console.log('[FinderView] Attaching event handlers to content area');
         // Delegation für Klick/Double‑Klick auf List/Grid‑Items
         const resolveItemEl = (evt: Event): HTMLElement | null => {
             const node = evt.target as Node | null;
@@ -362,18 +414,25 @@ export class FinderView extends BaseTab {
             this._selectItem(item.name);
         });
         this.dom.content?.addEventListener('dblclick', e => {
+            console.log('[FinderView] dblclick event fired', e.target);
             const itemEl = resolveItemEl(e);
+            console.log('[FinderView] resolved itemEl:', itemEl);
             if (!itemEl) return;
             const idx = parseInt(itemEl.dataset.itemIndex || '-1', 10);
             const item = this._renderedItems[idx];
+            console.log('[FinderView] item at index', idx, ':', item);
             if (!item) return;
+            console.log('[FinderView] calling openItem:', item.name, item.type);
             this.openItem(item.name, item.type);
         });
+        this._eventHandlersAttached = true;
+        console.log('[FinderView] Event handlers attached successfully');
     }
 
     private _renderAll(): void {
         this.renderBreadcrumbs();
         this.renderContent();
+        this._updateSidebarActiveHighlight();
     }
 
     renderBreadcrumbs(): void {
@@ -409,6 +468,45 @@ export class FinderView extends BaseTab {
         if (rootBtn) rootBtn.addEventListener('click', () => this.goRoot());
     }
 
+    /**
+     * Synchronisiert den aktiven Sidebar-Eintrag mit der aktuellen Quelle/Route.
+     * Regeln:
+     * - source=github → GitHub aktiv
+     * - source=recent → Zuletzt verwendet aktiv
+     * - source=starred → Markiert aktiv
+     * - source=computer → Wenn Pfad mit 'home' beginnt → Home aktiv, sonst Computer
+     */
+    private _updateSidebarActiveHighlight(): void {
+        if (!this.element) return;
+
+        const sidebarButtons = this.element.querySelectorAll<HTMLElement>('[data-sidebar-action]');
+        sidebarButtons.forEach(b => b.classList.remove('finder-sidebar-active'));
+
+        let toActivate: string | null = null;
+        switch (this.source) {
+            case 'github':
+                toActivate = '#finder-sidebar-github';
+                break;
+            case 'recent':
+                toActivate = '#finder-sidebar-recent';
+                break;
+            case 'starred':
+                toActivate = '#finder-sidebar-starred';
+                break;
+            case 'computer':
+            default: {
+                const atHome = this.currentPath.length > 0 && this.currentPath[0] === 'home';
+                toActivate = atHome ? '#finder-sidebar-home' : '#finder-sidebar-computer';
+                break;
+            }
+        }
+
+        if (toActivate) {
+            const el = this.element.querySelector(toActivate);
+            el?.classList.add('finder-sidebar-active');
+        }
+    }
+
     renderContent(): void {
         if (!this.dom.content) return;
 
@@ -428,7 +526,9 @@ export class FinderView extends BaseTab {
 
         // Apply search filter
         const filtered = this.filterItems(items, this.searchTerm);
-        const sorted = this.sortItems(filtered);
+
+        // Sort only if not in recent view (recent items are already sorted by date, newest first)
+        const sorted = this.source === 'recent' ? filtered : this.sortItems(filtered);
 
         switch (this.viewMode) {
             case 'list':
@@ -441,13 +541,10 @@ export class FinderView extends BaseTab {
     }
 
     getComputerItems(): FileItem[] {
-        let current: any = this.virtualFileSystem;
-        for (const pathPart of this.currentPath) {
-            if (current[pathPart] && current[pathPart].children)
-                current = current[pathPart].children;
-            else return [];
-        }
-        return Object.entries(current).map(([name, item]: [string, any]) => ({
+        // VirtualFS root is '/'; currentPath is relative to /
+        const path = this.currentPath.length === 0 ? ['/'] : ['/', ...this.currentPath];
+        const items = VirtualFS.list(path);
+        return Object.entries(items).map(([name, item]: [string, any]) => ({
             name,
             type: item.type as 'folder' | 'file',
             icon: item.icon || (item.type === 'folder' ? '📁' : '📄'),
@@ -489,29 +586,38 @@ export class FinderView extends BaseTab {
         const rows = items
             .map(
                 (item, i) => `
-            <tr class="finder-list-item ${this.selectedItems.has(item.name) ? 'bg-blue-100 dark:bg-blue-900' : ''}" data-item-index="${i}" data-item-name="${item.name}" data-item-type="${item.type}">
-                <td><span class="finder-item-icon">${item.icon || ''}</span>${item.name}</td>
-                <td class="text-right">${this.formatSize(item.size)}</td>
-                <td class="text-right text-gray-500 dark:text-gray-400">${this.formatDate(item.modified)}</td>
+            <tr class="finder-list-item ${this.selectedItems.has(item.name) ? 'bg-blue-100 dark:bg-blue-900' : ''}" data-item-index="${i}" data-item-name="${item.name}" data-item-type="${item.type}"${item.path ? ` data-item-path="${item.path}"` : ''}>
+                <td class="pr-2">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="finder-item-icon shrink-0">${item.icon || ''}</span>
+                    <span class="truncate block min-w-0">${item.name}</span>
+                  </div>
+                </td>
+                <td class="text-right whitespace-nowrap pl-2 pr-2">${this.formatSize(item.size)}</td>
+                <td class="text-right text-gray-500 dark:text-gray-400 whitespace-nowrap pl-2">${this.formatDate(item.modified)}</td>
             </tr>
         `
             )
             .join('');
         this.dom.content!.innerHTML = `
             <div class="p-2">
-                <table class="finder-list-table">
+                <table class="finder-list-table table-fixed w-full">
+                    <colgroup>
+                        <col />
+                        <col class="w-28" />
+                        <col class="w-40" />
+                    </colgroup>
                     <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th class="text-right">Größe</th>
-                            <th class="text-right">Geändert</th>
+                        <tr class="text-left">
+                            <th class="font-medium">Name</th>
+                            <th class="text-right font-medium">Größe</th>
+                            <th class="text-right font-medium">Geändert</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
                 </table>
             </div>
         `;
-        this._setupContentEventHandlers();
     }
 
     renderGridView(items: FileItem[]): void {
@@ -519,17 +625,16 @@ export class FinderView extends BaseTab {
         const tiles = items
             .map(
                 (item, i) => `
-            <div class="finder-grid-item ${this.selectedItems.has(item.name) ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 bg-blue-100/60 dark:bg-blue-900/40' : ''}" data-item-index="${i}">
-                <div class="finder-grid-icon">${item.icon || ''}</div>
-                <div class="finder-grid-name">${item.name}</div>
+            <div class="finder-grid-item ${this.selectedItems.has(item.name) ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 bg-blue-100/60 dark:bg-blue-900/40' : ''} min-w-0 p-3 rounded" data-item-index="${i}" data-item-name="${item.name}" data-item-type="${item.type}"${item.path ? ` data-item-path="${item.path}"` : ''}>
+                <div class="finder-grid-icon text-2xl mb-2">${item.icon || ''}</div>
+                <div class="finder-grid-name truncate text-sm">${item.name}</div>
             </div>
         `
             )
             .join('');
         this.dom.content!.innerHTML = `
-            <div class="finder-grid-container">${tiles}</div>
+            <div class="finder-grid-container grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 p-3">${tiles}</div>
         `;
-        this._setupContentEventHandlers();
     }
 
     formatSize(size?: number): string {
@@ -555,21 +660,98 @@ export class FinderView extends BaseTab {
     }
 
     _selectItem(name: string): void {
+        const wasSelected = this.selectedItems.has(name);
         this.selectedItems.clear();
-        this.selectedItems.add(name);
-        this.renderContent();
+
+        if (!wasSelected) {
+            this.selectedItems.add(name);
+        }
+
+        // Update selection styling without full re-render
+        // This prevents DOM destruction during double-click sequences
+        if (this.dom.content) {
+            const allItems = this.dom.content.querySelectorAll('[data-item-name]');
+            allItems.forEach(el => {
+                const itemName = (el as HTMLElement).dataset.itemName;
+                const isSelected = this.selectedItems.has(itemName || '');
+
+                if (this.viewMode === 'list') {
+                    if (isSelected) {
+                        el.classList.add('bg-blue-100', 'dark:bg-blue-900');
+                    } else {
+                        el.classList.remove('bg-blue-100', 'dark:bg-blue-900');
+                    }
+                } else {
+                    // Grid mode
+                    if (isSelected) {
+                        el.classList.add(
+                            'ring-2',
+                            'ring-blue-500',
+                            'ring-offset-2',
+                            'dark:ring-offset-gray-900',
+                            'bg-blue-100/60',
+                            'dark:bg-blue-900/40'
+                        );
+                    } else {
+                        el.classList.remove(
+                            'ring-2',
+                            'ring-blue-500',
+                            'ring-offset-2',
+                            'dark:ring-offset-gray-900',
+                            'bg-blue-100/60',
+                            'dark:bg-blue-900/40'
+                        );
+                    }
+                }
+            });
+        }
     }
 
     openItem(name: string, type: 'folder' | 'file'): void {
         if (type === 'folder') {
             this.navigateToFolder(name);
         } else {
-            // Track in recent files
-            this.addToRecent(name);
+            // Special handling for recent files: navigate to original location
+            if (this.source === 'recent') {
+                const item = this._renderedItems.find(i => i.name === name);
+                if (item?.path) {
+                    this.navigateToRecentFile(item.path);
+                    return;
+                }
+            }
+
+            // Track in recent files (only if not already in recent view)
+            if (this.source !== 'recent') {
+                this.addToRecent(name);
+            }
+
             // In Zukunft: Datei öffnen mit passender App
             // Hier nur Statusänderung
             this._selectItem(name);
         }
+    }
+
+    /**
+     * Navigate to a recent file's original location
+     */
+    private navigateToRecentFile(fullPath: string): void {
+        // Parse path: e.g., "home/marvin/Documents/notes.txt"
+        const parts = fullPath.split('/').filter(Boolean);
+        if (parts.length === 0) return;
+
+        const fileName = parts[parts.length - 1];
+        if (!fileName) return;
+
+        const folderParts = parts.slice(0, -1);
+
+        // Switch to computer view and navigate to the folder
+        this.source = 'computer';
+        this.currentPath = folderParts;
+        this._persistState();
+        this._renderAll();
+
+        // Select the file
+        this._selectItem(fileName);
     }
 
     navigateToFolder(name: string): void {
@@ -579,14 +761,11 @@ export class FinderView extends BaseTab {
             this._renderAll();
             return;
         }
-        // Resolve folder path based on current path
-        let current: any = this.virtualFileSystem;
-        for (const part of this.currentPath) {
-            if (current[part] && current[part].children) current = current[part].children;
-            else return;
-        }
-        const target = current[name];
-        if (target && target.type === 'folder') {
+        // Check VirtualFS if folder exists
+        const targetPath =
+            this.currentPath.length === 0 ? ['/', name] : ['/', ...this.currentPath, name];
+        const folder = VirtualFS.getFolder(targetPath);
+        if (folder) {
             this.currentPath = [...this.currentPath, name];
             this._persistState();
             this._renderAll();
@@ -656,37 +835,118 @@ export class FinderView extends BaseTab {
         return items;
     }
 
-    // --- Recent Files System ---
+    // --- Recent Files System (Global Shared) ---
+    private static RECENT_FILES_KEY = 'finder-recent-files';
+    private static MAX_RECENT_FILES = 20;
+
+    /**
+     * Load recent files from global storage
+     */
+    private static loadRecentFiles(): RecentFile[] {
+        try {
+            const stored = localStorage.getItem(FinderView.RECENT_FILES_KEY);
+            if (stored) {
+                return JSON.parse(stored) as RecentFile[];
+            }
+        } catch (e) {
+            console.warn('[FinderView] Failed to load recent files:', e);
+        }
+        return FinderView.getDefaultRecentFiles();
+    }
+
+    /**
+     * Save recent files to global storage
+     */
+    private static saveRecentFiles(files: RecentFile[]): void {
+        try {
+            localStorage.setItem(FinderView.RECENT_FILES_KEY, JSON.stringify(files));
+        } catch (e) {
+            console.warn('[FinderView] Failed to save recent files:', e);
+        }
+    }
+
+    /**
+     * Get default recent files (with examples)
+     */
+    private static getDefaultRecentFiles(): RecentFile[] {
+        const now = new Date().toISOString();
+        const yesterday = new Date(Date.now() - 86400000).toISOString();
+        const twoDaysAgo = new Date(Date.now() - 172800000).toISOString();
+
+        return [
+            {
+                name: 'README.md',
+                path: 'home/marvin/README.md',
+                icon: '📝',
+                modified: now,
+            },
+            {
+                name: 'notes.txt',
+                path: 'home/marvin/Documents/notes.txt',
+                icon: '📝',
+                modified: yesterday,
+            },
+            {
+                name: 'project-plan.md',
+                path: 'home/marvin/Documents/project-plan.md',
+                icon: '📝',
+                modified: twoDaysAgo,
+            },
+        ];
+    }
+
     addToRecent(name: string): void {
-        const path = this.currentPath.join('/') + '/' + name;
-        const icon = name.endsWith('.md') || name.endsWith('.txt') ? '📝' : '📄';
+        // Build full path from current location
+        const pathParts = this.source === 'computer' ? this.currentPath : [];
+        const fullPath = pathParts.length > 0 ? pathParts.join('/') + '/' + name : name;
+
+        // Determine icon based on file extension
+        const ext = name.split('.').pop()?.toLowerCase() || '';
+        let icon = '📄';
+        if (['md', 'txt'].includes(ext)) icon = '📝';
+        else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) icon = '🖼️';
+        else if (['pdf'].includes(ext)) icon = '�';
+        else if (['zip', 'tar', 'gz'].includes(ext)) icon = '�';
+
         const recentFile: RecentFile = {
             name,
-            path,
+            path: fullPath,
             icon,
             modified: new Date().toISOString(),
         };
 
+        // Load current global list
+        const recentFiles = FinderView.loadRecentFiles();
+
         // Remove duplicate if exists
-        this.recentFiles = this.recentFiles.filter(f => f.path !== path);
+        const filtered = recentFiles.filter(f => f.path !== fullPath);
 
         // Add to front
-        this.recentFiles.unshift(recentFile);
+        filtered.unshift(recentFile);
 
         // Limit to maxRecentFiles
-        if (this.recentFiles.length > this.maxRecentFiles) {
-            this.recentFiles = this.recentFiles.slice(0, this.maxRecentFiles);
-        }
+        const limited = filtered.slice(0, FinderView.MAX_RECENT_FILES);
 
+        // Save back to global storage
+        FinderView.saveRecentFiles(limited);
+
+        // Update local instance reference
+        this.recentFiles = limited;
         this._persistState();
     }
 
     getRecentItems(): FileItem[] {
-        return this.recentFiles.map(rf => ({
+        // Always load fresh from global storage
+        const recentFiles = FinderView.loadRecentFiles();
+        // Note: recentFiles is already sorted with newest first (unshift in addToRecent)
+        // So we can return them directly without additional sorting
+        return recentFiles.map(rf => ({
             name: rf.name,
             type: 'file' as const,
             icon: rf.icon,
             modified: rf.modified,
+            // Store path in a data attribute for navigation
+            path: rf.path,
         }));
     }
 
@@ -709,6 +969,7 @@ export class FinderView extends BaseTab {
             sortOrder: this.sortOrder,
             favorites: Array.from(this.favorites),
             recentFiles: this.recentFiles,
+            sidebarWidth: this.sidebarWidth,
         };
         this.metadata.modified = Date.now();
 
@@ -741,6 +1002,7 @@ export class FinderView extends BaseTab {
                 ...state.contentState,
                 favorites: state.favorites || state.contentState?.favorites || [],
                 recentFiles: state.recentFiles || state.contentState?.recentFiles || [],
+                sidebarWidth: state.sidebarWidth || state.contentState?.sidebarWidth || 192,
             },
         });
         view.currentPath = state.currentPath || [];
@@ -893,7 +1155,9 @@ export class FinderView extends BaseTab {
                 break;
             case 'github':
                 // At root show generic GitHub view label, otherwise last path segment (repo or folder)
-                label = atRoot ? 'GitHub' : this.currentPath[this.currentPath.length - 1];
+                label = atRoot
+                    ? 'GitHub'
+                    : this.currentPath[this.currentPath.length - 1] || 'GitHub';
                 break;
             case 'recent':
                 label = t('finder.sidebar.recent', 'Zuletzt verwendet');

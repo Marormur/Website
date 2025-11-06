@@ -378,6 +378,7 @@ export const en = {
         },
         sidebar: {
             favorites: 'Favorites',
+            home: 'Home',
             computer: 'Computer',
             recent: 'Recent',
             locations: 'Locations',

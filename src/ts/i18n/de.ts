@@ -266,6 +266,7 @@ export const de = {
         },
         sidebar: {
             favorites: 'Favoriten',
+            home: 'Home',
             computer: 'Computer',
             recent: 'Zuletzt verwendet',
             locations: 'Orte',

@@ -44,12 +44,7 @@ export interface FileSystemStats {
     totalSize: number;
 }
 
-export type FileSystemEventType = 
-    | 'create'
-    | 'update'
-    | 'delete'
-    | 'rename'
-    | 'move';
+export type FileSystemEventType = 'create' | 'update' | 'delete' | 'rename' | 'move';
 
 export interface FileSystemEvent {
     type: FileSystemEventType;
@@ -82,55 +77,167 @@ class VirtualFileSystemManager {
 
     private createDefaultStructure(): Record<string, VirtualFolder> {
         const now = new Date().toISOString();
-        
+
         return {
-            Computer: {
+            '/': {
                 type: 'folder',
-                icon: '💻',
+                icon: '/',
                 created: now,
                 modified: now,
                 children: {
-                    Documents: {
+                    home: {
                         type: 'folder',
-                        icon: '📄',
+                        icon: '🏠',
                         created: now,
                         modified: now,
                         children: {
-                            'README.md': {
-                                type: 'file',
-                                icon: '📝',
-                                content: '# Welcome to Virtual File System\n\nThis is a persistent virtual file system.',
-                                size: 72,
+                            marvin: {
+                                type: 'folder',
+                                icon: '👤',
                                 created: now,
                                 modified: now,
+                                children: {
+                                    '.profile': {
+                                        type: 'file',
+                                        icon: '⚙️',
+                                        content:
+                                            '# ~/.profile\n# User profile configuration\n\nexport PATH=$HOME/bin:/usr/local/bin:/usr/bin:/bin\nexport EDITOR=vim\n',
+                                        size: 112,
+                                        created: now,
+                                        modified: now,
+                                    },
+                                    'README.md': {
+                                        type: 'file',
+                                        icon: '📝',
+                                        content:
+                                            '# Welcome to your home directory\n\nThis is your personal space in the virtual file system.\n\n## Structure\n- Documents: Store your text files and documents\n- Downloads: Temporary download location\n- Pictures: Image files\n- Projects: Your code projects\n',
+                                        size: 248,
+                                        created: now,
+                                        modified: now,
+                                    },
+                                    Documents: {
+                                        type: 'folder',
+                                        icon: '📄',
+                                        created: now,
+                                        modified: now,
+                                        children: {
+                                            'notes.txt': {
+                                                type: 'file',
+                                                icon: '📝',
+                                                content: 'Personal notes...',
+                                                size: 17,
+                                                created: now,
+                                                modified: now,
+                                            },
+                                        },
+                                    },
+                                    Downloads: {
+                                        type: 'folder',
+                                        icon: '⬇️',
+                                        created: now,
+                                        modified: now,
+                                        children: {},
+                                    },
+                                    Pictures: {
+                                        type: 'folder',
+                                        icon: '🖼️',
+                                        created: now,
+                                        modified: now,
+                                        children: {},
+                                    },
+                                    Projects: {
+                                        type: 'folder',
+                                        icon: '�',
+                                        created: now,
+                                        modified: now,
+                                        children: {},
+                                    },
+                                },
                             },
-                            'notes.txt': {
+                        },
+                    },
+                    etc: {
+                        type: 'folder',
+                        icon: '⚙️',
+                        created: now,
+                        modified: now,
+                        children: {
+                            hosts: {
                                 type: 'file',
-                                icon: '📝',
-                                content: 'Your notes here...',
-                                size: 18,
+                                icon: '�',
+                                content:
+                                    '# /etc/hosts\n127.0.0.1   localhost\n::1         localhost\n',
+                                size: 57,
                                 created: now,
                                 modified: now,
                             },
                         },
                     },
-                    Downloads: {
+                    usr: {
                         type: 'folder',
-                        icon: '⬇️',
+                        icon: '📦',
                         created: now,
                         modified: now,
-                        children: {},
+                        children: {
+                            bin: {
+                                type: 'folder',
+                                icon: '⚡',
+                                created: now,
+                                modified: now,
+                                children: {},
+                            },
+                            share: {
+                                type: 'folder',
+                                icon: '📚',
+                                created: now,
+                                modified: now,
+                                children: {
+                                    doc: {
+                                        type: 'folder',
+                                        icon: '📖',
+                                        created: now,
+                                        modified: now,
+                                        children: {
+                                            README: {
+                                                type: 'file',
+                                                icon: '📝',
+                                                content:
+                                                    'Virtual File System Documentation\n\nThis is a UNIX-like filesystem hierarchy.\n\nStandard directories:\n- /home: User home directories\n- /etc: System configuration\n- /usr: User programs and data\n- /var: Variable data (logs, temp)\n- /tmp: Temporary files\n',
+                                                size: 252,
+                                                created: now,
+                                                modified: now,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
                     },
-                    Pictures: {
+                    var: {
                         type: 'folder',
-                        icon: '🖼️',
+                        icon: '📊',
                         created: now,
                         modified: now,
-                        children: {},
+                        children: {
+                            log: {
+                                type: 'folder',
+                                icon: '📜',
+                                created: now,
+                                modified: now,
+                                children: {},
+                            },
+                            tmp: {
+                                type: 'folder',
+                                icon: '�️',
+                                created: now,
+                                modified: now,
+                                children: {},
+                            },
+                        },
                     },
-                    Music: {
+                    tmp: {
                         type: 'folder',
-                        icon: '🎵',
+                        icon: '🗑️',
                         created: now,
                         modified: now,
                         children: {},
@@ -231,22 +338,33 @@ class VirtualFileSystemManager {
 
     private navigate(path: string | string[]): VirtualFileSystemItem | null {
         const parts = this.parsePath(path);
+
+        // Empty path = root folder
+        if (parts.length === 0) {
+            return null; // Root is not an item, it's the container
+        }
+
         let current: Record<string, VirtualFileSystemItem> = this.root;
+        let lastItem: VirtualFileSystemItem | null = null;
 
         for (const part of parts) {
             const item = current[part];
             if (!item) {
                 return null;
             }
+
+            lastItem = item;
+
             if (item.type === 'folder') {
                 current = item.children;
             } else {
-                // Last part is a file
+                // File - stop navigation
                 return item;
             }
         }
 
-        return null;
+        // Return the last folder we successfully navigated to
+        return lastItem;
     }
 
     // ========================================================================
@@ -273,7 +391,7 @@ class VirtualFileSystemManager {
 
     public list(path: string | string[] = []): Record<string, VirtualFileSystemItem> {
         const parts = this.parsePath(path);
-        
+
         if (parts.length === 0) {
             return this.root;
         }
@@ -291,22 +409,18 @@ class VirtualFileSystemManager {
     // Write Operations
     // ========================================================================
 
-    public createFile(
-        path: string | string[],
-        content: string = '',
-        icon: string = '📝'
-    ): boolean {
+    public createFile(path: string | string[], content: string = '', icon: string = '📝'): boolean {
         const parts = this.parsePath(path);
         if (parts.length === 0) {
             return false;
         }
 
-        const fileName = parts[parts.length - 1];
+        const fileName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
         const container = parent?.children || this.root;
 
-        if (container[fileName]) {
+        if (container[fileName!]) {
             console.warn('[VirtualFS] File already exists:', this.normalizePath(path));
             return false;
         }
@@ -321,7 +435,7 @@ class VirtualFileSystemManager {
             modified: now,
         };
 
-        container[fileName] = file;
+        container[fileName!] = file;
 
         if (parent) {
             parent.modified = now;
@@ -338,12 +452,12 @@ class VirtualFileSystemManager {
             return false;
         }
 
-        const folderName = parts[parts.length - 1];
+        const folderName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
         const container = parent?.children || this.root;
 
-        if (container[folderName]) {
+        if (container[folderName!]) {
             console.warn('[VirtualFS] Folder already exists:', this.normalizePath(path));
             return false;
         }
@@ -357,7 +471,7 @@ class VirtualFileSystemManager {
             modified: now,
         };
 
-        container[folderName] = folder;
+        container[folderName!] = folder;
 
         if (parent) {
             parent.modified = now;
@@ -390,18 +504,18 @@ class VirtualFileSystemManager {
             return false;
         }
 
-        const itemName = parts[parts.length - 1];
+        const itemName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
         const container = parent?.children || this.root;
 
-        if (!container[itemName]) {
+        if (!container[itemName!]) {
             console.warn('[VirtualFS] Item not found:', this.normalizePath(path));
             return false;
         }
 
-        const item = container[itemName];
-        delete container[itemName];
+        const item = container[itemName!];
+        delete container[itemName!];
 
         if (parent) {
             parent.modified = new Date().toISOString();
@@ -418,12 +532,12 @@ class VirtualFileSystemManager {
             return false;
         }
 
-        const oldName = parts[parts.length - 1];
+        const oldName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
         const container = parent?.children || this.root;
 
-        if (!container[oldName]) {
+        if (!container[oldName!]) {
             console.warn('[VirtualFS] Item not found:', this.normalizePath(oldPath));
             return false;
         }
@@ -433,17 +547,15 @@ class VirtualFileSystemManager {
             return false;
         }
 
-        const item = container[oldName];
+        const item = container[oldName!]!; // Checked above
         container[newName] = item;
-        delete container[oldName];
+        delete container[oldName!];
 
         if (parent) {
             parent.modified = new Date().toISOString();
         }
 
-        if (item.type === 'file' || item.type === 'folder') {
-            item.modified = new Date().toISOString();
-        }
+        item.modified = new Date().toISOString();
 
         const newPath = [...parentPath, newName].join('/');
         this.scheduleSave();

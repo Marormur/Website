@@ -1,37 +1,29 @@
 /**
  * src/ts/terminal-session.ts
  * Terminal session as a tab within a terminal window
+ *
+ * Uses the shared VirtualFS for file system operations.
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BaseTab, type TabConfig } from './base-tab.js';
-
-type DirEntry = {
-    type: 'directory';
-    contents: Record<string, FSNode>;
-};
-type FileEntry = {
-    type: 'file';
-    content: string;
-};
-type FSNode = DirEntry | FileEntry;
+import { VirtualFS } from './virtual-fs.js';
 
 /**
  * TerminalSession - Individual terminal session tab
  *
  * Features:
- * - Command execution
- * - File system simulation
+ * - Command execution with VirtualFS integration
+ * - Shared file system with Finder
  * - Command history
- * - Tab completion
+ * - Path resolution and navigation
  */
 export class TerminalSession extends BaseTab {
     outputElement: HTMLElement | null;
     inputElement: HTMLInputElement | null;
     commandHistory: string[];
     historyIndex: number;
-    currentPath: string;
-    fileSystem: Record<string, FSNode>;
+    vfsCwd: string;
 
     constructor(config?: Partial<TabConfig>) {
         super({
@@ -44,31 +36,7 @@ export class TerminalSession extends BaseTab {
         this.inputElement = null;
         this.commandHistory = [];
         this.historyIndex = -1;
-        this.currentPath = '~';
-
-        this.fileSystem = {
-            '~': {
-                type: 'directory',
-                contents: {
-                    Desktop: { type: 'directory', contents: {} },
-                    Documents: {
-                        type: 'directory',
-                        contents: {
-                            'readme.txt': {
-                                type: 'file',
-                                content: 'Willkommen im Terminal!',
-                            },
-                        },
-                    },
-                    Downloads: { type: 'directory', contents: {} },
-                    'welcome.txt': {
-                        type: 'file',
-                        content:
-                            'Willkommen auf Marvins Portfolio-Website!\n\nGib "help" ein, um eine Liste verfügbarer Befehle zu sehen.',
-                    },
-                },
-            },
-        };
+        this.vfsCwd = '/home/marvin';
     }
 
     /**
@@ -84,7 +52,7 @@ export class TerminalSession extends BaseTab {
                 <div class="terminal-output flex-1 overflow-y-auto p-4 space-y-1" data-terminal-output>
                 </div>
                 <div class="terminal-input-line flex items-center px-4 py-2 border-t border-gray-700">
-                    <span class="terminal-prompt text-blue-400">guest@marvin:${this.currentPath}$</span>
+                    <span class="terminal-prompt text-blue-400">guest@marvin:${this.vfsCwd}$</span>
                     <input
                         type="text"
                         class="flex-1 ml-2 bg-transparent outline-none text-green-400 terminal-input"
@@ -154,7 +122,7 @@ export class TerminalSession extends BaseTab {
     }
 
     executeCommand(command: string): void {
-        this.addOutput(`guest@marvin:${this.currentPath}$ ${command}`, 'command');
+        this.addOutput(`guest@marvin:${this.vfsCwd}$ ${command}`, 'command');
         const [cmd, ...args] = command.split(' ');
 
         if (cmd === undefined) return;
@@ -166,6 +134,9 @@ export class TerminalSession extends BaseTab {
             pwd: () => this.printWorkingDirectory(),
             cd: () => this.changeDirectory(args[0]),
             cat: () => this.catFile(args[0]),
+            touch: () => this.touch(args[0]),
+            mkdir: () => this.mkdir(args[0]),
+            rm: () => this.rm(args[0]),
             echo: () => this.echo(args.join(' ')),
             date: () => this.showDate(),
             whoami: () => this.addOutput('guest', 'output'),
@@ -211,6 +182,9 @@ export class TerminalSession extends BaseTab {
             '  pwd      - Zeige aktuelles Verzeichnis',
             '  cd <dir> - Wechsle Verzeichnis',
             '  cat <f>  - Zeige Dateiinhalt',
+            '  touch <f> - Erstelle leere Datei',
+            '  mkdir <d> - Erstelle Verzeichnis',
+            '  rm <p>    - Lösche Datei/Verzeichnis',
             '  echo <t> - Gebe Text aus',
             '  date     - Zeige Datum/Zeit',
             '  whoami   - Zeige Benutzername',
@@ -219,43 +193,43 @@ export class TerminalSession extends BaseTab {
     }
 
     listDirectory(path?: string): void {
-        const targetPath = path ? this.normalizePath(path) : this.currentPath;
-        const targetDir = this.resolvePath(targetPath);
-        if (!targetDir || targetDir.type !== 'directory') {
-            this.addOutput(`Verzeichnis nicht gefunden: ${path || targetPath}`, 'error');
+        const target = this.vfsResolve(path);
+        const item = VirtualFS.get(target);
+        if (!item) {
+            this.addOutput(`Verzeichnis/Datei nicht gefunden: ${path || target}`, 'error');
             return;
         }
-        const items = Object.keys(targetDir.contents);
-        if (items.length === 0) this.addOutput('(leer)', 'output');
-        else {
-            items.forEach(item => {
-                const itemObj = targetDir.contents[item];
-                if (!itemObj) return;
-                const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
-                this.addOutput(prefix + item, 'output');
-            });
+        if (item.type === 'file') {
+            this.addOutput('📄 ' + target.split('/').pop(), 'output');
+            return;
         }
+        const entries = VirtualFS.list(target);
+        const names = Object.keys(entries);
+        if (names.length === 0) {
+            this.addOutput('(leer)', 'output');
+            return;
+        }
+        names.forEach(name => {
+            const child = entries[name];
+            const prefix = child.type === 'folder' ? '📁 ' : '📄 ';
+            this.addOutput(prefix + name, 'output');
+        });
     }
 
     printWorkingDirectory(): void {
-        this.addOutput(this.currentPath, 'output');
+        this.addOutput(this.vfsCwd, 'output');
     }
 
     changeDirectory(path?: string): void {
-        if (!path) {
-            this.currentPath = '~';
-            this.updatePrompt();
+        const target = this.vfsResolve(path || '/home/marvin');
+        const folder = VirtualFS.getFolder(target);
+        if (!folder) {
+            this.addOutput(`Verzeichnis nicht gefunden: ${path || target}`, 'error');
             return;
         }
-        const newPath = this.normalizePath(path);
-        const resolved = this.resolvePath(newPath);
-        if (!resolved || resolved.type !== 'directory') {
-            this.addOutput(`Verzeichnis nicht gefunden: ${path}`, 'error');
-            return;
-        }
-        this.currentPath = newPath;
+        this.vfsCwd = target;
         this.updatePrompt();
-        this.updateContentState({ currentPath: this.currentPath });
+        this.updateContentState({ currentPath: this.vfsCwd });
     }
 
     catFile(filename?: string): void {
@@ -263,10 +237,9 @@ export class TerminalSession extends BaseTab {
             this.addOutput('Dateiname fehlt', 'error');
             return;
         }
-        const currentDir = this.resolvePath(this.currentPath) as DirEntry | null;
-        const file = currentDir?.contents?.[filename] as FSNode | undefined;
+        const target = this.vfsResolve(filename);
+        const file = VirtualFS.getFile(target);
         if (!file) this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
-        else if (file.type !== 'file') this.addOutput(`${filename} ist keine Datei`, 'error');
         else this.addOutput(file.content, 'output');
     }
 
@@ -281,52 +254,114 @@ export class TerminalSession extends BaseTab {
     updatePrompt(): void {
         const prompt = this.element?.querySelector('.terminal-prompt') as HTMLElement | null;
         if (prompt) {
-            prompt.textContent = `guest@marvin:${this.currentPath}$`;
+            prompt.textContent = `guest@marvin:${this.vfsCwd}$`;
         }
     }
 
-    resolvePath(path: string | undefined | null): FSNode | null {
-        if (!path) return null;
-        const normalizedPath = this.normalizePath(path);
-        const homeNode = this.fileSystem['~'];
-        if (normalizedPath === '~') return homeNode ?? null;
-        if (homeNode === undefined) return null;
+    // ---------------------------
+    // VirtualFS helpers & cmds
+    // ---------------------------
+    private vfsResolve(path?: string): string {
+        // Default to current folder
+        if (!path || path.trim() === '' || path === '.') return this.vfsCwd;
 
-        let current: FSNode = homeNode;
-        const parts = normalizedPath
-            .replace(/^~\/?/, '')
-            .split('/')
-            .filter(p => p);
-        for (const part of parts) {
-            if ((current as DirEntry).type !== 'directory') return null;
-            const nextNode = (current as DirEntry).contents[part];
-            if (nextNode === undefined) return null;
-            current = nextNode;
-        }
-        return current;
-    }
+        // Handle tilde expansion for home directory
+        let raw = path.trim();
+        if (raw === '~') return '/home/marvin';
+        if (raw.startsWith('~/')) raw = '/home/marvin/' + raw.slice(2);
 
-    normalizePath(path: string): string {
-        if (!path || path === '~') return '~';
-        if (path === '.') return this.currentPath;
-        let workingPath: string;
-        if (path.startsWith('~')) workingPath = path;
-        else if (path.startsWith('/')) workingPath = '~' + path;
-        else workingPath = this.currentPath === '~' ? `~/${path}` : `${this.currentPath}/${path}`;
-        const parts = workingPath.split('/').filter(p => p !== '' && p !== '.');
-        const resolved: string[] = [];
-        for (const part of parts) {
-            if (part === '..') {
-                if (resolved.length > 0 && resolved[resolved.length - 1] !== '~') {
-                    resolved.pop();
+        // Absolute path starts with /
+        if (raw.startsWith('/')) {
+            // Resolve '.' and '..'
+            const parts = raw.split('/').filter(Boolean);
+            const resolved: string[] = [];
+            for (const p of parts) {
+                if (p === '.') continue;
+                if (p === '..') {
+                    if (resolved.length > 0) resolved.pop();
+                } else {
+                    resolved.push(p);
                 }
+            }
+            return '/' + resolved.join('/');
+        }
+
+        // Relative path: append to current directory
+        const base = this.vfsCwd.split('/').filter(Boolean);
+        const parts = raw.split('/').filter(Boolean);
+        const combined = [...base, ...parts];
+
+        // Resolve '.' and '..'
+        const resolved: string[] = [];
+        for (const p of combined) {
+            if (p === '.') continue;
+            if (p === '..') {
+                if (resolved.length > 0) resolved.pop();
             } else {
-                resolved.push(part);
+                resolved.push(p);
             }
         }
-        if (resolved.length === 0 || (resolved.length === 1 && resolved[0] === '~')) return '~';
-        if (resolved[0] !== '~') resolved.unshift('~');
-        return resolved.join('/');
+        return '/' + resolved.join('/');
+    }
+
+    touch(path?: string): void {
+        if (!path) {
+            this.addOutput('Pfad/Dateiname fehlt', 'error');
+            return;
+        }
+        const target = this.vfsResolve(path);
+        const existing = VirtualFS.get(target);
+        if (existing) {
+            if (existing.type === 'file') {
+                this.addOutput(`Datei existiert bereits: ${target}`, 'error');
+            } else {
+                this.addOutput(`Pfad ist ein Verzeichnis: ${target}`, 'error');
+            }
+            return;
+        }
+        // Ensure parent exists
+        const parts = target.split('/');
+        const name = parts.pop() as string;
+        const parentPath = parts.join('/');
+        const parent = VirtualFS.getFolder(parentPath);
+        if (!parent) {
+            this.addOutput(`Übergeordnetes Verzeichnis nicht gefunden: ${parentPath}`, 'error');
+            return;
+        }
+        const ok = VirtualFS.createFile([...parts, name].join('/'), '');
+        if (!ok) this.addOutput(`Konnte Datei nicht erstellen: ${target}`, 'error');
+    }
+
+    mkdir(path?: string): void {
+        if (!path) {
+            this.addOutput('Verzeichnisname fehlt', 'error');
+            return;
+        }
+        const target = this.vfsResolve(path);
+        const parts = target.split('/');
+        const name = parts.pop() as string;
+        const parentPath = parts.join('/');
+        const parent = VirtualFS.getFolder(parentPath);
+        if (!parent) {
+            this.addOutput(`Übergeordnetes Verzeichnis nicht gefunden: ${parentPath}`, 'error');
+            return;
+        }
+        const ok = VirtualFS.createFolder([...parts, name].join('/'));
+        if (!ok) this.addOutput(`Konnte Verzeichnis nicht erstellen: ${target}`, 'error');
+    }
+
+    rm(path?: string): void {
+        if (!path) {
+            this.addOutput('Pfad fehlt', 'error');
+            return;
+        }
+        const target = this.vfsResolve(path);
+        if (!VirtualFS.get(target)) {
+            this.addOutput(`Nicht gefunden: ${target}`, 'error');
+            return;
+        }
+        const ok = VirtualFS.delete(target);
+        if (!ok) this.addOutput(`Konnte nicht löschen: ${target}`, 'error');
     }
 
     /**
@@ -335,9 +370,9 @@ export class TerminalSession extends BaseTab {
     serialize(): any {
         return {
             ...super.serialize(),
-            currentPath: this.currentPath,
+            currentPath: this.vfsCwd,
             commandHistory: this.commandHistory,
-            fileSystem: this.fileSystem,
+            vfsCwd: this.vfsCwd,
         };
     }
 
@@ -350,15 +385,46 @@ export class TerminalSession extends BaseTab {
             title: state.title,
         });
 
+        // Map legacy currentPath to vfsCwd
         if (state.currentPath) {
-            session.currentPath = state.currentPath;
+            // Map old 'Computer' paths to new '/' structure
+            if (state.currentPath === 'Computer' || state.currentPath === '~') {
+                session.vfsCwd = '/home/marvin';
+            } else if (state.currentPath.startsWith('Computer/')) {
+                // Map Computer/Home -> /home/marvin, Computer/Documents -> /home/marvin/Documents
+                const subPath = state.currentPath.slice(9); // Remove 'Computer/'
+                if (subPath === 'Home' || subPath.startsWith('Home/')) {
+                    const rest = subPath === 'Home' ? '' : subPath.slice(5);
+                    session.vfsCwd = rest ? `/home/marvin/${rest}` : '/home/marvin';
+                } else {
+                    session.vfsCwd = `/home/marvin/${subPath}`;
+                }
+            } else if (state.currentPath.startsWith('~/')) {
+                session.vfsCwd = '/home/marvin/' + state.currentPath.slice(2);
+            } else {
+                session.vfsCwd = state.currentPath;
+            }
+        }
+        // New vfsCwd property takes precedence
+        if (state.vfsCwd) {
+            // Migrate old Computer paths to new structure
+            if (state.vfsCwd === 'Computer') {
+                session.vfsCwd = '/home/marvin';
+            } else if (state.vfsCwd.startsWith('Computer/')) {
+                const subPath = state.vfsCwd.slice(9);
+                if (subPath === 'Home' || subPath.startsWith('Home/')) {
+                    const rest = subPath === 'Home' ? '' : subPath.slice(5);
+                    session.vfsCwd = rest ? `/home/marvin/${rest}` : '/home/marvin';
+                } else {
+                    session.vfsCwd = `/home/marvin/${subPath}`;
+                }
+            } else {
+                session.vfsCwd = state.vfsCwd;
+            }
         }
         if (state.commandHistory) {
             session.commandHistory = state.commandHistory;
             session.historyIndex = session.commandHistory.length;
-        }
-        if (state.fileSystem) {
-            session.fileSystem = state.fileSystem;
         }
 
         return session;
