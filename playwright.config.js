@@ -22,7 +22,7 @@ export default defineConfig({
     // Mild retry locally to smooth out rare flakes; CI keeps 2
     retries: process.env.CI ? 2 : 1,
     // Single worker to avoid server port conflicts
-    workers: 1,
+    // workers: 1,
     reporter: process.env.CI ? 'list' : 'line', // Less verbose output locally
     use: {
         baseURL: BASE_URL,
