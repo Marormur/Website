@@ -334,32 +334,50 @@ export function initDockDragDrop(): void {
 }
 
 export function updateDockIndicators(): void {
+    const W = window as any;
+    const domUtils = W.DOMUtils;
+
     const indicatorMappings = [
-        { modalId: 'finder-modal', indicatorId: 'finder-indicator' },
+        { indicatorId: 'finder-indicator', windowType: 'finder' },
         { modalId: 'projects-modal', indicatorId: 'projects-indicator' },
         { modalId: 'settings-modal', indicatorId: 'settings-indicator' },
-        { modalId: 'text-modal', indicatorId: 'text-indicator' },
-        { modalId: 'terminal-modal', indicatorId: 'terminal-indicator' },
+        { modalId: 'text-modal', indicatorId: 'text-indicator', windowType: 'text-editor' },
+        { modalId: 'terminal-modal', indicatorId: 'terminal-indicator', windowType: 'terminal' },
     ];
 
     indicatorMappings.forEach(mapping => {
-        const modal = document.getElementById(mapping.modalId);
         const indicator = document.getElementById(mapping.indicatorId);
-        if (modal && indicator) {
-            const minimized = modal.dataset && modal.dataset.minimized === 'true';
-            const domUtils = (window as any).DOMUtils;
-            if (!modal.classList.contains('hidden') || minimized) {
-                if (domUtils && typeof domUtils.show === 'function') {
-                    domUtils.show(indicator);
-                } else {
-                    indicator.classList.remove('hidden');
-                }
+        if (!indicator) return;
+
+        let hasOpenWindow = false;
+
+        // Check multi-window system first (for finder, terminal, text-editor)
+        if (mapping.windowType && W.WindowRegistry) {
+            const windows = W.WindowRegistry.getWindowsByType(mapping.windowType);
+            hasOpenWindow = windows && windows.length > 0;
+        }
+
+        // Fallback: check legacy modal system
+        if (!hasOpenWindow) {
+            const modal = document.getElementById(mapping.modalId);
+            if (modal) {
+                const minimized = modal.dataset && modal.dataset.minimized === 'true';
+                hasOpenWindow = !modal.classList.contains('hidden') || minimized;
+            }
+        }
+
+        // Update indicator visibility
+        if (hasOpenWindow) {
+            if (domUtils && typeof domUtils.show === 'function') {
+                domUtils.show(indicator);
             } else {
-                if (domUtils && typeof domUtils.hide === 'function') {
-                    domUtils.hide(indicator);
-                } else {
-                    indicator.classList.add('hidden');
-                }
+                indicator.classList.remove('hidden');
+            }
+        } else {
+            if (domUtils && typeof domUtils.hide === 'function') {
+                domUtils.hide(indicator);
+            } else {
+                indicator.classList.add('hidden');
             }
         }
     });

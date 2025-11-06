@@ -318,6 +318,10 @@ class MultiWindowSessionManager {
         }
 
         console.log('[MultiWindowSessionManager] Session restored successfully');
+
+        // Update dock indicators after session restore
+        const W = window as any;
+        W.updateDockIndicators?.();
     }
 
     /**

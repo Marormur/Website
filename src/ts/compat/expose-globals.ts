@@ -49,8 +49,9 @@ import '../text-editor-document'; // Text editor document tab
 import '../text-editor-window'; // Text editor window
 
 // Multi-window system (Phase 4: Finder)
-import '../finder-view'; // Finder view tab
-import '../finder-window'; // Finder window
+// Import both side-effect and named to ensure symbols are retained and exposed
+import { FinderView as __FinderView__ } from '../finder-view'; // Finder view tab
+import { FinderWindow as __FinderWindow__ } from '../finder-window'; // Finder window
 
 // Multi-window system (Phase 6: Session Management)
 import '../multi-window-session'; // Multi-window session persistence
@@ -92,6 +93,25 @@ const w = window as unknown as WindowWithBundle;
 
 if (!('DOMUtils' in w)) {
     w['DOMUtils'] = DOMUtils;
+}
+
+// Ensure critical classes are attached on window and not eliminated by tree-shaking
+try {
+    if (!(w as any).FinderView) (w as any).FinderView = __FinderView__;
+    if (!(w as any).FinderWindow) (w as any).FinderWindow = __FinderWindow__;
+} catch {
+    /* ignore */
+}
+
+try {
+    console.log('[BUNDLE] Globals present:', {
+        FinderView: !!(w as any).FinderView,
+        FinderWindow: !!(w as any).FinderWindow,
+        WindowRegistry: !!(w as any).WindowRegistry,
+        ActionBus: !!(w as any).ActionBus,
+    });
+} catch {
+    /* ignore */
 }
 
 // Trigger app initialization manually since the IIFE in app-init.ts
