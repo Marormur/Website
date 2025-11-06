@@ -215,10 +215,8 @@ Example test structure:
 ```javascript
 test('should open window when clicking icon', async ({ page }) => {
     await page.goto('/');
-    await page.click(
-        '[data-action="openWindow"][data-window-id="finder-modal"]'
-    );
-    await expect(page.locator('#finder-modal')).toBeVisible();
+    await page.click('[data-action="openWindow"][data-window-id="text-modal"]');
+    await expect(page.locator('#text-modal')).toBeVisible();
 });
 ```
 

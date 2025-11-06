@@ -36,7 +36,7 @@ Dieses Dokument beschreibt etablierte Code-Patterns und Best Practices für die 
 
 ```javascript
 // RICHTIG
-Logger.info('WindowManager', 'Window opened', { id: 'finder-modal' });
+Logger.info('WindowManager', 'Window opened', { id: 'text-modal' });
 Logger.error('API', 'Request failed', error);
 Logger.debug('Terminal', 'Command executed', { cmd: 'ls' });
 
@@ -51,13 +51,13 @@ console.error('Error:', error);
 
 ```html
 <!-- RICHTIG: Deklarativ -->
-<button data-action="closeWindow" data-window-id="finder-modal">Close</button>
+<button data-action="closeWindow" data-window-id="text-modal">Close</button>
 ```
 
 ```javascript
 // FALSCH: Imperativ
 closeBtn.addEventListener('click', () => {
-    WindowManager.close('finder-modal');
+    WindowManager.close('text-modal');
 });
 ```
 
@@ -117,12 +117,16 @@ class MyInstance extends BaseWindowInstance {
 
 ```javascript
 // RICHTIG
-API.window.open('finder-modal');
+// Multi-Window System
+FinderWindow.focusOrCreate();
+
+// Legacy Modal System
+API.window.open('settings-modal');
 API.theme.setThemePreference('dark');
 API.i18n.translate('programs.finder.label');
 
 // FALSCH (Legacy)
-openWindow('finder-modal');
+openWindow('text-modal');
 setThemePreference('dark');
 ```
 
@@ -209,7 +213,7 @@ test('should open window', async ({ page }) => {
     const openButton = page.locator('[data-action="openWindow"]');
     await openButton.click();
 
-    const modal = page.locator('#finder-modal');
+    const modal = page.locator('#text-modal');
     await expect(modal).toBeVisible();
 });
 ```

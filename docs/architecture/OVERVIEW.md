@@ -171,11 +171,15 @@
 │  API.theme.setPreference('dark')                               │
 │  API.theme.getPreference()                                     │
 │                                                                 │
-│  // Window                                                      │
-│  API.window.open('finder-modal')                               │
+│  // Multi-Window System                                        │
+│  FinderWindow.focusOrCreate()                                  │
+│  TerminalWindow.create()                                       │
+│                                                                 │
+│  // Legacy Modal System                                        │
+│  API.window.open('settings-modal')                             │
 │  API.window.close('settings-modal')                            │
 │  API.window.getTopWindow()                                     │
-│  API.window.getProgramInfo('finder-modal')                     │
+│  API.window.getProgramInfo('text-modal')                       │
 │                                                                 │
 │  // Storage                                                     │
 │  API.storage.saveOpenModals()                                  │

@@ -98,7 +98,7 @@ Das System erkennt das Fenster automatisch und:
 ### Alt:
 
 ```html
-<button id="close-finder-modal" ...>Schließen</button>
+<button id="close-text-modal" ...>Schließen</button>
 ```
 
 **Fertig!** 🎉
@@ -117,7 +117,13 @@ Kein JavaScript mehr nötig! 🚀
 ### Moderne Methode:
 
 ```javascript
-API.window.open('finder-modal');
+// Multi-Window System (Finder, Terminal, TextEditor)
+FinderWindow.focusOrCreate();
+TerminalWindow.create();
+TextEditorWindow.create();
+
+// Legacy Modals
+API.window.open('settings-modal');
 API.theme.setPreference('dark');
 API.storage.saveOpenModals();
 ```
@@ -158,7 +164,7 @@ console.log(WindowManager.getAllWindowIds());
 console.log(WindowManager.getTopWindow());
 
 // Fenster-Info
-console.log(WindowManager.getConfig('finder-modal'));
+console.log(WindowManager.getConfig('text-modal'));
 ```
 
 ## Tests ausführen

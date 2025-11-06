@@ -365,9 +365,7 @@ Deklaratives Event-System für UI-Aktionen.
 
 ```html
 <!-- Fenster schließen -->
-<button data-action="closeWindow" data-window-id="finder-modal">
-    Schließen
-</button>
+<button data-action="closeWindow" data-window-id="text-modal">Schließen</button>
 
 <!-- Fenster öffnen -->
 <button data-action="openWindow" data-window-id="settings-modal">
@@ -424,8 +422,12 @@ Saubere Schnittstelle zu allen Modulen.
 API.theme.setPreference('dark');
 const pref = API.theme.getPreference();
 
-// Window
-API.window.open('finder-modal');
+// Multi-Window System
+FinderWindow.focusOrCreate();
+TerminalWindow.create();
+
+// Legacy Modal System
+API.window.open('settings-modal');
 API.window.close('settings-modal');
 const topWindow = API.window.getTopWindow();
 
@@ -512,10 +514,10 @@ setThemePreference('dark'); // funktioniert weiterhin!
 ### Alt (manuelle Event-Handler):
 
 ```javascript
-const closeButton = document.getElementById('close-finder-modal');
+const closeButton = document.getElementById('close-text-modal');
 closeButton.addEventListener('click', function (e) {
     e.preventDefault();
-    window.dialogs['finder-modal'].close();
+    window.dialogs['text-modal'].close();
     saveOpenModals();
     updateDockIndicators();
 });
@@ -524,9 +526,7 @@ closeButton.addEventListener('click', function (e) {
 ### Neu (deklarativ):
 
 ```html
-<button data-action="closeWindow" data-window-id="finder-modal">
-    Schließen
-</button>
+<button data-action="closeWindow" data-window-id="text-modal">Schließen</button>
 ```
 
 ---
@@ -535,7 +535,7 @@ closeButton.addEventListener('click', function (e) {
 
 ```javascript
 var modalIds = [
-    'finder-modal',
+    'text-modal',
     'projects-modal',
     'about-modal',
     'settings-modal',
@@ -665,11 +665,11 @@ ActionBus.register('myCustomAction', (params, element) => {
 ### API nutzen:
 
 ```javascript
-// Bevorzugt: Über API-Objekt
-API.window.open('finder-modal');
+// Multi-Window System
+FinderWindow.focusOrCreate();
 
-// Legacy (funktioniert auch):
-openDesktopItemById('finder');
+// Legacy Modals
+API.window.open('settings-modal');
 ```
 
 ---
@@ -681,7 +681,7 @@ openDesktopItemById('finder');
 console.log(WindowManager.getAllWindowIds());
 
 // Fenster-Konfiguration prüfen
-console.log(WindowManager.getConfig('finder-modal'));
+console.log(WindowManager.getConfig('text-modal'));
 
 // Aktuelles Top-Window
 console.log(WindowManager.getTopWindow());

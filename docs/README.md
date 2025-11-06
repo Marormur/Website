@@ -59,7 +59,7 @@ Simply add to `src/ts/window-configs.ts`:
 Instead of manual event handlers, use declarative actions:
 
 ```html
-<button data-action="closeWindow" data-window-id="finder-modal">Close</button>
+<button data-action="closeWindow" data-window-id="text-modal">Close</button>
 ```
 
 ## 🛠️ Tools & Scripts
@@ -69,7 +69,15 @@ Instead of manual event handlers, use declarative actions:
 - `npm run dev` - Start development server
 - `npm run test:e2e` - Run end-to-end tests
 
-## 📦 Project Structure
+## 💾 Shared Virtual File System
+
+Finder und Terminal verwenden ein zentrales, persistentes Virtual File System (VirtualFS). Dadurch sind Dateien und Verzeichnisse in beiden Apps identisch sichtbar und änderbar.
+
+- **Einstieg und API**: [guides/VIRTUAL_FS_USAGE.md](./guides/VIRTUAL_FS_USAGE.md)
+- **Finder Integration**: [guides/FINDER_VIRTUAL_FS.md](./guides/FINDER_VIRTUAL_FS.md)
+- **Beispiele**: Finder-Refresh über Events, Terminal-Befehle (ls, cd, cat, touch, mkdir, rm)
+
+## �📦 Project Structure
 
 ```
 /

@@ -237,6 +237,7 @@ WindowManager
 ### ✅ MULTI-WINDOW SYSTEM VOLLSTÄNDIG (31. Oktober 2025)
 
 **Status**: Alle 6 Phasen abgeschlossen, System produktiv einsetzbar!
+
 - BaseWindow, BaseTab, WindowRegistry: 845 Zeilen
 - Terminal/TextEditor/Finder: Multi-Window + Tab-Transfer
 - Session Restore: Automatisch bei Reload, Legacy-Migration
@@ -264,6 +265,7 @@ WindowManager
 **Ziel**: Finder mit persistentem, editierbarem Virtual File System ausstatten
 
 **Aktueller Stand:**
+
 - ✅ Basis Virtual FS existiert (Computer/Documents/Downloads/Pictures/Music)
 - ✅ Read-only Dateien (README.md mit 1024 bytes)
 - ✅ GitHub-Integration für Remote-Repos
@@ -274,12 +276,14 @@ WindowManager
 **Zu implementieren:**
 
 #### 1.1.1 Persistente FS-Struktur (3-4h)
+
 - [ ] **LocalStorage Backend** - VFS in `localStorage` speichern
 - [ ] **Auto-Save on Change** - Debounced save bei Änderungen
 - [ ] **Restore on Load** - VFS beim App-Start laden
 - [ ] **Migration System** - Schema-Versioning für Future Updates
 
 #### 1.1.2 File Operations (4-5h)
+
 - [ ] **Create File** - Neue Datei erstellen (Name, Content, Icon)
 - [ ] **Create Folder** - Neuen Ordner erstellen
 - [ ] **Rename** - Dateien/Ordner umbenennen
@@ -288,16 +292,18 @@ WindowManager
 - [ ] **Copy** - Dateien/Ordner duplizieren
 
 #### 1.1.3 File Upload/Download (3-4h)
+
 - [ ] **File Upload** - Lokale Dateien ins VFS hochladen
-  - Drag & Drop auf Finder-Window
-  - File-Picker Dialog
-  - Größenlimit & Type-Validierung
+    - Drag & Drop auf Finder-Window
+    - File-Picker Dialog
+    - Größenlimit & Type-Validierung
 - [ ] **File Download** - VFS-Dateien als echte Files speichern
-  - Download-Button in Toolbar
-  - Batch-Download (ZIP für Ordner)
+    - Download-Button in Toolbar
+    - Batch-Download (ZIP für Ordner)
 - [ ] **Import/Export VFS** - Gesamtes VFS exportieren/importieren (Backup)
 
 #### 1.1.4 Advanced Features (Optional, 3-4h)
+
 - [ ] **File Preview** - Text/Bild/Markdown-Preview im Finder
 - [ ] **Search** - Dateisuche im gesamten VFS
 - [ ] **Favoriten & Recents** - Schnellzugriff auf oft genutzte Dateien
@@ -306,12 +312,14 @@ WindowManager
 **Geschätzter Aufwand**: 13-17 Stunden (Kern: 10-13h, Optional: 3-4h)
 
 **Dateien**:
+
 - `src/ts/finder.ts` (erweitern)
 - `src/ts/finder-view.ts` (erweitern)
 - `src/ts/virtual-fs.ts` (neu - VFS Manager)
 - `src/ts/file-operations.ts` (neu - CRUD Operations)
 
 **Dependencies**:
+
 - LocalStorage API (bereits vorhanden)
 - File API (Upload/Download)
 - Dialogs (Confirm, File Picker)
@@ -348,11 +356,13 @@ WindowManager
 **Status**: 10/30 Tests failing nach neuesten Änderungen
 
 **Failing Tests:**
+
 1. Desktop Icons (2 Tests) - Nur `projects` Icon wird gerendert
 2. Launchpad (5 Tests) - UI-Elemente nicht gefunden (`#launchpad-apps-grid`, `#launchpad-search-input`)
 3. Session Restore (3 Tests) - Terminal/Editor-Instanzen werden nicht wiederhergestellt
 
 **To Do:**
+
 - [ ] Desktop Icons Fix - `about`, `settings`, `github` Icons fehlen
 - [ ] Launchpad DOM Fix - Prüfe HTML-Struktur vs. Test-Selektoren
 - [ ] Session Restore Debug - Multi-Window Session vs. Legacy Session
@@ -513,16 +523,19 @@ WindowManager
 ## Nächster Schritt - Empfehlung
 
 ### Option A: Virtual File System Enhancement (NEUE FEATURE)
+
 **Aufwand**: 13-17 Stunden
 **Impact**: Finder wird vollwertiger Dateimanager mit Persistenz & CRUD
 **Siehe**: Priorität 1.1
 
 ### Option B: E2E Tests stabilisieren (BUG FIXES)
-**Aufwand**: 4-6 Stunden  
+
+**Aufwand**: 4-6 Stunden
 **Impact**: CI/CD wieder grün, Push-Hook reaktivierbar
 **Siehe**: Priorität 2.1
 
 ### Option C: TypeScript Refactoring (CODE QUALITY)
+
 **Aufwand**: 4-6 Stunden
 **Impact**: Duplikation reduzieren, bessere Type-Safety
 **Siehe**: Backlog - TypeScript Refactoring

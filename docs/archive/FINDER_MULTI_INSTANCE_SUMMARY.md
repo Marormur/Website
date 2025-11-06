@@ -1,5 +1,10 @@
 # Finder Multi-Instance Implementation Summary
 
+> **⚠️ LEGACY DOCUMENTATION - ARCHIVED**
+> This document describes the legacy modal-based Finder system (`finder-modal`).
+> The project has since migrated to a full Multi-Window system using `FinderWindow` class.
+> See `src/ts/finder-window.ts` for the current implementation.
+
 ## Overview
 
 Successfully implemented multi-instance support for the Finder module, enabling users to open multiple Finder windows with independent state and tab-based navigation.
@@ -220,10 +225,10 @@ if (
 
 ## Success Criteria Met
 
-✅ From the menu, creating a new Finder window results in a new Finder instance being created and visible  
-✅ Users can switch between Finder instances (via tabs)  
-✅ Each instance maintains its own state independently  
-✅ No regressions to existing Finder functionality  
+✅ From the menu, creating a new Finder window results in a new Finder instance being created and visible
+✅ Users can switch between Finder instances (via tabs)
+✅ Each instance maintains its own state independently
+✅ No regressions to existing Finder functionality
 ✅ Basic E2E test created (cannot execute due to environment limitations)
 
 ## Conclusion

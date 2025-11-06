@@ -744,7 +744,7 @@ Tipps:
  * @throws {Error} If window ID is invalid
  *
  * @example
- * WindowManager.open('finder-modal');
+ * WindowManager.open('text-modal');
  */
 static open(windowId) {
     // ...
