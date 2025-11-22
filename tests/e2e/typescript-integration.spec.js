@@ -42,7 +42,8 @@ test.describe('TypeScript Integration', () => {
                 StorageSystem: window.API && typeof window.API.storage,
 
                 // Phase 3: Instance Types
-                TerminalInstance: typeof window.TerminalInstance,
+                TerminalWindow: typeof window.TerminalWindow,
+                TerminalSession: typeof window.TerminalSession,
                 TextEditorInstance: typeof window.TextEditorInstance,
 
                 // Phase 4: Legacy Refactoring (exported modules)
@@ -70,7 +71,8 @@ test.describe('TypeScript Integration', () => {
         expect(modulesAvailable.StorageSystem, 'API.storage').toBe('object');
 
         // Phase 3 Instance assertions
-        expect(modulesAvailable.TerminalInstance, 'TerminalInstance').toBe('function');
+        expect(modulesAvailable.TerminalWindow, 'TerminalWindow').toBe('function');
+        expect(modulesAvailable.TerminalSession, 'TerminalSession').toBe('function');
         expect(modulesAvailable.TextEditorInstance, 'TextEditorInstance').toBe('function');
 
         // Phase 4 assertions (exported modules only)
@@ -114,29 +116,30 @@ test.describe('TypeScript Integration', () => {
         expect(abAPI.hasExecute).toBe('function');
     });
 
-    test('InstanceManager can create instances', async ({ page }) => {
+    test('TerminalWindow can create windows', async ({ page }) => {
         const canCreate = await page.evaluate(() => {
             try {
-                // Check if TerminalInstanceManager exists
-                if (!window.TerminalInstanceManager) return false;
+                // Check if TerminalWindow exists
+                if (!window.TerminalWindow) return false;
 
-                // Create instance
-                const instance = window.TerminalInstanceManager.createInstance({
+                // Create window
+                const termWin = window.TerminalWindow.create({
                     title: 'Test Terminal',
                 });
 
-                if (!instance) return false;
+                if (!termWin) return false;
 
-                // Verify instance has expected methods
-                const hasDestroy = typeof instance.destroy === 'function';
-                const hasInstanceId = typeof instance.instanceId === 'string';
+                // Verify window has expected properties
+                const hasWindowId = typeof termWin.windowId === 'string';
+                const hasSessions = Array.isArray(termWin.sessions);
+                const hasClose = typeof termWin.close === 'function';
 
                 // Clean up
-                instance.destroy();
+                termWin.close();
 
-                return hasDestroy && hasInstanceId;
+                return hasWindowId && hasSessions && hasClose;
             } catch (err) {
-                console.error('Instance creation failed:', err);
+                console.error('Window creation failed:', err);
                 return false;
             }
         });
@@ -238,24 +241,30 @@ test.describe('TypeScript Integration', () => {
     });
 
     test('TypeScript modules integrate with legacy code', async ({ page }) => {
-        // Open a window that uses both TS and JS modules
-        await page.click('[data-action="openWindow"][data-window-id="terminal-modal"]');
+        // Open terminal via Dock
+        const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
+        await terminalDockItem.click();
 
-        // Wait for terminal to be visible
-        await page.waitForSelector('#terminal-modal', { state: 'visible' });
+        // Wait for terminal window to be created
+        await page.waitForFunction(
+            () => {
+                return window.WindowRegistry?.getAllWindows('terminal')?.length === 1;
+            },
+            { timeout: 5000 }
+        );
 
-        // Check that terminal instance was created (uses TerminalInstance from TS)
+        // Check that terminal window was created (uses TerminalWindow from TS)
         const hasTerminal = await page.evaluate(() => {
-            return (
-                window.TerminalInstanceManager &&
-                window.TerminalInstanceManager.getActiveInstance() !== null
-            );
+            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
+            return wins.length > 0 && wins[0].sessions?.length > 0;
         });
 
         expect(hasTerminal).toBe(true);
 
         // Clean up
-        await page.click('[data-action="closeWindow"][data-window-id="terminal-modal"]');
+        await page.evaluate(() => {
+            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
+            wins.forEach(w => w.close?.());
+        });
     });
 });
-

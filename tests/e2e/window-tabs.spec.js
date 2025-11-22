@@ -30,16 +30,16 @@ test.describe('Multi-Instance Window Tabs', () => {
         expect(modules.MultiInstanceIntegration).toBe(true);
     });
 
-    test('should have Terminal and TextEditor instance managers', async ({ page }) => {
+    test('should have TextEditor instance manager', async ({ page }) => {
         const managers = await page.evaluate(() => {
             return {
-                terminal: typeof window.TerminalInstanceManager !== 'undefined',
                 textEditor: typeof window.TextEditorInstanceManager !== 'undefined',
+                windowRegistry: typeof window.WindowRegistry !== 'undefined',
             };
         });
 
-        expect(managers.terminal).toBe(true);
         expect(managers.textEditor).toBe(true);
+        expect(managers.windowRegistry).toBe(true);
     });
 
     test('should create tab containers in modals', async ({ page }) => {
@@ -51,22 +51,18 @@ test.describe('Multi-Instance Window Tabs', () => {
         await expect(textEditorTabsContainer).toBeAttached();
     });
 
-    test('should create multiple terminal instances via console', async ({ page }) => {
-        // Create multiple terminal instances
+    test('should create multiple terminal windows via WindowRegistry', async ({ page }) => {
+        // Create multiple terminal windows
         const result = await page.evaluate(() => {
-            if (!window.TerminalInstanceManager) return null;
+            if (!window.TerminalWindow || !window.WindowRegistry) return null;
 
-            const term1 = window.TerminalInstanceManager.createInstance({
-                title: 'Test Terminal 1',
-            });
-            const term2 = window.TerminalInstanceManager.createInstance({
-                title: 'Test Terminal 2',
-            });
+            const term1 = window.TerminalWindow.create({ title: 'Test Terminal 1' });
+            const term2 = window.TerminalWindow.create({ title: 'Test Terminal 2' });
 
             return {
-                count: window.TerminalInstanceManager.getInstanceCount(),
-                term1Id: term1?.instanceId,
-                term2Id: term2?.instanceId,
+                count: window.WindowRegistry.getAllWindows('terminal')?.length || 0,
+                term1Id: term1?.windowId,
+                term2Id: term2?.windowId,
             };
         });
 
@@ -105,4 +101,3 @@ test.describe('Multi-Instance Window Tabs', () => {
         expect(sessionInfo.storageInfo).toBeDefined();
     });
 });
-
