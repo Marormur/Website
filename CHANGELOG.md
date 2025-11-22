@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 ### Added
+- Terminal migrated to multi-window/tab architecture. Dock and Menubar now use TerminalWindow (WindowRegistry).
+- Menubar: Terminal-specific File/Edit actions (New Window, New Tab, Duplicate Tab, Close Tab/Window, Clear, Copy/Paste/Select All).
+- Dynamic menu switching based on focused window via WindowRegistry active window tracking.
+
 ### Docs
 
 - Entfernt: JSDoc aus Build und Dev-Setup. Keine API-HTML-Dokumentation mehr unter `./docs/api/`.
