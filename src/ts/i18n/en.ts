@@ -488,6 +488,13 @@ export const en = {
             clear: 'Clear Terminal',
             close: 'Close window',
             help: 'Show Terminal help',
+            newTab: 'New Tab',
+            duplicateTab: 'Duplicate Tab',
+            closeTab: 'Close Tab',
+            closeWindow: 'Close Terminal window',
+            copy: 'Copy',
+            paste: 'Paste',
+            selectAll: 'Select all',
         },
         about: {
             close: 'Close window',

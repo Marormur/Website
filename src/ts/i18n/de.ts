@@ -489,6 +489,13 @@ export const de = {
             clear: 'Terminal löschen',
             close: 'Fenster schließen',
             help: 'Terminal-Hilfe anzeigen',
+            newTab: 'Neuer Tab',
+            duplicateTab: 'Tab duplizieren',
+            closeTab: 'Tab schließen',
+            closeWindow: 'Terminal-Fenster schließen',
+            copy: 'Kopieren',
+            paste: 'Einfügen',
+            selectAll: 'Alles auswählen',
         },
         about: {
             close: 'Fenster schließen',
