@@ -155,6 +155,39 @@ export class TerminalWindow extends BaseWindow {
 
         return window;
     }
+
+    /**
+     * Focus existing Terminal window or create new one (macOS-like Dock behavior)
+     * - If no Terminal window exists, create a new one
+     * - If Terminal windows exist, focus the most recently active one
+     */
+    static focusOrCreate(config?: Partial<WindowConfig>): TerminalWindow {
+        const W = globalThis as any;
+        if (!W.WindowRegistry) {
+            // Fallback: create new if registry unavailable
+            return TerminalWindow.create(config);
+        }
+
+        // Get all existing Terminal windows
+        const terminalWindows = W.WindowRegistry.getWindowsByType('terminal');
+
+        if (terminalWindows.length === 0) {
+            // No Terminal window exists → create new one
+            return TerminalWindow.create(config);
+        }
+
+        // Find the most recently active Terminal window (highest z-index)
+        let mostRecentWindow = terminalWindows[0];
+        for (const win of terminalWindows) {
+            if (win.zIndex > mostRecentWindow.zIndex) {
+                mostRecentWindow = win;
+            }
+        }
+
+        // Focus the most recent Terminal window
+        mostRecentWindow.bringToFront();
+        return mostRecentWindow;
+    }
 }
 
 // Export to window for global access
