@@ -19,6 +19,7 @@ class WindowRegistry {
     private windows: Map<string, BaseWindow>;
     private nextZIndex: number;
     private initialized: boolean;
+    private activeWindowId: string | null;
 
     constructor() {
         this.windows = new Map();
@@ -26,6 +27,7 @@ class WindowRegistry {
         // Will sync with WindowManager if available
         this.nextZIndex = 1000;
         this.initialized = false;
+        this.activeWindowId = null;
     }
 
     /**
@@ -69,6 +71,8 @@ class WindowRegistry {
     registerWindow(window: BaseWindow): void {
         this.windows.set(window.id, window);
         console.log(`[WindowRegistry] Registered window: ${window.id} (type: ${window.type})`);
+        // If no active window yet, set the first registered as active
+        if (!this.activeWindowId) this.activeWindowId = window.id;
     }
 
     /**
@@ -80,6 +84,11 @@ class WindowRegistry {
             window.destroy();
             this.windows.delete(windowId);
             console.log(`[WindowRegistry] Removed window: ${windowId}`);
+            // Update active window if needed
+            if (this.activeWindowId === windowId) {
+                const top = this.getTopWindow();
+                this.activeWindowId = top ? top.id : null;
+            }
         }
     }
 
@@ -163,6 +172,22 @@ class WindowRegistry {
         return windows.reduce((top, current) => {
             return current.zIndex > top.zIndex ? current : top;
         });
+    }
+
+    /**
+     * Mark a window as actively focused. Consumers (menus) can use this
+     * to react to focus changes and render the correct application menu.
+     */
+    setActiveWindow(windowId: string | null): void {
+        this.activeWindowId = windowId;
+    }
+
+    /**
+     * Retrieve the currently active window, if known.
+     */
+    getActiveWindow(): BaseWindow | null {
+        if (!this.activeWindowId) return null;
+        return this.windows.get(this.activeWindowId) || null;
     }
 
     /**
