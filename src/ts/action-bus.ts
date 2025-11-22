@@ -271,6 +271,68 @@ console.log('ActionBus loaded');
                 return;
             }
 
+            // SPECIAL: Use Multi-Window system for Finder instead of legacy modal
+            if (windowId === 'finder-modal') {
+                const win = window as any;
+                try {
+                    console.info(
+                        '[ActionBus] openWindow("finder-modal") invoked. FinderWindow available?',
+                        !!win.FinderWindow
+                    );
+                } catch {
+                    /* ignore */
+                }
+                if (win.FinderWindow && typeof win.FinderWindow.focusOrCreate === 'function') {
+                    try {
+                        console.info(
+                            '[ActionBus] Focusing/creating FinderWindow via multi-window system (macOS-like behavior)'
+                        );
+                    } catch {
+                        /* ignore */
+                    }
+                    win.FinderWindow.focusOrCreate();
+                    return;
+                }
+                try {
+                    console.warn(
+                        '[ActionBus] FinderWindow not available; falling back to legacy WindowManager.open("finder-modal")'
+                    );
+                } catch {
+                    /* ignore */
+                }
+            }
+
+            // SPECIAL: Use Multi-Window system for Terminal instead of legacy modal
+            if (windowId === 'terminal-modal') {
+                const win = window as any;
+                try {
+                    console.info(
+                        '[ActionBus] openWindow("terminal-modal") invoked. TerminalWindow available?',
+                        !!win.TerminalWindow
+                    );
+                } catch {
+                    /* ignore */
+                }
+                if (win.TerminalWindow && typeof win.TerminalWindow.focusOrCreate === 'function') {
+                    try {
+                        console.info(
+                            '[ActionBus] Focusing/creating TerminalWindow via multi-window system (macOS-like behavior)'
+                        );
+                    } catch {
+                        /* ignore */
+                    }
+                    win.TerminalWindow.focusOrCreate();
+                    return;
+                }
+                try {
+                    console.warn(
+                        '[ActionBus] TerminalWindow not available; falling back to legacy WindowManager.open("terminal-modal")'
+                    );
+                } catch {
+                    /* ignore */
+                }
+            }
+
             (
                 window as Window & { WindowManager?: { open?: (id: string) => void } }
             ).WindowManager?.open?.(windowId);

@@ -562,6 +562,11 @@ export class BaseWindow {
         // Update menubar to reflect next top window
         const W = window as any;
         W.updateProgramLabelByTopModal?.();
+        const menuSystem = W.MenuSystem;
+        if (menuSystem?.renderApplicationMenu) {
+            const current = menuSystem.getCurrentMenuModalId?.();
+            menuSystem.renderApplicationMenu(current);
+        }
         this._saveState();
     }
 
@@ -585,6 +590,12 @@ export class BaseWindow {
 
         // Update dock indicators after window is closed
         W.updateDockIndicators?.();
+        // Refresh menus after closing in case active app changes
+        const menuSystem = W.MenuSystem;
+        if (menuSystem?.renderApplicationMenu) {
+            const current = menuSystem.getCurrentMenuModalId?.();
+            menuSystem.renderApplicationMenu(current);
+        }
     }
 
     /**
@@ -634,7 +645,16 @@ export class BaseWindow {
         if (W.__zIndexManager && typeof W.__zIndexManager.bringToFront === 'function') {
             W.__zIndexManager.bringToFront(this.id, this.element, this.element);
             // Notify menubar about focus change
+            // Track active window in WindowRegistry if available
+            W.WindowRegistry?.setActiveWindow?.(this.id);
             W.updateProgramLabelByTopModal?.();
+            // Refresh dynamic application menu (e.g. switch to Terminal menu)
+            const menuSystem = W.MenuSystem;
+            if (menuSystem?.renderApplicationMenu) {
+                // Pass current menu modal id so sections rebuild with new active context
+                const current = menuSystem.getCurrentMenuModalId?.();
+                menuSystem.renderApplicationMenu(current);
+            }
             return;
         }
 
@@ -644,10 +664,16 @@ export class BaseWindow {
             if (this.element) {
                 this.element.style.zIndex = String(this.zIndex);
             }
+            W.WindowRegistry.setActiveWindow?.(this.id);
         }
 
         // Notify menubar about focus change
         W.updateProgramLabelByTopModal?.();
+        const menuSystem = W.MenuSystem;
+        if (menuSystem?.renderApplicationMenu) {
+            const current = menuSystem.getCurrentMenuModalId?.();
+            menuSystem.renderApplicationMenu(current);
+        }
     }
 
     /**
