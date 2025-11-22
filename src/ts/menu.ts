@@ -395,45 +395,90 @@ function buildProgramInfoMenuDefinition(context: MenuContext) {
 }
 
 function buildTerminalMenuDefinition(context: any) {
+    // Determine active TerminalWindow (multi-window system)
+    const registry = window['WindowRegistry'];
+    const activeWin = registry?.getActiveWindow?.();
+    const isTerminalActive = activeWin?.type === 'terminal';
+    const terminalWin = isTerminalActive ? activeWin : null;
+
     return [
         {
             id: 'file',
             label: () => translate('menu.sections.file'),
             items: [
+                // New Terminal Window
                 {
                     id: 'terminal-new-window',
                     label: () => translate('menu.terminal.newWindow'),
                     shortcut: '⌘N',
-                    icon: 'terminal',
+                    icon: 'new',
                     action: () => {
-                        // Create new multi-window Terminal
-                        if (
-                            window['TerminalWindow'] &&
-                            typeof window['TerminalWindow'].create === 'function'
-                        ) {
-                            const registry = window['WindowRegistry'];
+                        if (window['TerminalWindow']?.create) {
                             const count = registry?.getWindowCount?.('terminal') || 0;
-                            window['TerminalWindow'].create({
-                                title: `Terminal ${count + 1}`,
-                            });
-                        } else {
-                            // Fallback to legacy instance manager
-                            if (
-                                window['TerminalInstanceManager'] &&
-                                typeof window['TerminalInstanceManager'].createInstance ===
-                                    'function'
-                            )
-                                window['TerminalInstanceManager'].createInstance();
+                            window['TerminalWindow'].create({ title: `Terminal ${count + 1}` });
+                        } else if (window['TerminalInstanceManager']?.createInstance) {
+                            window['TerminalInstanceManager'].createInstance();
+                        }
+                    },
+                },
+                // New Tab in active Terminal window
+                {
+                    id: 'terminal-new-tab',
+                    label: () => translate('menu.terminal.newTab'),
+                    shortcut: '⌘T',
+                    icon: 'tabNew',
+                    disabled: () => !terminalWin,
+                    action: () => {
+                        if (terminalWin?.createSession) terminalWin.createSession();
+                    },
+                },
+                // Duplicate current tab
+                {
+                    id: 'terminal-duplicate-tab',
+                    label: () => translate('menu.terminal.duplicateTab'),
+                    shortcut: '⌥⌘D',
+                    icon: 'tabDuplicate',
+                    disabled: () => !terminalWin || !terminalWin.activeTabId,
+                    action: () => {
+                        const activeId = terminalWin?.activeTabId;
+                        if (!activeId) return;
+                        const tabs = (terminalWin as any).tabs as Map<string, any>;
+                        const orig = tabs.get(activeId);
+                        if (orig && terminalWin.createSession) {
+                            const newSession = terminalWin.createSession(orig.title + ' Copy');
+                            // Optionally copy buffer if available
+                            if (orig.buffer && newSession && (newSession as any).appendOutput) {
+                                (newSession as any).appendOutput(orig.buffer);
+                            }
                         }
                     },
                 },
                 { type: 'separator' },
+                // Close current tab (⌘W). If only one tab: close window.
                 {
-                    id: 'terminal-close',
-                    label: () => translate('menu.terminal.close'),
+                    id: 'terminal-close-tab',
+                    label: () => translate('menu.terminal.closeTab'),
                     shortcut: '⌘W',
-                    disabled: () => !(context && context.dialog),
+                    icon: 'tabClose',
+                    disabled: () => !terminalWin || !terminalWin.activeTabId,
+                    action: () => {
+                        if (!terminalWin) return;
+                        const tabs: Map<string, any> = (terminalWin as any).tabs;
+                        if (tabs.size <= 1) {
+                            terminalWin.close?.();
+                            return;
+                        }
+                        const activeId = terminalWin.activeTabId;
+                        if (activeId) terminalWin.removeTab(activeId);
+                    },
+                },
+                // Close entire window (⇧⌘W)
+                {
+                    id: 'terminal-close-window',
+                    label: () => translate('menu.terminal.closeWindow'),
+                    shortcut: '⇧⌘W',
                     icon: 'close',
+                    disabled: () => !(context && context.dialog),
                     action: () => closeContextWindow(context),
                 },
             ],
@@ -442,18 +487,68 @@ function buildTerminalMenuDefinition(context: any) {
             id: 'edit',
             label: () => translate('menu.sections.edit'),
             items: [
+                // Clear terminal scrollback/output
                 {
                     id: 'terminal-clear',
                     label: () => translate('menu.terminal.clear'),
                     shortcut: '⌘K',
                     icon: 'clear',
                     action: () => {
-                        if (context && context.instanceId && window['TerminalInstanceManager']) {
-                            const instance = window['TerminalInstanceManager'].getInstance(
-                                context.instanceId
-                            );
-                            if (instance && instance.clearOutput) instance.clearOutput();
+                        if (!terminalWin) return;
+                        const activeId = terminalWin.activeTabId;
+                        const tabs: Map<string, any> = (terminalWin as any).tabs;
+                        const tab = activeId ? tabs.get(activeId) : null;
+                        const inst = tab || null;
+                        if (inst?.clearOutput) inst.clearOutput();
+                    },
+                },
+                { type: 'separator' },
+                // Basic clipboard actions (delegate to focused input)
+                {
+                    id: 'terminal-copy',
+                    label: () => translate('menu.terminal.copy'),
+                    shortcut: '⌘C',
+                    icon: 'copy',
+                    action: () => {
+                        const input = document.querySelector('#terminal-input') as
+                            | HTMLInputElement
+                            | HTMLTextAreaElement
+                            | null;
+                        if (input) input.select();
+                        document.execCommand?.('copy');
+                    },
+                },
+                {
+                    id: 'terminal-paste',
+                    label: () => translate('menu.terminal.paste'),
+                    shortcut: '⌘V',
+                    icon: 'paste',
+                    action: async () => {
+                        const input = document.querySelector('#terminal-input') as
+                            | HTMLInputElement
+                            | HTMLTextAreaElement
+                            | null;
+                        if (!input) return;
+                        try {
+                            const text = await navigator.clipboard.readText();
+                            input.value += text;
+                            input.dispatchEvent(new Event('input'));
+                        } catch (e) {
+                            console.warn('Clipboard read failed', e);
                         }
+                    },
+                },
+                {
+                    id: 'terminal-select-all',
+                    label: () => translate('menu.terminal.selectAll'),
+                    shortcut: '⌘A',
+                    icon: 'selectAll',
+                    action: () => {
+                        const input = document.querySelector('#terminal-input') as
+                            | HTMLInputElement
+                            | HTMLTextAreaElement
+                            | null;
+                        if (input) input.select();
                     },
                 },
             ],
@@ -535,6 +630,63 @@ function getMultiInstanceMenuItems(context: MenuContext) {
     let typeLabel: string | null = null;
     let newInstanceKey: string | null = null;
     const modalId = context?.modalId;
+    // Also derive active window type from WindowRegistry for multi-window Terminal
+    const registry = window['WindowRegistry'];
+    const activeWindowType = registry?.getActiveWindow?.()?.type || null;
+
+    // Use WindowRegistry for Terminal (modern multi-window system)
+    if (modalId === 'terminal-modal' || activeWindowType === 'terminal') {
+        const terminalWindow = window['TerminalWindow'];
+
+        if (registry && terminalWindow) {
+            typeLabel = 'Terminal';
+            newInstanceKey = 'menu.window.newTerminal';
+
+            items.push({
+                id: 'window-new-instance',
+                label: () => translate(newInstanceKey || 'menu.window.newWindow'),
+                shortcut: '⌘N',
+                icon: 'new',
+                action: () => {
+                    const count = registry.getWindowCount?.('terminal') || 0;
+                    terminalWindow.create({ title: `Terminal ${count + 1}` });
+                },
+            });
+
+            const windows = registry.getAllWindows?.('terminal') || [];
+            if (windows.length > 1) {
+                items.push({ type: 'separator' });
+                windows.forEach((win: any, index: number) => {
+                    const isActive = registry.getActiveWindow?.()?.windowId === win.windowId;
+                    const numberLabel = `Terminal ${index + 1}`;
+                    items.push({
+                        id: `window-instance-${win.windowId}`,
+                        label: () => `${isActive ? '✓ ' : ''}${numberLabel}`,
+                        shortcut: index < 9 ? `⌘${index + 1}` : undefined,
+                        action: () => {
+                            win.focus?.();
+                        },
+                    });
+                });
+                items.push(
+                    { type: 'separator' },
+                    {
+                        id: 'window-close-all',
+                        label: () => translate('menu.window.closeAll'),
+                        icon: 'close',
+                        action: () => {
+                            if (confirm(`Alle ${windows.length} Terminal-Fenster schließen?`)) {
+                                windows.forEach((w: any) => w.close?.());
+                            }
+                        },
+                    }
+                );
+            }
+            return items;
+        }
+    }
+
+    // Legacy fallback for Finder and TextEditor
     if (modalId === 'projects-modal' && window['FinderInstanceManager']) {
         manager = window['FinderInstanceManager'];
         typeLabel = 'Finder';
@@ -667,6 +819,13 @@ let currentMenuModalId: string | null = null;
 export function renderApplicationMenu(activeModalId?: string | null) {
     const container = document.getElementById('menubar-links');
     if (!container) return;
+    // Detect active window type from WindowRegistry to switch menu dynamically
+    const registry = (window as any).WindowRegistry;
+    const activeType = registry?.getActiveWindow?.()?.type;
+    // If a Terminal window is focused but no explicit terminal-modal passed, force terminal modal key
+    if (activeType === 'terminal' && activeModalId !== 'terminal-modal') {
+        activeModalId = 'terminal-modal';
+    }
     const modalKey = activeModalId && menuDefinitions[activeModalId] ? activeModalId : 'default';
     const builder = menuDefinitions[modalKey] || menuDefinitions.default;
     const context = createMenuContext(activeModalId || null);
