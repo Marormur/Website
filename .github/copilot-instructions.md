@@ -1,12 +1,13 @@
 # Copilot Quick Guide – macOS-Style Portfolio (Website)
 
-Kompakt und praxisnah: So arbeitest du in diesem Codebase effektiv. Fokus auf reale Projektspezifika statt generischer Tipps.
+Kompakt und praxisnah. Primärquelle ist der Code; ausführliche Markdown-Doku wurde entfernt. Bitte Code gut kommentieren, damit Menschen und Copilot Kontext haben.
 
 ## Grundsätze
 
 - Quellcode nur in `src/ts/` (TypeScript) und `src/css/` (Tailwind) pflegen.
-- `js/` ist Build-Output (tsc + esbuild). Nicht direkt editieren. Siehe `js/README.md`.
-- Architekturdoku Einstieg: `docs/README.md` → Architektur/OVERVIEW, PATTERNS, Finder/VFS.
+- `js/` ist Build-Output (tsc + esbuild). Nicht direkt editieren (siehe `js/README.md`).
+- README (`readme.md`) gelegentlich pflegen, aber Kommentare im Code sind maßgeblich.
+- Bevorzugt aussagekräftige Inline-Kommentare/JSDoc an öffentlichen APIs, komplexer Logik, Fallbacks und Invarianten.
 
 ## Architektur auf einen Blick (evolving)
 
@@ -42,15 +43,15 @@ Hinweis: Das Projekt ist in der Anfangsphase; Details können sich ändern. Halt
 - Internationalisierung: `API.i18n.translate('key', 'fallback')`; Theming: `API.theme.setPreference('dark'|'light'|'system')`.
 - Persistenz & Kommunikation zwischen Apps (Finder/Terminal) erfolgt über VFS (`virtual-fs.js`).
 - Fehler- und Performance-Hooks: `error-handler.js`, `perf-monitor.js`.
+- Kommentar-Policy: Wichtige Invarianten, Nebenwirkungen, Reihenfolgen (Init/Restore), Fallbacks und öffentlich genutzte APIs kurz dokumentieren (JSDoc/Inline).
 
 ## Deployment
 
 - GitHub Pages Auto-Deploy auf Push nach `main` (CI baut CSS). `dist/output.css` nicht committen.
 
-## Pflege & Doku
+## Pflege
 
-- Dokuänderungen im `CHANGELOG.md` unter `docs:` kurz vermerken.
-- Wichtige Referenzen: `docs/architecture/OVERVIEW.md`, `docs/guides/FINDER.md`, `docs/guides/VIRTUAL_FS_USAGE.md`.
+- README (`readme.md`) gelegentlich aktualisieren; Hauptwissen in Code-Kommentaren halten.
 
 ## MCP-Tools kurz
 
