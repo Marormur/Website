@@ -11,8 +11,8 @@ async function gotoHome(page, baseURL) {
             process.env.USE_BUNDLE === '1'
                 ? true
                 : process.env.USE_BUNDLE === '0'
-                    ? false
-                    : undefined;
+                  ? false
+                  : undefined;
         if (typeof flag !== 'undefined') {
             await page.addInitScript(val => {
                 window.__USE_BUNDLE__ = val;
@@ -581,8 +581,8 @@ async function waitForFinderReady(page, opts = {}) {
         typeof opts.timeout === 'number'
             ? opts.timeout
             : process.env.USE_BUNDLE === '1'
-                ? 30000
-                : 15000;
+              ? 30000
+              : 15000;
     // Ensure optional GitHub mocks are set up before Finder initializes
     await ensureGithubMocksIfRequested(page);
     await page.waitForFunction(
