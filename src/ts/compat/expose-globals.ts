@@ -7,82 +7,82 @@
 console.log('[BUNDLE] expose-globals.ts loading...');
 
 // i18n must load FIRST - provides window.appI18n for all modules
-import '../i18n';
+import '../services/i18n';
 
 // Import the modern module(s) we want to expose explicitly
-import * as DOMUtils from '../dom-utils';
+import * as DOMUtils from '../ui/dom-utils';
 
 // Import core constants first (needed by storage, app-init, etc.)
-import '../constants';
+import '../core/constants';
 
 // Import legacy/global modules for their side effects so they register on window.*
-import '../api';
-import '../window-manager';
-import '../action-bus';
-import '../dialog-utils';
-import '../snap-utils';
-import '../program-actions';
-import '../program-menu-sync';
-import '../menu';
-import '../dock';
-import '../dialog';
-import '../menubar-utils';
-import '../context-menu';
-import '../storage';
-import '../session-manager'; // Auto-save system for instances
-import '../theme';
-import '../base-window-instance'; // Must come before instance types
-import '../instance-manager';
-import '../window-chrome';
+import '../core/api';
+import '../windows/window-manager';
+import '../ui/action-bus';
+import '../ui/dialog-utils';
+import '../ui/snap-utils';
+import '../services/program-actions';
+import '../services/program-menu-sync';
+import '../ui/menu';
+import '../ui/dock';
+import '../ui/dialog';
+import '../ui/menubar-utils';
+import '../ui/context-menu';
+import '../services/storage';
+import '../services/session-manager'; // Auto-save system for instances
+import '../services/theme';
+import '../windows/base-window-instance'; // Must come before instance types
+import '../windows/instance-manager';
+import '../windows/window-chrome';
 
 // Multi-window system (Phase 1: Foundation)
-import '../base-tab'; // Base class for tab content
-import '../base-window'; // Base class for windows
-import '../window-registry'; // Central window management
+import '../windows/base-tab'; // Base class for tab content
+import '../windows/base-window'; // Base class for windows
+import '../windows/window-registry'; // Central window management
 
 // Multi-window system (Phase 2: Terminal)
-import '../terminal-session'; // Terminal session tab
-import '../terminal-window'; // Terminal window
+import '../apps/terminal/terminal-session'; // Terminal session tab
+import '../apps/terminal/terminal-window'; // Terminal window
 
 // Multi-window system (Phase 3: TextEditor)
-import '../text-editor-document'; // Text editor document tab
-import '../text-editor-window'; // Text editor window
+import '../apps/text-editor/text-editor-document'; // Text editor document tab
+import '../apps/text-editor/text-editor-window'; // Text editor window
 
 // Multi-window system (Phase 4: Finder)
 // Import both side-effect and named to ensure symbols are retained and exposed
-import { FinderView as __FinderView__ } from '../finder-view'; // Finder view tab
-import { FinderWindow as __FinderWindow__ } from '../finder-window'; // Finder window
+import { FinderView as __FinderView__ } from '../apps/finder/finder-view'; // Finder view tab
+import { FinderWindow as __FinderWindow__ } from '../apps/finder/finder-window'; // Finder window
 
 // Multi-window system (Phase 6: Session Management)
-import '../multi-window-session'; // Multi-window session persistence
+import '../services/multi-window-session'; // Multi-window session persistence
 
-import '../window-tabs';
-import '../terminal-instance';
-import '../text-editor-instance';
-import '../text-editor';
-import '../settings';
-import '../image-viewer-utils';
-import '../logger';
-import '../keyboard-shortcuts';
-import '../github-api';
+import '../windows/window-tabs';
+import '../apps/terminal/terminal-instance';
+import '../apps/text-editor/text-editor-instance';
+import '../apps/text-editor/text-editor';
+import '../services/settings';
+import '../apps/photos/image-viewer-utils';
+import '../core/logger';
+import '../ui/keyboard-shortcuts';
+import '../services/github-api';
 // Include compiled Photos App JS into the bundle to expose window.PhotosApp
 // Using the compiled JS avoids TS encoding issues and ensures identical runtime behavior
-import '../photos-app';
+import '../apps/photos/photos-app';
 
 // Window configurations (now in TypeScript)
-import '../window-configs'; // Must load before windows are registered
+import '../windows/window-configs'; // Must load before windows are registered
 // Remaining legacy JS modules (to be ported)
-import '../finder-instance';
-import '../launchpad';
-import '../multi-instance-integration';
-import '../desktop'; // Now in TypeScript
+import '../apps/finder/finder-instance';
+import '../ui/launchpad';
+import '../windows/multi-instance-integration';
+import '../ui/desktop'; // Now in TypeScript
 // Use modern TypeScript module instead of legacy JS
-import '../system';
+import '../services/system';
 
 // Finally, include the TypeScript app initialization to bootstrap and signal readiness
 // This sets window.__APP_READY = true when the app finishes loading. It must come
 // AFTER all side-effect imports above so that globals like WindowManager/Dialog exist.
-import '../app-init';
+import '../core/app-init';
 
 // Guarded attach for modern modules not yet on window
 type WindowWithBundle = Window & { __BUNDLE_READY__?: boolean; initApp?: () => void } & Record<
