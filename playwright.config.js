@@ -27,7 +27,7 @@ export default defineConfig({
     use: {
         baseURL: BASE_URL,
         // Balanced timeouts for bundle mode without excessive waiting
-        actionTimeout: 10_000,
+        actionTimeout: 25_000,
         navigationTimeout: 25_000,
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',

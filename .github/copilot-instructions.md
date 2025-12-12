@@ -1,40 +1,63 @@
-# Copilot Quick Guide - macOS-Style Portfolio
+# Copilot Quick Guide – macOS-Style Portfolio (Website)
 
-Kurz und praxisnah: So arbeitest du mit diesem Projekt effizient, ohne das Kontextfenster mit Doku zu sprengen.
+Kompakt und praxisnah: So arbeitest du in diesem Codebase effektiv. Fokus auf reale Projektspezifika statt generischer Tipps.
 
-- Bearbeite keinen Quellcode in `js/` oder `css/` direkt. Nutze `src/ts/` für TypeScript und `src/css/` für TailwindCSS.
+## Grundsätze
 
-## Dev-Workflow (Kurz)
+- Quellcode nur in `src/ts/` (TypeScript) und `src/css/` (Tailwind) pflegen.
+- `js/` ist Build-Output (tsc + esbuild). Nicht direkt editieren. Siehe `js/README.md`.
+- Architekturdoku Einstieg: `docs/README.md` → Architektur/OVERVIEW, PATTERNS, Finder/VFS.
 
-- Build: `npm run build:css`, `npm run build:ts`
+## Architektur auf einen Blick (evolving)
+
+- WindowManager: zentrale Fenster-/Modalsteuerung (`js/window-manager.js` → Quellen in `src/ts/`).
+- ActionBus: deklarative Aktionen über `data-action` statt ad-hoc Handler (`js/action-bus.js`).
+- Virtual FS: persistente Schicht für Finder & Terminal (`js/virtual-fs.js`).
+- API: Aggregator für i18n/theme/storage/system (`js/api.js`), z. B. `API.i18n.translate(...)`, `API.theme.setPreference(...)`.
+
+Hinweis: Das Projekt ist in der Anfangsphase; Details können sich ändern. Halte Änderungen minimal und folge den Konventionen unten.
+
+## Dev-Workflow
+
+- Build: `npm run build:css` (Tailwind), `npm run build:ts` (TypeScript → js/)
 - Watch: `npm run watch:css`, `npm run typecheck:watch`
-- Dev-Server: `npm run dev` (http://127.0.0.1:5173)
-- VS Code Tasks bündeln das ("Dev Environment: Start All").
+- Dev-Server: `npm run dev` (http://127.0.0.1:5173). VS Code Task „Start Dev Server“ existiert.
+- Bündeln: `npm run build:bundle`, Watch: `npm run dev:bundle` (VS Code Task „Bundle: Watch“)
+- Komforttasks:
+    - „Dev Environment: Start All“ startet CSS-Watch, TS-Watch und Dev-Server.
+    - „Dev Environment: Start All (Bundle)“ inkludiert zusätzlich Bundle-Watch.
 
 ## Tests (Playwright)
 
-- Schnell: `npm run test:e2e:quick` (lokal Chromium)
-- Voll: `npm run test:e2e`
-- Stabilität: `MOCK_GITHUB=1`; auf Readiness warten (`window.__APP_READY`).
-- Schreibe für neue Features mindestens einen E2E-Test (Smoke + 1 Edge Case).
+- Schnelltest: `npm run test:e2e:quick` (lokal Chromium). Für Stabilität: `MOCK_GITHUB=1` und auf `window.__APP_READY` warten.
+- Volltests: `npm run test:e2e` (Headless), Varianten: headed/UI (`npm run test:e2e:headed`, `npm run test:e2e:ui`).
+- Bundel- und Mock-Modus: `USE_BUNDLE=1 MOCK_GITHUB=1` mit Quick/Full Tasks vorhanden.
+- Beispiel-Task: „E2E: Test (basic smoke)“ startet erst Dev-Server, dann Quick-Test (env: `USE_NODE_SERVER=1`, `MOCK_GITHUB=1`).
+- Schreibe für Features min. 1 Smoke + 1 Edge-Case E2E. Nutze explizite `waitForSelector` statt Timeouts.
 
-## Deployment (GitHub Pages)
+## Projektkonventionen
 
-- Auto-Deploy auf Push nach `main`.
-- CSS wird in CI gebaut; `dist/output.css` nicht committen.
+- Keine direkten Änderungen in `js/`/`css/`; alle Quellen in `src/ts/`, `src/css/`.
+- Fenster hinzufügen/ändern über zentrale Configs (`window-configs`) statt verstreuter Logik.
+- Internationalisierung: `API.i18n.translate('key', 'fallback')`; Theming: `API.theme.setPreference('dark'|'light'|'system')`.
+- Persistenz & Kommunikation zwischen Apps (Finder/Terminal) erfolgt über VFS (`virtual-fs.js`).
+- Fehler- und Performance-Hooks: `error-handler.js`, `perf-monitor.js`.
 
-## Pflegehinweis
+## Deployment
 
-- Bei Doku-Änderungen kurzen Eintrag unter `docs:` in `CHANGELOG.md` ergänzen.
+- GitHub Pages Auto-Deploy auf Push nach `main` (CI baut CSS). `dist/output.css` nicht committen.
 
-## MCP-Tools (kurz)
+## Pflege & Doku
 
-- GitHub MCP Server ("github/github-mcp-server")
-    - Wofür: PRs/Reviews, Issues, Branches, Repo-Änderungen und Suchen auf GitHub.
-    - Wie: Bei Reviews erst eine pending Review anlegen, Kommentare hinzufügen, dann Review submitten. Vor dem Erstellen von Issues/PRs zuerst suchen, Pagination nutzen.
-    - Nutzen, wenn: PR-Status prüfen, Review-Kommentare verfassen, Branch/PR/Issue anlegen oder Dateien im Repo ändern.
+- Dokuänderungen im `CHANGELOG.md` unter `docs:` kurz vermerken.
+- Wichtige Referenzen: `docs/architecture/OVERVIEW.md`, `docs/guides/FINDER.md`, `docs/guides/VIRTUAL_FS_USAGE.md`.
 
-- Playwright MCP ("microsoft/playwright-mcp")
-    - Wofür: Browserautomation und E2E-Tests direkt aus der Session.
-    - Wie: Auf `window.__APP_READY` warten, explizite `waitForSelector` statt Timeouts, `MOCK_GITHUB=1` für Stabilität.
-    - Nutzen, wenn: Neue Features verifizieren, Smoke-Checks fahren, reproduzierbare UI-Flows testen (headed/UI/quick).
+## MCP-Tools kurz
+
+- GitHub MCP Server: Reviews mit pending → Kommentare → submit. Vor Issues/PRs immer Suche + Pagination nutzen.
+- Playwright MCP: Auf `window.__APP_READY` warten; headed/UI/quick Modi; `MOCK_GITHUB=1` für Stabilität.
+
+## Beispiele aus dem Codebase
+
+- Fenster schließen über ActionBus: HTML-Button mit `data-action="closeWindow"`; Bus dispatch triggert `WindowManager`.
+- VFS-Operationen sichtbar in Finder & Terminal: `touch`, `mkdir`, `rm` ändern denselben Zustand (`virtual-fs.js`).

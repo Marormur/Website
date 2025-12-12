@@ -6,7 +6,7 @@
   "scripts": {
     "build:css": "cross-env NODE_ENV=production npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
     "build:css:dev": "npx tailwindcss -i ./src/input.css -o ./dist/output.css",
-    "watch:css": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
+    "watch:css": "cross-env NODE_OPTIONS=--max-old-space-size=4096 npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
     "dev": "node server.js",
     "pw:install": "playwright install",
     "test:e2e": "playwright test",
@@ -16,7 +16,7 @@
     "test:e2e:all-browsers": "cross-env CI=1 playwright test",
     "test:e2e:quick": "playwright test --grep basic --project=chromium",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "typecheck:watch": "tsc --noEmit -p tsconfig.json --watch",
+    "typecheck:watch": "cross-env NODE_OPTIONS=--max-old-space-size=2048 tsc --noEmit -p tsconfig.json --watch --incremental",
     "type:report": "type-coverage --detail",
     "type:baseline": "type-coverage --at-least 81",
     "type:coverage": "type-coverage --at-least 90 --detail",

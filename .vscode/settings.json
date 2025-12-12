@@ -60,5 +60,9 @@
     "**/playwright-report/**": true,
     "**/.playwright-mcp/**": true,
     "**/coverage/**": true
-  }
+  },
+
+  // Task Automation - Reduce user prompts during agent/automated runs
+  "task.allowAutomaticTasks": "on",
+  "task.slowProviderWarning": ["npm"]
 }

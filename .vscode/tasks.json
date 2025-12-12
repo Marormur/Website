@@ -7,12 +7,12 @@
       "command": "npm run watch:css",
       "problemMatcher": [],
       "isBackground": true,
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      },
       "runOptions": {
-        "runOn": "folderOpen"
+        "instanceLimit": 1
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
       }
     },
     {
@@ -31,8 +31,11 @@
       "command": "npm run typecheck:watch",
       "problemMatcher": "$tsc-watch",
       "isBackground": true,
+      "runOptions": {
+        "instanceLimit": 1
+      },
       "presentation": {
-        "reveal": "always",
+        "reveal": "silent",
         "panel": "dedicated"
       }
     },
@@ -129,6 +132,9 @@
       "type": "shell",
       "command": "node scripts/dev-server-ensure.js",
       "isBackground": true,
+      "runOptions": {
+        "instanceLimit": 1
+      },
       "problemMatcher": {
         "owner": "dev-server",
         "pattern": {
@@ -141,7 +147,7 @@
         }
       },
       "presentation": {
-        "reveal": "always",
+        "reveal": "silent",
         "panel": "dedicated",
         "focus": false,
         "clear": true
@@ -251,6 +257,9 @@
       "type": "shell",
       "command": "node scripts/dev-server-ensure.js",
       "isBackground": true,
+      "runOptions": {
+        "instanceLimit": 1
+      },
       "options": {
         "env": {
           "NO_WATCH": "1"
@@ -268,7 +277,7 @@
         }
       },
       "presentation": {
-        "reveal": "always",
+        "reveal": "silent",
         "panel": "dedicated",
         "focus": false,
         "clear": true
@@ -308,6 +317,9 @@
       "type": "shell",
       "command": "npm run dev:bundle",
       "isBackground": true,
+      "runOptions": {
+        "instanceLimit": 1
+      },
       "problemMatcher": {
         "owner": "esbuild",
         "pattern": {
@@ -320,22 +332,28 @@
         }
       },
       "presentation": {
-        "reveal": "always",
+        "reveal": "silent",
         "panel": "dedicated"
       }
     },
     {
       "label": "Dev Environment: Start All (Bundle)",
       "dependsOn": [
+        "Start Dev Server",
         "Tailwind CSS: Watch",
         "TypeScript: Watch",
-        "Bundle: Watch",
-        "Start Dev Server"
+        "Bundle: Watch"
       ],
+      "dependsOrder": "sequence",
       "problemMatcher": [],
       "presentation": {
-        "reveal": "always",
-        "panel": "shared"
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "new"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
       }
     },
     {

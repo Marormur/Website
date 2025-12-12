@@ -18,7 +18,7 @@
     // Source Maps
     "sourceMap": true,
     "inlineSourceMap": false,
-    "inlineSources": true,
+    "inlineSources": false,
 
     // Developer Experience
     "skipLibCheck": true,

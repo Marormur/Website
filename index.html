@@ -850,10 +850,14 @@
                                             id="finder-breadcrumbs"
                                             class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300"
                                         ></div>
-                                        <div
-                                            id="finder-list-container"
-                                            class="flex-1 overflow-auto min-h-0"
-                                        >
+                                        <!-- Preview container (used by PreviewInstanceManager) -->
+                                        <div>
+                                            <div
+                                                id="preview-container"
+                                                class="fixed inset-0 pointer-events-none z-[2500]"
+                                            ></div>
+
+                                            class="flex-1 overflow-auto min-h-0" >
                                             <ul
                                                 id="repo-files"
                                                 class="divide-y divide-gray-200 dark:divide-gray-700 m-0 p-0 list-none max-h-full"
