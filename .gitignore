@@ -22,6 +22,8 @@ node_modules/
 .playwright-mcp/
 test-results/
 playwright-report/
+test-results.txt
+test-output.txt
 
 # Playwright / test artifacts and media (exclude large test output and videos/screenshots)
 # Keeps repo free of generated videos/images from E2E runs
