@@ -25,6 +25,13 @@ export class TerminalWindow extends BaseWindow {
     }
 
     /**
+     * Accessor for tests: alias tabs as sessions for Terminal nomenclature
+     */
+    get sessions(): BaseTab[] {
+        return Array.from(this.tabs.values());
+    }
+
+    /**
      * Create terminal-specific window DOM
      */
     createDOM(): HTMLElement {
@@ -182,6 +189,10 @@ export class TerminalWindow extends BaseWindow {
             if (win.zIndex > mostRecentWindow.zIndex) {
                 mostRecentWindow = win;
             }
+        }
+        // Ensure the window has at least one session
+        if (mostRecentWindow.tabs.size === 0 && W.TerminalSession) {
+            mostRecentWindow.createSession();
         }
 
         // Focus the most recent Terminal window

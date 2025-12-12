@@ -642,6 +642,186 @@ function initApp(): void {
                 console.info('[APP-INIT] ActionBus exposed as __ActionBus');
             }
 
+            // =====================================================================
+            // PHASE 2: Legacy FinderInstanceManager Compatibility Shim
+            // =====================================================================
+            // Many E2E tests still expect window.FinderInstanceManager to exist.
+            // This shim bridges the old InstanceManager-based API to the new
+            // WindowRegistry + FinderWindow multi-window architecture.
+            if (typeof gw2.FinderInstanceManager === 'undefined') {
+                try {
+                    const registry = gw2.WindowRegistry;
+                    if (registry) {
+                        gw2.FinderInstanceManager = {
+                            /**
+                             * Creates a new Finder window (not a tab within an existing window).
+                             * In the multi-window model, each window manages its own tabs.
+                             */
+                            createInstance(opts?: { title?: string }) {
+                                try {
+                                    const windows = registry.getAllWindows('finder') || [];
+                                    const firstWindow = windows[0];
+
+                                    // If a Finder window exists, add a tab to it
+                                    if (firstWindow && typeof firstWindow.addTab === 'function') {
+                                        const tabView = gw2.FinderView
+                                            ? new gw2.FinderView({
+                                                  title: opts?.title || 'Computer',
+                                                  source: 'computer',
+                                              })
+                                            : null;
+                                        if (tabView) {
+                                            firstWindow.addTab(tabView);
+                                            return {
+                                                instanceId: tabView.id,
+                                                type: 'finder',
+                                                title: tabView.title,
+                                            };
+                                        }
+                                    }
+
+                                    // No window exists, return null (window should be created via WindowRegistry)
+                                    return null;
+                                } catch (e) {
+                                    console.warn(
+                                        '[FinderInstanceManager shim] createInstance failed:',
+                                        e
+                                    );
+                                    return null;
+                                }
+                            },
+
+                            getInstanceCount() {
+                                try {
+                                    const windows = registry.getAllWindows('finder') || [];
+                                    let totalTabs = 0;
+                                    windows.forEach((win: any) => {
+                                        if (win.tabs && typeof win.tabs.size === 'number') {
+                                            totalTabs += win.tabs.size;
+                                        }
+                                    });
+                                    return totalTabs;
+                                } catch {
+                                    return 0;
+                                }
+                            },
+
+                            getAllInstances() {
+                                try {
+                                    const windows = registry.getAllWindows('finder') || [];
+                                    const allTabs: any[] = [];
+                                    windows.forEach((win: any) => {
+                                        if (win.tabs && typeof win.tabs.values === 'function') {
+                                            const tabs = Array.from(win.tabs.values());
+                                            tabs.forEach((tab: any) => {
+                                                allTabs.push({
+                                                    instanceId: tab.id,
+                                                    type: 'finder',
+                                                    title: tab.title || 'Finder',
+                                                    show: () => tab.show?.(),
+                                                    hide: () => tab.hide?.(),
+                                                });
+                                            });
+                                        }
+                                    });
+                                    return allTabs;
+                                } catch {
+                                    return [];
+                                }
+                            },
+
+                            getActiveInstance() {
+                                try {
+                                    // Strategy 1: Check if active window is a Finder
+                                    const activeWindow = registry.getActiveWindow();
+                                    if (activeWindow && activeWindow.type === 'finder') {
+                                        const finderWindow = activeWindow as any;
+                                        if (finderWindow.activeTabId && finderWindow.tabs) {
+                                            const activeTab = finderWindow.tabs.get(
+                                                finderWindow.activeTabId
+                                            );
+                                            if (activeTab) {
+                                                return {
+                                                    instanceId: activeTab.id,
+                                                    type: 'finder',
+                                                    title: activeTab.title || 'Finder',
+                                                };
+                                            }
+                                        }
+                                    }
+
+                                    // Strategy 2: No active Finder window, find any visible Finder window
+                                    const windows = registry.getAllWindows('finder') || [];
+                                    for (const win of windows) {
+                                        const w = win as any;
+                                        if (w.isVisible && w.isVisible()) {
+                                            if (w.activeTabId && w.tabs) {
+                                                const activeTab = w.tabs.get(w.activeTabId);
+                                                if (activeTab) {
+                                                    return {
+                                                        instanceId: activeTab.id,
+                                                        type: 'finder',
+                                                        title: activeTab.title || 'Finder',
+                                                    };
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Strategy 3: Just return the active tab of the first Finder window
+                                    if (windows.length > 0) {
+                                        const firstWindow = windows[0] as any;
+                                        if (firstWindow.activeTabId && firstWindow.tabs) {
+                                            const activeTab = firstWindow.tabs.get(
+                                                firstWindow.activeTabId
+                                            );
+                                            if (activeTab) {
+                                                return {
+                                                    instanceId: activeTab.id,
+                                                    type: 'finder',
+                                                    title: activeTab.title || 'Finder',
+                                                };
+                                            }
+                                        }
+                                    }
+
+                                    return null;
+                                } catch (e) {
+                                    console.warn(
+                                        '[FinderInstanceManager shim] getActiveInstance failed:',
+                                        e
+                                    );
+                                    return null;
+                                }
+                            },
+
+                            setActiveInstance(instanceId: string) {
+                                try {
+                                    const windows = registry.getAllWindows('finder') || [];
+                                    for (const win of windows) {
+                                        if ((win as any).tabs?.has(instanceId)) {
+                                            (win as any).setActiveTab?.(instanceId);
+                                            registry.setActiveWindow(win.id);
+                                            return;
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.warn(
+                                        '[FinderInstanceManager shim] setActiveInstance failed:',
+                                        e
+                                    );
+                                }
+                            },
+                        };
+                        console.info(
+                            '[APP-INIT] FinderInstanceManager compatibility shim installed'
+                        );
+                    }
+                } catch (e) {
+                    console.warn('[APP-INIT] FinderInstanceManager shim failed:', e);
+                }
+            }
+
             gw.__APP_READY = true;
             console.info('[APP-INIT] __APP_READY=true');
             // After marking ready, some systems may initialize a few ticks later

@@ -79,7 +79,7 @@
             if (isEditable(e.target)) return;
             const key = e.key.toLowerCase();
 
-            if (key === 'n') {
+            if (key === 'n' || key === 't') {
                 e.preventDefault();
                 const title = arg2.newTitleFactory?.();
                 manager.createInstance({ title });
@@ -159,4 +159,3 @@
     const KeyboardShortcuts = { register, setContextResolver };
     (window as unknown as { [k: string]: unknown }).KeyboardShortcuts = KeyboardShortcuts;
 })();
-
