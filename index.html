@@ -1143,10 +1143,7 @@
         </div>
 
         <!-- Bildbetrachter Modal -->
-        <div
-            id="image-modal"
-            class="fixed inset-0 flex items-center justify-center hidden modal relative"
-        >
+        <div id="image-modal" class="fixed inset-0 items-center justify-center hidden modal">
             <div
                 class="bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl autopointer flex flex-col w-[min(90vw,1100px)] h-[min(85vh,780px)]"
             >
@@ -1348,7 +1345,7 @@
                         <div class="flex-1 relative min-h-0">
                             <div
                                 id="photos-loading"
-                                class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 hidden"
+                                class="absolute inset-0 items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 hidden"
                             >
                                 <div
                                     class="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300"
@@ -1388,7 +1385,7 @@
                             ></div>
                             <div
                                 id="photos-empty"
-                                class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 hidden px-6"
+                                class="absolute inset-0 items-center justify-center text-center text-gray-500 dark:text-gray-400 hidden px-6"
                             >
                                 <div>
                                     <p class="text-lg font-semibold" data-i18n="photos.empty.title">
@@ -1401,7 +1398,7 @@
                             </div>
                             <div
                                 id="image-placeholder"
-                                class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 hidden pointer-events-none"
+                                class="absolute inset-0 items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 hidden pointer-events-none"
                                 data-i18n="photos.placeholder"
                             >
                                 Wähle ein Foto aus, um Details zu sehen.
@@ -1484,7 +1481,7 @@
                             />
                             <div
                                 id="photo-detail-loader"
-                                class="absolute inset-0 flex items-center justify-center bg-gray-900/40 text-white text-sm font-medium hidden"
+                                class="absolute inset-0 items-center justify-center bg-gray-900/40 text-white text-sm font-medium hidden"
                                 data-i18n="photos.detail.loader"
                             >
                                 Foto wird geladen…
@@ -1540,8 +1537,7 @@
         <!-- stylelint-disable-next-line -->
         <div
             id="dock"
-            class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000]"
-            style="display: flex; visibility: visible; opacity: 1"
+            class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000] flex visible opacity-100"
         >
             <div class="dock-tray inline-flex items-end gap-2 px-3 py-2">
                 <!-- Finder -->
