@@ -1,0 +1,5 @@
+{
+  "deprecated": true,
+  "note": "JSDoc wurde aus dem Build entfernt. Diese Datei bleibt nur erhalten, um Tools nicht zu brechen, wird aber nicht mehr verwendet.",
+  "doNotUse": true
+}

@@ -1,0 +1,29 @@
+name: Copilot Issue Helper
+
+on:
+    issues:
+        types: [opened]
+
+jobs:
+    respond:
+        runs-on: ubuntu-latest
+        permissions:
+            issues: write
+            contents: read
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+
+            - name: Install dependencies
+              run: npm install axios bottleneck
+
+            - name: Run Copilot Helper
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  node .github/scripts/copilot-helper.js

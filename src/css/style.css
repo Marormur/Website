@@ -1,0 +1,1542 @@
+/*
+ * Zusätzliche CSS-Regeln für die Desktop‑Simulation.
+ * Tailwind liefert den Großteil des Layouts; hier können zusätzliche Anpassungen
+ * vorgenommen werden oder fehlende Assets neutralisiert werden.
+ */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    background: url('../../img/wallpaper.png') no-repeat center center fixed !important;
+    background-size: cover !important;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --window-shadow: 0 22px 45px rgba(15, 23, 42, 0.18);
+    --window-shadow-hover: 0 28px 58px rgba(15, 23, 42, 0.25);
+    --window-border: rgba(15, 23, 42, 0.12);
+    /* Increased desktop icon mask size for better visual weight */
+    --desktop-icon-size: 88px;
+}
+
+/* Launchpad modal: Allow clicks to pass through the wrapper and centering overlay
+   to underlying UI (dock/menubar) while keeping the inner card interactive.
+   The capture-phase document click handler in app-init.js will close the
+   launchpad when clicking outside the inner card.
+
+   z-index must be higher than any window (windows can reach ~10000+) but below
+   menubar dropdowns (2147483647). Using 2147483600 ensures Launchpad overlays
+   all windows while staying below the menubar. */
+#launchpad-modal {
+    z-index: 2147483600 !important;
+    pointer-events: none !important;
+}
+#launchpad-modal > .absolute {
+    pointer-events: none;
+}
+#launchpad-modal .launchpad-modal-inner {
+    pointer-events: auto;
+}
+
+.dark {
+    --window-shadow: 0 26px 52px rgba(15, 23, 42, 0.45);
+    --window-shadow-hover: 0 34px 68px rgba(15, 23, 42, 0.55);
+    --window-border: rgba(148, 163, 184, 0.2);
+}
+
+body > header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* Elevate menubar above app windows so dropdowns are clickable.
+       Windows may increase their z-index dynamically during tests/sessions.
+       Use a very high value to ensure the menubar (buttons + dropdowns)
+       always stays on top, but still below OS-level overlays if any. */
+    z-index: 2147483500 !important;
+}
+
+.desktop-area {
+    position: fixed;
+    top: 48px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 28px 36px 120px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    pointer-events: auto;
+    gap: 32px;
+}
+
+.desktop-icon-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 22px;
+    pointer-events: auto;
+}
+
+.desktop-icon-button {
+    /* compact container so mask appears larger relative to label */
+    width: 100px;
+    max-width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    background: transparent;
+    padding: 8px 6px 10px;
+    border-radius: 14px;
+    cursor: pointer;
+    color: #f8fafc;
+    text-shadow: 0 2px 6px rgba(15, 23, 42, 0.55);
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+html.dark .desktop-icon-button {
+    color: #e2e8f0;
+    text-shadow: 0 2px 6px rgba(7, 11, 19, 0.75);
+}
+
+.desktop-icon-button:hover {
+    background: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.22);
+}
+
+html.dark .desktop-icon-button:hover {
+    background: rgba(148, 163, 184, 0.22);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.55);
+}
+
+.desktop-icon-button:focus-visible {
+    outline: 2px solid rgba(96, 165, 250, 0.9);
+    outline-offset: 3px;
+}
+
+.desktop-icon-button[data-selected='true'] {
+    background: rgba(59, 130, 246, 0.35);
+    box-shadow: 0 24px 42px rgba(37, 99, 235, 0.32);
+}
+
+html.dark .desktop-icon-button[data-selected='true'] {
+    background: rgba(37, 99, 235, 0.45);
+    box-shadow: 0 26px 48px rgba(15, 23, 42, 0.55);
+}
+
+.desktop-icon-graphic {
+    width: var(--desktop-icon-size);
+    height: var(--desktop-icon-size);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.28);
+}
+
+/* Emoji sizing: make emoji fill a larger portion of the mask */
+.desktop-icon-graphic {
+    /* font-size used for text-emoji fallback inside the mask */
+    font-size: calc(var(--desktop-icon-size) * 0.55);
+    line-height: 1;
+}
+
+html.dark .desktop-icon-graphic {
+    background: rgba(30, 41, 59, 0.55);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65);
+}
+
+.desktop-icon-graphic img {
+    /* Fill the entire mask and use the container's shape as clipping/mask */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
+    filter: drop-shadow(0 6px 12px rgba(15, 23, 42, 0.22));
+    /* ensure the image follows the container rounding */
+    border-radius: inherit;
+}
+
+/* Rubberband selection visuals */
+.desktop-rubberband {
+    mix-blend-mode: normal;
+    border-radius: 4px;
+}
+
+/* Temporary highlight when an icon is inside the rubberband */
+.desktop-icon-button.rubber-selected {
+    box-shadow: 0 28px 48px rgba(37, 99, 235, 0.18);
+}
+
+.desktop-icon-label {
+    display: inline-block;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 2px 8px 4px;
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+    text-shadow: inherit;
+}
+
+.desktop-icon-button[data-selected='true'] .desktop-icon-label {
+    background: rgba(37, 99, 235, 0.85);
+    color: #ffffff;
+}
+
+html.dark .desktop-icon-button[data-selected='true'] .desktop-icon-label {
+    background: rgba(59, 130, 246, 0.85);
+    color: #f8fafc;
+}
+
+.menubar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 34px;
+    padding: 0 16px;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.7);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    color: #0f172a;
+    -webkit-backdrop-filter: saturate(140%) blur(18px);
+    backdrop-filter: saturate(140%) blur(18px);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
+}
+
+html.dark .menubar {
+    background: rgba(17, 25, 40, 0.75);
+    border-bottom: 1px solid rgba(94, 106, 135, 0.35);
+    color: #edeff3;
+    box-shadow: 0 1px 0 rgba(8, 10, 20, 0.7);
+}
+
+.menubar-left,
+.menubar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.menubar-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 12px;
+}
+
+.menubar-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.menubar-logo,
+.menubar-item,
+.menubar-status-icon {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.2;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.menubar-logo {
+    padding: 4px 6px;
+}
+
+.menubar-logo svg,
+.menubar-status-icon svg {
+    display: block;
+}
+
+.menubar-item {
+    padding-inline: 6px;
+}
+
+.menubar-item:hover,
+.menubar-status-icon:hover,
+.menubar-logo:hover,
+.menubar-item:focus-visible,
+.menubar-status-icon:focus-visible,
+.menubar-logo:focus-visible {
+    background: rgba(15, 23, 42, 0.08);
+    outline: none;
+}
+
+html.dark .menubar-item:hover,
+html.dark .menubar-status-icon:hover,
+html.dark .menubar-logo:hover,
+html.dark .menubar-item:focus-visible,
+html.dark .menubar-status-icon:focus-visible,
+html.dark .menubar-logo:focus-visible {
+    background: rgba(148, 163, 184, 0.18);
+}
+
+.menubar-app {
+    font-weight: 600;
+}
+
+.menubar-right {
+    margin-left: auto;
+    gap: 14px;
+    display: flex;
+    align-items: center;
+}
+
+.menubar-status-cluster {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.menubar-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 6px;
+}
+
+.menubar-battery svg {
+    width: 18px;
+    height: 18px;
+}
+
+.menubar-status-icon-svg,
+.system-toggle-icon,
+.system-slider-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+}
+
+.menubar-battery-label {
+    font-variant-numeric: tabular-nums;
+}
+
+.menubar-clock {
+    min-width: 64px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.menu-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    list-style: none;
+    margin: 0;
+    min-width: 190px;
+    padding: 6px 0;
+    background: rgba(245, 246, 248, 0.96);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+    -webkit-backdrop-filter: saturate(140%) blur(16px);
+    backdrop-filter: saturate(140%) blur(16px);
+    color: inherit;
+}
+
+.menu-dropdown.menu-right {
+    left: auto;
+    right: 0;
+}
+
+html.dark .menu-dropdown {
+    background: rgba(25, 34, 52, 0.95);
+    border: 1px solid rgba(99, 112, 144, 0.45);
+    box-shadow: 0 22px 42px rgba(0, 0, 0, 0.55);
+}
+
+/* Context menu overrides: fixed positioning at cursor with high z-index */
+.menu-dropdown.context-menu {
+    position: fixed;
+    /* top/left are set dynamically by JS */
+    z-index: 2147483647;
+    /* ensure above all app windows and dropdowns */
+}
+
+.menu-dropdown li {
+    margin: 0;
+    padding: 0;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    width: 100%;
+    padding: 6px 18px;
+    color: inherit;
+    font-size: 13px;
+    line-height: 1.3;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+    background: transparent;
+    border: none;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+    background: rgba(59, 130, 246, 0.14);
+    outline: none;
+}
+
+html.dark .menu-item:hover,
+html.dark .menu-item:focus-visible {
+    background: rgba(148, 163, 184, 0.22);
+}
+
+.menu-item-label {
+    flex: 1 1 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.menu-item-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+}
+
+.menu-item-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
+
+.menu-item-shortcut {
+    flex: 0 0 auto;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.system-dropdown {
+    min-width: 260px;
+    padding: 10px 0;
+}
+
+.system-section {
+    padding: 6px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.system-section + .system-section {
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+    margin-top: 4px;
+    padding-top: 12px;
+}
+
+html.dark .system-section + .system-section {
+    border-top-color: rgba(71, 85, 105, 0.35);
+}
+
+.system-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0;
+    color: inherit;
+    opacity: 0.72;
+}
+
+.system-toggle-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.system-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(148, 163, 184, 0.18);
+    border: 1px solid transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.system-toggle.is-active {
+    background: rgba(59, 130, 246, 0.18);
+    border-color: rgba(59, 130, 246, 0.32);
+}
+
+.system-toggle:hover,
+.system-toggle:focus-visible {
+    background: rgba(59, 130, 246, 0.16);
+    border-color: rgba(59, 130, 246, 0.28);
+    outline: none;
+}
+
+html.dark .system-toggle {
+    background: rgba(71, 85, 105, 0.32);
+}
+
+html.dark .system-toggle:hover,
+html.dark .system-toggle:focus-visible {
+    background: rgba(148, 163, 184, 0.26);
+    border-color: rgba(148, 163, 184, 0.35);
+}
+
+html.dark .system-toggle.is-active {
+    background: rgba(96, 165, 250, 0.28);
+    border-color: rgba(96, 165, 250, 0.4);
+}
+
+.system-toggle-label {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.system-toggle-status {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.system-slider-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    opacity: 0.85;
+}
+
+.system-slider-value {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.6;
+}
+
+.system-slider {
+    width: 100%;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.4);
+    outline: none;
+    margin-bottom: 6px;
+}
+
+html.dark .system-slider {
+    background: rgba(71, 85, 105, 0.65);
+}
+
+.system-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #2563eb;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.system-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #2563eb;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.system-slider::-moz-range-track {
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.4);
+    border: none;
+}
+
+html.dark .system-slider::-moz-range-track {
+    background: rgba(71, 85, 105, 0.65);
+}
+
+.system-state-pill {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    background: rgba(59, 130, 246, 0.14);
+    color: inherit;
+}
+
+html.dark .system-state-pill {
+    background: rgba(147, 197, 253, 0.18);
+}
+
+.system-network-indicator {
+    font-size: 10px;
+    opacity: 0.65;
+}
+
+.system-menu-item {
+    justify-content: space-between;
+}
+
+.system-menu-item.is-active {
+    background: rgba(59, 130, 246, 0.12);
+}
+
+html.dark .system-menu-item.is-active {
+    background: rgba(96, 165, 250, 0.18);
+}
+
+.system-menu-item[aria-disabled='true'] {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.menu-item[disabled],
+.menu-item[aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.menu-item[disabled]:hover,
+.menu-item[aria-disabled='true']:hover {
+    background: transparent;
+}
+
+.menu-item-link {
+    text-decoration: none;
+}
+
+.menu-separator {
+    height: 1px;
+    margin: 4px 12px;
+    background: rgba(148, 163, 184, 0.4);
+}
+
+html.dark .menu-separator {
+    background: rgba(71, 85, 105, 0.7);
+}
+
+#apple-menu-dropdown,
+#program-dropdown {
+    z-index: 2147483647 !important;
+}
+
+/* Ensure dynamically rendered application menus (e.g., Fenster/Window section)
+   also float above any app windows and are always clickable. */
+#menubar-links .menu-dropdown {
+    z-index: 2147483647 !important;
+}
+
+#snap-preview-overlay {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(96, 165, 250, 0.14);
+    border: 1px dashed rgba(96, 165, 250, 0.45);
+    border-radius: 18px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+    -webkit-backdrop-filter: saturate(140%) brightness(1.05) blur(4px);
+    backdrop-filter: saturate(140%) brightness(1.05) blur(4px);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 2500;
+}
+
+html.dark #snap-preview-overlay {
+    background: rgba(147, 197, 253, 0.22);
+    border-color: rgba(191, 219, 254, 0.55);
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+}
+
+#snap-preview-overlay[data-side='left'] {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+#snap-preview-overlay[data-side='right'] {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+#snap-preview-overlay.snap-preview-visible {
+    opacity: 1;
+}
+
+/* Stelle sicher, dass iframes und Modale sauber gestylt sind */
+.modal iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/*
+ * Modal containers cover den gesamten Bildschirm (inset-0). Ohne Eingriff fangen sie alle Klicks
+ * ab und verhindern, dass man ein dahinterliegendes Fenster mit der Maus erreicht. Durch
+ * pointer-events:none auf dem Container und pointer-events:auto auf dem eigentlichen
+ * Fensterelement (autopointer) werden Klicks korrekt an hinterliegende Fenster weitergereicht.
+ */
+.modal {
+    pointer-events: none;
+}
+
+.modal .autopointer {
+    pointer-events: auto;
+    box-sizing: border-box;
+    max-width: none;
+    border: 1px solid var(--window-border);
+    box-shadow: var(--window-shadow);
+    transition: box-shadow 0.25s ease;
+}
+
+.modal .autopointer > * {
+    min-width: 0;
+}
+
+.modal .autopointer:focus-within,
+.modal .autopointer:hover {
+    box-shadow: var(--window-shadow-hover);
+}
+
+.no-select {
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+/* --- macOS‑ähnliches Dock --- */
+/* Dock must stay above all windows. Windows can reach z-index ~10000+,
+   so we use 2147483550 to ensure the dock is always visible and clickable.
+   This is below the menubar (2147483500 for header, 2147483647 for dropdowns)
+   and below Launchpad (2147483600). */
+#dock {
+    pointer-events: auto;
+    z-index: 2147483550 !important;
+}
+
+#dock .dock-tray {
+    width: max-content;
+    border-radius: 18px;
+    background: rgba(245, 245, 247, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.25),
+        0 2px 6px rgba(0, 0, 0, 0.12) inset;
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+    backdrop-filter: saturate(160%) blur(18px);
+}
+
+html.dark #dock .dock-tray {
+    background: rgba(17, 24, 39, 0.45);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow:
+        0 16px 36px rgba(0, 0, 0, 0.45),
+        0 2px 6px rgba(255, 255, 255, 0.06) inset;
+}
+
+#dock .dock-item {
+    margin: 0 6px;
+}
+
+#dock .dock-icon {
+    width: 64px;
+    height: 64px;
+    transition:
+        transform 0.18s ease,
+        filter 0.18s ease;
+    will-change: transform;
+}
+
+@media (min-width: 768px) {
+    #dock .dock-icon {
+        width: 72px;
+        height: 72px;
+    }
+}
+
+#dock .dock-icon {
+    transform-origin: bottom center;
+}
+
+#dock .dock-tooltip {
+    background: rgba(17, 24, 39, 0.85);
+    z-index: 400;
+    transition:
+        transform 0.18s ease,
+        opacity 0.12s ease;
+    will-change: transform;
+}
+
+html.dark #dock .dock-tooltip {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+/* Dock indicator dots */
+.dock-indicator {
+    position: absolute;
+    bottom: -0.15rem; /* positioned below the dock item */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0.375rem; /* 6px */
+    height: 0.375rem; /* 6px */
+    border-radius: 9999px;
+    background-color: rgb(55, 65, 81); /* gray-700 */
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .dock-indicator {
+    background-color: rgb(243, 244, 246); /* gray-100 */
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+}
+
+/* ============================================================================
+   Finder Styles
+   ============================================================================ */
+
+/* Toolbar */
+.finder-toolbar-btn {
+    padding: 0.375rem;
+    border-radius: 0.375rem;
+    color: #6b7280;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.finder-toolbar-btn:hover {
+    background-color: #f3f4f6;
+    color: #111827;
+}
+
+.dark .finder-toolbar-btn:hover {
+    background-color: #374151;
+    color: #f9fafb;
+}
+
+/* Breadcrumbs */
+.finder-breadcrumb-item {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    transition: background-color 0.15s ease;
+}
+
+.finder-breadcrumb-item:hover {
+    background-color: #f3f4f6;
+}
+
+.dark .finder-breadcrumb-item:hover {
+    background-color: #374151;
+}
+
+.finder-breadcrumb-separator {
+    color: #9ca3af;
+    padding: 0 0.25rem;
+}
+
+/* Sidebar */
+.finder-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-size: 0.875rem;
+    color: #374151;
+    transition: background-color 0.15s ease;
+}
+
+.finder-sidebar-item:hover {
+    background-color: #f3f4f6;
+}
+
+.finder-sidebar-item.finder-sidebar-active {
+    background-color: #e5e7eb;
+    font-weight: 500;
+}
+
+.dark .finder-sidebar-item {
+    color: #d1d5db;
+}
+
+.dark .finder-sidebar-item:hover {
+    background-color: #374151;
+}
+
+.dark .finder-sidebar-item.finder-sidebar-active {
+    background-color: #4b5563;
+}
+
+.finder-sidebar-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* List View */
+.finder-list-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.finder-list-table thead th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.finder-list-table thead th:hover {
+    background-color: #f9fafb;
+}
+
+.dark .finder-list-table thead th {
+    color: #9ca3af;
+    border-bottom-color: #374151;
+}
+
+.dark .finder-list-table thead th:hover {
+    background-color: #1f2937;
+}
+
+.finder-list-item {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.finder-list-item:hover {
+    background-color: #f9fafb;
+}
+
+.dark .finder-list-item:hover {
+    background-color: #1f2937;
+}
+
+.finder-list-item td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #111827;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.dark .finder-list-item td {
+    color: #f9fafb;
+    border-bottom-color: #1f2937;
+}
+
+.finder-item-icon {
+    font-size: 1.25rem;
+    margin-right: 0.5rem;
+}
+
+/* Grid View */
+.finder-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+    padding: 0.5rem;
+}
+
+.finder-grid-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.finder-grid-item:hover {
+    background-color: #f3f4f6;
+}
+
+.dark .finder-grid-item:hover {
+    background-color: #374151;
+}
+
+.finder-grid-icon {
+    font-size: 3rem;
+}
+
+.finder-grid-name {
+    font-size: 0.875rem;
+    text-align: center;
+    word-break: break-word;
+    color: #111827;
+}
+
+.dark .finder-grid-name {
+    color: #f9fafb;
+}
+
+/* Empty State */
+.finder-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+}
+/* ============================================================================
+ * Launchpad Styles
+ * ============================================================================ */
+
+.launchpad-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 2rem;
+    background: transparent;
+}
+
+.launchpad-search {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.launchpad-search-input {
+    width: 100%;
+    max-width: 600px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.125rem;
+    border: 2px solid rgba(148, 163, 184, 0.3);
+    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    color: #1e293b;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.dark .launchpad-search-input {
+    background: rgba(30, 41, 59, 0.95);
+    color: #e2e8f0;
+    border-color: rgba(148, 163, 184, 0.2);
+}
+
+.launchpad-search-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.launchpad-apps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+    overflow-y: auto;
+    flex: 1;
+    /* When empty, center the content */
+    align-content: start;
+}
+
+@media (min-width: 768px) {
+    .launchpad-apps-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+}
+
+.launchpad-app-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 0.5rem;
+    background: transparent;
+    border: none;
+    border-radius: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.launchpad-app-button:hover {
+    background: rgba(59, 130, 246, 0.08);
+    transform: translateY(-4px);
+}
+
+.dark .launchpad-app-button:hover {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.launchpad-app-button:active {
+    transform: translateY(-2px);
+}
+
+.launchpad-app-button:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 4px;
+}
+
+.launchpad-app-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+.launchpad-app-button:hover .launchpad-app-icon {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    transform: scale(1.05);
+}
+
+.launchpad-app-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.launchpad-app-emoji {
+    font-size: 4rem;
+    line-height: 1;
+}
+
+.launchpad-app-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #334155;
+    text-align: center;
+    line-height: 1.2;
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+}
+
+.dark .launchpad-app-label {
+    color: #e2e8f0;
+}
+
+.launchpad-empty {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: #64748b;
+    font-size: 1.125rem;
+}
+
+.dark .launchpad-empty {
+    color: #94a3b8;
+}
+
+/* Launchpad modal specific styling */
+#launchpad-modal {
+    /* Wrapper needs to be interactive for E2E background-click close */
+    pointer-events: auto;
+    /* Ensure launchpad overlays the menubar (z-index ~10000) */
+    z-index: 11000;
+}
+
+/* Position launchpad between menubar and dock */
+.launchpad-modal-wrapper {
+    align-items: center;
+    /* Account for menubar (~44px) and dock (~80px + margins) */
+    padding-top: 44px;
+    padding-bottom: 100px;
+}
+
+.launchpad-modal-inner {
+    background: rgba(255, 255, 255, 0.7);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+}
+
+.dark .launchpad-modal-inner {
+    background: rgba(30, 41, 59, 0.7);
+}
+
+/* ==============================
+   Text Editor Toast Notifications
+   ============================== */
+
+.text-editor-toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.text-editor-toast {
+    min-width: 200px;
+    max-width: 400px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(10px);
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+    pointer-events: auto;
+}
+
+.text-editor-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.text-editor-toast-info {
+    background: #3b82f6;
+    color: white;
+}
+
+.text-editor-toast-success {
+    background: #10b981;
+    color: white;
+}
+
+.text-editor-toast-error {
+    background: #ef4444;
+    color: white;
+}
+
+.dark .text-editor-toast {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ==============================
+   Text Editor Input Modal
+   ============================== */
+
+.text-editor-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.text-editor-modal-overlay.show {
+    opacity: 1;
+}
+
+.text-editor-modal-overlay.closing {
+    opacity: 0;
+}
+
+.text-editor-modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    min-width: 400px;
+    max-width: 90vw;
+    overflow: hidden;
+    transform: scale(0.9);
+    transition: transform 0.2s ease;
+}
+
+.text-editor-modal-overlay.show .text-editor-modal {
+    transform: scale(1);
+}
+
+.text-editor-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.text-editor-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.text-editor-modal-body {
+    padding: 20px;
+}
+
+.text-editor-modal-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.text-editor-modal-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.text-editor-modal-footer {
+    padding: 12px 20px;
+    background: #f9fafb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.text-editor-modal-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.text-editor-modal-btn-cancel {
+    background: white;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+.text-editor-modal-btn-cancel:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.text-editor-modal-btn-confirm {
+    background: #3b82f6;
+    color: white;
+}
+
+.text-editor-modal-btn-confirm:hover {
+    background: #2563eb;
+}
+
+.text-editor-modal-btn:active {
+    transform: scale(0.98);
+}
+
+/* Dark mode styles */
+.dark .text-editor-modal {
+    background: #1e293b;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.dark .text-editor-modal-header {
+    border-bottom-color: #334155;
+}
+
+.dark .text-editor-modal-header h3 {
+    color: #f1f5f9;
+}
+
+.dark .text-editor-modal-input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+.dark .text-editor-modal-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.dark .text-editor-modal-footer {
+    background: #0f172a;
+    border-top-color: #334155;
+}
+
+.dark .text-editor-modal-btn-cancel {
+    background: #334155;
+    color: #cbd5e1;
+    border-color: #475569;
+}
+
+.dark .text-editor-modal-btn-cancel:hover {
+    background: #475569;
+    border-color: #64748b;
+}
+
+/* Fotos-App spezifische Styles */
+.photos-sidebar-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+html.dark .photos-sidebar-button {
+    color: #e2e8f0;
+}
+
+.photos-sidebar-button:hover {
+    background: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
+}
+
+html.dark .photos-sidebar-button:hover {
+    background: rgba(59, 130, 246, 0.18);
+    color: #93c5fd;
+}
+
+.photos-sidebar-button[data-active='true'] {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(37, 99, 235, 0.26));
+    color: #1d4ed8;
+    font-weight: 600;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+html.dark .photos-sidebar-button[data-active='true'] {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(29, 78, 216, 0.32));
+    color: #bfdbfe;
+    box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.35);
+}
+
+.photos-sidebar-count {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+html.dark .photos-sidebar-count {
+    color: #94a3b8;
+}
+
+.photos-segment-button {
+    border: none;
+    background: transparent;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    color: inherit;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+.photos-segment-button:hover {
+    background: rgba(255, 255, 255, 0.7);
+    color: #1f2937;
+}
+
+html.dark .photos-segment-button:hover {
+    background: rgba(148, 163, 184, 0.18);
+}
+
+.photos-segment-button[data-active='true'] {
+    background: #ffffff;
+    color: #1d4ed8;
+    font-weight: 600;
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.18);
+}
+
+html.dark .photos-segment-button[data-active='true'] {
+    background: rgba(37, 99, 235, 0.28);
+    color: #bfdbfe;
+    box-shadow: 0 10px 20px rgba(30, 64, 175, 0.35);
+}
+
+.photos-card {
+    position: relative;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.photos-card[data-selected='true'] {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px rgba(59, 130, 246, 0.28);
+    border: 2px solid rgba(59, 130, 246, 0.35);
+}
+
+html.dark .photos-card[data-selected='true'] {
+    box-shadow: 0 20px 40px rgba(30, 64, 175, 0.45);
+    border-color: rgba(147, 197, 253, 0.55);
+}
+
+.photos-card[data-favorite='true']::after {
+    content: '❤️';
+    position: absolute;
+    top: 0.65rem;
+    right: 0.8rem;
+    font-size: 1.1rem;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+}
+
+html.dark .photos-card[data-favorite='true']::after {
+    color: #fbbf24;
+}

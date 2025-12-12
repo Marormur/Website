@@ -1,0 +1,68 @@
+{
+  // Editor - Formatting & Saving
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.endOfLine": "auto",
+  "files.eol": "auto",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+
+  // Editor - Visual Guides
+  //   "editor.rulers": [80, 100],
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+
+  // TypeScript
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+
+  // ESLint
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+
+  // Tailwind CSS IntelliSense
+  "tailwindCSS.experimental.classRegex": [
+    ["class[:]\\s*['\"`]([^'\"`]*)['\"`]", "['\"`]([^'\"`]*)['\"`]"]
+  ],
+
+  // Playwright Testing
+  "playwright.reuseBrowser": false,
+  "playwright.showTrace": false,
+
+  // File Associations
+  "files.associations": {
+    "*.config.mjs": "javascript"
+  },
+
+  // Search Performance - Exclude generated files
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/test-results": true,
+    "**/test-output.json": true,
+    "**/.playwright-mcp": true,
+    "**/playwright-report": true,
+    "**/coverage": true,
+    "**/docs/api": true,
+    "**/js/*.js": true,
+    "**/js/*.js.map": true
+  },
+
+  // File Watcher Performance - Don't watch these directories
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/test-results/**": true,
+    "**/test-output.json/**": true,
+    "**/playwright-report/**": true,
+    "**/.playwright-mcp/**": true,
+    "**/coverage/**": true
+  },
+
+  // Task Automation - Reduce user prompts during agent/automated runs
+  "task.allowAutomaticTasks": "on",
+  "task.slowProviderWarning": ["npm"]
+}

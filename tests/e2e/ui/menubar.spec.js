@@ -1,0 +1,73 @@
+// End-to-end tests for menubar switching logic between Finder and Texteditor
+const { test, expect } = require('@playwright/test');
+const {
+    waitForAppReady,
+    openFinderWindow,
+    waitForFinderReady,
+    clickDockIcon,
+    expectMenuButton,
+    expectMenuItem,
+    bringModalToFront,
+} = require('../utils');
+
+test.describe('Menubar switches with active window (de-DE)', () => {
+    test.use({ locale: 'de-DE' });
+
+    test.beforeEach(async ({ page, baseURL }) => {
+        await page.goto(baseURL + '/index.html');
+        await waitForAppReady(page);
+    });
+
+    test('Finder menus appear when Finder is active', async ({ page }) => {
+        // Open Finder via helper and ensure it's ready
+        const finderWindow = await openFinderWindow(page);
+        await waitForFinderReady(page);
+
+        // Program label becomes "Finder" (de-DE: "Sucher")
+        const finderButton = page.getByRole('button', { name: /Finder|Sucher/i });
+        await finderButton.waitFor({ state: 'visible', timeout: 10000 });
+        await expect(finderButton).toBeVisible({ timeout: 10000 });
+
+        // Finder menubar sections
+        await expectMenuButton(page, 'Ablage');
+        await expectMenuButton(page, 'Fenster');
+        await expectMenuButton(page, 'Hilfe');
+
+        // Verify Finder-specific menu items in Ablage (de-DE: "Sucher" instead of "Finder")
+        await expectMenuItem(page, 'Ablage', /Neues (Finder|Sucher)-Fenster/);
+        await expectMenuItem(page, 'Ablage', /Sucher neu laden/);
+        await expectMenuItem(page, 'Ablage', 'Fenster schließen');
+    });
+
+    test('Switch to Texteditor and back to Finder updates menubar', async ({ page }) => {
+        // Open Texteditor (use stable window id)
+        await clickDockIcon(page, 'text-modal');
+        const textEditorButton = page.getByRole('button', {
+            name: 'Texteditor',
+        });
+        await textEditorButton.waitFor({ state: 'visible', timeout: 10000 });
+        await expect(textEditorButton).toBeVisible({ timeout: 10000 });
+
+        // Texteditor menubar sections
+        await expectMenuButton(page, 'Ablage');
+        await expectMenuButton(page, 'Bearbeiten');
+        await expectMenuButton(page, 'Darstellung');
+        await expectMenuButton(page, 'Fenster');
+        await expectMenuButton(page, 'Hilfe');
+
+        // Open Finder too (via helper)
+        const finderWindow = await openFinderWindow(page);
+        await waitForFinderReady(page);
+
+        // Ensure Finder is actually the top-most by clicking its title bar
+        await bringModalToFront(page, 'finder-modal');
+
+        // Program label switches to Finder (de-DE: "Sucher")
+        await expect(page.getByRole('button', { name: /Finder|Sucher/i })).toBeVisible();
+
+        // Back to Finder sections
+        await expectMenuButton(page, 'Ablage');
+        await expectMenuButton(page, 'Fenster');
+        await expectMenuButton(page, 'Hilfe');
+    });
+});

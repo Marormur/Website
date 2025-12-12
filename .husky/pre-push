@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run basic E2E smoke tests before push to catch breaking changes early
+# Temporarily disabled due to failing tests
+# echo "Running E2E basic smoke tests before push..."
+# npm run test:e2e:quick

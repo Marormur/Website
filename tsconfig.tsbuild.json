@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": false,
+    "declaration": false,
+    "emitDeclarationOnly": false,
+    "outDir": "js",
+    "rootDir": "src/ts",
+    "module": "none",
+    "moduleResolution": "classic",
+    "target": "ES2020",
+    "removeComments": false
+  },
+  "include": ["src/ts/**/*.ts", "types/**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "tests", "test-results"]
+}

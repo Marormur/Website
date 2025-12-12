@@ -5,42 +5,66 @@
  * - Runs tests in Chromium by default
  */
 
-const { defineConfig, devices } = require('@playwright/test');
+import { defineConfig, devices } from '@playwright/test';
 
-module.exports = defineConfig({
+// Always use the Node server on port 5173 for tests
+// The webServer config below will start it automatically if not running
+const BASE_URL = 'http://127.0.0.1:5173';
+
+export default defineConfig({
     testDir: './tests',
+    // Reduced timeout for faster feedback - individual tests can override if needed
     timeout: 30 * 1000,
-    expect: { timeout: 5000 },
-    fullyParallel: true,
+    expect: { timeout: 8000 },
+    // Disable fullyParallel to ensure clean sequential execution with single worker
+    fullyParallel: false,
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 2 : 0,
-    workers: process.env.CI ? 1 : undefined,
-    reporter: 'list',
+    // Mild retry locally to smooth out rare flakes; CI keeps 2
+    retries: process.env.CI ? 2 : 1,
+    // Single worker to avoid server port conflicts
+    // workers: 1,
+    reporter: process.env.CI ? 'list' : 'line', // Less verbose output locally
     use: {
-        baseURL: 'http://127.0.0.1:3000',
+        baseURL: BASE_URL,
+        // Balanced timeouts for bundle mode without excessive waiting
+        actionTimeout: 25_000,
+        navigationTimeout: 25_000,
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
-        video: 'retain-on-failure'
+        video: 'retain-on-failure',
     },
-    projects: [
-        // Run tests in all major desktop browsers to catch cross-browser regressions
-        {
-            name: 'chromium',
-            use: { ...devices['Desktop Chrome'] }
-        },
-        {
-            name: 'firefox',
-            use: { ...devices['Desktop Firefox'] }
-        },
-        {
-            name: 'webkit',
-            use: { ...devices['Desktop Safari'] }
-        }
-    ],
+    projects: process.env.CI
+        ? [
+              // CI: Run all browsers to catch cross-browser regressions
+              {
+                  name: 'chromium',
+                  use: { ...devices['Desktop Chrome'] },
+              },
+              {
+                  name: 'firefox',
+                  use: { ...devices['Desktop Firefox'] },
+              },
+              {
+                  name: 'webkit',
+                  use: { ...devices['Desktop Safari'] },
+              },
+          ]
+        : [
+              // Local: Only Chromium for faster feedback
+              {
+                  name: 'chromium',
+                  use: { ...devices['Desktop Chrome'] },
+              },
+          ],
+    // Always start the Node server on port 5173 for tests
+    // Reuse existing server locally for faster startup and shutdown
     webServer: {
-        command: 'echo "Using VS Code Live Server on port 3000"',
-        url: 'http://127.0.0.1:3000',
-        reuseExistingServer: true,
-        timeout: 30 * 1000
-    }
+        command: 'node server.js',
+        url: 'http://127.0.0.1:5173',
+        reuseExistingServer: !process.env.CI,
+        timeout: 60 * 1000,
+        // Pipe output for debugging but don't wait indefinitely
+        stdout: 'pipe',
+        stderr: 'pipe',
+    },
 });

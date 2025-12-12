@@ -4,8 +4,8 @@
  * vorgenommen werden oder fehlende Assets neutralisiert werden.
  */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    background: url("./img/wallpaper.png") no-repeat center center fixed !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    background: url('./img/wallpaper.png') no-repeat center center fixed !important;
     background-size: cover !important;
     margin: 0;
     padding: 0;
@@ -25,7 +25,7 @@ body {
     --window-border: rgba(148, 163, 184, 0.2);
 }
 
-body>header {
+body > header {
     position: fixed;
     top: 0;
     left: 0;
@@ -70,7 +70,9 @@ body>header {
     cursor: pointer;
     color: #f8fafc;
     text-shadow: 0 2px 6px rgba(15, 23, 42, 0.55);
-    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
 html.dark .desktop-icon-button {
@@ -93,12 +95,12 @@ html.dark .desktop-icon-button:hover {
     outline-offset: 3px;
 }
 
-.desktop-icon-button[data-selected="true"] {
+.desktop-icon-button[data-selected='true'] {
     background: rgba(59, 130, 246, 0.35);
     box-shadow: 0 24px 42px rgba(37, 99, 235, 0.32);
 }
 
-html.dark .desktop-icon-button[data-selected="true"] {
+html.dark .desktop-icon-button[data-selected='true'] {
     background: rgba(37, 99, 235, 0.45);
     box-shadow: 0 26px 48px rgba(15, 23, 42, 0.55);
 }
@@ -162,16 +164,18 @@ html.dark .desktop-icon-graphic {
     border-radius: 10px;
     background: transparent;
     color: inherit;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
     text-shadow: inherit;
 }
 
-.desktop-icon-button[data-selected="true"] .desktop-icon-label {
+.desktop-icon-button[data-selected='true'] .desktop-icon-label {
     background: rgba(37, 99, 235, 0.85);
     color: #ffffff;
 }
 
-html.dark .desktop-icon-button[data-selected="true"] .desktop-icon-label {
+html.dark .desktop-icon-button[data-selected='true'] .desktop-icon-label {
     background: rgba(59, 130, 246, 0.85);
     color: #f8fafc;
 }
@@ -232,7 +236,9 @@ html.dark .menubar {
     align-items: center;
     gap: 6px;
     line-height: 1.2;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
 }
 
 .menubar-logo {
@@ -344,6 +350,14 @@ html.dark .menu-dropdown {
     box-shadow: 0 22px 42px rgba(0, 0, 0, 0.55);
 }
 
+/* Context menu overrides: fixed positioning at cursor with high z-index */
+.menu-dropdown.context-menu {
+    position: fixed;
+    /* top/left are set dynamically by JS */
+    z-index: 2147483647;
+    /* ensure above all app windows and dropdowns */
+}
+
 .menu-dropdown li {
     margin: 0;
     padding: 0;
@@ -359,7 +373,9 @@ html.dark .menu-dropdown {
     color: inherit;
     font-size: 13px;
     line-height: 1.3;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
     background: transparent;
     border: none;
     text-align: left;
@@ -418,13 +434,13 @@ html.dark .menu-item:focus-visible {
     gap: 6px;
 }
 
-.system-section+.system-section {
+.system-section + .system-section {
     border-top: 1px solid rgba(148, 163, 184, 0.2);
     margin-top: 4px;
     padding-top: 12px;
 }
 
-html.dark .system-section+.system-section {
+html.dark .system-section + .system-section {
     border-top-color: rgba(71, 85, 105, 0.35);
 }
 
@@ -455,7 +471,9 @@ html.dark .system-section+.system-section {
     color: inherit;
     font: inherit;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
 }
 
 .system-toggle.is-active {
@@ -587,19 +605,19 @@ html.dark .system-menu-item.is-active {
     background: rgba(96, 165, 250, 0.18);
 }
 
-.system-menu-item[aria-disabled="true"] {
+.system-menu-item[aria-disabled='true'] {
     opacity: 0.45;
     pointer-events: none;
 }
 
 .menu-item[disabled],
-.menu-item[aria-disabled="true"] {
+.menu-item[aria-disabled='true'] {
     opacity: 0.45;
     cursor: default;
 }
 
 .menu-item[disabled]:hover,
-.menu-item[aria-disabled="true"]:hover {
+.menu-item[aria-disabled='true']:hover {
     background: transparent;
 }
 
@@ -642,12 +660,12 @@ html.dark #snap-preview-overlay {
     box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
 }
 
-#snap-preview-overlay[data-side="left"] {
+#snap-preview-overlay[data-side='left'] {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
 }
 
-#snap-preview-overlay[data-side="right"] {
+#snap-preview-overlay[data-side='right'] {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
 }
@@ -682,7 +700,7 @@ html.dark #snap-preview-overlay {
     transition: box-shadow 0.25s ease;
 }
 
-.modal .autopointer>* {
+.modal .autopointer > * {
     min-width: 0;
 }
 
@@ -708,7 +726,9 @@ html.dark #snap-preview-overlay {
     border-radius: 18px;
     background: rgba(245, 245, 247, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.45);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.12) inset;
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.25),
+        0 2px 6px rgba(0, 0, 0, 0.12) inset;
     -webkit-backdrop-filter: saturate(160%) blur(18px);
     backdrop-filter: saturate(160%) blur(18px);
 }
@@ -716,7 +736,9 @@ html.dark #snap-preview-overlay {
 html.dark #dock .dock-tray {
     background: rgba(17, 24, 39, 0.45);
     border-color: rgba(255, 255, 255, 0.22);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(255, 255, 255, 0.06) inset;
+    box-shadow:
+        0 16px 36px rgba(0, 0, 0, 0.45),
+        0 2px 6px rgba(255, 255, 255, 0.06) inset;
 }
 
 #dock .dock-item {
@@ -726,7 +748,9 @@ html.dark #dock .dock-tray {
 #dock .dock-icon {
     width: 64px;
     height: 64px;
-    transition: transform 0.18s ease, filter 0.18s ease;
+    transition:
+        transform 0.18s ease,
+        filter 0.18s ease;
     will-change: transform;
 }
 
@@ -744,7 +768,9 @@ html.dark #dock .dock-tray {
 #dock .dock-tooltip {
     background: rgba(17, 24, 39, 0.85);
     z-index: 400;
-    transition: transform 0.18s ease, opacity 0.12s ease;
+    transition:
+        transform 0.18s ease,
+        opacity 0.12s ease;
     will-change: transform;
 }
 
@@ -761,7 +787,9 @@ html.dark #dock .dock-tooltip {
     padding: 0.375rem;
     border-radius: 0.375rem;
     color: #6b7280;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
 }
 
 .finder-toolbar-btn:hover {
@@ -945,4 +973,395 @@ html.dark #dock .dock-tooltip {
     justify-content: center;
     height: 100%;
     padding: 2rem;
+}
+
+/* ============================================================================
+ * Launchpad Styles
+ * ============================================================================ */
+
+.launchpad-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 2rem;
+    background: transparent;
+}
+
+.launchpad-search {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.launchpad-search-input {
+    width: 100%;
+    max-width: 600px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.125rem;
+    border: 2px solid rgba(148, 163, 184, 0.3);
+    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    color: #1e293b;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.dark .launchpad-search-input {
+    background: rgba(30, 41, 59, 0.95);
+    color: #e2e8f0;
+    border-color: rgba(148, 163, 184, 0.2);
+}
+
+.launchpad-search-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.launchpad-apps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+    overflow-y: auto;
+    flex: 1;
+    /* When empty, center the content */
+    align-content: start;
+}
+
+@media (min-width: 768px) {
+    .launchpad-apps-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+}
+
+.launchpad-app-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 0.5rem;
+    background: transparent;
+    border: none;
+    border-radius: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.launchpad-app-button:hover {
+    background: rgba(59, 130, 246, 0.08);
+    transform: translateY(-4px);
+}
+
+.dark .launchpad-app-button:hover {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.launchpad-app-button:active {
+    transform: translateY(-2px);
+}
+
+.launchpad-app-button:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 4px;
+}
+
+.launchpad-app-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+.launchpad-app-button:hover .launchpad-app-icon {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    transform: scale(1.05);
+}
+
+.launchpad-app-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.launchpad-app-emoji {
+    font-size: 4rem;
+    line-height: 1;
+}
+
+.launchpad-app-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #334155;
+    text-align: center;
+    line-height: 1.2;
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    -webkit-hyphens: auto;
+    /* Support Safari on iOS < 17 */
+    hyphens: auto;
+}
+
+.dark .launchpad-app-label {
+    color: #e2e8f0;
+}
+
+.launchpad-empty {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: #64748b;
+    font-size: 1.125rem;
+}
+
+.dark .launchpad-empty {
+    color: #94a3b8;
+}
+
+/* Launchpad modal specific styling */
+#launchpad-modal {
+    /* Override the default .modal pointer-events: none to enable click-outside-to-close */
+    pointer-events: auto;
+}
+
+/* Position launchpad between menubar and dock */
+.launchpad-modal-wrapper {
+    align-items: center;
+    /* Account for menubar (~44px) and dock (~80px + margins) */
+    padding-top: 44px;
+    padding-bottom: 100px;
+}
+
+.launchpad-modal-inner {
+    background: rgba(255, 255, 255, 0.7);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+}
+
+.dark .launchpad-modal-inner {
+    background: rgba(30, 41, 59, 0.7);
+}
+
+/* ==============================
+   Text Editor Toast Notifications
+   ============================== */
+
+.text-editor-toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.text-editor-toast {
+    min-width: 200px;
+    max-width: 400px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(10px);
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+    pointer-events: auto;
+}
+
+.text-editor-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.text-editor-toast-info {
+    background: #3b82f6;
+    color: white;
+}
+
+.text-editor-toast-success {
+    background: #10b981;
+    color: white;
+}
+
+.text-editor-toast-error {
+    background: #ef4444;
+    color: white;
+}
+
+.dark .text-editor-toast {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ==============================
+   Text Editor Input Modal
+   ============================== */
+
+.text-editor-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.text-editor-modal-overlay.show {
+    opacity: 1;
+}
+
+.text-editor-modal-overlay.closing {
+    opacity: 0;
+}
+
+.text-editor-modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    min-width: 400px;
+    max-width: 90vw;
+    overflow: hidden;
+    transform: scale(0.9);
+    transition: transform 0.2s ease;
+}
+
+.text-editor-modal-overlay.show .text-editor-modal {
+    transform: scale(1);
+}
+
+.text-editor-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.text-editor-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.text-editor-modal-body {
+    padding: 20px;
+}
+
+.text-editor-modal-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.text-editor-modal-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.text-editor-modal-footer {
+    padding: 12px 20px;
+    background: #f9fafb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.text-editor-modal-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.text-editor-modal-btn-cancel {
+    background: white;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+.text-editor-modal-btn-cancel:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.text-editor-modal-btn-confirm {
+    background: #3b82f6;
+    color: white;
+}
+
+.text-editor-modal-btn-confirm:hover {
+    background: #2563eb;
+}
+
+.text-editor-modal-btn:active {
+    transform: scale(0.98);
+}
+
+/* Dark mode styles */
+.dark .text-editor-modal {
+    background: #1e293b;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.dark .text-editor-modal-header {
+    border-bottom-color: #334155;
+}
+
+.dark .text-editor-modal-header h3 {
+    color: #f1f5f9;
+}
+
+.dark .text-editor-modal-input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+.dark .text-editor-modal-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.dark .text-editor-modal-footer {
+    background: #0f172a;
+    border-top-color: #334155;
+}
+
+.dark .text-editor-modal-btn-cancel {
+    background: #334155;
+    color: #cbd5e1;
+    border-color: #475569;
+}
+
+.dark .text-editor-modal-btn-cancel:hover {
+    background: #475569;
+    border-color: #64748b;
 }

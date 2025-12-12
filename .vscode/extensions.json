@@ -1,0 +1,44 @@
+{
+  "recommendations": [
+    // TypeScript & JavaScript
+    "ms-vscode.vscode-typescript-next",
+
+    // ESLint & Prettier
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+
+    // Tailwind CSS
+    "bradlc.vscode-tailwindcss",
+
+    // Playwright Testing
+    "ms-playwright.playwright",
+
+    // Git & Version Control
+    "github.vscode-pull-request-github",
+
+    // Markdown
+    "yzhang.markdown-all-in-one",
+
+    // Live Server (alternative to node server)
+    "ritwickdey.liveserver",
+
+    // Path Autocomplete
+    "christian-kohler.path-intellisense",
+
+    // Error Lens (inline errors)
+    "usernamehw.errorlens",
+
+    // EditorConfig Support
+    "editorconfig.editorconfig",
+
+    // TODO Highlighting
+    "gruntfuggly.todo-tree",
+
+    // Spell Checker
+    "streetsidesoftware.code-spell-checker",
+
+    // Import Cost (shows size of imports)
+    "wix.vscode-import-cost"
+  ],
+  "unwantedRecommendations": []
+}

@@ -1,50 +1,71 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+    push:
+        branches: [main]
+    workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+    contents: read
+    pages: write
+    id-token: write
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+    group: 'pages'
+    cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build Tailwind CSS
-        run: npm run build:css
-      
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: '.'
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Download build artifacts
+              id: download-build
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-${{ github.sha }}
+              continue-on-error: true
+
+            - name: Typecheck
+              if: steps.download-build.outcome == 'failure'
+              run: npm run typecheck
+
+            - name: Type Coverage Check
+              if: steps.download-build.outcome == 'failure'
+              run: npm run type:coverage
+              continue-on-error: true
+
+            - name: Build TypeScript
+              if: steps.download-build.outcome == 'failure'
+              run: npm run build:ts
+
+            - name: Build Tailwind CSS
+              if: steps.download-build.outcome == 'failure'
+              run: npm run build:css
+
+            - name: Upload artifact
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: '.'
+
+    deploy:
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        runs-on: ubuntu-latest
+        needs: build
+        steps:
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4

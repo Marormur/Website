@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    // JavaScript-Kompatibilität
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+
+    // Modern JavaScript
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
+
+    // Type Checking (Phase 5: Full strict mode enabled!)
+    "strict": true, // ✅ Combines all strict* flags
+    "noUncheckedIndexedAccess": true, // ✅ Array/object access returns T | undefined
+
+    // Source Maps
+    "sourceMap": true,
+    "inlineSourceMap": false,
+    "inlineSources": false,
+
+    // Developer Experience
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Paths
+    "paths": {
+      "@/*": ["./js/*"]
+    }
+  },
+  "include": ["js/**/*.js", "js/**/*.ts", "app.js", "types/**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "test-results", "tests"]
+}

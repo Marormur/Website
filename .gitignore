@@ -1,5 +1,68 @@
+# macOS
 *.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDEs
 .idea/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# Dependencies
 node_modules/
+
+# Test results
 .playwright-mcp/
 test-results/
+playwright-report/
+
+# Playwright / test artifacts and media (exclude large test output and videos/screenshots)
+# Keeps repo free of generated videos/images from E2E runs
+test-results/**/video.*
+test-results/**/trace.*
+test-results/**/screenshot*.png
+test-results/**/test-failed-*.png
+playwright-report/
+test-output.json/
+
+# Logs folder (project-specific)
+logs/
+logs/**
+
+# Build outputs
+# Tailwind CSS output is built by GitHub Actions during deployment
+dist/output.css
+
+# Generated JavaScript files (built in CI from src/ts/)
+js/**/*.js
+js/**/*.js.map
+!js/README.md
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+.cache/
+tmp/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
