@@ -45,7 +45,7 @@ Hinweis: Das Projekt entwickelt sich weiter; Details können sich ändern. Halte
 
 - Schnelltest: `npm run test:e2e:quick` (lokal Chromium). Für Stabilität: `MOCK_GITHUB=1` und auf `window.__APP_READY` warten.
 - Volltests: `npm run test:e2e` (Headless), Varianten: headed/UI (`npm run test:e2e:headed`, `npm run test:e2e:ui`).
-- Bundel- und Mock-Modus: `USE_BUNDLE=1 MOCK_GITHUB=1` mit Quick/Full Tasks vorhanden.
+- Bundle- und Mock-Modus: `USE_BUNDLE=1 MOCK_GITHUB=1` mit Quick/Full Tasks vorhanden.
 - Beispiel-Task: „E2E: Test (basic smoke)“ startet erst Dev-Server, dann Quick-Test (env: `USE_NODE_SERVER=1`, `MOCK_GITHUB=1`).
 - Schreibe für Features min. 1 Smoke + 1 Edge-Case E2E. Nutze explizite `waitForSelector` statt Timeouts.
 
@@ -124,7 +124,7 @@ ActionBus.register('myAction', (params, element) => {
 
 - **localStorage**: Fenster-States, Theme, Sprache, VirtualFS werden persistiert. Bei Layout-Problemen: `localStorage.clear()` im Browser-DevTools
 - **GitHub API Rate Limit**: Ohne Token 60 Requests/Stunde. Bei Entwicklung: `MOCK_GITHUB=1` nutzen
-- **window.\_\_APP_READY**: Tests müssen auf dieses Flag warten, bevor sie mit der App interagieren
+- **`window.__APP_READY`**: Tests müssen auf dieses Flag warten, bevor sie mit der App interagieren
 - **Bundle vs. Non-Bundle**: Standard ist Bundle-Modus (`js/app.bundle.js`). Opt-out via `?bundle=0` oder `localStorage.USE_BUNDLE='0'`
 - **Build-Output**: `js/` und `dist/` sind generiert – NIEMALS direkt editieren! Immer `src/ts/` und `src/css/` ändern
 - **Type Coverage**: Minimum 79% erforderlich (`npm run type:baseline`). Bei Änderungen prüfen!
