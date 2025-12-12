@@ -215,9 +215,9 @@ test.describe('FinderView New Features', () => {
         const sortBySize = finderWindow.locator('[data-sort="size"]');
         await sortBySize.click();
 
-        // Close and reopen Finder (simulate)
-        const closeBtn = finderWindow.locator('.window-titlebar-close').first();
-        await closeBtn.click();
+        // Close Finder window - use title="Close" selector instead of old .window-titlebar-close
+        const closeBtn = finderWindow.locator('button[title="Close"]').first();
+        await closeBtn.click({ timeout: 5000 });
         await page.waitForTimeout(300);
 
         // Reopen

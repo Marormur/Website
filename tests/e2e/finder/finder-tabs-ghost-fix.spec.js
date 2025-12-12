@@ -346,6 +346,10 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
         let tabs = await getFinderTabs(page, finderWindow);
         await expect(tabs).toHaveCount(3, { timeout: 5000 });
 
+        // Click the third tab to make it active
+        await tabs.nth(2).click();
+        await page.waitForTimeout(100);
+
         const activeBeforeClose = await page.evaluate(() => {
             if (!window.FinderInstanceManager) return null;
             return window.FinderInstanceManager.getActiveInstance()?.instanceId;
@@ -353,6 +357,7 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
         expect(activeBeforeClose).not.toBeNull();
 
         // Close the active tab (third)
+        tabs = await getFinderTabs(page, finderWindow);
         const thirdTabClose = tabs.nth(2).locator('.wt-tab-close');
         await thirdTabClose.click();
 

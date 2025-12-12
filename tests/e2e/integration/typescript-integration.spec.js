@@ -130,14 +130,15 @@ test.describe('TypeScript Integration', () => {
                 if (!termWin) return false;
 
                 // Verify window has expected properties
-                const hasWindowId = typeof termWin.windowId === 'string';
-                const hasSessions = Array.isArray(termWin.sessions);
+                // New architecture uses .id (not .windowId), .tabs (not .sessions)
+                const hasId = typeof termWin.id === 'string';
+                const hasTabs = termWin.tabs instanceof Map;
                 const hasClose = typeof termWin.close === 'function';
 
                 // Clean up
                 termWin.close();
 
-                return hasWindowId && hasSessions && hasClose;
+                return hasId && hasTabs && hasClose;
             } catch (err) {
                 console.error('Window creation failed:', err);
                 return false;
@@ -248,22 +249,22 @@ test.describe('TypeScript Integration', () => {
         // Wait for terminal window to be created
         await page.waitForFunction(
             () => {
-                return window.WindowRegistry?.getAllWindows('terminal')?.length === 1;
+                return window.WindowRegistry?.getWindowsByType('terminal')?.length === 1;
             },
             { timeout: 5000 }
         );
 
         // Check that terminal window was created (uses TerminalWindow from TS)
         const hasTerminal = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-            return wins.length > 0 && wins[0].sessions?.length > 0;
+            const wins = window.WindowRegistry?.getWindowsByType('terminal') || [];
+            return wins.length > 0 && wins[0].tabs?.size > 0;
         });
 
         expect(hasTerminal).toBe(true);
 
         // Clean up
         await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
+            const wins = window.WindowRegistry?.getWindowsByType('terminal') || [];
             wins.forEach(w => w.close?.());
         });
     });
