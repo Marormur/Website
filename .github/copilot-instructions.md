@@ -3,6 +3,7 @@
 ## Projekt-Übersicht
 
 Eine persönliche Portfolio-Website mit Desktop-Metapher im macOS-Stil. Zentrale Features:
+
 - **Fenstersystem**: Draggable windows mit Multi-Instance Support (mehrere Fenster/Tabs pro App)
 - **Apps**: Finder (GitHub-Browser), Terminal (VirtualFS), TextEditor, Photos, Launchpad
 - **Theming**: Dark/Light/System Mode mit Persistenz
@@ -95,6 +96,7 @@ index.html            # Hauptseite (Bundle-Loader)
 ## Häufige Aufgaben
 
 ### Neues Fenster/App hinzufügen
+
 1. Window-Config in `src/ts/window-configs.ts` registrieren
 2. HTML-Struktur in `index.html` hinzufügen
 3. Window/Instance-Klassen in `src/ts/apps/<app-name>/` erstellen
@@ -102,6 +104,7 @@ index.html            # Hauptseite (Bundle-Loader)
 5. Menü-Einträge in relevanten Menüs hinzufügen
 
 ### Neue Action hinzufügen
+
 ```typescript
 // In src/ts/core/app-init.ts oder app-spezifischem Module
 ActionBus.register('myAction', (params, element) => {
@@ -113,6 +116,7 @@ ActionBus.register('myAction', (params, element) => {
 ```
 
 ### i18n-Text hinzufügen
+
 1. Keys in `src/ts/i18n/translations.ts` hinzufügen (DE + EN)
 2. Verwendung: `API.i18n.translate('key', 'fallback')`
 
@@ -120,7 +124,7 @@ ActionBus.register('myAction', (params, element) => {
 
 - **localStorage**: Fenster-States, Theme, Sprache, VirtualFS werden persistiert. Bei Layout-Problemen: `localStorage.clear()` im Browser-DevTools
 - **GitHub API Rate Limit**: Ohne Token 60 Requests/Stunde. Bei Entwicklung: `MOCK_GITHUB=1` nutzen
-- **window.__APP_READY**: Tests müssen auf dieses Flag warten, bevor sie mit der App interagieren
+- **window.\_\_APP_READY**: Tests müssen auf dieses Flag warten, bevor sie mit der App interagieren
 - **Bundle vs. Non-Bundle**: Standard ist Bundle-Modus (`js/app.bundle.js`). Opt-out via `?bundle=0` oder `localStorage.USE_BUNDLE='0'`
 - **Build-Output**: `js/` und `dist/` sind generiert – NIEMALS direkt editieren! Immer `src/ts/` und `src/css/` ändern
 - **Type Coverage**: Minimum 79% erforderlich (`npm run type:baseline`). Bei Änderungen prüfen!
