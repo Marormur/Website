@@ -311,6 +311,5 @@ class InstanceManager {
 
 - [architecture/PATTERNS.md](../architecture/PATTERNS.md) - Code Patterns
 - [guides/QUICKSTART.md](./QUICKSTART.md) - Allgemeiner Quickstart
-- [archive/](../archive/) - Alte Multi-Instance Docs
 
 **Letzte Aktualisierung:** Oktober 2025

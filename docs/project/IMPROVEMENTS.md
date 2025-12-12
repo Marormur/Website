@@ -30,13 +30,12 @@
 
 ✅ **Erledigt:**
 
-- Archiv-Struktur `docs/archive/` erstellt
-- 14 historische Docs archiviert (Migration Summaries, Session Restore, Audits)
+- Historische Docs konsolidiert (Migration Summaries, Session Restore, Audits)
 - TODO.md gestrafft (978 → 550 Zeilen, -44%)
 - ROADMAP.md vollständig aktualisiert (Q4 2025 als komplett markiert)
 - Docs-Cleanup-Empfehlungen erstellt (`docs/analysis/DOCS_CLEANUP_RECOMMENDATIONS.md`)
 - DECISIONS.md bereits vorhanden
-- CHANGELOG.md aktiv genutzt
+- Versionshistorie über Git-Historie statt separatem CHANGELOG.md
 
 **Aktuelle Struktur:**
 
@@ -50,7 +49,6 @@ docs/
 │   ├── OVERVIEW.md
 │   ├── PATTERNS.md
 │   └── REFACTORING.md
-├── archive/ ✅ (14 historische Docs)
 ├── guides/
 │   └── DEPLOYMENT.md
 ├── migration/
@@ -79,7 +77,7 @@ docs/
 Root-Verzeichnis (nur essentials):
 ├── README.md # Projekt-Übersicht
 ├── CONTRIBUTING.md # Contribution Guidelines
-└── CHANGELOG.md # Version History (NEU)
+└── (Changelog entfällt, Git-Historie nutzen)
 
 docs/ (alle technischen Docs):
 ├── README.md # Docs Index
@@ -99,15 +97,6 @@ docs/ (alle technischen Docs):
 ├── TODO.md # = TODO_MULTI_INSTANCE.md
 ├── ROADMAP.md # Langfristige Planung (NEU)
 └── DECISIONS.md # Architecture Decision Records (NEU)
-
-Archivieren (alte Implementierungs-Docs):
-archive/
-├── IMPLEMENTATION_COMPLETE.md
-├── IMPLEMENTATION_SUMMARY.md
-├── MULTI_INSTANCE_COMPLETE.md
-├── MULTI_INSTANCE_MIGRATION.md
-├── FILE_SUMMARY_MULTI_INSTANCE.md
-└── SUMMARY.md
 
 ````
 

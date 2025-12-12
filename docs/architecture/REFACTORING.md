@@ -2,7 +2,7 @@
 
 **Last Updated:** 29. Oktober 2025
 
-> **🎉 MIGRATION COMPLETE!** Die TypeScript-Migration ist **100% abgeschlossen** (Phase 7 komplett). Alle 8 Kern-Module wurden erfolgreich migriert: finder (1284 Zeilen), terminal (469 Zeilen), system (499 Zeilen), settings (461 Zeilen), launchpad (330 Zeilen), icons (232 Zeilen), error-handler (209 Zeilen), perf-monitor (180 Zeilen). Total: 3,664 Zeilen TypeScript-Code mit full strict mode compliance. Siehe CHANGELOG.md für Details.
+> **🎉 MIGRATION COMPLETE!** Die TypeScript-Migration ist **100% abgeschlossen** (Phase 7 komplett). Alle 8 Kern-Module wurden erfolgreich migriert: finder (1284 Zeilen), terminal (469 Zeilen), system (499 Zeilen), settings (461 Zeilen), launchpad (330 Zeilen), icons (232 Zeilen), error-handler (209 Zeilen), perf-monitor (180 Zeilen). Total: 3,664 Zeilen TypeScript-Code mit full strict mode compliance.
 
 ## Übersicht
 
@@ -74,7 +74,7 @@ if (domUtils && typeof domUtils.show === 'function') {
 - ✅ Tests: 20/20 quick, 120/120 full E2E passing
 - ✅ Keine Breaking Changes
 
-**Siehe:** CHANGELOG.md Abschnitt "DOM Utils Migration (Complete)"
+**Siehe:** Git-Historie (DOM Utils Migration Commit am 28. Oktober 2025)
 
 ---
 
