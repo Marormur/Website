@@ -4,19 +4,20 @@ Kompakt und praxisnah. Primärquelle ist der Code; ausführliche Markdown-Doku w
 
 ## Grundsätze
 
-- Quellcode nur in `src/ts/` (TypeScript) und `src/css/` (Tailwind) pflegen.
-- `js/` ist Build-Output (tsc + esbuild). Nicht direkt editieren (siehe `js/README.md`).
-- README (`readme.md`) gelegentlich pflegen, aber Kommentare im Code sind maßgeblich.
-- Bevorzugt aussagekräftige Inline-Kommentare/JSDoc an öffentlichen APIs, komplexer Logik, Fallbacks und Invarianten.
+- Quellcode nur in `src/ts/` (TypeScript) und `src/css/` (Tailwind) pflegen
+- `js/` ist Build-Output (tsc + esbuild) – nicht direkt editieren
+- README und diese Datei gelegentlich pflegen, aber **Code-Kommentare sind maßgeblich**
+- Bevorzugt aussagekräftige Inline-Kommentare/JSDoc an öffentlichen APIs, komplexer Logik, Fallbacks und Invarianten
 
 ## Architektur auf einen Blick (evolving)
 
-- WindowManager: zentrale Fenster-/Modalsteuerung (`js/window-manager.js` → Quellen in `src/ts/`).
-- ActionBus: deklarative Aktionen über `data-action` statt ad-hoc Handler (`js/action-bus.js`).
-- Virtual FS: persistente Schicht für Finder & Terminal (`js/virtual-fs.js`).
-- API: Aggregator für i18n/theme/storage/system (`js/api.js`), z. B. `API.i18n.translate(...)`, `API.theme.setPreference(...)`.
+- **WindowManager**: Zentrale Fenster-/Modalsteuerung (Quellen in `src/ts/windows/`)
+- **ActionBus**: Deklarative Aktionen über `data-action`-Attribute statt ad-hoc Event-Handler
+- **VirtualFS**: Persistente Dateisystem-Schicht für Finder & Terminal
+- **API-Aggregator**: Zentrale Schnittstelle für i18n, theme, storage, system (z.B. `API.i18n.translate(...)`, `API.theme.setPreference(...)`)
+- **Multi-Instance Support**: BaseWindowInstance-Pattern für mehrere Fenster/Tabs pro App-Typ
 
-Hinweis: Das Projekt ist in der Anfangsphase; Details können sich ändern. Halte Änderungen minimal und folge den Konventionen unten.
+Hinweis: Das Projekt entwickelt sich weiter; Details können sich ändern. Halte Änderungen minimal und folge den Konventionen unten.
 
 ## Dev-Workflow
 
@@ -38,27 +39,23 @@ Hinweis: Das Projekt ist in der Anfangsphase; Details können sich ändern. Halt
 
 ## Projektkonventionen
 
-- Keine direkten Änderungen in `js/`/`css/`; alle Quellen in `src/ts/`, `src/css/`.
-- Fenster hinzufügen/ändern über zentrale Configs (`window-configs`) statt verstreuter Logik.
-- Internationalisierung: `API.i18n.translate('key', 'fallback')`; Theming: `API.theme.setPreference('dark'|'light'|'system')`.
-- Persistenz & Kommunikation zwischen Apps (Finder/Terminal) erfolgt über VFS (`virtual-fs.js`).
-- Fehler- und Performance-Hooks: `error-handler.js`, `perf-monitor.js`.
-- Kommentar-Policy: Wichtige Invarianten, Nebenwirkungen, Reihenfolgen (Init/Restore), Fallbacks und öffentlich genutzte APIs kurz dokumentieren (JSDoc/Inline).
+- Keine direkten Änderungen in `js/` oder `dist/`; alle Quellen in `src/ts/` und `src/css/`
+- Internationalisierung: `API.i18n.translate('key', 'fallback')`
+- Theming: `API.theme.setPreference('dark'|'light'|'system')`
+- Persistenz & App-Kommunikation über VirtualFS
+- Error-Handling und Performance-Monitoring über zentrale Services nutzen
+- **Kommentar-Policy**: Wichtige Invarianten, Nebenwirkungen, Reihenfolgen (Init/Restore), Fallbacks und öffentliche APIs dokumentieren (JSDoc/Inline)
 
 ## Deployment
 
-- GitHub Pages Auto-Deploy auf Push nach `main` (CI baut CSS). `dist/output.css` nicht committen.
+- Build-Outputs (`dist/`, `js/`) nicht committen (außer Bundle für Deployment)
 
 ## Pflege
 
+- Diese Datei minimal halten; bei größeren Architekturänderungen anpassen
 - README (`readme.md`) gelegentlich aktualisieren; Hauptwissen in Code-Kommentaren halten.
 
 ## MCP-Tools kurz
 
 - GitHub MCP Server: Reviews mit pending → Kommentare → submit. Vor Issues/PRs immer Suche + Pagination nutzen.
 - Playwright MCP: Auf `window.__APP_READY` warten; headed/UI/quick Modi; `MOCK_GITHUB=1` für Stabilität.
-
-## Beispiele aus dem Codebase
-
-- Fenster schließen über ActionBus: HTML-Button mit `data-action="closeWindow"`; Bus dispatch triggert `WindowManager`.
-- VFS-Operationen sichtbar in Finder & Terminal: `touch`, `mkdir`, `rm` ändern denselben Zustand (`virtual-fs.js`).

@@ -545,7 +545,14 @@ export class BaseWindow {
             }
         }
 
-        this.element?.classList.remove('hidden');
+        if (this.element) {
+            const domUtils = (window as any).DOMUtils;
+            if (domUtils && typeof domUtils.show === 'function') {
+                domUtils.show(this.element);
+            } else {
+                this.element.classList.remove('hidden');
+            }
+        }
         this.bringToFront();
         // Update menubar to reflect new active window
         const W = window as any;

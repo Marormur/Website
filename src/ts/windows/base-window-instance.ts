@@ -78,7 +78,12 @@ export class BaseWindowInstance {
 
     show(): void {
         if (this.container) {
-            this.container.classList.remove('hidden');
+            const domUtils = (window as any).DOMUtils;
+            if (domUtils && typeof domUtils.show === 'function') {
+                domUtils.show(this.container);
+            } else {
+                this.container.classList.remove('hidden');
+            }
             this.isVisible = true;
             this.emit('shown');
         }
@@ -86,7 +91,12 @@ export class BaseWindowInstance {
 
     hide(): void {
         if (this.container) {
-            this.container.classList.add('hidden');
+            const domUtils = (window as any).DOMUtils;
+            if (domUtils && typeof domUtils.hide === 'function') {
+                domUtils.hide(this.container);
+            } else {
+                this.container.classList.add('hidden');
+            }
             this.isVisible = false;
             this.emit('hidden');
         }
@@ -298,15 +308,23 @@ console.log('BaseWindowInstance loaded');
 
         show(): void {
             if (this.container) {
-                this.container.classList.remove('hidden');
-                this.isVisible = true;
-                this.emit('shown');
+                const domUtils = (window as any).DOMUtils;
+                if (domUtils && typeof domUtils.show === 'function') {
+                    domUtils.show(this.container);
+                } else {
+                    this.container.classList.remove('hidden');
+                }
             }
         }
 
         hide(): void {
             if (this.container) {
-                this.container.classList.add('hidden');
+                const domUtils = (window as any).DOMUtils;
+                if (domUtils && typeof domUtils.hide === 'function') {
+                    domUtils.hide(this.container);
+                } else {
+                    this.container.classList.add('hidden');
+                }
                 this.isVisible = false;
                 this.emit('hidden');
             }

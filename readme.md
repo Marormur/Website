@@ -1,41 +1,33 @@
 # Marvins Portfolio – Desktop‑Style Web App
 
-> NOTE: TypeScript sources are the canonical source of truth. The codebase has been migrated to TypeScript and the authoritative source lives under `src/ts/`. The `js/` directory contains emitted JavaScript output (built artifacts and legacy runtime files); edit `src/ts/` and run the build when changing behavior. Ausführliche Markdown-Dokumentation haben wir entfernt – bitte bevorzugt aussagekräftige Kommentare direkt im Code.
-
-Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale und Menüleiste im macOS‑Look, Dark Mode, Mehrsprachigkeit (DE/EN) und ein integrierter Projekte‑Browser, der öffentliche GitHub‑Repos lädt. Zusätzlich enthält die Seite einen einfachen Texteditor und einen Bildbetrachter.
+Eine persönliche Portfolio‑Website mit Desktop‑Metapher im macOS‑Stil: Fenster, Modale, Menüleiste, Dark Mode, Mehrsprachigkeit (DE/EN), Multi-Instance Support und integrierter GitHub-Projekte‑Browser. Zusätzlich: Texteditor, Terminal, Bildbetrachter (Photos) und Launchpad.
 
 ## Features
 
-- **Desktop‑UI** mit Fenstern, Modalen und Programm‑Info
-- **🆕 Multi-Instance Support** - Mehrere Fenster des gleichen Typs gleichzeitig (z.B. 3 Terminals!)
-- **Projekte‑Browser**: Listet GitHub‑Repos von „Marormur" und zeigt Dateien an
-- **Integrierter Texteditor** (für Text-/Code‑Dateien) und Bildbetrachter
-- **Dark Mode**: Systembasiert oder manuell wählbar, Speicherung in `localStorage`
-- **Mehrsprachigkeit** (Deutsch/Englisch) inkl. Sprachpräferenz
-- **Persistenz** von Fenster‑Layout und Finder‑Zustand (Repo/Path)
+- **macOS-Style Desktop**: Fenster, Modals, Menüleiste mit dynamischen Kontextmenüs
+- **Multi-Instance Support**: Mehrere Fenster/Tabs pro App (Finder, Terminal, TextEditor) gleichzeitig
+- **Apps**: Finder (GitHub-Browser), Terminal (VirtualFS), TextEditor, Photos (Picsum-Galerie), Launchpad
+- **VirtualFS**: Gemeinsames Dateisystem für Finder & Terminal mit Persistenz
+- **Session Management**: Auto-Save, vollständige State-Wiederherstellung nach Reload
+- **Dark Mode**: System/Hell/Dunkel mit `localStorage`-Persistenz
+- **i18n**: Deutsch/Englisch mit Sprachwechsel zur Laufzeit
+- **TypeScript**: 100% migriert, Strict Mode, 79% Type Coverage
 
 ## Projektstruktur
 
 ```
-/
-├── src/               # 📝 Source Files
-│   ├── css/          #   - CSS Quelldateien (style.css, dialog.css)
-│   └── input.css     #   - Tailwind CSS Input
-├── js/               # ⚙️ JavaScript Module
-│   ├── window-manager.js      # Zentrale Fensterverwaltung
-│   ├── action-bus.js          # Deklaratives Event-System
-│   ├── api.js                 # Saubere Modul-Schnittstelle
-│   ├── base-window-instance.js # 🆕 Multi-Instance Basis-Klasse
-│   ├── instance-manager.js    # 🆕 Instance Manager
-│   ├── window-chrome.js       # 🆕 Wiederverwendbare UI-Komponenten
-│   ├── terminal-instance.js   # 🆕 Multi-Instance Terminal
-│   ├── text-editor-instance.js # 🆕 Multi-Instance Editor
-│   └── ...                    # Weitere Module (theme, dock, finder, etc.)
-├── img/              # 🖼️ Assets (Icons, Wallpaper, Profile)
-├── tests/            # 🧪 E2E Tests (Playwright)
-├── dist/             # 📦 Build Output (output.css)
-├── index.html        # 🏠 Hauptseite
-├── app.js            # 🚀 Haupt-Applikationslogik
+/ts/           # TypeScript Source (maßgeblich!)
+│   ├── core/        # app-init, api, constants, error-handler, logger, perf-monitor
+│   ├── services/    # i18n, theme, storage, session-manager, multi-window-session, virtual-fs
+│   ├── ui/          # action-bus, dialog, menu, dock, desktop, context-menu, keyboard-shortcuts
+│   ├── windows/     # base-window, window-manager, window-tabs, instance-manager, window-chrome
+│   └── apps/        # finder, terminal, text-editor, photos (jeweilige Window/Instance-Klassen)
+├── src/css/          # CSS Source (style.css, dialog.css)
+├── js/               # Build Output (tsc + esbuild) – nicht direkt editieren!
+├── tests/e2e/        # Playwright E2E Tests (~190 Tests)
+├── dist/             # Tailwind CSS Build Output (output.css)
+├── index.html        # Hauptseite (Bundle-Loader)
+└── app.js            # Legacy Entry Point (wird durch Bundle ersetzt
 └── i18n.js           # 🌍 Internationalisierung (DE/EN)
 ```
 
@@ -49,45 +41,38 @@ npm install
 npm run build:css
 
 # Development Server starten
-npm run dev
+npm install          # Dependencies
+npm run build:css    # Tailwind CSS bauen
+npm run build:ts     # TypeScript kompilieren
+npm run dev          # Dev-Server starten (http://127.0.0.1:5173)
 ```
 
-Dann Browser öffnen: http://localhost:5500/
+**Entwicklung:** VS Code Task „Dev Environment: Start All" startet CSS-Watch, TS-Watch und Dev-Server gleichzeitig.
 
-**Alternative:** `index.html` direkt im Browser öffnen (lokaler Server empfohlen für GitHub API)
-
-### TypeScript Development
-
-Dieses Projekt ist **vollständig zu TypeScript migriert** mit strict mode compliance. Alle neuen Entwicklungen und Änderungen sollten in den TypeScript-Quellen unter `src/ts/` erfolgen. Das `js/`-Verzeichnis enthält generierte JavaScript-Ausgaben und Legacy-Artefakte.
-
-**Migration Status: 100% Complete! ✅**
+**Alternative:** `index.html` direkt im Browser (localhost empfohlen für GitHub API ohne CORS-Probleme).
 
 - 8 Kern-Module migriert (3,664 Zeilen TypeScript-Code)
 - Full TypeScript Strict Mode (Level 6/6)
 - Type Coverage: 81.79% baseline
 - Zero compilation errors
 
-```bash
+````bash
 # TypeScript typecheck
-npm run typecheck
+**Migration: 100% Complete! ✅**
 
-# TypeScript build
-npm run build:ts
+- Vollständig migriert: 8 Kern-Module, 3,664 LoC TypeScript
+- Strict Mode (Level 6/6), Type Coverage: 79% (baseline)
+- Alle Änderungen in `src/ts/` durchführen; `js/` ist Build-Output
 
-# Type coverage messen
-npm run type:coverage
-```
+```bash
+npm run typecheck           # Type-Check ohne Build
+npm run typecheck:watch     # Watch-Modus
+npm run build:ts            # Kompilieren nach js/
+npm run build:bundle        # esbuild Bundle (app.bundle.js)
+npm run type:baseline       # Coverage-Check (≥79%)
+````
 
-## Bedienung
-
-- Kopfzeile: Profilmenü (Über, Layout zurücksetzen, Einstellungen, LinkedIn)
-- Desktop‑Icon „Projekte": öffnet den Finder‑ähnlichen Browser für Repositories und Dateien
-- Textdateien: Öffnen im integrierten Editor (eigener Tab/Modal)
-- Bilddateien: Vorschau im Bildbetrachter mit Infos
-- Einstellungen: Theme (System/Hell/Dunkel) und Sprache (System/DE/EN)
-- Fenster: sind beweglich, kommen bei Interaktion in den Vordergrund; Layout kann zurückgesetzt werden
-
-## GitHub‑Integration und Limits
+**Bundle-Modus:** Standard-Lademodus; nutzt `js/app.bundle.js` (esbuild IIFE). Opt-out via `?bundle=0` oder `localStorage.USE_BUNDLE='0'`.GitHub‑Integration und Limits
 
 - Standardnutzer ist in `app.js`/`projekte.html` auf `Marormur` gesetzt.
 - Öffentliche GitHub‑API, Rate‑Limit ohne Token: Falls Repos/Dateien nicht laden, später erneut versuchen.
@@ -101,52 +86,15 @@ npm run type:coverage
 
 ## Entwicklung
 
-### Neue Fenster hinzufügen
-
-Einfach in `js/window-configs.js` registrieren (siehe Kommentare im Code):
-
-```javascript
-{
-    id: 'my-window-modal',
-    type: 'persistent',
-    programKey: 'programs.myApp',
-    icon: './img/myapp.png',
-    closeButtonId: 'close-my-window-modal'
-}
-```
-
-### Testing
-
-```bash
-# E2E Tests ausführen
-npm run test:e2e
-
-# Tests mit UI
-npm run test:e2e:ui
-
-# Multi-Instance Tests
-npm run test:e2e -- tests/e2e/multi-instance-basic.spec.js
-```
-
-### Multi-Instance System
-
-Das neue Multi-Instance System ermöglicht mehrere Fenster des gleichen Typs:
-
-```javascript
-// Browser Console (F12)
-demoCreateTerminals(); // Erstelle 3 Terminal-Instanzen
-demoCreateEditors(); // Erstelle 3 Editor-Instanzen
-```
-
-Oder: http://localhost:3000/?demo=true
-
 ### Beitragen
 
 Siehe [CONTRIBUTING.md](./CONTRIBUTING.md) für Contribution Guidelines.
 
 ## Deployment
 
-Als statische Seite auf GitHub Pages, Netlify oder Vercel deployen.
+**GitHub Pages:** Auto-Deploy bei Push nach `main` (CI baut CSS via `.github/workflows/deploy.yml`).
+
+**Wichtig:** `dist/output.css` nicht committen (wird in CI gebaut).
 
 **Live Demo:** https://marormur.github.io/Website/
 

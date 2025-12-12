@@ -127,7 +127,17 @@ import { getJSON } from '../services/storage-utils.js';
                     try {
                         const API = (window as any).API;
                         if (API?.window?.close) API.window.close('terminal-modal');
-                        else document.getElementById('terminal-modal')?.classList.add('hidden');
+                        else {
+                            const modal = document.getElementById('terminal-modal');
+                            if (modal) {
+                                const domUtils = (window as any).DOMUtils;
+                                if (domUtils && typeof domUtils.hide === 'function') {
+                                    domUtils.hide(modal);
+                                } else {
+                                    modal.classList.add('hidden');
+                                }
+                            }
+                        }
                     } catch {}
                 } else {
                     const active = manager.getActiveInstance();
@@ -185,7 +195,17 @@ import { getJSON } from '../services/storage-utils.js';
                     try {
                         const API = (window as any).API;
                         if (API?.window?.close) API.window.close('text-modal');
-                        else document.getElementById('text-modal')?.classList.add('hidden');
+                        else {
+                            const modal = document.getElementById('text-modal');
+                            if (modal) {
+                                const domUtils = (window as any).DOMUtils;
+                                if (domUtils && typeof domUtils.hide === 'function') {
+                                    domUtils.hide(modal);
+                                } else {
+                                    modal.classList.add('hidden');
+                                }
+                            }
+                        }
                     } catch {}
                 } else {
                     const active = manager.getActiveInstance();
