@@ -1,6 +1,6 @@
 # Marvins Portfolio – Desktop‑Style Web App
 
-> NOTE: TypeScript sources are the canonical source of truth. The codebase has been migrated to TypeScript and the authoritative source lives under `src/ts/`. The `js/` directory contains emitted JavaScript output (built artifacts and legacy runtime files); edit `src/ts/` and run the build when changing behavior.
+> NOTE: TypeScript sources are the canonical source of truth. The codebase has been migrated to TypeScript and the authoritative source lives under `src/ts/`. The `js/` directory contains emitted JavaScript output (built artifacts and legacy runtime files); edit `src/ts/` and run the build when changing behavior. Ausführliche Markdown-Dokumentation haben wir entfernt – bitte bevorzugt aussagekräftige Kommentare direkt im Code.
 
 Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale und Menüleiste im macOS‑Look, Dark Mode, Mehrsprachigkeit (DE/EN) und ein integrierter Projekte‑Browser, der öffentliche GitHub‑Repos lädt. Zusätzlich enthält die Seite einen einfachen Texteditor und einen Bildbetrachter.
 
@@ -18,7 +18,6 @@ Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale un
 
 ```
 /
-├── docs/              # 📚 Dokumentation (Architecture, Refactoring, Quick Start)
 ├── src/               # 📝 Source Files
 │   ├── css/          #   - CSS Quelldateien (style.css, dialog.css)
 │   └── input.css     #   - Tailwind CSS Input
@@ -40,8 +39,6 @@ Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale un
 └── i18n.js           # 🌍 Internationalisierung (DE/EN)
 ```
 
-Detaillierte Architektur-Dokumentation: [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
-
 ## Schnellstart
 
 ```bash
@@ -59,8 +56,6 @@ Dann Browser öffnen: http://localhost:5500/
 
 **Alternative:** `index.html` direkt im Browser öffnen (lokaler Server empfohlen für GitHub API)
 
-Für detaillierte Anweisungen: [docs/QUICKSTART.md](./docs/QUICKSTART.md)
-
 ### TypeScript Development
 
 Dieses Projekt ist **vollständig zu TypeScript migriert** mit strict mode compliance. Alle neuen Entwicklungen und Änderungen sollten in den TypeScript-Quellen unter `src/ts/` erfolgen. Das `js/`-Verzeichnis enthält generierte JavaScript-Ausgaben und Legacy-Artefakte.
@@ -71,8 +66,6 @@ Dieses Projekt ist **vollständig zu TypeScript migriert** mit strict mode compl
 - Full TypeScript Strict Mode (Level 6/6)
 - Type Coverage: 81.79% baseline
 - Zero compilation errors
-
-Siehe [docs/TYPESCRIPT_GUIDELINES.md](./docs/TYPESCRIPT_GUIDELINES.md) für Best Practices und Migrationsanleitungen.
 
 ```bash
 # TypeScript typecheck
@@ -110,7 +103,7 @@ npm run type:coverage
 
 ### Neue Fenster hinzufügen
 
-Einfach in `js/window-configs.js` registrieren:
+Einfach in `js/window-configs.js` registrieren (siehe Kommentare im Code):
 
 ```javascript
 {
@@ -121,8 +114,6 @@ Einfach in `js/window-configs.js` registrieren:
     closeButtonId: 'close-my-window-modal'
 }
 ```
-
-Siehe [docs/REFACTORING.md](./docs/REFACTORING.md) für Details.
 
 ### Testing
 
@@ -149,12 +140,6 @@ demoCreateEditors(); // Erstelle 3 Editor-Instanzen
 
 Oder: http://localhost:3000/?demo=true
 
-**Dokumentation**:
-
-- [Multi-Instance System Guide](./docs/guides/MULTI_INSTANCE.md)
-- [Architecture Overview](./docs/architecture/OVERVIEW.md)
-- [Refactoring Guide](./docs/architecture/REFACTORING.md)
-
 ### Beitragen
 
 Siehe [CONTRIBUTING.md](./CONTRIBUTING.md) für Contribution Guidelines.
@@ -162,8 +147,6 @@ Siehe [CONTRIBUTING.md](./CONTRIBUTING.md) für Contribution Guidelines.
 ## Deployment
 
 Als statische Seite auf GitHub Pages, Netlify oder Vercel deployen.
-
-Siehe [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) für Details.
 
 **Live Demo:** https://marormur.github.io/Website/
 
