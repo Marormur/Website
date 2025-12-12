@@ -32,7 +32,7 @@ const { chromium } = require('@playwright/test');
         console.log('\n✅ SUCCESS: window.__APP_READY was set within 10s');
     } catch {
         console.error('\n❌ FAILURE: window.__APP_READY was NOT set within 10s');
-        
+
         // Check current state
         const readyState = await page.evaluate(() => ({
             __APP_READY: window.__APP_READY,
