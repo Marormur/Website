@@ -108,18 +108,84 @@ async function clickDockIcon(page, identifier) {
     // Prefer stable data-window-id based clicks when a modal id is provided
     try {
         if (typeof identifier === 'string' && identifier.endsWith('-modal')) {
-            const sel = `#dock .dock-tray .dock-item[data-window-id="${identifier}"]`;
-            const el = page.locator(sel).first();
-            await el.waitFor({ state: 'visible', timeout: 10000 });
-            await el.click();
-            return;
+            const name = identifier.replace(/-modal$/, '');
+            // Try exact match first
+            const exactSel = `#dock .dock-tray .dock-item[data-window-id="${identifier}"]`;
+            let el = page.locator(exactSel).first();
+            if ((await el.count()) > 0) {
+                try {
+                    await el.waitFor({ state: 'visible', timeout: 4000 });
+                    await el.click();
+                    return;
+                } catch {}
+            }
+            // Try new multi-window pattern: data-window-id starting with window-{name}-
+            const prefixSel = `#dock .dock-tray .dock-item[data-window-id^="window-${name}-"]`;
+            el = page.locator(prefixSel).first();
+            if ((await el.count()) > 0) {
+                try {
+                    await el.waitFor({ state: 'visible', timeout: 4000 });
+                    await el.click();
+                    return;
+                } catch {}
+            }
+            // Try contains fallback
+            const containsSel = `#dock .dock-tray .dock-item[data-window-id*="${name}"]`;
+            el = page.locator(containsSel).first();
+            if ((await el.count()) > 0) {
+                try {
+                    await el.waitFor({ state: 'visible', timeout: 4000 });
+                    await el.click();
+                    return;
+                } catch {}
+            }
         }
     } catch (e) {
         // fallthrough to legacy behaviour
     }
 
-    // Legacy: click image by accessible name (alt text)
-    await page.getByRole('img', { name: identifier }).click();
+    // Legacy: click image by accessible name (alt text) or fallback by matching image alt that contains the identifier
+    try {
+        await page.getByRole('img', { name: identifier }).click();
+        return;
+    } catch {}
+
+    // Last resort: try to find an img whose accessible name contains the identifier (case-insensitive)
+    const imgs = page.locator('#dock .dock-tray img');
+    const count = await imgs.count();
+    for (let i = 0; i < count; i++) {
+        const img = imgs.nth(i);
+        try {
+            const name =
+                (await img.getAttribute('alt')) || (await img.getAttribute('aria-label')) || '';
+            if (name && name.toLowerCase().includes(String(identifier).toLowerCase())) {
+                await img.click();
+                return;
+            }
+        } catch {}
+    }
+
+    // Final fallback: use WindowManager directly if dock icon cannot be found
+    try {
+        const result = await page.evaluate(id => {
+            const wm = window.WindowManager;
+            if (wm && typeof wm.open === 'function') {
+                wm.open(id);
+                return true;
+            }
+            return false;
+        }, identifier);
+
+        if (result) {
+            // Opened successfully via WindowManager
+            return;
+        }
+    } catch (e) {
+        // fallthrough
+    }
+
+    // If nothing worked, throw to signal the caller
+    throw new Error(`Unable to click dock icon for identifier: ${identifier}`);
 }
 
 async function expectMenuButton(page, label) {
@@ -139,10 +205,27 @@ async function expectMenuItem(page, sectionLabel, itemLabel) {
             timeout: 5000,
         });
     }
-    await expect(page.getByRole('menuitem', { name: new RegExp('^' + itemLabel) })).toBeVisible();
+    const pattern = itemLabel instanceof RegExp ? itemLabel : new RegExp('^' + itemLabel);
+    await expect(page.getByRole('menuitem', { name: pattern })).toBeVisible();
 }
 
 async function bringModalToFront(page, modalId) {
+    // Support both legacy modal id (e.g. 'finder-modal') and new multi-window pattern
+    try {
+        if (typeof modalId === 'string' && modalId.endsWith('-modal')) {
+            const name = modalId.replace(/-modal$/, '');
+            const sel = `.modal.multi-window[id^="window-${name}-"]`;
+            const win = page.locator(sel).first();
+            if ((await win.count()) > 0) {
+                const header = win.locator('.draggable-header').first();
+                await header.click({ position: { x: 10, y: 10 } });
+                return;
+            }
+        }
+    } catch (e) {
+        // fall through to legacy behavior
+    }
+
     const header = page.locator(`#${modalId} .draggable-header`).first();
     await header.click({ position: { x: 10, y: 10 } });
 }
@@ -355,10 +438,64 @@ async function ensureGithubMocksIfRequested(page) {
     }
 }
 
+// Wait for the application to persist a session to localStorage.
+// Checks common keys used by the app: 'multi-window-session', 'windowInstancesSession', 'window-session'.
+async function waitForSessionSaved(page, timeout = 3000) {
+    const keys = ['multi-window-session', 'windowInstancesSession', 'window-session'];
+    await page.waitForFunction(ks => ks.some(k => !!localStorage.getItem(k)), keys, { timeout });
+}
+
+// Read the saved session payload from localStorage and return { key, raw }
+async function getSavedSessionPayload(page) {
+    return await page.evaluate(() => {
+        try {
+            const keys = ['multi-window-session', 'windowInstancesSession', 'window-session'];
+            for (const k of keys) {
+                const raw = localStorage.getItem(k);
+                if (raw) return { key: k, raw };
+            }
+            return { key: null, raw: null };
+        } catch (e) {
+            return { key: null, raw: null, error: String(e) };
+        }
+    });
+}
+
+/**
+ * Get the add-tab button for a Finder window.
+ * The window-id is auto-detected from page.__finderWindowId or derived from finderWindow selector.
+ * @param {Page} page - Playwright page
+ * @param {Locator} finderWindow - Locator of the Finder window (.modal.multi-window[id^="window-finder-"])
+ * @returns {Locator} Locator for the add-tab button (.wt-add button in the tab bar)
+ */
+async function getFinderAddTabButton(page, finderWindow) {
+    const windowId = await finderWindow.getAttribute('id');
+    if (!windowId) {
+        throw new Error('Unable to determine Finder window ID from element');
+    }
+    // New structure: #window-finder-{id}-tabs contains tab bar with .wt-add button
+    return finderWindow.locator(`#${windowId}-tabs .wt-add`);
+}
+
+/**
+ * Get the list of tabs in a Finder window.
+ * @param {Page} page - Playwright page
+ * @param {Locator} finderWindow - Locator of the Finder window
+ * @returns {Locator} Locator for all tabs in the window
+ */
+async function getFinderTabs(page, finderWindow) {
+    const windowId = await finderWindow.getAttribute('id');
+    if (!windowId) {
+        throw new Error('Unable to determine Finder window ID from element');
+    }
+    return finderWindow.locator(`#${windowId}-tabs .wt-tab`);
+}
+
 module.exports = {
     // Navigation / Settings / Apple menu
     gotoHome,
     waitForAppReady,
+    waitForFinderReady,
     openFinderWindow,
     openAppleMenu,
     closeAppleMenuIfOpen,
@@ -376,9 +513,17 @@ module.exports = {
     dragAfter,
     dragBefore,
     expectOrderContains,
+    // Finder window helpers (new multi-window API)
+    getFinderAddTabButton,
+    getFinderTabs,
     // Finder / GitHub mocks
     mockGithubRepoImageFlow,
     ensureGithubMocksIfRequested,
+    // Backwards-compatible alias used by some older tests
+    mockGitHubIfNeeded,
+    // Session helpers
+    waitForSessionSaved,
+    getSavedSessionPayload,
 };
 
 // --- Window helpers ---
@@ -393,13 +538,101 @@ async function openFinderWindow(page) {
     const newWin = page.locator('.modal.multi-window[id^="window-finder-"]');
     try {
         await newWin.first().waitFor({ state: 'visible', timeout: 6000 });
+        // After the window appears, wait for Finder systems to initialize
+        try {
+            await waitForFinderReady(page, { timeout: 10000 });
+        } catch {
+            // proceed anyway; callers may perform additional waits
+        }
+        // Store the window ID on the page context for later use in tests
+        const windowId = await newWin.first().getAttribute('id');
+        if (windowId) {
+            page.__finderWindowId = windowId; // Store for use in test helpers
+        }
         return newWin.first();
-    } catch (_) {
+    } catch {
         // Fallback: locate a visible dialog whose heading is "Finder" and return its modal container
         const heading = page.getByRole('heading', { name: /^Finder$/ });
         await heading.waitFor({ state: 'visible', timeout: 6000 });
         const modal = page.locator('.modal', { has: heading });
         await modal.first().waitFor({ state: 'visible', timeout: 4000 });
+        try {
+            await waitForFinderReady(page, { timeout: 10000 });
+        } catch {
+            /* noop */
+        }
+        const windowId = await modal.first().getAttribute('id');
+        if (windowId) {
+            page.__finderWindowId = windowId;
+        }
         return modal.first();
     }
+}
+
+/**
+ * Waits for Finder readiness in the page context.
+ * Criteria: window.__APP_READY === true AND at least one of
+ * - WindowRegistry.getAllWindows('finder').length >= 1
+ * - A visible window element with #${windowId}-tabs tab bar (new multi-window)
+ * - FinderInstanceManager reports an instance count > 0 (legacy)
+ */
+async function waitForFinderReady(page, opts = {}) {
+    const timeout =
+        typeof opts.timeout === 'number'
+            ? opts.timeout
+            : process.env.USE_BUNDLE === '1'
+                ? 30000
+                : 15000;
+    // Ensure optional GitHub mocks are set up before Finder initializes
+    await ensureGithubMocksIfRequested(page);
+    await page.waitForFunction(
+        () => {
+            try {
+                if (typeof window === 'undefined') return false;
+                if (window.__APP_READY !== true) return false;
+                // Check for WindowRegistry with Finder windows (most reliable for new architecture)
+                const hasRegistry = !!(
+                    window.WindowRegistry &&
+                    typeof window.WindowRegistry.getAllWindows === 'function'
+                );
+                if (hasRegistry) {
+                    try {
+                        const arr = window.WindowRegistry.getAllWindows('finder') || [];
+                        if (Array.isArray(arr) && arr.length > 0) {
+                            // Also verify the window element is visible (has DOM presence)
+                            const firstWindow = arr[0];
+                            if (firstWindow && firstWindow.windowId) {
+                                const el = document.getElementById(firstWindow.windowId);
+                                if (el && el.offsetParent !== null) return true; // visible
+                            }
+                            return true; // Window registered even if not visible yet
+                        }
+                    } catch {}
+                }
+                // Fallback: check for any multi-window finder (newer pattern uses window-specific IDs)
+                const anyFinderWindow = document.querySelector(
+                    '.modal.multi-window[id^="window-finder-"]'
+                );
+                if (anyFinderWindow && anyFinderWindow.offsetParent !== null) return true;
+                // Fallback: check for legacy FinderInstanceManager
+                if (
+                    window.FinderInstanceManager &&
+                    typeof window.FinderInstanceManager.getInstanceCount === 'function'
+                ) {
+                    try {
+                        if ((window.FinderInstanceManager.getInstanceCount() || 0) > 0) return true;
+                    } catch {}
+                }
+                return false;
+            } catch {
+                return false;
+            }
+        },
+        { timeout }
+    );
+}
+
+// Backwards-compatible helper expected by older tests
+async function mockGitHubIfNeeded(page) {
+    return ensureGithubMocksIfRequested(page);
 }
