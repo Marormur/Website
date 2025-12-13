@@ -4,14 +4,14 @@
             "name": "🏠 Website (Root)",
             "path": ".",
         },
-        {
-            "name": "📚 Documentation",
-            "path": "docs",
-        },
-        {
-            "name": "🧪 Tests",
-            "path": "tests",
-        },
+        // {
+        //     "name": "📚 Documentation",
+        //     "path": "docs",
+        // },
+        // {
+        //     "name": "🧪 Tests",
+        //     "path": "tests",
+        // },
     ],
     "settings": {
         // Root-level settings apply to all folders
