@@ -51,60 +51,63 @@
                 console.log('[Module Loader] Loading individual scripts...');
 
                 // Logger System (laden VOR allen anderen Modulen)
-                document.write('<script src="./js/logger.js"><\/script>');
+                document.write('<script src="./js/core/logger.js"><\/script>');
 
                 // Core observability systems
-                document.write('<script src="./js/error-handler.js"><\/script>');
-                document.write('<script src="./js/perf-monitor.js"><\/script>');
+                document.write('<script src="./js/core/error-handler.js"><\/script>');
+                document.write('<script src="./js/core/perf-monitor.js"><\/script>');
 
                 // Modularisierte Komponenten (in Ladereihenfolge)
-                document.write('<script src="./js/constants.js"><\/script>');
-                document.write('<script src="./js/icons.js"><\/script>');
-                document.write('<script src="./js/theme.js"><\/script>');
-                document.write('<script src="./js/dock.js"><\/script>');
-                document.write('<script src="./js/storage.js"><\/script>');
-                document.write('<script src="./js/snap-utils.js"><\/script>');
-                document.write('<script src="./js/dialog-utils.js"><\/script>');
-                document.write('<script src="./js/dialog.js"><\/script>');
-                document.write('<script src="./js/desktop.js"><\/script>');
-                document.write('<script src="./js/system.js"><\/script>');
-                document.write('<script src="./js/menubar-utils.js"><\/script>');
-                document.write('<script src="./js/program-actions.js"><\/script>');
-                document.write('<script src="./js/menu.js"><\/script>');
-                document.write('<script src="./js/github-api.js"><\/script>');
-                document.write('<script src="./js/finder.js"><\/script>');
+                document.write('<script src="./js/core/constants.js"><\/script>');
+                document.write('<script src="./js/ui/icons.js"><\/script>');
+                document.write('<script src="./js/services/theme.js"><\/script>');
+                document.write('<script src="./js/ui/dock.js"><\/script>');
+                document.write('<script src="./js/services/storage.js"><\/script>');
+                document.write('<script src="./js/ui/snap-utils.js"><\/script>');
+                document.write('<script src="./js/ui/dialog-utils.js"><\/script>');
+                document.write('<script src="./js/ui/dialog.js"><\/script>');
+                document.write('<script src="./js/ui/desktop.js"><\/script>');
+                document.write('<script src="./js/services/system.js"><\/script>');
+                document.write('<script src="./js/ui/menubar-utils.js"><\/script>');
+                document.write('<script src="./js/services/program-actions.js"><\/script>');
+                document.write('<script src="./js/ui/menu.js"><\/script>');
+                document.write('<script src="./js/services/github-api.js"><\/script>');
+                document.write('<script src="./js/apps/finder/finder.js"><\/script>');
 
                 // Neue zentrale Systeme
-                document.write('<script src="./js/window-manager.js"><\/script>');
-                document.write('<script src="./js/action-bus.js"><\/script>');
-                document.write('<script src="./js/window-configs.js"><\/script>');
-                document.write('<script src="./js/api.js"><\/script>');
+                document.write('<script src="./js/windows/window-manager.js"><\/script>');
+                document.write('<script src="./js/ui/action-bus.js"><\/script>');
+                document.write('<script src="./js/windows/window-configs.js"><\/script>');
+                document.write('<script src="./js/core/api.js"><\/script>');
 
                 // Multi-Instance Support
-                document.write('<script src="./js/base-window-instance.js"><\/script>');
-                document.write('<script src="./js/instance-manager.js"><\/script>');
-                document.write('<script src="./js/window-chrome.js"><\/script>');
-                document.write('<script src="./js/window-tabs.js"><\/script>');
-                document.write('<script src="./js/keyboard-shortcuts.js"><\/script>');
-                document.write('<script src="./js/session-manager.js"><\/script>');
-                document.write('<script src="./js/multi-instance-demo.js"><\/script>');
+                document.write('<script src="./js/windows/base-window-instance.js"><\/script>');
+                document.write('<script src="./js/windows/instance-manager.js"><\/script>');
+                document.write('<script src="./js/windows/window-chrome.js"><\/script>');
+                document.write('<script src="./js/windows/window-tabs.js"><\/script>');
+                document.write('<script src="./js/ui/keyboard-shortcuts.js"><\/script>');
+                document.write('<script src="./js/services/session-manager.js"><\/script>');
+                document.write(
+                    '<script src="./js/windows/multi-instance-integration.js"><\/script>'
+                );
 
                 // Inline module scripts
-                document.write('<script src="./js/context-menu.js"><\/script>');
-                document.write('<script src="./js/settings.js"><\/script>');
-                document.write('<script src="./js/text-editor.js"><\/script>');
-                document.write('<script src="./js/text-editor-instance.js"><\/script>');
-                document.write('<script src="./js/terminal.js"><\/script>');
-                document.write('<script src="./js/terminal-instance.js"><\/script>');
-                document.write('<script src="./js/photos-app.js"><\/script>');
-                document.write('<script src="./js/finder-instance.js"><\/script>');
-                document.write('<script src="./js/launchpad.js"><\/script>');
-                document.write('<script src="./js/multi-instance-integration.js"><\/script>');
+                document.write('<script src="./js/ui/context-menu.js"><\/script>');
+                document.write('<script src="./js/services/settings.js"><\/script>');
+                document.write('<script src="./js/apps/text-editor/text-editor.js"><\/script>');
+                document.write(
+                    '<script src="./js/apps/text-editor/text-editor-instance.js"><\/script>'
+                );
+                document.write('<script src="./js/apps/terminal/terminal.js"><\/script>');
+                document.write('<script src="./js/apps/terminal/terminal-instance.js"><\/script>');
+                document.write('<script src="./js/apps/photos/photos-app.js"><\/script>');
+                document.write('<script src="./js/apps/finder/finder-instance.js"><\/script>');
+                document.write('<script src="./js/ui/launchpad.js"><\/script>');
 
                 // Hauptanwendung
-                document.write('<script src="./js/image-viewer-utils.js"><\/script>');
-                document.write('<script src="./js/program-menu-sync.js"><\/script>');
-                document.write('<script src="./js/app-init.js"><\/script>');
+                document.write('<script src="./js/apps/photos/image-viewer-utils.js"><\/script>');
+                document.write('<script src="./js/services/program-menu-sync.js"><\/script>');
+                document.write('<script src="./js/core/app-init.js"><\/script>');
                 document.write('<script src="app.js"><\/script>');
             }
         </script>

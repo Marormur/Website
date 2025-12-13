@@ -1,6 +1,25 @@
 // Ambient types for global API facade
 
 declare namespace API {
+  // Error Handler
+  namespace error {
+    function enable(): void;
+    function disable(): void;
+    function getLogs(): unknown[];
+    function clearLogs(): void;
+    function exportLogs(): void;
+  }
+
+  // Performance Monitor
+  namespace performance {
+    function enable(): void;
+    function disable(): void;
+    function toggle(): void;
+    function mark(name: string): void;
+    function measure(name: string, startMark?: string, endMark?: string): void;
+    function report(): void;
+  }
+
   // Theme
   namespace theme {
     function setThemePreference(mode: 'system' | 'light' | 'dark'): void;
