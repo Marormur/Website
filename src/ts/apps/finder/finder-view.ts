@@ -84,6 +84,9 @@ export class FinderView extends BaseTab {
     githubErrorMessage = '';
     lastGithubItemsMap: Map<string, any>;
 
+    // Track scroll position to restore after file open/close
+    private _savedScrollPosition = 0;
+
     constructor(config?: Partial<TabConfig> & { source?: FinderSource }) {
         super({
             type: 'finder-view',
@@ -424,9 +427,23 @@ export class FinderView extends BaseTab {
     }
 
     private _renderAll(): void {
+        // Save scroll position before re-rendering
+        this._saveScrollPosition();
+
         this.renderBreadcrumbs();
         this.renderContent();
         this._updateSidebarActiveHighlight();
+
+        // Restore scroll position after re-rendering with multiple attempts
+        // to ensure it works even with async rendering
+        this._restoreScrollPosition();
+        requestAnimationFrame(() => {
+            this._restoreScrollPosition();
+        });
+        // Additional delayed restore for reliability
+        setTimeout(() => {
+            this._restoreScrollPosition();
+        }, 0);
     }
 
     renderBreadcrumbs(): void {
@@ -719,6 +736,9 @@ export class FinderView extends BaseTab {
                 this.addToRecent(name);
             }
 
+            // Save scroll position before opening file
+            this._saveScrollPosition();
+
             // Track selection first
             this._selectItem(name);
 
@@ -791,8 +811,23 @@ export class FinderView extends BaseTab {
                     }
 
                     if (editorWindow && typeof editorWindow.createDocument === 'function') {
-                        editorWindow.createDocument(fileName, content);
-                        editorWindow.bringToFront?.();
+                        // Check if file is already open in a tab
+                        const existingTabs = Array.from(editorWindow.tabs.values()) as any[];
+                        const existingTab = existingTabs.find((tab: any) => tab.title === fileName);
+
+                        if (existingTab) {
+                            // File already open, just switch to that tab
+                            editorWindow.setActiveTab(existingTab.id);
+                            editorWindow.bringToFront?.();
+                        } else {
+                            // Create new document tab
+                            const newDoc = editorWindow.createDocument(fileName, content);
+                            // Activate the newly created tab
+                            if (newDoc && newDoc.id) {
+                                editorWindow.setActiveTab(newDoc.id);
+                            }
+                            editorWindow.bringToFront?.();
+                        }
                         return true;
                     }
 
@@ -1314,6 +1349,45 @@ export class FinderView extends BaseTab {
         if (this.parentWindow) {
             (this.parentWindow as any)._saveState?.();
         }
+    }
+
+    /**
+     * Save current scroll position
+     */
+    private _saveScrollPosition(): void {
+        if (this.dom.content) {
+            this._savedScrollPosition = this.dom.content.scrollTop;
+        }
+    }
+
+    /**
+     * Restore saved scroll position
+     */
+    private _restoreScrollPosition(): void {
+        if (this.dom.content && this._savedScrollPosition > 0) {
+            // Use requestAnimationFrame to ensure DOM is ready
+            requestAnimationFrame(() => {
+                if (this.dom.content) {
+                    this.dom.content.scrollTop = this._savedScrollPosition;
+                }
+            });
+        }
+    }
+
+    /**
+     * Override show to restore scroll position
+     */
+    show(): void {
+        super.show();
+        this._restoreScrollPosition();
+    }
+
+    /**
+     * Override hide to save scroll position
+     */
+    hide(): void {
+        this._saveScrollPosition();
+        super.hide();
     }
 
     serialize(): any {
