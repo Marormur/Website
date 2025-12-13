@@ -41,6 +41,7 @@ test.describe('Terminal Tab Autocomplete', () => {
     async function typeAndTab(page, text) {
         const input = page.locator('[data-terminal-input]');
         await input.fill(text);
+        // Ensure the key event is dispatched to the input (page.keyboard may target <body> if focus is elsewhere).
         await input.press('Tab');
     }
 
@@ -63,6 +64,7 @@ test.describe('Terminal Tab Autocomplete', () => {
     });
 
     test('completes directory: "cd Doc" → "cd Documents/"', async ({ page }) => {
+        // "Do" is ambiguous in the default VirtualFS (Documents + Downloads).
         await typeAndTab(page, 'cd Doc');
         const value = await getInputValue(page);
         expect(value).toContain('Documents');
