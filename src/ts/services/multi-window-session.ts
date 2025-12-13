@@ -239,11 +239,15 @@ class MultiWindowSessionManager {
             );
             if (legacyV1Data) {
                 console.log('[MultiWindowSessionManager] Migrating legacy v1 session...');
+                console.log('[MultiWindowSessionManager] Legacy v1 data:', legacyV1Data);
                 const rawSession = JSON.parse(legacyV1Data);
+                console.log('[MultiWindowSessionManager] Parsed legacy session:', rawSession);
                 // Normalize legacy format to current format
                 const session = this.normalizeLegacyV1Session(rawSession);
+                console.log('[MultiWindowSessionManager] Normalized session:', session);
                 // Apply path migration
                 this.migrateSessionPaths(session);
+                console.log('[MultiWindowSessionManager] After path migration:', session);
                 await this.restoreMultiWindowSession(session);
                 // Clear legacy key and save in new format
                 localStorage.removeItem(MultiWindowSessionManager.LEGACY_STORAGE_KEY_V1);
