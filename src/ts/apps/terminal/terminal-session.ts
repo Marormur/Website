@@ -207,7 +207,6 @@ export class TerminalSession extends BaseTab {
     private findCommonPrefix(strings: string[]): string {
         if (strings.length === 0) return '';
         const first = strings[0];
-        if (first === undefined) return '';
         if (strings.length === 1) return first;
 
         let prefix = first;
