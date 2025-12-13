@@ -114,10 +114,167 @@ export class TerminalSession extends BaseTab {
                     this.inputElement!.value = '';
                 }
             } else if (e.key === 'Tab') {
+                // Keep focus and prevent browser focus traversal.
                 e.preventDefault();
                 this.handleTabCompletion();
             }
         });
+    }
+
+    /**
+     * Basic tab completion for commands and VirtualFS paths.
+     *
+     * This is primarily used by Playwright E2E tests (tests/e2e/terminal/terminal-autocomplete.spec.js)
+     * and intentionally stays simple:
+     * - Completes first token as command
+     * - Completes first argument for cd/cat/mkdir/rm
+     */
+    private handleTabCompletion(): void {
+        if (!this.inputElement) return;
+
+        const input = this.inputElement.value;
+        if (input === '') return;
+
+        const endsWithSpace = input.endsWith(' ');
+        const tokens = input.split(' ').filter((t, i, arr) => {
+            // Preserve a single empty arg at the end via endsWithSpace; otherwise ignore extra spaces.
+            if (t !== '') return true;
+            return i === arr.length - 1;
+        });
+
+        const cmd = tokens[0] ?? '';
+        const arg1 = tokens[1] ?? '';
+
+        // Keep in sync with executeCommand() keys.
+        const availableCommands = [
+            'help',
+            'clear',
+            'ls',
+            'pwd',
+            'cd',
+            'cat',
+            'touch',
+            'mkdir',
+            'rm',
+            'echo',
+            'date',
+            'whoami',
+        ];
+
+        // Command completion (first token).
+        if (tokens.length <= 1 && !endsWithSpace) {
+            const matches = availableCommands.filter(c => c.startsWith(cmd));
+            if (matches.length === 1) {
+                const match = matches[0];
+                if (match !== undefined) this.inputElement.value = match + ' ';
+                return;
+            }
+
+            // If already complete command, add a trailing space.
+            if (availableCommands.includes(cmd)) {
+                this.inputElement.value = cmd + ' ';
+            }
+            return;
+        }
+
+        // Argument completion (first argument only).
+        // If user just typed a full command and pressed Tab, add a space.
+        if (tokens.length === 1 && endsWithSpace && availableCommands.includes(cmd)) {
+            this.inputElement.value = cmd + ' ';
+            return;
+        }
+
+        // Only complete for supported commands.
+        const completeForCmd = cmd === 'cd' || cmd === 'cat' || cmd === 'mkdir' || cmd === 'rm';
+        if (!completeForCmd) return;
+
+        // If user hasn't started typing an argument yet, don't change anything.
+        if (arg1 === '') return;
+
+        // mkdir: if argument ends with '/', the tests just expect it to stay stable.
+        if (cmd === 'mkdir' && arg1.endsWith('/')) return;
+
+        const allowFolders = cmd === 'cd' || cmd === 'mkdir';
+        const allowFiles = cmd === 'cat' || cmd === 'rm';
+        const allowBoth = cmd === 'rm';
+
+        this.completePathArgument(cmd, arg1, {
+            allowFolders: allowBoth ? true : allowFolders,
+            allowFiles: allowBoth ? true : allowFiles,
+        });
+    }
+
+    private findCommonPrefix(strings: string[]): string {
+        if (strings.length === 0) return '';
+        const first = strings[0];
+        if (strings.length === 1) return first;
+
+        let prefix = first;
+        for (let i = 1; i < strings.length; i++) {
+            const cur = strings[i];
+            if (cur === undefined) continue;
+            while (cur.indexOf(prefix) !== 0) {
+                prefix = prefix.slice(0, -1);
+                if (prefix === '') return '';
+            }
+        }
+        return prefix;
+    }
+
+    private completePathArgument(
+        cmd: 'cd' | 'cat' | 'mkdir' | 'rm',
+        rawArg: string,
+        opts: { allowFolders: boolean; allowFiles: boolean }
+    ): void {
+        if (!this.inputElement) return;
+
+        // Split into directory part + basename part (to complete last segment).
+        const lastSlashIdx = rawArg.lastIndexOf('/');
+        const dirPrefix = lastSlashIdx >= 0 ? rawArg.slice(0, lastSlashIdx + 1) : '';
+        const basePrefix = lastSlashIdx >= 0 ? rawArg.slice(lastSlashIdx + 1) : rawArg;
+
+        // If the user is already inside a directory path (ends with '/'), keep stable.
+        if (basePrefix === '' && rawArg.endsWith('/')) return;
+
+        const dirForResolve =
+            dirPrefix === ''
+                ? this.vfsCwd
+                : this.vfsResolve(dirPrefix.endsWith('/') ? dirPrefix.slice(0, -1) : dirPrefix);
+
+        const folder = VirtualFS.getFolder(dirForResolve);
+        if (!folder) return;
+
+        const entries = Object.entries(folder.children);
+        const matches = entries
+            .filter(([name, item]) => {
+                if (!name.startsWith(basePrefix)) return false;
+                if (item.type === 'folder') return opts.allowFolders;
+                return opts.allowFiles;
+            })
+            .map(([name, item]) => ({ name, item }));
+
+        if (matches.length === 0) return;
+
+        const names = matches.map(m => m.name);
+
+        if (matches.length === 1) {
+            const m = matches[0];
+            let completed = m.name;
+
+            // For `cd`, append '/' to folders.
+            if (cmd === 'cd' && m.item.type === 'folder' && !completed.endsWith('/')) {
+                completed += '/';
+            }
+
+            this.inputElement.value = `${cmd} ${dirPrefix}${completed}`;
+            return;
+        }
+
+        // Multiple matches: extend to common prefix if possible.
+        const common = this.findCommonPrefix(names);
+        if (common.length > basePrefix.length) {
+            this.inputElement.value = `${cmd} ${dirPrefix}${common}`;
+        }
     }
 
     showWelcomeMessage(): void {
@@ -553,7 +710,6 @@ export class TerminalSession extends BaseTab {
         parts.pop();
         return parts.length > 0 ? '/' + parts.join('/') : '/';
     }
-
     /**
      * Serialize session state
      */

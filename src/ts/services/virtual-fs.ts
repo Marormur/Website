@@ -66,35 +66,23 @@ class VirtualFileSystemManager {
     private readonly AUTO_SAVE_DELAY = 1000; // 1 second debounce
     private saveTimeout: number | null = null;
 
-    constructor() {
-        this.root = this.createDefaultStructure();
-        this.load();
-    }
-
-    // ========================================================================
-    // Initialization
-    // ========================================================================
-
-    private createDefaultStructure(): Record<string, VirtualFolder> {
-        const now = new Date().toISOString();
-
-        return {
-            '/': {
-                type: 'folder',
-                icon: '/',
-                created: now,
-                modified: now,
-                children: {
-                    home: {
-                        type: 'folder',
-                        icon: '🏠',
-                        created: now,
-                        modified: now,
-                        children: {
-                            marvin: {
-                                type: 'folder',
-                                icon: '👤',
-                                created: now,
+                                            'notes.txt': {
+                                                type: 'file',
+                                                icon: '📝',
+                                                content: 'Personal notes...',
+                                                size: 17,
+                                                created: now,
+                                                modified: now,
+                                            },
+                                            // Used by Terminal autocomplete tests after cd Documents
+                                            'readme.txt': {
+                                                type: 'file',
+                                                icon: '📝',
+                                                content: 'Willkommen im Terminal!',
+                                                size: 23,
+                                                created: now,
+                                                modified: now,
+                                            },
                                 modified: now,
                                 children: {
                                     '.profile': {
@@ -115,6 +103,7 @@ class VirtualFileSystemManager {
                                         created: now,
                                         modified: now,
                                     },
+                                    // Files used by Terminal autocomplete tests (keep stable for Playwright)
                                     'welcome.txt': {
                                         type: 'file',
                                         icon: '📝',
@@ -145,6 +134,7 @@ class VirtualFileSystemManager {
                                                 created: now,
                                                 modified: now,
                                             },
+                                            // Used by Terminal autocomplete tests after cd Documents
                                             'readme.txt': {
                                                 type: 'file',
                                                 icon: '📝',
@@ -368,7 +358,14 @@ class VirtualFileSystemManager {
             return null; // Root is not an item, it's the container
         }
 
-        let current: Record<string, VirtualFileSystemItem> = this.root;
+        // Start navigation from the root folder's children
+        // The root structure is: { '/': { type: 'folder', children: { home: ..., etc: ... } } }
+        const rootFolder = this.root['/'];
+        if (!rootFolder || rootFolder.type !== 'folder') {
+            return null;
+        }
+
+        let current: Record<string, VirtualFileSystemItem> = rootFolder.children;
         let lastItem: VirtualFileSystemItem | null = null;
 
         for (const part of parts) {
@@ -416,8 +413,10 @@ class VirtualFileSystemManager {
     public list(path: string | string[] = []): Record<string, VirtualFileSystemItem> {
         const parts = this.parsePath(path);
 
+        // Empty path = list root folder's children
         if (parts.length === 0) {
-            return this.root;
+            const rootFolder = this.root['/'];
+            return rootFolder?.children || {};
         }
 
         const folder = this.getFolder(path);
@@ -439,14 +438,11 @@ class VirtualFileSystemManager {
             return false;
         }
 
-        const fileName = parts[parts.length - 1]!;
+        const itemName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container = parent?.children || this.root;
-
-        if (container[fileName!]) {
-            console.warn('[VirtualFS] File already exists:', this.normalizePath(path));
-            return false;
+        const rootFolder = this.root['/'];
+        const container = parent?.children || (rootFolder?.type === 'folder' ? rootFolder.children : {});
         }
 
         const now = new Date().toISOString();
@@ -476,13 +472,11 @@ class VirtualFileSystemManager {
             return false;
         }
 
-        const folderName = parts[parts.length - 1]!;
+        const oldName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container = parent?.children || this.root;
-
-        if (container[folderName!]) {
-            console.warn('[VirtualFS] Folder already exists:', this.normalizePath(path));
+        const rootFolder = this.root['/'];
+        const container = parent?.children || (rootFolder?.type === 'folder' ? rootFolder.children : {});
             return false;
         }
 
@@ -531,7 +525,9 @@ class VirtualFileSystemManager {
         const itemName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container = parent?.children || this.root;
+        // Root-level deletes must operate on root folder children, not the root container object.
+        const rootFolder = this.root['/'];
+        const container = parent?.children || (rootFolder?.type === 'folder' ? rootFolder.children : {});
 
         if (!container[itemName!]) {
             console.warn('[VirtualFS] Item not found:', this.normalizePath(path));
@@ -559,7 +555,9 @@ class VirtualFileSystemManager {
         const oldName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container = parent?.children || this.root;
+        // Root-level renames must operate on root folder children, not the root container object.
+        const rootFolder = this.root['/'];
+        const container = parent?.children || (rootFolder?.type === 'folder' ? rootFolder.children : {});
 
         if (!container[oldName!]) {
             console.warn('[VirtualFS] Item not found:', this.normalizePath(oldPath));

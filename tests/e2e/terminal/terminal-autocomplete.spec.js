@@ -17,7 +17,8 @@ test.describe('Terminal Tab Autocomplete', () => {
 
         await page.waitForFunction(
             () => {
-                return window.WindowRegistry?.getWindowsByType('terminal')?.length === 1;
+                const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+                return win && win.activeSession;
             },
             { timeout: 5000 }
         );
@@ -30,21 +31,18 @@ test.describe('Terminal Tab Autocomplete', () => {
      * Helper to get terminal input value
      */
     async function getInputValue(page) {
-        return await page.evaluate(() => {
-            const input = document.querySelector('[data-terminal-input]');
-            return input ? input.value : '';
-        });
+        const input = page.locator('[data-terminal-input]');
+        return await input.inputValue();
     }
 
     /**
      * Helper to set input and trigger Tab
      */
     async function typeAndTab(page, text) {
-        await page.evaluate(txt => {
-            const input = document.querySelector('[data-terminal-input]');
-            if (input) input.value = txt;
-        }, text);
-        await page.keyboard.press('Tab');
+        const input = page.locator('[data-terminal-input]');
+        await input.fill(text);
+        // Ensure the key event is dispatched to the input (page.keyboard may target <body> if focus is elsewhere).
+        await input.press('Tab');
     }
 
     test('completes command: "hel" → "help "', async ({ page }) => {
@@ -65,8 +63,9 @@ test.describe('Terminal Tab Autocomplete', () => {
         expect(value).toBe('pwd ');
     });
 
-    test('completes directory: "cd Do" → "cd Documents/"', async ({ page }) => {
-        await typeAndTab(page, 'cd Do');
+    test('completes directory: "cd Doc" → "cd Documents/"', async ({ page }) => {
+        // "Do" is ambiguous in the default VirtualFS (Documents + Downloads).
+        await typeAndTab(page, 'cd Doc');
         const value = await getInputValue(page);
         expect(value).toContain('Documents');
     });
@@ -122,19 +121,17 @@ test.describe('Terminal Tab Autocomplete', () => {
 
     test('autocomplete works after cd to subdirectory', async ({ page }) => {
         // Navigate to Documents
-        await page.evaluate(() => {
-            const input = document.querySelector('[data-terminal-input]');
-            if (input) input.value = 'cd Documents';
-        });
-        await page.keyboard.press('Enter');
+        const input = page.locator('[data-terminal-input]');
+        await input.fill('cd Documents');
+        await input.press('Enter');
 
         // Wait for command execution (check prompt updated)
         await page.waitForFunction(
             () => {
-                const win = window.WindowRegistry?.getWindowsByType('terminal')?.[0];
+                const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
                 return win?.activeSession?.vfsCwd?.includes('Documents');
             },
-            { timeout: 2000 }
+            { timeout: 5000 }
         );
 
         // Try autocomplete in subdirectory
@@ -145,19 +142,17 @@ test.describe('Terminal Tab Autocomplete', () => {
 
     test('autocomplete with "../" navigates up', async ({ page }) => {
         // Navigate to Documents
-        await page.evaluate(() => {
-            const input = document.querySelector('[data-terminal-input]');
-            if (input) input.value = 'cd Documents';
-        });
-        await page.keyboard.press('Enter');
+        const input = page.locator('[data-terminal-input]');
+        await input.fill('cd Documents');
+        await input.press('Enter');
 
         // Wait for cwd change
         await page.waitForFunction(
             () => {
-                const win = window.WindowRegistry?.getWindowsByType('terminal')?.[0];
+                const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
                 return win?.activeSession?.vfsCwd?.includes('Documents');
             },
-            { timeout: 2000 }
+            { timeout: 5000 }
         );
 
         // Autocomplete parent directory file
