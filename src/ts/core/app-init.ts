@@ -266,6 +266,13 @@ function initApp(): void {
     }
 
     // Initialize Multi-Window SessionManager
+    // Create a promise to track session restore completion (even if no session manager)
+    let sessionRestoreComplete: () => void = () => {};
+    const sessionRestorePromise = new Promise<void>(resolve => {
+        sessionRestoreComplete = resolve;
+    });
+    (window as any).__sessionRestorePromise = sessionRestorePromise;
+
     if (win.MultiWindowSessionManager) {
         try {
             // SAFETY: Check BOTH sessions (new multi-window + legacy) before initializing
@@ -386,11 +393,19 @@ function initApp(): void {
                     }
                 } catch (err) {
                     console.warn('[APP-INIT] Multi-window session restore failed:', err);
+                } finally {
+                    // Mark session restore as complete
+                    sessionRestoreComplete();
                 }
             }, 150); // Delay to ensure all managers are ready
         } catch (err) {
             console.warn('[APP-INIT] MultiWindowSessionManager initialization failed:', err);
+            // Mark session restore as complete even on error
+            sessionRestoreComplete();
         }
+    } else {
+        // No MultiWindowSessionManager, mark as complete immediately
+        sessionRestoreComplete();
     }
 
     // Initialize legacy SessionManager for auto-save and restore session if available
@@ -537,8 +552,19 @@ function initApp(): void {
     // after this file) have a chance to run and not hide UI elements
     // after tests consider the app ready.
     const gw = window as Window & { __APP_READY?: boolean };
-    function markReady() {
+    async function markReady() {
         try {
+            // Wait for session restore to complete before marking ready
+            const sessionRestorePromise = (window as any).__sessionRestorePromise;
+            if (sessionRestorePromise) {
+                try {
+                    await sessionRestorePromise;
+                    console.log('[APP-INIT] Waited for session restore before marking ready');
+                } catch (e) {
+                    console.warn('[APP-INIT] Session restore wait failed:', e);
+                }
+            }
+
             // At load time, ensure the dock is placed under document.body so
             // any legacy scripts that reparent early don't leave it inside a
             // hidden modal. Do this right before signaling readiness so tests
