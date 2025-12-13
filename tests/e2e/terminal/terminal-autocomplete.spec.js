@@ -17,7 +17,7 @@ test.describe('Terminal Tab Autocomplete', () => {
 
         await page.waitForFunction(
             () => {
-                return window.WindowRegistry?.getAllWindows('terminal')?.length === 1;
+                return window.WindowRegistry?.getWindowsByType('terminal')?.length === 1;
             },
             { timeout: 5000 }
         );
@@ -131,7 +131,7 @@ test.describe('Terminal Tab Autocomplete', () => {
         // Wait for command execution (check prompt updated)
         await page.waitForFunction(
             () => {
-                const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+                const win = window.WindowRegistry?.getWindowsByType('terminal')?.[0];
                 return win?.activeSession?.vfsCwd?.includes('Documents');
             },
             { timeout: 2000 }
@@ -154,7 +154,7 @@ test.describe('Terminal Tab Autocomplete', () => {
         // Wait for cwd change
         await page.waitForFunction(
             () => {
-                const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+                const win = window.WindowRegistry?.getWindowsByType('terminal')?.[0];
                 return win?.activeSession?.vfsCwd?.includes('Documents');
             },
             { timeout: 2000 }

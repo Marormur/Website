@@ -188,15 +188,23 @@ console.log('TerminalInstance (TS) loaded');
                         this.inputElement.value = match + ' ';
                     }
                 } else if (matches.length > 1) {
-                    this.addOutput(`guest@marvin:${this.currentPath}$ ${input}`, 'command');
-                    this.addOutput(matches.join('  '), 'info');
-                    const commonPrefix = this.findCommonPrefix(matches);
-                    if (commonPrefix.length > partialCmd.length) {
-                        this.inputElement.value = commonPrefix;
+                    // Check if partialCmd is an exact match (complete command)
+                    if (availableCommands.includes(partialCmd)) {
+                        // Already a complete command, just add space
+                        this.inputElement.value = partialCmd + ' ';
+                    } else {
+                        this.addOutput(`guest@marvin:${this.currentPath}$ ${input}`, 'command');
+                        this.addOutput(matches.join('  '), 'info');
+                        const commonPrefix = this.findCommonPrefix(matches);
+                        if (commonPrefix.length > partialCmd.length) {
+                            this.inputElement.value = commonPrefix;
+                        }
                     }
                 }
             } else {
-                if (partialCmd === 'cd' || partialCmd === 'cat') {
+                // Path/file completion for commands that take paths
+                const pathCommands = ['cd', 'cat', 'ls', 'rm'];
+                if (pathCommands.includes(partialCmd)) {
                     this.completePathArgument(partialCmd, args[0] || '');
                 }
             }
@@ -222,28 +230,38 @@ console.log('TerminalInstance (TS) loaded');
             return prefix;
         }
 
-        completePathArgument(cmd: 'cd' | 'cat', partial: string): void {
+        completePathArgument(cmd: string, partial: string): void {
             const currentDir = this.resolvePath(this.currentPath);
             if (!currentDir || currentDir.type !== 'directory') return;
 
             const items = Object.keys(currentDir.contents);
             let matches: string[];
             if (cmd === 'cd') {
+                // Only directories
                 matches = items.filter(
                     item =>
                         (currentDir.contents[item] as FSNode).type === 'directory' &&
                         item.startsWith(partial)
                 );
-            } else {
+            } else if (cmd === 'cat') {
+                // Only files
                 matches = items.filter(
                     item =>
                         (currentDir.contents[item] as FSNode).type === 'file' &&
                         item.startsWith(partial)
                 );
+            } else {
+                // Both files and directories (ls, rm)
+                matches = items.filter(item => item.startsWith(partial));
             }
 
             if (matches.length === 1) {
-                this.inputElement!.value = `${cmd} ${matches[0]}`;
+                const match = matches[0];
+                if (match !== undefined) {
+                    const itemObj = currentDir.contents[match] as FSNode | undefined;
+                    const suffix = itemObj?.type === 'directory' ? '/' : '';
+                    this.inputElement!.value = `${cmd} ${match}${suffix}`;
+                }
             } else if (matches.length > 1) {
                 this.addOutput(
                     `guest@marvin:${this.currentPath}$ ${this.inputElement!.value}`,
@@ -577,4 +595,3 @@ console.log('TerminalInstance (TS) loaded');
         });
     }
 })();
-

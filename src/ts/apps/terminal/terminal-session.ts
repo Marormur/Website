@@ -113,6 +113,9 @@ export class TerminalSession extends BaseTab {
                     this.historyIndex = this.commandHistory.length;
                     this.inputElement!.value = '';
                 }
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                this.handleTabCompletion();
             }
         });
     }
@@ -364,6 +367,191 @@ export class TerminalSession extends BaseTab {
         }
         const ok = VirtualFS.delete(target);
         if (!ok) this.addOutput(`Konnte nicht löschen: ${target}`, 'error');
+    }
+
+    // ---------------------------
+    // Tab Completion
+    // ---------------------------
+
+    /**
+     * Handle Tab key completion for commands and paths
+     */
+    private handleTabCompletion(): void {
+        if (!this.inputElement) return;
+
+        const input = this.inputElement.value;
+        const [partialCmd, ...args] = input.split(' ');
+
+        if (partialCmd === undefined) return;
+
+        const availableCommands = [
+            'help',
+            'clear',
+            'ls',
+            'pwd',
+            'cd',
+            'cat',
+            'touch',
+            'mkdir',
+            'rm',
+            'echo',
+            'date',
+            'whoami',
+        ];
+
+        // Command completion (no arguments yet)
+        if (args.length === 0) {
+            const matches = availableCommands.filter(cmd => cmd.startsWith(partialCmd));
+
+            if (matches.length === 1) {
+                const match = matches[0];
+                if (match !== undefined) {
+                    this.inputElement.value = match + ' ';
+                }
+            } else if (matches.length > 1) {
+                // Check if partialCmd is an exact match (complete command)
+                if (availableCommands.includes(partialCmd)) {
+                    // Already a complete command, just add space
+                    this.inputElement.value = partialCmd + ' ';
+                } else {
+                    // Show all matches
+                    this.addOutput(`guest@marvin:${this.vfsCwd}$ ${input}`, 'command');
+                    this.addOutput(matches.join('  '), 'info');
+                    // Complete to common prefix if longer than current input
+                    const commonPrefix = this.findCommonPrefix(matches);
+                    if (commonPrefix.length > partialCmd.length) {
+                        this.inputElement.value = commonPrefix;
+                    }
+                }
+            }
+        } else {
+            // Path/file completion for commands that take paths
+            const pathCommands = ['cd', 'cat', 'ls', 'rm', 'touch', 'mkdir'];
+            if (pathCommands.includes(partialCmd)) {
+                this.completePathArgument(partialCmd, args[0] || '');
+            }
+        }
+    }
+
+    /**
+     * Complete path argument for commands like cd, cat, ls, rm
+     */
+    private completePathArgument(cmd: string, partial: string): void {
+        if (!this.inputElement) return;
+
+        // Parse the partial path to determine directory and prefix
+        let searchDir = this.vfsCwd;
+        let searchPrefix = partial;
+
+        // Handle relative paths (./, ../)
+        if (partial.includes('/')) {
+            const lastSlash = partial.lastIndexOf('/');
+            const dirPart = partial.substring(0, lastSlash + 1);
+            searchPrefix = partial.substring(lastSlash + 1);
+
+            // Resolve the directory part
+            if (dirPart === './') {
+                searchDir = this.vfsCwd;
+            } else if (dirPart === '../') {
+                searchDir = this.parentPath(this.vfsCwd);
+            } else {
+                // Complex relative or absolute path
+                const resolvedDir = this.vfsResolve(dirPart);
+                const dirItem = VirtualFS.get(resolvedDir);
+                if (dirItem?.type === 'folder') {
+                    searchDir = resolvedDir;
+                } else {
+                    // Invalid directory, no completion
+                    return;
+                }
+            }
+        }
+
+        // Get items in the search directory
+        const items = VirtualFS.list(searchDir);
+        const itemNames = Object.keys(items);
+
+        // Filter based on command type
+        let matches: string[] = [];
+        if (cmd === 'cd') {
+            // Only directories
+            matches = itemNames.filter(name => {
+                const item = items[name];
+                return item?.type === 'folder' && name.startsWith(searchPrefix);
+            });
+        } else if (cmd === 'cat') {
+            // Only files
+            matches = itemNames.filter(name => {
+                const item = items[name];
+                return item?.type === 'file' && name.startsWith(searchPrefix);
+            });
+        } else {
+            // Both files and directories (ls, rm, touch, mkdir)
+            matches = itemNames.filter(name => name.startsWith(searchPrefix));
+        }
+
+        // Handle completion
+        if (matches.length === 1) {
+            const match = matches[0];
+            if (match !== undefined) {
+                const item = items[match];
+                const suffix = item?.type === 'folder' ? '/' : '';
+                // Reconstruct full path with prefix
+                const dirPrefix = partial.includes('/')
+                    ? partial.substring(0, partial.lastIndexOf('/') + 1)
+                    : '';
+                this.inputElement.value = `${cmd} ${dirPrefix}${match}${suffix}`;
+            }
+        } else if (matches.length > 1) {
+            // Show all matches with icons
+            this.addOutput(`guest@marvin:${this.vfsCwd}$ ${this.inputElement.value}`, 'command');
+            const formatted = matches.map(name => {
+                const item = items[name];
+                const prefix = item?.type === 'folder' ? '📁 ' : '📄 ';
+                return prefix + name;
+            });
+            this.addOutput(formatted.join('  '), 'info');
+
+            // Complete to common prefix if available
+            const commonPrefix = this.findCommonPrefix(matches);
+            if (commonPrefix.length > searchPrefix.length) {
+                const dirPrefix = partial.includes('/')
+                    ? partial.substring(0, partial.lastIndexOf('/') + 1)
+                    : '';
+                this.inputElement.value = `${cmd} ${dirPrefix}${commonPrefix}`;
+            }
+        }
+    }
+
+    /**
+     * Find common prefix among strings
+     */
+    private findCommonPrefix(strings: string[]): string {
+        if (!strings.length) return '';
+        const firstString = strings[0];
+        if (strings.length === 1) return firstString ?? '';
+        if (firstString === undefined) return '';
+
+        let prefix: string = firstString;
+        for (let i = 1; i < strings.length; i++) {
+            const currentString = strings[i];
+            if (currentString === undefined) continue;
+
+            while (currentString.indexOf(prefix) !== 0) {
+                prefix = prefix.substring(0, prefix.length - 1);
+                if (!prefix) return '';
+            }
+        }
+        return prefix;
+    }
+
+    /**
+     * Get parent path of a given path
+     */
+    private parentPath(path: string): string {
+        const parts = path.split('/').filter(Boolean);
+        parts.pop();
+        return parts.length > 0 ? '/' + parts.join('/') : '/';
     }
 
     /**

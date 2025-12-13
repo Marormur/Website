@@ -115,6 +115,22 @@ class VirtualFileSystemManager {
                                         created: now,
                                         modified: now,
                                     },
+                                    'welcome.txt': {
+                                        type: 'file',
+                                        icon: '📝',
+                                        content:
+                                            'Willkommen auf Marvins Portfolio-Website!\n\nGib "help" ein, um eine Liste verfügbarer Befehle zu sehen.',
+                                        size: 94,
+                                        created: now,
+                                        modified: now,
+                                    },
+                                    Desktop: {
+                                        type: 'folder',
+                                        icon: '🖥️',
+                                        created: now,
+                                        modified: now,
+                                        children: {},
+                                    },
                                     Documents: {
                                         type: 'folder',
                                         icon: '📄',
@@ -126,6 +142,14 @@ class VirtualFileSystemManager {
                                                 icon: '📝',
                                                 content: 'Personal notes...',
                                                 size: 17,
+                                                created: now,
+                                                modified: now,
+                                            },
+                                            'readme.txt': {
+                                                type: 'file',
+                                                icon: '📝',
+                                                content: 'Willkommen im Terminal!',
+                                                size: 23,
                                                 created: now,
                                                 modified: now,
                                             },
