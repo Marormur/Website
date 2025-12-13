@@ -553,7 +553,6 @@ export class TerminalSession extends BaseTab {
         parts.pop();
         return parts.length > 0 ? '/' + parts.join('/') : '/';
     }
-
     /**
      * Serialize session state
      */

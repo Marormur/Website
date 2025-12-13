@@ -115,6 +115,7 @@ class VirtualFileSystemManager {
                                         created: now,
                                         modified: now,
                                     },
+                                    // Files used by Terminal autocomplete tests
                                     'welcome.txt': {
                                         type: 'file',
                                         icon: '📝',
@@ -145,6 +146,7 @@ class VirtualFileSystemManager {
                                                 created: now,
                                                 modified: now,
                                             },
+                                            // Used by Terminal autocomplete tests after cd Documents
                                             'readme.txt': {
                                                 type: 'file',
                                                 icon: '📝',
@@ -368,7 +370,14 @@ class VirtualFileSystemManager {
             return null; // Root is not an item, it's the container
         }
 
-        let current: Record<string, VirtualFileSystemItem> = this.root;
+        // Start navigation from the root folder's children
+        // The root structure is: { '/': { type: 'folder', children: { home: ..., etc: ... } } }
+        const rootFolder = this.root['/'];
+        if (!rootFolder || rootFolder.type !== 'folder') {
+            return null;
+        }
+
+        let current: Record<string, VirtualFileSystemItem> = rootFolder.children;
         let lastItem: VirtualFileSystemItem | null = null;
 
         for (const part of parts) {
@@ -416,8 +425,10 @@ class VirtualFileSystemManager {
     public list(path: string | string[] = []): Record<string, VirtualFileSystemItem> {
         const parts = this.parsePath(path);
 
+        // Empty path = list root folder's children
         if (parts.length === 0) {
-            return this.root;
+            const rootFolder = this.root['/'];
+            return rootFolder?.children || {};
         }
 
         const folder = this.getFolder(path);
@@ -442,7 +453,7 @@ class VirtualFileSystemManager {
         const fileName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container = parent?.children || this.root;
+        const container = parent?.children || this.root['/']?.children || {};
 
         if (container[fileName!]) {
             console.warn('[VirtualFS] File already exists:', this.normalizePath(path));
@@ -479,7 +490,7 @@ class VirtualFileSystemManager {
         const folderName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container = parent?.children || this.root;
+        const container = parent?.children || this.root['/']?.children || {};
 
         if (container[folderName!]) {
             console.warn('[VirtualFS] Folder already exists:', this.normalizePath(path));
@@ -531,7 +542,7 @@ class VirtualFileSystemManager {
         const itemName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container = parent?.children || this.root;
+        const container = parent?.children || this.root['/']?.children || {};
 
         if (!container[itemName!]) {
             console.warn('[VirtualFS] Item not found:', this.normalizePath(path));
@@ -559,7 +570,7 @@ class VirtualFileSystemManager {
         const oldName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container = parent?.children || this.root;
+        const container = parent?.children || this.root['/']?.children || {};
 
         if (!container[oldName!]) {
             console.warn('[VirtualFS] Item not found:', this.normalizePath(oldPath));

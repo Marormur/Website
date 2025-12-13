@@ -218,90 +218,82 @@ console.log('TerminalInstance (TS) loaded');
             if (firstString === undefined) return '';
 
             let prefix: string = firstString;
-            for (let i = 1; i < strings.length; i++) {
-                const currentString = strings[i];
-                if (currentString === undefined) continue;
-
-                while (currentString.indexOf(prefix) !== 0) {
-                    prefix = prefix.substring(0, prefix.length - 1);
-                    if (!prefix) return '';
+                        this.completePathArgument(partialCmd, args[0] || '');
+                    }
                 }
             }
-            return prefix;
-        }
 
-        completePathArgument(cmd: string, partial: string): void {
-            const currentDir = this.resolvePath(this.currentPath);
-            if (!currentDir || currentDir.type !== 'directory') return;
+            findCommonPrefix(strings: string[]): string {
+                if (!strings.length) return '';
+                // noUncheckedIndexedAccess: array access may return undefined
+                const firstString = strings[0];
+                if (strings.length === 1) return firstString ?? '';
+                if (firstString === undefined) return '';
 
-            const items = Object.keys(currentDir.contents);
-            let matches: string[];
-            if (cmd === 'cd') {
-                // Only directories
-                matches = items.filter(
-                    item =>
-                        (currentDir.contents[item] as FSNode).type === 'directory' &&
-                        item.startsWith(partial)
-                );
-            } else if (cmd === 'cat') {
-                // Only files
-                matches = items.filter(
-                    item =>
-                        (currentDir.contents[item] as FSNode).type === 'file' &&
-                        item.startsWith(partial)
-                );
-            } else {
-                // Both files and directories (ls, rm)
-                matches = items.filter(item => item.startsWith(partial));
+                let prefix: string = firstString;
+                for (let i = 1; i < strings.length; i++) {
+                    const currentString = strings[i];
+                    if (currentString === undefined) continue;
+
+                    while (currentString.indexOf(prefix) !== 0) {
+                        prefix = prefix.substring(0, prefix.length - 1);
+                        if (!prefix) return '';
+                    }
+                }
+                return prefix;
             }
 
-            if (matches.length === 1) {
-                const match = matches[0];
-                if (match !== undefined) {
-                    const itemObj = currentDir.contents[match] as FSNode | undefined;
-                    const suffix = itemObj?.type === 'directory' ? '/' : '';
-                    this.inputElement!.value = `${cmd} ${match}${suffix}`;
+            completePathArgument(cmd: string, partial: string): void {
+                const currentDir = this.resolvePath(this.currentPath);
+                if (!currentDir || currentDir.type !== 'directory') return;
+
+                const items = Object.keys(currentDir.contents);
+                let matches: string[];
+                if (cmd === 'cd') {
+                    // Only directories
+                    matches = items.filter(
+                        item =>
+                            (currentDir.contents[item] as FSNode).type === 'directory' &&
+                            item.startsWith(partial)
+                    );
+                } else if (cmd === 'cat') {
+                    // Only files
+                    matches = items.filter(
+                        item =>
+                            (currentDir.contents[item] as FSNode).type === 'file' &&
+                            item.startsWith(partial)
+                    );
+                } else {
+                    // Both files and directories (ls, rm)
+                    matches = items.filter(item => item.startsWith(partial));
                 }
-            } else if (matches.length > 1) {
-                this.addOutput(
-                    `guest@marvin:${this.currentPath}$ ${this.inputElement!.value}`,
-                    'command'
-                );
-                const formatted = matches.map(item => {
-                    // noUncheckedIndexedAccess: dictionary access may return undefined
-                    const itemObj = currentDir.contents[item] as FSNode | undefined;
-                    if (!itemObj) return item;
-                    const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
-                    return prefix + item;
-                });
-                this.addOutput(formatted.join('  '), 'info');
-                const commonPrefix = this.findCommonPrefix(matches);
-                if (commonPrefix.length > partial.length) {
-                    this.inputElement!.value = `${cmd} ${commonPrefix}`;
+
+                if (matches.length === 1) {
+                    const match = matches[0];
+                    if (match !== undefined) {
+                        const itemObj = currentDir.contents[match] as FSNode | undefined;
+                        const suffix = itemObj?.type === 'directory' ? '/' : '';
+                        this.inputElement!.value = `${cmd} ${match}${suffix}`;
+                    }
+                } else if (matches.length > 1) {
+                    this.addOutput(
+                        `guest@marvin:${this.currentPath}$ ${this.inputElement!.value}`,
+                        'command'
+                    );
+                    const formatted = matches.map(item => {
+                        // noUncheckedIndexedAccess: dictionary access may return undefined
+                        const itemObj = currentDir.contents[item] as FSNode | undefined;
+                        if (!itemObj) return item;
+                        const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
+                        return prefix + item;
+                    });
+                    this.addOutput(formatted.join('  '), 'info');
+                    const commonPrefix = this.findCommonPrefix(matches);
+                    if (commonPrefix.length > partial.length) {
+                        this.inputElement!.value = `${cmd} ${commonPrefix}`;
+                    }
                 }
             }
-        }
-
-        executeCommand(command: string): void {
-            this.addOutput(`guest@marvin:${this.currentPath}$ ${command}`, 'command');
-            const [cmd, ...args] = command.split(' ');
-
-            // noUncheckedIndexedAccess: array destructuring may return undefined
-            if (cmd === undefined) return;
-
-            const commands: Record<string, () => void> = {
-                help: () => this.showHelp(),
-                clear: () => this.clearOutput(),
-                ls: () => this.listDirectory(args[0]),
-                pwd: () => this.printWorkingDirectory(),
-                cd: () => this.changeDirectory(args[0]),
-                cat: () => this.catFile(args[0]),
-                echo: () => this.echo(args.join(' ')),
-                date: () => this.showDate(),
-                whoami: () => this.addOutput('guest', 'output'),
-            };
-
-            const commandFn = commands[cmd];
             if (commandFn !== undefined) {
                 commandFn();
             } else {
