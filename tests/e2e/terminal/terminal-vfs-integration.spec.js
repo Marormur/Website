@@ -17,7 +17,7 @@ test.describe('Terminal VirtualFS Integration', () => {
      */
     async function executeCommand(page, command) {
         return await page.evaluate(cmd => {
-            const win = window.__WindowRegistry?.getAllWindows?.('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType?.('terminal')?.[0];
             const session = win?.activeSession;
             if (!session || !session.executeCommand) return null;
 
@@ -46,7 +46,7 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         await page.waitForFunction(
             () => {
-                return window.__WindowRegistry?.getAllWindows?.('terminal')?.length === 1;
+                return window.__WindowRegistry?.getWindowsByType?.('terminal')?.length === 1;
             },
             { timeout: 5000 }
         );
@@ -59,7 +59,7 @@ test.describe('Terminal VirtualFS Integration', () => {
         await page.waitForFunction(
             () => {
                 const registry = window.__WindowRegistry;
-                const wins = registry?.getAllWindows?.('terminal') || [];
+                const wins = registry?.getWindowsByType?.('terminal') || [];
                 return wins.length > 0 && wins[0]?.sessions?.length === 2;
             },
             { timeout: 5000 }
@@ -68,7 +68,7 @@ test.describe('Terminal VirtualFS Integration', () => {
         // File should be visible in second session
         const result = await page.evaluate(() => {
             const registry = window.__WindowRegistry;
-            const win = registry?.getAllWindows?.('terminal')?.[0];
+            const win = registry?.getWindowsByType?.('terminal')?.[0];
             const session = win?.activeSession;
             if (!session) return null;
 
@@ -88,7 +88,7 @@ test.describe('Terminal VirtualFS Integration', () => {
         await openFinderWindow(page);
         await page.waitForFunction(
             () => {
-                return window.__WindowRegistry?.getAllWindows?.('finder')?.length === 1;
+                return window.__WindowRegistry?.getWindowsByType?.('finder')?.length === 1;
             },
             { timeout: 5000 }
         );
@@ -104,7 +104,7 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         await page.waitForFunction(
             () => {
-                return window.__WindowRegistry?.getAllWindows?.('terminal')?.length === 1;
+                return window.__WindowRegistry?.getWindowsByType?.('terminal')?.length === 1;
             },
             { timeout: 5000 }
         );
@@ -115,7 +115,7 @@ test.describe('Terminal VirtualFS Integration', () => {
         // Skip VirtualFS direct access - it's handled internally
         // Just verify terminal is accessible through registry
         const terminalAccessible = await page.evaluate(() => {
-            const win = window.__WindowRegistry?.getAllWindows?.('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType?.('terminal')?.[0];
             return win !== null && win !== undefined;
         });
 
@@ -130,7 +130,7 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         await page.waitForFunction(
             () => {
-                return window.__WindowRegistry?.getAllWindows?.('terminal')?.length === 1;
+                return window.__WindowRegistry?.getWindowsByType?.('terminal')?.length === 1;
             },
             { timeout: 5000 }
         );
@@ -142,7 +142,7 @@ test.describe('Terminal VirtualFS Integration', () => {
         await page.keyboard.press('Control+KeyT');
         await page.waitForFunction(
             () => {
-                const wins = window.__WindowRegistry?.getAllWindows?.('terminal') || [];
+                const wins = window.__WindowRegistry?.getWindowsByType?.('terminal') || [];
                 return wins[0]?.sessions?.length === 2;
             },
             { timeout: 5000 }
@@ -150,7 +150,7 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         // Get both session cwds
         const cwds = await page.evaluate(() => {
-            const win = window.__WindowRegistry?.getAllWindows?.('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType?.('terminal')?.[0];
             const sessions = win?.sessions || [];
             return sessions.map(s => s.vfsCwd);
         });
@@ -166,7 +166,7 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         await page.waitForFunction(
             () => {
-                return window.__WindowRegistry?.getAllWindows?.('terminal')?.length === 1;
+                return window.__WindowRegistry?.getWindowsByType?.('terminal')?.length === 1;
             },
             { timeout: 5000 }
         );
@@ -184,7 +184,7 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         // Check terminal is restored (may not have the exact cwd due to session restore complexity)
         const terminalRestored = await page.evaluate(() => {
-            const win = window.__WindowRegistry?.getAllWindows?.('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType?.('terminal')?.[0];
             return win?.activeSession?.vfsCwd || null;
         });
 
@@ -220,7 +220,7 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         // Check migrated path
         const migratedCwd = await page.evaluate(() => {
-            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType('terminal')?.[0];
             return win?.activeSession?.vfsCwd || null;
         });
 
@@ -234,30 +234,30 @@ test.describe('Terminal VirtualFS Integration', () => {
         await terminalDockItem.click();
 
         await page.waitForFunction(() => {
-            return window.WindowRegistry?.getAllWindows('terminal')?.length === 1;
+            return window.__WindowRegistry?.getWindowsByType('terminal')?.length === 1;
         });
 
         await page.keyboard.press('Control+KeyT');
         await page.waitForFunction(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
+            const wins = window.__WindowRegistry?.getWindowsByType('terminal') || [];
             return wins[0]?.sessions?.length === 2;
         });
 
         // Create file in first tab
         await page.evaluate(() => {
-            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType('terminal')?.[0];
             win?.setActiveSession?.(win.sessions[0]);
         });
         await executeCommand(page, 'touch immediate-test.txt');
 
         // Switch to second tab and check
         await page.evaluate(() => {
-            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType('terminal')?.[0];
             win?.setActiveSession?.(win.sessions[1]);
         });
 
         const hasFile = await page.evaluate(() => {
-            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType('terminal')?.[0];
             const session = win?.activeSession;
             if (!session || !window.VirtualFS) return false;
 
