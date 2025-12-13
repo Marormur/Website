@@ -387,43 +387,15 @@ export class TerminalSession extends BaseTab {
             title: state.title,
         });
 
-        // Map legacy currentPath to vfsCwd
-        if (state.currentPath) {
-            // Map old 'Computer' paths to new '/' structure
-            if (state.currentPath === 'Computer' || state.currentPath === '~') {
-                session.vfsCwd = '/home/marvin';
-            } else if (state.currentPath.startsWith('Computer/')) {
-                // Map Computer/Home -> /home/marvin, Computer/Documents -> /home/marvin/Documents
-                const subPath = state.currentPath.slice(9); // Remove 'Computer/'
-                if (subPath === 'Home' || subPath.startsWith('Home/')) {
-                    const rest = subPath === 'Home' ? '' : subPath.slice(5);
-                    session.vfsCwd = rest ? `/home/marvin/${rest}` : '/home/marvin';
-                } else {
-                    session.vfsCwd = `/home/marvin/${subPath}`;
-                }
-            } else if (state.currentPath.startsWith('~/')) {
-                session.vfsCwd = '/home/marvin/' + state.currentPath.slice(2);
-            } else {
-                session.vfsCwd = state.currentPath;
-            }
-        }
-        // New vfsCwd property takes precedence
+        // Use vfsCwd if available, otherwise fall back to currentPath
+        // Note: Path migration is handled centrally in MultiWindowSessionManager
+        // before this method is called, so paths are already in the correct format
         if (state.vfsCwd) {
-            // Migrate old Computer paths to new structure
-            if (state.vfsCwd === 'Computer') {
-                session.vfsCwd = '/home/marvin';
-            } else if (state.vfsCwd.startsWith('Computer/')) {
-                const subPath = state.vfsCwd.slice(9);
-                if (subPath === 'Home' || subPath.startsWith('Home/')) {
-                    const rest = subPath === 'Home' ? '' : subPath.slice(5);
-                    session.vfsCwd = rest ? `/home/marvin/${rest}` : '/home/marvin';
-                } else {
-                    session.vfsCwd = `/home/marvin/${subPath}`;
-                }
-            } else {
-                session.vfsCwd = state.vfsCwd;
-            }
+            session.vfsCwd = state.vfsCwd;
+        } else if (state.currentPath) {
+            session.vfsCwd = state.currentPath;
         }
+
         if (state.commandHistory) {
             session.commandHistory = state.commandHistory;
             session.historyIndex = session.commandHistory.length;

@@ -15,6 +15,11 @@ import * as DOMUtils from '../ui/dom-utils';
 // Import core constants first (needed by storage, app-init, etc.)
 import '../core/constants';
 
+// Import core observability systems (error handling, performance monitoring)
+import '../core/logger';
+import '../core/error-handler';
+import '../core/perf-monitor';
+
 // Import legacy/global modules for their side effects so they register on window.*
 import '../core/api';
 import '../windows/window-manager';
