@@ -220,7 +220,7 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         // Check migrated path
         const migratedCwd = await page.evaluate(() => {
-            const win = window.WindowRegistry?.getWindowsByType('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType('terminal')?.[0];
             return win?.activeSession?.vfsCwd || null;
         });
 
@@ -234,30 +234,30 @@ test.describe('Terminal VirtualFS Integration', () => {
         await terminalDockItem.click();
 
         await page.waitForFunction(() => {
-            return window.WindowRegistry?.getWindowsByType('terminal')?.length === 1;
+            return window.__WindowRegistry?.getWindowsByType('terminal')?.length === 1;
         });
 
         await page.keyboard.press('Control+KeyT');
         await page.waitForFunction(() => {
-            const wins = window.WindowRegistry?.getWindowsByType('terminal') || [];
+            const wins = window.__WindowRegistry?.getWindowsByType('terminal') || [];
             return wins[0]?.sessions?.length === 2;
         });
 
         // Create file in first tab
         await page.evaluate(() => {
-            const win = window.WindowRegistry?.getWindowsByType('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType('terminal')?.[0];
             win?.setActiveSession?.(win.sessions[0]);
         });
         await executeCommand(page, 'touch immediate-test.txt');
 
         // Switch to second tab and check
         await page.evaluate(() => {
-            const win = window.WindowRegistry?.getWindowsByType('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType('terminal')?.[0];
             win?.setActiveSession?.(win.sessions[1]);
         });
 
         const hasFile = await page.evaluate(() => {
-            const win = window.WindowRegistry?.getWindowsByType('terminal')?.[0];
+            const win = window.__WindowRegistry?.getWindowsByType('terminal')?.[0];
             const session = win?.activeSession;
             if (!session || !window.VirtualFS) return false;
 
