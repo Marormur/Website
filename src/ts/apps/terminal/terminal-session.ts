@@ -86,9 +86,7 @@ export class TerminalSession extends BaseTab {
                 const command = this.inputElement!.value.trim();
                 if (command) {
                     this.executeCommand(command);
-                    this.commandHistory.push(command);
-                    this.historyIndex = this.commandHistory.length;
-                    this.updateContentState({ commandHistory: this.commandHistory });
+                    // Note: commandHistory is now updated in executeCommand()
                 }
                 this.inputElement!.value = '';
                 this.inputElement!.focus();
@@ -151,6 +149,11 @@ export class TerminalSession extends BaseTab {
                 'error'
             );
         }
+
+        // Add command to history for session persistence
+        this.commandHistory.push(command);
+        this.historyIndex = this.commandHistory.length;
+        this.updateContentState({ commandHistory: this.commandHistory });
     }
 
     addOutput(text: string, type: 'command' | 'output' | 'error' | 'info' = 'output'): void {
