@@ -33,6 +33,7 @@ export class TerminalWindow extends BaseWindow {
 
     /**
      * Get the currently active session (active tab)
+     * This getter provides test compatibility for accessing the active terminal session
      */
     get activeSession(): BaseTab | null {
         if (!this.activeTabId) return null;
