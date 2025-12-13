@@ -47,6 +47,9 @@ js/**/*.js
 js/**/*.js.map
 !js/README.md
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Logs
 *.log
 npm-debug.log*
