@@ -579,7 +579,7 @@ class MultiWindowSessionManager {
                     modified: tab.modified || Date.now(),
                 };
 
-                // Copy relevant fields to contentState
+                // Copy relevant fields to tab data
                 if (tab.vfsCwd) tabData.vfsCwd = tab.vfsCwd;
                 if (tab.currentPath) tabData.currentPath = tab.currentPath;
                 if (tab.commandHistory) tabData.commandHistory = tab.commandHistory;
