@@ -260,7 +260,6 @@ export class TerminalSession extends BaseTab {
 
         if (matches.length === 1) {
             const m = matches[0];
-            if (!m) return;
             let completed = m.name;
 
             // For `cd`, append '/' to folders.
