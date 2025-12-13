@@ -97,17 +97,17 @@ index.html            # Hauptseite (Bundle-Loader)
 
 ### Neues Fenster/App hinzufügen
 
-1. Window-Config in `src/ts/window-configs.ts` registrieren
+1. Window-Config in `src/ts/windows/window-configs.ts` registrieren
 2. HTML-Struktur in `index.html` hinzufügen
 3. Window/Instance-Klassen in `src/ts/apps/<app-name>/` erstellen
-4. Actions via ActionBus registrieren (`ActionBus.register(...)`)
+4. Actions via ActionBus registrieren (`window.ActionBus.register(...)`)
 5. Menü-Einträge in relevanten Menüs hinzufügen
 
 ### Neue Action hinzufügen
 
 ```typescript
 // In src/ts/core/app-init.ts oder app-spezifischem Module
-ActionBus.register('myAction', (params, element) => {
+window.ActionBus.register('myAction', (params, element) => {
     // Logic here
 });
 
@@ -117,7 +117,7 @@ ActionBus.register('myAction', (params, element) => {
 
 ### i18n-Text hinzufügen
 
-1. Keys in `src/ts/i18n/translations.ts` hinzufügen (DE + EN)
+1. Keys in `src/ts/i18n/de.ts` (Deutsch) und `src/ts/i18n/en.ts` (Englisch) hinzufügen
 2. Verwendung: `API.i18n.translate('key', 'fallback')`
 
 ## Gotchas & Wichtige Hinweise
