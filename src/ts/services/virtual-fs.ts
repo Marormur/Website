@@ -124,6 +124,13 @@ class VirtualFileSystemManager {
                                         created: now,
                                         modified: now,
                                     },
+                                    Desktop: {
+                                        type: 'folder',
+                                        icon: '🖥️',
+                                        created: now,
+                                        modified: now,
+                                        children: {},
+                                    },
                                     Documents: {
                                         type: 'folder',
                                         icon: '📄',
