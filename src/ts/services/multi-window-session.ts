@@ -222,24 +222,6 @@ class MultiWindowSessionManager {
         this.isRestoring = true;
 
         try {
-            // DEBUG: Log all localStorage keys
-            const allKeys: string[] = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key) allKeys.push(key);
-            }
-            console.log('[MultiWindowSessionManager] All localStorage keys:', allKeys);
-
-            // DEBUG: Check specifically for v1 key
-            const v1Check = localStorage.getItem('multiWindowSession_v1');
-            console.log(
-                '[MultiWindowSessionManager] multiWindowSession_v1 exists:',
-                v1Check !== null
-            );
-            if (v1Check) {
-                console.log('[MultiWindowSessionManager] multiWindowSession_v1 value:', v1Check);
-            }
-
             // Try to load multi-window session
             const sessionData = localStorage.getItem(MultiWindowSessionManager.STORAGE_KEY);
 
@@ -257,27 +239,11 @@ class MultiWindowSessionManager {
             );
             if (legacyV1Data) {
                 console.log('[MultiWindowSessionManager] Migrating legacy v1 session...');
-                console.log('[MultiWindowSessionManager] Legacy v1 data:', legacyV1Data);
-
-                // DEBUG: Add visible indicator
-                const debugDiv = document.createElement('div');
-                debugDiv.style.position = 'fixed';
-                debugDiv.style.top = '50px';
-                debugDiv.style.left = '50px';
-                debugDiv.style.background = 'yellow';
-                debugDiv.style.padding = '10px';
-                debugDiv.style.zIndex = '99999';
-                debugDiv.textContent = `[DEBUG] Found legacy v1 session: ${legacyV1Data.substring(0, 100)}...`;
-                document.body.appendChild(debugDiv);
-
                 const rawSession = JSON.parse(legacyV1Data);
-                console.log('[MultiWindowSessionManager] Parsed legacy session:', rawSession);
                 // Normalize legacy format to current format
                 const session = this.normalizeLegacyV1Session(rawSession);
-                console.log('[MultiWindowSessionManager] Normalized session:', session);
                 // Apply path migration
                 this.migrateSessionPaths(session);
-                console.log('[MultiWindowSessionManager] After path migration:', session);
                 await this.restoreMultiWindowSession(session);
                 // Clear legacy key and save in new format
                 localStorage.removeItem(MultiWindowSessionManager.LEGACY_STORAGE_KEY_V1);
