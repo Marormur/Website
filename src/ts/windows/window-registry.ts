@@ -100,17 +100,20 @@ class WindowRegistry {
     }
 
     /**
-     * Get all windows
+     * Get all windows, optionally filtered by type
+     * @param type - Optional window type filter (e.g., 'terminal', 'finder', 'text-editor')
      */
-    getAllWindows(): BaseWindow[] {
-        return Array.from(this.windows.values());
+    getAllWindows(type?: string): BaseWindow[] {
+        const allWindows = Array.from(this.windows.values());
+        return type ? allWindows.filter(w => w.type === type) : allWindows;
     }
 
     /**
      * Get windows by type
+     * @deprecated Use getAllWindows(type) instead
      */
     getWindowsByType(type: string): BaseWindow[] {
-        return Array.from(this.windows.values()).filter(w => w.type === type);
+        return this.getAllWindows(type);
     }
 
     /**
