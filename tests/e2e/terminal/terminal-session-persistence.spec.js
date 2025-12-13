@@ -34,10 +34,19 @@ test.describe('Terminal Session Persistence', () => {
             }
         });
 
-        // Trigger session save
+        // Trigger session save with immediate flag to bypass debounce
         await page.evaluate(() => {
-            window.MultiWindowSessionManager?.saveSession();
+            window.MultiWindowSessionManager?.saveSession({ immediate: true });
         });
+
+        // Wait for session to be saved to localStorage
+        await page.waitForFunction(
+            () => {
+                const saved = window.localStorage?.getItem('multi-window-session');
+                return saved !== null;
+            },
+            { timeout: 2000 }
+        );
 
         // Reload
         await page.reload();
@@ -79,10 +88,19 @@ test.describe('Terminal Session Persistence', () => {
             return window.WindowRegistry?.getAllWindows('terminal')?.length === 2;
         });
 
-        // Save session
+        // Save session with immediate flag
         await page.evaluate(() => {
-            window.MultiWindowSessionManager?.saveSession();
+            window.MultiWindowSessionManager?.saveSession({ immediate: true });
         });
+
+        // Wait for session to be saved
+        await page.waitForFunction(
+            () => {
+                const saved = window.localStorage?.getItem('multi-window-session');
+                return saved !== null;
+            },
+            { timeout: 2000 }
+        );
 
         // Reload
         await page.reload();
@@ -113,10 +131,19 @@ test.describe('Terminal Session Persistence', () => {
             return wins[0]?.sessions?.length === 3;
         });
 
-        // Save
+        // Save with immediate flag
         await page.evaluate(() => {
-            window.MultiWindowSessionManager?.saveSession();
+            window.MultiWindowSessionManager?.saveSession({ immediate: true });
         });
+
+        // Wait for session to be saved
+        await page.waitForFunction(
+            () => {
+                const saved = window.localStorage?.getItem('multi-window-session');
+                return saved !== null;
+            },
+            { timeout: 2000 }
+        );
 
         // Reload
         await page.reload();
@@ -160,10 +187,18 @@ test.describe('Terminal Session Persistence', () => {
             return win?.activeSession?.sessionId || null;
         });
 
-        // Save and reload
+        // Save with immediate flag and wait for completion
         await page.evaluate(() => {
-            window.MultiWindowSessionManager?.saveSession();
+            window.MultiWindowSessionManager?.saveSession({ immediate: true });
         });
+
+        await page.waitForFunction(
+            () => {
+                const saved = window.localStorage?.getItem('multi-window-session');
+                return saved !== null;
+            },
+            { timeout: 2000 }
+        );
 
         await page.reload();
         await waitForAppReady(page);
@@ -195,10 +230,19 @@ test.describe('Terminal Session Persistence', () => {
             }
         });
 
-        // Save
+        // Save with immediate flag to bypass debounce
         await page.evaluate(() => {
-            window.MultiWindowSessionManager?.saveSession();
+            window.MultiWindowSessionManager?.saveSession({ immediate: true });
         });
+
+        // Wait for session to be saved to localStorage
+        await page.waitForFunction(
+            () => {
+                const saved = window.localStorage?.getItem('multi-window-session');
+                return saved !== null;
+            },
+            { timeout: 2000 }
+        );
 
         // Reload
         await page.reload();
@@ -242,10 +286,18 @@ test.describe('Terminal Session Persistence', () => {
             return wins.map(w => w.windowId);
         });
 
-        // Save and reload
+        // Save with immediate flag and wait for completion
         await page.evaluate(() => {
-            window.MultiWindowSessionManager?.saveSession();
+            window.MultiWindowSessionManager?.saveSession({ immediate: true });
         });
+
+        await page.waitForFunction(
+            () => {
+                const saved = window.localStorage?.getItem('multi-window-session');
+                return saved !== null;
+            },
+            { timeout: 2000 }
+        );
 
         await page.reload();
         await waitForAppReady(page);

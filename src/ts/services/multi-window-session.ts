@@ -139,6 +139,7 @@ class MultiWindowSessionManager {
             console.log('[MultiWindowSessionManager] Session saved:', {
                 windows: session.windows.length,
                 totalTabs: session.windows.reduce((sum, w) => sum + w.tabs.length, 0),
+                isRestoring: this.isRestoring,
             });
         } catch (error) {
             console.error('[MultiWindowSessionManager] Failed to save session:', error);
@@ -219,6 +220,9 @@ class MultiWindowSessionManager {
      * Restore session from localStorage
      */
     async restoreSession(): Promise<boolean> {
+        console.log(
+            '[MultiWindowSessionManager] restoreSession() called, setting isRestoring=true'
+        );
         this.isRestoring = true;
 
         try {
@@ -226,10 +230,16 @@ class MultiWindowSessionManager {
             const sessionData = localStorage.getItem(MultiWindowSessionManager.STORAGE_KEY);
 
             if (sessionData) {
+                console.log('[MultiWindowSessionManager] Found session data, parsing...');
                 const session = JSON.parse(sessionData) as MultiWindowSession;
+                console.log('[MultiWindowSessionManager] Session parsed:', {
+                    windows: session.windows.length,
+                    windowTypes: session.windows.map(w => w.type),
+                });
                 // Apply path migration in case there are legacy paths
                 this.migrateSessionPaths(session);
                 await this.restoreMultiWindowSession(session);
+                console.log('[MultiWindowSessionManager] Session restored successfully');
                 return true;
             }
 
@@ -266,6 +276,9 @@ class MultiWindowSessionManager {
             console.error('[MultiWindowSessionManager] Failed to restore session:', error);
             return false;
         } finally {
+            console.log(
+                '[MultiWindowSessionManager] restoreSession() complete, setting isRestoring=false'
+            );
             this.isRestoring = false;
         }
     }
