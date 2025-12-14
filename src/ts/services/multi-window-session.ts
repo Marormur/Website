@@ -205,11 +205,24 @@ class MultiWindowSessionManager {
     private serializeWindow(window: BaseWindow): WindowSessionData {
         const tabs = Array.from(window.tabs.values());
 
+        // CRITICAL: Read z-index from DOM, not from instance variable
+        // Instance variable may be stale if assignZIndices() was called
+        // but window.zIndex wasn't updated (happens for non-active windows)
+        let domZIndex = window.zIndex;
+        if (window.element) {
+            const parsed = parseInt(window.element.style.zIndex || '0', 10);
+            if (!Number.isNaN(parsed)) {
+                domZIndex = parsed;
+                // Also update instance variable to keep them in sync
+                window.zIndex = parsed;
+            }
+        }
+
         return {
             id: window.id,
             type: window.type,
             position: { ...window.position },
-            zIndex: window.zIndex,
+            zIndex: domZIndex,
             isMinimized: window.isMinimized,
             isMaximized: window.isMaximized,
             activeTabId: window.activeTabId,
@@ -418,6 +431,9 @@ class MultiWindowSessionManager {
             setTimeout(() => {
                 if (window.element) {
                     window.element.style.zIndex = String(data.zIndex);
+                    // CRITICAL: Also update the instance variable to match DOM
+                    // Without this, getTopWindow() fallback will return wrong window
+                    window.zIndex = data.zIndex;
 
                     // Restore position
                     if (data.position && !data.isMaximized) {

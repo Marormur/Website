@@ -364,17 +364,22 @@ test.describe('Terminal Session Persistence', () => {
             }
         });
 
-        // Wait for autosave
+        // Wait for autosave (use new multi-window session key)
         await page.waitForFunction(
             () => {
-                const saved = window.localStorage?.getItem('multiWindowSession_v1');
+                const saved =
+                    window.localStorage?.getItem('multi-window-session') ||
+                    window.localStorage?.getItem('windowInstancesSession');
                 return !!saved;
             },
             { timeout: 2000 }
         );
 
         const savedSession = await page.evaluate(() => {
-            return window.localStorage?.getItem('multiWindowSession_v1');
+            return (
+                window.localStorage?.getItem('multi-window-session') ||
+                window.localStorage?.getItem('windowInstancesSession')
+            );
         });
 
         expect(savedSession).toBeTruthy();
