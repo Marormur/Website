@@ -9,6 +9,7 @@ import { extractParams, type Handler, type Params } from './actions/helpers.js';
 import { getFinderActions } from './actions/finder.js';
 import { getPreviewActions } from './actions/preview.js';
 import { getSessionActions } from './actions/session.js';
+import { getSettingsActions } from './actions/settings.js';
 import { getWindowActions } from './actions/windows.js';
 
 console.log('ActionBus loaded');
@@ -118,6 +119,7 @@ console.log('ActionBus loaded');
         ...getWindowActions(),
         ...getFinderActions(),
         ...getSessionActions(),
+        ...getSettingsActions(),
     });
 
     (window as unknown as { ActionBus: typeof ActionBus }).ActionBus = ActionBus;
