@@ -2,10 +2,15 @@
 # Store LF in the repository; checkout CRLF on Windows when appropriate
 * text=auto
 
-# Keep UNIX line endings for shell scripts to avoid shebang issues
+# Keep UNIX line endings for shell scripts and web assets to avoid MIME-Type issues
 *.sh text eol=lf
 *.bash text eol=lf
 *.zsh text eol=lf
+*.css text eol=lf charset=utf-8
+*.js text eol=lf charset=utf-8
+*.html text eol=lf charset=utf-8
+*.json text eol=lf charset=utf-8
+*.md text eol=lf charset=utf-8
 
 # Treat common binary assets as binary (no EOL conversion)
 *.png binary
