@@ -199,105 +199,106 @@ import { getString, setString } from '../services/storage-utils.js';
 
     /**
      * Observe Core Web Vitals using PerformanceObserver API
+     * These observers are always initialized to capture metrics, even if PerfMonitor is disabled.
+     * The metrics will be available via getVitals() when PerfMonitor is later enabled.
+     *
      * - LCP: Largest Contentful Paint (< 2.5s good, < 4s needs improvement, >= 4s poor)
      * - FID: First Input Delay (< 100ms good, < 300ms needs improvement, >= 300ms poor)
      * - CLS: Cumulative Layout Shift (< 0.1 good, < 0.25 needs improvement, >= 0.25 poor)
      * - TTFB: Time to First Byte (< 800ms good, < 1800ms needs improvement, >= 1800ms poor)
      */
-    if (PerfMonitor.enabled) {
-        try {
-            // Observe LCP (Largest Contentful Paint)
-            if (
-                'PerformanceObserver' in window &&
-                PerformanceObserver.supportedEntryTypes?.includes('largest-contentful-paint')
-            ) {
-                const lcpObserver = new PerformanceObserver(list => {
-                    const entries = list.getEntries();
-                    const lastEntry = entries[entries.length - 1] as PerformanceEntry & {
-                        renderTime?: number;
-                        loadTime?: number;
-                    };
-                    // LCP is the render time or load time
-                    PerfMonitor.vitals.LCP =
-                        lastEntry.renderTime || lastEntry.loadTime || lastEntry.startTime;
-                });
-                lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
-            }
-
-            // Observe FID (First Input Delay)
-            if (
-                'PerformanceObserver' in window &&
-                PerformanceObserver.supportedEntryTypes?.includes('first-input')
-            ) {
-                const fidObserver = new PerformanceObserver(list => {
-                    const entries = list.getEntries();
-                    const firstInput = entries[0] as PerformanceEntry & {
-                        processingStart?: number;
-                    };
-                    // FID is the delay between user input and processing
-                    if (firstInput && firstInput.processingStart) {
-                        PerfMonitor.vitals.FID = firstInput.processingStart - firstInput.startTime;
-                    }
-                });
-                fidObserver.observe({ type: 'first-input', buffered: true });
-            }
-
-            // Observe CLS (Cumulative Layout Shift)
-            if (
-                'PerformanceObserver' in window &&
-                PerformanceObserver.supportedEntryTypes?.includes('layout-shift')
-            ) {
-                let clsValue = 0;
-                const clsObserver = new PerformanceObserver(list => {
-                    const entries = list.getEntries();
-                    for (const entry of entries) {
-                        const layoutShift = entry as PerformanceEntry & {
-                            hadRecentInput?: boolean;
-                            value?: number;
-                        };
-                        // Only count layout shifts without recent user input
-                        if (!layoutShift.hadRecentInput && layoutShift.value) {
-                            clsValue += layoutShift.value;
-                            PerfMonitor.vitals.CLS = clsValue;
-                        }
-                    }
-                });
-                clsObserver.observe({ type: 'layout-shift', buffered: true });
-            }
-
-            // Observe TTFB (Time to First Byte)
-            if (
-                'PerformanceObserver' in window &&
-                PerformanceObserver.supportedEntryTypes?.includes('navigation')
-            ) {
-                const ttfbObserver = new PerformanceObserver(list => {
-                    const entries = list.getEntries();
-                    const navEntry = entries[0] as PerformanceEntry & { responseStart?: number };
-                    if (navEntry && navEntry.responseStart) {
-                        PerfMonitor.vitals.TTFB = navEntry.responseStart;
-                    }
-                });
-                ttfbObserver.observe({ type: 'navigation', buffered: true });
-            } else {
-                // Fallback for browsers without PerformanceObserver for navigation
-                // Use PerformanceNavigationTiming API
-                window.addEventListener(
-                    'load',
-                    () => {
-                        const navTiming = performance.getEntriesByType(
-                            'navigation'
-                        )[0] as PerformanceNavigationTiming;
-                        if (navTiming && navTiming.responseStart) {
-                            PerfMonitor.vitals.TTFB = navTiming.responseStart;
-                        }
-                    },
-                    { once: true }
-                );
-            }
-        } catch (error) {
-            // Silently fail if PerformanceObserver is not supported
-            void error;
+    try {
+        // Observe LCP (Largest Contentful Paint)
+        if (
+            'PerformanceObserver' in window &&
+            PerformanceObserver.supportedEntryTypes?.includes('largest-contentful-paint')
+        ) {
+            const lcpObserver = new PerformanceObserver(list => {
+                const entries = list.getEntries();
+                const lastEntry = entries[entries.length - 1] as PerformanceEntry & {
+                    renderTime?: number;
+                    loadTime?: number;
+                };
+                // LCP is the render time or load time
+                PerfMonitor.vitals.LCP =
+                    lastEntry.renderTime || lastEntry.loadTime || lastEntry.startTime;
+            });
+            lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
         }
+
+        // Observe FID (First Input Delay)
+        if (
+            'PerformanceObserver' in window &&
+            PerformanceObserver.supportedEntryTypes?.includes('first-input')
+        ) {
+            const fidObserver = new PerformanceObserver(list => {
+                const entries = list.getEntries();
+                const firstInput = entries[0] as PerformanceEntry & {
+                    processingStart?: number;
+                };
+                // FID is the delay between user input and processing
+                if (firstInput && firstInput.processingStart) {
+                    PerfMonitor.vitals.FID = firstInput.processingStart - firstInput.startTime;
+                }
+            });
+            fidObserver.observe({ type: 'first-input', buffered: true });
+        }
+
+        // Observe CLS (Cumulative Layout Shift)
+        if (
+            'PerformanceObserver' in window &&
+            PerformanceObserver.supportedEntryTypes?.includes('layout-shift')
+        ) {
+            let clsValue = 0;
+            const clsObserver = new PerformanceObserver(list => {
+                const entries = list.getEntries();
+                for (const entry of entries) {
+                    const layoutShift = entry as PerformanceEntry & {
+                        hadRecentInput?: boolean;
+                        value?: number;
+                    };
+                    // Only count layout shifts without recent user input
+                    if (!layoutShift.hadRecentInput && layoutShift.value) {
+                        clsValue += layoutShift.value;
+                        PerfMonitor.vitals.CLS = clsValue;
+                    }
+                }
+            });
+            clsObserver.observe({ type: 'layout-shift', buffered: true });
+        }
+
+        // Observe TTFB (Time to First Byte)
+        if (
+            'PerformanceObserver' in window &&
+            PerformanceObserver.supportedEntryTypes?.includes('navigation')
+        ) {
+            const ttfbObserver = new PerformanceObserver(list => {
+                const entries = list.getEntries();
+                const navEntry = entries[0] as PerformanceEntry & { responseStart?: number };
+                if (navEntry && navEntry.responseStart) {
+                    PerfMonitor.vitals.TTFB = navEntry.responseStart;
+                }
+            });
+            ttfbObserver.observe({ type: 'navigation', buffered: true });
+        } else {
+            // Fallback for browsers without PerformanceObserver for navigation
+            // Use PerformanceNavigationTiming API
+            window.addEventListener(
+                'load',
+                () => {
+                    const navTiming = performance.getEntriesByType(
+                        'navigation'
+                    )[0] as PerformanceNavigationTiming;
+                    if (navTiming && navTiming.responseStart) {
+                        PerfMonitor.vitals.TTFB = navTiming.responseStart;
+                    }
+                },
+                { once: true }
+            );
+        }
+    } catch (_error) {
+        // Silently fail if PerformanceObserver is not supported
+        // This is expected in older browsers
     }
 
     // ===== Auto Capture Lifecycle Timings =====
