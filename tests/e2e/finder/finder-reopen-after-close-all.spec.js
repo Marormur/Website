@@ -1,19 +1,7 @@
 // E2E: Reopen Finder after closing all tabs should render content and a fresh tab
 const { test, expect } = require('@playwright/test');
-const {
-    waitForAppReady,
-    openFinderWindow,
-    waitForFinderReady,
-    getFinderAddTabButton,
-    getFinderTabs,
-} = require('../utils');
-
-async function openFinder(page) {
-    const finderWindow = await openFinderWindow(page);
-    await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-    await waitForFinderReady(page);
-    return finderWindow;
-}
+const { waitForAppReady, getFinderAddTabButton, getFinderTabs } = require('../utils');
+const { openFinder } = require('../utils/window-helpers');
 
 async function closeAllFinderTabs(page) {
     // Close until no instances remain
