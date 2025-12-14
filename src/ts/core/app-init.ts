@@ -13,6 +13,11 @@ export {};
 
 // Import window menu module for initialization
 import { initializeWindowMenu } from '../ui/window-menu';
+import {
+    clearSessionKey,
+    validateLegacySession,
+    validateMultiWindowSession,
+} from '../services/session-guard';
 
 /**
  * Global window interface extensions for app initialization
@@ -285,108 +290,17 @@ function initApp(): void {
 
     if (win.MultiWindowSessionManager) {
         try {
-            // SAFETY: Check BOTH sessions (new multi-window + legacy) before initializing
-            let shouldClearSessions = false;
+            const multiCheck = validateMultiWindowSession();
+            const legacyCheck = validateLegacySession();
 
-            // Check multi-window session
-            try {
-                const sessionData = localStorage.getItem('multi-window-session');
-                if (sessionData) {
-                    const session = JSON.parse(sessionData);
-                    console.log('[APP-INIT] Found multi-window session:', {
-                        windowCount: session.windows?.length || 0,
-                        windows:
-                            session.windows?.map((w: any) => ({ type: w.type, id: w.id })) || [],
-                    });
-
-                    // Clear if too many windows (indicates corruption)
-                    if (session.windows && session.windows.length > 10) {
-                        console.warn(
-                            '[APP-INIT] Multi-window session corrupted (too many windows)'
-                        );
-                        shouldClearSessions = true;
-                    }
-                    // Also check for duplicate types (e.g., multiple finder windows)
-                    const typeCount = new Map();
-                    if (session.windows) {
-                        session.windows.forEach((w: any) => {
-                            const count = typeCount.get(w.type) || 0;
-                            typeCount.set(w.type, count + 1);
-                        });
-                        for (const [type, count] of typeCount.entries()) {
-                            if (count > 3) {
-                                console.warn(
-                                    `[APP-INIT] Multi-window session has ${count} ${type} windows (max 3 per type)`
-                                );
-                                shouldClearSessions = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            } catch {
-                // Invalid JSON - clear it
-                shouldClearSessions = true;
+            if (legacyCheck.shouldClear) {
+                console.warn('[APP-INIT] Clearing ONLY legacy session (corrupted)');
+                clearSessionKey('windowInstancesSession');
             }
 
-            // Check legacy session
-            try {
-                const legacyData = localStorage.getItem('windowInstancesSession');
-                console.log('[APP-INIT] Legacy session exists?', !!legacyData);
-
-                if (legacyData) {
-                    const legacySession = JSON.parse(legacyData);
-                    console.log('[APP-INIT] Found legacy session:', {
-                        instanceCount: legacySession.instances?.length || 0,
-                        instances:
-                            legacySession.instances?.map((i: any) => ({
-                                type: i.type,
-                                id: i.id,
-                            })) || [],
-                    });
-
-                    let shouldClearLegacy = false;
-
-                    if (legacySession.instances && legacySession.instances.length > 10) {
-                        console.warn('[APP-INIT] Legacy session corrupted (too many instances)');
-                        shouldClearLegacy = true;
-                    }
-                    // Also check for duplicate types in legacy
-                    const typeCount = new Map();
-                    if (legacySession.instances) {
-                        legacySession.instances.forEach((inst: any) => {
-                            const count = typeCount.get(inst.type) || 0;
-                            typeCount.set(inst.type, count + 1);
-                        });
-                        for (const [type, count] of typeCount.entries()) {
-                            if (count > 3) {
-                                console.warn(
-                                    `[APP-INIT] Legacy session has ${count} ${type} instances (max 3 per type)`
-                                );
-                                shouldClearLegacy = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (shouldClearLegacy) {
-                        console.warn('[APP-INIT] Clearing ONLY legacy session (corrupted)');
-                        localStorage.removeItem('windowInstancesSession');
-                    }
-                }
-            } catch (err) {
-                // Invalid JSON - clear ONLY legacy session
-                console.warn('[APP-INIT] Legacy session error:', err);
-                console.warn(
-                    '[APP-INIT] Clearing ONLY legacy session (multi-window session preserved)'
-                );
-                localStorage.removeItem('windowInstancesSession');
-            }
-
-            // Clear multi-window session if corrupted (legacy session already cleared above if needed)
-            if (shouldClearSessions) {
+            if (multiCheck.shouldClear) {
                 console.warn('[APP-INIT] Clearing multi-window session (corrupted)');
-                localStorage.removeItem('multi-window-session');
+                clearSessionKey('multi-window-session');
             }
 
             win.MultiWindowSessionManager.init?.();
