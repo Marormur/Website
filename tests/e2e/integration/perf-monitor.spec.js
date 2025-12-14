@@ -235,14 +235,8 @@ test.describe('Performance Monitor Integration @basic', () => {
             window.PerfMonitor.report();
         });
 
-        // Wait for console output to be captured
-        await page.waitForFunction(
-            () => {
-                // Check if any console logs were captured
-                return true; // Report is synchronous, logs should be available
-            },
-            { timeout: 1000 }
-        );
+        // Small delay to ensure console events are processed
+        await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 100)));
 
         // Check if Core Web Vitals are mentioned in report
         const hasVitalsReport = consoleLogs.some(
