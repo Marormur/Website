@@ -3,6 +3,12 @@
 // Note: waitForTimeout used intentionally for menu animations and DOM updates
 const { test, expect } = require('@playwright/test');
 const { gotoHome, waitForAppReady, clickDockIcon } = require('../utils');
+const {
+    getFinderWindowCount,
+    openFinderViaDock,
+    openWindowMenu,
+    closeWindowMenu,
+} = require('../utils/window-helpers');
 
 test.describe('Window Menu Multi-Instance Integration', () => {
     test.beforeEach(async ({ page, baseURL }) => {
@@ -19,82 +25,6 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await gotoHome(page, baseURL);
         await waitForAppReady(page);
     });
-
-    async function openWindowMenu(page) {
-        const trigger = page.locator('#window-menu-trigger');
-        await trigger.waitFor({ state: 'visible', timeout: 10000 });
-        await trigger.click();
-        // The dropdown toggles via the menubar system; wait until it is not hidden.
-        try {
-            await page.waitForSelector('#window-menu-dropdown:not(.hidden)', { timeout: 2000 });
-        } catch {
-            // Fallback: focus/hover also forces open in menubar-utils
-            await trigger.focus();
-            await trigger.hover();
-            await page.waitForSelector('#window-menu-dropdown:not(.hidden)', { timeout: 5000 });
-        }
-        await page.waitForTimeout(150);
-    }
-
-    async function closeWindowMenu(page) {
-        await page.keyboard.press('Escape');
-        // If the menubar system keeps it open, a second Escape is harmless.
-        try {
-            await page.waitForSelector('#window-menu-dropdown.hidden', { timeout: 1000 });
-        } catch {
-            await page.keyboard.press('Escape');
-        }
-        await page.waitForTimeout(100);
-    }
-
-    async function getFinderWindowCount(page) {
-        return await page.evaluate(
-            () => (window.WindowRegistry?.getAllWindows?.('finder') || []).length
-        );
-    }
-
-    async function openFinderViaDock(page) {
-        // Deterministic open: Dock clicks can bubble to multiple handlers in this project,
-        // which can create 2+ windows unexpectedly. For this spec we only need a Finder
-        // window to exist; we can create it directly via the multi-window API.
-        await page.evaluate(() => {
-            try {
-                window.WindowRegistry?.closeAllWindows?.();
-            } catch {
-                /* ignore */
-            }
-            const FW = window.FinderWindow;
-            if (FW && typeof FW.create === 'function') {
-                FW.create();
-                return;
-            }
-            if (FW && typeof FW.focusOrCreate === 'function') {
-                FW.focusOrCreate();
-            }
-        });
-
-        // Wait until at least one Finder window is registered.
-        await page.waitForFunction(
-            () => (window.WindowRegistry?.getAllWindows?.('finder') || []).length > 0,
-            { timeout: 15000 }
-        );
-
-        // Resolve the top-most Finder window id (highest zIndex) and return its locator.
-        const windowId = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows?.('finder') || [];
-            if (!wins.length) return null;
-            let top = wins[0];
-            for (const w of wins) {
-                if ((w?.zIndex || 0) > (top?.zIndex || 0)) top = w;
-            }
-            return top?.id || null;
-        });
-
-        if (!windowId) throw new Error('Finder window did not register an id');
-        const finderWindowEl = page.locator(`#${windowId}`);
-        await expect(finderWindowEl).toBeVisible({ timeout: 10000 });
-        return { windowId, finderWindowEl };
-    }
 
     async function clickNewFinderInMenu(page) {
         const before = await getFinderWindowCount(page);
