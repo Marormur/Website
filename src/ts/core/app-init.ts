@@ -11,6 +11,9 @@
 // Export to make this a proper module for global augmentation
 export {};
 
+// Import window menu module for initialization
+import { initializeWindowMenu } from '../ui/window-menu';
+
 /**
  * Global window interface extensions for app initialization
  */
@@ -263,6 +266,13 @@ function initApp(): void {
     // Initialize WindowRegistry for multi-window system
     if (win.WindowRegistry) {
         win.WindowRegistry.init?.();
+    }
+
+    // Initialize Window menu (macOS-style menu for window management)
+    try {
+        initializeWindowMenu();
+    } catch (err) {
+        console.warn('[APP-INIT] Window menu initialization failed:', err);
     }
 
     // Initialize Multi-Window SessionManager
