@@ -106,6 +106,15 @@ class VirtualFileSystemManager {
                                         created: now,
                                         modified: now,
                                     },
+                                    'welcome.txt': {
+                                        type: 'file',
+                                        icon: '👋',
+                                        content:
+                                            'Welcome to the virtual terminal!\nType "help" to see available commands.\n',
+                                        size: 72,
+                                        created: now,
+                                        modified: now,
+                                    },
                                     'README.md': {
                                         type: 'file',
                                         icon: '📝',
@@ -121,6 +130,15 @@ class VirtualFileSystemManager {
                                         created: now,
                                         modified: now,
                                         children: {
+                                            'readme.txt': {
+                                                type: 'file',
+                                                icon: '📘',
+                                                content:
+                                                    'Welcome to your Documents folder. Store your work here!',
+                                                size: 70,
+                                                created: now,
+                                                modified: now,
+                                            },
                                             'notes.txt': {
                                                 type: 'file',
                                                 icon: '📝',
