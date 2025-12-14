@@ -553,7 +553,9 @@ export class FinderView extends BaseTab {
 
     getComputerItems(): FileItem[] {
         // VirtualFS root is '/'; currentPath is relative to /
-        const path = this.currentPath.length === 0 ? ['/'] : ['/', ...this.currentPath];
+        // For root, pass '/' or [] to VirtualFS.list()
+        // For subfolders, pass path parts WITHOUT leading '/'
+        const path = this.currentPath.length === 0 ? '/' : this.currentPath;
         const items = VirtualFS.list(path);
         return Object.entries(items).map(([name, item]: [string, any]) => ({
             name,
@@ -853,6 +855,7 @@ export class FinderView extends BaseTab {
             // Handle local VirtualFS files
             if (this.source === 'computer') {
                 try {
+                    // VirtualFS expects path without leading '/' for arrays
                     const pathParts =
                         this.currentPath.length > 0 ? [...this.currentPath, name] : [name];
                     const content = (VirtualFS as any).readFile(pathParts);
@@ -1134,8 +1137,8 @@ export class FinderView extends BaseTab {
             return;
         }
         // Check VirtualFS if folder exists
-        const targetPath =
-            this.currentPath.length === 0 ? ['/', name] : ['/', ...this.currentPath, name];
+        // VirtualFS expects path without leading '/' for arrays, or string path like '/home'
+        const targetPath = this.currentPath.length === 0 ? name : [...this.currentPath, name];
         const folder = VirtualFS.getFolder(targetPath);
         if (folder) {
             this.currentPath = [...this.currentPath, name];

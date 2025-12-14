@@ -184,11 +184,17 @@
             const g = window as unknown as {
                 __SESSION_RESTORE_IN_PROGRESS?: boolean;
             };
+            const allowInitDuringRestore = !!(
+                config?.metadata &&
+                (config.metadata as Record<string, unknown> & { runInitDuringRestore?: boolean })
+                    .runInitDuringRestore
+            );
+
             if (
                 config &&
                 config.metadata &&
                 typeof (config.metadata as Record<string, unknown>).initHandler === 'function' &&
-                !g.__SESSION_RESTORE_IN_PROGRESS
+                (!g.__SESSION_RESTORE_IN_PROGRESS || allowInitDuringRestore)
             ) {
                 try {
                     const md = config.metadata as Record<string, unknown> & {

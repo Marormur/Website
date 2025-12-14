@@ -35,8 +35,11 @@ test.describe('FinderView New Features', () => {
     test('Search: Filters items in real-time', async ({ page }) => {
         const finderWindow = await openFinderWindow(page);
 
-        // Wait for content to load
-        await page.waitForTimeout(500);
+        // Wait for at least one item to be rendered (not a timeout!)
+        await finderWindow
+            .locator('.finder-list-item, .finder-grid-item')
+            .first()
+            .waitFor({ state: 'visible', timeout: 10000 });
 
         // Get search input
         const searchInput = finderWindow.locator('.finder-search');
@@ -50,7 +53,16 @@ test.describe('FinderView New Features', () => {
 
         // Type search term
         await searchInput.fill('Doc');
-        await page.waitForTimeout(300);
+
+        // Wait for filtering to complete (count changes or stabilizes)
+        await page.waitForFunction(
+            initial => {
+                const items = document.querySelectorAll('.finder-list-item, .finder-grid-item');
+                return items.length <= initial;
+            },
+            initialItems,
+            { timeout: 3000 }
+        );
 
         // Count filtered items (should be less or equal)
         const filteredItems = await finderWindow
@@ -60,7 +72,16 @@ test.describe('FinderView New Features', () => {
 
         // Clear search
         await searchInput.fill('');
-        await page.waitForTimeout(300);
+
+        // Wait for items to restore
+        await page.waitForFunction(
+            initial => {
+                const items = document.querySelectorAll('.finder-list-item, .finder-grid-item');
+                return items.length === initial;
+            },
+            initialItems,
+            { timeout: 3000 }
+        );
 
         // Items should return to original count
         const finalItems = await finderWindow
@@ -149,8 +170,11 @@ test.describe('FinderView New Features', () => {
     test('Navigation: Updates breadcrumbs correctly', async ({ page }) => {
         const finderWindow = await openFinderWindow(page);
 
-        // Wait for initial load
-        await page.waitForTimeout(500);
+        // Wait for at least one item to be visible
+        await finderWindow
+            .locator('.finder-list-item, .finder-grid-item')
+            .first()
+            .waitFor({ state: 'visible', timeout: 10000 });
 
         // Check breadcrumbs exist
         const breadcrumbs = finderWindow.locator('.breadcrumbs');
@@ -163,7 +187,14 @@ test.describe('FinderView New Features', () => {
             .first();
         if ((await documentsFolder.count()) > 0) {
             await documentsFolder.dblclick();
-            await page.waitForTimeout(300);
+            // Wait for breadcrumbs to update
+            await page.waitForFunction(
+                () => {
+                    const bc = document.querySelector('.breadcrumbs');
+                    return bc && bc.textContent && bc.textContent.includes('Documents');
+                },
+                { timeout: 5000 }
+            );
 
             // Breadcrumbs should now show Documents
             const breadcrumbText = await breadcrumbs.textContent();
@@ -183,7 +214,20 @@ test.describe('FinderView New Features', () => {
 
         // Switch to grid view
         await gridBtn.click();
-        await page.waitForTimeout(300);
+
+        // Wait for grid container to appear OR list items (fallback if no content)
+        await Promise.race([
+            finderWindow
+                .locator('.finder-grid-container')
+                .waitFor({ state: 'visible', timeout: 5000 })
+                .catch(() => {}),
+            finderWindow
+                .locator('.finder-list-item')
+                .first()
+                .waitFor({ state: 'hidden', timeout: 5000 })
+                .catch(() => {}),
+            page.waitForTimeout(1000),
+        ]);
 
         // Should show grid items
         const gridItems = await finderWindow.locator('.finder-grid-item').count();
@@ -195,7 +239,11 @@ test.describe('FinderView New Features', () => {
 
         // Switch back to list view
         await listBtn.click();
-        await page.waitForTimeout(300);
+
+        // Wait for list table to appear
+        await finderWindow
+            .locator('.finder-list-table')
+            .waitFor({ state: 'visible', timeout: 5000 });
 
         const listItems = await finderWindow.locator('.finder-list-item').count();
         expect(listItems).toBeGreaterThanOrEqual(0);
@@ -207,7 +255,11 @@ test.describe('FinderView New Features', () => {
         // Change to grid view
         const gridBtn = finderWindow.locator('[data-action="view-grid"]');
         await gridBtn.click();
-        await page.waitForTimeout(300);
+
+        // Wait for grid container to appear
+        await finderWindow
+            .locator('.finder-grid-container')
+            .waitFor({ state: 'visible', timeout: 5000 });
 
         // Change sort
         const sortBtn = finderWindow.locator('[data-action="toggle-sort"]');
@@ -215,14 +267,18 @@ test.describe('FinderView New Features', () => {
         const sortBySize = finderWindow.locator('[data-sort="size"]');
         await sortBySize.click();
 
-        // Close Finder window - use title="Close" selector instead of old .window-titlebar-close
+        // Wait for sort menu to close
+        await finderWindow.locator('.finder-sort-menu').waitFor({ state: 'hidden', timeout: 3000 });
+
+        // Close Finder window
         const closeBtn = finderWindow.locator('button[title="Close"]').first();
         await closeBtn.click({ timeout: 5000 });
-        await page.waitForTimeout(300);
+
+        // Wait for window to actually close
+        await finderWindow.waitFor({ state: 'hidden', timeout: 5000 });
 
         // Reopen
         const finderWindow2 = await openFinderWindow(page);
-        await page.waitForTimeout(500);
 
         // State should be preserved (grid view and size sort)
         // This is hard to test without inspecting internal state,

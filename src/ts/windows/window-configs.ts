@@ -33,6 +33,9 @@ export const windowConfigurations: WindowConfiguration[] = [
         icon: './img/launchpad.png',
         closeButtonId: 'close-launchpad-modal',
         metadata: {
+            // Launchpad darf seinen initHandler auch während der Session-Restore-Phase ausführen,
+            // damit das Grid direkt verfügbar ist (Tests klicken oft sehr früh).
+            runInitDuringRestore: true,
             skipMenubarUpdate: true,
             initHandler: function () {
                 // Initialize Launchpad module if not already

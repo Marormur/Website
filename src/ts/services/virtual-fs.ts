@@ -13,76 +13,84 @@
  * - Event system for change notifications
  */
 
-import { getJSON, setJSON } from '../services/storage-utils.js';
+import { getJSON, setJSON } from './storage-utils.js';
 
 // ============================================================================
-// Types
+// Type Definitions
 // ============================================================================
 
-export interface VirtualFile {
+interface FileItem {
     type: 'file';
     icon: string;
     content: string;
     size: number;
-    modified: string;
     created: string;
+    modified: string;
 }
 
-export interface VirtualFolder {
+interface FolderItem {
     type: 'folder';
     icon: string;
-    children: Record<string, VirtualFileSystemItem>;
-    modified: string;
+    children: Record<string, FileItem | FolderItem>;
     created: string;
+    modified: string;
 }
 
-export type VirtualFileSystemItem = VirtualFile | VirtualFolder;
+type FSItem = FileItem | FolderItem;
 
-export interface FileSystemStats {
-    totalFiles: number;
-    totalFolders: number;
-    totalSize: number;
+interface FileSystemRoot {
+    '/': FolderItem;
 }
 
-export type FileSystemEventType = 'create' | 'update' | 'delete' | 'rename' | 'move';
-
-export interface FileSystemEvent {
-    type: FileSystemEventType;
+interface FSEvent {
+    type: 'create' | 'update' | 'delete' | 'rename';
     path: string;
-    item?: VirtualFileSystemItem;
     oldPath?: string;
+    item: FSItem;
 }
 
-type FileSystemListener = (event: FileSystemEvent) => void;
+type FSListener = (event: FSEvent) => void;
 
 // ============================================================================
 // Virtual File System Manager
 // ============================================================================
 
 class VirtualFileSystemManager {
-    private root: Record<string, VirtualFolder>;
-    private listeners: FileSystemListener[] = [];
+    private root: FileSystemRoot;
+    private listeners: FSListener[] = [];
     private readonly STORAGE_KEY = 'virtual-file-system';
     private readonly AUTO_SAVE_DELAY = 1000; // 1 second debounce
     private saveTimeout: number | null = null;
 
-                                            'notes.txt': {
-                                                type: 'file',
-                                                icon: '📝',
-                                                content: 'Personal notes...',
-                                                size: 17,
-                                                created: now,
-                                                modified: now,
-                                            },
-                                            // Used by Terminal autocomplete tests after cd Documents
-                                            'readme.txt': {
-                                                type: 'file',
-                                                icon: '📝',
-                                                content: 'Willkommen im Terminal!',
-                                                size: 23,
-                                                created: now,
-                                                modified: now,
-                                            },
+    constructor() {
+        this.root = this.createDefaultStructure();
+        this.load();
+    }
+
+    // ========================================================================
+    // Initialization
+    // ========================================================================
+
+    private createDefaultStructure(): FileSystemRoot {
+        const now = new Date().toISOString();
+
+        return {
+            '/': {
+                type: 'folder',
+                icon: '/',
+                created: now,
+                modified: now,
+                children: {
+                    home: {
+                        type: 'folder',
+                        icon: '🏠',
+                        created: now,
+                        modified: now,
+                        children: {
+                            marvin: {
+                                type: 'folder',
+                                icon: '👤',
+                                created: now,
                                 modified: now,
                                 children: {
                                     '.profile': {
@@ -103,23 +111,6 @@ class VirtualFileSystemManager {
                                         created: now,
                                         modified: now,
                                     },
-                                    // Files used by Terminal autocomplete tests (keep stable for Playwright)
-                                    'welcome.txt': {
-                                        type: 'file',
-                                        icon: '📝',
-                                        content:
-                                            'Willkommen auf Marvins Portfolio-Website!\n\nGib "help" ein, um eine Liste verfügbarer Befehle zu sehen.',
-                                        size: 94,
-                                        created: now,
-                                        modified: now,
-                                    },
-                                    Desktop: {
-                                        type: 'folder',
-                                        icon: '🖥️',
-                                        created: now,
-                                        modified: now,
-                                        children: {},
-                                    },
                                     Documents: {
                                         type: 'folder',
                                         icon: '📄',
@@ -131,15 +122,6 @@ class VirtualFileSystemManager {
                                                 icon: '📝',
                                                 content: 'Personal notes...',
                                                 size: 17,
-                                                created: now,
-                                                modified: now,
-                                            },
-                                            // Used by Terminal autocomplete tests after cd Documents
-                                            'readme.txt': {
-                                                type: 'file',
-                                                icon: '📝',
-                                                content: 'Willkommen im Terminal!',
-                                                size: 23,
                                                 created: now,
                                                 modified: now,
                                             },
@@ -161,7 +143,7 @@ class VirtualFileSystemManager {
                                     },
                                     Projects: {
                                         type: 'folder',
-                                        icon: '�',
+                                        icon: '💼',
                                         created: now,
                                         modified: now,
                                         children: {},
@@ -178,7 +160,7 @@ class VirtualFileSystemManager {
                         children: {
                             hosts: {
                                 type: 'file',
-                                icon: '�',
+                                icon: '🌐',
                                 content:
                                     '# /etc/hosts\n127.0.0.1   localhost\n::1         localhost\n',
                                 size: 57,
@@ -242,7 +224,7 @@ class VirtualFileSystemManager {
                             },
                             tmp: {
                                 type: 'folder',
-                                icon: '�️',
+                                icon: '🗂️',
                                 created: now,
                                 modified: now,
                                 children: {},
@@ -265,20 +247,22 @@ class VirtualFileSystemManager {
     // Persistence
     // ========================================================================
 
-    private load(): void {
+    load(): void {
         try {
-            const stored = getJSON<Record<string, VirtualFolder>>(
-                this.STORAGE_KEY,
-                {} as Record<string, VirtualFolder>
-            );
+            const stored = getJSON<FileSystemRoot>(this.STORAGE_KEY, null);
+
             if (stored && Object.keys(stored).length > 0) {
                 this.root = stored;
                 console.log('[VirtualFS] Loaded from localStorage');
             } else {
-                console.log('[VirtualFS] No stored data, using defaults');
+                // Use default structure if no valid data in storage
+                this.root = this.createDefaultStructure();
+                console.log('[VirtualFS] No stored data, initialized with defaults');
             }
         } catch (error) {
             console.error('[VirtualFS] Failed to load:', error);
+            // Fallback to defaults on error
+            this.root = this.createDefaultStructure();
         }
     }
 
@@ -302,7 +286,7 @@ class VirtualFileSystemManager {
         }
     }
 
-    public forceSave(): void {
+    forceSave(): void {
         if (this.saveTimeout !== null) {
             window.clearTimeout(this.saveTimeout);
             this.saveTimeout = null;
@@ -314,18 +298,18 @@ class VirtualFileSystemManager {
     // Event System
     // ========================================================================
 
-    public addEventListener(listener: FileSystemListener): void {
+    addEventListener(listener: FSListener): void {
         this.listeners.push(listener);
     }
 
-    public removeEventListener(listener: FileSystemListener): void {
+    removeEventListener(listener: FSListener): void {
         const index = this.listeners.indexOf(listener);
         if (index !== -1) {
             this.listeners.splice(index, 1);
         }
     }
 
-    private emit(event: FileSystemEvent): void {
+    private emit(event: FSEvent): void {
         this.listeners.forEach(listener => {
             try {
                 listener(event);
@@ -346,11 +330,11 @@ class VirtualFileSystemManager {
         return path.split('/').filter(p => p.length > 0);
     }
 
-    private normalizePath(path: string | string[]): string {
+    normalizePath(path: string | string[]): string {
         return this.parsePath(path).join('/');
     }
 
-    private navigate(path: string | string[]): VirtualFileSystemItem | null {
+    navigate(path: string | string[]): FSItem | null {
         const parts = this.parsePath(path);
 
         // Empty path = root folder
@@ -359,14 +343,13 @@ class VirtualFileSystemManager {
         }
 
         // Start navigation from the root folder's children
-        // The root structure is: { '/': { type: 'folder', children: { home: ..., etc: ... } } }
         const rootFolder = this.root['/'];
         if (!rootFolder || rootFolder.type !== 'folder') {
             return null;
         }
 
-        let current: Record<string, VirtualFileSystemItem> = rootFolder.children;
-        let lastItem: VirtualFileSystemItem | null = null;
+        let current: Record<string, FSItem> = rootFolder.children;
+        let lastItem: FSItem | null = null;
 
         for (const part of parts) {
             const item = current[part];
@@ -384,7 +367,6 @@ class VirtualFileSystemManager {
             }
         }
 
-        // Return the last folder we successfully navigated to
         return lastItem;
     }
 
@@ -392,25 +374,25 @@ class VirtualFileSystemManager {
     // Read Operations
     // ========================================================================
 
-    public exists(path: string | string[]): boolean {
+    exists(path: string | string[]): boolean {
         return this.navigate(path) !== null;
     }
 
-    public get(path: string | string[]): VirtualFileSystemItem | null {
+    get(path: string | string[]): FSItem | null {
         return this.navigate(path);
     }
 
-    public getFolder(path: string | string[]): VirtualFolder | null {
+    getFolder(path: string | string[]): FolderItem | null {
         const item = this.navigate(path);
         return item?.type === 'folder' ? item : null;
     }
 
-    public getFile(path: string | string[]): VirtualFile | null {
+    getFile(path: string | string[]): FileItem | null {
         const item = this.navigate(path);
         return item?.type === 'file' ? item : null;
     }
 
-    public list(path: string | string[] = []): Record<string, VirtualFileSystemItem> {
+    list(path: string | string[] = []): Record<string, FSItem> {
         const parts = this.parsePath(path);
 
         // Empty path = list root folder's children
@@ -423,7 +405,7 @@ class VirtualFileSystemManager {
         return folder?.children || {};
     }
 
-    public readFile(path: string | string[]): string | null {
+    readFile(path: string | string[]): string | null {
         const file = this.getFile(path);
         return file?.content || null;
     }
@@ -432,21 +414,26 @@ class VirtualFileSystemManager {
     // Write Operations
     // ========================================================================
 
-    public createFile(path: string | string[], content: string = '', icon: string = '📝'): boolean {
+    createFile(path: string | string[], content = '', icon = '📝'): boolean {
         const parts = this.parsePath(path);
+
         if (parts.length === 0) {
             return false;
         }
 
-        const itemName = parts[parts.length - 1]!;
+        const fileName = parts[parts.length - 1];
         const parentPath = parts.slice(0, -1);
+
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const rootFolder = this.root['/'];
-        const container = parent?.children || (rootFolder?.type === 'folder' ? rootFolder.children : {});
+        const container: Record<string, FSItem> = parent?.children || this.root;
+
+        if (container[fileName]) {
+            console.warn('[VirtualFS] File already exists:', this.normalizePath(path));
+            return false;
         }
 
         const now = new Date().toISOString();
-        const file: VirtualFile = {
+        const file: FileItem = {
             type: 'file',
             icon,
             content,
@@ -455,7 +442,7 @@ class VirtualFileSystemManager {
             modified: now,
         };
 
-        container[fileName!] = file;
+        container[fileName] = file;
 
         if (parent) {
             parent.modified = now;
@@ -463,25 +450,30 @@ class VirtualFileSystemManager {
 
         this.scheduleSave();
         this.emit({ type: 'create', path: this.normalizePath(path), item: file });
+
         return true;
     }
 
-    public createFolder(path: string | string[], icon: string = '📁'): boolean {
+    createFolder(path: string | string[], icon = '📁'): boolean {
         const parts = this.parsePath(path);
+
         if (parts.length === 0) {
             return false;
         }
 
-        const oldName = parts[parts.length - 1]!;
+        const folderName = parts[parts.length - 1];
         const parentPath = parts.slice(0, -1);
+
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const rootFolder = this.root['/'];
-        const container = parent?.children || (rootFolder?.type === 'folder' ? rootFolder.children : {});
+        const container: Record<string, FSItem> = parent?.children || this.root;
+
+        if (container[folderName]) {
+            console.warn('[VirtualFS] Folder already exists:', this.normalizePath(path));
             return false;
         }
 
         const now = new Date().toISOString();
-        const folder: VirtualFolder = {
+        const folder: FolderItem = {
             type: 'folder',
             icon,
             children: {},
@@ -489,7 +481,7 @@ class VirtualFileSystemManager {
             modified: now,
         };
 
-        container[folderName!] = folder;
+        container[folderName] = folder;
 
         if (parent) {
             parent.modified = now;
@@ -497,11 +489,13 @@ class VirtualFileSystemManager {
 
         this.scheduleSave();
         this.emit({ type: 'create', path: this.normalizePath(path), item: folder });
+
         return true;
     }
 
-    public writeFile(path: string | string[], content: string): boolean {
+    writeFile(path: string | string[], content: string): boolean {
         const file = this.getFile(path);
+
         if (!file) {
             console.warn('[VirtualFS] File not found:', this.normalizePath(path));
             return false;
@@ -513,29 +507,30 @@ class VirtualFileSystemManager {
 
         this.scheduleSave();
         this.emit({ type: 'update', path: this.normalizePath(path), item: file });
+
         return true;
     }
 
-    public delete(path: string | string[]): boolean {
+    delete(path: string | string[]): boolean {
         const parts = this.parsePath(path);
+
         if (parts.length === 0) {
             return false;
         }
 
-        const itemName = parts[parts.length - 1]!;
+        const itemName = parts[parts.length - 1];
         const parentPath = parts.slice(0, -1);
-        const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        // Root-level deletes must operate on root folder children, not the root container object.
-        const rootFolder = this.root['/'];
-        const container = parent?.children || (rootFolder?.type === 'folder' ? rootFolder.children : {});
 
-        if (!container[itemName!]) {
+        const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
+        const container: Record<string, FSItem> = parent?.children || this.root;
+
+        if (!container[itemName]) {
             console.warn('[VirtualFS] Item not found:', this.normalizePath(path));
             return false;
         }
 
-        const item = container[itemName!];
-        delete container[itemName!];
+        const item = container[itemName];
+        delete container[itemName];
 
         if (parent) {
             parent.modified = new Date().toISOString();
@@ -543,23 +538,24 @@ class VirtualFileSystemManager {
 
         this.scheduleSave();
         this.emit({ type: 'delete', path: this.normalizePath(path), item });
+
         return true;
     }
 
-    public rename(oldPath: string | string[], newName: string): boolean {
+    rename(oldPath: string | string[], newName: string): boolean {
         const parts = this.parsePath(oldPath);
+
         if (parts.length === 0) {
             return false;
         }
 
-        const oldName = parts[parts.length - 1]!;
+        const oldName = parts[parts.length - 1];
         const parentPath = parts.slice(0, -1);
-        const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        // Root-level renames must operate on root folder children, not the root container object.
-        const rootFolder = this.root['/'];
-        const container = parent?.children || (rootFolder?.type === 'folder' ? rootFolder.children : {});
 
-        if (!container[oldName!]) {
+        const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
+        const container: Record<string, FSItem> = parent?.children || this.root;
+
+        if (!container[oldName]) {
             console.warn('[VirtualFS] Item not found:', this.normalizePath(oldPath));
             return false;
         }
@@ -569,9 +565,9 @@ class VirtualFileSystemManager {
             return false;
         }
 
-        const item = container[oldName!]!; // Checked above
+        const item = container[oldName];
         container[newName] = item;
-        delete container[oldName!];
+        delete container[oldName];
 
         if (parent) {
             parent.modified = new Date().toISOString();
@@ -580,6 +576,7 @@ class VirtualFileSystemManager {
         item.modified = new Date().toISOString();
 
         const newPath = [...parentPath, newName].join('/');
+
         this.scheduleSave();
         this.emit({
             type: 'rename',
@@ -587,6 +584,7 @@ class VirtualFileSystemManager {
             oldPath: this.normalizePath(oldPath),
             item,
         });
+
         return true;
     }
 
@@ -594,12 +592,12 @@ class VirtualFileSystemManager {
     // Stats & Utilities
     // ========================================================================
 
-    public getStats(): FileSystemStats {
+    getStats(): { totalFiles: number; totalFolders: number; totalSize: number } {
         let totalFiles = 0;
         let totalFolders = 0;
         let totalSize = 0;
 
-        const traverse = (items: Record<string, VirtualFileSystemItem>) => {
+        const traverse = (items: Record<string, FSItem>) => {
             for (const item of Object.values(items)) {
                 if (item.type === 'file') {
                     totalFiles++;
@@ -616,17 +614,17 @@ class VirtualFileSystemManager {
         return { totalFiles, totalFolders, totalSize };
     }
 
-    public reset(): void {
+    reset(): void {
         this.root = this.createDefaultStructure();
         this.save();
         console.log('[VirtualFS] Reset to defaults');
     }
 
-    public export(): Record<string, VirtualFolder> {
+    export(): FileSystemRoot {
         return JSON.parse(JSON.stringify(this.root));
     }
 
-    public import(data: Record<string, VirtualFolder>): boolean {
+    import(data: FileSystemRoot): boolean {
         try {
             // Basic validation
             if (!data || typeof data !== 'object') {
@@ -636,6 +634,7 @@ class VirtualFileSystemManager {
             this.root = data;
             this.save();
             console.log('[VirtualFS] Imported successfully');
+
             return true;
         } catch (error) {
             console.error('[VirtualFS] Import failed:', error);
@@ -649,8 +648,9 @@ class VirtualFileSystemManager {
 // ============================================================================
 
 export const VirtualFS = new VirtualFileSystemManager();
+export default VirtualFS;
 
 // Expose globally for debugging
 if (typeof window !== 'undefined') {
-    (window as unknown as { VirtualFS: VirtualFileSystemManager }).VirtualFS = VirtualFS;
+    (window as any).VirtualFS = VirtualFS;
 }

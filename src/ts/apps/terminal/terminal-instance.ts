@@ -11,10 +11,12 @@ console.log('TerminalInstance (TS) loaded');
         type: 'directory';
         contents: Record<string, FSNode>;
     };
+
     type FileEntry = {
         type: 'file';
         content: string;
     };
+
     type FSNode = DirEntry | FileEntry;
 
     type BaseLike = {
@@ -22,14 +24,15 @@ console.log('TerminalInstance (TS) loaded');
         updateState: (u: Record<string, unknown>) => void;
     } & Record<string, unknown>;
     type BaseCtor = new (cfg: Record<string, unknown>) => BaseLike & Record<string, unknown>;
+
     const Base = (window as unknown as { BaseWindowInstance: BaseCtor }).BaseWindowInstance;
 
     class TerminalInstance extends Base {
-        outputElement: HTMLElement | null;
-        inputElement: HTMLInputElement | null;
-        commandHistory: string[];
-        historyIndex: number;
-        currentPath: string;
+        outputElement: HTMLElement | null = null;
+        inputElement: HTMLInputElement | null = null;
+        commandHistory: string[] = [];
+        historyIndex = -1;
+        currentPath = '~';
         fileSystem: Record<string, FSNode>;
 
         constructor(config: Record<string, unknown>) {
@@ -37,12 +40,6 @@ console.log('TerminalInstance (TS) loaded');
                 ...config,
                 type: 'terminal',
             });
-
-            this.outputElement = null;
-            this.inputElement = null;
-            this.commandHistory = [];
-            this.historyIndex = -1;
-            this.currentPath = '~';
 
             this.fileSystem = {
                 '~': {
@@ -188,23 +185,15 @@ console.log('TerminalInstance (TS) loaded');
                         this.inputElement.value = match + ' ';
                     }
                 } else if (matches.length > 1) {
-                    // Check if partialCmd is an exact match (complete command)
-                    if (availableCommands.includes(partialCmd)) {
-                        // Already a complete command, just add space
-                        this.inputElement.value = partialCmd + ' ';
-                    } else {
-                        this.addOutput(`guest@marvin:${this.currentPath}$ ${input}`, 'command');
-                        this.addOutput(matches.join('  '), 'info');
-                        const commonPrefix = this.findCommonPrefix(matches);
-                        if (commonPrefix.length > partialCmd.length) {
-                            this.inputElement.value = commonPrefix;
-                        }
+                    this.addOutput(`guest@marvin:${this.currentPath}$ ${input}`, 'command');
+                    this.addOutput(matches.join('  '), 'info');
+                    const commonPrefix = this.findCommonPrefix(matches);
+                    if (commonPrefix.length > partialCmd.length) {
+                        this.inputElement.value = commonPrefix;
                     }
                 }
             } else {
-                // Path/file completion for commands that take paths
-                const pathCommands = ['cd', 'cat', 'ls', 'rm'];
-                if (pathCommands.includes(partialCmd)) {
+                if (partialCmd === 'cd' || partialCmd === 'cat') {
                     this.completePathArgument(partialCmd, args[0] || '');
                 }
             }
@@ -218,82 +207,85 @@ console.log('TerminalInstance (TS) loaded');
             if (firstString === undefined) return '';
 
             let prefix: string = firstString;
-                        this.completePathArgument(partialCmd, args[0] || '');
-                    }
+            for (let i = 1; i < strings.length; i++) {
+                const currentString = strings[i];
+                if (currentString === undefined) continue;
+
+                while (currentString.indexOf(prefix) !== 0) {
+                    prefix = prefix.substring(0, prefix.length - 1);
+                    if (!prefix) return '';
                 }
             }
+            return prefix;
+        }
 
-            findCommonPrefix(strings: string[]): string {
-                if (!strings.length) return '';
-                // noUncheckedIndexedAccess: array access may return undefined
-                const firstString = strings[0];
-                if (strings.length === 1) return firstString ?? '';
-                if (firstString === undefined) return '';
+        completePathArgument(cmd: 'cd' | 'cat', partial: string): void {
+            const currentDir = this.resolvePath(this.currentPath);
+            if (!currentDir || currentDir.type !== 'directory') return;
 
-                let prefix: string = firstString;
-                for (let i = 1; i < strings.length; i++) {
-                    const currentString = strings[i];
-                    if (currentString === undefined) continue;
-
-                    while (currentString.indexOf(prefix) !== 0) {
-                        prefix = prefix.substring(0, prefix.length - 1);
-                        if (!prefix) return '';
-                    }
-                }
-                return prefix;
+            const items = Object.keys(currentDir.contents);
+            let matches: string[];
+            if (cmd === 'cd') {
+                // Only directories
+                matches = items.filter(
+                    item =>
+                        (currentDir.contents[item] as FSNode).type === 'directory' &&
+                        item.startsWith(partial)
+                );
+            } else {
+                // cat: Only files
+                matches = items.filter(
+                    item =>
+                        (currentDir.contents[item] as FSNode).type === 'file' &&
+                        item.startsWith(partial)
+                );
             }
 
-            completePathArgument(cmd: string, partial: string): void {
-                const currentDir = this.resolvePath(this.currentPath);
-                if (!currentDir || currentDir.type !== 'directory') return;
-
-                const items = Object.keys(currentDir.contents);
-                let matches: string[];
-                if (cmd === 'cd') {
-                    // Only directories
-                    matches = items.filter(
-                        item =>
-                            (currentDir.contents[item] as FSNode).type === 'directory' &&
-                            item.startsWith(partial)
-                    );
-                } else if (cmd === 'cat') {
-                    // Only files
-                    matches = items.filter(
-                        item =>
-                            (currentDir.contents[item] as FSNode).type === 'file' &&
-                            item.startsWith(partial)
-                    );
-                } else {
-                    // Both files and directories (ls, rm)
-                    matches = items.filter(item => item.startsWith(partial));
+            if (matches.length === 1) {
+                const match = matches[0];
+                if (match !== undefined) {
+                    this.inputElement!.value = `${cmd} ${match}`;
                 }
-
-                if (matches.length === 1) {
-                    const match = matches[0];
-                    if (match !== undefined) {
-                        const itemObj = currentDir.contents[match] as FSNode | undefined;
-                        const suffix = itemObj?.type === 'directory' ? '/' : '';
-                        this.inputElement!.value = `${cmd} ${match}${suffix}`;
-                    }
-                } else if (matches.length > 1) {
-                    this.addOutput(
-                        `guest@marvin:${this.currentPath}$ ${this.inputElement!.value}`,
-                        'command'
-                    );
-                    const formatted = matches.map(item => {
-                        // noUncheckedIndexedAccess: dictionary access may return undefined
-                        const itemObj = currentDir.contents[item] as FSNode | undefined;
-                        if (!itemObj) return item;
-                        const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
-                        return prefix + item;
-                    });
-                    this.addOutput(formatted.join('  '), 'info');
-                    const commonPrefix = this.findCommonPrefix(matches);
-                    if (commonPrefix.length > partial.length) {
-                        this.inputElement!.value = `${cmd} ${commonPrefix}`;
-                    }
+            } else if (matches.length > 1) {
+                this.addOutput(
+                    `guest@marvin:${this.currentPath}$ ${this.inputElement!.value}`,
+                    'command'
+                );
+                const formatted = matches.map(item => {
+                    // noUncheckedIndexedAccess: dictionary access may return undefined
+                    const itemObj = currentDir.contents[item] as FSNode | undefined;
+                    if (!itemObj) return item;
+                    const prefix = itemObj.type === 'directory' ? '📁 ' : '📄 ';
+                    return prefix + item;
+                });
+                this.addOutput(formatted.join('  '), 'info');
+                const commonPrefix = this.findCommonPrefix(matches);
+                if (commonPrefix.length > partial.length) {
+                    this.inputElement!.value = `${cmd} ${commonPrefix}`;
                 }
             }
+        }
+
+        executeCommand(command: string): void {
+            this.addOutput(`guest@marvin:${this.currentPath}$ ${command}`, 'command');
+            const [cmd, ...args] = command.split(' ');
+
+            // noUncheckedIndexedAccess: array destructuring may return undefined
+            if (cmd === undefined) return;
+
+            const commands: Record<string, () => void> = {
+                help: () => this.showHelp(),
+                clear: () => this.clearOutput(),
+                ls: () => this.listDirectory(args[0]),
+                pwd: () => this.printWorkingDirectory(),
+                cd: () => this.changeDirectory(args[0]),
+                cat: () => this.catFile(args[0]),
+                echo: () => this.echo(args.join(' ')),
+                date: () => this.showDate(),
+                whoami: () => this.addOutput('guest', 'output'),
+            };
+
+            const commandFn = commands[cmd];
             if (commandFn !== undefined) {
                 commandFn();
             } else {
@@ -409,14 +401,14 @@ console.log('TerminalInstance (TS) loaded');
             if (filename.includes('/')) {
                 const normalizedPath = this.normalizePath(filename);
                 const pathParts = normalizedPath.split('/').filter(p => p !== '');
-                const fileName = pathParts.pop()!;
+                const fileName = pathParts.pop();
                 const dirPath = pathParts.length > 0 ? pathParts.join('/') : '~';
                 const dir = this.resolvePath(dirPath);
                 if (!dir) {
                     this.addOutput(`Verzeichnis nicht gefunden: ${dirPath}`, 'error');
                     return;
                 }
-                const file = (dir as DirEntry).contents?.[fileName] as FSNode | undefined;
+                const file = (dir as DirEntry).contents?.[fileName as string];
                 if (!file) this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
                 else if (file.type !== 'file')
                     this.addOutput(`${filename} ist keine Datei`, 'error');
@@ -556,7 +548,10 @@ console.log('TerminalInstance (TS) loaded');
 
     // Create Terminal Instance Manager
     const G = window as unknown as Record<string, unknown>;
-    type InstanceManagerCtor = new (cfg: Record<string, unknown>) => unknown;
+    type InstanceManagerCtor = new (cfg: Record<string, unknown>) => {
+        type?: string;
+        getInstanceCount?: () => number;
+    };
     const InstanceManager = G['InstanceManager'] as unknown as InstanceManagerCtor | undefined;
     if (InstanceManager) {
         (G['TerminalInstanceManager'] as unknown) = new (InstanceManager as InstanceManagerCtor)({
@@ -585,5 +580,16 @@ console.log('TerminalInstance (TS) loaded');
                 return container;
             },
         });
+
+        try {
+            console.debug('TerminalInstanceManager created', {
+                type: (G['TerminalInstanceManager'] as { type?: string })?.type,
+                instanceCount: (
+                    G['TerminalInstanceManager'] as { getInstanceCount?: () => number }
+                )?.getInstanceCount?.(),
+            });
+        } catch (error) {
+            console.debug('TerminalInstanceManager created (debug log failed)', error);
+        }
     }
 })();

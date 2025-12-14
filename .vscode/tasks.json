@@ -402,6 +402,11 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "label": "Run specific Playwright test: terminal-autocomplete",
+      "type": "shell",
+      "command": "npm run test:e2e -- tests/e2e/terminal/terminal-autocomplete.spec.js"
     }
   ]
 }
