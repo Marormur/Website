@@ -7,13 +7,7 @@ const {
     getFinderAddTabButton,
     getFinderTabs,
 } = require('../utils');
-
-async function openFinder(page) {
-    const finderWindow = await openFinderWindow(page);
-    await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-    await waitForFinderReady(page);
-    return finderWindow;
-}
+const { openFinder } = require('../utils/window-helpers');
 
 async function closeAllFinderTabs(page) {
     // Close until no instances remain

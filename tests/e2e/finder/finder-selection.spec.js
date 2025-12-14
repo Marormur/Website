@@ -1,6 +1,7 @@
 // Finder item selection behavior (single, toggle, range)
 const { test, expect } = require('@playwright/test');
 const { waitForAppReady, openFinderWindow, waitForFinderReady } = require('../utils');
+const { openFinderAtRoot } = require('../utils/window-helpers');
 
 async function getListItems(page, finderWindow) {
     return await finderWindow.locator('#finder-list-container .finder-list-item');
@@ -45,14 +46,6 @@ async function ensureComputerRoot(page, finderWindow) {
     if (await computerBtn.isVisible().catch(() => false)) {
         await computerBtn.click();
     }
-}
-
-async function openFinderAtRoot(page) {
-    const finderWindow = await openFinderWindow(page);
-    await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-    await waitForFinderReady(page);
-    await ensureComputerRoot(page, finderWindow);
-    return finderWindow;
 }
 
 async function openDocumentsIfExists(page, finderWindow) {
