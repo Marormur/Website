@@ -40,14 +40,6 @@ async function getSelectedNames(page, finderWindow) {
     );
 }
 
-async function ensureComputerRoot(page, finderWindow) {
-    // Click sidebar computer if present
-    const computerBtn = finderWindow.locator('[data-finder-view="computer"]').first();
-    if (await computerBtn.isVisible().catch(() => false)) {
-        await computerBtn.click();
-    }
-}
-
 async function openDocumentsIfExists(page, finderWindow) {
     const docEl = finderWindow
         .locator('#finder-list-container [data-item-name="Documents"]')
