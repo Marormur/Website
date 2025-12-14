@@ -194,8 +194,8 @@ test.describe('Terminal Session Persistence', () => {
         // Switch to first tab
         await page.evaluate(() => {
             const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
-            if (win && win.setActiveSession) {
-                win.setActiveSession(win.sessions[0]);
+            if (win && win.setActiveTab && win.sessions?.[0]) {
+                win.setActiveTab(win.sessions[0].id);
             }
         });
 
@@ -359,8 +359,8 @@ test.describe('Terminal Session Persistence', () => {
         // Switch tabs using direct API - this should trigger autosave
         await page.evaluate(() => {
             const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
-            if (win && win.setActiveSession && win.sessions?.[0]) {
-                win.setActiveSession(win.sessions[0]);
+            if (win && win.setActiveTab && win.sessions?.[0]) {
+                win.setActiveTab(win.sessions[0].id);
             }
         });
 
