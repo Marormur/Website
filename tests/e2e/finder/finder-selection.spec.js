@@ -1,6 +1,6 @@
 // Finder item selection behavior (single, toggle, range)
 const { test, expect } = require('@playwright/test');
-const { waitForAppReady, openFinderWindow, waitForFinderReady } = require('../utils');
+const { waitForAppReady } = require('../utils');
 const { openFinderAtRoot } = require('../utils/window-helpers');
 
 async function getListItems(page, finderWindow) {
