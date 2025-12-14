@@ -46,7 +46,7 @@ jobs:
       - name: Build production bundle
         run: npm run build:bundle
 
-      # Upload only the files needed for Pages to serve
+      # Upload all files needed for Pages to serve
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -54,7 +54,7 @@ jobs:
             index.html
             projekte.html
             dist/
-            js/app.bundle.js
+            js/
             img/
 
   deploy:
