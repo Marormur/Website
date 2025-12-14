@@ -37,12 +37,6 @@ test.describe('Finder active tab persistence across reload', () => {
         });
         expect(twoTabsCount).toBe(2);
 
-        // Get titles before reload
-        const beforeTitles = await page.evaluate(() => {
-            const instances = window.FinderInstanceManager?.getAllInstances?.() || [];
-            return instances.map(inst => inst.title);
-        });
-
         // Switch to the first tab
         const tabs = await getFinderTabs(page, finderWindow);
         await tabs.nth(0).click();
