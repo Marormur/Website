@@ -38,12 +38,10 @@ test-output.json/
 logs/
 logs/**
 
-# Build outputs
-# Note: For Cloudflare Pages deployment, we COMMIT build outputs
-# so they're available in the repo. CI still rebuilds them, but
-# having them committed ensures deployment works even if build fails.
-# dist/output.css is now committed
-# js/**/*.js files are now committed
+# Build outputs (built by GitHub Actions during deployment)
+dist/output.css
+js/**/*.js
+js/**/*.js.map
 
 # TypeScript incremental build cache
 *.tsbuildinfo
