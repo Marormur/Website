@@ -111,6 +111,11 @@ class MultiWindowSessionManager {
      * Save current session to localStorage
      */
     saveSession(options: { immediate?: boolean } = {}): void {
+        console.log('[MultiWindowSessionManager] saveSession called:', {
+            immediate: options.immediate,
+            isRestoring: this.isRestoring,
+        });
+
         if (this.isRestoring) {
             console.log('[MultiWindowSessionManager] Skipping save during restore');
             return;
@@ -127,14 +132,29 @@ class MultiWindowSessionManager {
      * Save session immediately (bypasses debounce)
      */
     private saveSessionImmediate(): void {
+        console.log('[MultiWindowSessionManager] saveSessionImmediate called');
+
         if (this.autoSaveTimer !== null) {
             clearTimeout(this.autoSaveTimer);
             this.autoSaveTimer = null;
         }
 
         try {
+            console.log('[MultiWindowSessionManager] Creating session snapshot...');
             const session = this.createSession();
-            localStorage.setItem(MultiWindowSessionManager.STORAGE_KEY, JSON.stringify(session));
+            console.log('[MultiWindowSessionManager] Session created:', {
+                windows: session.windows.length,
+                totalTabs: session.windows.reduce((sum, w) => sum + w.tabs.length, 0),
+            });
+
+            const serialized = JSON.stringify(session);
+            console.log(
+                '[MultiWindowSessionManager] Session serialized, length:',
+                serialized.length
+            );
+
+            localStorage.setItem(MultiWindowSessionManager.STORAGE_KEY, serialized);
+            console.log('[MultiWindowSessionManager] Session saved to localStorage');
 
             console.log('[MultiWindowSessionManager] Session saved:', {
                 windows: session.windows.length,
@@ -143,6 +163,9 @@ class MultiWindowSessionManager {
             });
         } catch (error) {
             console.error('[MultiWindowSessionManager] Failed to save session:', error);
+            if (error instanceof Error) {
+                console.error('[MultiWindowSessionManager] Error stack:', error.stack);
+            }
         }
     }
 
