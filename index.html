@@ -97,6 +97,7 @@
                     './js/ui/menu.js',
                     './js/services/github-api.js',
                     './js/apps/finder/finder.js',
+                    './js/apps/finder/finder-window.js',
                     './js/windows/window-manager.js',
                     './js/ui/action-bus.js',
                     './js/windows/window-configs.js',
@@ -253,6 +254,7 @@
                     './js/ui/menu.js',
                     './js/services/github-api.js',
                     './js/apps/finder/finder.js',
+                    './js/apps/finder/finder-window.js',
                     './js/windows/window-manager.js',
                     './js/ui/action-bus.js',
                     './js/windows/window-configs.js',
@@ -2063,6 +2065,48 @@
                 } catch (e) {
                     console.debug('[LR] Live reload not active:', e);
                 }
+            })();
+        </script>
+        <script>
+            // Hotfix: prevent recursive topZIndex setter causing stack overflow when z-index manager
+            // touches window.topZIndex. Replaces the global getter/setter with a simple value store
+            // and patches the manager methods to use the same store without re-entering the setter.
+            (() => {
+                const BASE = 1000;
+                const MAX = 2147483500;
+                const clamp = z => Math.min(Math.max(typeof z === 'number' ? z : BASE, BASE), MAX);
+                const patch = () => {
+                    const mgr = window.__zIndexManager;
+                    if (!mgr || mgr.__patched) return;
+                    let raw = clamp(window.__topZIndexRaw ?? window.topZIndex);
+                    const setRaw = z => {
+                        raw = clamp(z);
+                        window.__topZIndexRaw = raw;
+                        return raw;
+                    };
+                    mgr.__patched = true;
+                    if (typeof mgr.ensureTopZIndex === 'function') {
+                        mgr.ensureTopZIndex = z => setRaw(Math.max(raw, z ?? raw));
+                    }
+                    if (typeof mgr.getTopZIndex === 'function') {
+                        mgr.getTopZIndex = () => raw;
+                    }
+                    if (typeof mgr.bumpZIndex === 'function') {
+                        mgr.bumpZIndex = () => setRaw(raw + 1);
+                    }
+                    try {
+                        Object.defineProperty(window, 'topZIndex', {
+                            configurable: true,
+                            get: () => raw,
+                            set: v => setRaw(v ?? raw),
+                        });
+                    } catch (e) {
+                        // Ignore if property is non-configurable in some environments
+                    }
+                };
+                window.addEventListener('load', patch);
+                setTimeout(patch, 0);
+                setTimeout(patch, 200);
             })();
         </script>
     </body>

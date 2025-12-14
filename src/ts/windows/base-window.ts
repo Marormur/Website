@@ -6,6 +6,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { BaseTab } from '../windows/base-tab.js';
+import { getZIndexManager } from './z-index-manager.js';
 
 export interface WindowPosition {
     x: number;
@@ -586,9 +587,8 @@ export class BaseWindow {
 
         // Remove from z-index manager stack
         const W = window as any;
-        if (W.__zIndexManager && typeof W.__zIndexManager.removeWindow === 'function') {
-            W.__zIndexManager.removeWindow(this.id);
-        }
+        const zIndexManager = getZIndexManager();
+        zIndexManager.removeWindow(this.id);
 
         // WindowRegistry will handle cleanup
         if (W.WindowRegistry) {
@@ -642,137 +642,24 @@ export class BaseWindow {
      */
     bringToFront(): void {
         const W = window as any;
-
-        // Initialize __zIndexManager if not exists (needed for proper z-index stacking)
-        if (!W.__zIndexManager) {
-            this._ensureZIndexManager();
+        const zIndexManager = getZIndexManager();
+        zIndexManager.bringToFront(this.id, this.element, this.element);
+        // Sync local zIndex with DOM assignment
+        if (this.element) {
+            const currentZ = parseInt(this.element.style.zIndex || '0', 10);
+            if (!Number.isNaN(currentZ)) this.zIndex = currentZ;
         }
-
-        // Use __zIndexManager for consistent z-index management across all windows
-        if (W.__zIndexManager && typeof W.__zIndexManager.bringToFront === 'function') {
-            W.__zIndexManager.bringToFront(this.id, this.element, this.element);
-            // Notify menubar about focus change
-            // Track active window in WindowRegistry if available
-            W.WindowRegistry?.setActiveWindow?.(this.id);
-            W.updateProgramLabelByTopModal?.();
-            // Refresh dynamic application menu (e.g. switch to Terminal menu)
-            const menuSystem = W.MenuSystem;
-            if (menuSystem?.renderApplicationMenu) {
-                // Pass current menu modal id so sections rebuild with new active context
-                const current = menuSystem.getCurrentMenuModalId?.();
-                menuSystem.renderApplicationMenu(current);
-            }
-            return;
-        }
-
-        // Fallback to WindowRegistry (should rarely happen now)
-        if (W.WindowRegistry) {
-            this.zIndex = W.WindowRegistry.getNextZIndex();
-            if (this.element) {
-                this.element.style.zIndex = String(this.zIndex);
-            }
-            W.WindowRegistry.setActiveWindow?.(this.id);
-        }
-
         // Notify menubar about focus change
+        // Track active window in WindowRegistry if available
+        W.WindowRegistry?.setActiveWindow?.(this.id);
         W.updateProgramLabelByTopModal?.();
+        // Refresh dynamic application menu (e.g. switch to Terminal menu)
         const menuSystem = W.MenuSystem;
         if (menuSystem?.renderApplicationMenu) {
+            // Pass current menu modal id so sections rebuild with new active context
             const current = menuSystem.getCurrentMenuModalId?.();
             menuSystem.renderApplicationMenu(current);
         }
-    }
-
-    /**
-     * Ensure __zIndexManager exists. This is normally initialized by Dialog class,
-     * but BaseWindow instances may be created before any Dialog, so we initialize it here.
-     */
-    private _ensureZIndexManager(): void {
-        const W = window as any;
-        if (W.__zIndexManager) return;
-
-        const BASE_Z_INDEX = 1000;
-        const MAX_WINDOW_Z_INDEX = 2147483500; // Below Dock (2147483550) and Launchpad (2147483600)
-        const windowStack: string[] = []; // Ordered list of window IDs (bottom to top)
-
-        W.__zIndexManager = {
-            bringToFront(windowId: string, _modal: HTMLElement, _windowEl?: HTMLElement | null) {
-                // Remove from current position if exists
-                const currentIndex = windowStack.indexOf(windowId);
-                if (currentIndex !== -1) {
-                    windowStack.splice(currentIndex, 1);
-                }
-
-                // Add to top of stack
-                windowStack.push(windowId);
-
-                // Reassign z-indexes to all windows in stack
-                // This prevents z-index from growing indefinitely
-                windowStack.forEach((id, index) => {
-                    const zIndex = BASE_Z_INDEX + index;
-                    const element = document.getElementById(id);
-
-                    if (element) {
-                        // Clamp to maximum to ensure critical UI elements stay on top
-                        const clampedZIndex = Math.min(zIndex, MAX_WINDOW_Z_INDEX);
-                        element.style.zIndex = clampedZIndex.toString();
-
-                        // Also update windowEl if it's a separate element
-                        const win = element.querySelector('.window-container') as HTMLElement;
-                        if (win) {
-                            win.style.zIndex = clampedZIndex.toString();
-                        }
-                    }
-                });
-
-                // Update legacy topZIndex for compatibility
-                W.topZIndex = Math.min(BASE_Z_INDEX + windowStack.length, MAX_WINDOW_Z_INDEX);
-            },
-
-            removeWindow(windowId: string) {
-                const index = windowStack.indexOf(windowId);
-                if (index !== -1) {
-                    windowStack.splice(index, 1);
-                }
-            },
-
-            getWindowStack() {
-                return [...windowStack];
-            },
-
-            restoreWindowStack(savedStack: string[]) {
-                // Clear current stack
-                windowStack.length = 0;
-
-                // Restore stack in order, validating each window exists
-                savedStack.forEach(windowId => {
-                    const element = document.getElementById(windowId);
-                    if (element) {
-                        windowStack.push(windowId);
-                    }
-                });
-
-                // Reassign z-indexes based on restored order
-                windowStack.forEach((id, index) => {
-                    const zIndex = BASE_Z_INDEX + index;
-                    const element = document.getElementById(id);
-
-                    if (element) {
-                        const clampedZIndex = Math.min(zIndex, MAX_WINDOW_Z_INDEX);
-                        element.style.zIndex = clampedZIndex.toString();
-
-                        const win = element.querySelector('.window-container') as HTMLElement;
-                        if (win) {
-                            win.style.zIndex = clampedZIndex.toString();
-                        }
-                    }
-                });
-            },
-
-            reset() {
-                windowStack.length = 0;
-            },
-        };
     }
 
     /**

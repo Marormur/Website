@@ -7,13 +7,17 @@
  * Legacy finder-instance.ts is not tested here.
  */
 const { test, expect } = require('@playwright/test');
-const { waitForAppReady, openFinderWindow } = require('../utils');
-
+const {
+    gotoHome,
+    waitForAppReady,
+    openFinderWindow,
+    ensureFinderViewMode,
+    waitForFinderContent,
+} = require('../utils');
 test.describe('FinderView Double-Click Navigation @basic', () => {
     test.beforeEach(async ({ page, baseURL }) => {
-        await page.goto(baseURL + '/index.html');
-
-        // Wait for app readiness
+        // Use shared navigation helper so loader flags (USE_BUNDLE etc.) are applied deterministically
+        await gotoHome(page, baseURL);
         await waitForAppReady(page);
     });
 
@@ -22,11 +26,8 @@ test.describe('FinderView Double-Click Navigation @basic', () => {
 
         // Ensure list view is active within the Finder window
         const win = await openFinderWindow(page);
-        const listViewBtn = win.locator('.finder-toolbar button[data-action="view-list"]');
-        await listViewBtn.waitFor({ state: 'visible' });
-        await listViewBtn.click();
-        // Wait until list rows are present
-        await win.locator('.finder-list-table tbody tr').first().waitFor({ state: 'visible' });
+        await ensureFinderViewMode(win, 'list');
+        await waitForFinderContent(win, 'list');
 
         // Verify we are at Computer root (breadcrumb should show "Computer")
         const breadcrumb = win.locator('.breadcrumbs');
@@ -59,26 +60,12 @@ test.describe('FinderView Double-Click Navigation @basic', () => {
 
         // Switch to grid view
         const win = await openFinderWindow(page);
-        const gridViewBtn = win.locator('.finder-toolbar button[data-action="view-grid"]');
-        await gridViewBtn.waitFor({ state: 'visible' });
-        await gridViewBtn.click();
-        // Wait for grid items
-        await win
-            .locator('.finder-grid-container .finder-grid-item')
-            .first()
-            .waitFor({ state: 'visible' });
+        await ensureFinderViewMode(win, 'grid');
+        const firstGridItem = await waitForFinderContent(win, 'grid');
 
         // Verify we are at Computer root
         const breadcrumb = win.locator('.breadcrumbs');
         await expect(breadcrumb).toContainText('Computer');
-
-        // Find the first folder in grid view
-        // Grid items have data-item-index and we can filter by data-item-type if available,
-        // but currently grid items may not have explicit data-item-type in the element,
-        // so we rely on the order and _renderedItems structure.
-        // For safety, we can assume the first few items at root are folders (home, etc.)
-        const firstGridItem = win.locator('.finder-grid-item').first();
-        await firstGridItem.waitFor({ state: 'visible', timeout: 5000 });
 
         const itemIndex = await firstGridItem.getAttribute('data-item-index');
         console.log('[Test] First grid item index:', itemIndex);
@@ -103,11 +90,8 @@ test.describe('FinderView Double-Click Navigation @basic', () => {
 
         // Ensure list view
         const win = await openFinderWindow(page);
-        const listViewBtn = win.locator('.finder-toolbar button[data-action="view-list"]');
-        await listViewBtn.waitFor({ state: 'visible' });
-        await listViewBtn.click();
-        // Wait until list rows are present
-        await win.locator('.finder-list-table tbody tr').first().waitFor({ state: 'visible' });
+        await ensureFinderViewMode(win, 'list');
+        await waitForFinderContent(win, 'list');
 
         const firstFolder = win.locator('.finder-list-item[data-item-type="folder"]').first();
         await firstFolder.waitFor({ state: 'visible' });

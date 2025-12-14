@@ -62,6 +62,10 @@ class VirtualFileSystemManager {
     private readonly AUTO_SAVE_DELAY = 1000; // 1 second debounce
     private saveTimeout: number | null = null;
 
+    private getRootContainer(): Record<string, FSItem> {
+        return this.root['/'].children;
+    }
+
     constructor() {
         this.root = this.createDefaultStructure();
         this.load();
@@ -249,7 +253,7 @@ class VirtualFileSystemManager {
 
     load(): void {
         try {
-            const stored = getJSON<FileSystemRoot>(this.STORAGE_KEY, null);
+            const stored = getJSON<FileSystemRoot | null>(this.STORAGE_KEY, null);
 
             if (stored && Object.keys(stored).length > 0) {
                 this.root = stored;
@@ -425,7 +429,7 @@ class VirtualFileSystemManager {
         const parentPath = parts.slice(0, -1);
 
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container: Record<string, FSItem> = parent?.children || this.root;
+        const container: Record<string, FSItem> = parent?.children || this.getRootContainer();
 
         if (container[fileName]) {
             console.warn('[VirtualFS] File already exists:', this.normalizePath(path));
@@ -465,7 +469,7 @@ class VirtualFileSystemManager {
         const parentPath = parts.slice(0, -1);
 
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container: Record<string, FSItem> = parent?.children || this.root;
+        const container: Record<string, FSItem> = parent?.children || this.getRootContainer();
 
         if (container[folderName]) {
             console.warn('[VirtualFS] Folder already exists:', this.normalizePath(path));
@@ -522,7 +526,7 @@ class VirtualFileSystemManager {
         const parentPath = parts.slice(0, -1);
 
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container: Record<string, FSItem> = parent?.children || this.root;
+        const container: Record<string, FSItem> = parent?.children || this.getRootContainer();
 
         if (!container[itemName]) {
             console.warn('[VirtualFS] Item not found:', this.normalizePath(path));
@@ -553,7 +557,7 @@ class VirtualFileSystemManager {
         const parentPath = parts.slice(0, -1);
 
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
-        const container: Record<string, FSItem> = parent?.children || this.root;
+        const container: Record<string, FSItem> = parent?.children || this.getRootContainer();
 
         if (!container[oldName]) {
             console.warn('[VirtualFS] Item not found:', this.normalizePath(oldPath));

@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { BaseWindow, WindowState } from '../windows/base-window.js';
+import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
 
 /**
  * WindowRegistry - Singleton for managing all windows
@@ -20,12 +21,13 @@ class WindowRegistry {
     private nextZIndex: number;
     private initialized: boolean;
     private activeWindowId: string | null;
+    private zIndexManager = getZIndexManager();
 
     constructor() {
         this.windows = new Map();
         // Start with a higher base to avoid conflicts with legacy modals
         // Will sync with WindowManager if available
-        this.nextZIndex = 1000;
+        this.nextZIndex = BASE_Z_INDEX;
         this.initialized = false;
         this.activeWindowId = null;
     }
@@ -35,11 +37,11 @@ class WindowRegistry {
      */
     private _syncZIndexWithWindowManager(): void {
         const W = window as any;
-        if (W.WindowManager && typeof W.WindowManager.getTopZIndex === 'function') {
-            const legacyTopZ = W.WindowManager.getTopZIndex();
-            if (legacyTopZ >= this.nextZIndex) {
-                this.nextZIndex = legacyTopZ + 1;
-            }
+        const legacyTopZ = W.WindowManager?.getTopZIndex?.();
+        if (typeof legacyTopZ === 'number') {
+            this.nextZIndex = this.zIndexManager.ensureTopZIndex(legacyTopZ);
+        } else {
+            this.nextZIndex = this.zIndexManager.getTopZIndex();
         }
     }
 
@@ -122,14 +124,7 @@ class WindowRegistry {
     getNextZIndex(): number {
         // Sync with WindowManager to ensure we're always on top of legacy modals
         this._syncZIndexWithWindowManager();
-        this.nextZIndex += 1;
-
-        // Notify WindowManager of our new z-index so it can stay in sync
-        const W = window as any;
-        if (W.WindowManager && typeof W.WindowManager.updateTopZIndex === 'function') {
-            W.WindowManager.updateTopZIndex(this.nextZIndex);
-        }
-
+        this.nextZIndex = this.zIndexManager.bumpZIndex();
         return this.nextZIndex;
     }
 
@@ -137,6 +132,7 @@ class WindowRegistry {
      * Get current top z-index without incrementing
      */
     getTopZIndex(): number {
+        this.nextZIndex = this.zIndexManager.getTopZIndex();
         return this.nextZIndex;
     }
 
@@ -144,9 +140,7 @@ class WindowRegistry {
      * Update top z-index from external source (e.g., WindowManager)
      */
     updateTopZIndex(newZIndex: number): void {
-        if (newZIndex > this.nextZIndex) {
-            this.nextZIndex = newZIndex;
-        }
+        this.nextZIndex = this.zIndexManager.ensureTopZIndex(newZIndex);
     }
 
     /**
@@ -169,6 +163,11 @@ class WindowRegistry {
      * Get top-most window
      */
     getTopWindow(): BaseWindow | null {
+        const topId = this.zIndexManager.getTopWindowId();
+        if (topId) {
+            const win = this.windows.get(topId);
+            if (win) return win;
+        }
         const windows = Array.from(this.windows.values());
         if (windows.length === 0) return null;
 

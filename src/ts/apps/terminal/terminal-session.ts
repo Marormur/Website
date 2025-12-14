@@ -224,7 +224,7 @@ export class TerminalSession extends BaseTab {
 
     private findCommonPrefix(strings: string[]): string {
         if (strings.length === 0) return '';
-        const first = strings[0];
+        const first = strings[0] ?? '';
         if (strings.length === 1) return first;
 
         let prefix = first;
@@ -297,7 +297,7 @@ export class TerminalSession extends BaseTab {
         const names = matches.map(m => m.name);
 
         if (matches.length === 1) {
-            const m = matches[0];
+            const m = matches[0]!;
             let completed = m.name;
 
             // For `cd`, append '/' to folders.
