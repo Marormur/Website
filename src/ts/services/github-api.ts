@@ -78,11 +78,30 @@ import { getJSON, setJSON, getString } from '../services/storage-utils.js';
         username: string,
         params?: { per_page?: number; sort?: string }
     ): Promise<unknown[]> {
+        const perf = (
+            window as {
+                PerfMonitor?: {
+                    mark: (n: string) => void;
+                    measure: (n: string, s?: string, e?: string) => void;
+                };
+            }
+        ).PerfMonitor;
+        perf?.mark('github:fetchUserRepos:start');
+
         const search = new globalThis.URLSearchParams();
         search.set('per_page', String(params?.per_page ?? 100));
         search.set('sort', params?.sort ?? 'updated');
         const url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?${search.toString()}`;
-        return fetchJSON<unknown[]>(url);
+        const result = await fetchJSON<unknown[]>(url);
+
+        perf?.mark('github:fetchUserRepos:end');
+        perf?.measure(
+            'github:fetchUserRepos-duration',
+            'github:fetchUserRepos:start',
+            'github:fetchUserRepos:end'
+        );
+
+        return result;
     }
 
     async function fetchRepoContents(
@@ -90,9 +109,28 @@ import { getJSON, setJSON, getString } from '../services/storage-utils.js';
         repo: string,
         subPath = ''
     ): Promise<unknown> {
+        const perf = (
+            window as {
+                PerfMonitor?: {
+                    mark: (n: string) => void;
+                    measure: (n: string, s?: string, e?: string) => void;
+                };
+            }
+        ).PerfMonitor;
+        perf?.mark('github:fetchRepoContents:start');
+
         const pathPart = subPath ? `/${encodeURIComponent(subPath).replace(/%2F/g, '/')}` : '';
         const url = `https://api.github.com/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/contents${pathPart}`;
-        return fetchJSON<unknown>(url);
+        const result = await fetchJSON<unknown>(url);
+
+        perf?.mark('github:fetchRepoContents:end');
+        perf?.measure(
+            'github:fetchRepoContents-duration',
+            'github:fetchRepoContents:start',
+            'github:fetchRepoContents:end'
+        );
+
+        return result;
     }
 
     type GitHubAPINamespace = {

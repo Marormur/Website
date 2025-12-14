@@ -156,6 +156,16 @@ import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
         },
 
         bringToFront(windowId: string): void {
+            const perf = (
+                window as {
+                    PerfMonitor?: {
+                        mark: (n: string) => void;
+                        measure: (n: string, s?: string, e?: string) => void;
+                    };
+                }
+            ).PerfMonitor;
+            perf?.mark(`window:bringToFront:${windowId}:start`);
+
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.bringToFront === 'function') {
                 instance.bringToFront();
@@ -169,9 +179,19 @@ import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
             }
             const windowEl = this.getDialogWindowElement(modal);
             zIndexManager.bringToFront(windowId, modal, windowEl);
+
+            perf?.mark(`window:bringToFront:${windowId}:end`);
+            perf?.measure(
+                `window:bringToFront:${windowId}`,
+                `window:bringToFront:${windowId}:start`,
+                `window:bringToFront:${windowId}:end`
+            );
         },
 
         open(windowId: string): void {
+            const perf = (window as { PerfMonitor?: { mark: (n: string) => void } }).PerfMonitor;
+            perf?.mark(`window:open:${windowId}:start`);
+
             const config = this.getConfig(windowId);
             // Run the configured initHandler on every open. Some windows rely on
             // per-open initialization (e.g., Finder multi-instance recreation).
@@ -214,9 +234,34 @@ import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
                     this.bringToFront(windowId);
                 }
             }
+
+            const perf = (
+                window as {
+                    PerfMonitor?: {
+                        mark: (n: string) => void;
+                        measure: (n: string, s?: string, e?: string) => void;
+                    };
+                }
+            ).PerfMonitor;
+            perf?.mark(`window:open:${windowId}:end`);
+            perf?.measure(
+                `window:open:${windowId}`,
+                `window:open:${windowId}:start`,
+                `window:open:${windowId}:end`
+            );
         },
 
         close(windowId: string): void {
+            const perf = (
+                window as {
+                    PerfMonitor?: {
+                        mark: (n: string) => void;
+                        measure: (n: string, s?: string, e?: string) => void;
+                    };
+                }
+            ).PerfMonitor;
+            perf?.mark(`window:close:${windowId}:start`);
+
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.close === 'function') {
                 instance.close();
@@ -231,6 +276,21 @@ import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
                     }
                 }
             }
+
+            const perf = (
+                window as {
+                    PerfMonitor?: {
+                        mark: (n: string) => void;
+                        measure: (n: string, s?: string, e?: string) => void;
+                    };
+                }
+            ).PerfMonitor;
+            perf?.mark(`window:close:${windowId}:end`);
+            perf?.measure(
+                `window:close:${windowId}`,
+                `window:close:${windowId}:start`,
+                `window:close:${windowId}:end`
+            );
         },
 
         getNextZIndex(): number {

@@ -35,6 +35,17 @@ import { getString, setString } from '../services/storage-utils.js';
 
     function setThemePreference(pref: ThemePref): void {
         if (!validThemePreferences.includes(pref)) return;
+
+        const perf = (
+            window as {
+                PerfMonitor?: {
+                    mark: (n: string) => void;
+                    measure: (n: string, s?: string, e?: string) => void;
+                };
+            }
+        ).PerfMonitor;
+        perf?.mark('theme:change:start');
+
         themePreference = pref;
         setString(THEME_KEY, pref);
         updateThemeFromPreference();
@@ -45,6 +56,9 @@ import { getString, setString } from '../services/storage-utils.js';
                 detail: { preference: pref },
             })
         );
+
+        perf?.mark('theme:change:end');
+        perf?.measure('theme:change-duration', 'theme:change:start', 'theme:change:end');
     }
 
     function getThemePreference(): ThemePref {

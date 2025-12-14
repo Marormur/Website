@@ -270,6 +270,16 @@ class VirtualFileSystemManager {
     // ========================================================================
 
     load(): void {
+        const perf = (
+            window as {
+                PerfMonitor?: {
+                    mark: (n: string) => void;
+                    measure: (n: string, s?: string, e?: string) => void;
+                };
+            }
+        ).PerfMonitor;
+        perf?.mark('vfs:load:start');
+
         try {
             const stored = getJSON<FileSystemRoot | null>(this.STORAGE_KEY, null);
 
@@ -286,6 +296,9 @@ class VirtualFileSystemManager {
             // Fallback to defaults on error
             this.root = this.createDefaultStructure();
         }
+
+        perf?.mark('vfs:load:end');
+        perf?.measure('vfs:load-duration', 'vfs:load:start', 'vfs:load:end');
     }
 
     private scheduleSave(): void {
@@ -300,12 +313,25 @@ class VirtualFileSystemManager {
     }
 
     private save(): void {
+        const perf = (
+            window as {
+                PerfMonitor?: {
+                    mark: (n: string) => void;
+                    measure: (n: string, s?: string, e?: string) => void;
+                };
+            }
+        ).PerfMonitor;
+        perf?.mark('vfs:save:start');
+
         try {
             setJSON(this.STORAGE_KEY, this.root);
             console.log('[VirtualFS] Saved to localStorage');
         } catch (error) {
             console.error('[VirtualFS] Failed to save:', error);
         }
+
+        perf?.mark('vfs:save:end');
+        perf?.measure('vfs:save-duration', 'vfs:save:start', 'vfs:save:end');
     }
 
     forceSave(): void {

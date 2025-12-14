@@ -212,6 +212,16 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
      * Perform the actual save operation
      */
     function performSave(): void {
+        const perf = (
+            window as {
+                PerfMonitor?: {
+                    mark: (n: string) => void;
+                    measure: (n: string, s?: string, e?: string) => void;
+                };
+            }
+        ).PerfMonitor;
+        perf?.mark('session:save:start');
+
         if (saveInProgress) {
             console.warn('SessionManager: Save already in progress, skipping');
             return;
@@ -247,6 +257,17 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
                     `SessionManager: Saved ${instanceCount} instances across ${Object.keys(instances).length} types`
                 );
             }
+
+            const perf = (
+                window as {
+                    PerfMonitor?: {
+                        mark: (n: string) => void;
+                        measure: (n: string, s?: string, e?: string) => void;
+                    };
+                }
+            ).PerfMonitor;
+            perf?.mark('session:save:end');
+            perf?.measure('session:save-duration', 'session:save:start', 'session:save:end');
 
             pendingSaveTypes.clear();
         } catch (err) {
@@ -310,6 +331,16 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
      * Restore session from localStorage
      */
     function restoreSession(): boolean {
+        const perf = (
+            window as {
+                PerfMonitor?: {
+                    mark: (n: string) => void;
+                    measure: (n: string, s?: string, e?: string) => void;
+                };
+            }
+        ).PerfMonitor;
+        perf?.mark('session:restore:start');
+
         const session = readSession();
         // Debugging: surface session contents and available managers to E2E traces
         try {
@@ -384,6 +415,18 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
         }
 
         console.log(`SessionManager: Restored ${restoredCount} instances total`);
+
+        const perf = (
+            window as {
+                PerfMonitor?: {
+                    mark: (n: string) => void;
+                    measure: (n: string, s?: string, e?: string) => void;
+                };
+            }
+        ).PerfMonitor;
+        perf?.mark('session:restore:end');
+        perf?.measure('session:restore-duration', 'session:restore:start', 'session:restore:end');
+
         return restoredCount > 0;
     }
 
