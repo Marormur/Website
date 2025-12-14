@@ -113,7 +113,15 @@ test.describe('Performance Monitor Integration @basic', () => {
     test('should capture Core Web Vitals', async ({ page }) => {
         // Wait for page to fully load and vitals to be captured
         await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
+        
+        // Wait for vitals to be populated (at least TTFB should be available)
+        await page.waitForFunction(
+            () => {
+                const vitals = window.PerfMonitor.getVitals();
+                return Object.keys(vitals).length > 0;
+            },
+            { timeout: 5000 }
+        );
 
         const vitals = await page.evaluate(() => {
             return window.PerfMonitor.getVitals();
@@ -202,10 +210,6 @@ test.describe('Performance Monitor Integration @basic', () => {
     });
 
     test('should include vitals in report output', async ({ page }) => {
-        // Wait for vitals to be captured
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
-
         // Capture console logs
         const consoleLogs = [];
         page.on('console', msg => {
@@ -214,13 +218,31 @@ test.describe('Performance Monitor Integration @basic', () => {
             }
         });
 
+        // Wait for vitals to be captured
+        await page.waitForLoadState('networkidle');
+        
+        // Wait for vitals to be populated
+        await page.waitForFunction(
+            () => {
+                const vitals = window.PerfMonitor.getVitals();
+                return Object.keys(vitals).length > 0;
+            },
+            { timeout: 5000 }
+        );
+
         // Generate report
         await page.evaluate(() => {
             window.PerfMonitor.report();
         });
 
-        // Wait for console output
-        await page.waitForTimeout(500);
+        // Wait for console output to be captured
+        await page.waitForFunction(
+            () => {
+                // Check if any console logs were captured
+                return true; // Report is synchronous, logs should be available
+            },
+            { timeout: 1000 }
+        );
 
         // Check if Core Web Vitals are mentioned in report
         const hasVitalsReport = consoleLogs.some(

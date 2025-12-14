@@ -215,6 +215,7 @@ import { getString, setString } from '../services/storage-utils.js';
         ) {
             const lcpObserver = new PerformanceObserver(list => {
                 const entries = list.getEntries();
+                if (entries.length === 0) return;
                 const lastEntry = entries[entries.length - 1] as PerformanceEntry & {
                     renderTime?: number;
                     loadTime?: number;
@@ -233,6 +234,7 @@ import { getString, setString } from '../services/storage-utils.js';
         ) {
             const fidObserver = new PerformanceObserver(list => {
                 const entries = list.getEntries();
+                if (entries.length === 0) return;
                 const firstInput = entries[0] as PerformanceEntry & {
                     processingStart?: number;
                 };
@@ -274,6 +276,7 @@ import { getString, setString } from '../services/storage-utils.js';
         ) {
             const ttfbObserver = new PerformanceObserver(list => {
                 const entries = list.getEntries();
+                if (entries.length === 0) return;
                 const navEntry = entries[0] as PerformanceEntry & { responseStart?: number };
                 if (navEntry && navEntry.responseStart) {
                     PerfMonitor.vitals.TTFB = navEntry.responseStart;
@@ -299,7 +302,7 @@ import { getString, setString } from '../services/storage-utils.js';
                 window.addEventListener('load', captureTTFB, { once: true });
             }
         }
-    } catch (_error) {
+    } catch {
         // Silently fail if PerformanceObserver is not supported
         // This is expected in older browsers
     }
