@@ -1,0 +1,15 @@
+# GitHub Pages configuration for marvintemmen.de
+# This file ensures proper routing and resource serving with custom domain
+
+# Jekyll settings
+theme: null
+plugins: []
+
+# Disable Jekyll processing for static files
+exclude: ['node_modules', 'src', 'tests', '.git', '.github', 'scripts']
+
+# Enable compression
+compress_output: true
+
+# Custom headers and redirects handled by GitHub Pages
+# Ensure all static assets are served with correct MIME types
