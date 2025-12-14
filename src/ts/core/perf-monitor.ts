@@ -283,18 +283,21 @@ import { getString, setString } from '../services/storage-utils.js';
         } else {
             // Fallback for browsers without PerformanceObserver for navigation
             // Use PerformanceNavigationTiming API
-            window.addEventListener(
-                'load',
-                () => {
-                    const navTiming = performance.getEntriesByType(
-                        'navigation'
-                    )[0] as PerformanceNavigationTiming;
-                    if (navTiming && navTiming.responseStart) {
-                        PerfMonitor.vitals.TTFB = navTiming.responseStart;
-                    }
-                },
-                { once: true }
-            );
+            const captureTTFB = () => {
+                const navTiming = performance.getEntriesByType(
+                    'navigation'
+                )[0] as PerformanceNavigationTiming;
+                if (navTiming && navTiming.responseStart) {
+                    PerfMonitor.vitals.TTFB = navTiming.responseStart;
+                }
+            };
+
+            // Check if page already loaded, otherwise wait for load event
+            if (document.readyState === 'complete') {
+                captureTTFB();
+            } else {
+                window.addEventListener('load', captureTTFB, { once: true });
+            }
         }
     } catch (_error) {
         // Silently fail if PerformanceObserver is not supported
