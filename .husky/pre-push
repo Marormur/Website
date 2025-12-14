@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
-# Run basic E2E smoke tests before push to catch breaking changes early
-# Temporarily disabled due to failing tests
-# echo "Running E2E basic smoke tests before push..."
-# npm run test:e2e:quick
+# Pre-push checks: TypeCheck + Type Coverage before pushing
+echo "Running pre-push checks..."
+npm run typecheck || exit 1
+npm run type:baseline || exit 1  # 79% baseline (less strict than CI's 90%)
+echo "✓ Pre-push checks passed!"
