@@ -64,5 +64,10 @@
 
   // Task Automation - Reduce user prompts during agent/automated runs
   "task.allowAutomaticTasks": "on",
-  "task.slowProviderWarning": ["npm"]
+  "task.slowProviderWarning": ["npm"],
+
+  // cSpell - enable German dictionary alongside English
+  "cSpell.language": "en,de",
+  "cSpell.locale": "en,de",
+  "cSpell.dictionaries": ["en-gb", "de-de"]
 }
