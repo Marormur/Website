@@ -23,23 +23,27 @@ test.describe('Terminal Tab Autocomplete', () => {
             { timeout: 5000 }
         );
 
-        // Wait for terminal input to be ready
-        await page.waitForSelector('[data-terminal-input]', { timeout: 5000 });
+        // Wait for active terminal tab's input to be visible (not .hidden)
+        await page.waitForSelector('.tab-content:not(.hidden) [data-terminal-input]', {
+            timeout: 5000,
+        });
     });
 
     /**
-     * Helper to get terminal input value
+     * Helper to get terminal input value from active session
      */
     async function getInputValue(page) {
-        const input = page.locator('[data-terminal-input]');
+        // Get the active tab content (visible, not .hidden) input
+        const input = page.locator('.tab-content:not(.hidden) [data-terminal-input]');
         return await input.inputValue();
     }
 
     /**
-     * Helper to set input and trigger Tab
+     * Helper to set input and trigger Tab on active session
      */
     async function typeAndTab(page, text) {
-        const input = page.locator('[data-terminal-input]');
+        // Target the visible terminal input (active tab content without .hidden class)
+        const input = page.locator('.tab-content:not(.hidden) [data-terminal-input]');
         await input.fill(text);
         // Ensure the key event is dispatched to the input (page.keyboard may target <body> if focus is elsewhere).
         await input.press('Tab');
@@ -121,7 +125,7 @@ test.describe('Terminal Tab Autocomplete', () => {
 
     test('autocomplete works after cd to subdirectory', async ({ page }) => {
         // Navigate to Documents
-        const input = page.locator('[data-terminal-input]');
+        const input = page.locator('.tab-content:not(.hidden) [data-terminal-input]');
         await input.fill('cd Documents');
         await input.press('Enter');
 
@@ -142,7 +146,7 @@ test.describe('Terminal Tab Autocomplete', () => {
 
     test('autocomplete with "../" navigates up', async ({ page }) => {
         // Navigate to Documents
-        const input = page.locator('[data-terminal-input]');
+        const input = page.locator('.tab-content:not(.hidden) [data-terminal-input]');
         await input.fill('cd Documents');
         await input.press('Enter');
 
