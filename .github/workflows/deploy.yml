@@ -1,71 +1,70 @@
 name: Deploy to GitHub Pages
 
 on:
-    push:
-        branches: [main]
-    workflow_dispatch:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
-    contents: read
-    pages: write
-    id-token: write
+  contents: read
+  pages: write
+  id-token: write
 
+# Prevent overlapping page deployments for the same branch
 concurrency:
-    group: 'pages'
-    cancel-in-progress: false
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: '20'
-                  cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-            - name: Install dependencies
-              run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Download build artifacts
-              id: download-build
-              uses: actions/download-artifact@v4
-              with:
-                  name: build-${{ github.sha }}
-              continue-on-error: true
+      # Build from source to avoid cross-workflow artifact coupling
+      - name: Typecheck
+        run: npm run typecheck
 
-            - name: Typecheck
-              if: steps.download-build.outcome == 'failure'
-              run: npm run typecheck
+      - name: Build TypeScript
+        run: npm run build:ts
 
-            - name: Type Coverage Check
-              if: steps.download-build.outcome == 'failure'
-              run: npm run type:coverage
-              continue-on-error: true
+      - name: Build Tailwind CSS
+        run: npm run build:css
 
-            - name: Build TypeScript
-              if: steps.download-build.outcome == 'failure'
-              run: npm run build:ts
+      # Optionally build production bundle if your Pages uses app.bundle.js
+      - name: Build production bundle
+        run: npm run build:bundle
 
-            - name: Build Tailwind CSS
-              if: steps.download-build.outcome == 'failure'
-              run: npm run build:css
+      # Upload only the files needed for Pages to serve
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: |
+            index.html
+            projekte.html
+            dist/
+            js/app.bundle.js
+            img/
 
-            - name: Upload artifact
-              uses: actions/upload-pages-artifact@v3
-              with:
-                  path: '.'
-
-    deploy:
-        environment:
-            name: github-pages
-            url: ${{ steps.deployment.outputs.page_url }}
-        runs-on: ubuntu-latest
-        needs: build
-        steps:
-            - name: Deploy to GitHub Pages
-              id: deployment
-              uses: actions/deploy-pages@v4
+  deploy:
+    name: Deploy
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
