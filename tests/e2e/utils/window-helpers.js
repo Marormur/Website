@@ -2,11 +2,7 @@
 // Reduces duplication and improves maintainability of window-related test helpers
 
 const { expect } = require('@playwright/test');
-const {
-    clickDockIcon,
-    openFinderWindow,
-    waitForFinderReady,
-} = require('../utils');
+const { openFinderWindow, waitForFinderReady } = require('../utils');
 
 /**
  * Get the count of Finder windows registered in WindowRegistry
@@ -124,13 +120,13 @@ async function openFinderAtRoot(page) {
     const finderWindow = await openFinderWindow(page);
     await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
     await waitForFinderReady(page);
-    
+
     // Click sidebar computer if present to ensure root view
     const computerBtn = finderWindow.locator('[data-finder-view="computer"]').first();
     if (await computerBtn.isVisible().catch(() => false)) {
         await computerBtn.click();
     }
-    
+
     return finderWindow;
 }
 
