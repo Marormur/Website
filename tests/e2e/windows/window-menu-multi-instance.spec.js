@@ -2,7 +2,7 @@
 /* eslint-disable no-restricted-syntax */
 // Note: waitForTimeout used intentionally for menu animations and DOM updates
 const { test, expect } = require('@playwright/test');
-const { gotoHome, waitForAppReady, clickDockIcon } = require('../utils');
+const { gotoHome, waitForAppReady } = require('../utils');
 const {
     getFinderWindowCount,
     openFinderViaDock,
