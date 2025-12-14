@@ -254,6 +254,7 @@ import { getString, setString } from '../services/storage-utils.js';
             let clsValue = 0;
             const clsObserver = new PerformanceObserver(list => {
                 const entries = list.getEntries();
+                if (entries.length === 0) return;
                 for (const entry of entries) {
                     const layoutShift = entry as PerformanceEntry & {
                         hadRecentInput?: boolean;
