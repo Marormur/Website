@@ -47,16 +47,11 @@ jobs:
               run: npm run build:bundle
 
             # Upload all files needed for Pages to serve
+            # Path: '.' uploads the entire repo root (after build)
             - name: Upload Pages artifact
               uses: actions/upload-pages-artifact@v3
               with:
-                  path: |
-                      index.html
-                      projekte.html
-                      CNAME
-                      dist/
-                      js/
-                      img/
+                  path: '.'
 
     deploy:
         name: Deploy
