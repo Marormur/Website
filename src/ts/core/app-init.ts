@@ -11,6 +11,15 @@
 // Export to make this a proper module for global augmentation
 export {};
 
+// Import window menu module for initialization
+import { initializeWindowMenu } from '../ui/window-menu';
+import {
+    clearSessionKey,
+    validateLegacySession,
+    validateMultiWindowSession,
+} from '../services/session-guard';
+import { installShim } from '../compat/instance-shims';
+
 /**
  * Global window interface extensions for app initialization
  */
@@ -265,111 +274,34 @@ function initApp(): void {
         win.WindowRegistry.init?.();
     }
 
+    // Initialize Window menu (macOS-style menu for window management)
+    try {
+        initializeWindowMenu();
+    } catch (err) {
+        console.warn('[APP-INIT] Window menu initialization failed:', err);
+    }
+
     // Initialize Multi-Window SessionManager
+    // Create a promise to track session restore completion (even if no session manager)
+    let sessionRestoreComplete: () => void = () => {};
+    const sessionRestorePromise = new Promise<void>(resolve => {
+        sessionRestoreComplete = resolve;
+    });
+    (window as any).__sessionRestorePromise = sessionRestorePromise;
+
     if (win.MultiWindowSessionManager) {
         try {
-            // SAFETY: Check BOTH sessions (new multi-window + legacy) before initializing
-            let shouldClearSessions = false;
+            const multiCheck = validateMultiWindowSession();
+            const legacyCheck = validateLegacySession();
 
-            // Check multi-window session
-            try {
-                const sessionData = localStorage.getItem('multi-window-session');
-                if (sessionData) {
-                    const session = JSON.parse(sessionData);
-                    console.log('[APP-INIT] Found multi-window session:', {
-                        windowCount: session.windows?.length || 0,
-                        windows:
-                            session.windows?.map((w: any) => ({ type: w.type, id: w.id })) || [],
-                    });
-
-                    // Clear if too many windows (indicates corruption)
-                    if (session.windows && session.windows.length > 10) {
-                        console.warn(
-                            '[APP-INIT] Multi-window session corrupted (too many windows)'
-                        );
-                        shouldClearSessions = true;
-                    }
-                    // Also check for duplicate types (e.g., multiple finder windows)
-                    const typeCount = new Map();
-                    if (session.windows) {
-                        session.windows.forEach((w: any) => {
-                            const count = typeCount.get(w.type) || 0;
-                            typeCount.set(w.type, count + 1);
-                        });
-                        for (const [type, count] of typeCount.entries()) {
-                            if (count > 3) {
-                                console.warn(
-                                    `[APP-INIT] Multi-window session has ${count} ${type} windows (max 3 per type)`
-                                );
-                                shouldClearSessions = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            } catch {
-                // Invalid JSON - clear it
-                shouldClearSessions = true;
+            if (legacyCheck.shouldClear) {
+                console.warn('[APP-INIT] Clearing ONLY legacy session (corrupted)');
+                clearSessionKey('windowInstancesSession');
             }
 
-            // Check legacy session
-            try {
-                const legacyData = localStorage.getItem('windowInstancesSession');
-                console.log('[APP-INIT] Legacy session exists?', !!legacyData);
-
-                if (legacyData) {
-                    const legacySession = JSON.parse(legacyData);
-                    console.log('[APP-INIT] Found legacy session:', {
-                        instanceCount: legacySession.instances?.length || 0,
-                        instances:
-                            legacySession.instances?.map((i: any) => ({
-                                type: i.type,
-                                id: i.id,
-                            })) || [],
-                    });
-
-                    let shouldClearLegacy = false;
-
-                    if (legacySession.instances && legacySession.instances.length > 10) {
-                        console.warn('[APP-INIT] Legacy session corrupted (too many instances)');
-                        shouldClearLegacy = true;
-                    }
-                    // Also check for duplicate types in legacy
-                    const typeCount = new Map();
-                    if (legacySession.instances) {
-                        legacySession.instances.forEach((inst: any) => {
-                            const count = typeCount.get(inst.type) || 0;
-                            typeCount.set(inst.type, count + 1);
-                        });
-                        for (const [type, count] of typeCount.entries()) {
-                            if (count > 3) {
-                                console.warn(
-                                    `[APP-INIT] Legacy session has ${count} ${type} instances (max 3 per type)`
-                                );
-                                shouldClearLegacy = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (shouldClearLegacy) {
-                        console.warn('[APP-INIT] Clearing ONLY legacy session (corrupted)');
-                        localStorage.removeItem('windowInstancesSession');
-                    }
-                }
-            } catch (err) {
-                // Invalid JSON - clear ONLY legacy session
-                console.warn('[APP-INIT] Legacy session error:', err);
-                console.warn(
-                    '[APP-INIT] Clearing ONLY legacy session (multi-window session preserved)'
-                );
-                localStorage.removeItem('windowInstancesSession');
-            }
-
-            // Clear multi-window session if corrupted (legacy session already cleared above if needed)
-            if (shouldClearSessions) {
+            if (multiCheck.shouldClear) {
                 console.warn('[APP-INIT] Clearing multi-window session (corrupted)');
-                localStorage.removeItem('multi-window-session');
+                clearSessionKey('multi-window-session');
             }
 
             win.MultiWindowSessionManager.init?.();
@@ -386,11 +318,19 @@ function initApp(): void {
                     }
                 } catch (err) {
                     console.warn('[APP-INIT] Multi-window session restore failed:', err);
+                } finally {
+                    // Mark session restore as complete
+                    sessionRestoreComplete();
                 }
             }, 150); // Delay to ensure all managers are ready
         } catch (err) {
             console.warn('[APP-INIT] MultiWindowSessionManager initialization failed:', err);
+            // Mark session restore as complete even on error
+            sessionRestoreComplete();
         }
+    } else {
+        // No MultiWindowSessionManager, mark as complete immediately
+        sessionRestoreComplete();
     }
 
     // Initialize legacy SessionManager for auto-save and restore session if available
@@ -537,8 +477,19 @@ function initApp(): void {
     // after this file) have a chance to run and not hide UI elements
     // after tests consider the app ready.
     const gw = window as Window & { __APP_READY?: boolean };
-    function markReady() {
+    async function markReady() {
         try {
+            // Wait for session restore to complete before marking ready
+            const sessionRestorePromise = (window as any).__sessionRestorePromise;
+            if (sessionRestorePromise) {
+                try {
+                    await sessionRestorePromise;
+                    console.log('[APP-INIT] Waited for session restore before marking ready');
+                } catch (e) {
+                    console.warn('[APP-INIT] Session restore wait failed:', e);
+                }
+            }
+
             // At load time, ensure the dock is placed under document.body so
             // any legacy scripts that reparent early don't leave it inside a
             // hidden modal. Do this right before signaling readiness so tests
@@ -640,6 +591,167 @@ function initApp(): void {
             if (gw2.ActionBus) {
                 gw2.__ActionBus = gw2.ActionBus;
                 console.info('[APP-INIT] ActionBus exposed as __ActionBus');
+            }
+
+            // =====================================================================
+            // PHASE 2: Legacy InstanceManager Compatibility Shims (Finder)
+            // =====================================================================
+            if (typeof gw2.FinderInstanceManager === 'undefined') {
+                try {
+                    const registry = gw2.WindowRegistry;
+                    installShim(
+                        {
+                            legacyName: 'FinderInstanceManager',
+                            registryType: 'finder',
+                            createInstance(opts?: { title?: string }) {
+                                try {
+                                    const windows = registry.getAllWindows('finder') || [];
+                                    const firstWindow = windows[0];
+                                    if (firstWindow && typeof firstWindow.addTab === 'function') {
+                                        const tabView = gw2.FinderView
+                                            ? new gw2.FinderView({
+                                                  title: opts?.title || 'Computer',
+                                                  source: 'computer',
+                                              })
+                                            : null;
+                                        if (tabView) {
+                                            firstWindow.addTab(tabView);
+                                            return {
+                                                instanceId: tabView.id,
+                                                type: 'finder',
+                                                title: tabView.title,
+                                            };
+                                        }
+                                    }
+                                    return null;
+                                } catch (e) {
+                                    console.warn(
+                                        '[FinderInstanceManager shim] createInstance failed:',
+                                        e
+                                    );
+                                    return null;
+                                }
+                            },
+                            getInstanceCount() {
+                                try {
+                                    const windows = registry.getAllWindows('finder') || [];
+                                    let totalTabs = 0;
+                                    windows.forEach((win: any) => {
+                                        if (win.tabs && typeof win.tabs.size === 'number') {
+                                            totalTabs += win.tabs.size;
+                                        }
+                                    });
+                                    return totalTabs;
+                                } catch {
+                                    return 0;
+                                }
+                            },
+                            getAllInstances() {
+                                try {
+                                    const windows = registry.getAllWindows('finder') || [];
+                                    const allTabs: any[] = [];
+                                    windows.forEach((win: any) => {
+                                        if (win.tabs && typeof win.tabs.values === 'function') {
+                                            const tabs = Array.from(win.tabs.values());
+                                            tabs.forEach((tab: any) => {
+                                                allTabs.push({
+                                                    instanceId: tab.id,
+                                                    type: 'finder',
+                                                    title: tab.title || 'Finder',
+                                                    show: () => tab.show?.(),
+                                                    hide: () => tab.hide?.(),
+                                                });
+                                            });
+                                        }
+                                    });
+                                    return allTabs;
+                                } catch {
+                                    return [];
+                                }
+                            },
+                            getActiveInstance() {
+                                try {
+                                    const activeWindow = registry.getActiveWindow();
+                                    if (activeWindow && activeWindow.type === 'finder') {
+                                        const finderWindow = activeWindow as any;
+                                        if (finderWindow.activeTabId && finderWindow.tabs) {
+                                            const activeTab = finderWindow.tabs.get(
+                                                finderWindow.activeTabId
+                                            );
+                                            if (activeTab) {
+                                                return {
+                                                    instanceId: activeTab.id,
+                                                    type: 'finder',
+                                                    title: activeTab.title || 'Finder',
+                                                };
+                                            }
+                                        }
+                                    }
+
+                                    const windows = registry.getAllWindows('finder') || [];
+                                    for (const win of windows) {
+                                        const w = win as any;
+                                        if (w.isVisible && w.isVisible()) {
+                                            if (w.activeTabId && w.tabs) {
+                                                const activeTab = w.tabs.get(w.activeTabId);
+                                                if (activeTab) {
+                                                    return {
+                                                        instanceId: activeTab.id,
+                                                        type: 'finder',
+                                                        title: activeTab.title || 'Finder',
+                                                    };
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (windows.length > 0) {
+                                        const firstWindow = windows[0] as any;
+                                        if (firstWindow.activeTabId && firstWindow.tabs) {
+                                            const activeTab = firstWindow.tabs.get(
+                                                firstWindow.activeTabId
+                                            );
+                                            if (activeTab) {
+                                                return {
+                                                    instanceId: activeTab.id,
+                                                    type: 'finder',
+                                                    title: activeTab.title || 'Finder',
+                                                };
+                                            }
+                                        }
+                                    }
+                                    return null;
+                                } catch (e) {
+                                    console.warn(
+                                        '[FinderInstanceManager shim] getActiveInstance failed:',
+                                        e
+                                    );
+                                    return null;
+                                }
+                            },
+                            setActiveInstance(instanceId: string) {
+                                try {
+                                    const windows = registry.getAllWindows('finder') || [];
+                                    for (const win of windows) {
+                                        if ((win as any).tabs?.has(instanceId)) {
+                                            (win as any).setActiveTab?.(instanceId);
+                                            registry.setActiveWindow(win.id);
+                                            return;
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.warn(
+                                        '[FinderInstanceManager shim] setActiveInstance failed:',
+                                        e
+                                    );
+                                }
+                            },
+                        },
+                        gw2
+                    );
+                } catch (e) {
+                    console.warn('[APP-INIT] FinderInstanceManager shim failed:', e);
+                }
             }
 
             gw.__APP_READY = true;

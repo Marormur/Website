@@ -1,6 +1,6 @@
 # 🤝 Contributing to Marvin's Portfolio Website
 
-> NOTE: TypeScript migration is complete. Prefer the TypeScript sources in `src/ts/` when adding or editing code. The `js/` directory contains emitted JavaScript output and legacy artifacts — edit `js/` only when fixing generated output or maintaining historical documentation.
+> NOTE: TypeScript migration is complete. Prefer the TypeScript sources in `src/ts/` when adding or editing code. The `js/` directory contains emitted JavaScript output and legacy artifacts — edit `js/` only when fixing generated output or maintaining historical documentation. Markdown-Dokumente wurden weitgehend entfernt; bitte aussagekräftige Kommentare direkt im Code hinterlassen.
 
 Thank you for your interest in contributing! This document provides guidelines for contributing to the project.
 
@@ -64,7 +64,6 @@ Thank you for your interest in contributing! This document provides guidelines f
 - **Runtime / Emitted JS**: `js/` directory
     - Contains compiled/emitted JavaScript output and historical artifacts
     - Do NOT create new modules under `js/`. Edit `src/ts/` and run the build instead. Only edit `js/` when fixing generated output or maintaining historical docs.
-- **Documentation**: `docs/` directory
 - **Tests**: `tests/` directory
 
 ### Making Changes
@@ -123,14 +122,7 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 ### TypeScript
 
-This project uses TypeScript for improved type safety. See [docs/TYPESCRIPT_GUIDELINES.md](./docs/TYPESCRIPT_GUIDELINES.md) for:
-
-- Best practices and patterns
-- Migration guide for converting JS to TS
-- Type coverage targets and enforcement
-- Common issues and troubleshooting
-
-Quick TypeScript workflow:
+This project uses TypeScript for improved type safety. Quick TypeScript workflow:
 
 ```bash
 npm run typecheck         # Check types
@@ -265,10 +257,7 @@ Feature suggestions are welcome! Please:
 
 ## 📚 Resources
 
-- [Architecture Documentation](./docs/ARCHITECTURE.md)
-- [Refactoring Guide](./docs/REFACTORING.md)
-- [Quick Start Guide](./docs/QUICKSTART.md)
-- [Deployment Guide](./docs/DEPLOYMENT.md)
+(Weitere ausführliche Markdown-Dokumente wurden entfernt; bitte Code-Kommentare nutzen.)
 
 ## 📄 License
 

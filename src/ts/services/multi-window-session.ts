@@ -70,6 +70,7 @@ export interface LegacySession {
 class MultiWindowSessionManager {
     private static STORAGE_KEY = 'multi-window-session';
     private static LEGACY_STORAGE_KEY = 'windowInstancesSession'; // Old SessionManager key
+    private static LEGACY_STORAGE_KEY_V1 = 'multiWindowSession_v1'; // Legacy multi-window session key
     private static VERSION = '1.0.0';
     private static AUTO_SAVE_DELAY = 2000; // 2 seconds debounce
 
@@ -110,6 +111,11 @@ class MultiWindowSessionManager {
      * Save current session to localStorage
      */
     saveSession(options: { immediate?: boolean } = {}): void {
+        console.log('[MultiWindowSessionManager] saveSession called:', {
+            immediate: options.immediate,
+            isRestoring: this.isRestoring,
+        });
+
         if (this.isRestoring) {
             console.log('[MultiWindowSessionManager] Skipping save during restore');
             return;
@@ -126,21 +132,40 @@ class MultiWindowSessionManager {
      * Save session immediately (bypasses debounce)
      */
     private saveSessionImmediate(): void {
+        console.log('[MultiWindowSessionManager] saveSessionImmediate called');
+
         if (this.autoSaveTimer !== null) {
             clearTimeout(this.autoSaveTimer);
             this.autoSaveTimer = null;
         }
 
         try {
+            console.log('[MultiWindowSessionManager] Creating session snapshot...');
             const session = this.createSession();
-            localStorage.setItem(MultiWindowSessionManager.STORAGE_KEY, JSON.stringify(session));
+            console.log('[MultiWindowSessionManager] Session created:', {
+                windows: session.windows.length,
+                totalTabs: session.windows.reduce((sum, w) => sum + w.tabs.length, 0),
+            });
+
+            const serialized = JSON.stringify(session);
+            console.log(
+                '[MultiWindowSessionManager] Session serialized, length:',
+                serialized.length
+            );
+
+            localStorage.setItem(MultiWindowSessionManager.STORAGE_KEY, serialized);
+            console.log('[MultiWindowSessionManager] Session saved to localStorage');
 
             console.log('[MultiWindowSessionManager] Session saved:', {
                 windows: session.windows.length,
                 totalTabs: session.windows.reduce((sum, w) => sum + w.tabs.length, 0),
+                isRestoring: this.isRestoring,
             });
         } catch (error) {
             console.error('[MultiWindowSessionManager] Failed to save session:', error);
+            if (error instanceof Error) {
+                console.error('[MultiWindowSessionManager] Error stack:', error.stack);
+            }
         }
     }
 
@@ -218,6 +243,9 @@ class MultiWindowSessionManager {
      * Restore session from localStorage
      */
     async restoreSession(): Promise<boolean> {
+        console.log(
+            '[MultiWindowSessionManager] restoreSession() called, setting isRestoring=true'
+        );
         this.isRestoring = true;
 
         try {
@@ -225,8 +253,34 @@ class MultiWindowSessionManager {
             const sessionData = localStorage.getItem(MultiWindowSessionManager.STORAGE_KEY);
 
             if (sessionData) {
+                console.log('[MultiWindowSessionManager] Found session data, parsing...');
                 const session = JSON.parse(sessionData) as MultiWindowSession;
+                console.log('[MultiWindowSessionManager] Session parsed:', {
+                    windows: session.windows.length,
+                    windowTypes: session.windows.map(w => w.type),
+                });
+                // Apply path migration in case there are legacy paths
+                this.migrateSessionPaths(session);
                 await this.restoreMultiWindowSession(session);
+                console.log('[MultiWindowSessionManager] Session restored successfully');
+                return true;
+            }
+
+            // Try to load legacy v1 session (multiWindowSession_v1)
+            const legacyV1Data = localStorage.getItem(
+                MultiWindowSessionManager.LEGACY_STORAGE_KEY_V1
+            );
+            if (legacyV1Data) {
+                console.log('[MultiWindowSessionManager] Migrating legacy v1 session...');
+                const rawSession = JSON.parse(legacyV1Data);
+                // Normalize legacy format to current format
+                const session = this.normalizeLegacyV1Session(rawSession);
+                // Apply path migration
+                this.migrateSessionPaths(session);
+                await this.restoreMultiWindowSession(session);
+                // Clear legacy key and save in new format
+                localStorage.removeItem(MultiWindowSessionManager.LEGACY_STORAGE_KEY_V1);
+                this.saveSessionImmediate();
                 return true;
             }
 
@@ -245,6 +299,9 @@ class MultiWindowSessionManager {
             console.error('[MultiWindowSessionManager] Failed to restore session:', error);
             return false;
         } finally {
+            console.log(
+                '[MultiWindowSessionManager] restoreSession() complete, setting isRestoring=false'
+            );
             this.isRestoring = false;
         }
     }
@@ -437,6 +494,147 @@ class MultiWindowSessionManager {
             console.error('[MultiWindowSessionManager] Failed to restore tab:', error);
             return null;
         }
+    }
+
+    /**
+     * Migrate legacy path formats (Computer/Home → /home/marvin)
+     */
+    private migrateLegacyPath(path: string | undefined | null): string {
+        if (!path) return '/home/marvin';
+
+        // Already in new format
+        if (path.startsWith('/')) return path;
+
+        // Computer/Home → /home/marvin
+        if (path === 'Computer' || path === '~') {
+            return '/home/marvin';
+        }
+
+        if (path.startsWith('Computer/Home')) {
+            // Computer/Home → /home/marvin
+            // Computer/Home/Documents → /home/marvin/Documents
+            const subPath = path.slice('Computer/Home'.length);
+            return subPath ? `/home/marvin${subPath}` : '/home/marvin';
+        }
+
+        if (path.startsWith('Computer/')) {
+            // Computer/Documents → /home/marvin/Documents
+            const subPath = path.slice('Computer/'.length);
+            return `/home/marvin/${subPath}`;
+        }
+
+        // Handle tilde expansion
+        if (path.startsWith('~/')) {
+            return '/home/marvin/' + path.slice(2);
+        }
+
+        // Relative path - prepend /home/marvin/
+        return `/home/marvin/${path}`;
+    }
+
+    /**
+     * Migrate paths in session data
+     */
+    private migrateSessionPaths(session: any): void {
+        if (!session || !session.windows) return;
+
+        for (const window of session.windows) {
+            // Handle legacy format: windows[].sessions[]
+            const tabsArray = window.tabs || window.sessions || [];
+
+            for (const tab of tabsArray) {
+                // Migrate vfsCwd for terminal sessions
+                if (tab.vfsCwd) {
+                    const migrated = this.migrateLegacyPath(tab.vfsCwd);
+                    console.log(
+                        `[MultiWindowSessionManager] Migrating path: ${tab.vfsCwd} → ${migrated}`
+                    );
+                    tab.vfsCwd = migrated;
+                }
+
+                // Also check currentPath (legacy field)
+                if (tab.currentPath && !tab.vfsCwd) {
+                    const migrated = this.migrateLegacyPath(tab.currentPath);
+                    console.log(
+                        `[MultiWindowSessionManager] Migrating currentPath: ${tab.currentPath} → ${migrated}`
+                    );
+                    tab.vfsCwd = migrated;
+                    tab.currentPath = migrated;
+                }
+
+                // Migrate contentState.vfsCwd if it exists
+                if (tab.contentState?.vfsCwd) {
+                    const migrated = this.migrateLegacyPath(tab.contentState.vfsCwd);
+                    tab.contentState.vfsCwd = migrated;
+                }
+
+                // Migrate contentState.currentPath if it exists
+                if (tab.contentState?.currentPath) {
+                    const migrated = this.migrateLegacyPath(tab.contentState.currentPath);
+                    tab.contentState.currentPath = migrated;
+                }
+            }
+        }
+    }
+
+    /**
+     * Normalize legacy session format to current format
+     * Handles old format with windowId/sessions instead of id/tabs
+     */
+    private normalizeLegacyV1Session(session: any): MultiWindowSession {
+        const normalized: MultiWindowSession = {
+            version: MultiWindowSessionManager.VERSION,
+            timestamp: session.timestamp || Date.now(),
+            windows: [],
+            metadata: session.metadata || {},
+        };
+
+        for (const window of session.windows || []) {
+            const windowData: WindowSessionData = {
+                id: window.id || window.windowId || `window-${Date.now()}`,
+                type: window.type || session.windowType || 'terminal',
+                position: window.position || { x: 100, y: 100, width: 800, height: 600 },
+                zIndex: window.zIndex || 100,
+                isMinimized: window.isMinimized || false,
+                isMaximized: window.isMaximized || false,
+                activeTabId: window.activeTabId || null,
+                tabs: [],
+                metadata: window.metadata || {},
+            };
+
+            // Convert sessions[] to tabs[]
+            const tabsSource = window.tabs || window.sessions || [];
+            for (const tab of tabsSource) {
+                const tabData: any = {
+                    id: tab.id || tab.sessionId || `tab-${Date.now()}-${Math.random()}`,
+                    type: tab.type || 'terminal-session',
+                    title: tab.title || 'Terminal',
+                    icon: tab.icon,
+                    contentState: tab.contentState || {},
+                    created: tab.created || Date.now(),
+                    modified: tab.modified || Date.now(),
+                };
+
+                // Copy relevant fields to tab data
+                if (tab.vfsCwd) tabData.vfsCwd = tab.vfsCwd;
+                if (tab.currentPath) tabData.currentPath = tab.currentPath;
+                if (tab.commandHistory) tabData.commandHistory = tab.commandHistory;
+
+                windowData.tabs.push(tabData);
+            }
+
+            // Set activeTabId if not set
+            if (!windowData.activeTabId && windowData.tabs.length > 0) {
+                const firstTab = windowData.tabs[0];
+                if (firstTab) {
+                    windowData.activeTabId = firstTab.id;
+                }
+            }
+
+            normalized.windows.push(windowData);
+        }
+
+        return normalized;
     }
 
     /**

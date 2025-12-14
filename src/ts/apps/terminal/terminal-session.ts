@@ -37,6 +37,18 @@ export class TerminalSession extends BaseTab {
         this.commandHistory = [];
         this.historyIndex = -1;
         this.vfsCwd = '/home/marvin';
+
+        // Ensure VirtualFS has default structure for tests/dev if storage is empty or corrupted
+        try {
+            const home = VirtualFS.getFolder('/home/marvin');
+            if (!home || !home.children) {
+                console.warn('[TerminalSession] VirtualFS missing defaults, resetting');
+                VirtualFS.reset();
+            }
+        } catch (error) {
+            console.warn('[TerminalSession] VirtualFS check failed, resetting', error);
+            VirtualFS.reset();
+        }
     }
 
     /**
@@ -86,9 +98,7 @@ export class TerminalSession extends BaseTab {
                 const command = this.inputElement!.value.trim();
                 if (command) {
                     this.executeCommand(command);
-                    this.commandHistory.push(command);
-                    this.historyIndex = this.commandHistory.length;
-                    this.updateContentState({ commandHistory: this.commandHistory });
+                    // Note: commandHistory is now updated in executeCommand()
                 }
                 this.inputElement!.value = '';
                 this.inputElement!.focus();
@@ -113,8 +123,209 @@ export class TerminalSession extends BaseTab {
                     this.historyIndex = this.commandHistory.length;
                     this.inputElement!.value = '';
                 }
+            } else if (e.key === 'Tab') {
+                // Keep focus and prevent browser focus traversal.
+                e.preventDefault();
+                this.handleTabCompletion();
             }
         });
+    }
+
+    /**
+     * Basic tab completion for commands and VirtualFS paths.
+     *
+     * This is primarily used by Playwright E2E tests (tests/e2e/terminal/terminal-autocomplete.spec.js)
+     * and intentionally stays simple:
+     * - Completes first token as command
+     * - Completes first argument for cd/cat/mkdir/rm
+     */
+    private handleTabCompletion(): void {
+        if (!this.inputElement) return;
+
+        const input = this.inputElement.value;
+        if (input === '') return;
+
+        const endsWithSpace = input.endsWith(' ');
+        const tokens = input.split(' ').filter((t, i, arr) => {
+            // Preserve a single empty arg at the end via endsWithSpace; otherwise ignore extra spaces.
+            if (t !== '') return true;
+            return i === arr.length - 1;
+        });
+
+        const cmd = tokens[0] ?? '';
+        const arg1 = tokens[1] ?? '';
+
+        // Keep in sync with executeCommand() keys.
+        const availableCommands = [
+            'help',
+            'clear',
+            'ls',
+            'pwd',
+            'cd',
+            'cat',
+            'touch',
+            'mkdir',
+            'rm',
+            'echo',
+            'date',
+            'whoami',
+        ];
+
+        // Debug: current CWD and raw input
+        try {
+            console.debug('[TerminalSession] Tab on input', { input, cwd: this.vfsCwd });
+        } catch {}
+
+        // Command completion (first token).
+        if (tokens.length <= 1 && !endsWithSpace) {
+            const matches = availableCommands.filter(c => c.startsWith(cmd));
+            try {
+                console.debug('[TerminalSession] Command matches', { cmd, matches });
+            } catch {}
+            if (matches.length === 1) {
+                const match = matches[0];
+                if (match !== undefined) this.inputElement.value = match + ' ';
+                return;
+            }
+
+            // If already complete command, add a trailing space.
+            if (availableCommands.includes(cmd)) {
+                this.inputElement.value = cmd + ' ';
+            }
+            return;
+        }
+
+        // Argument completion (first argument only).
+        // If user just typed a full command and pressed Tab, add a space.
+        if (tokens.length === 1 && endsWithSpace && availableCommands.includes(cmd)) {
+            this.inputElement.value = cmd + ' ';
+            return;
+        }
+
+        // Only complete for supported commands.
+        const completeForCmd = cmd === 'cd' || cmd === 'cat' || cmd === 'mkdir' || cmd === 'rm';
+        if (!completeForCmd) return;
+
+        // If user hasn't started typing an argument yet, don't change anything.
+        if (arg1 === '') return;
+
+        // mkdir: if argument ends with '/', the tests just expect it to stay stable.
+        if (cmd === 'mkdir' && arg1.endsWith('/')) return;
+
+        const allowFolders = cmd === 'cd' || cmd === 'mkdir';
+        const allowFiles = cmd === 'cat' || cmd === 'rm';
+        const allowBoth = cmd === 'rm';
+
+        this.completePathArgument(cmd, arg1, {
+            allowFolders: allowBoth ? true : allowFolders,
+            allowFiles: allowBoth ? true : allowFiles,
+        });
+    }
+
+    private findCommonPrefix(strings: string[]): string {
+        if (strings.length === 0) return '';
+        const first = strings[0] ?? '';
+        if (strings.length === 1) return first;
+
+        let prefix = first;
+        for (let i = 1; i < strings.length; i++) {
+            const cur = strings[i];
+            if (cur === undefined) continue;
+            while (cur.indexOf(prefix) !== 0) {
+                prefix = prefix.slice(0, -1);
+                if (prefix === '') return '';
+            }
+        }
+        return prefix;
+    }
+
+    private completePathArgument(
+        cmd: 'cd' | 'cat' | 'mkdir' | 'rm',
+        rawArg: string,
+        opts: { allowFolders: boolean; allowFiles: boolean }
+    ): void {
+        if (!this.inputElement) return;
+
+        // Split into directory part + basename part (to complete last segment).
+        const lastSlashIdx = rawArg.lastIndexOf('/');
+        const dirPrefix = lastSlashIdx >= 0 ? rawArg.slice(0, lastSlashIdx + 1) : '';
+        const basePrefix = lastSlashIdx >= 0 ? rawArg.slice(lastSlashIdx + 1) : rawArg;
+
+        // If the user is already inside a directory path (ends with '/'), keep stable.
+        if (basePrefix === '' && rawArg.endsWith('/')) return;
+
+        // Resolve directory context for matching. Accept absolute, relative, and ./ ../ prefixes.
+        let dirForResolve: string;
+        if (dirPrefix === '') {
+            dirForResolve = this.vfsCwd;
+        } else {
+            const rawDir = dirPrefix.endsWith('/') ? dirPrefix.slice(0, -1) : dirPrefix;
+            dirForResolve = this.vfsResolve(rawDir);
+        }
+
+        const folder = VirtualFS.getFolder(dirForResolve);
+        try {
+            console.debug('[TerminalSession] Dir resolve', {
+                rawArg,
+                dirPrefix,
+                basePrefix,
+                dirForResolve,
+                folderFound: !!folder,
+            });
+        } catch {}
+        if (!folder) return;
+
+        const entries = Object.entries(folder.children);
+        const matches = entries
+            .filter(([name, item]) => {
+                if (!name.startsWith(basePrefix)) return false;
+                if (item.type === 'folder') return opts.allowFolders;
+                return opts.allowFiles;
+            })
+            .map(([name, item]) => ({ name, item }));
+
+        try {
+            console.debug('[TerminalSession] Path matches', {
+                cmd,
+                basePrefix,
+                count: matches.length,
+                names: matches.map(m => m.name),
+            });
+        } catch {}
+        if (matches.length === 0) return;
+
+        const names = matches.map(m => m.name);
+
+        if (matches.length === 1) {
+            const m = matches[0]!;
+            let completed = m.name;
+
+            // For `cd`, append '/' to folders.
+            if (cmd === 'cd' && m.item.type === 'folder' && !completed.endsWith('/')) {
+                completed += '/';
+            }
+
+            this.inputElement.value = `${cmd} ${dirPrefix}${completed}`;
+            return;
+        }
+
+        // Multiple matches: extend to common prefix if possible.
+        const common = this.findCommonPrefix(names);
+        if (common.length > basePrefix.length) {
+            this.inputElement.value = `${cmd} ${dirPrefix}${common}`;
+        } else {
+            // If nothing to extend, show the list in output for UX feedback (like typical shells).
+            try {
+                const formatted = matches.map(
+                    m => (m.item.type === 'folder' ? '📁 ' : '📄 ') + m.name
+                );
+                this.addOutput(
+                    `guest@marvin:${this.vfsCwd}$ ${this.inputElement!.value}`,
+                    'command'
+                );
+                this.addOutput(formatted.join('  '), 'info');
+            } catch {}
+        }
     }
 
     showWelcomeMessage(): void {
@@ -151,6 +362,11 @@ export class TerminalSession extends BaseTab {
                 'error'
             );
         }
+
+        // Add command to history for session persistence
+        this.commandHistory.push(command);
+        this.historyIndex = this.commandHistory.length;
+        this.updateContentState({ commandHistory: this.commandHistory });
     }
 
     addOutput(text: string, type: 'command' | 'output' | 'error' | 'info' = 'output'): void {
@@ -367,6 +583,14 @@ export class TerminalSession extends BaseTab {
     }
 
     /**
+     * Get parent path of a given path
+     */
+    private parentPath(path: string): string {
+        const parts = path.split('/').filter(Boolean);
+        parts.pop();
+        return parts.length > 0 ? '/' + parts.join('/') : '/';
+    }
+    /**
      * Serialize session state
      */
     serialize(): any {
@@ -387,43 +611,15 @@ export class TerminalSession extends BaseTab {
             title: state.title,
         });
 
-        // Map legacy currentPath to vfsCwd
-        if (state.currentPath) {
-            // Map old 'Computer' paths to new '/' structure
-            if (state.currentPath === 'Computer' || state.currentPath === '~') {
-                session.vfsCwd = '/home/marvin';
-            } else if (state.currentPath.startsWith('Computer/')) {
-                // Map Computer/Home -> /home/marvin, Computer/Documents -> /home/marvin/Documents
-                const subPath = state.currentPath.slice(9); // Remove 'Computer/'
-                if (subPath === 'Home' || subPath.startsWith('Home/')) {
-                    const rest = subPath === 'Home' ? '' : subPath.slice(5);
-                    session.vfsCwd = rest ? `/home/marvin/${rest}` : '/home/marvin';
-                } else {
-                    session.vfsCwd = `/home/marvin/${subPath}`;
-                }
-            } else if (state.currentPath.startsWith('~/')) {
-                session.vfsCwd = '/home/marvin/' + state.currentPath.slice(2);
-            } else {
-                session.vfsCwd = state.currentPath;
-            }
-        }
-        // New vfsCwd property takes precedence
+        // Use vfsCwd if available, otherwise fall back to currentPath
+        // Note: Path migration is handled centrally in MultiWindowSessionManager
+        // before this method is called, so paths are already in the correct format
         if (state.vfsCwd) {
-            // Migrate old Computer paths to new structure
-            if (state.vfsCwd === 'Computer') {
-                session.vfsCwd = '/home/marvin';
-            } else if (state.vfsCwd.startsWith('Computer/')) {
-                const subPath = state.vfsCwd.slice(9);
-                if (subPath === 'Home' || subPath.startsWith('Home/')) {
-                    const rest = subPath === 'Home' ? '' : subPath.slice(5);
-                    session.vfsCwd = rest ? `/home/marvin/${rest}` : '/home/marvin';
-                } else {
-                    session.vfsCwd = `/home/marvin/${subPath}`;
-                }
-            } else {
-                session.vfsCwd = state.vfsCwd;
-            }
+            session.vfsCwd = state.vfsCwd;
+        } else if (state.currentPath) {
+            session.vfsCwd = state.currentPath;
         }
+
         if (state.commandHistory) {
             session.commandHistory = state.commandHistory;
             session.historyIndex = session.commandHistory.length;

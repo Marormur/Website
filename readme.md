@@ -1,177 +1,83 @@
-# Marvins Portfolio – Desktop‑Style Web App
+# 🎨 Marvin's Vibe Coding Paradise
 
-> NOTE: TypeScript sources are the canonical source of truth. The codebase has been migrated to TypeScript and the authoritative source lives under `src/ts/`. The `js/` directory contains emitted JavaScript output (built artifacts and legacy runtime files); edit `src/ts/` and run the build when changing behavior.
+Mein persönliches digitales Playground: Ein macOS-inspiriertes Desktop-Universum im Browser mit Fenstern, Modals, Menüleiste, Dark Mode, Deutsch/Englisch-Umschaltung und integriertem GitHub-Explorer. Texteditor, Terminal, Fotogalerie und Launchpad – alles in einer Web-App, weil warum nicht?
 
-Eine persönliche Portfolio‑Website mit Desktop‑Metapher: Fenster, Modale und Menüleiste im macOS‑Look, Dark Mode, Mehrsprachigkeit (DE/EN) und ein integrierter Projekte‑Browser, der öffentliche GitHub‑Repos lädt. Zusätzlich enthält die Seite einen einfachen Texteditor und einen Bildbetrachter.
+## Was ist hier los? 🚀
 
-## Features
+- 🪟 **macOS-Vibes**: Fenster, Kontextmenüs, alles sehr macos-like (aber im Browser!)
+- 🔄 **Multi-Instance Magic**: Mehrere Terminal-Fenster, mehrere Finder-Tabs – alles gleichzeitig
+- 🎯 **Apps**: Finder (GitHub-Browser), Terminal (mit virtuellem Dateisystem), TextEditor, Photos & Launchpad
+- 📁 **VirtualFS**: Ein echtes (virtuelles) Dateisystem, das sich merkt, was du tust
+- 💾 **Auto-Save**: Fenster, Tabs, Inhalte – alles wird wiederhergestellt nach dem Reload
+- 🌓 **Dark/Light Mode**: Weil manchmal brauchst du Dunkelheit, manchmal Licht
+- 🌍 **Deutsch & Englisch**: Umschalten zur Laufzeit, kein Reload nötig
+- 📘 **Vollständig TypeScript**: Strikt, mit Type Coverage und allen Ängsten dank Compiler
 
-- **Desktop‑UI** mit Fenstern, Modalen und Programm‑Info
-- **🆕 Multi-Instance Support** - Mehrere Fenster des gleichen Typs gleichzeitig (z.B. 3 Terminals!)
-- **Projekte‑Browser**: Listet GitHub‑Repos von „Marormur" und zeigt Dateien an
-- **Integrierter Texteditor** (für Text-/Code‑Dateien) und Bildbetrachter
-- **Dark Mode**: Systembasiert oder manuell wählbar, Speicherung in `localStorage`
-- **Mehrsprachigkeit** (Deutsch/Englisch) inkl. Sprachpräferenz
-- **Persistenz** von Fenster‑Layout und Finder‑Zustand (Repo/Path)
-
-## Projektstruktur
+## Im Projekt 🗂️
 
 ```
-/
-├── docs/              # 📚 Dokumentation (Architecture, Refactoring, Quick Start)
-├── src/               # 📝 Source Files
-│   ├── css/          #   - CSS Quelldateien (style.css, dialog.css)
-│   └── input.css     #   - Tailwind CSS Input
-├── js/               # ⚙️ JavaScript Module
-│   ├── window-manager.js      # Zentrale Fensterverwaltung
-│   ├── action-bus.js          # Deklaratives Event-System
-│   ├── api.js                 # Saubere Modul-Schnittstelle
-│   ├── base-window-instance.js # 🆕 Multi-Instance Basis-Klasse
-│   ├── instance-manager.js    # 🆕 Instance Manager
-│   ├── window-chrome.js       # 🆕 Wiederverwendbare UI-Komponenten
-│   ├── terminal-instance.js   # 🆕 Multi-Instance Terminal
-│   ├── text-editor-instance.js # 🆕 Multi-Instance Editor
-│   └── ...                    # Weitere Module (theme, dock, finder, etc.)
-├── img/              # 🖼️ Assets (Icons, Wallpaper, Profile)
-├── tests/            # 🧪 E2E Tests (Playwright)
-├── dist/             # 📦 Build Output (output.css)
-├── index.html        # 🏠 Hauptseite
-├── app.js            # 🚀 Haupt-Applikationslogik
-└── i18n.js           # 🌍 Internationalisierung (DE/EN)
+/ts/              # TypeScript Source (die Quelle aller Wahrheit!)
+│   ├── core/     # Initialisierung, APIs, Fehlerbehandlung, Logger
+│   ├── services/ # i18n, Theming, Storage, Session Manager, VirtualFS
+│   ├── ui/       # Action Bus, Dialoge, Menüs, Desktop, Keyboard-Shortcuts
+│   ├── windows/  # Fenster, Tabs, Instance Manager, Chrome-Styling
+│   └── apps/     # Die Apps: Finder, Terminal, TextEditor, Photos
+├── src/css/      # Noch mehr CSS-Magie (Tailwind + Custom)
+├── js/           # Build Output (nicht editieren! Das macht tsc für dich)
+├── tests/e2e/    # ~190 Playwright Tests (damit alles nicht kaputt geht)
+├── dist/         # Tailwind Output (auch nicht editieren)
+└── index.html    # Einstiegspunkt (lädt das Bundle)
 ```
 
-Detaillierte Architektur-Dokumentation: [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
-
-## Schnellstart
+## So geht's los 🎬
 
 ```bash
-# Dependencies installieren
+# 1. Dependencies
 npm install
 
-# CSS bauen
+# 2. CSS bauen (einmalig oder mit watch)
 npm run build:css
 
-# Development Server starten
+# 3. Dev-Server & TypeScript-Watch in einer Command
 npm run dev
 ```
 
-Dann Browser öffnen: http://localhost:5500/
+Das war's! Browser öffnen → http://127.0.0.1:5173 → Vibe genießen.
 
-**Alternative:** `index.html` direkt im Browser öffnen (lokaler Server empfohlen für GitHub API)
+**Pro-Tip:** VS Code Task „**Dev Environment: Start All**" macht alles automatisch: CSS-Watch, TypeScript-Watch, Server. Einmal klicken, alles läuft.
 
-Für detaillierte Anweisungen: [docs/QUICKSTART.md](./docs/QUICKSTART.md)
-
-### TypeScript Development
-
-Dieses Projekt ist **vollständig zu TypeScript migriert** mit strict mode compliance. Alle neuen Entwicklungen und Änderungen sollten in den TypeScript-Quellen unter `src/ts/` erfolgen. Das `js/`-Verzeichnis enthält generierte JavaScript-Ausgaben und Legacy-Artefakte.
-
-**Migration Status: 100% Complete! ✅**
-
-- 8 Kern-Module migriert (3,664 Zeilen TypeScript-Code)
-- Full TypeScript Strict Mode (Level 6/6)
-- Type Coverage: 81.79% baseline
-- Zero compilation errors
-
-Siehe [docs/TYPESCRIPT_GUIDELINES.md](./docs/TYPESCRIPT_GUIDELINES.md) für Best Practices und Migrationsanleitungen.
+### TypeScript-Sachen
 
 ```bash
-# TypeScript typecheck
-npm run typecheck
-
-# TypeScript build
-npm run build:ts
-
-# Type coverage messen
-npm run type:coverage
+npm run typecheck          # Keine Fehler? Schön!
+npm run typecheck:watch    # Fortwährende Kontrolle
+npm run build:ts           # Kompilieren zu js/
 ```
 
-## Bedienung
+## Anpassen & Spielen 🎮
 
-- Kopfzeile: Profilmenü (Über, Layout zurücksetzen, Einstellungen, LinkedIn)
-- Desktop‑Icon „Projekte": öffnet den Finder‑ähnlichen Browser für Repositories und Dateien
-- Textdateien: Öffnen im integrierten Editor (eigener Tab/Modal)
-- Bilddateien: Vorschau im Bildbetrachter mit Infos
-- Einstellungen: Theme (System/Hell/Dunkel) und Sprache (System/DE/EN)
-- Fenster: sind beweglich, kommen bei Interaktion in den Vordergrund; Layout kann zurückgesetzt werden
+- **GitHub-Account wechseln?** → In `app.js` nach `loadGithubRepos` suchen, `Marormur` austauschen
+- **Bilder & Branding?** → Alles in `img/` ist austauschbar (Profilbild, Icons, Wallpaper)
+- **Texte übersetzen/ändern?** → `i18n.js` ist dein Freund (Deutsch & Englisch)
+- **Styling anpassen?** → Tailwind kompiliert das, Custom CSS in `src/css/` macht den Rest
+- **Dark Mode Verhalten?** → `localStorage` speichert deine Einstellung (Theme, Fenstergrößen, alles)
 
-## GitHub‑Integration und Limits
+## Deploy & Live 🌐
 
-- Standardnutzer ist in `app.js`/`projekte.html` auf `Marormur` gesetzt.
-- Öffentliche GitHub‑API, Rate‑Limit ohne Token: Falls Repos/Dateien nicht laden, später erneut versuchen.
+Die Website deployed automatisch auf GitHub Pages beim Push nach `main`. Läuft unter: https://marormur.github.io/Website/
 
-## Konfiguration & Anpassung
+Die CSS wird in der CI gebaut – keine Sorge um Dateien committen.
 
-- **GitHub‑Nutzername**: in `app.js` (Funktion `loadGithubRepos`) und in `projekte.html`
-- **Branding**: Bilder in `img/` austauschen (`profil.jpg`, Icons, Wallpaper)
-- **Sprachen**: Texte in `i18n.js` pflegen
-- **Styling**: Tailwind per CLI‑Build (`src/input.css` → `dist/output.css`), zusätzliche Regeln in `src/css/style.css` und `src/css/dialog.css`
-
-## Entwicklung
-
-### Neue Fenster hinzufügen
-
-Einfach in `js/window-configs.js` registrieren:
-
-```javascript
-{
-    id: 'my-window-modal',
-    type: 'persistent',
-    programKey: 'programs.myApp',
-    icon: './img/myapp.png',
-    closeButtonId: 'close-my-window-modal'
-}
-```
-
-Siehe [docs/REFACTORING.md](./docs/REFACTORING.md) für Details.
-
-### Testing
+## Quick Reference
 
 ```bash
-# E2E Tests ausführen
-npm run test:e2e
+# Alle zusammen
+npm run dev                  # dev-server + watch everything
 
-# Tests mit UI
-npm run test:e2e:ui
-
-# Multi-Instance Tests
-npm run test:e2e -- tests/e2e/multi-instance-basic.spec.js
+# Einzeln
+npm run build:css           # CSS bauen
+npm run build:ts            # TypeScript → js/
+npm run typecheck           # Fehler-Check
+npm run test:e2e            # E2E Tests (braucht Browser)
+npm run format              # Code formatieren
 ```
-
-### Multi-Instance System
-
-Das neue Multi-Instance System ermöglicht mehrere Fenster des gleichen Typs:
-
-```javascript
-// Browser Console (F12)
-demoCreateTerminals(); // Erstelle 3 Terminal-Instanzen
-demoCreateEditors(); // Erstelle 3 Editor-Instanzen
-```
-
-Oder: http://localhost:3000/?demo=true
-
-**Dokumentation**:
-
-- [Multi-Instance System Guide](./docs/guides/MULTI_INSTANCE.md)
-- [Architecture Overview](./docs/architecture/OVERVIEW.md)
-- [Refactoring Guide](./docs/architecture/REFACTORING.md)
-
-### Beitragen
-
-Siehe [CONTRIBUTING.md](./CONTRIBUTING.md) für Contribution Guidelines.
-
-## Deployment
-
-Als statische Seite auf GitHub Pages, Netlify oder Vercel deployen.
-
-Siehe [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) für Details.
-
-**Live Demo:** https://marormur.github.io/Website/
-
-## Hinweise
-
-- Der bestehende Code nutzt `localStorage` für Theme‑ und Fensterzustände.
-- Bei Änderungen an der Fensterlogik ggf. gespeicherte Zustände in `localStorage` löschen, um Layout‑Artefakte zu vermeiden.
-
-—
-
-Erstellt von Marvin Temmen. Feedback und Ideen sind willkommen!

@@ -156,4 +156,3 @@ test.describe('Text Editor Multi-Instance Tabs', () => {
         expect(firstTabId).toBe(initialOrder[2]);
     });
 });
-

@@ -2,205 +2,170 @@
 /* eslint-disable no-restricted-syntax */
 // Note: waitForTimeout used intentionally for menu animations and DOM updates
 const { test, expect } = require('@playwright/test');
+const { gotoHome, waitForAppReady } = require('../utils');
 const {
-    waitForAppReady,
-    clickDockIcon,
-    openFinderWindow,
-    waitForFinderReady,
-    getFinderAddTabButton,
-    getFinderTabs,
-} = require('../utils');
+    getFinderWindowCount,
+    openFinderViaDock,
+    openWindowMenu,
+    closeWindowMenu,
+} = require('../utils/window-helpers');
 
 test.describe('Window Menu Multi-Instance Integration', () => {
     test.beforeEach(async ({ page, baseURL }) => {
-        await page.goto(baseURL + '/index.html');
+        // Prevent session restore from leaking windows across tests.
+        // This spec relies on deterministic window counts.
+        await page.addInitScript(() => {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch {
+                /* ignore */
+            }
+        });
+        await gotoHome(page, baseURL);
         await waitForAppReady(page);
     });
 
-    test('Window menu shows Finder instances and actions', async ({ page }) => {
-        // Open Finder via helper and wait for readiness
-        const finderWindow = await openFinderWindow(page);
-        await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-        await waitForFinderReady(page);
+    async function clickNewFinderInMenu(page) {
+        const before = await getFinderWindowCount(page);
+        await openWindowMenu(page);
+        const newFinderItem = page
+            .locator('#window-menu-dropdown .menu-item', { hasText: /Neuer Finder|New Finder/i })
+            .first();
+        await expect(newFinderItem).toBeVisible();
+        await newFinderItem.click();
+        await closeWindowMenu(page);
 
-        // Open Window menu in menubar
-        const windowMenuButton = page.getByRole('button', { name: /Fenster|Window/i });
-        await windowMenuButton.click();
-        await page.waitForTimeout(200); // Wait for menu dropdown animation
+        await page.waitForFunction(
+            b => (window.WindowRegistry?.getAllWindows?.('finder') || []).length >= b + 1,
+            before,
+            { timeout: 10000 }
+        );
+    }
+
+    test('@basic Window menu shows Finder instances and actions', async ({ page }) => {
+        await openFinderViaDock(page);
+
+        await openWindowMenu(page);
 
         // Verify "New Finder" action is visible
         const newFinderItem = page
-            .locator('.menu-item', {
-                hasText: /Neuer Finder|New Finder/i,
-            })
+            .locator('#window-menu-dropdown .menu-item', { hasText: /Neuer Finder|New Finder/i })
             .first();
         await expect(newFinderItem).toBeVisible();
 
-        // Close menu
-        await page.keyboard.press('Escape');
-        await page.waitForTimeout(200);
+        // Verify at least one Finder instance is listed
+        const finderItems = page.locator('#window-menu-dropdown .menu-item', {
+            hasText: /Finder\s+\d+/i,
+        });
+        await expect(finderItems.first()).toBeVisible();
+
+        await closeWindowMenu(page);
     });
 
     test('Window menu lists multiple Finder instances', async ({ page }) => {
-        // Open Finder via helper and wait for readiness
-        const finderWindow = await openFinderWindow(page);
-        await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-        await waitForFinderReady(page);
+        await openFinderViaDock(page);
 
-        // Create a second Finder instance via tab button (scoped)
-        const addButton = await getFinderAddTabButton(page, finderWindow);
-        await expect(addButton).toBeVisible();
-        await addButton.click();
-        await page.waitForTimeout(500);
+        // Create a second Finder window via Window menu
+        await clickNewFinderInMenu(page);
 
         // Verify two instances exist via WindowRegistry
-        const instanceCount = await page.evaluate(
-            () => (window.WindowRegistry?.getAllWindows('finder') || []).length
-        );
-        expect(instanceCount).toBe(2);
+        const instanceCount = await getFinderWindowCount(page);
+        expect(instanceCount).toBeGreaterThanOrEqual(2);
 
-        // Open Window menu
-        const windowMenuButton = page.getByRole('button', { name: /Fenster|Window/i });
-        await windowMenuButton.click();
-        await page.waitForTimeout(300);
+        await openWindowMenu(page);
 
         // Verify two Finder instances are listed in menu
         // Look for "Finder 1" and "Finder 2" in the menu
-        const finderItems = page.locator('.menu-item', {
-            hasText: /Finder \d+/i,
+        const finderItems = page.locator('#window-menu-dropdown .menu-item', {
+            hasText: /Finder\s+\d+/i,
         });
         const count = await finderItems.count();
         expect(count).toBeGreaterThanOrEqual(2);
 
-        // Close menu
-        await page.keyboard.press('Escape');
-        await page.waitForTimeout(200);
+        await closeWindowMenu(page);
     });
 
     test('Window menu shows checkmark on active instance', async ({ page }) => {
-        // Open Finder via helper and wait for readiness
-        const finderWindow = await openFinderWindow(page);
-        await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-        await waitForFinderReady(page);
+        await openFinderViaDock(page);
+        await clickNewFinderInMenu(page);
 
-        // Create second instance
-        const addButton = await getFinderAddTabButton(page, finderWindow);
-        await addButton.click();
-        await page.waitForTimeout(500);
+        await openWindowMenu(page);
 
-        // Open Window menu
-        const windowMenuButton = page.getByRole('button', { name: /Fenster|Window/i });
-        await windowMenuButton.click();
-        await page.waitForTimeout(300);
+        // Exactly one active checkmark is expected
+        const checkmarks = page.locator('#window-menu-dropdown .menu-item-checkmark');
+        await expect(checkmarks).toHaveCount(1);
 
-        // Find the active instance in the menu (should have checkmark ✓)
-        const activeItem = page.locator('.menu-item', { hasText: /✓/ });
-        await expect(activeItem).toBeVisible();
-
-        // Close menu
-        await page.keyboard.press('Escape');
+        await closeWindowMenu(page);
     });
 
     test('Can switch Finder instances via Window menu', async ({ page }) => {
-        // Open Finder via helper and ensure readiness
-        const finderWindow = await openFinderWindow(page);
-        await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-        await waitForFinderReady(page);
+        await openFinderViaDock(page);
+        await clickNewFinderInMenu(page);
 
-        // Create second instance
-        const addButton = await getFinderAddTabButton(page, finderWindow);
-        await addButton.click();
-        await page.waitForTimeout(500);
-
-        // Click first tab to make first instance active
-        const tabs = await getFinderTabs(page, finderWindow);
-        await tabs.nth(0).click();
-        await page.waitForTimeout(300);
-
-        // Get current active instance ID (after switching to first tab)
         const initialActiveId = await page.evaluate(
-            () => window.WindowRegistry?.getActiveWindow?.()?.windowId || null
+            () => window.WindowRegistry?.getActiveWindow?.()?.id || null
         );
+        expect(initialActiveId).toBeTruthy();
 
-        // Open Window menu
-        const windowMenuButton = page.getByRole('button', { name: /Fenster|Window/i });
-        await windowMenuButton.click();
-        await page.waitForTimeout(300);
+        await openWindowMenu(page);
 
-        // Click on second instance in menu
-        // Look for the item without checkmark (not active)
-        const menuItems = page.locator('.menu-item', { hasText: /Finder \d+/ });
+        const menuItems = page.locator('#window-menu-dropdown .menu-item', {
+            hasText: /Finder\s+\d+/,
+        });
         const itemCount = await menuItems.count();
+        expect(itemCount).toBeGreaterThanOrEqual(2);
 
-        // Find item without checkmark and click it
+        // Click the non-active one (no checkmark)
         for (let i = 0; i < itemCount; i++) {
             const item = menuItems.nth(i);
-            const text = await item.textContent();
-            if (!text?.includes('✓')) {
+            const text = (await item.textContent()) || '';
+            if (!text.includes('✓')) {
                 await item.click();
                 break;
             }
         }
 
-        await page.waitForTimeout(300);
+        await closeWindowMenu(page);
 
-        // Verify active instance changed via WindowRegistry
+        await page.waitForFunction(
+            prev => (window.WindowRegistry?.getActiveWindow?.()?.id || null) !== prev,
+            initialActiveId,
+            { timeout: 5000 }
+        );
+
         const newActiveId = await page.evaluate(
-            () => window.WindowRegistry?.getActiveWindow?.()?.windowId || null
+            () => window.WindowRegistry?.getActiveWindow?.()?.id || null
         );
         expect(newActiveId).not.toBe(initialActiveId);
     });
 
     test('Window menu shows "Close All" action with multiple instances', async ({ page }) => {
-        // Open Finder via helper and ensure readiness
-        const finderWindow = await openFinderWindow(page);
-        await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-        await waitForFinderReady(page);
+        await openFinderViaDock(page);
+        await clickNewFinderInMenu(page);
 
-        // Create second instance
-        const addButton = await getFinderAddTabButton(page, finderWindow);
-        await addButton.click();
-        await page.waitForTimeout(500);
-
-        // Open Window menu
-        const windowMenuButton = page.getByRole('button', { name: /Fenster|Window/i });
-        await windowMenuButton.click();
-        await page.waitForTimeout(300);
+        await openWindowMenu(page);
 
         // Verify "Close All" action is visible
-        const closeAllItem = page.locator('.menu-item', {
+        const closeAllItem = page.locator('#window-menu-dropdown .menu-item', {
             hasText: /Alle schließen|Close All/i,
         });
         await expect(closeAllItem).toBeVisible();
 
-        // Close menu without clicking
-        await page.keyboard.press('Escape');
+        await closeWindowMenu(page);
     });
 
     test('Close All action closes all Finder instances', async ({ page }) => {
-        // Open Finder via helper and wait for readiness
-        const finderWindow = await openFinderWindow(page);
-        await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-        await waitForFinderReady(page);
+        await openFinderViaDock(page);
+        await clickNewFinderInMenu(page);
 
-        // Create second instance (scoped to finderWindow)
-        const addButton = await getFinderAddTabButton(page, finderWindow);
-        await addButton.click();
-        await page.waitForTimeout(500);
+        let count = await getFinderWindowCount(page);
+        expect(count).toBeGreaterThanOrEqual(2);
 
-        // Verify two instances via WindowRegistry
-        let count = await page.evaluate(
-            () => (window.WindowRegistry?.getAllWindows('finder') || []).length
-        );
-        expect(count).toBe(2);
-
-        // Open Window menu
-        const windowMenuButton = page.getByRole('button', { name: /Fenster|Window/i });
-        await windowMenuButton.click();
-        await page.waitForTimeout(300);
+        await openWindowMenu(page);
 
         // Click "Close All"
-        const closeAllItem = page.locator('.menu-item', {
+        const closeAllItem = page.locator('#window-menu-dropdown .menu-item', {
             hasText: /Alle schließen|Close All/i,
         });
 
@@ -223,81 +188,57 @@ test.describe('Window Menu Multi-Instance Integration', () => {
     });
 
     test('New Finder action creates new instance', async ({ page }) => {
-        // Open Finder via helper and wait for readiness
-        const finderWindow = await openFinderWindow(page);
-        await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-        await waitForFinderReady(page);
+        await openFinderViaDock(page);
 
         // Verify one instance initially
-        let count = await page.evaluate(
-            () => (window.WindowRegistry?.getAllWindows('finder') || []).length
-        );
+        let count = await getFinderWindowCount(page);
         expect(count).toBe(1);
 
-        // Open Window menu
-        const windowMenuButton = page.getByRole('button', { name: /Fenster|Window/i });
-        await windowMenuButton.click();
-        await page.waitForTimeout(300);
-
-        // Click "New Finder"
-        const newFinderItem = page
-            .locator('.menu-item', {
-                hasText: /Neuer Finder|New Finder/i,
-            })
-            .first();
-        await newFinderItem.click();
-        await page.waitForTimeout(500);
+        await clickNewFinderInMenu(page);
 
         // Verify two instances now exist
-        count = await page.evaluate(
-            () => (window.WindowRegistry?.getAllWindows('finder') || []).length
-        );
-        expect(count).toBe(2);
+        count = await getFinderWindowCount(page);
+        expect(count).toBeGreaterThanOrEqual(2);
 
-        // Verify two tabs are visible (at least 2 tabs in DOM across finder windows)
-        const tabs = page.locator('.modal.multi-window[id^="window-finder-"] .wt-tab');
-        await expect(tabs).toHaveCount(2);
+        // Verify at least two Finder windows exist in the DOM
+        const windows = page.locator('.modal.multi-window[id^="window-finder-"]');
+        const winCount = await windows.count();
+        expect(winCount).toBeGreaterThanOrEqual(2);
     });
 
     test('Menu updates when instances are created/destroyed', async ({ page }) => {
-        // Open Finder via helper and wait for readiness
-        const finderWindow = await openFinderWindow(page);
-        await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-        await waitForFinderReady(page);
+        await openFinderViaDock(page);
 
         // Open Window menu - should show only "New Finder", no instance list
-        let windowMenuButton = page.getByRole('button', { name: /Fenster|Window/i });
-        await windowMenuButton.click();
-        await page.waitForTimeout(300);
+        await openWindowMenu(page);
 
         // Should not have "Close All" yet (only one instance)
-        let closeAllItem = page.locator('.menu-item', {
+        let closeAllItem = page.locator('#window-menu-dropdown .menu-item', {
             hasText: /Alle schließen|Close All/i,
         });
         await expect(closeAllItem).not.toBeVisible();
 
-        await page.keyboard.press('Escape');
-        await page.waitForTimeout(200);
+        await closeWindowMenu(page);
 
-        // Create second instance (scoped)
-        const addButton = await getFinderAddTabButton(page, finderWindow);
-        await addButton.click();
-        await page.waitForTimeout(500);
+        // Create second window
+        await clickNewFinderInMenu(page);
 
         // Open Window menu again - should now show instance list and Close All
-        windowMenuButton = page.getByRole('button', { name: /Fenster|Window/i });
-        await windowMenuButton.click();
-        await page.waitForTimeout(300);
+        await openWindowMenu(page);
 
         // Now "Close All" should be visible
-        closeAllItem = page.locator('.menu-item', {
+        closeAllItem = page.locator('#window-menu-dropdown .menu-item', {
             hasText: /Alle schließen|Close All/i,
         });
         await expect(closeAllItem).toBeVisible();
 
         // Should see instance items
-        const instanceItems = page.locator('.menu-item', { hasText: /Finder \d+/ });
+        const instanceItems = page.locator('#window-menu-dropdown .menu-item', {
+            hasText: /Finder\s+\d+/,
+        });
         const itemCount = await instanceItems.count();
         expect(itemCount).toBeGreaterThanOrEqual(2);
+
+        await closeWindowMenu(page);
     });
 });

@@ -1,7 +1,7 @@
 /**
  * system.ts
  * System Status UI Module
- * 
+ *
  * Manages:
  * - WiFi, Bluetooth, Focus, Dark Mode, Battery status
  * - Volume, Brightness sliders
@@ -82,9 +82,14 @@ console.log('✅ SystemUI loaded');
     const hideMenuDropdowns =
         window.hideMenuDropdowns ||
         (() => {
+            const domUtils = (window as any).DOMUtils;
             document.querySelectorAll('.menu-dropdown').forEach(dropdown => {
                 if (!dropdown.classList.contains('hidden')) {
-                    dropdown.classList.add('hidden');
+                    if (domUtils && typeof domUtils.hide === 'function') {
+                        domUtils.hide(dropdown as HTMLElement);
+                    } else {
+                        dropdown.classList.add('hidden');
+                    }
                 }
             });
             document.querySelectorAll('[data-menubar-trigger-button="true"]').forEach(button => {
@@ -119,7 +124,10 @@ console.log('✅ SystemUI loaded');
         });
     }
 
-    function updateSystemStateText(stateKey: string, text: string | number | null | undefined): void {
+    function updateSystemStateText(
+        stateKey: string,
+        text: string | number | null | undefined
+    ): void {
         document.querySelectorAll(`[data-state="${stateKey}"]`).forEach(el => {
             el.textContent = text !== null && text !== undefined ? String(text) : '';
         });
@@ -142,11 +150,13 @@ console.log('✅ SystemUI loaded');
     }
 
     function updateSystemSliderValue(type: string, value: number): void {
-        document.querySelectorAll<HTMLInputElement>(`[data-system-slider="${type}"]`).forEach(slider => {
-            if (Number(slider.value) !== value) {
-                slider.value = String(value);
-            }
-        });
+        document
+            .querySelectorAll<HTMLInputElement>(`[data-system-slider="${type}"]`)
+            .forEach(slider => {
+                if (Number(slider.value) !== value) {
+                    slider.value = String(value);
+                }
+            });
         document.querySelectorAll(`[data-state="${type}"]`).forEach(label => {
             label.textContent = `${value}%`;
         });
@@ -304,7 +314,8 @@ console.log('✅ SystemUI loaded');
             if (indicator && !indicator.getAttribute('data-default')) {
                 indicator.setAttribute('data-default', indicator.textContent || '');
             }
-            const isActive = systemStatus.bluetooth && btn.getAttribute('data-device') === activeDevice;
+            const isActive =
+                systemStatus.bluetooth && btn.getAttribute('data-device') === activeDevice;
             btn.classList.toggle('is-active', isActive);
             btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
             if (indicator) {
@@ -380,7 +391,9 @@ console.log('✅ SystemUI loaded');
             case 'open-bluetooth':
             case 'open-sound':
                 {
-                    const dialogs = (window as Window & { dialogs?: Record<string, { open(): void }> }).dialogs;
+                    const dialogs = (
+                        window as Window & { dialogs?: Record<string, { open(): void }> }
+                    ).dialogs;
                     if (dialogs?.['settings-modal']) {
                         dialogs['settings-modal'].open();
                     } else {
@@ -434,7 +447,11 @@ console.log('✅ SystemUI loaded');
 
         document.querySelectorAll('[data-system-menu-trigger]').forEach(trigger => {
             // bindDropdownTrigger is expected in app.js or global scope
-            const bindFunc = (window as Window & { bindDropdownTrigger?: (el: Element, opts: Record<string, unknown>) => void }).bindDropdownTrigger;
+            const bindFunc = (
+                window as Window & {
+                    bindDropdownTrigger?: (el: Element, opts: Record<string, unknown>) => void;
+                }
+            ).bindDropdownTrigger;
             if (typeof bindFunc === 'function') {
                 bindFunc(trigger, {
                     hoverRequiresOpen: true,

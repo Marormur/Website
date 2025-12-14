@@ -51,10 +51,18 @@ export class FinderWindow extends BaseWindow {
     }
 
     protected _renderTabs(): void {
+        this._doRenderTabs();
+    }
+
+    private _doRenderTabs(): void {
         const W = window as any;
-        if (!W.WindowTabs || !this.element) return;
+        if (!W.WindowTabs || !this.element) {
+            return;
+        }
         const tabBar = this.element.querySelector(`#${this.id}-tabs`);
-        if (!tabBar) return;
+        if (!tabBar) {
+            return;
+        }
 
         // Always show tab bar for Finder (unlike Terminal/TextEditor)
         // Tab bar contains navigation and "+" button
@@ -87,6 +95,8 @@ export class FinderWindow extends BaseWindow {
                     : null;
                 if (view) {
                     this.addTab(view);
+                    // Aktiviere den neuen Tab direkt nach dem Erstellen
+                    this.setActiveTab(view.id);
                     return makeInst(view);
                 }
                 return null;
@@ -118,6 +128,7 @@ export class FinderWindow extends BaseWindow {
             },
         };
 
+        // Destroy existing controller before creating new one
         if ((this as any).tabController) {
             (this as any).tabController.destroy();
         }

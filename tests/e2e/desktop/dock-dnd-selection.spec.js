@@ -20,6 +20,8 @@ async function dragAfter(page, sourceId, targetId) {
 
 test('Drag & Drop löst keine Textselektion aus', async ({ page }) => {
     await page.goto('/');
+    // Warte auf App-Initialisierung
+    await page.waitForFunction(() => window.__APP_READY === true, { timeout: 10000 });
     await page.waitForSelector('#dock .dock-tray .dock-item');
 
     // Sicherheitscheck: Vorherige Selektion leeren

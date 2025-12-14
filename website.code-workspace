@@ -4,16 +4,17 @@
             "name": "🏠 Website (Root)",
             "path": ".",
         },
-        {
-            "name": "📚 Documentation",
-            "path": "docs",
-        },
-        {
-            "name": "🧪 Tests",
-            "path": "tests",
-        },
+        // {
+        //     "name": "📚 Documentation",
+        //     "path": "docs",
+        // },
+        // {
+        //     "name": "🧪 Tests",
+        //     "path": "tests",
+        // },
     ],
     "settings": {
+        "githubPullRequests.ignoredPullRequestBranches": ["develop"],
         // Root-level settings apply to all folders
         // See .vscode/settings.json for main configuration
     },

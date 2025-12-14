@@ -15,6 +15,11 @@ import * as DOMUtils from '../ui/dom-utils';
 // Import core constants first (needed by storage, app-init, etc.)
 import '../core/constants';
 
+// Import core observability systems (error handling, performance monitoring)
+import '../core/logger';
+import '../core/error-handler';
+import '../core/perf-monitor';
+
 // Import legacy/global modules for their side effects so they register on window.*
 import '../core/api';
 import '../windows/window-manager';
@@ -29,7 +34,6 @@ import '../ui/dialog';
 import '../ui/menubar-utils';
 import '../ui/context-menu';
 import '../services/storage';
-import '../services/session-manager'; // Auto-save system for instances
 import '../services/theme';
 import '../windows/base-window-instance'; // Must come before instance types
 import '../windows/instance-manager';
@@ -42,11 +46,12 @@ import '../windows/window-registry'; // Central window management
 
 // Multi-window system (Phase 2: Terminal)
 import '../apps/terminal/terminal-session'; // Terminal session tab
-import '../apps/terminal/terminal-window'; // Terminal window
+import { TerminalWindow as __TerminalWindow__ } from '../apps/terminal/terminal-window'; // Terminal window
 
 // Multi-window system (Phase 3: TextEditor)
 import '../apps/text-editor/text-editor-document'; // Text editor document tab
 import '../apps/text-editor/text-editor-window'; // Text editor window
+import '../apps/text-editor/text-editor-instance'; // Text editor instance manager
 
 // Multi-window system (Phase 4: Finder)
 // Import both side-effect and named to ensure symbols are retained and exposed
@@ -55,10 +60,10 @@ import { FinderWindow as __FinderWindow__ } from '../apps/finder/finder-window';
 
 // Multi-window system (Phase 6: Session Management)
 import '../services/multi-window-session'; // Multi-window session persistence
+import '../services/session-manager'; // Auto-save system for instances - MUST come AFTER all instance managers
 
 import '../windows/window-tabs';
 import '../apps/terminal/terminal-instance';
-import '../apps/text-editor/text-editor-instance';
 import '../apps/text-editor/text-editor';
 import '../services/settings';
 import '../apps/photos/image-viewer-utils';
@@ -99,6 +104,7 @@ if (!('DOMUtils' in w)) {
 try {
     if (!(w as any).FinderView) (w as any).FinderView = __FinderView__;
     if (!(w as any).FinderWindow) (w as any).FinderWindow = __FinderWindow__;
+    if (!(w as any).TerminalWindow) (w as any).TerminalWindow = __TerminalWindow__;
 } catch {
     /* ignore */
 }
@@ -107,6 +113,7 @@ try {
     console.log('[BUNDLE] Globals present:', {
         FinderView: !!(w as any).FinderView,
         FinderWindow: !!(w as any).FinderWindow,
+        TerminalWindow: !!(w as any).TerminalWindow,
         WindowRegistry: !!(w as any).WindowRegistry,
         ActionBus: !!(w as any).ActionBus,
     });

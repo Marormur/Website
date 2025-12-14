@@ -163,7 +163,12 @@ import { translate } from '../services/i18n';
         else {
             const modalElement = document.getElementById(windowId);
             if (modalElement) {
-                modalElement.classList.remove('hidden');
+                const domUtils = (window as any).DOMUtils;
+                if (domUtils && typeof domUtils.show === 'function') {
+                    domUtils.show(modalElement);
+                } else {
+                    modalElement.classList.remove('hidden');
+                }
                 w.bringDialogToFront?.(windowId);
                 w.updateProgramLabelByTopModal?.();
             }

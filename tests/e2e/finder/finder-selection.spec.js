@@ -1,6 +1,7 @@
 // Finder item selection behavior (single, toggle, range)
 const { test, expect } = require('@playwright/test');
-const { waitForAppReady, openFinderWindow, waitForFinderReady } = require('../utils');
+const { waitForAppReady } = require('../utils');
+const { openFinderAtRoot } = require('../utils/window-helpers');
 
 async function getListItems(page, finderWindow) {
     return await finderWindow.locator('#finder-list-container .finder-list-item');
@@ -37,22 +38,6 @@ async function getSelectedNames(page, finderWindow) {
         },
         await finderWindow.getAttribute('id')
     );
-}
-
-async function ensureComputerRoot(page, finderWindow) {
-    // Click sidebar computer if present
-    const computerBtn = finderWindow.locator('[data-finder-view="computer"]').first();
-    if (await computerBtn.isVisible().catch(() => false)) {
-        await computerBtn.click();
-    }
-}
-
-async function openFinderAtRoot(page) {
-    const finderWindow = await openFinderWindow(page);
-    await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
-    await waitForFinderReady(page);
-    await ensureComputerRoot(page, finderWindow);
-    return finderWindow;
 }
 
 async function openDocumentsIfExists(page, finderWindow) {

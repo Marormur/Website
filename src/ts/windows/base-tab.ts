@@ -116,7 +116,14 @@ export class BaseTab {
             }
         }
 
-        this.element?.classList.remove('hidden');
+        if (this.element) {
+            const domUtils = (window as any).DOMUtils;
+            if (domUtils && typeof domUtils.show === 'function') {
+                domUtils.show(this.element);
+            } else {
+                this.element.classList.remove('hidden');
+            }
+        }
         this.isVisible = true;
         this.onShow();
     }
@@ -125,7 +132,14 @@ export class BaseTab {
      * Tab verbergen (DOM bleibt erhalten, CSS .hidden).
      */
     hide(): void {
-        this.element?.classList.add('hidden');
+        if (this.element) {
+            const domUtils = (window as any).DOMUtils;
+            if (domUtils && typeof domUtils.hide === 'function') {
+                domUtils.hide(this.element);
+            } else {
+                this.element.classList.add('hidden');
+            }
+        }
         this.isVisible = false;
         this.onHide();
     }

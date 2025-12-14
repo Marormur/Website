@@ -1,8 +1,8 @@
 # 🎯 Refactoring: Modulare Architektur
 
-**Last Updated:** 29. Oktober 2025
+**Last Updated:** 13. Dezember 2025
 
-> **🎉 MIGRATION COMPLETE!** Die TypeScript-Migration ist **100% abgeschlossen** (Phase 7 komplett). Alle 8 Kern-Module wurden erfolgreich migriert: finder (1284 Zeilen), terminal (469 Zeilen), system (499 Zeilen), settings (461 Zeilen), launchpad (330 Zeilen), icons (232 Zeilen), error-handler (209 Zeilen), perf-monitor (180 Zeilen). Total: 3,664 Zeilen TypeScript-Code mit full strict mode compliance. Siehe CHANGELOG.md für Details.
+> **🎉 COMPLETE!** TypeScript-Migration (100%), DOM-Utils-Migration (100%), Bundle-System (Standard-Modus). Alle Kern-Module migriert und produktionsbereit.
 
 ## Übersicht
 
@@ -18,14 +18,14 @@ Für eine vollständige Analyse der TypeScript-Refactoring-Möglichkeiten siehe:
 
 ---
 
-## ✅ Phase 2 Abgeschlossen: DOM-Utils Migration
+## ✅ Phase 2 Komplett: DOM-Utils Migration
 
-**Datum:** 28. Oktober 2025
+**Datum:** Oktober 2025 (vollständig abgeschlossen Dezember 2025)
 **Problem:** 20+ Code-Duplikationen von `element.classList.add/remove('hidden')` im gesamten Codebase
 
 ### Lösung
 
-Neues zentralisiertes Modul **`src/ts/dom-utils.ts`** mit konsistenter API:
+Zentralisiertes Modul **`src/ts/ui/dom-utils.ts`** mit konsistenter API:
 
 ```typescript
 // Zentrale DOM-Utilities
@@ -52,36 +52,31 @@ if (domUtils && typeof domUtils.show === 'function') {
 }
 ```
 
-### Migrierte Module (8)
+### Migrierte Module (Alle ✅)
 
-- ✅ `dialog.ts` (3 Vorkommen)
-- ✅ `menubar-utils.ts` (2 Vorkommen)
-- ✅ `context-menu.ts` (4 Vorkommen)
-- ✅ `terminal-instance.ts` (1 Vorkommen)
-- ✅ `text-editor-instance.ts` (1 Vorkommen)
-- ✅ `storage.ts` (2 Vorkommen)
-- ✅ `image-viewer-utils.ts` (3 Vorkommen)
+- ✅ `dialog.ts`, `menubar-utils.ts`, `context-menu.ts`
+- ✅ `terminal-instance.ts`, `text-editor-instance.ts`, `storage.ts`, `image-viewer-utils.ts`
+- ✅ `base-window-instance.ts` (vollständig mit Fallback-Pattern)
+- ✅ `base-window.ts`, `base-tab.ts`
+- ✅ `system.ts`, `menu.ts`, `launchpad.ts`
+- ✅ `multi-instance-integration.ts`, `preview-instance-manager.ts`
 
-**Bewusst nicht migriert:**
-
-- `base-window-instance.ts` — Dual Export+IIFE Pattern; wird mit Bundle-Migration angegangen
+**Status:** Alle Module nutzen DOMUtils mit Fallback-Pattern für Kompatibilität.
 
 ### Ergebnisse
 
-- ✅ ~100 Zeilen Code-Reduktion
+- ✅ ~150 Zeilen Code-Reduktion (20+ Migrationen)
 - ✅ Konsistente DOM-Manipulation API
-- ✅ Null-safe by default
-- ✅ Tests: 20/20 quick, 120/120 full E2E passing
+- ✅ Null-safe by default mit Fallback-Pattern
+- ✅ 100% Migration abgeschlossen (Dezember 2025)
 - ✅ Keine Breaking Changes
-
-**Siehe:** CHANGELOG.md Abschnitt "DOM Utils Migration (Complete)"
 
 ---
 
-## 🚧 Phase 3 In Arbeit: Bundle-basierte Architektur
+## ✅ Phase 3 Komplett: Bundle-basierte Architektur
 
-**Datum:** 28. Oktober 2025
-**Problem:** Inkonsistente Module-Patterns (11 IIFE only, 3 Export+IIFE, 6 Pure Exports); viele `<script>`-Tags in `index.html`
+**Datum:** Oktober 2025 (Bundle ist Default seit Dezember 2025)
+**Problem:** Inkonsistente Module-Patterns; viele `<script>`-Tags in `index.html`
 
 ### Lösung: esbuild IIFE Bundle
 
@@ -112,39 +107,23 @@ npm run dev:bundle    # Watch mode
 
 - "Dev Environment: Start All (Bundle)" — CSS + TS + Bundle + Server
 
-### ✅ Bundle Migration Complete (Default)
+### ✅ Bundle ist Standard-Modus
 
-**Status:** Bundle ist jetzt der **Standard-Lademodus** (28. Oktober 2025)
+**Status:** Bundle-Modus ist **Default** (aktiviert Dezember 2025)
 
-**Problem:** Initial fehlten Legacy-Module im Bundle → 12/20 Tests failed
+**Konfiguration in `index.html`:**
 
-**Lösung: src/ts/legacy/ Pattern**
-
-Esbuild kann nicht direkt aus `../../js/` importieren. Lösung:
-
-```bash
-# Legacy JS-Module nach src/ts/legacy/ kopieren
-cp js/finder-instance.js src/ts/legacy/
-cp js/launchpad.js src/ts/legacy/
-cp js/window-configs.js src/ts/legacy/
-cp js/multi-instance-integration.js src/ts/legacy/
-cp js/desktop.js src/ts/legacy/
-cp js/system.js src/ts/legacy/
+```javascript
+const defaultBundle = true; // Bundle default
+window.USE_BUNDLE = [
+    bundleFromEnv,
+    bundleFromUrl,
+    bundleFromStorage,
+    defaultBundle,
+].find(v => v !== undefined);
 ```
 
-Import in `src/ts/compat/expose-globals.ts`:
-
-```typescript
-// Legacy JS modules (copied to src/ts/legacy/ for esbuild compatibility)
-import '../legacy/window-configs.js'; // Must load before windows are registered
-import '../legacy/finder-instance.js';
-import '../legacy/launchpad.js';
-import '../legacy/multi-instance-integration.js';
-import '../legacy/desktop.js';
-import '../legacy/system.js';
-```
-
-**Bundle-Größe:** 401.8 KB (vorher ~305 KB für TS-only)
+**Bundle-Größe:** ~711 KB (inkl. aller Module + Source Maps)
 
 **Testergebnisse:**
 
@@ -291,16 +270,14 @@ USE_BUNDLE=1 MOCK_GITHUB=1 npm run test:e2e:quick
 
 ### Migration Status
 
-- ✅ Bundle-Pipeline funktionsfähig (285kb Output, Sourcemap, 1 minor warning)
-- ✅ Quick E2E Verifikation ohne Bundle (20/20 Tests bestehen)
-- ✅ **BLOCKER GELÖST:** Conditional Loading implementiert
-- ✅ E2E-Tests in beiden Modi verifiziert (20/20 jeweils)
-- ✅ VS Code Tasks für Bundle-Modus hinzugefügt
-- 📋 **Nächste Schritte:**
-    - Bundle-Modus als Default setzen (nach Verifizierung in Produktion)
-    - Individual Scripts aus `index.html` vollständig entfernen
-    - `scripts/fix-ts-exports.js` entfernen (obsolet mit Bundle)
-    - DOM-Utils-Migration vervollständigen (verbleibende 12 Module)
+- ✅ Bundle-Pipeline produktionsbereit (~711 KB mit Source Maps)
+- ✅ Conditional Loading implementiert (Bundle + Scripts Modi)
+- ✅ E2E-Tests in beiden Modi funktional
+- ✅ Bundle ist Standard-Modus (Default: `true`)
+- ✅ DOM-Utils-Migration vollständig (alle 20+ Module migriert)
+- ✅ `scripts/fix-ts-exports.js` entfernt (obsolet)
+
+**Status:** Produktionsbereit. Individual Scripts bleiben als Fallback verfügbar.
 
 **Siehe:** CHANGELOG.md Abschnitt "Build - Esbuild bundle (compat adapter) ✅"
 

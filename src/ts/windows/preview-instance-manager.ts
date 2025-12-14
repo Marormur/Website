@@ -68,7 +68,12 @@ export class PreviewInstanceManager {
         try {
             const containerRoot = document.getElementById('preview-container');
             if (containerRoot) {
-                containerRoot.classList.remove('hidden');
+                const domUtils = (window as any).DOMUtils;
+                if (domUtils && typeof domUtils.show === 'function') {
+                    domUtils.show(containerRoot);
+                } else {
+                    containerRoot.classList.remove('hidden');
+                }
                 containerRoot.style.pointerEvents = 'auto';
             }
         } catch (_) {

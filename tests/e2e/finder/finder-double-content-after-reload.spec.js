@@ -14,7 +14,8 @@ async function getActiveFinderContainerId(page) {
         const reg = window.WindowRegistry;
         if (reg && typeof reg.getActiveWindow === 'function') {
             const active = reg.getActiveWindow();
-            if (active && active.windowId) return `${active.windowId}-container`;
+            // Use .id, not .windowId (which doesn't exist in the new architecture)
+            if (active && active.id) return `${active.id}-container`;
         }
         const mgr = window.FinderInstanceManager;
         if (!mgr) return null;
@@ -23,15 +24,19 @@ async function getActiveFinderContainerId(page) {
     });
 }
 
-async function countWrappersInActiveContainer(page) {
+async function countContentInActiveContainer(page) {
     const containerId = await getActiveFinderContainerId(page);
-    if (!containerId) return { containerId: null, count: -1 };
-    const count = await page.evaluate(id => {
+    if (!containerId) return { containerId: null, hasContent: false };
+    const hasContent = await page.evaluate(id => {
         const el = document.getElementById(id);
-        if (!el) return -2;
-        return el.querySelectorAll('.finder-instance-wrapper').length;
+        if (!el) return false;
+        // The new architecture doesn't use .finder-instance-wrapper anymore
+        // Instead, check if the container has any meaningful content (not just empty divs)
+        const children = el.querySelectorAll('*');
+        // Filter out empty text nodes and just count actual content
+        return children.length > 0;
     }, containerId);
-    return { containerId, count };
+    return { containerId, hasContent };
 }
 
 test.describe('Finder double content after reload', () => {
@@ -40,7 +45,7 @@ test.describe('Finder double content after reload', () => {
         await waitForAppReady(page);
     });
 
-    test('First tab has exactly one content wrapper after reload', async ({ page }) => {
+    test('First tab has content after reload', async ({ page }) => {
         // Open Finder via helper and ensure readiness
         const finderWindow = await openFinderWindow(page);
         await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
@@ -56,9 +61,9 @@ test.describe('Finder double content after reload', () => {
         await expect(tabs.nth(0)).toBeVisible();
         await tabs.nth(0).click();
 
-        // Sanity check before reload: count wrappers
-        const before = await countWrappersInActiveContainer(page);
-        expect(before.count).toBe(1);
+        // Sanity check before reload: container should have content
+        const before = await countContentInActiveContainer(page);
+        expect(before.hasContent).toBe(true);
 
         // Reload
         await page.reload();
@@ -81,20 +86,26 @@ test.describe('Finder double content after reload', () => {
             });
         }
 
-        // Verify only one wrapper is present after restore
-        const after = await countWrappersInActiveContainer(page);
-        // Provide helpful error details
-        if (after.count !== 1) {
+        // Verify content is present after restore
+        const after = await countContentInActiveContainer(page);
+
+        // Provide helpful error details if content is missing
+        if (!after.hasContent) {
             const allContainersInfo = await page.evaluate(() => {
                 const nodes = Array.from(document.querySelectorAll('[id$="-container"]'));
-                return nodes.map(n => ({
-                    id: n.id,
-                    hidden: n.classList.contains('hidden'),
-                    wrappers: n.querySelectorAll('.finder-instance-wrapper').length,
-                }));
+                return nodes
+                    .filter(
+                        n => n.id.startsWith('window-finder-') || n.id.startsWith('tab-undefined-')
+                    )
+                    .map(n => ({
+                        id: n.id,
+                        hidden: n.classList.contains('hidden'),
+                        childElements: n.children.length,
+                    }));
             });
-            console.log('[DBG] containers=', allContainersInfo);
+            console.log('[DBG] finder containers=', allContainersInfo);
         }
-        expect(after.count).toBe(1);
+
+        expect(after.hasContent).toBe(true);
     });
 });

@@ -11,10 +11,12 @@ console.log('TerminalInstance (TS) loaded');
         type: 'directory';
         contents: Record<string, FSNode>;
     };
+
     type FileEntry = {
         type: 'file';
         content: string;
     };
+
     type FSNode = DirEntry | FileEntry;
 
     type BaseLike = {
@@ -22,14 +24,15 @@ console.log('TerminalInstance (TS) loaded');
         updateState: (u: Record<string, unknown>) => void;
     } & Record<string, unknown>;
     type BaseCtor = new (cfg: Record<string, unknown>) => BaseLike & Record<string, unknown>;
+
     const Base = (window as unknown as { BaseWindowInstance: BaseCtor }).BaseWindowInstance;
 
     class TerminalInstance extends Base {
-        outputElement: HTMLElement | null;
-        inputElement: HTMLInputElement | null;
-        commandHistory: string[];
-        historyIndex: number;
-        currentPath: string;
+        outputElement: HTMLElement | null = null;
+        inputElement: HTMLInputElement | null = null;
+        commandHistory: string[] = [];
+        historyIndex = -1;
+        currentPath = '~';
         fileSystem: Record<string, FSNode>;
 
         constructor(config: Record<string, unknown>) {
@@ -37,12 +40,6 @@ console.log('TerminalInstance (TS) loaded');
                 ...config,
                 type: 'terminal',
             });
-
-            this.outputElement = null;
-            this.inputElement = null;
-            this.commandHistory = [];
-            this.historyIndex = -1;
-            this.currentPath = '~';
 
             this.fileSystem = {
                 '~': {
@@ -229,12 +226,14 @@ console.log('TerminalInstance (TS) loaded');
             const items = Object.keys(currentDir.contents);
             let matches: string[];
             if (cmd === 'cd') {
+                // Only directories
                 matches = items.filter(
                     item =>
                         (currentDir.contents[item] as FSNode).type === 'directory' &&
                         item.startsWith(partial)
                 );
             } else {
+                // cat: Only files
                 matches = items.filter(
                     item =>
                         (currentDir.contents[item] as FSNode).type === 'file' &&
@@ -243,7 +242,10 @@ console.log('TerminalInstance (TS) loaded');
             }
 
             if (matches.length === 1) {
-                this.inputElement!.value = `${cmd} ${matches[0]}`;
+                const match = matches[0];
+                if (match !== undefined) {
+                    this.inputElement!.value = `${cmd} ${match}`;
+                }
             } else if (matches.length > 1) {
                 this.addOutput(
                     `guest@marvin:${this.currentPath}$ ${this.inputElement!.value}`,
@@ -399,14 +401,14 @@ console.log('TerminalInstance (TS) loaded');
             if (filename.includes('/')) {
                 const normalizedPath = this.normalizePath(filename);
                 const pathParts = normalizedPath.split('/').filter(p => p !== '');
-                const fileName = pathParts.pop()!;
+                const fileName = pathParts.pop();
                 const dirPath = pathParts.length > 0 ? pathParts.join('/') : '~';
                 const dir = this.resolvePath(dirPath);
                 if (!dir) {
                     this.addOutput(`Verzeichnis nicht gefunden: ${dirPath}`, 'error');
                     return;
                 }
-                const file = (dir as DirEntry).contents?.[fileName] as FSNode | undefined;
+                const file = (dir as DirEntry).contents?.[fileName as string];
                 if (!file) this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
                 else if (file.type !== 'file')
                     this.addOutput(`${filename} ist keine Datei`, 'error');
@@ -546,7 +548,10 @@ console.log('TerminalInstance (TS) loaded');
 
     // Create Terminal Instance Manager
     const G = window as unknown as Record<string, unknown>;
-    type InstanceManagerCtor = new (cfg: Record<string, unknown>) => unknown;
+    type InstanceManagerCtor = new (cfg: Record<string, unknown>) => {
+        type?: string;
+        getInstanceCount?: () => number;
+    };
     const InstanceManager = G['InstanceManager'] as unknown as InstanceManagerCtor | undefined;
     if (InstanceManager) {
         (G['TerminalInstanceManager'] as unknown) = new (InstanceManager as InstanceManagerCtor)({
@@ -575,6 +580,16 @@ console.log('TerminalInstance (TS) loaded');
                 return container;
             },
         });
+
+        try {
+            console.debug('TerminalInstanceManager created', {
+                type: (G['TerminalInstanceManager'] as { type?: string })?.type,
+                instanceCount: (
+                    G['TerminalInstanceManager'] as { getInstanceCount?: () => number }
+                )?.getInstanceCount?.(),
+            });
+        } catch (error) {
+            console.debug('TerminalInstanceManager created (debug log failed)', error);
+        }
     }
 })();
-

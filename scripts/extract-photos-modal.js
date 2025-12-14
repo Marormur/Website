@@ -9,7 +9,7 @@ const path = require('path');
 console.log('Extracting Photos modal from PR branch...');
 const prIndexHtml = execSync('git show codex/create-custom-macos-photos-app:index.html', {
     encoding: 'utf8',
-    cwd: __dirname
+    cwd: __dirname,
 });
 
 // Find the Photos modal boundaries
@@ -53,9 +53,10 @@ console.log(`✓ Updated ${indexPath}`);
 
 // Verify the change
 const verification = fs.readFileSync(indexPath, 'utf8');
-const hasPhotosElements = verification.includes('id="photos-sidebar"') &&
-                          verification.includes('id="photos-gallery"') &&
-                          verification.includes('data-photos-segment');
+const hasPhotosElements =
+    verification.includes('id="photos-sidebar"') &&
+    verification.includes('id="photos-gallery"') &&
+    verification.includes('data-photos-segment');
 
 if (hasPhotosElements) {
     console.log('✓ Verification passed: Photos App elements found');

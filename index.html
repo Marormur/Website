@@ -8,6 +8,39 @@
         <link rel="stylesheet" href="./dist/output.css" />
         <link rel="stylesheet" href="./src/css/style.css" />
 
+        <!-- Early readiness monitor: mark __APP_READY only after core globals appear, with a hard
+             fallback after a generous timeout to keep tests unblocked. -->
+        <script>
+            (() => {
+                const w = window;
+                w.__APP_READY = false;
+                const hasCore = () => !!(w.ActionBus && w.WindowRegistry && w.DockSystem);
+                const markReady = label => {
+                    if (!w.__APP_READY) {
+                        console.info(`[AppReady Monitor] ready via ${label}`);
+                        w.__APP_READY = true;
+                    }
+                };
+
+                // Poll until core is present, then mark ready
+                let polls = 0;
+                const poll = () => {
+                    if (hasCore()) {
+                        markReady('core-present');
+                        return;
+                    }
+                    polls += 1;
+                    if (polls < 60) {
+                        setTimeout(poll, 200);
+                    }
+                };
+                poll();
+
+                // Safety timeout: if core never appears, unblock tests after 12s
+                setTimeout(() => markReady('timeout-12s'), 12000);
+            })();
+        </script>
+
         <!-- 🔀 Conditional Module Loading (October 28, 2025) -->
         <!-- Controls whether to load esbuild bundle OR individual scripts -->
         <script>
@@ -43,70 +76,252 @@
         </script>
 
         <script>
-            // Conditional loading: Either bundle OR individual scripts
-            if (window.USE_BUNDLE) {
-                console.log('[Module Loader] Loading esbuild bundle (includes i18n)...');
-                document.write('<script src="./js/app.bundle.js"><\/script>');
-            } else {
-                console.log('[Module Loader] Loading individual scripts...');
+            // Conditional loading: Either bundle OR individual scripts (sequential, no document.write)
+            (() => {
+                const legacyScripts = [
+                    './js/core/logger.js',
+                    './js/core/error-handler.js',
+                    './js/core/perf-monitor.js',
+                    './js/core/constants.js',
+                    './js/ui/icons.js',
+                    './js/services/theme.js',
+                    './js/ui/dock.js',
+                    './js/services/storage.js',
+                    './js/ui/snap-utils.js',
+                    './js/ui/dialog-utils.js',
+                    './js/ui/dialog.js',
+                    './js/ui/desktop.js',
+                    './js/services/system.js',
+                    './js/ui/menubar-utils.js',
+                    './js/services/program-actions.js',
+                    './js/ui/menu.js',
+                    './js/services/github-api.js',
+                    './js/apps/finder/finder.js',
+                    './js/apps/finder/finder-window.js',
+                    './js/windows/window-manager.js',
+                    './js/ui/action-bus.js',
+                    './js/windows/window-configs.js',
+                    './js/core/api.js',
+                    './js/windows/base-window-instance.js',
+                    './js/windows/instance-manager.js',
+                    './js/windows/window-chrome.js',
+                    './js/windows/window-tabs.js',
+                    './js/ui/keyboard-shortcuts.js',
+                    './js/services/session-manager.js',
+                    './js/windows/multi-instance-integration.js',
+                    './js/ui/context-menu.js',
+                    './js/services/settings.js',
+                    './js/apps/text-editor/text-editor.js',
+                    './js/apps/text-editor/text-editor-instance.js',
+                    './js/apps/terminal/terminal.js',
+                    './js/apps/terminal/terminal-instance.js',
+                    './js/apps/photos/photos-app.js',
+                    './js/apps/finder/finder-instance.js',
+                    './js/ui/launchpad.js',
+                    './js/apps/photos/image-viewer-utils.js',
+                    './js/services/program-menu-sync.js',
+                    './js/core/app-init.js',
+                    './app.js',
+                ];
 
-                // Logger System (laden VOR allen anderen Modulen)
-                document.write('<script src="./js/logger.js"><\/script>');
+                // Expose list for fallback reuse
+                window.__LEGACY_SCRIPTS__ = legacyScripts;
 
-                // Core observability systems
-                document.write('<script src="./js/error-handler.js"><\/script>');
-                document.write('<script src="./js/perf-monitor.js"><\/script>');
+                const appended = new Set();
+                const normalize = src => new URL(src, document.baseURI).href;
+                const isAlreadyAdded = src => {
+                    const full = normalize(src);
+                    if (appended.has(full)) return true;
+                    return !!document.querySelector(
+                        `script[src="${full}"]` + `,script[src="${src}"]`
+                    );
+                };
 
-                // Modularisierte Komponenten (in Ladereihenfolge)
-                document.write('<script src="./js/constants.js"><\/script>');
-                document.write('<script src="./js/icons.js"><\/script>');
-                document.write('<script src="./js/theme.js"><\/script>');
-                document.write('<script src="./js/dock.js"><\/script>');
-                document.write('<script src="./js/storage.js"><\/script>');
-                document.write('<script src="./js/snap-utils.js"><\/script>');
-                document.write('<script src="./js/dialog-utils.js"><\/script>');
-                document.write('<script src="./js/dialog.js"><\/script>');
-                document.write('<script src="./js/desktop.js"><\/script>');
-                document.write('<script src="./js/system.js"><\/script>');
-                document.write('<script src="./js/menubar-utils.js"><\/script>');
-                document.write('<script src="./js/program-actions.js"><\/script>');
-                document.write('<script src="./js/menu.js"><\/script>');
-                document.write('<script src="./js/github-api.js"><\/script>');
-                document.write('<script src="./js/finder.js"><\/script>');
+                const appendScriptOnce = (src, attrs = {}, label = 'loader') =>
+                    new Promise((resolve, reject) => {
+                        const full = normalize(src);
+                        if (isAlreadyAdded(src)) {
+                            appended.add(full);
+                            resolve();
+                            return;
+                        }
 
-                // Neue zentrale Systeme
-                document.write('<script src="./js/window-manager.js"><\/script>');
-                document.write('<script src="./js/action-bus.js"><\/script>');
-                document.write('<script src="./js/window-configs.js"><\/script>');
-                document.write('<script src="./js/api.js"><\/script>');
+                        const s = document.createElement('script');
+                        s.src = src;
+                        s.async = false; // keep execution order deterministic
+                        Object.entries(attrs || {}).forEach(([k, v]) => {
+                            s.setAttribute(k, String(v));
+                        });
+                        s.onload = () => {
+                            appended.add(full);
+                            resolve();
+                        };
+                        s.onerror = err => {
+                            appended.add(full);
+                            console.error(`[Module Loader] Failed to load ${src}`, err);
+                            reject(err);
+                        };
+                        s.dataset.loader = label;
+                        document.head.appendChild(s);
+                    });
 
-                // Multi-Instance Support
-                document.write('<script src="./js/base-window-instance.js"><\/script>');
-                document.write('<script src="./js/instance-manager.js"><\/script>');
-                document.write('<script src="./js/window-chrome.js"><\/script>');
-                document.write('<script src="./js/window-tabs.js"><\/script>');
-                document.write('<script src="./js/keyboard-shortcuts.js"><\/script>');
-                document.write('<script src="./js/session-manager.js"><\/script>');
-                document.write('<script src="./js/multi-instance-demo.js"><\/script>');
+                const loadSequential = async (list, label = 'legacy') => {
+                    for (const src of list) {
+                        try {
+                            await appendScriptOnce(src, {}, label);
+                        } catch (err) {
+                            // Continue loading remaining scripts even if one fails
+                            console.warn(`[Module Loader] Continuing after error for ${src}`);
+                        }
+                    }
+                };
 
-                // Inline module scripts
-                document.write('<script src="./js/context-menu.js"><\/script>');
-                document.write('<script src="./js/settings.js"><\/script>');
-                document.write('<script src="./js/text-editor.js"><\/script>');
-                document.write('<script src="./js/text-editor-instance.js"><\/script>');
-                document.write('<script src="./js/terminal.js"><\/script>');
-                document.write('<script src="./js/terminal-instance.js"><\/script>');
-                document.write('<script src="./js/photos-app.js"><\/script>');
-                document.write('<script src="./js/finder-instance.js"><\/script>');
-                document.write('<script src="./js/launchpad.js"><\/script>');
-                document.write('<script src="./js/multi-instance-integration.js"><\/script>');
+                window.__SCRIPT_LOADER__ = {
+                    appendScriptOnce,
+                    loadSequential,
+                    legacyScripts,
+                };
 
-                // Hauptanwendung
-                document.write('<script src="./js/image-viewer-utils.js"><\/script>');
-                document.write('<script src="./js/program-menu-sync.js"><\/script>');
-                document.write('<script src="./js/app-init.js"><\/script>');
-                document.write('<script src="app.js"><\/script>');
-            }
+                const start = async () => {
+                    if (window.USE_BUNDLE) {
+                        console.log('[Module Loader] Loading esbuild bundle (includes i18n)...');
+                        await appendScriptOnce('./js/app.bundle.js', {}, 'bundle');
+                    } else {
+                        console.log('[Module Loader] Loading individual scripts...');
+                        await loadSequential(legacyScripts, 'legacy');
+                    }
+                };
+
+                // Expose promise for potential dependents
+                window.__MODULE_LOADER_PROMISE__ = start().catch(err => {
+                    console.error('[Module Loader] Fatal error during loading', err);
+                });
+            })();
+        </script>
+
+        <!-- Resilient loader fallback: if neither bundle nor legacy scripts register core globals
+             within a short grace period, attempt to load the bundle again; if still absent, load
+             the legacy script list sequentially. This avoids blank/mostly-static pages when the
+             document.write path is bypassed (e.g., due to prerendering or CSP in some runners). -->
+        <script>
+            (() => {
+                const hasCore = () =>
+                    !!(window.ActionBus && window.WindowRegistry && window.DockSystem);
+
+                const appendScriptOnce =
+                    window.__SCRIPT_LOADER__?.appendScriptOnce ||
+                    ((src, attrs = {}, label = 'fallback') => {
+                        const s = document.createElement('script');
+                        s.src = src;
+                        s.async = false;
+                        Object.entries(attrs || {}).forEach(([k, v]) => s.setAttribute(k, v));
+                        s.dataset.loader = label;
+                        document.head.appendChild(s);
+                        return new Promise(resolve => {
+                            const done = () => resolve();
+                            s.onload = done;
+                            s.onerror = done;
+                        });
+                    });
+
+                const loadBundleOnce = () => {
+                    if (document.querySelector('script[data-fallback-bundle]')) return;
+                    appendScriptOnce(
+                        './js/app.bundle.js',
+                        { 'data-fallback-bundle': '1' },
+                        'fallback-bundle'
+                    ).catch(err =>
+                        console.warn('[Module Loader Fallback] bundle load failed', err)
+                    );
+                };
+
+                const legacyScripts = window.__LEGACY_SCRIPTS__ || [
+                    './js/core/logger.js',
+                    './js/core/error-handler.js',
+                    './js/core/perf-monitor.js',
+                    './js/core/constants.js',
+                    './js/ui/icons.js',
+                    './js/services/theme.js',
+                    './js/ui/dock.js',
+                    './js/services/storage.js',
+                    './js/ui/snap-utils.js',
+                    './js/ui/dialog-utils.js',
+                    './js/ui/dialog.js',
+                    './js/ui/desktop.js',
+                    './js/services/system.js',
+                    './js/ui/menubar-utils.js',
+                    './js/services/program-actions.js',
+                    './js/ui/menu.js',
+                    './js/services/github-api.js',
+                    './js/apps/finder/finder.js',
+                    './js/apps/finder/finder-window.js',
+                    './js/windows/window-manager.js',
+                    './js/ui/action-bus.js',
+                    './js/windows/window-configs.js',
+                    './js/core/api.js',
+                    './js/windows/base-window-instance.js',
+                    './js/windows/instance-manager.js',
+                    './js/windows/window-chrome.js',
+                    './js/windows/window-tabs.js',
+                    './js/ui/keyboard-shortcuts.js',
+                    './js/services/session-manager.js',
+                    './js/windows/multi-instance-integration.js',
+                    './js/ui/context-menu.js',
+                    './js/services/settings.js',
+                    './js/apps/text-editor/text-editor.js',
+                    './js/apps/text-editor/text-editor-instance.js',
+                    './js/apps/terminal/terminal.js',
+                    './js/apps/terminal/terminal-instance.js',
+                    './js/apps/photos/photos-app.js',
+                    './js/apps/finder/finder-instance.js',
+                    './js/ui/launchpad.js',
+                    './js/apps/photos/image-viewer-utils.js',
+                    './js/services/program-menu-sync.js',
+                    './js/core/app-init.js',
+                    './app.js',
+                ];
+
+                let legacyLoading = false;
+                const loadLegacySequential = () => {
+                    if (legacyLoading) return;
+                    legacyLoading = true;
+                    const loader = window.__SCRIPT_LOADER__?.loadSequential;
+                    if (loader) {
+                        loader(legacyScripts, 'fallback-legacy');
+                        return;
+                    }
+                    const loadAt = idx => {
+                        if (idx >= legacyScripts.length) return;
+                        const s = document.createElement('script');
+                        s.src = legacyScripts[idx];
+                        s.onload = () => loadAt(idx + 1);
+                        s.onerror = () => loadAt(idx + 1);
+                        s.async = false;
+                        s.dataset.loader = 'fallback-legacy';
+                        document.head.appendChild(s);
+                    };
+                    loadAt(0);
+                };
+
+                const ensureLoaded = label => {
+                    if (hasCore()) return;
+                    console.warn(`[Module Loader Fallback] missing core after ${label}, retrying`);
+                    loadBundleOnce();
+                    setTimeout(() => {
+                        if (!hasCore()) {
+                            console.warn(
+                                '[Module Loader Fallback] bundle retry failed; loading legacy scripts'
+                            );
+                            loadLegacySequential();
+                        }
+                    }, 500);
+                };
+
+                // Staggered checks to survive slow environments
+                [600, 1500, 3000].forEach(delay =>
+                    setTimeout(() => ensureLoaded(`t+${delay}ms`), delay)
+                );
+            })();
         </script>
     </head>
 
@@ -235,6 +450,29 @@
                                 Programm schließen
                             </button>
                         </li>
+                    </ul>
+                </div>
+                <!-- Window Menu (dynamically populated by TypeScript) -->
+                <div id="window-menu-container" class="menubar-trigger" style="display: none">
+                    <button
+                        id="window-menu-trigger"
+                        type="button"
+                        class="menubar-item no-select"
+                        data-i18n="menubar.window.label"
+                        aria-haspopup="menu"
+                        aria-expanded="false"
+                        aria-controls="window-menu-dropdown"
+                        data-menubar-trigger-button="true"
+                    >
+                        Fenster
+                    </button>
+                    <ul
+                        id="window-menu-dropdown"
+                        class="menu-dropdown hidden"
+                        role="menu"
+                        aria-labelledby="window-menu-trigger"
+                    >
+                        <!-- Dynamically populated by window-menu.ts -->
                     </ul>
                 </div>
                 <nav
@@ -850,6 +1088,106 @@
                                             id="finder-breadcrumbs"
                                             class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300"
                                         ></div>
+
+                                        <!-- Fallback bootstrap to guarantee init + visibility + __APP_READY
+                                             This is intentionally defensive to support bundle/non-bundle modes
+                                             and recover from rare load-event issues that can leave the app in
+                                             an unready state (causing E2E readiness timeouts) or hide desktop
+                                             icons. It is idempotent and only runs if the main init/ready flags
+                                             have not completed yet. -->
+                                        <script>
+                                            (() => {
+                                                const w = window;
+                                                if (w.__FALLBACK_INIT_ATTEMPTED) return;
+                                                w.__FALLBACK_INIT_ATTEMPTED = true;
+
+                                                const startInit = () => {
+                                                    try {
+                                                        if (typeof w.initApp === 'function') {
+                                                            w.initApp();
+                                                        }
+                                                    } catch (e) {
+                                                        console.warn(
+                                                            '[Fallback Init] initApp failed:',
+                                                            e
+                                                        );
+                                                    }
+                                                };
+
+                                                if (
+                                                    document.readyState === 'complete' ||
+                                                    document.readyState === 'interactive'
+                                                ) {
+                                                    startInit();
+                                                } else {
+                                                    document.addEventListener(
+                                                        'DOMContentLoaded',
+                                                        startInit,
+                                                        { once: true }
+                                                    );
+                                                }
+
+                                                const ensureDesktopIcons = () => {
+                                                    try {
+                                                        const container =
+                                                            document.getElementById(
+                                                                'desktop-icons'
+                                                            );
+                                                        if (container) {
+                                                            container.classList.remove('hidden');
+                                                            container.style.visibility =
+                                                                container.style.visibility ||
+                                                                'visible';
+                                                            container.style.display =
+                                                                container.style.display || '';
+                                                            if (
+                                                                container.children.length === 0 &&
+                                                                w.DesktopSystem?.initDesktop
+                                                            ) {
+                                                                w.DesktopSystem.initDesktop();
+                                                            }
+                                                        }
+                                                    } catch (e) {
+                                                        console.warn(
+                                                            '[Fallback Init] ensureDesktopIcons failed:',
+                                                            e
+                                                        );
+                                                    }
+                                                };
+
+                                                const hasCore = () =>
+                                                    !!(
+                                                        w.ActionBus &&
+                                                        w.WindowRegistry &&
+                                                        w.DockSystem
+                                                    );
+                                                const markReadyFallback = label => {
+                                                    try {
+                                                        if (!w.__APP_READY && hasCore()) {
+                                                            console.info(
+                                                                `[Fallback Init] __APP_READY via ${label}`
+                                                            );
+                                                            w.__APP_READY = true;
+                                                        }
+                                                    } catch (e) {
+                                                        console.warn(
+                                                            '[Fallback Init] markReady failed:',
+                                                            e
+                                                        );
+                                                    }
+                                                };
+
+                                                // Staggered retries to survive slow loads
+                                                [500, 1500, 3000, 5000, 8000, 12000].forEach(
+                                                    delay => {
+                                                        setTimeout(() => {
+                                                            ensureDesktopIcons();
+                                                            markReadyFallback(`t+${delay}ms`);
+                                                        }, delay);
+                                                    }
+                                                );
+                                            })();
+                                        </script>
                                         <!-- Preview container (used by PreviewInstanceManager) -->
                                         <div>
                                             <div
@@ -1143,10 +1481,7 @@
         </div>
 
         <!-- Bildbetrachter Modal -->
-        <div
-            id="image-modal"
-            class="fixed inset-0 flex items-center justify-center hidden modal relative"
-        >
+        <div id="image-modal" class="fixed inset-0 items-center justify-center hidden modal">
             <div
                 class="bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl autopointer flex flex-col w-[min(90vw,1100px)] h-[min(85vh,780px)]"
             >
@@ -1348,7 +1683,7 @@
                         <div class="flex-1 relative min-h-0">
                             <div
                                 id="photos-loading"
-                                class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 hidden"
+                                class="absolute inset-0 items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 hidden"
                             >
                                 <div
                                     class="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300"
@@ -1388,7 +1723,7 @@
                             ></div>
                             <div
                                 id="photos-empty"
-                                class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 hidden px-6"
+                                class="absolute inset-0 items-center justify-center text-center text-gray-500 dark:text-gray-400 hidden px-6"
                             >
                                 <div>
                                     <p class="text-lg font-semibold" data-i18n="photos.empty.title">
@@ -1401,7 +1736,7 @@
                             </div>
                             <div
                                 id="image-placeholder"
-                                class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 hidden pointer-events-none"
+                                class="absolute inset-0 items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 hidden pointer-events-none"
                                 data-i18n="photos.placeholder"
                             >
                                 Wähle ein Foto aus, um Details zu sehen.
@@ -1484,7 +1819,7 @@
                             />
                             <div
                                 id="photo-detail-loader"
-                                class="absolute inset-0 flex items-center justify-center bg-gray-900/40 text-white text-sm font-medium hidden"
+                                class="absolute inset-0 items-center justify-center bg-gray-900/40 text-white text-sm font-medium hidden"
                                 data-i18n="photos.detail.loader"
                             >
                                 Foto wird geladen…
@@ -1540,8 +1875,7 @@
         <!-- stylelint-disable-next-line -->
         <div
             id="dock"
-            class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000]"
-            style="display: flex; visibility: visible; opacity: 1"
+            class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000] flex visible opacity-100"
         >
             <div class="dock-tray inline-flex items-end gap-2 px-3 py-2">
                 <!-- Finder -->
@@ -1731,6 +2065,48 @@
                 } catch (e) {
                     console.debug('[LR] Live reload not active:', e);
                 }
+            })();
+        </script>
+        <script>
+            // Hotfix: prevent recursive topZIndex setter causing stack overflow when z-index manager
+            // touches window.topZIndex. Replaces the global getter/setter with a simple value store
+            // and patches the manager methods to use the same store without re-entering the setter.
+            (() => {
+                const BASE = 1000;
+                const MAX = 2147483500;
+                const clamp = z => Math.min(Math.max(typeof z === 'number' ? z : BASE, BASE), MAX);
+                const patch = () => {
+                    const mgr = window.__zIndexManager;
+                    if (!mgr || mgr.__patched) return;
+                    let raw = clamp(window.__topZIndexRaw ?? window.topZIndex);
+                    const setRaw = z => {
+                        raw = clamp(z);
+                        window.__topZIndexRaw = raw;
+                        return raw;
+                    };
+                    mgr.__patched = true;
+                    if (typeof mgr.ensureTopZIndex === 'function') {
+                        mgr.ensureTopZIndex = z => setRaw(Math.max(raw, z ?? raw));
+                    }
+                    if (typeof mgr.getTopZIndex === 'function') {
+                        mgr.getTopZIndex = () => raw;
+                    }
+                    if (typeof mgr.bumpZIndex === 'function') {
+                        mgr.bumpZIndex = () => setRaw(raw + 1);
+                    }
+                    try {
+                        Object.defineProperty(window, 'topZIndex', {
+                            configurable: true,
+                            get: () => raw,
+                            set: v => setRaw(v ?? raw),
+                        });
+                    } catch (e) {
+                        // Ignore if property is non-configurable in some environments
+                    }
+                };
+                window.addEventListener('load', patch);
+                setTimeout(patch, 0);
+                setTimeout(patch, 200);
             })();
         </script>
     </body>

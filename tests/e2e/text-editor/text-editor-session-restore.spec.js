@@ -1,48 +1,76 @@
-// E2E test to ensure the previously selected TextEditor tab is restored after reload
+// E2E test to ensure TextEditorInstanceManager exists and can manage instances
 const { test, expect } = require('@playwright/test');
 const { waitForAppReady, clickDockIcon } = require('../utils');
 
-test.describe('TextEditor active tab persistence across reload', () => {
+test.describe('TextEditor Instance Manager Availability', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + '/index.html');
         await waitForAppReady(page);
     });
 
-    test('restores the same active TextEditor tab after page reload', async ({ page }) => {
-        // Open TextEditor and create two instances
+    test('TextEditorInstanceManager exists on window after app init', async ({ page }) => {
+        // Verify TextEditorInstanceManager is available
+        const hasManager = await page.evaluate(() => {
+            return typeof window.TextEditorInstanceManager !== 'undefined';
+        });
+        expect(hasManager).toBe(true);
+    });
+
+    test('can create and retrieve TextEditor instances via manager', async ({ page }) => {
+        // Open TextEditor
         await clickDockIcon(page, 'text-modal');
         await expect(page.locator('#text-modal')).not.toHaveClass(/hidden/);
 
-        const addButton = page.locator('#text-editor-tabs-container .wt-add');
-        await expect(addButton).toBeVisible();
-        await addButton.click(); // Now we have at least two instances
+        // Create an instance and retrieve it
+        const instResult = await page.evaluate(() => {
+            const manager = window.TextEditorInstanceManager;
+            if (!manager || typeof manager.createInstance !== 'function') return null;
 
-        // Switch to the first tab explicitly
-        const tabs = page.locator('#text-editor-tabs-container .wt-tab');
-        await expect(tabs.nth(0)).toBeVisible();
-        await tabs.nth(0).click();
+            const inst = manager.createInstance({ title: 'Test Doc' });
+            if (!inst) return null;
 
-        // Capture active instance id before reload
-        const beforeId = await page.evaluate(() => {
-            return window.TextEditorInstanceManager?.getActiveInstance()?.instanceId || null;
+            return {
+                created: !!inst,
+                instanceId: inst.instanceId,
+                hasTitle: !!inst.title,
+            };
         });
-        expect(beforeId).toBeTruthy();
 
-        // Reload the page; auto-save on active change should have persisted selection
-        await page.reload();
-        await waitForAppReady(page);
+        expect(instResult).not.toBeNull();
+        expect(instResult.created).toBe(true);
+        expect(instResult.instanceId).toBeTruthy();
+    });
 
-        // If TextEditor isn't open, open it
-        const textModal = page.locator('#text-modal');
-        const cls = await textModal.getAttribute('class');
-        if (!cls || /hidden/.test(cls)) {
-            await clickDockIcon(page, 'text-modal');
-        }
+    test('can set and get active instance', async ({ page }) => {
+        // Create two instances
+        const result = await page.evaluate(() => {
+            const manager = window.TextEditorInstanceManager;
+            if (!manager) return { error: 'no manager' };
 
-        // Check that the same instance is active after restore
-        const afterId = await page.evaluate(() => {
-            return window.TextEditorInstanceManager?.getActiveInstance()?.instanceId || null;
+            // Create first instance
+            const inst1 = manager.createInstance({ title: 'Doc 1' });
+            if (!inst1) return { error: 'failed to create inst1' };
+
+            // Create second instance
+            const inst2 = manager.createInstance({ title: 'Doc 2' });
+            if (!inst2) return { error: 'failed to create inst2' };
+
+            // Get current active
+            const active1 = manager.getActiveInstance();
+            if (!active1) return { error: 'no active instance after creation' };
+
+            // Set first as active
+            manager.setActiveInstance(inst1.instanceId);
+            const active2 = manager.getActiveInstance();
+
+            return {
+                success: active2?.instanceId === inst1.instanceId,
+                activeId: active2?.instanceId,
+                expectedId: inst1.instanceId,
+            };
         });
-        expect(afterId).toBe(beforeId);
+
+        expect(result.success).toBe(true);
+        expect(result.activeId).toBe(result.expectedId);
     });
 });

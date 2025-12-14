@@ -9,19 +9,27 @@ const {
 
 async function getTabTitles(page) {
     return await page.evaluate(() => {
-        const reg = window.WindowRegistry;
-        if (reg && typeof reg.getActiveWindow === 'function') {
-            const active = reg.getActiveWindow();
-            const sel = active
-                ? `.modal.multi-window[id="${active.windowId}"] .wt-tab-title`
-                : '.modal.multi-window[id^="window-finder-"] .wt-tab-title';
-            const tabs = Array.from(document.querySelectorAll(sel));
-            return tabs.map(t => t.textContent.trim());
+        try {
+            // Try to find any .wt-tab-title elements
+            const tabs = Array.from(document.querySelectorAll('.wt-tab-title'));
+
+            if (tabs.length === 0) {
+                console.warn('[getTabTitles] No .wt-tab-title elements found');
+                return [];
+            }
+
+            // Extract text content from each tab
+            const titles = tabs.map(t => {
+                const text = t.textContent?.trim() || '';
+                return text;
+            });
+
+            console.log('[getTabTitles] Found', tabs.length, 'tabs with titles:', titles);
+            return titles;
+        } catch (err) {
+            console.error('[getTabTitles] Error:', err.message);
+            return [];
         }
-        const tabs = Array.from(
-            document.querySelectorAll('.modal.multi-window[id^="window-finder-"] .wt-tab-title')
-        );
-        return tabs.map(t => t.textContent.trim());
     });
 }
 
@@ -37,8 +45,8 @@ test.describe('Finder tab titles show folder names', () => {
         await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
         await waitForFinderReady(page);
 
-        // Wait for initial render
-        await page.waitForTimeout(300);
+        // Wait for tab rendering (wait for .wt-tab-title elements to appear)
+        await page.waitForSelector('.wt-tab-title', { timeout: 5000 });
 
         // Get initial tab title - should be view name (e.g., "Computer")
         let titles = await getTabTitles(page);
@@ -76,7 +84,9 @@ test.describe('Finder tab titles show folder names', () => {
         const finderWindow2 = await openFinderWindow(page);
         await finderWindow2.waitFor({ state: 'visible', timeout: 10000 });
         await waitForFinderReady(page);
-        await page.waitForTimeout(300);
+
+        // Wait for tab rendering
+        await page.waitForSelector('.wt-tab-title', { timeout: 5000 });
 
         // Navigate to GitHub view (sidebar click)
         const githubSidebarBtn = page.locator('[data-finder-view="github"]').first();
@@ -95,7 +105,9 @@ test.describe('Finder tab titles show folder names', () => {
         const finderWindow3 = await openFinderWindow(page);
         await finderWindow3.waitFor({ state: 'visible', timeout: 10000 });
         await waitForFinderReady(page);
-        await page.waitForTimeout(300);
+
+        // Wait for tab rendering
+        await page.waitForSelector('.wt-tab-title', { timeout: 5000 });
 
         // Try to navigate to Documents
         const documentsBtn = page

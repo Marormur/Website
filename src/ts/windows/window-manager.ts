@@ -3,6 +3,8 @@
  * Mirrors js/window-manager.js behavior while adding types and preserving global API.
  */
 
+import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
+
 (() => {
     'use strict';
 
@@ -79,24 +81,21 @@
     }
 
     const windowRegistry = new Map<string, WindowConfig>();
-    const baseZIndex = 1000;
-    let topZIndex = 1000;
+    const zIndexManager = getZIndexManager();
 
     const WindowManager = {
         /**
          * Get current top z-index for synchronization
          */
         getTopZIndex(): number {
-            return topZIndex;
+            return zIndexManager.getTopZIndex();
         },
 
         /**
          * Update top z-index from external source (e.g., WindowRegistry)
          */
         updateTopZIndex(newZIndex: number): void {
-            if (newZIndex > topZIndex) {
-                topZIndex = newZIndex;
-            }
+            zIndexManager.ensureTopZIndex(newZIndex);
         },
         register(config: WindowConfigOptions): WindowConfig {
             const windowConfig = new WindowConfig(config);
@@ -153,28 +152,23 @@
         },
 
         getTopWindow(): HTMLElement | null {
-            let topModal: HTMLElement | null = null;
-            let highestZ = 0;
-            this.getAllWindowIds().forEach(id => {
-                const modal = document.getElementById(id);
-                if (modal && !modal.classList.contains('hidden')) {
-                    const zIndex = parseInt(getComputedStyle(modal).zIndex, 10) || 0;
-                    if (zIndex > highestZ) {
-                        highestZ = zIndex;
-                        topModal = modal;
-                    }
-                }
-            });
-            return topModal;
+            return zIndexManager.getTopWindowElement();
         },
 
         bringToFront(windowId: string): void {
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.bringToFront === 'function') {
                 instance.bringToFront();
-            } else {
-                console.warn(`Keine Dialog-Instanz für ${windowId} gefunden.`);
+                return;
             }
+
+            const modal = document.getElementById(windowId);
+            if (!modal) {
+                console.warn(`Keine Dialog-Instanz für ${windowId} gefunden.`);
+                return;
+            }
+            const windowEl = this.getDialogWindowElement(modal);
+            zIndexManager.bringToFront(windowId, modal, windowEl);
         },
 
         open(windowId: string): void {
@@ -184,11 +178,17 @@
             const g = window as unknown as {
                 __SESSION_RESTORE_IN_PROGRESS?: boolean;
             };
+            const allowInitDuringRestore = !!(
+                config?.metadata &&
+                (config.metadata as Record<string, unknown> & { runInitDuringRestore?: boolean })
+                    .runInitDuringRestore
+            );
+
             if (
                 config &&
                 config.metadata &&
                 typeof (config.metadata as Record<string, unknown>).initHandler === 'function' &&
-                !g.__SESSION_RESTORE_IN_PROGRESS
+                (!g.__SESSION_RESTORE_IN_PROGRESS || allowInitDuringRestore)
             ) {
                 try {
                     const md = config.metadata as Record<string, unknown> & {
@@ -234,40 +234,11 @@
         },
 
         getNextZIndex(): number {
-            // Sync with WindowRegistry if available
-            const W = window as any;
-            if (W.WindowRegistry && typeof W.WindowRegistry.getNextZIndex === 'function') {
-                const registryZ = W.WindowRegistry.getTopZIndex?.() || 0;
-                if (registryZ >= topZIndex) {
-                    topZIndex = registryZ;
-                }
-            }
-
-            topZIndex++;
-
-            // Notify WindowRegistry of our new z-index
-            if (W.WindowRegistry && typeof W.WindowRegistry.updateTopZIndex === 'function') {
-                W.WindowRegistry.updateTopZIndex?.(topZIndex);
-            }
-
-            return topZIndex;
+            return zIndexManager.bumpZIndex();
         },
 
         syncZIndexWithDOM(): number {
-            let maxZ = baseZIndex;
-            this.getAllWindowIds().forEach(id => {
-                const modal = document.getElementById(id);
-                if (!modal) return;
-                const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
-                if (!Number.isNaN(modalZ)) maxZ = Math.max(maxZ, modalZ);
-                const windowEl = this.getDialogWindowElement(modal);
-                if (windowEl) {
-                    const contentZ = parseInt(window.getComputedStyle(windowEl).zIndex, 10);
-                    if (!Number.isNaN(contentZ)) maxZ = Math.max(maxZ, contentZ);
-                }
-            });
-            topZIndex = maxZ;
-            return maxZ;
+            return zIndexManager.syncFromDOM();
         },
 
         getDialogWindowElement(modal: HTMLElement | null): HTMLElement | null {
@@ -303,13 +274,13 @@
         },
 
         get topZIndex(): number {
-            return topZIndex;
+            return zIndexManager.getTopZIndex();
         },
         set topZIndex(value: number) {
-            topZIndex = value;
+            zIndexManager.ensureTopZIndex(value);
         },
         get baseZIndex(): number {
-            return baseZIndex;
+            return BASE_Z_INDEX;
         },
     };
 

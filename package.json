@@ -6,7 +6,7 @@
   "scripts": {
     "build:css": "cross-env NODE_ENV=production npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
     "build:css:dev": "npx tailwindcss -i ./src/input.css -o ./dist/output.css",
-    "watch:css": "cross-env NODE_OPTIONS=--max-old-space-size=4096 npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
+    "watch:css": "cross-env NODE_OPTIONS=--max-old-space-size=8192 npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch --poll",
     "dev": "node server.js",
     "pw:install": "playwright install",
     "test:e2e": "playwright test",
@@ -35,7 +35,12 @@
   },
   "lint-staged": {
     "*.js": [
-      "eslint --fix --ignore-pattern 'js/**/*.js'"
+      "eslint --fix --ignore-pattern 'js/**/*.js'",
+      "prettier --write"
+    ],
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
     ],
     "*.{css,md,html,json}": [
       "prettier --write"

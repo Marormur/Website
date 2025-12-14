@@ -25,6 +25,22 @@ export class TerminalWindow extends BaseWindow {
     }
 
     /**
+     * Accessor for tests: alias tabs as sessions for Terminal nomenclature
+     */
+    get sessions(): BaseTab[] {
+        return Array.from(this.tabs.values());
+    }
+
+    /**
+     * Get the currently active session (active tab)
+     * This getter provides test compatibility for accessing the active terminal session
+     */
+    get activeSession(): BaseTab | null {
+        if (!this.activeTabId) return null;
+        return this.tabs.get(this.activeTabId) || null;
+    }
+
+    /**
      * Create terminal-specific window DOM
      */
     createDOM(): HTMLElement {
@@ -144,14 +160,14 @@ export class TerminalWindow extends BaseWindow {
         // Create initial session
         window.createSession();
 
-        // Show window
-        window.show();
-
-        // Register with WindowRegistry
+        // Register window BEFORE showing it, so updateDockIndicators() can find it
         const W = globalThis as any;
         if (W.WindowRegistry) {
             W.WindowRegistry.registerWindow(window);
         }
+
+        // Show window
+        window.show();
 
         return window;
     }
@@ -182,6 +198,10 @@ export class TerminalWindow extends BaseWindow {
             if (win.zIndex > mostRecentWindow.zIndex) {
                 mostRecentWindow = win;
             }
+        }
+        // Ensure the window has at least one session
+        if (mostRecentWindow.tabs.size === 0 && W.TerminalSession) {
+            mostRecentWindow.createSession();
         }
 
         // Focus the most recent Terminal window

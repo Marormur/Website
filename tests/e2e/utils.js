@@ -5,25 +5,39 @@ const { expect } = require('@playwright/test');
 
 // Navigation and readiness
 async function gotoHome(page, baseURL) {
+    // Attach console logging for debugging loader issues
+    page.on('console', msg => {
+        console.log(`[Browser console][${msg.type()}]`, msg.text());
+    });
+    page.on('pageerror', err => {
+        console.log('[Browser pageerror]', err.message, err.stack);
+    });
+
     // Set USE_BUNDLE flag if env var is set (BEFORE navigation)
     if (typeof process.env.USE_BUNDLE !== 'undefined') {
         const flag =
             process.env.USE_BUNDLE === '1'
                 ? true
                 : process.env.USE_BUNDLE === '0'
-                    ? false
-                    : undefined;
+                  ? false
+                  : undefined;
         if (typeof flag !== 'undefined') {
             await page.addInitScript(val => {
+                // Both flags are respected by different loader paths
+                window.USE_BUNDLE = val;
                 window.__USE_BUNDLE__ = val;
+                try {
+                    window.localStorage.setItem('USE_BUNDLE', val ? '1' : '0');
+                } catch (e) {
+                    /* ignore storage errors */
+                }
             }, flag);
             console.log(`[Test Utils] Bundle mode via USE_BUNDLE=${process.env.USE_BUNDLE}`);
         }
     }
 
-    // Use networkidle for bundle mode to ensure large JS finishes loading
-    const waitUntil = process.env.USE_BUNDLE === '1' ? 'networkidle' : 'load';
-    await page.goto(baseURL + '/index.html', { waitUntil, timeout: 30000 });
+    // Keep navigation bounded for per-test timeout (30s). Avoid networkidle to prevent hanging on external fetches.
+    await page.goto(baseURL + '/index.html', { waitUntil: 'load', timeout: 20000 });
 
     // Wait for critical DOM elements
     await page.waitForSelector('#dock .dock-tray .dock-item', {
@@ -491,6 +505,47 @@ async function getFinderTabs(page, finderWindow) {
     return finderWindow.locator(`#${windowId}-tabs .wt-tab`);
 }
 
+/**
+ * Waits for Finder content to be rendered and visible for the given view mode.
+ * Uses DOM presence instead of fixed timeouts to reduce flakiness.
+ * @param {Locator} finderWindow - Locator of the Finder window
+ * @param {'list'|'grid'} mode - Desired view mode
+ * @param {number} timeout - Max wait time in ms
+ * @returns {Locator} Locator pointing to the first rendered item
+ */
+async function waitForFinderContent(finderWindow, mode = 'list', timeout = 12000) {
+    const content = finderWindow.locator('.finder-content');
+    await content.waitFor({ state: 'visible', timeout });
+
+    const selector =
+        mode === 'grid'
+            ? '.finder-grid-container .finder-grid-item'
+            : '.finder-list-table tbody tr';
+
+    const firstItem = finderWindow.locator(selector).first();
+    await firstItem.waitFor({ state: 'visible', timeout });
+    return firstItem;
+}
+
+/**
+ * Switches the Finder view mode and waits until the corresponding content is ready.
+ * @param {Locator} finderWindow - Locator of the Finder window
+ * @param {'list'|'grid'} mode - Target view mode
+ * @param {number} timeout - Max wait time in ms
+ */
+async function ensureFinderViewMode(finderWindow, mode = 'list', timeout = 12000) {
+    const buttonSelector =
+        mode === 'grid'
+            ? '.finder-toolbar button[data-action="view-grid"]'
+            : '.finder-toolbar button[data-action="view-list"]';
+
+    const toggleBtn = finderWindow.locator(buttonSelector);
+    await toggleBtn.waitFor({ state: 'visible', timeout: Math.min(timeout, 6000) });
+    await toggleBtn.click();
+
+    await waitForFinderContent(finderWindow, mode, timeout);
+}
+
 module.exports = {
     // Navigation / Settings / Apple menu
     gotoHome,
@@ -516,6 +571,8 @@ module.exports = {
     // Finder window helpers (new multi-window API)
     getFinderAddTabButton,
     getFinderTabs,
+    waitForFinderContent,
+    ensureFinderViewMode,
     // Finder / GitHub mocks
     mockGithubRepoImageFlow,
     ensureGithubMocksIfRequested,
@@ -532,18 +589,104 @@ module.exports = {
  * Nutzt die BaseWindow‑Struktur: .modal.multi-window[id^="window-finder-"]
  */
 async function openFinderWindow(page) {
-    // Click dock icon by accessible name
-    await page.getByRole('img', { name: 'Finder Icon' }).click();
+    // Use the robust dock click helper; fall back to direct WindowManager.open if needed
+    try {
+        await clickDockIcon(page, 'finder');
+    } catch {
+        // If dock interaction fails, open programmatically
+        try {
+            await page.evaluate(() => {
+                if (window.WindowManager && typeof window.WindowManager.open === 'function') {
+                    window.WindowManager.open('finder');
+                    return true;
+                }
+                return false;
+            });
+        } catch {
+            /* ignore */
+        }
+    }
+
+    const preState = await page.evaluate(() => {
+        try {
+            return {
+                appReady: window.__APP_READY === true,
+                bundleReady: window.__BUNDLE_READY === true,
+                useBundleFlag: window.USE_BUNDLE ?? null,
+                useBundleLegacy: window.__USE_BUNDLE__ ?? null,
+                hasWindowManager: !!window.WindowManager,
+                hasWindowRegistry: !!window.WindowRegistry,
+                hasFinderWindow: !!window.FinderWindow,
+                finderDomCount: document.querySelectorAll(
+                    '.modal.multi-window[id^="window-finder-"]'
+                ).length,
+            };
+        } catch (e) {
+            return { error: String(e) };
+        }
+    });
+    console.log('[Test Utils] Finder pre-open state:', preState);
+
+    // Actively ensure a Finder window exists by invoking WindowManager if needed
+    await page.waitForFunction(
+        () => {
+            try {
+                const existing = document.querySelector(
+                    '.modal.multi-window[id^="window-finder-"]'
+                );
+                if (existing) return true;
+                const finder = window.FinderWindow;
+                if (finder && typeof finder.focusOrCreate === 'function') {
+                    finder.focusOrCreate();
+                } else if (
+                    window.WindowManager &&
+                    typeof window.WindowManager.open === 'function'
+                ) {
+                    window.WindowManager.open('finder');
+                }
+                return !!document.querySelector('.modal.multi-window[id^="window-finder-"]');
+            } catch {
+                return false;
+            }
+        },
+        { timeout: 12000 }
+    );
+
+    const postEnsureState = await page.evaluate(() => {
+        try {
+            return {
+                appReady: window.__APP_READY === true,
+                bundleReady: window.__BUNDLE_READY === true,
+                useBundleFlag: window.USE_BUNDLE ?? null,
+                useBundleLegacy: window.__USE_BUNDLE__ ?? null,
+                hasWindowManager: !!window.WindowManager,
+                hasWindowRegistry: !!window.WindowRegistry,
+                hasFinderWindow: !!window.FinderWindow,
+                finderDomCount: document.querySelectorAll(
+                    '.modal.multi-window[id^="window-finder-"]'
+                ).length,
+                registryFinderCount:
+                    window.WindowRegistry &&
+                    typeof window.WindowRegistry.getAllWindows === 'function'
+                        ? (window.WindowRegistry.getAllWindows('finder') || []).length
+                        : null,
+            };
+        } catch (e) {
+            return { error: String(e) };
+        }
+    });
+    console.log('[Test Utils] Finder post-ensure state:', postEnsureState);
+
     // Prefer new BaseWindow Finder
     const newWin = page.locator('.modal.multi-window[id^="window-finder-"]');
     try {
-        await newWin.first().waitFor({ state: 'visible', timeout: 6000 });
-        // After the window appears, wait for Finder systems to initialize
+        // Wait for Finder systems to initialize and the window to appear
         try {
-            await waitForFinderReady(page, { timeout: 10000 });
+            await waitForFinderReady(page, { timeout: 12000 });
         } catch {
-            // proceed anyway; callers may perform additional waits
+            /* proceed to wait for DOM */
         }
+        await newWin.first().waitFor({ state: 'visible', timeout: 8000 });
         // Store the window ID on the page context for later use in tests
         const windowId = await newWin.first().getAttribute('id');
         if (windowId) {
@@ -551,13 +694,22 @@ async function openFinderWindow(page) {
         }
         return newWin.first();
     } catch {
-        // Fallback: locate a visible dialog whose heading is "Finder" and return its modal container
+        // Final fallback: trigger WindowManager.open and locate a visible dialog heading "Finder"
+        try {
+            await page.evaluate(() => {
+                if (window.WindowManager && typeof window.WindowManager.open === 'function') {
+                    window.WindowManager.open('finder');
+                }
+            });
+        } catch {
+            /* noop */
+        }
         const heading = page.getByRole('heading', { name: /^Finder$/ });
-        await heading.waitFor({ state: 'visible', timeout: 6000 });
+        await heading.waitFor({ state: 'visible', timeout: 8000 });
         const modal = page.locator('.modal', { has: heading });
         await modal.first().waitFor({ state: 'visible', timeout: 4000 });
         try {
-            await waitForFinderReady(page, { timeout: 10000 });
+            await waitForFinderReady(page, { timeout: 12000 });
         } catch {
             /* noop */
         }
@@ -581,8 +733,8 @@ async function waitForFinderReady(page, opts = {}) {
         typeof opts.timeout === 'number'
             ? opts.timeout
             : process.env.USE_BUNDLE === '1'
-                ? 30000
-                : 15000;
+              ? 30000
+              : 15000;
     // Ensure optional GitHub mocks are set up before Finder initializes
     await ensureGithubMocksIfRequested(page);
     await page.waitForFunction(
