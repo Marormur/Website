@@ -61,8 +61,9 @@ test.describe('Multi-Instance Window Tabs', () => {
 
             return {
                 count: window.WindowRegistry.getAllWindows('terminal')?.length || 0,
-                term1Id: term1?.windowId,
-                term2Id: term2?.windowId,
+                // BaseWindow exposes `id`; keep `windowId` fallback for legacy builds
+                term1Id: term1?.id || term1?.windowId,
+                term2Id: term2?.id || term2?.windowId,
             };
         });
 
