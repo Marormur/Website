@@ -76,73 +76,126 @@
         </script>
 
         <script>
-            // Conditional loading: Either bundle OR individual scripts
-            if (window.USE_BUNDLE) {
-                console.log('[Module Loader] Loading esbuild bundle (includes i18n)...');
-                document.write('<script src="./js/app.bundle.js"><\/script>');
-            } else {
-                console.log('[Module Loader] Loading individual scripts...');
+            // Conditional loading: Either bundle OR individual scripts (sequential, no document.write)
+            (() => {
+                const legacyScripts = [
+                    './js/core/logger.js',
+                    './js/core/error-handler.js',
+                    './js/core/perf-monitor.js',
+                    './js/core/constants.js',
+                    './js/ui/icons.js',
+                    './js/services/theme.js',
+                    './js/ui/dock.js',
+                    './js/services/storage.js',
+                    './js/ui/snap-utils.js',
+                    './js/ui/dialog-utils.js',
+                    './js/ui/dialog.js',
+                    './js/ui/desktop.js',
+                    './js/services/system.js',
+                    './js/ui/menubar-utils.js',
+                    './js/services/program-actions.js',
+                    './js/ui/menu.js',
+                    './js/services/github-api.js',
+                    './js/apps/finder/finder.js',
+                    './js/windows/window-manager.js',
+                    './js/ui/action-bus.js',
+                    './js/windows/window-configs.js',
+                    './js/core/api.js',
+                    './js/windows/base-window-instance.js',
+                    './js/windows/instance-manager.js',
+                    './js/windows/window-chrome.js',
+                    './js/windows/window-tabs.js',
+                    './js/ui/keyboard-shortcuts.js',
+                    './js/services/session-manager.js',
+                    './js/windows/multi-instance-integration.js',
+                    './js/ui/context-menu.js',
+                    './js/services/settings.js',
+                    './js/apps/text-editor/text-editor.js',
+                    './js/apps/text-editor/text-editor-instance.js',
+                    './js/apps/terminal/terminal.js',
+                    './js/apps/terminal/terminal-instance.js',
+                    './js/apps/photos/photos-app.js',
+                    './js/apps/finder/finder-instance.js',
+                    './js/ui/launchpad.js',
+                    './js/apps/photos/image-viewer-utils.js',
+                    './js/services/program-menu-sync.js',
+                    './js/core/app-init.js',
+                    './app.js',
+                ];
 
-                // Logger System (laden VOR allen anderen Modulen)
-                document.write('<script src="./js/core/logger.js"><\/script>');
+                // Expose list for fallback reuse
+                window.__LEGACY_SCRIPTS__ = legacyScripts;
 
-                // Core observability systems
-                document.write('<script src="./js/core/error-handler.js"><\/script>');
-                document.write('<script src="./js/core/perf-monitor.js"><\/script>');
+                const appended = new Set();
+                const normalize = src => new URL(src, document.baseURI).href;
+                const isAlreadyAdded = src => {
+                    const full = normalize(src);
+                    if (appended.has(full)) return true;
+                    return !!document.querySelector(
+                        `script[src="${full}"]` + `,script[src="${src}"]`
+                    );
+                };
 
-                // Modularisierte Komponenten (in Ladereihenfolge)
-                document.write('<script src="./js/core/constants.js"><\/script>');
-                document.write('<script src="./js/ui/icons.js"><\/script>');
-                document.write('<script src="./js/services/theme.js"><\/script>');
-                document.write('<script src="./js/ui/dock.js"><\/script>');
-                document.write('<script src="./js/services/storage.js"><\/script>');
-                document.write('<script src="./js/ui/snap-utils.js"><\/script>');
-                document.write('<script src="./js/ui/dialog-utils.js"><\/script>');
-                document.write('<script src="./js/ui/dialog.js"><\/script>');
-                document.write('<script src="./js/ui/desktop.js"><\/script>');
-                document.write('<script src="./js/services/system.js"><\/script>');
-                document.write('<script src="./js/ui/menubar-utils.js"><\/script>');
-                document.write('<script src="./js/services/program-actions.js"><\/script>');
-                document.write('<script src="./js/ui/menu.js"><\/script>');
-                document.write('<script src="./js/services/github-api.js"><\/script>');
-                document.write('<script src="./js/apps/finder/finder.js"><\/script>');
+                const appendScriptOnce = (src, attrs = {}, label = 'loader') =>
+                    new Promise((resolve, reject) => {
+                        const full = normalize(src);
+                        if (isAlreadyAdded(src)) {
+                            appended.add(full);
+                            resolve();
+                            return;
+                        }
 
-                // Neue zentrale Systeme
-                document.write('<script src="./js/windows/window-manager.js"><\/script>');
-                document.write('<script src="./js/ui/action-bus.js"><\/script>');
-                document.write('<script src="./js/windows/window-configs.js"><\/script>');
-                document.write('<script src="./js/core/api.js"><\/script>');
+                        const s = document.createElement('script');
+                        s.src = src;
+                        s.async = false; // keep execution order deterministic
+                        Object.entries(attrs || {}).forEach(([k, v]) => {
+                            s.setAttribute(k, String(v));
+                        });
+                        s.onload = () => {
+                            appended.add(full);
+                            resolve();
+                        };
+                        s.onerror = err => {
+                            appended.add(full);
+                            console.error(`[Module Loader] Failed to load ${src}`, err);
+                            reject(err);
+                        };
+                        s.dataset.loader = label;
+                        document.head.appendChild(s);
+                    });
 
-                // Multi-Instance Support
-                document.write('<script src="./js/windows/base-window-instance.js"><\/script>');
-                document.write('<script src="./js/windows/instance-manager.js"><\/script>');
-                document.write('<script src="./js/windows/window-chrome.js"><\/script>');
-                document.write('<script src="./js/windows/window-tabs.js"><\/script>');
-                document.write('<script src="./js/ui/keyboard-shortcuts.js"><\/script>');
-                document.write('<script src="./js/services/session-manager.js"><\/script>');
-                document.write(
-                    '<script src="./js/windows/multi-instance-integration.js"><\/script>'
-                );
+                const loadSequential = async (list, label = 'legacy') => {
+                    for (const src of list) {
+                        try {
+                            await appendScriptOnce(src, {}, label);
+                        } catch (err) {
+                            // Continue loading remaining scripts even if one fails
+                            console.warn(`[Module Loader] Continuing after error for ${src}`);
+                        }
+                    }
+                };
 
-                // Inline module scripts
-                document.write('<script src="./js/ui/context-menu.js"><\/script>');
-                document.write('<script src="./js/services/settings.js"><\/script>');
-                document.write('<script src="./js/apps/text-editor/text-editor.js"><\/script>');
-                document.write(
-                    '<script src="./js/apps/text-editor/text-editor-instance.js"><\/script>'
-                );
-                document.write('<script src="./js/apps/terminal/terminal.js"><\/script>');
-                document.write('<script src="./js/apps/terminal/terminal-instance.js"><\/script>');
-                document.write('<script src="./js/apps/photos/photos-app.js"><\/script>');
-                document.write('<script src="./js/apps/finder/finder-instance.js"><\/script>');
-                document.write('<script src="./js/ui/launchpad.js"><\/script>');
+                window.__SCRIPT_LOADER__ = {
+                    appendScriptOnce,
+                    loadSequential,
+                    legacyScripts,
+                };
 
-                // Hauptanwendung
-                document.write('<script src="./js/apps/photos/image-viewer-utils.js"><\/script>');
-                document.write('<script src="./js/services/program-menu-sync.js"><\/script>');
-                document.write('<script src="./js/core/app-init.js"><\/script>');
-                document.write('<script src="app.js"><\/script>');
-            }
+                const start = async () => {
+                    if (window.USE_BUNDLE) {
+                        console.log('[Module Loader] Loading esbuild bundle (includes i18n)...');
+                        await appendScriptOnce('./js/app.bundle.js', {}, 'bundle');
+                    } else {
+                        console.log('[Module Loader] Loading individual scripts...');
+                        await loadSequential(legacyScripts, 'legacy');
+                    }
+                };
+
+                // Expose promise for potential dependents
+                window.__MODULE_LOADER_PROMISE__ = start().catch(err => {
+                    console.error('[Module Loader] Fatal error during loading', err);
+                });
+            })();
         </script>
 
         <!-- Resilient loader fallback: if neither bundle nor legacy scripts register core globals
@@ -153,15 +206,35 @@
             (() => {
                 const hasCore = () =>
                     !!(window.ActionBus && window.WindowRegistry && window.DockSystem);
+
+                const appendScriptOnce =
+                    window.__SCRIPT_LOADER__?.appendScriptOnce ||
+                    ((src, attrs = {}, label = 'fallback') => {
+                        const s = document.createElement('script');
+                        s.src = src;
+                        s.async = false;
+                        Object.entries(attrs || {}).forEach(([k, v]) => s.setAttribute(k, v));
+                        s.dataset.loader = label;
+                        document.head.appendChild(s);
+                        return new Promise(resolve => {
+                            const done = () => resolve();
+                            s.onload = done;
+                            s.onerror = done;
+                        });
+                    });
+
                 const loadBundleOnce = () => {
                     if (document.querySelector('script[data-fallback-bundle]')) return;
-                    const s = document.createElement('script');
-                    s.src = './js/app.bundle.js';
-                    s.dataset.fallbackBundle = '1';
-                    document.head.appendChild(s);
+                    appendScriptOnce(
+                        './js/app.bundle.js',
+                        { 'data-fallback-bundle': '1' },
+                        'fallback-bundle'
+                    ).catch(err =>
+                        console.warn('[Module Loader Fallback] bundle load failed', err)
+                    );
                 };
 
-                const legacyScripts = [
+                const legacyScripts = window.__LEGACY_SCRIPTS__ || [
                     './js/core/logger.js',
                     './js/core/error-handler.js',
                     './js/core/perf-monitor.js',
@@ -210,12 +283,19 @@
                 const loadLegacySequential = () => {
                     if (legacyLoading) return;
                     legacyLoading = true;
+                    const loader = window.__SCRIPT_LOADER__?.loadSequential;
+                    if (loader) {
+                        loader(legacyScripts, 'fallback-legacy');
+                        return;
+                    }
                     const loadAt = idx => {
                         if (idx >= legacyScripts.length) return;
                         const s = document.createElement('script');
                         s.src = legacyScripts[idx];
                         s.onload = () => loadAt(idx + 1);
                         s.onerror = () => loadAt(idx + 1);
+                        s.async = false;
+                        s.dataset.loader = 'fallback-legacy';
                         document.head.appendChild(s);
                     };
                     loadAt(0);
