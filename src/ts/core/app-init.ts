@@ -18,6 +18,7 @@ import {
     validateLegacySession,
     validateMultiWindowSession,
 } from '../services/session-guard';
+import { installShim } from '../compat/instance-shims';
 
 /**
  * Global window interface extensions for app initialization
@@ -593,26 +594,19 @@ function initApp(): void {
             }
 
             // =====================================================================
-            // PHASE 2: Legacy FinderInstanceManager Compatibility Shim
+            // PHASE 2: Legacy InstanceManager Compatibility Shims (Finder)
             // =====================================================================
-            // Many E2E tests still expect window.FinderInstanceManager to exist.
-            // This shim bridges the old InstanceManager-based API to the new
-            // WindowRegistry + FinderWindow multi-window architecture.
             if (typeof gw2.FinderInstanceManager === 'undefined') {
                 try {
                     const registry = gw2.WindowRegistry;
-                    if (registry) {
-                        gw2.FinderInstanceManager = {
-                            /**
-                             * Creates a new Finder window (not a tab within an existing window).
-                             * In the multi-window model, each window manages its own tabs.
-                             */
+                    installShim(
+                        {
+                            legacyName: 'FinderInstanceManager',
+                            registryType: 'finder',
                             createInstance(opts?: { title?: string }) {
                                 try {
                                     const windows = registry.getAllWindows('finder') || [];
                                     const firstWindow = windows[0];
-
-                                    // If a Finder window exists, add a tab to it
                                     if (firstWindow && typeof firstWindow.addTab === 'function') {
                                         const tabView = gw2.FinderView
                                             ? new gw2.FinderView({
@@ -629,8 +623,6 @@ function initApp(): void {
                                             };
                                         }
                                     }
-
-                                    // No window exists, return null (window should be created via WindowRegistry)
                                     return null;
                                 } catch (e) {
                                     console.warn(
@@ -640,7 +632,6 @@ function initApp(): void {
                                     return null;
                                 }
                             },
-
                             getInstanceCount() {
                                 try {
                                     const windows = registry.getAllWindows('finder') || [];
@@ -655,7 +646,6 @@ function initApp(): void {
                                     return 0;
                                 }
                             },
-
                             getAllInstances() {
                                 try {
                                     const windows = registry.getAllWindows('finder') || [];
@@ -679,10 +669,8 @@ function initApp(): void {
                                     return [];
                                 }
                             },
-
                             getActiveInstance() {
                                 try {
-                                    // Strategy 1: Check if active window is a Finder
                                     const activeWindow = registry.getActiveWindow();
                                     if (activeWindow && activeWindow.type === 'finder') {
                                         const finderWindow = activeWindow as any;
@@ -700,7 +688,6 @@ function initApp(): void {
                                         }
                                     }
 
-                                    // Strategy 2: No active Finder window, find any visible Finder window
                                     const windows = registry.getAllWindows('finder') || [];
                                     for (const win of windows) {
                                         const w = win as any;
@@ -718,7 +705,6 @@ function initApp(): void {
                                         }
                                     }
 
-                                    // Strategy 3: Just return the active tab of the first Finder window
                                     if (windows.length > 0) {
                                         const firstWindow = windows[0] as any;
                                         if (firstWindow.activeTabId && firstWindow.tabs) {
@@ -734,7 +720,6 @@ function initApp(): void {
                                             }
                                         }
                                     }
-
                                     return null;
                                 } catch (e) {
                                     console.warn(
@@ -744,7 +729,6 @@ function initApp(): void {
                                     return null;
                                 }
                             },
-
                             setActiveInstance(instanceId: string) {
                                 try {
                                     const windows = registry.getAllWindows('finder') || [];
@@ -762,11 +746,9 @@ function initApp(): void {
                                     );
                                 }
                             },
-                        };
-                        console.info(
-                            '[APP-INIT] FinderInstanceManager compatibility shim installed'
-                        );
-                    }
+                        },
+                        gw2
+                    );
                 } catch (e) {
                     console.warn('[APP-INIT] FinderInstanceManager shim failed:', e);
                 }
