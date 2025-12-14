@@ -72,8 +72,8 @@ test.describe('Terminal Session Persistence', () => {
         expect(sessionInfo.historyLength).toBeGreaterThanOrEqual(2);
     });
 
-    // Skipped: uses Meta/Ctrl+N which browsers intercept; unreliable in CI
-    test.skip('multiple terminal windows persist across reload', async ({ page }) => {
+    // Note: Using direct API instead of Ctrl+N/Meta+N shortcuts to avoid browser interception
+    test('multiple terminal windows persist across reload', async ({ page }) => {
         // Create 2 terminal windows
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
@@ -82,7 +82,12 @@ test.describe('Terminal Session Persistence', () => {
             return window.WindowRegistry?.getAllWindows('terminal')?.length === 1;
         });
 
-        await page.keyboard.press('Meta+KeyN');
+        // Create second window using direct API instead of keyboard shortcut
+        await page.evaluate(() => {
+            if (window.TerminalWindow?.create) {
+                window.TerminalWindow.create({ title: 'Terminal 2' });
+            }
+        });
 
         await page.waitForFunction(() => {
             return window.WindowRegistry?.getAllWindows('terminal')?.length === 2;
@@ -113,8 +118,8 @@ test.describe('Terminal Session Persistence', () => {
         expect(windowCount).toBe(2);
     });
 
-    // Skipped: depends on Ctrl+T shortcut (conflicts with browser new-tab)
-    test.skip('multiple tabs per window persist', async ({ page }) => {
+    // Note: Using direct API instead of Ctrl+T shortcuts to avoid browser interception
+    test('multiple tabs per window persist', async ({ page }) => {
         // Open terminal and create 3 tabs
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
@@ -123,8 +128,14 @@ test.describe('Terminal Session Persistence', () => {
             return window.WindowRegistry?.getAllWindows('terminal')?.length === 1;
         });
 
-        await page.keyboard.press('Control+KeyT');
-        await page.keyboard.press('Control+KeyT');
+        // Create additional tabs using direct API instead of keyboard shortcuts
+        await page.evaluate(() => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (win?.createSession) {
+                win.createSession('Terminal 2');
+                win.createSession('Terminal 3');
+            }
+        });
 
         await page.waitForFunction(() => {
             const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
@@ -157,8 +168,8 @@ test.describe('Terminal Session Persistence', () => {
         expect(sessionCount).toBe(3);
     });
 
-    // Skipped: relies on Ctrl+T to create extra tab
-    test.skip('active session is restored', async ({ page }) => {
+    // Note: Using direct API instead of Ctrl+T shortcuts to avoid browser interception
+    test('active session is restored', async ({ page }) => {
         // Open terminal with 2 tabs
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
@@ -167,7 +178,13 @@ test.describe('Terminal Session Persistence', () => {
             return window.WindowRegistry?.getAllWindows('terminal')?.length === 1;
         });
 
-        await page.keyboard.press('Control+KeyT');
+        // Create second tab using direct API instead of keyboard shortcut
+        await page.evaluate(() => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (win?.createSession) {
+                win.createSession('Terminal 2');
+            }
+        });
 
         await page.waitForFunction(() => {
             const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
@@ -264,8 +281,8 @@ test.describe('Terminal Session Persistence', () => {
         expect(windowInfo?.hasElement).toBe(true);
     });
 
-    // Skipped: uses Meta/Ctrl+N shortcut
-    test.skip('z-index order persists', async ({ page }) => {
+    // Note: Using direct API instead of Ctrl+N/Meta+N shortcuts to avoid browser interception
+    test('z-index order persists', async ({ page }) => {
         // Create 2 terminal windows
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
@@ -274,7 +291,12 @@ test.describe('Terminal Session Persistence', () => {
             return window.WindowRegistry?.getAllWindows('terminal')?.length === 1;
         });
 
-        await page.keyboard.press('Meta+KeyN');
+        // Create second window using direct API instead of keyboard shortcut
+        await page.evaluate(() => {
+            if (window.TerminalWindow?.create) {
+                window.TerminalWindow.create({ title: 'Terminal 2' });
+            }
+        });
 
         await page.waitForFunction(() => {
             return window.WindowRegistry?.getAllWindows('terminal')?.length === 2;
@@ -311,8 +333,8 @@ test.describe('Terminal Session Persistence', () => {
         expect(orderAfter).toEqual(orderBefore);
     });
 
-    // Skipped: needs Ctrl+T / Ctrl+Tab shortcuts
-    test.skip('session autosave on tab switch', async ({ page }) => {
+    // Note: Using direct API instead of Ctrl+T/Ctrl+Tab shortcuts to avoid browser interception
+    test('session autosave on tab switch', async ({ page }) => {
         // Open terminal with 2 tabs
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
@@ -321,15 +343,26 @@ test.describe('Terminal Session Persistence', () => {
             return window.WindowRegistry?.getAllWindows('terminal')?.length === 1;
         });
 
-        await page.keyboard.press('Control+KeyT');
+        // Create second tab using direct API instead of keyboard shortcut
+        await page.evaluate(() => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (win?.createSession) {
+                win.createSession('Terminal 2');
+            }
+        });
 
         await page.waitForFunction(() => {
             const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
             return wins[0]?.sessions?.length === 2;
         });
 
-        // Switch tabs triggers autosave
-        await page.keyboard.press('Control+Tab');
+        // Switch tabs using direct API - this should trigger autosave
+        await page.evaluate(() => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (win && win.setActiveSession && win.sessions?.[0]) {
+                win.setActiveSession(win.sessions[0]);
+            }
+        });
 
         // Wait for autosave
         await page.waitForFunction(
