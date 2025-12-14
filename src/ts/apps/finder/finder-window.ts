@@ -95,6 +95,8 @@ export class FinderWindow extends BaseWindow {
                     : null;
                 if (view) {
                     this.addTab(view);
+                    // Aktiviere den neuen Tab direkt nach dem Erstellen
+                    this.setActiveTab(view.id);
                     return makeInst(view);
                 }
                 return null;
