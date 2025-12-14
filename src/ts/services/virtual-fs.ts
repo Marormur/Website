@@ -425,7 +425,7 @@ class VirtualFileSystemManager {
             return false;
         }
 
-        const fileName = parts[parts.length - 1];
+        const fileName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
 
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
@@ -465,7 +465,7 @@ class VirtualFileSystemManager {
             return false;
         }
 
-        const folderName = parts[parts.length - 1];
+        const folderName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
 
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
@@ -522,7 +522,7 @@ class VirtualFileSystemManager {
             return false;
         }
 
-        const itemName = parts[parts.length - 1];
+        const itemName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
 
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
@@ -553,7 +553,7 @@ class VirtualFileSystemManager {
             return false;
         }
 
-        const oldName = parts[parts.length - 1];
+        const oldName = parts[parts.length - 1]!;
         const parentPath = parts.slice(0, -1);
 
         const parent = parentPath.length > 0 ? this.getFolder(parentPath) : null;
@@ -613,7 +613,7 @@ class VirtualFileSystemManager {
             }
         };
 
-        traverse(this.root);
+        traverse(this.root['/'].children);
 
         return { totalFiles, totalFolders, totalSize };
     }
