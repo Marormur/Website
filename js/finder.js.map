@@ -1,0 +1,1 @@
+{"version":3,"file":"finder.js","sourceRoot":"","sources":["../src/ts/finder.ts"],"names":[],"mappings":";AAAA;;;;GAIG","sourcesContent":["/**\r\n * DEPRECATED: Legacy Finder System (finder.ts)\r\n * This file is intentionally left as a noop placeholder.\r\n * The new multi-window FinderWindow/FinderView implementation replaces it.\r\n */\r\n\r\nexport {};\r\n"]}

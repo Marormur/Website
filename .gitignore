@@ -39,13 +39,11 @@ logs/
 logs/**
 
 # Build outputs
-# Tailwind CSS output is built by GitHub Actions during deployment
-dist/output.css
-
-# Generated JavaScript files (built in CI from src/ts/)
-js/**/*.js
-js/**/*.js.map
-!js/README.md
+# Note: For Cloudflare Pages deployment, we COMMIT build outputs
+# so they're available in the repo. CI still rebuilds them, but
+# having them committed ensures deployment works even if build fails.
+# dist/output.css is now committed
+# js/**/*.js files are now committed
 
 # TypeScript incremental build cache
 *.tsbuildinfo
