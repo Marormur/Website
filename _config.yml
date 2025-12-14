@@ -1,0 +1,14 @@
+# GitHub Pages Jekyll configuration
+# Minimal config to serve static assets correctly
+
+# Disable Jekyll processing entirely - serve as pure static site
+jekyll: false
+
+# Enable GZIP compression
+gzip: true
+
+# Set proper MIME types for assets
+# Note: GitHub Pages automatically serves .css and .js with correct MIME types,
+# but this config ensures proper handling
+include:
+  - .htaccess
