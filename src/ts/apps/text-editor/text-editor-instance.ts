@@ -516,35 +516,70 @@ import { getString, setString } from '../../services/storage-utils.js';
     (window as unknown as { TextEditorInstance: typeof TextEditorInstance }).TextEditorInstance =
         TextEditorInstance;
 
+    // Initialize TextEditorInstanceManager
+    // This must happen synchronously to ensure it's available for SessionManager.restoreSession()
     const G = window as unknown as Record<string, unknown>;
     type InstanceManagerCtor = new (cfg: Record<string, unknown>) => unknown;
-    const InstanceManager = G['InstanceManager'] as unknown as InstanceManagerCtor | undefined;
-    if (InstanceManager) {
-        (G['TextEditorInstanceManager'] as unknown) = new (InstanceManager as InstanceManagerCtor)({
-            type: 'text-editor',
-            instanceClass: TextEditorInstance,
-            maxInstances: 0,
-            createContainer: function (instanceId: string): HTMLElement | null {
-                const editorModalContainer = document.getElementById('text-editor-container');
-                if (!editorModalContainer) {
-                    console.error('Text editor container not found');
-                    return null;
-                }
-                const container = document.createElement('div');
-                container.id = `${instanceId}-container`;
-                container.className = 'text-editor-instance-container h-full';
-                // Use DOMUtils if available to hide initially, else fallback
-                const domUtils = (
-                    window as unknown as { DOMUtils?: { hide?: (el: Element) => void } }
-                ).DOMUtils;
-                if (domUtils && typeof domUtils.hide === 'function') {
-                    domUtils.hide(container);
-                } else {
-                    container.classList.add('hidden');
-                }
-                editorModalContainer.appendChild(container);
-                return container;
-            },
-        });
+
+    const ensureTextEditorInstanceManager = () => {
+        if (G['TextEditorInstanceManager']) return true; // Already created
+
+        const InstanceManager = G['InstanceManager'] as unknown as InstanceManagerCtor | undefined;
+        if (!InstanceManager) {
+            return false; // InstanceManager not available
+        }
+
+        try {
+            (G['TextEditorInstanceManager'] as unknown) =
+                new (InstanceManager as InstanceManagerCtor)({
+                    type: 'text-editor',
+                    instanceClass: TextEditorInstance,
+                    maxInstances: 0,
+                    createContainer: function (instanceId: string): HTMLElement | null {
+                        const editorModalContainer =
+                            document.getElementById('text-editor-container');
+                        if (!editorModalContainer) {
+                            console.error('Text editor container not found');
+                            return null;
+                        }
+                        const container = document.createElement('div');
+                        container.id = `${instanceId}-container`;
+                        container.className = 'text-editor-instance-container h-full';
+                        // Use DOMUtils if available to hide initially, else fallback
+                        const domUtils = (
+                            window as unknown as { DOMUtils?: { hide?: (el: Element) => void } }
+                        ).DOMUtils;
+                        if (domUtils && typeof domUtils.hide === 'function') {
+                            domUtils.hide(container);
+                        } else {
+                            container.classList.add('hidden');
+                        }
+                        editorModalContainer.appendChild(container);
+                        return container;
+                    },
+                });
+            console.log('[TextEditorInstance] TextEditorInstanceManager created');
+            return true;
+        } catch (err) {
+            console.error('[TextEditorInstance] Failed to create TextEditorInstanceManager:', err);
+            return false;
+        }
+    };
+
+    // Try to initialize immediately
+    if (!ensureTextEditorInstanceManager()) {
+        // If InstanceManager not ready yet, register a deferred initialization
+        // that fires right after all modules are loaded
+        const initHook = () => {
+            if (ensureTextEditorInstanceManager()) {
+                // Successfully created
+                return;
+            }
+            // Still not ready, retry after a short delay
+            setTimeout(initHook, 100);
+        };
+
+        // Use a microtask to ensure this runs after module initialization
+        Promise.resolve().then(initHook);
     }
 })();

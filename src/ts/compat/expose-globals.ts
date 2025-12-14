@@ -34,7 +34,6 @@ import '../ui/dialog';
 import '../ui/menubar-utils';
 import '../ui/context-menu';
 import '../services/storage';
-import '../services/session-manager'; // Auto-save system for instances
 import '../services/theme';
 import '../windows/base-window-instance'; // Must come before instance types
 import '../windows/instance-manager';
@@ -52,6 +51,7 @@ import { TerminalWindow as __TerminalWindow__ } from '../apps/terminal/terminal-
 // Multi-window system (Phase 3: TextEditor)
 import '../apps/text-editor/text-editor-document'; // Text editor document tab
 import '../apps/text-editor/text-editor-window'; // Text editor window
+import '../apps/text-editor/text-editor-instance'; // Text editor instance manager
 
 // Multi-window system (Phase 4: Finder)
 // Import both side-effect and named to ensure symbols are retained and exposed
@@ -60,10 +60,10 @@ import { FinderWindow as __FinderWindow__ } from '../apps/finder/finder-window';
 
 // Multi-window system (Phase 6: Session Management)
 import '../services/multi-window-session'; // Multi-window session persistence
+import '../services/session-manager'; // Auto-save system for instances - MUST come AFTER all instance managers
 
 import '../windows/window-tabs';
 import '../apps/terminal/terminal-instance';
-import '../apps/text-editor/text-editor-instance';
 import '../apps/text-editor/text-editor';
 import '../services/settings';
 import '../apps/photos/image-viewer-utils';
