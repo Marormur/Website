@@ -192,8 +192,11 @@ test.describe('Terminal VirtualFS Integration', () => {
         expect(terminalRestored).not.toBeNull();
     });
 
-    test('legacy path migration: Computer/Home → /home/marvin', async ({ page, context }) => {
-        // Simulate legacy session with old path
+    test('legacy path migration: Computer/Home → /home/marvin', async ({ browser }) => {
+        // Create a fresh context with legacy session already in localStorage
+        const context = await browser.newContext();
+
+        // Set the legacy session BEFORE any page navigation
         await context.addInitScript(() => {
             const legacySession = {
                 windowType: 'terminal',
@@ -214,9 +217,18 @@ test.describe('Terminal VirtualFS Integration', () => {
             window.localStorage.setItem('multiWindowSession_v1', JSON.stringify(legacySession));
         });
 
-        // Reload and restore
-        await page.reload();
+        const page = await context.newPage();
+
+        // Now navigate - the initScript will have already run
+        await page.goto('http://127.0.0.1:5173/index.html');
         await waitForAppReady(page);
+
+        // Session restore happens asynchronously after __APP_READY
+        // Wait for the terminal to be restored
+        await page.waitForFunction(
+            () => window.__WindowRegistry?.getWindowsByType('terminal')?.length > 0,
+            { timeout: 5000 }
+        );
 
         // Check migrated path
         const migratedCwd = await page.evaluate(() => {
@@ -225,6 +237,8 @@ test.describe('Terminal VirtualFS Integration', () => {
         });
 
         expect(migratedCwd).toBe('/home/marvin/Documents');
+
+        await context.close();
     });
 
     // Skipped: requires Ctrl+T for multi-tab setup
