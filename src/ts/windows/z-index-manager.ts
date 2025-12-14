@@ -29,16 +29,46 @@ export interface ZIndexManager {
 
 export const BASE_Z_INDEX = 1000;
 const MAX_WINDOW_Z_INDEX = 2147483500; // Below Dock (2147483550) and Launchpad (2147483600)
+const Z_INDEX_POOL_SIZE = 100; // Pre-allocated pool for O(1) z-index assignment
 
 type MaybeZIndexManager = Partial<ZIndexManager> & { [key: string]: unknown };
 
 type StackAware = {
     windowStack: string[];
     externalTopZ: number;
+    zIndexMap: Map<string, number>; // Cache for O(1) lookup
 };
 
 function clamp(z: number): number {
     return Math.min(z, MAX_WINDOW_Z_INDEX);
+}
+
+/**
+ * Batch DOM updates to prevent multiple reflows.
+ * Queues z-index updates and applies them in a single animation frame.
+ */
+let pendingUpdates: Array<{ element: HTMLElement; zIndex: number }> = [];
+let rafScheduled = false;
+
+function flushZIndexUpdates(): void {
+    if (pendingUpdates.length === 0) return;
+    
+    // Batch all style updates in a single pass
+    for (const { element, zIndex } of pendingUpdates) {
+        element.style.zIndex = zIndex.toString();
+    }
+    
+    pendingUpdates = [];
+    rafScheduled = false;
+}
+
+function scheduleZIndexUpdate(element: HTMLElement, zIndex: number): void {
+    pendingUpdates.push({ element, zIndex });
+    
+    if (!rafScheduled) {
+        rafScheduled = true;
+        requestAnimationFrame(flushZIndexUpdates);
+    }
 }
 
 function applyZIndex(
@@ -58,9 +88,10 @@ function applyZIndex(
     const contentEl = element?.querySelector?.('.window-container') as HTMLElement | null;
     if (contentEl && !targets.includes(contentEl)) targets.push(contentEl);
 
+    // Batch updates for better performance
     targets.forEach(target => {
         if (!target) return;
-        target.style.zIndex = zIndex.toString();
+        scheduleZIndexUpdate(target, zIndex);
     });
 }
 
@@ -96,7 +127,7 @@ function getState(existing: MaybeZIndexManager | undefined): StackAware {
     // If an older manager exists, reuse its stack to preserve ordering during hot reloads
     const windowStack = existing?.getWindowStack?.() || [];
     const externalTopZ = BASE_Z_INDEX;
-    return { windowStack: [...windowStack], externalTopZ };
+    return { windowStack: [...windowStack], externalTopZ, zIndexMap: new Map() };
 }
 
 export function getZIndexManager(): ZIndexManager {
@@ -159,11 +190,25 @@ export function getZIndexManager(): ZIndexManager {
 
     const state = getState(existing);
 
+    /**
+     * Optimized z-index assignment using cached map.
+     * Only updates windows whose z-index actually changed (dirty tracking).
+     */
     const assignZIndices = (): void => {
+        const dirtyWindows: string[] = [];
+        
         state.windowStack.forEach((id, index) => {
-            const zIndex = clamp(BASE_Z_INDEX + index);
-            applyZIndex(id, zIndex);
+            const newZIndex = clamp(BASE_Z_INDEX + index);
+            const currentZIndex = state.zIndexMap.get(id);
+            
+            // Only update if z-index changed (dirty tracking)
+            if (currentZIndex !== newZIndex) {
+                state.zIndexMap.set(id, newZIndex);
+                dirtyWindows.push(id);
+                applyZIndex(id, newZIndex);
+            }
         });
+        
         // Keep topZIndex as "next available" to mirror legacy semantics
         const stackTopNext = BASE_Z_INDEX + state.windowStack.length;
         setTopZStore(Math.max(stackTopNext, state.externalTopZ));
@@ -176,12 +221,25 @@ export function getZIndexManager(): ZIndexManager {
             windowEl?: HTMLElement | null
         ): number {
             const currentIndex = state.windowStack.indexOf(windowId);
+            
+            // Early return if already on top
+            if (currentIndex === state.windowStack.length - 1) {
+                const currentZ = state.zIndexMap.get(windowId);
+                if (currentZ !== undefined) {
+                    return manager.getTopZIndex();
+                }
+            }
+            
             if (currentIndex !== -1) {
                 state.windowStack.splice(currentIndex, 1);
             }
             state.windowStack.push(windowId);
+            
+            // Only reassign z-indices for affected windows (optimization)
             assignZIndices();
+            
             const assigned = clamp(BASE_Z_INDEX + state.windowStack.length - 1);
+            state.zIndexMap.set(windowId, assigned);
             applyZIndex(windowId, assigned, modal, windowEl);
             return manager.getTopZIndex();
         },
@@ -190,6 +248,7 @@ export function getZIndexManager(): ZIndexManager {
             const idx = state.windowStack.indexOf(windowId);
             if (idx !== -1) {
                 state.windowStack.splice(idx, 1);
+                state.zIndexMap.delete(windowId); // Clean up cache
                 assignZIndices();
             }
         },
@@ -200,6 +259,7 @@ export function getZIndexManager(): ZIndexManager {
 
         restoreWindowStack(savedStack: string[]): void {
             state.windowStack.length = 0;
+            state.zIndexMap.clear(); // Clear cache on restore
             savedStack.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) state.windowStack.push(id);
@@ -209,6 +269,7 @@ export function getZIndexManager(): ZIndexManager {
 
         reset(): void {
             state.windowStack.length = 0;
+            state.zIndexMap.clear(); // Clear cache on reset
             state.externalTopZ = BASE_Z_INDEX;
             setTopZStore(BASE_Z_INDEX);
         },
