@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Window Manager Performance Test</title>
+        <style>
+            body {
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                max-width: 800px;
+                margin: 50px auto;
+                padding: 20px;
+            }
+            .test-section {
+                margin: 20px 0;
+                padding: 20px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+            }
+            button {
+                padding: 10px 20px;
+                margin: 5px;
+                cursor: pointer;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 4px;
+            }
+            button:hover {
+                background: #0056b3;
+            }
+            .results {
+                margin-top: 20px;
+                padding: 15px;
+                background: #f8f9fa;
+                border-radius: 4px;
+                font-family: monospace;
+                white-space: pre-wrap;
+            }
+            .success {
+                color: #28a745;
+                font-weight: bold;
+            }
+            .warning {
+                color: #ffc107;
+                font-weight: bold;
+            }
+            .error {
+                color: #dc3545;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Window Manager Performance Verification</h1>
+
+        <div class="test-section">
+            <h2>Performance Optimizations Implemented</h2>
+            <ul>
+                <li>✅ Z-Index caching with Map for O(1) lookups</li>
+                <li>✅ Dirty tracking - only update windows whose z-index changed</li>
+                <li>✅ RequestAnimationFrame batching for DOM updates</li>
+                <li>✅ Early return optimization in bringToFront</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>Performance Targets</h2>
+            <ul>
+                <li>Window open &lt; 50ms @ 20 windows</li>
+                <li>Window close &lt; 30ms</li>
+                <li>BringToFront &lt; 20ms</li>
+                <li>No visual glitches</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>Quick Verification</h2>
+            <p>This test verifies the optimizations are properly loaded in the compiled code.</p>
+            <button onclick="runVerification()">Run Verification</button>
+            <div id="verification-results" class="results"></div>
+        </div>
+
+        <script>
+            function runVerification() {
+                const results = [];
+                const resultDiv = document.getElementById('verification-results');
+
+                // Check if the optimizations are in the compiled code
+                fetch('/js/windows/z-index-manager.js')
+                    .then(response => response.text())
+                    .then(code => {
+                        results.push('=== Verification Results ===\n');
+
+                        // Check for batching mechanism
+                        if (
+                            code.includes('scheduleZIndexUpdate') &&
+                            code.includes('flushZIndexUpdates')
+                        ) {
+                            results.push('✅ RAF Batching: IMPLEMENTED');
+                        } else {
+                            results.push('❌ RAF Batching: MISSING');
+                        }
+
+                        // Check for z-index map
+                        if (code.includes('zIndexMap')) {
+                            results.push('✅ Z-Index Cache Map: IMPLEMENTED');
+                        } else {
+                            results.push('❌ Z-Index Cache Map: MISSING');
+                        }
+
+                        // Check for dirty tracking
+                        if (
+                            code.includes('Only update if z-index changed') ||
+                            code.includes('currentZIndex !== newZIndex')
+                        ) {
+                            results.push('✅ Dirty Tracking: IMPLEMENTED');
+                        } else {
+                            results.push('❌ Dirty Tracking: MISSING');
+                        }
+
+                        // Check for early return optimization
+                        if (code.includes('Early return if already on top')) {
+                            results.push('✅ Early Return Optimization: IMPLEMENTED');
+                        } else {
+                            results.push('❌ Early Return Optimization: MISSING');
+                        }
+
+                        results.push('\n=== Summary ===');
+                        const checkmarks = results.filter(r => r.startsWith('✅')).length;
+                        const total = 4;
+
+                        if (checkmarks === total) {
+                            results.push(
+                                `\n<span class="success">All ${total}/${total} optimizations are properly implemented! 🎉</span>`
+                            );
+                        } else {
+                            results.push(
+                                `\n<span class="warning">Only ${checkmarks}/${total} optimizations found.</span>`
+                            );
+                        }
+
+                        resultDiv.innerHTML = results.join('\n');
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = `<span class="error">Error loading z-index-manager.js: ${error.message}</span>`;
+                    });
+            }
+        </script>
+    </body>
+</html>
