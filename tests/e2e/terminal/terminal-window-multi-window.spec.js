@@ -12,8 +12,7 @@ test.describe('Terminal Multi-Window', () => {
         await waitForAppReady(page);
     });
 
-    // Skipped: relies on Ctrl+N which browsers/OS may intercept
-    test.skip('can create multiple Terminal windows', async ({ page }) => {
+    test('can create multiple Terminal windows', async ({ page }) => {
         // Create first terminal window via Dock
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
@@ -26,8 +25,10 @@ test.describe('Terminal Multi-Window', () => {
             { timeout: 5000 }
         );
 
-        // Create second terminal window (Ctrl+N while focused)
-        await page.keyboard.press('Control+KeyN');
+        // Create second terminal window via app API
+        await page.evaluate(() => {
+            return window.TerminalWindow?.create?.();
+        });
 
         // Wait for second window
         await page.waitForFunction(
@@ -43,8 +44,7 @@ test.describe('Terminal Multi-Window', () => {
         expect(windowCount).toBe(2);
     });
 
-    // Skipped: depends on Ctrl+N shortcut to spawn window
-    test.skip('each Terminal window has independent sessions', async ({ page }) => {
+    test('each Terminal window has independent sessions', async ({ page }) => {
         // Create two terminal windows
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
@@ -52,7 +52,9 @@ test.describe('Terminal Multi-Window', () => {
             () => window.WindowRegistry?.getAllWindows('terminal')?.length === 1
         );
 
-        await page.keyboard.press('Control+KeyN');
+        await page.evaluate(() => {
+            return window.TerminalWindow?.create?.();
+        });
         await page.waitForFunction(
             () => window.WindowRegistry?.getAllWindows('terminal')?.length === 2
         );
@@ -71,8 +73,7 @@ test.describe('Terminal Multi-Window', () => {
         expect(windows[1].sessionCount).toBeGreaterThanOrEqual(1);
     });
 
-    // Skipped: uses Ctrl+N/Ctrl+W shortcuts
-    test.skip('closing one Terminal window keeps others open', async ({ page }) => {
+    test('closing one Terminal window keeps others open', async ({ page }) => {
         // Create two windows
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
@@ -80,19 +81,20 @@ test.describe('Terminal Multi-Window', () => {
             () => window.WindowRegistry?.getAllWindows('terminal')?.length === 1
         );
 
-        await page.keyboard.press('Control+KeyN');
+        await page.evaluate(() => {
+            return window.TerminalWindow?.create?.();
+        });
         await page.waitForFunction(
             () => window.WindowRegistry?.getAllWindows('terminal')?.length === 2
         );
 
         // Close the active window
-        const activeWindow = await page.evaluate(() => {
-            const active = window.WindowRegistry?.getActiveWindow();
-            return active ? active.windowId : null;
+        // Close the first window via API
+        await page.evaluate(() => {
+            const registry = window.WindowRegistry;
+            const wins = registry?.getAllWindows('terminal') || [];
+            if (wins[0]) wins[0].close();
         });
-        expect(activeWindow).toBeTruthy();
-
-        await page.keyboard.press('Control+KeyW');
 
         // Wait for window count to decrease
         await page.waitForFunction(
@@ -108,8 +110,7 @@ test.describe('Terminal Multi-Window', () => {
         expect(remainingCount).toBe(1);
     });
 
-    // Skipped: setup uses Ctrl+N shortcut
-    test.skip('TerminalWindow.focusOrCreate focuses existing window', async ({ page }) => {
+    test('TerminalWindow.focusOrCreate focuses existing window', async ({ page }) => {
         // Create first terminal
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
@@ -120,12 +121,14 @@ test.describe('Terminal Multi-Window', () => {
         // Get window ID (verify exists)
         const hasWindowId = await page.evaluate(() => {
             const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-            return !!wins[0]?.windowId;
+            return !!wins[0]?.id;
         });
         expect(hasWindowId).toBe(true);
 
-        // Focus something else (create a second window to defocus first)
-        await page.keyboard.press('Control+KeyN');
+        // Create a second window to ensure focus moves between existing windows
+        await page.evaluate(() => {
+            return window.TerminalWindow?.create?.();
+        });
         await page.waitForFunction(
             () => window.WindowRegistry?.getAllWindows('terminal')?.length === 2
         );
@@ -143,14 +146,14 @@ test.describe('Terminal Multi-Window', () => {
 
         // Active window should be one of the existing ones
         const activeWindowId = await page.evaluate(() => {
-            const active = window.WindowRegistry?.getActiveWindow();
-            return active ? active.windowId : null;
+            const registry = window.WindowRegistry;
+            const active = registry?.getActiveWindow?.() || registry?.getTopWindow?.();
+            return active ? active.id : null;
         });
         expect(activeWindowId).toBeTruthy();
     });
 
-    // Skipped: requires repeated Ctrl+N shortcuts
-    test.skip('WindowRegistry tracks all Terminal windows', async ({ page }) => {
+    test('WindowRegistry tracks all Terminal windows', async ({ page }) => {
         // Create 3 terminal windows
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
@@ -158,12 +161,12 @@ test.describe('Terminal Multi-Window', () => {
             () => window.WindowRegistry?.getAllWindows('terminal')?.length === 1
         );
 
-        await page.keyboard.press('Control+KeyN');
+        await page.evaluate(() => window.TerminalWindow?.create?.());
         await page.waitForFunction(
             () => window.WindowRegistry?.getAllWindows('terminal')?.length === 2
         );
 
-        await page.keyboard.press('Control+KeyN');
+        await page.evaluate(() => window.TerminalWindow?.create?.());
         await page.waitForFunction(
             () => {
                 return window.WindowRegistry?.getAllWindows('terminal')?.length === 3;
@@ -175,8 +178,8 @@ test.describe('Terminal Multi-Window', () => {
             const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
             return {
                 count: wins.length,
-                allHaveIds: wins.every(w => !!w.windowId),
-                allHaveType: wins.every(w => w.windowType === 'terminal'),
+                allHaveIds: wins.every(w => !!w.id),
+                allHaveType: wins.every(w => w.type === 'terminal'),
             };
         });
 

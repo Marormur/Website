@@ -17,7 +17,10 @@ test.describe('Terminal VirtualFS Integration', () => {
      */
     async function executeCommand(page, command) {
         return await page.evaluate(cmd => {
-            const win = window.__WindowRegistry?.getWindowsByType?.('terminal')?.[0];
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            const win =
+                registry?.getAllWindows?.('terminal')?.[0] ||
+                registry?.getWindowsByType?.('terminal')?.[0];
             const session = win?.activeSession;
             if (!session || !session.executeCommand) return null;
 
@@ -32,11 +35,11 @@ test.describe('Terminal VirtualFS Integration', () => {
         }, command);
     }
 
-    // Skipped: relies on Ctrl+T new-tab shortcut (captured by browser)
-    test.skip('Terminal sessions share same VirtualFS instance', async ({ page }) => {
+    test('Terminal sessions share same VirtualFS instance', async ({ page }) => {
         // Debug: check what globals are available
         const hasWindowRegistry = await page.evaluate(() => {
-            return typeof window.__WindowRegistry !== 'undefined';
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            return typeof registry !== 'undefined';
         });
         console.log('[DEBUG] Has __WindowRegistry:', hasWindowRegistry);
 
@@ -46,7 +49,8 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         await page.waitForFunction(
             () => {
-                return window.__WindowRegistry?.getWindowsByType?.('terminal')?.length === 1;
+                const registry = window.WindowRegistry || window.__WindowRegistry;
+                return registry?.getAllWindows?.('terminal')?.length === 1;
             },
             { timeout: 5000 }
         );
@@ -54,30 +58,38 @@ test.describe('Terminal VirtualFS Integration', () => {
         // Create file in first session
         await executeCommand(page, 'touch testfile.txt');
 
-        // Create second tab
-        await page.keyboard.press('Control+KeyT');
+        // Create second tab via app API (no keyboard shortcut)
+        const newSessionId = await page.evaluate(() => {
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            const win =
+                registry?.getAllWindows?.('terminal')?.[0] ||
+                registry?.getWindowsByType?.('terminal')?.[0];
+            const session = win?.createSession?.();
+            if (session?.id) {
+                win?.setActiveTab?.(session.id);
+                return session.id;
+            }
+            return null;
+        });
+        expect(newSessionId).toBeTruthy();
+
         await page.waitForFunction(
             () => {
-                const registry = window.__WindowRegistry;
-                const wins = registry?.getWindowsByType?.('terminal') || [];
+                const registry = window.WindowRegistry || window.__WindowRegistry;
+                const wins =
+                    registry?.getAllWindows?.('terminal') ||
+                    registry?.getWindowsByType?.('terminal') ||
+                    [];
                 return wins.length > 0 && wins[0]?.sessions?.length === 2;
             },
             { timeout: 5000 }
         );
 
         // File should be visible in second session
+        // Verify file exists via VirtualFS (shared across sessions)
+        await page.waitForFunction(() => window.VirtualFS?.exists?.('/home/marvin/testfile.txt'));
         const result = await page.evaluate(() => {
-            const registry = window.__WindowRegistry;
-            const win = registry?.getWindowsByType?.('terminal')?.[0];
-            const session = win?.activeSession;
-            if (!session) return null;
-
-            // VirtualFS is accessed through TerminalInstanceManager
-            const termMgr = window.TerminalInstanceManager;
-            if (!termMgr) return null;
-
-            const files = termMgr.listFilesInCurrentDirectory?.() || [];
-            return files.some(f => f === 'testfile.txt');
+            return window.VirtualFS?.exists?.('/home/marvin/testfile.txt') || false;
         });
 
         expect(result).toBe(true);
@@ -88,7 +100,8 @@ test.describe('Terminal VirtualFS Integration', () => {
         await openFinderWindow(page);
         await page.waitForFunction(
             () => {
-                return window.__WindowRegistry?.getWindowsByType?.('finder')?.length === 1;
+                const registry = window.WindowRegistry || window.__WindowRegistry;
+                return registry?.getAllWindows?.('finder')?.length === 1;
             },
             { timeout: 5000 }
         );
@@ -104,7 +117,8 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         await page.waitForFunction(
             () => {
-                return window.__WindowRegistry?.getWindowsByType?.('terminal')?.length === 1;
+                const registry = window.WindowRegistry || window.__WindowRegistry;
+                return registry?.getAllWindows?.('terminal')?.length === 1;
             },
             { timeout: 5000 }
         );
@@ -115,22 +129,25 @@ test.describe('Terminal VirtualFS Integration', () => {
         // Skip VirtualFS direct access - it's handled internally
         // Just verify terminal is accessible through registry
         const terminalAccessible = await page.evaluate(() => {
-            const win = window.__WindowRegistry?.getWindowsByType?.('terminal')?.[0];
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            const win =
+                registry?.getAllWindows?.('terminal')?.[0] ||
+                registry?.getWindowsByType?.('terminal')?.[0];
             return win !== null && win !== undefined;
         });
 
         expect(terminalAccessible).toBe(true);
     });
 
-    // Skipped: depends on Ctrl+T to spawn second tab
-    test.skip('each session maintains independent working directory', async ({ page }) => {
+    test('each session maintains independent working directory', async ({ page }) => {
         // Open terminal
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
 
         await page.waitForFunction(
             () => {
-                return window.__WindowRegistry?.getWindowsByType?.('terminal')?.length === 1;
+                const registry = window.WindowRegistry || window.__WindowRegistry;
+                return registry?.getAllWindows?.('terminal')?.length === 1;
             },
             { timeout: 5000 }
         );
@@ -138,11 +155,22 @@ test.describe('Terminal VirtualFS Integration', () => {
         // Change directory in first session
         await executeCommand(page, 'cd Documents');
 
-        // Create second tab
-        await page.keyboard.press('Control+KeyT');
+        // Create second tab via app API
+        await page.evaluate(() => {
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            const win =
+                registry?.getAllWindows?.('terminal')?.[0] ||
+                registry?.getWindowsByType?.('terminal')?.[0];
+            const session = win?.createSession?.();
+            if (session?.id) win?.setActiveTab?.(session.id);
+        });
         await page.waitForFunction(
             () => {
-                const wins = window.__WindowRegistry?.getWindowsByType?.('terminal') || [];
+                const registry = window.WindowRegistry || window.__WindowRegistry;
+                const wins =
+                    registry?.getAllWindows?.('terminal') ||
+                    registry?.getWindowsByType?.('terminal') ||
+                    [];
                 return wins[0]?.sessions?.length === 2;
             },
             { timeout: 5000 }
@@ -150,7 +178,10 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         // Get both session cwds
         const cwds = await page.evaluate(() => {
-            const win = window.__WindowRegistry?.getWindowsByType?.('terminal')?.[0];
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            const win =
+                registry?.getAllWindows?.('terminal')?.[0] ||
+                registry?.getWindowsByType?.('terminal')?.[0];
             const sessions = win?.sessions || [];
             return sessions.map(s => s.vfsCwd);
         });
@@ -241,42 +272,68 @@ test.describe('Terminal VirtualFS Integration', () => {
         await context.close();
     });
 
-    // Skipped: requires Ctrl+T for multi-tab setup
-    test.skip('VirtualFS operations reflect immediately in all sessions', async ({ page }) => {
+    test('VirtualFS operations reflect immediately in all sessions', async ({ page }) => {
         // Open terminal with 2 tabs
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
         await terminalDockItem.click();
 
         await page.waitForFunction(() => {
-            return window.__WindowRegistry?.getWindowsByType('terminal')?.length === 1;
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            return registry?.getAllWindows('terminal')?.length === 1;
         });
 
-        await page.keyboard.press('Control+KeyT');
+        await page.evaluate(() => {
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            const win =
+                registry?.getAllWindows?.('terminal')?.[0] ||
+                registry?.getWindowsByType?.('terminal')?.[0];
+            const session = win?.createSession?.();
+            if (session?.id) win?.setActiveTab?.(session.id);
+        });
         await page.waitForFunction(() => {
-            const wins = window.__WindowRegistry?.getWindowsByType('terminal') || [];
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            const wins =
+                registry?.getAllWindows('terminal') ||
+                registry?.getWindowsByType?.('terminal') ||
+                [];
             return wins[0]?.sessions?.length === 2;
         });
 
         // Create file in first tab
         await page.evaluate(() => {
-            const win = window.__WindowRegistry?.getWindowsByType('terminal')?.[0];
-            win?.setActiveSession?.(win.sessions[0]);
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            const win =
+                registry?.getAllWindows?.('terminal')?.[0] ||
+                registry?.getWindowsByType?.('terminal')?.[0];
+            const first = win?.sessions?.[0];
+            if (first?.id) {
+                win?.setActiveTab?.(first.id);
+            }
         });
         await executeCommand(page, 'touch immediate-test.txt');
 
         // Switch to second tab and check
         await page.evaluate(() => {
-            const win = window.__WindowRegistry?.getWindowsByType('terminal')?.[0];
-            win?.setActiveSession?.(win.sessions[1]);
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            const win =
+                registry?.getAllWindows?.('terminal')?.[0] ||
+                registry?.getWindowsByType?.('terminal')?.[0];
+            const second = win?.sessions?.[1];
+            if (second?.id) {
+                win?.setActiveTab?.(second.id);
+            }
         });
 
         const hasFile = await page.evaluate(() => {
-            const win = window.__WindowRegistry?.getWindowsByType('terminal')?.[0];
+            const registry = window.WindowRegistry || window.__WindowRegistry;
+            const win =
+                registry?.getAllWindows?.('terminal')?.[0] ||
+                registry?.getWindowsByType?.('terminal')?.[0];
             const session = win?.activeSession;
             if (!session || !window.VirtualFS) return false;
 
-            const files = window.VirtualFS.listDirectory(session.vfsCwd);
-            return files.some(f => f.name === 'immediate-test.txt');
+            const entries = window.VirtualFS.list(session.vfsCwd) || {};
+            return Object.prototype.hasOwnProperty.call(entries, 'immediate-test.txt');
         });
 
         expect(hasFile).toBe(true);
