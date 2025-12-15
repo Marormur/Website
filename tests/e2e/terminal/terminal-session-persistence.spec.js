@@ -15,6 +15,8 @@ test.describe('Terminal Session Persistence', () => {
     test('single terminal window with session persists across reload', async ({ page }) => {
         // Open terminal
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
+        // Stabilize: ensure dock item is visible and attached before click
+        await terminalDockItem.waitFor({ state: 'visible' });
         await terminalDockItem.click();
 
         await page.waitForFunction(
@@ -23,6 +25,9 @@ test.describe('Terminal Session Persistence', () => {
             },
             { timeout: 5000 }
         );
+        // Additionally wait for Terminal DOM to be present and tabs rendered
+        await page.getByRole('heading', { name: 'Terminal' }).waitFor({ state: 'visible' });
+        await page.getByRole('button', { name: '+' }).waitFor({ state: 'visible' });
 
         // Execute command to add to history
         await page.evaluate(() => {
@@ -51,6 +56,9 @@ test.describe('Terminal Session Persistence', () => {
         // Reload
         await page.reload();
         await waitForAppReady(page);
+        // Ensure restored Terminal window and its tabs exist in DOM
+        await page.getByRole('heading', { name: 'Terminal' }).waitFor({ state: 'visible' });
+        await page.getByRole('button', { name: '+' }).waitFor({ state: 'visible' });
 
         // Verify window restored
         const windowCount = await page.evaluate(() => {
@@ -76,6 +84,7 @@ test.describe('Terminal Session Persistence', () => {
     test('multiple terminal windows persist across reload', async ({ page }) => {
         // Create 2 terminal windows
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
+        await terminalDockItem.waitFor({ state: 'visible' });
         await terminalDockItem.click();
 
         await page.waitForFunction(() => {
@@ -110,6 +119,12 @@ test.describe('Terminal Session Persistence', () => {
         // Reload
         await page.reload();
         await waitForAppReady(page);
+        // Scope waits to a specific Terminal dialog to avoid strict mode violation when multiple exist
+        const firstTerminalWindow = page.locator('[id^="window-terminal"]').first();
+        await firstTerminalWindow
+            .getByRole('heading', { name: 'Terminal' })
+            .waitFor({ state: 'visible' });
+        await firstTerminalWindow.getByRole('button', { name: '+' }).waitFor({ state: 'visible' });
 
         // Verify both windows restored
         const windowCount = await page.evaluate(() => {
@@ -122,6 +137,7 @@ test.describe('Terminal Session Persistence', () => {
     test('multiple tabs per window persist', async ({ page }) => {
         // Open terminal and create 3 tabs
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
+        await terminalDockItem.waitFor({ state: 'visible' });
         await terminalDockItem.click();
 
         await page.waitForFunction(() => {
@@ -159,6 +175,8 @@ test.describe('Terminal Session Persistence', () => {
         // Reload
         await page.reload();
         await waitForAppReady(page);
+        await page.getByRole('heading', { name: 'Terminal' }).waitFor({ state: 'visible' });
+        await page.getByRole('button', { name: '+' }).waitFor({ state: 'visible' });
 
         // Verify all tabs restored
         const sessionCount = await page.evaluate(() => {
@@ -172,6 +190,7 @@ test.describe('Terminal Session Persistence', () => {
     test('active session is restored', async ({ page }) => {
         // Open terminal with 2 tabs
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
+        await terminalDockItem.waitFor({ state: 'visible' });
         await terminalDockItem.click();
 
         await page.waitForFunction(() => {
@@ -219,6 +238,8 @@ test.describe('Terminal Session Persistence', () => {
 
         await page.reload();
         await waitForAppReady(page);
+        await page.getByRole('heading', { name: 'Terminal' }).waitFor({ state: 'visible' });
+        await page.getByRole('button', { name: '+' }).waitFor({ state: 'visible' });
 
         // Verify same session is active
         const activeIdAfter = await page.evaluate(() => {
@@ -232,6 +253,7 @@ test.describe('Terminal Session Persistence', () => {
     test('window positions persist', async ({ page }) => {
         // Open terminal and move window
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
+        await terminalDockItem.waitFor({ state: 'visible' });
         await terminalDockItem.click();
 
         await page.waitForFunction(() => {
