@@ -199,8 +199,8 @@ test.describe('Session Restore Performance', () => {
         expect(metrics.duration).toBeDefined();
     });
 
-    // TODO(#130): Reaktivieren sobald z-index Window-Stack korrekt persistiert/wiederhergestellt wird
-    test.skip('should restore z-index order correctly with many instances', async ({ page }) => {
+    // TODO(#130): Reaktiviert, beobachten; falls flaky, erneut untersuchen
+    test('should restore z-index order correctly with many instances', async ({ page }) => {
         // Ensure PerfMonitor is enabled
         await page.evaluate(() => {
             if (window.PerfMonitor && !window.PerfMonitor.enabled) {

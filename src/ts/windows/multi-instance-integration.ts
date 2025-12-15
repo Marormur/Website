@@ -254,6 +254,28 @@ import { getJSON } from '../services/storage-utils.js';
         showInstance(type: string, instanceId: string) {
             const integration = this.integrations.get(type);
             if (!integration) return;
+
+            // Ensure the associated modal/window is opened and on top so that
+            // the z-index manager tracks it in the window stack.
+            // Applicable for terminal/text-editor which have a modal container.
+            try {
+                if (integration.modalId) {
+                    const wm = (window as any).WindowManager;
+                    const modal = document.getElementById(integration.modalId);
+                    if (modal) {
+                        const isHidden = modal.classList.contains('hidden');
+                        if (wm && typeof wm.open === 'function' && isHidden) {
+                            wm.open(integration.modalId);
+                        } else if (wm && typeof wm.bringToFront === 'function') {
+                            // Even if already visible, push to top for consistent stacking
+                            wm.bringToFront(integration.modalId);
+                        }
+                    }
+                }
+            } catch {
+                /* non-fatal */
+            }
+
             const instances = integration.manager.getAllInstances();
             instances.forEach(inst => {
                 if (inst.instanceId === instanceId) inst.show?.();
