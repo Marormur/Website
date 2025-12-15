@@ -11,8 +11,6 @@
 // Export to make this a proper module for global augmentation
 export {};
 
-// Import window menu module for initialization
-import { initializeWindowMenu } from '../ui/window-menu';
 import {
     clearSessionKey,
     validateLegacySession,
@@ -274,12 +272,11 @@ function initApp(): void {
         win.WindowRegistry.init?.();
     }
 
-    // Initialize Window menu (macOS-style menu for window management)
-    try {
-        initializeWindowMenu();
-    } catch (err) {
-        console.warn('[APP-INIT] Window menu initialization failed:', err);
-    }
+    // Window menu integration
+    // Note: We used to initialize a separate Window menu via ui/window-menu.
+    // The application menu (MenuSystem) now provides the unified Window section
+    // across apps, so we no longer initialize the standalone window menu here
+    // to avoid duplicate "Window/Fenster" entries in the menubar.
 
     // Initialize Multi-Window SessionManager
     // Create a promise to track session restore completion (even if no session manager)
