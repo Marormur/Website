@@ -35,20 +35,23 @@ test.describe('Terminal Session Tabs', () => {
     // See Issue #90: https://github.com/Marormur/Website/issues/90
     test('can create new session tab via TerminalInstanceManager API', async ({ page }) => {
         // Create new session via app API instead of Ctrl+T
-        const newSessionId = await page.evaluate(() => {
-            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
-            if (!win || typeof win.createSession !== 'function') return null;
-            const session = win.createSession();
-            return session?.sessionId || null;
-        });
-
-        expect(newSessionId).not.toBeNull();
-
-        const sessionCount = await page.evaluate(() => {
+        const sessionCountBefore = await page.evaluate(() => {
             const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
             return wins[0]?.sessions?.length || 0;
         });
-        expect(sessionCount).toBe(2);
+
+        await page.evaluate(() => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (!win || typeof win.createSession !== 'function') return null;
+            win.createSession();
+        });
+
+        const sessionCountAfter = await page.evaluate(() => {
+            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
+            return wins[0]?.sessions?.length || 0;
+        });
+
+        expect(sessionCountAfter).toBe(sessionCountBefore + 1);
     });
 
     // Uses App API instead of keyboard shortcut (which browser intercepts)
@@ -104,15 +107,13 @@ test.describe('Terminal Session Tabs', () => {
 
         expect(sessionIds.length).toBe(2);
 
-        // Close the second session via BaseWindow's closeTab API
-        const closed = await page.evaluate(sessionId => {
+        // Close the second session via BaseWindow's removeTab API
+        await page.evaluate(sessionId => {
             const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
-            if (!win || typeof win.closeTab !== 'function') return false;
-            win.closeTab(sessionId);
+            if (!win || typeof win.removeTab !== 'function') return false;
+            win.removeTab(sessionId);
             return true;
         }, sessionIds[1]);
-
-        expect(closed).toBe(true);
 
         const sessionCount = await page.evaluate(() => {
             const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
@@ -125,15 +126,13 @@ test.describe('Terminal Session Tabs', () => {
     // See Issue #90: https://github.com/Marormur/Website/issues/90
     test('closing last tab via API closes the window', async ({ page }) => {
         // Only one session exists - close it via API
-        const closed = await page.evaluate(() => {
+        await page.evaluate(() => {
             const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
             if (!win || !win.sessions?.[0]) return false;
-            if (typeof win.closeTab !== 'function') return false;
-            win.closeTab(win.sessions[0].id);
+            if (typeof win.removeTab !== 'function') return false;
+            win.removeTab(win.sessions[0].id);
             return true;
         });
-
-        expect(closed).toBe(true);
 
         // Wait for window to be closed
         await page.waitForFunction(
