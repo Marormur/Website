@@ -111,16 +111,14 @@ test.describe('Performance Monitor Integration @basic', () => {
     });
 
     test('should capture Core Web Vitals', async ({ page }) => {
-        // Wait for page to fully load and vitals to be captured
-        await page.waitForLoadState('networkidle');
-
-        // Wait for vitals to be populated (at least TTFB should be available)
+        // Wait for vitals to be populated (at least TTFB should be available immediately)
+        // We don't use networkidle as it may timeout in dev environments with hot-reload
         await page.waitForFunction(
             () => {
                 const vitals = window.PerfMonitor.getVitals();
                 return Object.keys(vitals).length > 0;
             },
-            { timeout: 5000 }
+            { timeout: 10000 }
         );
 
         const vitals = await page.evaluate(() => {
@@ -218,16 +216,14 @@ test.describe('Performance Monitor Integration @basic', () => {
             }
         });
 
-        // Wait for vitals to be captured
-        await page.waitForLoadState('networkidle');
-
-        // Wait for vitals to be populated
+        // Wait for vitals to be populated (at least TTFB should be available immediately)
+        // We don't use networkidle as it may timeout in dev environments with hot-reload
         await page.waitForFunction(
             () => {
                 const vitals = window.PerfMonitor.getVitals();
                 return Object.keys(vitals).length > 0;
             },
-            { timeout: 5000 }
+            { timeout: 10000 }
         );
 
         // Generate report (synchronous - logs will be immediately captured by the listener)

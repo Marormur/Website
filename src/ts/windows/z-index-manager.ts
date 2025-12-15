@@ -52,7 +52,7 @@ let rafId: number | null = null;
 
 function flushZIndexUpdates(): void {
     if (pendingUpdates.length === 0) return;
-    
+
     // Filter out detached elements during loop to prevent memory leaks
     // Avoid creating new array if all elements are connected
     for (let i = 0; i < pendingUpdates.length; i++) {
@@ -61,7 +61,7 @@ function flushZIndexUpdates(): void {
             element.style.zIndex = zIndex.toString();
         }
     }
-    
+
     pendingUpdates = [];
     rafScheduled = false;
     rafId = null;
@@ -83,7 +83,7 @@ function flushZIndexUpdatesSync(): void {
 
 function scheduleZIndexUpdate(element: HTMLElement, zIndex: number): void {
     pendingUpdates.push({ element, zIndex });
-    
+
     if (!rafScheduled) {
         rafScheduled = true;
         rafId = requestAnimationFrame(flushZIndexUpdates);
@@ -218,19 +218,19 @@ export function getZIndexManager(): ZIndexManager {
         state.windowStack.forEach((id, index) => {
             const newZIndex = clamp(BASE_Z_INDEX + index);
             const currentZIndex = state.zIndexMap.get(id);
-            
+
             // Update cache and apply z-index if changed or not yet cached
             if (currentZIndex !== newZIndex) {
                 state.zIndexMap.set(id, newZIndex);
                 applyZIndex(id, newZIndex);
             }
         });
-        
+
         // Flush immediately if requested (e.g., in bringToFront)
         if (immediate) {
             flushZIndexUpdatesSync();
         }
-        
+
         // Keep topZIndex as "next available" to mirror legacy semantics
         const stackTopNext = BASE_Z_INDEX + state.windowStack.length;
         setTopZStore(Math.max(stackTopNext, state.externalTopZ));
@@ -243,7 +243,7 @@ export function getZIndexManager(): ZIndexManager {
             windowEl?: HTMLElement | null
         ): number {
             const currentIndex = state.windowStack.indexOf(windowId);
-            
+
             // Early return if already on top
             if (currentIndex === state.windowStack.length - 1) {
                 const currentZ = state.zIndexMap.get(windowId);
@@ -251,15 +251,15 @@ export function getZIndexManager(): ZIndexManager {
                     return manager.getTopZIndex();
                 }
             }
-            
+
             if (currentIndex !== -1) {
                 state.windowStack.splice(currentIndex, 1);
             }
             state.windowStack.push(windowId);
-            
+
             // Reassign z-indices with immediate flush for synchronous DOM updates
             assignZIndices(true);
-            
+
             return manager.getTopZIndex();
         },
 

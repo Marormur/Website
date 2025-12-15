@@ -134,49 +134,37 @@ import { getString, setString } from '../services/storage-utils.js';
                 .slice(0, topN) as PerformanceMeasure[];
 
             const logger = (window as typeof window & { Logger?: Console }).Logger || console;
-            logger.group('PerfMonitor report');
+            console.group('PerfMonitor report');
 
             // Report Core Web Vitals first
             const vitals = this.getVitals();
             if (Object.keys(vitals).length > 0) {
-                logger.group('Core Web Vitals');
+                console.group('Core Web Vitals');
                 if (vitals.LCP !== undefined) {
-                    logger.info(
-                        'PerfMonitor',
-                        `LCP (Largest Contentful Paint): ${vitals.LCP.toFixed(2)}ms`
-                    );
+                    console.info(`LCP (Largest Contentful Paint): ${vitals.LCP.toFixed(2)}ms`);
                 }
                 if (vitals.FID !== undefined) {
-                    logger.info(
-                        'PerfMonitor',
-                        `FID (First Input Delay): ${vitals.FID.toFixed(2)}ms`
-                    );
+                    console.info(`FID (First Input Delay): ${vitals.FID.toFixed(2)}ms`);
                 }
                 if (vitals.CLS !== undefined) {
-                    logger.info(
-                        'PerfMonitor',
-                        `CLS (Cumulative Layout Shift): ${vitals.CLS.toFixed(4)}`
-                    );
+                    console.info(`CLS (Cumulative Layout Shift): ${vitals.CLS.toFixed(4)}`);
                 }
                 if (vitals.TTFB !== undefined) {
-                    logger.info(
-                        'PerfMonitor',
-                        `TTFB (Time to First Byte): ${vitals.TTFB.toFixed(2)}ms`
-                    );
+                    console.info(`TTFB (Time to First Byte): ${vitals.TTFB.toFixed(2)}ms`);
                 }
-                logger.groupEnd();
+                console.groupEnd();
             }
 
             // Report custom measures
             if (measures.length) {
-                logger.group('Custom Measures');
+                console.group('Custom Measures');
                 for (const m of measures) {
-                    logger.info('PerfMonitor', `${m.name}: ${m.duration.toFixed(2)}ms`);
+                    console.info(`${m.name}: ${m.duration.toFixed(2)}ms`);
                 }
-                logger.groupEnd();
+                console.groupEnd();
             }
 
-            logger.groupEnd();
+            console.groupEnd();
 
             if (clear) {
                 performance.clearMeasures();
