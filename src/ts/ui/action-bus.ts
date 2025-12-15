@@ -50,6 +50,16 @@ console.log('ActionBus loaded');
         },
 
         init() {
+            // Re-register all core actions to ensure they're available after init
+            // This fixes issues where init() is called multiple times (e.g., bundle + non-bundle mode)
+            this.registerAll({
+                ...getPreviewActions(),
+                ...getWindowActions(),
+                ...getFinderActions(),
+                ...getSessionActions(),
+                ...getSettingsActions(),
+            });
+
             // Click-Events
             this.delegateEvent('click', '[data-action]', (element, event) => {
                 const actionName = element.getAttribute('data-action') as string;
