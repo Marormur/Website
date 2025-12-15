@@ -68,17 +68,18 @@ async function openFinderViaDock(page) {
  * @param {Page} page - Playwright page
  */
 async function openWindowMenu(page) {
-    const trigger = page.locator('#window-menu-trigger');
+    // MenuSystem creates dynamic IDs: menubar-menu-{section.id}
+    const trigger = page.locator('#menubar-menu-window');
     await trigger.waitFor({ state: 'visible', timeout: 10000 });
     await trigger.click();
     // The dropdown toggles via the menubar system; wait until it is not hidden.
     try {
-        await page.waitForSelector('#window-menu-dropdown:not(.hidden)', { timeout: 2000 });
+        await page.waitForSelector('#menu-dropdown-window:not(.hidden)', { timeout: 2000 });
     } catch {
         // Fallback: focus/hover also forces open in menubar-utils
         await trigger.focus();
         await trigger.hover();
-        await page.waitForSelector('#window-menu-dropdown:not(.hidden)', { timeout: 5000 });
+        await page.waitForSelector('#menu-dropdown-window:not(.hidden)', { timeout: 5000 });
     }
     await page.waitForTimeout(150);
 }
@@ -91,7 +92,7 @@ async function closeWindowMenu(page) {
     await page.keyboard.press('Escape');
     // If the menubar system keeps it open, a second Escape is harmless.
     try {
-        await page.waitForSelector('#window-menu-dropdown.hidden', { timeout: 1000 });
+        await page.waitForSelector('#menu-dropdown-window.hidden', { timeout: 1000 });
     } catch {
         await page.keyboard.press('Escape');
     }

@@ -1,5 +1,5 @@
 // E2E tests for Window menu multi-instance integration
-/* eslint-disable no-restricted-syntax */
+
 // Note: waitForTimeout used intentionally for menu animations and DOM updates
 const { test, expect } = require('@playwright/test');
 const { gotoHome, waitForAppReady } = require('../utils');
@@ -30,7 +30,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         const before = await getFinderWindowCount(page);
         await openWindowMenu(page);
         const newFinderItem = page
-            .locator('#window-menu-dropdown .menu-item', { hasText: /Neuer Finder|New Finder/i })
+            .locator('#menu-dropdown-window .menu-item', { hasText: /Neuer Finder|New Finder/i })
             .first();
         await expect(newFinderItem).toBeVisible();
         await newFinderItem.click();
@@ -50,12 +50,12 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
         // Verify "New Finder" action is visible
         const newFinderItem = page
-            .locator('#window-menu-dropdown .menu-item', { hasText: /Neuer Finder|New Finder/i })
+            .locator('#menu-dropdown-window .menu-item', { hasText: /Neuer Finder|New Finder/i })
             .first();
         await expect(newFinderItem).toBeVisible();
 
         // Verify at least one Finder instance is listed
-        const finderItems = page.locator('#window-menu-dropdown .menu-item', {
+        const finderItems = page.locator('#menu-dropdown-window .menu-item', {
             hasText: /Finder\s+\d+/i,
         });
         await expect(finderItems.first()).toBeVisible();
@@ -77,7 +77,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
         // Verify two Finder instances are listed in menu
         // Look for "Finder 1" and "Finder 2" in the menu
-        const finderItems = page.locator('#window-menu-dropdown .menu-item', {
+        const finderItems = page.locator('#menu-dropdown-window .menu-item', {
             hasText: /Finder\s+\d+/i,
         });
         const count = await finderItems.count();
@@ -92,8 +92,10 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
         await openWindowMenu(page);
 
-        // Exactly one active checkmark is expected
-        const checkmarks = page.locator('#window-menu-dropdown .menu-item-checkmark');
+        // Exactly one active checkmark is expected (✓ prefix in label text)
+        const checkmarks = page.locator('#menu-dropdown-window .menu-item', {
+            hasText: /^✓/,
+        });
         await expect(checkmarks).toHaveCount(1);
 
         await closeWindowMenu(page);
@@ -110,7 +112,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
         await openWindowMenu(page);
 
-        const menuItems = page.locator('#window-menu-dropdown .menu-item', {
+        const menuItems = page.locator('#menu-dropdown-window .menu-item', {
             hasText: /Finder\s+\d+/,
         });
         const itemCount = await menuItems.count();
@@ -147,7 +149,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await openWindowMenu(page);
 
         // Verify "Close All" action is visible
-        const closeAllItem = page.locator('#window-menu-dropdown .menu-item', {
+        const closeAllItem = page.locator('#menu-dropdown-window .menu-item', {
             hasText: /Alle schließen|Close All/i,
         });
         await expect(closeAllItem).toBeVisible();
@@ -165,7 +167,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await openWindowMenu(page);
 
         // Click "Close All"
-        const closeAllItem = page.locator('#window-menu-dropdown .menu-item', {
+        const closeAllItem = page.locator('#menu-dropdown-window .menu-item', {
             hasText: /Alle schließen|Close All/i,
         });
 
@@ -213,7 +215,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await openWindowMenu(page);
 
         // Should not have "Close All" yet (only one instance)
-        let closeAllItem = page.locator('#window-menu-dropdown .menu-item', {
+        let closeAllItem = page.locator('#menu-dropdown-window .menu-item', {
             hasText: /Alle schließen|Close All/i,
         });
         await expect(closeAllItem).not.toBeVisible();
@@ -227,13 +229,13 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await openWindowMenu(page);
 
         // Now "Close All" should be visible
-        closeAllItem = page.locator('#window-menu-dropdown .menu-item', {
+        closeAllItem = page.locator('#menu-dropdown-window .menu-item', {
             hasText: /Alle schließen|Close All/i,
         });
         await expect(closeAllItem).toBeVisible();
 
         // Should see instance items
-        const instanceItems = page.locator('#window-menu-dropdown .menu-item', {
+        const instanceItems = page.locator('#menu-dropdown-window .menu-item', {
             hasText: /Finder\s+\d+/,
         });
         const itemCount = await instanceItems.count();
