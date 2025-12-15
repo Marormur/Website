@@ -113,7 +113,7 @@ test.describe('Performance Monitor Integration @basic', () => {
     test('should capture Core Web Vitals', async ({ page }) => {
         // Wait for page to fully load and vitals to be captured
         await page.waitForLoadState('networkidle');
-        
+
         // Wait for vitals to be populated (at least TTFB should be available)
         await page.waitForFunction(
             () => {
@@ -220,7 +220,7 @@ test.describe('Performance Monitor Integration @basic', () => {
 
         // Wait for vitals to be captured
         await page.waitForLoadState('networkidle');
-        
+
         // Wait for vitals to be populated
         await page.waitForFunction(
             () => {
