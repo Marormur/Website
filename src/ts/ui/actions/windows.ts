@@ -51,30 +51,36 @@ export function getWindowActions(): ActionMap {
 
             // SPECIAL: Multi-Window Finder
             if (windowId === 'finder-modal') {
-                safeExecute('[ActionBus] openWindow finder-modal', () => {
-                    const finder = getGlobal<{ focusOrCreate?: () => void }>('FinderWindow');
-                    if (finder?.focusOrCreate) {
-                        finder.focusOrCreate();
-                        return;
-                    }
-                    console.warn(
-                        '[ActionBus] FinderWindow not available; falling back to WindowManager.open("finder-modal")'
-                    );
-                });
+                const finder = getGlobal<{ focusOrCreate?: () => void }>('FinderWindow');
+                if (finder?.focusOrCreate) {
+                    safeExecute('[ActionBus] openWindow finder-modal', () => {
+                        finder.focusOrCreate!();
+                    });
+                    // Early return: Multi-window handled, skip legacy WindowManager
+                    const g = getGlobal<{ updateProgramLabelByTopModal?: () => void }>('');
+                    g?.updateProgramLabelByTopModal?.();
+                    return;
+                }
+                console.warn(
+                    '[ActionBus] FinderWindow not available; falling back to WindowManager.open("finder-modal")'
+                );
             }
 
             // SPECIAL: Multi-Window Terminal
             if (windowId === 'terminal-modal') {
-                safeExecute('[ActionBus] openWindow terminal-modal', () => {
-                    const terminal = getGlobal<{ focusOrCreate?: () => void }>('TerminalWindow');
-                    if (terminal?.focusOrCreate) {
-                        terminal.focusOrCreate();
-                        return;
-                    }
-                    console.warn(
-                        '[ActionBus] TerminalWindow not available; falling back to WindowManager.open("terminal-modal")'
-                    );
-                });
+                const terminal = getGlobal<{ focusOrCreate?: () => void }>('TerminalWindow');
+                if (terminal?.focusOrCreate) {
+                    safeExecute('[ActionBus] openWindow terminal-modal', () => {
+                        terminal.focusOrCreate!();
+                    });
+                    // Early return: Multi-window handled, skip legacy WindowManager
+                    const g = getGlobal<{ updateProgramLabelByTopModal?: () => void }>('');
+                    g?.updateProgramLabelByTopModal?.();
+                    return;
+                }
+                console.warn(
+                    '[ActionBus] TerminalWindow not available; falling back to WindowManager.open("terminal-modal")'
+                );
             }
 
             const wm = getGlobal<{ open?: (id: string) => void }>('WindowManager');

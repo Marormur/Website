@@ -169,6 +169,9 @@ export class TerminalWindow extends BaseWindow {
         // Show window
         window.show();
 
+        // Explicitly render tabs (timing: must happen after window is shown and in DOM)
+        (window as any)._renderTabs?.();
+
         return window;
     }
 

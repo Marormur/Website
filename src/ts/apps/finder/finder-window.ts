@@ -169,6 +169,10 @@ export class FinderWindow extends BaseWindow {
         if (W.WindowRegistry) W.WindowRegistry.registerWindow(window);
 
         window.show();
+
+        // Explicitly render tabs (timing: must happen after window is shown and in DOM)
+        (window as any)._renderTabs?.();
+
         return window;
     }
 

@@ -427,6 +427,12 @@ class MultiWindowSessionManager {
             window.show();
             WindowRegistry.registerWindow(window);
 
+            // Force tab rendering after window is shown and in DOM
+            // This ensures tabs are visible even if they were added before the window was shown
+            if (typeof (window as any)._renderTabs === 'function') {
+                (window as any)._renderTabs();
+            }
+
             // Apply window state after DOM is ready
             setTimeout(() => {
                 if (window.element) {
@@ -514,9 +520,11 @@ class MultiWindowSessionManager {
 
     /**
      * Migrate legacy path formats (Computer/Home → /home/marvin)
+     * Only migrates string paths. Returns default for non-string or empty values.
      */
     private migrateLegacyPath(path: string | undefined | null): string {
-        if (!path) return '/home/marvin';
+        // Type guard: Only migrate strings. Skip arrays, objects, etc.
+        if (!path || typeof path !== 'string') return '/home/marvin';
 
         // Already in new format
         if (path.startsWith('/')) return path;
@@ -559,8 +567,8 @@ class MultiWindowSessionManager {
             const tabsArray = window.tabs || window.sessions || [];
 
             for (const tab of tabsArray) {
-                // Migrate vfsCwd for terminal sessions
-                if (tab.vfsCwd) {
+                // Migrate vfsCwd for terminal sessions (only if it's a string)
+                if (tab.vfsCwd && typeof tab.vfsCwd === 'string') {
                     const migrated = this.migrateLegacyPath(tab.vfsCwd);
                     console.log(
                         `[MultiWindowSessionManager] Migrating path: ${tab.vfsCwd} → ${migrated}`
@@ -568,8 +576,9 @@ class MultiWindowSessionManager {
                     tab.vfsCwd = migrated;
                 }
 
-                // Also check currentPath (legacy field)
-                if (tab.currentPath && !tab.vfsCwd) {
+                // Also check currentPath (legacy field) - only for terminal sessions
+                // Skip Finder currentPath (it's an array of path segments, not a string)
+                if (tab.currentPath && !tab.vfsCwd && typeof tab.currentPath === 'string') {
                     const migrated = this.migrateLegacyPath(tab.currentPath);
                     console.log(
                         `[MultiWindowSessionManager] Migrating currentPath: ${tab.currentPath} → ${migrated}`
@@ -578,14 +587,18 @@ class MultiWindowSessionManager {
                     tab.currentPath = migrated;
                 }
 
-                // Migrate contentState.vfsCwd if it exists
-                if (tab.contentState?.vfsCwd) {
+                // Migrate contentState.vfsCwd if it exists (only if string)
+                if (tab.contentState?.vfsCwd && typeof tab.contentState.vfsCwd === 'string') {
                     const migrated = this.migrateLegacyPath(tab.contentState.vfsCwd);
                     tab.contentState.vfsCwd = migrated;
                 }
 
-                // Migrate contentState.currentPath if it exists
-                if (tab.contentState?.currentPath) {
+                // Migrate contentState.currentPath if it exists (only if string)
+                // Skip Finder currentPath arrays
+                if (
+                    tab.contentState?.currentPath &&
+                    typeof tab.contentState.currentPath === 'string'
+                ) {
                     const migrated = this.migrateLegacyPath(tab.contentState.currentPath);
                     tab.contentState.currentPath = migrated;
                 }

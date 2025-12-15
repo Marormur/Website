@@ -123,6 +123,14 @@ function initModalIds(): { modalIds: string[]; transientModalIds: Set<string> } 
  * Sets up dialog instances, ActionBus, and initializes all subsystems.
  */
 function initApp(): void {
+    // Guard against duplicate initialization (can happen with bundle + direct import)
+    const w = window as Window & { __APP_INITIALIZED__?: boolean };
+    if (w.__APP_INITIALIZED__) {
+        console.warn('[APP-INIT] initApp() already ran, skipping duplicate call');
+        return;
+    }
+    w.__APP_INITIALIZED__ = true;
+
     const win = window as Window & GlobalModules & { WindowManager?: IWindowManager };
     const funcs = window as Window & {
         hideMenuDropdowns?: () => void;
@@ -824,19 +832,25 @@ function initApp(): void {
 }
 
 // ============================================================================
-// IIFE Export Pattern - Expose initApp globally and auto-attach to DOMContentLoaded
+// IIFE Export Pattern - Expose initApp globally
 // ============================================================================
+// NOTE: Auto-attach to DOMContentLoaded is handled by expose-globals.ts
+// to prevent duplicate initialization when using the bundle.
 
 (() => {
     if (typeof window.initApp !== 'function') {
         window.initApp = initApp;
     }
 
-    // Auto-attach to DOMContentLoaded
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initApp);
-    } else {
-        // DOMContentLoaded already fired, run immediately
-        initApp();
+    // For non-bundle usage: Auto-attach to DOMContentLoaded if not already handled
+    // This ensures standalone module loading still works
+    const isBundleMode = typeof (window as any).__BUNDLE_READY__ !== 'undefined';
+    if (!isBundleMode) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            // DOMContentLoaded already fired, run immediately
+            initApp();
+        }
     }
 })();

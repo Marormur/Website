@@ -84,18 +84,21 @@ import '../ui/desktop'; // Now in TypeScript
 // Use modern TypeScript module instead of legacy JS
 import '../services/system';
 
+// Set bundle-ready flag BEFORE importing app-init to prevent duplicate initialization
+// This allows app-init.ts to skip its own auto-attach to DOMContentLoaded
+type WindowWithBundle = Window & { __BUNDLE_READY__?: boolean; initApp?: () => void } & Record<
+        string,
+        unknown
+    >;
+const w = window as unknown as WindowWithBundle;
+w.__BUNDLE_READY__ = true;
+
 // Finally, include the TypeScript app initialization to bootstrap and signal readiness
 // This sets window.__APP_READY = true when the app finishes loading. It must come
 // AFTER all side-effect imports above so that globals like WindowManager/Dialog exist.
 import '../core/app-init';
 
 // Guarded attach for modern modules not yet on window
-type WindowWithBundle = Window & { __BUNDLE_READY__?: boolean; initApp?: () => void } & Record<
-        string,
-        unknown
-    >;
-const w = window as unknown as WindowWithBundle;
-
 if (!('DOMUtils' in w)) {
     w['DOMUtils'] = DOMUtils;
 }
@@ -133,6 +136,3 @@ if (typeof w.initApp === 'function') {
 } else {
     console.error('[BUNDLE] window.initApp is not defined; app initialization failed');
 }
-
-// Optional ready flag for tests
-w.__BUNDLE_READY__ = true;
