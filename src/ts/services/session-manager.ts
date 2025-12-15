@@ -400,6 +400,12 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
         });
 
         // Restore z-index order from saved windowStack AFTER all instances are restored
+        //
+        // Hinweis (#130): Die Wiederherstellung der Fenster-Reihenfolge erfolgt bewusst
+        // erst nach der Deserialisierung aller Instanzen und erwartet, dass der
+        // __zIndexManager initialisiert ist und Fenster registriert wurden.
+        // Multi-Instance-Integration öffnet/holt Modals beim Aktivieren nach vorn,
+        // sodass der Stack hier befüllt ist und konsistent wiederhergestellt werden kann.
         const windowStack = session.windowStack || [];
         if (windowStack.length > 0) {
             const zIndexManager = (window as any).__zIndexManager;

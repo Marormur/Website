@@ -251,6 +251,21 @@ import { getJSON } from '../services/storage-utils.js';
             };
         }
 
+        /**
+         * Zeigt die angefragte Instanz und sorgt dafür, dass das zugehörige Fenster
+         * auch im z-index-Stack erfasst wird.
+         *
+         * Hintergrund (#130):
+         * - Vorher wurde nur der Inhalt per show()/hide() umgeschaltet.
+         * - Ohne explizites Öffnen/Nach-vorne-holen des Modals bleibt der
+         *   __zIndexManager-Stack leer, wodurch die Reihenfolge nicht persistiert
+         *   bzw. nach Restore nicht korrekt wiederhergestellt werden konnte.
+         *
+         * Invariante:
+         * - Wenn eine Instanz aktiv ist, ist ihr Modal geöffnet (falls vorhanden)
+         *   und befindet sich oben auf dem Stack (bringToFront).
+         * - Für Typen ohne Modal (z. B. Finder) hat modalId keinen Effekt.
+         */
         showInstance(type: string, instanceId: string) {
             const integration = this.integrations.get(type);
             if (!integration) return;
