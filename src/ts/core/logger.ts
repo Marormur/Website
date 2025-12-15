@@ -139,10 +139,3 @@ declare global {
 if (typeof window !== 'undefined') {
     window.Logger = logger;
 }
-
-// For CommonJS compatibility
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const module: any;
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = logger;
-}
