@@ -1,8 +1,9 @@
 #!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
 
-# Pre-push checks: TypeCheck + Type Coverage before pushing
+# Pre-push checks: typecheck + type baseline + format check
 echo "Running pre-push checks..."
 npm run typecheck || exit 1
-npm run type:baseline || exit 1  # 79% baseline (less strict than CI's 90%)
+npm run type:baseline || exit 1
 npm run format:check || exit 1
 echo "✓ Pre-push checks passed!"

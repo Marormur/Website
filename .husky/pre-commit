@@ -1,1 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Auto-fix & format only staged files
 npx lint-staged
