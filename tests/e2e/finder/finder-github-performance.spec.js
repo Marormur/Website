@@ -51,7 +51,7 @@ test.describe('Finder GitHub API Performance', () => {
         // Loading skeleton should appear (briefly or until data loads)
         // Check for the animated pulse skeleton
         const skeleton = page.locator('.animate-pulse');
-        
+
         // Try to catch the skeleton - it might be very brief if cached or network is fast
         try {
             await skeleton.waitFor({ state: 'visible', timeout: 1000 });
@@ -61,13 +61,17 @@ test.describe('Finder GitHub API Performance', () => {
         } catch {
             // If skeleton doesn't appear or disappears too fast, that's also acceptable
             // (could mean cache was populated or network was very fast)
-            console.log('[Test] Loading skeleton not detected - network might be fast or cache present');
+            console.log(
+                '[Test] Loading skeleton not detected - network might be fast or cache present'
+            );
         }
 
         // Eventually content should load (either repos or error message)
         const websiteRow = page.locator('tr:has-text("Website")').first();
-        const errorMsg = page.locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i').first();
-        
+        const errorMsg = page
+            .locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i')
+            .first();
+
         await Promise.race([
             websiteRow.waitFor({ state: 'visible', timeout: 20000 }),
             errorMsg.waitFor({ state: 'visible', timeout: 20000 }),
@@ -77,17 +81,19 @@ test.describe('Finder GitHub API Performance', () => {
     test('Shows cached data immediately on second navigation', async ({ page }) => {
         // First navigation - populate cache
         await openFinderGithub(page);
-        
+
         // Wait for data to load
         const websiteRow = page.locator('tr:has-text("Website")').first();
-        const errorMsg = page.locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i').first();
-        
+        const errorMsg = page
+            .locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i')
+            .first();
+
         const race = Promise.race([
             websiteRow.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'ok'),
             errorMsg.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'error'),
         ]);
         const outcome = await race;
-        
+
         if (outcome !== 'ok') {
             test.skip(true, 'Skipping due to GitHub API being unavailable.');
         }
@@ -120,16 +126,18 @@ test.describe('Finder GitHub API Performance', () => {
 
         // Populate cache first
         await openFinderGithub(page);
-        
+
         const websiteRow = page.locator('tr:has-text("Website")').first();
-        const errorMsg = page.locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i').first();
-        
+        const errorMsg = page
+            .locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i')
+            .first();
+
         const race = Promise.race([
             websiteRow.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'ok'),
             errorMsg.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'error'),
         ]);
         const outcome = await race;
-        
+
         if (outcome !== 'ok') {
             test.skip(true, 'Skipping due to GitHub API being unavailable.');
         }
@@ -142,7 +150,7 @@ test.describe('Finder GitHub API Performance', () => {
                     const cached = JSON.parse(localStorage.getItem(key));
                     if (cached && cached.t) {
                         // Set timestamp to 6 minutes ago (beyond STALE_AGE of 5 min but within MAX_AGE of 30 min)
-                        cached.t = Date.now() - (6 * 60 * 1000);
+                        cached.t = Date.now() - 6 * 60 * 1000;
                         localStorage.setItem(key, JSON.stringify(cached));
                     }
                 }
@@ -162,18 +170,20 @@ test.describe('Finder GitHub API Performance', () => {
 
         // Refresh indicator should appear (may be brief)
         const refreshIndicator = page.locator('.finder-refresh-indicator');
-        
+
         try {
             await refreshIndicator.waitFor({ state: 'visible', timeout: 2000 });
             // Check it has the expected content
             const text = await refreshIndicator.textContent();
             expect(text).toContain('Aktualisiere');
-            
+
             // Indicator should eventually disappear after refresh completes
             await refreshIndicator.waitFor({ state: 'hidden', timeout: 10000 });
         } catch {
             // If indicator doesn't appear, background refresh might have completed too quickly
-            console.log('[Test] Refresh indicator not detected - background refresh might be very fast');
+            console.log(
+                '[Test] Refresh indicator not detected - background refresh might be very fast'
+            );
         }
     });
 
@@ -196,7 +206,7 @@ test.describe('Finder GitHub API Performance', () => {
         // Open Finder and rapidly click GitHub multiple times
         await openFinderWindow(page);
         const githubBtn = page.locator('#finder-sidebar-github');
-        
+
         // Click multiple times rapidly to trigger potential duplicate requests
         await githubBtn.click();
         await githubBtn.click();
@@ -204,8 +214,10 @@ test.describe('Finder GitHub API Performance', () => {
 
         // Wait for content or error to appear (more deterministic than fixed timeout)
         const websiteRow = page.locator('tr:has-text("Website")').first();
-        const errorMsg = page.locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i').first();
-        
+        const errorMsg = page
+            .locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i')
+            .first();
+
         await Promise.race([
             websiteRow.waitFor({ state: 'visible', timeout: 5000 }),
             errorMsg.waitFor({ state: 'visible', timeout: 5000 }),
@@ -217,7 +229,7 @@ test.describe('Finder GitHub API Performance', () => {
         // Due to deduplication, we should see only 1 request for the repos endpoint
         const repoRequests = requests.filter(r => r.url.includes('/repos'));
         console.log(`[Test] Made ${repoRequests.length} repo requests`);
-        
+
         // Should be 1 or 2 at most (not 3 or more from rapid clicking)
         expect(repoRequests.length).toBeLessThanOrEqual(2);
     });
@@ -238,21 +250,23 @@ test.describe('Finder GitHub API Performance', () => {
         await page.evaluate(() => {
             const originalPrefetch = window.GitHubAPI?.prefetchUserRepos;
             if (originalPrefetch && window.GitHubAPI) {
-                window.GitHubAPI.prefetchUserRepos = function(...args) {
+                window.GitHubAPI.prefetchUserRepos = function (...args) {
                     window.testPrefetchCalled();
                     return originalPrefetch.apply(this, args);
                 };
             }
         });
-        
+
         // Click GitHub button - should trigger prefetch
         const githubBtn = page.locator('#finder-sidebar-github');
         await githubBtn.click();
 
         // Wait for prefetch to be called with polling instead of fixed timeout
-        await page.waitForFunction(() => window.prefetchCalled === true, { timeout: 2000 }).catch(() => {
-            // Timeout is acceptable if GitHub API isn't available
-        });
+        await page
+            .waitForFunction(() => window.prefetchCalled === true, { timeout: 2000 })
+            .catch(() => {
+                // Timeout is acceptable if GitHub API isn't available
+            });
 
         // Verify prefetch was called (may be false if API unavailable)
         if (prefetchCalled) {
@@ -272,11 +286,11 @@ test.describe('Finder GitHub API Performance', () => {
         });
 
         await openFinderGithub(page);
-        
+
         // Wait for data to load
         const websiteRow = page.locator('tr:has-text("Website")').first();
         const errorMsg = page.locator('text=/GitHub Fehler|Rate Limit/i').first();
-        
+
         await Promise.race([
             websiteRow.waitFor({ state: 'visible', timeout: 20000 }),
             errorMsg.waitFor({ state: 'visible', timeout: 20000 }),
@@ -285,13 +299,14 @@ test.describe('Finder GitHub API Performance', () => {
         // Check performance metrics
         const metrics = await page.evaluate(() => {
             if (!window.PerfMonitor) return null;
-            
+
             const measures = performance.getEntriesByType('measure');
-            const githubMeasures = measures.filter(m => 
-                m.name.includes('github:fetchUserRepos') || 
-                m.name.includes('github:fetchRepoContents')
+            const githubMeasures = measures.filter(
+                m =>
+                    m.name.includes('github:fetchUserRepos') ||
+                    m.name.includes('github:fetchRepoContents')
             );
-            
+
             return githubMeasures.map(m => ({
                 name: m.name,
                 duration: m.duration,

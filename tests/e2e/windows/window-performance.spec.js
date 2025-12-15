@@ -1,6 +1,6 @@
 /**
  * Window Manager Performance Tests
- * 
+ *
  * Tests for window management performance with many simultaneous windows
  * Target: < 50ms for window operations with 20+ windows
  */
@@ -12,7 +12,7 @@ test.describe('Window Manager Performance @basic', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
         await utils.waitForAppReady(page);
-        
+
         // Enable performance monitoring
         await page.evaluate(() => {
             if (window.PerfMonitor) {
@@ -37,7 +37,7 @@ test.describe('Window Manager Performance @basic', () => {
         const result = await page.evaluate(() => {
             const timings = [];
             const manager = window.TerminalInstanceManager;
-            
+
             if (!manager) {
                 return { error: 'TerminalInstanceManager not found' };
             }
@@ -45,14 +45,14 @@ test.describe('Window Manager Performance @basic', () => {
             // Open 20 terminal instances and measure each
             for (let i = 0; i < 20; i++) {
                 const startTime = performance.now();
-                
+
                 const terminal = manager.createInstance({
                     title: `Terminal ${i + 1}`,
                 });
-                
+
                 const endTime = performance.now();
                 const duration = endTime - startTime;
-                
+
                 timings.push({
                     index: i + 1,
                     duration,
@@ -65,7 +65,7 @@ test.describe('Window Manager Performance @basic', () => {
             const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length;
             const maxDuration = Math.max(...durations);
             const minDuration = Math.min(...durations);
-            
+
             // Get last 5 timings (representing performance at 15-20 windows)
             const lastFive = timings.slice(-5);
             const lastFiveAvg = lastFive.reduce((a, t) => a + t.duration, 0) / lastFive.length;
@@ -91,14 +91,14 @@ test.describe('Window Manager Performance @basic', () => {
 
         // Verify we created all 20 windows
         expect(result.totalWindows).toBe(20);
-        
+
         // Performance assertions
         // First window should be fast (< 100ms to allow for initialization)
         expect(result.firstFive[0].duration).toBeLessThan(100);
-        
+
         // Average for last 5 windows (15-20) should be < 50ms
         expect(result.lastFiveAvg).toBeLessThan(50);
-        
+
         // No single window should take > 150ms (even with init overhead)
         expect(result.maxDuration).toBeLessThan(150);
     });
@@ -122,16 +122,16 @@ test.describe('Window Manager Performance @basic', () => {
             for (let i = 0; i < 10; i++) {
                 const instanceId = instances[i % instances.length];
                 const windowId = 'terminal-modal';
-                
+
                 const startTime = performance.now();
-                
+
                 if (window.API && window.API.window) {
                     window.API.window.bringToFront(windowId);
                 }
-                
+
                 const endTime = performance.now();
                 const duration = endTime - startTime;
-                
+
                 timings.push({ instanceId, duration });
             }
 
@@ -154,7 +154,7 @@ test.describe('Window Manager Performance @basic', () => {
 
         // Target: < 20ms average
         expect(result.avgDuration).toBeLessThan(20);
-        
+
         // Max should not exceed 30ms
         expect(result.maxDuration).toBeLessThan(30);
     });
@@ -163,7 +163,7 @@ test.describe('Window Manager Performance @basic', () => {
         const result = await page.evaluate(() => {
             const manager = window.TerminalInstanceManager;
             const timings = [];
-            
+
             // Create 20 instances
             const instanceIds = [];
             for (let i = 0; i < 20; i++) {
@@ -174,12 +174,12 @@ test.describe('Window Manager Performance @basic', () => {
             // Close them and measure
             for (const instanceId of instanceIds) {
                 const startTime = performance.now();
-                
+
                 manager.destroyInstance(instanceId);
-                
+
                 const endTime = performance.now();
                 const duration = endTime - startTime;
-                
+
                 timings.push({ instanceId, duration });
             }
 
@@ -209,7 +209,7 @@ test.describe('Window Manager Performance @basic', () => {
         // This test verifies that batch DOM updates work correctly
         const result = await page.evaluate(() => {
             const manager = window.TerminalInstanceManager;
-            
+
             // Create 10 instances rapidly
             const instances = [];
             for (let i = 0; i < 10; i++) {
@@ -228,8 +228,10 @@ test.describe('Window Manager Performance @basic', () => {
                     requestAnimationFrame(() => {
                         // Verify all windows have valid z-index
                         const windowEl = document.getElementById('terminal-modal');
-                        const zIndex = windowEl ? parseInt(window.getComputedStyle(windowEl).zIndex, 10) : 0;
-                        
+                        const zIndex = windowEl
+                            ? parseInt(window.getComputedStyle(windowEl).zIndex, 10)
+                            : 0;
+
                         resolve({
                             success: true,
                             instanceCount: manager.getInstanceCount(),
