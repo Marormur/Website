@@ -146,7 +146,12 @@
                         resultDiv.innerHTML = results.join('\n');
                     })
                     .catch(error => {
-                        resultDiv.innerHTML = `<span class="error">Error loading z-index-manager.js: ${error.message}</span>`;
+                        // Prevent XSS: use textContent instead of innerHTML for error messages
+                        const span = document.createElement('span');
+                        span.className = 'error';
+                        span.textContent = `Error loading z-index-manager.js: ${error.message}`;
+                        resultDiv.innerHTML = '';
+                        resultDiv.appendChild(span);
                     });
             }
         </script>

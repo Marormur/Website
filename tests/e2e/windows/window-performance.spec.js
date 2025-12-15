@@ -21,6 +21,18 @@ test.describe('Window Manager Performance @basic', () => {
         });
     });
 
+    test.afterEach(async ({ page }) => {
+        // Clean up all terminal instances to ensure test isolation
+        await page.evaluate(() => {
+            if (window.TerminalInstanceManager) {
+                window.TerminalInstanceManager.destroyAllInstances();
+            }
+            if (window.TextEditorInstanceManager) {
+                window.TextEditorInstanceManager.destroyAllInstances();
+            }
+        });
+    });
+
     test('opening 20 terminal windows performs within target (<50ms each)', async ({ page }) => {
         const result = await page.evaluate(() => {
             const timings = [];

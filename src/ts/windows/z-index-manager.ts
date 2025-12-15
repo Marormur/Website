@@ -29,7 +29,8 @@ export interface ZIndexManager {
 
 export const BASE_Z_INDEX = 1000;
 const MAX_WINDOW_Z_INDEX = 2147483500; // Below Dock (2147483550) and Launchpad (2147483600)
-const Z_INDEX_POOL_SIZE = 100; // Pre-allocated pool for O(1) z-index assignment
+// Reserved for future optimization: Z-Index Pooling is not yet implemented.
+// const Z_INDEX_POOL_SIZE = 100; // Would enable O(1) z-index assignment from pre-allocated pool
 
 type MaybeZIndexManager = Partial<ZIndexManager> & { [key: string]: unknown };
 
@@ -53,13 +54,28 @@ let rafScheduled = false;
 function flushZIndexUpdates(): void {
     if (pendingUpdates.length === 0) return;
     
+    // Filter out detached elements to prevent memory leaks
+    const validUpdates = pendingUpdates.filter(({ element }) => element.isConnected);
+    
     // Batch all style updates in a single pass
-    for (const { element, zIndex } of pendingUpdates) {
+    for (const { element, zIndex } of validUpdates) {
         element.style.zIndex = zIndex.toString();
     }
     
     pendingUpdates = [];
     rafScheduled = false;
+}
+
+/**
+ * Force flush of pending z-index updates synchronously.
+ * Used when immediate DOM updates are required (e.g., in bringToFront).
+ */
+function flushZIndexUpdatesSync(): void {
+    if (rafScheduled) {
+        // Cancel scheduled RAF and flush immediately
+        rafScheduled = false;
+    }
+    flushZIndexUpdates();
 }
 
 function scheduleZIndexUpdate(element: HTMLElement, zIndex: number): void {
@@ -195,8 +211,6 @@ export function getZIndexManager(): ZIndexManager {
      * Only updates windows whose z-index actually changed (dirty tracking).
      */
     const assignZIndices = (): void => {
-        const dirtyWindows: string[] = [];
-        
         state.windowStack.forEach((id, index) => {
             const newZIndex = clamp(BASE_Z_INDEX + index);
             const currentZIndex = state.zIndexMap.get(id);
@@ -204,7 +218,6 @@ export function getZIndexManager(): ZIndexManager {
             // Only update if z-index changed (dirty tracking)
             if (currentZIndex !== newZIndex) {
                 state.zIndexMap.set(id, newZIndex);
-                dirtyWindows.push(id);
                 applyZIndex(id, newZIndex);
             }
         });
@@ -235,12 +248,12 @@ export function getZIndexManager(): ZIndexManager {
             }
             state.windowStack.push(windowId);
             
-            // Only reassign z-indices for affected windows (optimization)
+            // Reassign z-indices for affected windows
             assignZIndices();
             
-            const assigned = clamp(BASE_Z_INDEX + state.windowStack.length - 1);
-            state.zIndexMap.set(windowId, assigned);
-            applyZIndex(windowId, assigned, modal, windowEl);
+            // Flush pending RAF updates to ensure z-index changes are immediately visible
+            flushZIndexUpdatesSync();
+            
             return manager.getTopZIndex();
         },
 
