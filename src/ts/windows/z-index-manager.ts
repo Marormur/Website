@@ -29,8 +29,6 @@ export interface ZIndexManager {
 
 export const BASE_Z_INDEX = 1000;
 const MAX_WINDOW_Z_INDEX = 2147483500; // Below Dock (2147483550) and Launchpad (2147483600)
-// Reserved for future optimization: Z-Index Pooling is not yet implemented.
-// const Z_INDEX_POOL_SIZE = 100; // Would enable O(1) z-index assignment from pre-allocated pool
 
 type MaybeZIndexManager = Partial<ZIndexManager> & { [key: string]: unknown };
 
@@ -214,18 +212,24 @@ export function getZIndexManager(): ZIndexManager {
     /**
      * Optimized z-index assignment using cached map.
      * Only updates windows whose z-index actually changed (dirty tracking).
+     * @param immediate - If true, apply changes synchronously without RAF batching
      */
-    const assignZIndices = (): void => {
+    const assignZIndices = (immediate = false): void => {
         state.windowStack.forEach((id, index) => {
             const newZIndex = clamp(BASE_Z_INDEX + index);
             const currentZIndex = state.zIndexMap.get(id);
             
-            // Only update if z-index changed (dirty tracking)
+            // Update cache and apply z-index if changed or not yet cached
             if (currentZIndex !== newZIndex) {
                 state.zIndexMap.set(id, newZIndex);
                 applyZIndex(id, newZIndex);
             }
         });
+        
+        // Flush immediately if requested (e.g., in bringToFront)
+        if (immediate) {
+            flushZIndexUpdatesSync();
+        }
         
         // Keep topZIndex as "next available" to mirror legacy semantics
         const stackTopNext = BASE_Z_INDEX + state.windowStack.length;
@@ -253,11 +257,8 @@ export function getZIndexManager(): ZIndexManager {
             }
             state.windowStack.push(windowId);
             
-            // Reassign z-indices for affected windows
-            assignZIndices();
-            
-            // Flush pending RAF updates to ensure z-index changes are immediately visible
-            flushZIndexUpdatesSync();
+            // Reassign z-indices with immediate flush for synchronous DOM updates
+            assignZIndices(true);
             
             return manager.getTopZIndex();
         },
