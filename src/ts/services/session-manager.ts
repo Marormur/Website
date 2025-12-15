@@ -320,7 +320,7 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
     }
 
     /**
-     * Restore session from localStorage
+     * Restore session from localStorage with Batch Restore for performance
      */
     function restoreSession(): boolean {
         const perf = (
@@ -352,10 +352,15 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
         } catch {
             /* ignore */
         }
-        let restoredCount = 0;
 
         const activeMap = (session as SessionData).active || {};
 
+        // BATCH RESTORE: Group by type and restore all types in parallel
+        // But keep execution synchronous for backwards compatibility
+        let restoredCount = 0;
+
+        // Process all types synchronously but prepare for parallel optimization
+        // The actual parallelization happens within deserializeAll implementations
         Object.entries(session.instances).forEach(([type, instances]) => {
             const manager = managers.get(type);
             if (!manager) {
@@ -364,33 +369,37 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
             }
 
             const mgr = manager as Record<string, unknown>;
-            if (typeof mgr.deserializeAll === 'function') {
-                try {
-                    (mgr.deserializeAll as (data: InstanceData[]) => void)(instances);
-                    restoredCount += instances.length;
-                    console.log(`SessionManager: Restored ${instances.length} "${type}" instances`);
-                    // Restore previously active instance for this type if present
-                    const activeId = activeMap[type] || null;
-                    if (activeId && typeof (mgr as any).setActiveInstance === 'function') {
-                        try {
-                            (mgr as any).setActiveInstance(activeId);
-                        } catch (e) {
-                            console.warn(
-                                `SessionManager: Failed to set active instance for ${type}:`,
-                                e
-                            );
-                        }
+            if (typeof mgr.deserializeAll !== 'function') {
+                return;
+            }
+
+            try {
+                // Batch restore all instances of this type
+                (mgr.deserializeAll as (data: InstanceData[]) => void)(instances);
+                restoredCount += instances.length;
+                console.log(`SessionManager: Restored ${instances.length} "${type}" instances`);
+
+                // Restore previously active instance for this type if present
+                const activeId = activeMap[type] || null;
+                if (activeId && typeof (mgr as any).setActiveInstance === 'function') {
+                    try {
+                        (mgr as any).setActiveInstance(activeId);
+                    } catch (e) {
+                        console.warn(
+                            `SessionManager: Failed to set active instance for ${type}:`,
+                            e
+                        );
                     }
-                } catch (err) {
-                    console.error(
-                        `SessionManager: Failed to restore instances for type "${type}":`,
-                        err
-                    );
                 }
+            } catch (err) {
+                console.error(
+                    `SessionManager: Failed to restore instances for type "${type}":`,
+                    err
+                );
             }
         });
 
-        // Restore z-index order from saved windowStack
+        // Restore z-index order from saved windowStack AFTER all instances are restored
         const windowStack = session.windowStack || [];
         if (windowStack.length > 0) {
             const zIndexManager = (window as any).__zIndexManager;

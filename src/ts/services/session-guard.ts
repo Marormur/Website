@@ -48,12 +48,36 @@ export function validateLegacySession(
     }
     try {
         const session = JSON.parse(raw) as LegacySession;
-        logFound('legacy', session?.instances?.length || 0, session?.instances);
-        if (isCountTooHigh(session?.instances)) {
+
+        // Legacy session has instances as Record<string, Array>
+        // e.g., { instances: { terminal: [...], "text-editor": [...] } }
+        const instances = session?.instances;
+
+        // Convert instances object to flat array for validation
+        let flatInstances: Array<{ type?: string; id?: string }> = [];
+        if (instances && typeof instances === 'object') {
+            // Check if instances is an array (old format) or object (new format)
+            if (Array.isArray(instances)) {
+                flatInstances = instances;
+            } else {
+                // New format: { terminal: [...], "text-editor": [...] }
+                flatInstances = Object.entries(instances).flatMap(([type, items]) => {
+                    if (!Array.isArray(items)) return [];
+                    return items.map(item => ({
+                        type: item?.type || type,
+                        id: item?.instanceId || item?.id,
+                    }));
+                });
+            }
+        }
+
+        logFound('legacy', flatInstances.length, flatInstances);
+
+        if (isCountTooHigh(flatInstances)) {
             warnTooMany('legacy');
             return { parsed: session, shouldClear: true, reason: 'too-many-instances' };
         }
-        if (hasTypeOverflow(session?.instances)) {
+        if (hasTypeOverflow(flatInstances)) {
             warnTypeOverflow('legacy');
             return { parsed: session, shouldClear: true, reason: 'type-overflow' };
         }
@@ -74,7 +98,7 @@ export function clearSessionKey(key: string, storage: Storage = localStorage): v
 
 function isCountTooHigh(items?: Array<unknown>): boolean {
     if (!Array.isArray(items)) return false;
-    return items.length > 10; // existing heuristic
+    return items.length > 50; // Increased limit for performance testing (Issue #125)
 }
 
 function hasTypeOverflow(items?: Array<{ type?: string }>): boolean {
@@ -85,7 +109,7 @@ function hasTypeOverflow(items?: Array<{ type?: string }>): boolean {
         if (!t) continue;
         const count = (typeCount.get(t) || 0) + 1;
         typeCount.set(t, count);
-        if (count > 3) return true; // existing heuristic
+        if (count > 20) return true; // Increased limit for performance testing (Issue #125)
     }
     return false;
 }

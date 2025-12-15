@@ -56,7 +56,9 @@ function flushZIndexUpdates(): void {
     // Filter out detached elements during loop to prevent memory leaks
     // Avoid creating new array if all elements are connected
     for (let i = 0; i < pendingUpdates.length; i++) {
-        const { element, zIndex } = pendingUpdates[i];
+        const update = pendingUpdates[i];
+        if (!update) continue;
+        const { element, zIndex } = update;
         if (element.isConnected) {
             element.style.zIndex = zIndex.toString();
         }

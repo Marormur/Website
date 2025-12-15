@@ -243,11 +243,13 @@ import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
             }
 
             perf?.mark(`window:open:${windowId}:end`);
-            perf?.measure(
-                `window:open:${windowId}`,
-                `window:open:${windowId}:start`,
-                `window:open:${windowId}:end`
-            );
+            if (perf?.measure) {
+                perf.measure(
+                    `window:open:${windowId}`,
+                    `window:open:${windowId}:start`,
+                    `window:open:${windowId}:end`
+                );
+            }
         },
 
         close(windowId: string): void {
