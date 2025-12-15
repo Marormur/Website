@@ -35,10 +35,59 @@ type MaybeZIndexManager = Partial<ZIndexManager> & { [key: string]: unknown };
 type StackAware = {
     windowStack: string[];
     externalTopZ: number;
+    zIndexMap: Map<string, number>; // Cache for O(1) lookup
 };
 
 function clamp(z: number): number {
     return Math.min(z, MAX_WINDOW_Z_INDEX);
+}
+
+/**
+ * Batch DOM updates to prevent multiple reflows.
+ * Queues z-index updates and applies them in a single animation frame.
+ */
+let pendingUpdates: Array<{ element: HTMLElement; zIndex: number }> = [];
+let rafScheduled = false;
+let rafId: number | null = null;
+
+function flushZIndexUpdates(): void {
+    if (pendingUpdates.length === 0) return;
+    
+    // Filter out detached elements during loop to prevent memory leaks
+    // Avoid creating new array if all elements are connected
+    for (let i = 0; i < pendingUpdates.length; i++) {
+        const { element, zIndex } = pendingUpdates[i];
+        if (element.isConnected) {
+            element.style.zIndex = zIndex.toString();
+        }
+    }
+    
+    pendingUpdates = [];
+    rafScheduled = false;
+    rafId = null;
+}
+
+/**
+ * Force flush of pending z-index updates synchronously.
+ * Used when immediate DOM updates are required (e.g., in bringToFront).
+ */
+function flushZIndexUpdatesSync(): void {
+    if (rafScheduled && rafId !== null) {
+        // Cancel scheduled RAF to prevent duplicate execution
+        cancelAnimationFrame(rafId);
+        rafId = null;
+        rafScheduled = false;
+    }
+    flushZIndexUpdates();
+}
+
+function scheduleZIndexUpdate(element: HTMLElement, zIndex: number): void {
+    pendingUpdates.push({ element, zIndex });
+    
+    if (!rafScheduled) {
+        rafScheduled = true;
+        rafId = requestAnimationFrame(flushZIndexUpdates);
+    }
 }
 
 function applyZIndex(
@@ -58,9 +107,10 @@ function applyZIndex(
     const contentEl = element?.querySelector?.('.window-container') as HTMLElement | null;
     if (contentEl && !targets.includes(contentEl)) targets.push(contentEl);
 
+    // Batch updates for better performance
     targets.forEach(target => {
         if (!target) return;
-        target.style.zIndex = zIndex.toString();
+        scheduleZIndexUpdate(target, zIndex);
     });
 }
 
@@ -96,7 +146,7 @@ function getState(existing: MaybeZIndexManager | undefined): StackAware {
     // If an older manager exists, reuse its stack to preserve ordering during hot reloads
     const windowStack = existing?.getWindowStack?.() || [];
     const externalTopZ = BASE_Z_INDEX;
-    return { windowStack: [...windowStack], externalTopZ };
+    return { windowStack: [...windowStack], externalTopZ, zIndexMap: new Map() };
 }
 
 export function getZIndexManager(): ZIndexManager {
@@ -159,11 +209,28 @@ export function getZIndexManager(): ZIndexManager {
 
     const state = getState(existing);
 
-    const assignZIndices = (): void => {
+    /**
+     * Optimized z-index assignment using cached map.
+     * Only updates windows whose z-index actually changed (dirty tracking).
+     * @param immediate - If true, apply changes synchronously without RAF batching
+     */
+    const assignZIndices = (immediate = false): void => {
         state.windowStack.forEach((id, index) => {
-            const zIndex = clamp(BASE_Z_INDEX + index);
-            applyZIndex(id, zIndex);
+            const newZIndex = clamp(BASE_Z_INDEX + index);
+            const currentZIndex = state.zIndexMap.get(id);
+            
+            // Update cache and apply z-index if changed or not yet cached
+            if (currentZIndex !== newZIndex) {
+                state.zIndexMap.set(id, newZIndex);
+                applyZIndex(id, newZIndex);
+            }
         });
+        
+        // Flush immediately if requested (e.g., in bringToFront)
+        if (immediate) {
+            flushZIndexUpdatesSync();
+        }
+        
         // Keep topZIndex as "next available" to mirror legacy semantics
         const stackTopNext = BASE_Z_INDEX + state.windowStack.length;
         setTopZStore(Math.max(stackTopNext, state.externalTopZ));
@@ -176,13 +243,23 @@ export function getZIndexManager(): ZIndexManager {
             windowEl?: HTMLElement | null
         ): number {
             const currentIndex = state.windowStack.indexOf(windowId);
+            
+            // Early return if already on top
+            if (currentIndex === state.windowStack.length - 1) {
+                const currentZ = state.zIndexMap.get(windowId);
+                if (currentZ !== undefined) {
+                    return manager.getTopZIndex();
+                }
+            }
+            
             if (currentIndex !== -1) {
                 state.windowStack.splice(currentIndex, 1);
             }
             state.windowStack.push(windowId);
-            assignZIndices();
-            const assigned = clamp(BASE_Z_INDEX + state.windowStack.length - 1);
-            applyZIndex(windowId, assigned, modal, windowEl);
+            
+            // Reassign z-indices with immediate flush for synchronous DOM updates
+            assignZIndices(true);
+            
             return manager.getTopZIndex();
         },
 
@@ -190,6 +267,7 @@ export function getZIndexManager(): ZIndexManager {
             const idx = state.windowStack.indexOf(windowId);
             if (idx !== -1) {
                 state.windowStack.splice(idx, 1);
+                state.zIndexMap.delete(windowId); // Clean up cache
                 assignZIndices();
             }
         },
@@ -200,6 +278,7 @@ export function getZIndexManager(): ZIndexManager {
 
         restoreWindowStack(savedStack: string[]): void {
             state.windowStack.length = 0;
+            state.zIndexMap.clear(); // Clear cache on restore
             savedStack.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) state.windowStack.push(id);
@@ -209,6 +288,7 @@ export function getZIndexManager(): ZIndexManager {
 
         reset(): void {
             state.windowStack.length = 0;
+            state.zIndexMap.clear(); // Clear cache on reset
             state.externalTopZ = BASE_Z_INDEX;
             setTopZStore(BASE_Z_INDEX);
         },
