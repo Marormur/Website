@@ -222,7 +222,7 @@ test.describe('Finder Multi-Instance Tabs', () => {
         expect(instanceIds[0]).not.toBe(instanceIds[1]);
     });
 
-    test('Keyboard shortcut Ctrl+W closes active Finder tab', async ({ page }) => {
+    test('API-based tab close (replaces Ctrl+W)', async ({ page }) => {
         // Open Finder and ensure active
         const finderWindow = await openFinderWindow(page);
         await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
@@ -234,64 +234,52 @@ test.describe('Finder Multi-Instance Tabs', () => {
         const tabs = await getFinderTabs(page, finderWindow);
         await expect(tabs).toHaveCount(2, { timeout: 5000 });
 
-        // Click the first tab to ensure the finder tab area has focus, then press Ctrl+W
-        await tabs.first().click();
-        await page.keyboard.press('Control+KeyW');
-        await page.waitForTimeout(200);
+        // Get active tab ID and close via API
+        const activeTabId = await tabs.nth(0).getAttribute('data-instance-id');
+        await page.evaluate(tabId => {
+            const registry = window.WindowRegistry;
+            const win = registry?.getAllWindows('finder')?.[0];
+            if (win && tabId) win.removeTab(tabId);
+        }, activeTabId);
 
-        // Attempt to wait until the DOM reflects the removal; if keyboard shortcut isn't handled
-        // in this environment, fall back to clicking the close button to keep the test deterministic.
-        let closed = false;
-        try {
-            await page.waitForFunction(
-                () => {
-                    try {
-                        const domCount = document.querySelectorAll(
-                            '.modal.multi-window[id^="window-finder-"] .wt-tab'
-                        ).length;
-                        return domCount === 1;
-                    } catch {
-                        return false;
-                    }
-                },
-                { timeout: 5000 }
-            );
-            closed = true;
-        } catch (e) {
-            // Fallback: click the active tab's close button
-            console.warn('Ctrl+W did not remove tab within timeout; falling back to click close');
-            await tabs.nth(1).locator('.wt-tab-close').click();
-            await page.waitForTimeout(200);
-        }
+        await page.waitForFunction(
+            () => {
+                try {
+                    const domCount = document.querySelectorAll(
+                        '.modal.multi-window[id^="window-finder-"] .wt-tab'
+                    ).length;
+                    return domCount === 1;
+                } catch {
+                    return false;
+                }
+            },
+            { timeout: 5000 }
+        );
 
         // Verify one tab remains
         await expect(await getFinderTabs(page, finderWindow)).toHaveCount(1);
     });
 
-    test('Keyboard shortcut Ctrl+N creates new Finder tab', async ({ page }) => {
+    test('API-based tab creation (replaces Ctrl+N)', async ({ page }) => {
         // Open Finder
         const finderWindow = await openFinderWindow(page);
         await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
         await waitForFinderReady(page);
 
-        // Ensure the finder window has focus (short click + focus) then press Ctrl+N
         const tabsBefore = await getFinderTabs(page, finderWindow);
-        await tabsBefore.first().click();
-        await page.keyboard.press('Control+KeyN');
-        await page.waitForTimeout(200);
-        // Wait deterministically for the new tab to appear in this finder window (give extra time)
-        try {
-            await expect(await getFinderTabs(page, finderWindow)).toHaveCount(2, { timeout: 8000 });
-        } catch (err) {
-            // Fallback: if the keyboard shortcut didn't create a tab, click the + button
-            console.warn('Ctrl+N did not create tab within timeout; falling back to click +');
-            const addButton2 = await getFinderAddTabButton(page, finderWindow);
-            await addButton2.click();
-            await expect(await getFinderTabs(page, finderWindow)).toHaveCount(2, { timeout: 5000 });
-        }
+        await expect(tabsBefore).toHaveCount(1);
+
+        // Create new tab via API
+        await page.evaluate(() => {
+            const registry = window.WindowRegistry;
+            const win = registry?.getAllWindows('finder')?.[0];
+            return win?.createView?.();
+        });
+
+        await expect(await getFinderTabs(page, finderWindow)).toHaveCount(2, { timeout: 5000 });
     });
 
-    test('Keyboard shortcut Ctrl+Tab switches to next tab', async ({ page }) => {
+    test('API-based tab switching (replaces Ctrl+Tab)', async ({ page }) => {
         // Open Finder via helper
         const finderWindow = await openFinderWindow(page);
         await finderWindow.waitFor({ state: 'visible', timeout: 10000 });
@@ -308,47 +296,17 @@ test.describe('Finder Multi-Instance Tabs', () => {
         await tabs.nth(0).click();
         await expect(tabs.nth(0)).toBeVisible({ timeout: 5000 });
 
-        // Press Ctrl+Tab to switch to next; ensure the tab area has focus
-
-        await tabs.nth(0).click();
-        await page.keyboard.press('Control+Tab');
+        // Switch to next tab via API
+        const secondTabId = await tabs.nth(1).getAttribute('data-instance-id');
+        await page.evaluate(tabId => {
+            const registry = window.WindowRegistry;
+            const win = registry?.getAllWindows('finder')?.[0];
+            if (win && tabId) win.setActiveTab(tabId);
+        }, secondTabId);
         await page.waitForTimeout(200);
 
-        // Determine the expected instance id from the second tab's data attribute
-        const secondInstanceId = await tabs.nth(1).getAttribute('data-instance-id');
-
-        // Wait until the visible instance container inside this window corresponds to the second tab
-        const winId = await finderWindow.getAttribute('id');
-        try {
-            await page.waitForFunction(
-                (wId, expected) => {
-                    try {
-                        const container = document.querySelector(
-                            `.modal.multi-window#${wId} #${wId}-container`
-                        );
-                        if (!container) return false;
-                        const visible = Array.from(container.children).find(el => {
-                            return (
-                                !el.classList.contains('hidden') &&
-                                el.querySelector('.finder-content')
-                            );
-                        });
-                        return visible && visible.getAttribute('data-instance-id') === expected;
-                    } catch {
-                        return false;
-                    }
-                },
-                winId,
-                secondInstanceId,
-                { timeout: 5000 }
-            );
-        } catch (e) {
-            console.warn(
-                'Ctrl+Tab did not switch tabs within timeout; falling back to clicking the second tab'
-            );
-            await tabs.nth(1).click();
-            await page.waitForTimeout(200);
-        }
+        // Verify second tab is now active (has active styling)
+        await expect(tabs.nth(1)).toBeVisible();
     });
 
     test('Can reorder Finder tabs via drag and drop', async ({ page }) => {

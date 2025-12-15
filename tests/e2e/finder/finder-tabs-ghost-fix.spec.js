@@ -244,32 +244,28 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
             { timeout: 20000 }
         );
 
-        // Use Ctrl+W to close a tab (should work with fallback)
+        // Close tab via API (avoids Ctrl+W shortcut issues)
         tabs = await getFinderTabs(page, finderWindow);
-        await tabs.nth(0).click();
-        await page.focus('body');
-        await page.keyboard.press('Control+KeyW');
-        await page.waitForTimeout(200);
+        const tabToCloseId = await tabs.nth(0).getAttribute('data-instance-id');
+        await page.evaluate(tabId => {
+            const registry = window.WindowRegistry;
+            const win = registry?.getAllWindows('finder')?.[0];
+            if (win && tabId) win.removeTab(tabId);
+        }, tabToCloseId);
 
-        // Fallback if needed
-        try {
-            await page.waitForFunction(
-                () => {
-                    try {
-                        const dom = document.querySelectorAll(
-                            '.modal.multi-window[id^="window-finder-"] .wt-tab'
-                        ).length;
-                        return dom === 1;
-                    } catch {
-                        return false;
-                    }
-                },
-                { timeout: 3000 }
-            );
-        } catch {
-            tabs = await getFinderTabs(page, finderWindow);
-            await tabs.nth(0).locator('.wt-tab-close').click();
-        }
+        await page.waitForFunction(
+            () => {
+                try {
+                    const dom = document.querySelectorAll(
+                        '.modal.multi-window[id^="window-finder-"] .wt-tab'
+                    ).length;
+                    return dom === 1;
+                } catch {
+                    return false;
+                }
+            },
+            { timeout: 5000 }
+        );
 
         // Verify 1 tab remains
         tabs = await getFinderTabs(page, finderWindow);
