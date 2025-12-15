@@ -44,6 +44,25 @@ interface RecentFile {
     modified: string;
 }
 
+/**
+ * Helper type for GitHub repository data
+ */
+interface GitHubRepo {
+    name: string;
+    [key: string]: unknown;
+}
+
+/**
+ * Helper type for GitHub content item
+ */
+interface GitHubContentItem {
+    name: string;
+    type: string;
+    size?: number;
+    git_url?: string;
+    [key: string]: unknown;
+}
+
 type FinderSource = 'computer' | 'github' | 'recent' | 'starred';
 
 export class FinderView extends BaseTab {
@@ -1443,6 +1462,57 @@ export class FinderView extends BaseTab {
         return w.GitHubAPI || null;
     }
 
+    /**
+     * Transform GitHub repos into FileItem array
+     */
+    private _transformRepoItems(repos: GitHubRepo[]): FileItem[] {
+        return repos.map((repo) => ({
+            name: repo.name,
+            type: 'folder' as const,
+            icon: '📦',
+        }));
+    }
+
+    /**
+     * Transform GitHub content items into FileItem array
+     */
+    private _transformContentItems(contents: GitHubContentItem[]): FileItem[] {
+        return contents.map((it) => ({
+            name: it.name,
+            type: (it.type === 'dir' ? 'folder' : 'file') as 'folder' | 'file',
+            icon: it.type === 'dir' ? '📁' : '📄',
+            size: it.size ?? 0,
+            modified: undefined,
+        }));
+    }
+
+    /**
+     * Render repository items (handles mapping, filtering, sorting)
+     */
+    private _renderRepoItems(repos: GitHubRepo[]): void {
+        this.githubRepos = Array.isArray(repos) ? repos : [];
+        const items = this._transformRepoItems(this.githubRepos);
+        this.lastGithubItemsMap.clear();
+        items.forEach(it => this.lastGithubItemsMap.set(it.name, it));
+        
+        const filtered = this.filterItems(items, this.searchTerm);
+        this.renderListView(this.sortItems(filtered));
+    }
+
+    /**
+     * Render content items (handles mapping, filtering, sorting)
+     */
+    private _renderContentItems(contents: GitHubContentItem[]): void {
+        const items = this._transformContentItems(Array.isArray(contents) ? contents : []);
+        this.lastGithubItemsMap.clear();
+        (Array.isArray(contents) ? contents : []).forEach((it) =>
+            this.lastGithubItemsMap.set(it.name, it)
+        );
+        
+        const filtered = this.filterItems(items, this.searchTerm);
+        this.renderListView(this.sortItems(filtered));
+    }
+
     async renderGithubContent(): Promise<void> {
         if (!this.dom.content) return;
         const API = this.getAPI();
@@ -1458,163 +1528,92 @@ export class FinderView extends BaseTab {
             if (this.currentPath.length === 0) {
                 // Repos listing
                 const cacheKey = 'repos';
-                let repos: any;
 
-                // Check our internal cache first
+                // Check cache state using the new API
+                const cacheState = API.getCacheState ? API.getCacheState('repos') : 
+                    (API.isCacheStale('repos') ? 'stale' : (API.readCache('repos') ? 'fresh' : 'missing'));
+                
                 const cached = this._readGithubCache(cacheKey);
                 const apiCached = API.readCache('repos');
-                const isStale = API.isCacheStale('repos');
 
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
-                    repos = cached || apiCached;
-                    this.githubRepos = Array.isArray(repos) ? repos : [];
-                    const items: FileItem[] = this.githubRepos.map((repo: any) => ({
-                        name: repo.name,
-                        type: 'folder',
-                        icon: '📦',
-                    }));
-                    this.lastGithubItemsMap.clear();
-                    items.forEach(it => this.lastGithubItemsMap.set(it.name, it));
-
-                    const filtered = this.filterItems(items, this.searchTerm);
-                    this.renderListView(this.sortItems(filtered));
+                    const repos = cached || apiCached;
+                    this._renderRepoItems(repos as GitHubRepo[]);
 
                     // If data is stale, show refresh indicator and fetch in background
-                    if (isStale) {
+                    if (cacheState === 'stale') {
                         this._showRefreshIndicator();
                         API.fetchUserRepos(username)
-                            .then((freshRepos: any) => {
+                            .then((freshRepos: unknown) => {
                                 API.writeCache('repos', '', '', freshRepos);
                                 this._writeGithubCache(cacheKey, freshRepos);
-                                this.githubRepos = Array.isArray(freshRepos) ? freshRepos : [];
-                                const freshItems: FileItem[] = this.githubRepos.map((repo: any) => ({
-                                    name: repo.name,
-                                    type: 'folder',
-                                    icon: '📦',
-                                }));
-                                this.lastGithubItemsMap.clear();
-                                freshItems.forEach(it => this.lastGithubItemsMap.set(it.name, it));
-                                const freshFiltered = this.filterItems(freshItems, this.searchTerm);
-                                this.renderListView(this.sortItems(freshFiltered));
+                                this._renderRepoItems(freshRepos as GitHubRepo[]);
                                 this._hideRefreshIndicator();
                             })
-                            .catch((err: any) => {
+                            .catch((err: unknown) => {
                                 console.warn('[FinderView] Background refresh failed:', err);
                                 this._hideRefreshIndicator();
+                                // Show subtle error state in refresh indicator
+                                this._showRefreshError();
                             });
                     }
                 } else {
                     // No cache - show loading skeleton
                     this._showLoadingSkeleton();
 
-                    const fetchUserRepos = API.fetchUserRepos;
-                    repos = await fetchUserRepos(username);
+                    const repos = await API.fetchUserRepos(username);
                     API.writeCache('repos', '', '', repos);
                     this._writeGithubCache(cacheKey, repos);
-
-                    this.githubRepos = Array.isArray(repos) ? repos : [];
-                    const items: FileItem[] = this.githubRepos.map((repo: any) => ({
-                        name: repo.name,
-                        type: 'folder',
-                        icon: '📦',
-                    }));
-                    this.lastGithubItemsMap.clear();
-                    items.forEach(it => this.lastGithubItemsMap.set(it.name, it));
-
-                    const filtered = this.filterItems(items, this.searchTerm);
-                    this.renderListView(this.sortItems(filtered));
+                    this._renderRepoItems(repos as GitHubRepo[]);
                 }
             } else {
                 // Repo contents
                 const repo = this.currentPath[0];
                 const subPath = this.currentPath.slice(1).join('/');
                 const cacheKey = `${repo}/${subPath}`;
-                let contents: any;
 
-                // Check our internal cache first
+                // Check cache state
+                const cacheState = API.getCacheState ? API.getCacheState('contents', repo, subPath) :
+                    (API.isCacheStale('contents', repo, subPath) ? 'stale' : (API.readCache('contents', repo, subPath) ? 'fresh' : 'missing'));
+
                 const cached = this._readGithubCache(cacheKey);
                 const apiCached = API.readCache('contents', repo, subPath);
-                const isStale = API.isCacheStale('contents', repo, subPath);
 
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
-                    contents = cached || apiCached;
-                    const items: FileItem[] = (Array.isArray(contents) ? contents : []).map(
-                        (it: any) => ({
-                            name: it.name,
-                            type: it.type === 'dir' ? 'folder' : 'file',
-                            icon: it.type === 'dir' ? '📁' : '📄',
-                            size: it.size ?? 0,
-                            modified: it.git_url ? undefined : undefined,
-                        })
-                    );
-                    this.lastGithubItemsMap.clear();
-                    (Array.isArray(contents) ? contents : []).forEach((it: any) =>
-                        this.lastGithubItemsMap.set(it.name, it)
-                    );
-
-                    const filtered = this.filterItems(items, this.searchTerm);
-                    this.renderListView(this.sortItems(filtered));
+                    const contents = cached || apiCached;
+                    this._renderContentItems(contents as GitHubContentItem[]);
 
                     // If data is stale, show refresh indicator and fetch in background
-                    if (isStale) {
+                    if (cacheState === 'stale') {
                         this._showRefreshIndicator();
                         API.fetchRepoContents(username, repo, subPath)
-                            .then((freshContents: any) => {
+                            .then((freshContents: unknown) => {
                                 API.writeCache('contents', repo, subPath, freshContents);
                                 this._writeGithubCache(cacheKey, freshContents);
-                                const freshItems: FileItem[] = (Array.isArray(freshContents) ? freshContents : []).map(
-                                    (it: any) => ({
-                                        name: it.name,
-                                        type: it.type === 'dir' ? 'folder' : 'file',
-                                        icon: it.type === 'dir' ? '📁' : '📄',
-                                        size: it.size ?? 0,
-                                        modified: it.git_url ? undefined : undefined,
-                                    })
-                                );
-                                this.lastGithubItemsMap.clear();
-                                (Array.isArray(freshContents) ? freshContents : []).forEach((it: any) =>
-                                    this.lastGithubItemsMap.set(it.name, it)
-                                );
-                                const freshFiltered = this.filterItems(freshItems, this.searchTerm);
-                                this.renderListView(this.sortItems(freshFiltered));
+                                this._renderContentItems(freshContents as GitHubContentItem[]);
                                 this._hideRefreshIndicator();
                             })
-                            .catch((err: any) => {
+                            .catch((err: unknown) => {
                                 console.warn('[FinderView] Background refresh failed:', err);
                                 this._hideRefreshIndicator();
+                                this._showRefreshError();
                             });
                     }
                 } else {
                     // No cache - show loading skeleton
                     this._showLoadingSkeleton();
 
-                    contents = await API.fetchRepoContents(username, repo, subPath);
+                    const contents = await API.fetchRepoContents(username, repo, subPath);
                     API.writeCache('contents', repo, subPath, contents);
                     this._writeGithubCache(cacheKey, contents);
-
-                    const items: FileItem[] = (Array.isArray(contents) ? contents : []).map(
-                        (it: any) => ({
-                            name: it.name,
-                            type: it.type === 'dir' ? 'folder' : 'file',
-                            icon: it.type === 'dir' ? '📁' : '📄',
-                            size: it.size ?? 0,
-                            modified: it.git_url ? undefined : undefined,
-                        })
-                    );
-                    this.lastGithubItemsMap.clear();
-                    (Array.isArray(contents) ? contents : []).forEach((it: any) =>
-                        this.lastGithubItemsMap.set(it.name, it)
-                    );
-
-                    const filtered = this.filterItems(items, this.searchTerm);
-                    this.renderListView(this.sortItems(filtered));
+                    this._renderContentItems(contents as GitHubContentItem[]);
                 }
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             this.githubError = true;
-            this.githubErrorMessage = e?.message || 'Unbekannter Fehler';
+            this.githubErrorMessage = (e as Error)?.message || 'Unbekannter Fehler';
             this.dom.content.innerHTML = `<div class="p-4 text-sm text-red-500">GitHub Fehler: ${this.githubErrorMessage}</div>`;
         }
     }
@@ -1666,6 +1665,27 @@ export class FinderView extends BaseTab {
         const indicator = this.dom.toolbar.querySelector('.finder-refresh-indicator') as HTMLElement;
         if (indicator) {
             indicator.style.display = 'none';
+            // Clear any error state
+            indicator.classList.remove('text-red-500');
+            indicator.innerHTML = '<span class="animate-spin">⟳</span><span>Aktualisiere…</span>';
+        }
+    }
+
+    /**
+     * Show error state in refresh indicator
+     */
+    private _showRefreshError(): void {
+        if (!this.dom.toolbar) return;
+        const indicator = this.dom.toolbar.querySelector('.finder-refresh-indicator') as HTMLElement;
+        if (indicator) {
+            indicator.classList.add('text-red-500');
+            indicator.innerHTML = '<span>⚠</span><span>Aktualisierung fehlgeschlagen</span>';
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                if (indicator) {
+                    indicator.style.display = 'none';
+                }
+            }, 3000);
         }
     }
 

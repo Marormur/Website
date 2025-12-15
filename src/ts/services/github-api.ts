@@ -56,21 +56,42 @@ import { getJSON, setJSON, getString } from '../services/storage-utils.js';
     }
 
     /**
-     * Check if cached data is stale (beyond STALE_AGE but within MAX_AGE).
-     * Returns null if cache doesn't exist or is expired (beyond MAX_AGE).
+     * Cache state types for better clarity
      */
-    function isCacheStale(kind: 'repos' | 'contents', repo = '', subPath = ''): boolean {
+    type CacheState = 'missing' | 'fresh' | 'stale';
+
+    /**
+     * Check cache state: missing (doesn't exist or expired), fresh (recent), or stale (old but valid).
+     * - 'missing': cache doesn't exist or is expired (beyond MAX_AGE)
+     * - 'fresh': cache exists and is not stale (within STALE_AGE)
+     * - 'stale': cache exists and is stale (beyond STALE_AGE but within MAX_AGE)
+     */
+    function getCacheState(kind: 'repos' | 'contents', repo = '', subPath = ''): CacheState {
         const key = makeCacheKey(kind, repo, subPath);
         try {
             const parsed = getJSON<{ t: number; d: unknown } | null>(key, null);
             if (!parsed || typeof parsed !== 'object' || typeof parsed.t !== 'number') {
-                return false;
+                return 'missing';
             }
             const age = Date.now() - parsed.t;
-            return age > CACHE_STALE_AGE && age <= CACHE_MAX_AGE;
+            if (age > CACHE_MAX_AGE) {
+                return 'missing';
+            } else if (age > CACHE_STALE_AGE) {
+                return 'stale';
+            } else {
+                return 'fresh';
+            }
         } catch {
-            return false;
+            return 'missing';
         }
+    }
+
+    /**
+     * Legacy compatibility: returns true if cache is stale
+     * @deprecated Use getCacheState() for more detailed cache status
+     */
+    function isCacheStale(kind: 'repos' | 'contents', repo = '', subPath = ''): boolean {
+        return getCacheState(kind, repo, subPath) === 'stale';
     }
 
     function getHeaders(): Record<string, string> {
@@ -103,13 +124,13 @@ import { getJSON, setJSON, getString } from '../services/storage-utils.js';
      * Deduplicate concurrent requests for the same resource.
      * If a request is already pending, return the existing promise.
      */
-    function deduplicatedFetch<T>(key: string, fetchFn: () => Promise<T>): Promise<T> {
+    function deduplicatedFetch<T>(key: string, fetchFunction: () => Promise<T>): Promise<T> {
         const existing = pendingRequests.get(key);
         if (existing) {
             return existing as Promise<T>;
         }
 
-        const promise = fetchFn()
+        const promise = fetchFunction()
             .finally(() => {
                 pendingRequests.delete(key);
             });
@@ -190,6 +211,7 @@ import { getJSON, setJSON, getString } from '../services/storage-utils.js';
             repo?: string,
             subPath?: string
         ) => T | null;
+        getCacheState: (kind: 'repos' | 'contents', repo?: string, subPath?: string) => CacheState;
         isCacheStale: (kind: 'repos' | 'contents', repo?: string, subPath?: string) => boolean;
         writeCache: (
             kind: 'repos' | 'contents',
@@ -230,6 +252,7 @@ import { getJSON, setJSON, getString } from '../services/storage-utils.js';
     (window as unknown as { GitHubAPI: GitHubAPINamespace }).GitHubAPI = {
         getHeaders,
         readCache,
+        getCacheState,
         isCacheStale,
         writeCache,
         fetchJSON,
