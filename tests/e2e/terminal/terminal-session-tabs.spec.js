@@ -31,18 +31,18 @@ test.describe('Terminal Session Tabs', () => {
         expect(sessionCount).toBe(1);
     });
 
-    // Skipped: Browser/OS often intercepts Ctrl+T (new tab) in CI → flaky
-    test.skip('can create new session tab with Ctrl+T', async ({ page }) => {
-        // Create new tab
-        await page.keyboard.press('Control+KeyT');
+    // Uses App API instead of keyboard shortcut (which browser intercepts)
+    // See Issue #90: https://github.com/Marormur/Website/issues/90
+    test('can create new session tab via TerminalInstanceManager API', async ({ page }) => {
+        // Create new session via app API instead of Ctrl+T
+        const newSessionId = await page.evaluate(() => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (!win || typeof win.createSession !== 'function') return null;
+            const session = win.createSession();
+            return session?.sessionId || null;
+        });
 
-        await page.waitForFunction(
-            () => {
-                const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-                return wins[0]?.sessions?.length === 2;
-            },
-            { timeout: 5000 }
-        );
+        expect(newSessionId).not.toBeNull();
 
         const sessionCount = await page.evaluate(() => {
             const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
@@ -51,62 +51,68 @@ test.describe('Terminal Session Tabs', () => {
         expect(sessionCount).toBe(2);
     });
 
-    // Skipped: Ctrl+Tab focus is captured by browser/OS in headless UI
-    test.skip('can switch between tabs with Ctrl+Tab', async ({ page }) => {
-        // Create second tab
-        await page.keyboard.press('Control+KeyT');
-        await page.waitForFunction(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-            return wins[0]?.sessions?.length === 2;
+    // Uses App API instead of keyboard shortcut (which browser intercepts)
+    // See Issue #90: https://github.com/Marormur/Website/issues/90
+    test('can switch between tabs via TerminalWindow API', async ({ page }) => {
+        // Create second session via app API
+        await page.evaluate(() => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (win && typeof win.createSession === 'function') {
+                win.createSession();
+            }
         });
 
         // Get initial active session
         const firstActive = await page.evaluate(() => {
             const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
-            return win?.activeSession?.sessionId || null;
+            return win?.activeSession?.id || null;
         });
 
-        // Switch tabs
-        await page.keyboard.press('Control+Tab');
+        // Switch tabs via app API (use BaseWindow's setActiveTab method)
+        const switched = await page.evaluate(firstId => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (!win || !win.sessions) return false;
+            const nextSession = win.sessions.find(s => s.id !== firstId);
+            if (nextSession && typeof win.setActiveTab === 'function') {
+                win.setActiveTab(nextSession.id);
+                return true;
+            }
+            return false;
+        }, firstActive);
 
-        // Wait for active session to change
-        await page.waitForFunction(
-            prevActive => {
-                const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
-                const current = win?.activeSession?.sessionId || null;
-                return current !== prevActive;
-            },
-            firstActive,
-            { timeout: 5000 }
-        );
+        expect(switched).toBe(true);
 
         const secondActive = await page.evaluate(() => {
             const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
-            return win?.activeSession?.sessionId || null;
+            return win?.activeSession?.id || null;
         });
 
         expect(secondActive).not.toBe(firstActive);
     });
 
-    // Skipped: Ctrl+W is intercepted by browser (closes page)
-    test.skip('can close tab with Ctrl+W', async ({ page }) => {
-        // Create second tab
-        await page.keyboard.press('Control+KeyT');
-        await page.waitForFunction(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-            return wins[0]?.sessions?.length === 2;
+    // Uses App API instead of keyboard shortcut (which browser intercepts)
+    // See Issue #90: https://github.com/Marormur/Website/issues/90
+    test('can close tab via TerminalWindow API', async ({ page }) => {
+        // Create second session
+        const sessionIds = await page.evaluate(() => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (win && typeof win.createSession === 'function') {
+                win.createSession();
+            }
+            return win?.sessions?.map(s => s.id) || [];
         });
 
-        // Close active tab
-        await page.keyboard.press('Control+KeyW');
+        expect(sessionIds.length).toBe(2);
 
-        await page.waitForFunction(
-            () => {
-                const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-                return wins[0]?.sessions?.length === 1;
-            },
-            { timeout: 5000 }
-        );
+        // Close the second session via BaseWindow's closeTab API
+        const closed = await page.evaluate(sessionId => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (!win || typeof win.closeTab !== 'function') return false;
+            win.closeTab(sessionId);
+            return true;
+        }, sessionIds[1]);
+
+        expect(closed).toBe(true);
 
         const sessionCount = await page.evaluate(() => {
             const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
@@ -115,11 +121,21 @@ test.describe('Terminal Session Tabs', () => {
         expect(sessionCount).toBe(1);
     });
 
-    // Skipped: Relies on Ctrl+W shortcut
-    test.skip('closing last tab closes the window', async ({ page }) => {
-        // Only one session exists - close it
-        await page.keyboard.press('Control+KeyW');
+    // Uses App API instead of keyboard shortcut
+    // See Issue #90: https://github.com/Marormur/Website/issues/90
+    test('closing last tab via API closes the window', async ({ page }) => {
+        // Only one session exists - close it via API
+        const closed = await page.evaluate(() => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (!win || !win.sessions?.[0]) return false;
+            if (typeof win.closeTab !== 'function') return false;
+            win.closeTab(win.sessions[0].id);
+            return true;
+        });
 
+        expect(closed).toBe(true);
+
+        // Wait for window to be closed
         await page.waitForFunction(
             () => {
                 return window.WindowRegistry?.getAllWindows('terminal')?.length === 0;
@@ -133,13 +149,15 @@ test.describe('Terminal Session Tabs', () => {
         expect(windowCount).toBe(0);
     });
 
-    // Skipped: Depends on Ctrl+T to spawn second tab
-    test.skip('each session has independent VFS working directory', async ({ page }) => {
-        // Create second tab
-        await page.keyboard.press('Control+KeyT');
-        await page.waitForFunction(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-            return wins[0]?.sessions?.length === 2;
+    // Uses App API instead of keyboard shortcut
+    // See Issue #90: https://github.com/Marormur/Website/issues/90
+    test('each session has independent VFS working directory', async ({ page }) => {
+        // Create second session via app API
+        await page.evaluate(() => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (win && typeof win.createSession === 'function') {
+                win.createSession();
+            }
         });
 
         // Get both session directories
@@ -155,41 +173,57 @@ test.describe('Terminal Session Tabs', () => {
         expect(cwds[1]).toBe('/home/marvin');
     });
 
-    // Skipped: Depends on Ctrl+T for multiple tabs
-    test.skip('tab drag-and-drop reorders sessions', async ({ page }) => {
-        // Create 3 tabs
-        await page.keyboard.press('Control+KeyT');
-        await page.keyboard.press('Control+KeyT');
-
-        await page.waitForFunction(
-            () => {
-                const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-                return wins[0]?.sessions?.length === 3;
-            },
-            { timeout: 5000 }
-        );
+    // Uses App API instead of keyboard shortcut
+    // See Issue #90: https://github.com/Marormur/Website/issues/90
+    test('tab drag-and-drop reorders sessions', async ({ page }) => {
+        // Create 3 sessions via app API
+        await page.evaluate(() => {
+            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            if (win && typeof win.createSession === 'function') {
+                win.createSession();
+                win.createSession();
+            }
+        });
 
         // Get initial order
         const initialOrder = await page.evaluate(() => {
             const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
-            return win?.sessions?.map(s => s.sessionId) || [];
+            return win?.sessions?.map(s => s.id) || [];
         });
 
-        // Simulate drag third tab to first position via WindowTabs
-        await page.evaluate(() => {
+        expect(initialOrder.length).toBe(3);
+
+        // Simulate drag third session to first position via app API
+        const reordered = await page.evaluate(initial => {
             const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
-            if (win && win.windowTabs) {
-                // Move session at index 2 to index 0
-                const session = win.sessions[2];
-                win.sessions.splice(2, 1);
-                win.sessions.unshift(session);
-                win.windowTabs.render();
+            if (!win || !win.sessions) return false;
+            // Use reorderTab if available, otherwise manipulate directly
+            if (typeof win.reorderTab === 'function') {
+                win.reorderTab(initial[2], 0);
+                return true;
             }
-        });
+            // Fallback: manually reorder if no dedicated API
+            const sessions = Array.from(win.sessions);
+            const session = sessions[2];
+            sessions.splice(2, 1);
+            sessions.unshift(session);
+
+            // Rebuild the tabs map in correct order
+            win.tabs.clear();
+            sessions.forEach(s => {
+                win.tabs.set(s.id, s);
+            });
+
+            // Re-render tabs
+            if (win._renderTabs) win._renderTabs();
+            return true;
+        }, initialOrder);
+
+        expect(reordered).toBe(true);
 
         const newOrder = await page.evaluate(() => {
             const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
-            return win?.sessions?.map(s => s.sessionId) || [];
+            return win?.sessions?.map(s => s.id) || [];
         });
 
         expect(newOrder.length).toBe(3);
