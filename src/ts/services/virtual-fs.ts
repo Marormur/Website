@@ -13,7 +13,303 @@
  * - Event system for change notifications
  */
 
-import { getJSON, setJSON } from './storage-utils.js';
+import { getJSON, setJSON, remove } from './storage-utils.js';
+
+// Lightweight storage adapter abstraction to support different persistence backends
+interface VfsStorageAdapter {
+    name: string;
+    load(): Promise<FileSystemRoot | null>;
+    save(root: FileSystemRoot): Promise<void>;
+    clear?(): Promise<void>;
+    // Optional: persist only file content updates
+    saveDeltaFiles?(updates: Array<{ path: string; file: FileItem }>): Promise<void>;
+    // Optional: overlay file content into a loaded root (used to hydrate after delta-saves)
+    overlayFilesOnLoad?(root: FileSystemRoot): Promise<void>;
+    // Optional: delete delta records for a given path/prefix
+    deleteDeltaForPrefix?(prefix: string): Promise<void>;
+    // Optional: rename delta record keys from oldPrefix to newPrefix
+    renameDeltaPrefix?(oldPrefix: string, newPrefix: string): Promise<void>;
+    // Optional: clear all delta records (after full save/import/reset)
+    clearAllDeltas?(): Promise<void>;
+}
+
+// LocalStorage-based adapter (backward compatible, used as fallback)
+class LocalStorageAdapter implements VfsStorageAdapter {
+    public readonly name = 'localStorage';
+    constructor(private readonly key: string) {}
+    async load(): Promise<FileSystemRoot | null> {
+        try {
+            return getJSON<FileSystemRoot | null>(this.key, null);
+        } catch {
+            return null;
+        }
+    }
+    async save(root: FileSystemRoot): Promise<void> {
+        setJSON(this.key, root);
+    }
+    async clear(): Promise<void> {
+        remove(this.key);
+    }
+}
+
+// IndexedDB-based adapter for large and non-blocking persistence
+class IndexedDbAdapter implements VfsStorageAdapter {
+    public readonly name = 'IndexedDB';
+    private dbPromise: Promise<IDBDatabase> | null = null;
+    private static readonly DB_NAME = 'VirtualFS';
+    private static readonly STORE = 'fs';
+    private static readonly FILES = 'files';
+
+    private openDb(): Promise<IDBDatabase> {
+        if (this.dbPromise) return this.dbPromise;
+        this.dbPromise = new Promise((resolve, reject) => {
+            try {
+                const req = indexedDB.open(IndexedDbAdapter.DB_NAME, 2);
+                req.onupgradeneeded = () => {
+                    const db = req.result;
+                    if (!db.objectStoreNames.contains(IndexedDbAdapter.STORE)) {
+                        db.createObjectStore(IndexedDbAdapter.STORE);
+                    }
+                    if (!db.objectStoreNames.contains(IndexedDbAdapter.FILES)) {
+                        db.createObjectStore(IndexedDbAdapter.FILES);
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+                req.onblocked = () => {
+                    // Continue to wait; consumer may retry later
+                    console.warn('[VirtualFS][IDB] open blocked');
+                };
+            } catch (err) {
+                reject(err);
+            }
+        });
+        return this.dbPromise;
+    }
+
+    private async withStore<T>(
+        mode: IDBTransactionMode,
+        fn: (store: IDBObjectStore) => void | T | Promise<T>
+    ): Promise<T> {
+        const db = await this.openDb();
+        return await new Promise<T>((resolve, reject) => {
+            const tx = db.transaction(IndexedDbAdapter.STORE, mode);
+            const store = tx.objectStore(IndexedDbAdapter.STORE);
+            let out: T | undefined;
+            try {
+                const maybe = fn(store);
+                if (maybe instanceof Promise) {
+                    maybe
+                        .then(value => {
+                            out = value as T;
+                        })
+                        .catch(reject);
+                } else {
+                    out = maybe as T;
+                }
+            } catch (err) {
+                reject(err);
+                return;
+            }
+            tx.oncomplete = () => resolve(out as T);
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error);
+        });
+    }
+
+    async load(): Promise<FileSystemRoot | null> {
+        try {
+            return await this.withStore<FileSystemRoot | null>('readonly', store => {
+                return new Promise<FileSystemRoot | null>((resolve, reject) => {
+                    const req = store.get('root');
+                    req.onsuccess = () => resolve((req.result as FileSystemRoot) || null);
+                    req.onerror = () => reject(req.error);
+                });
+            });
+        } catch (err) {
+            console.warn('[VirtualFS][IDB] load failed:', err);
+            return null;
+        }
+    }
+
+    async save(root: FileSystemRoot): Promise<void> {
+        try {
+            await this.withStore<void>('readwrite', store => {
+                return new Promise<void>((resolve, reject) => {
+                    const req = store.put(root, 'root');
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+            });
+        } catch (err) {
+            console.warn('[VirtualFS][IDB] save failed:', err);
+            throw err;
+        }
+    }
+
+    async clear(): Promise<void> {
+        try {
+            await this.withStore<void>('readwrite', store => {
+                return new Promise<void>((resolve, reject) => {
+                    const req = store.clear();
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+            });
+            // Also clear delta files store
+            const db = await this.openDb();
+            await new Promise<void>((resolve, reject) => {
+                const tx = db.transaction(IndexedDbAdapter.FILES, 'readwrite');
+                const st = tx.objectStore(IndexedDbAdapter.FILES);
+                const req = st.clear();
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+                tx.onabort = () => reject(tx.error);
+            });
+        } catch (err) {
+            console.warn('[VirtualFS][IDB] clear failed:', err);
+        }
+    }
+
+    async deleteDeltaForPrefix(prefix: string): Promise<void> {
+        const db = await this.openDb();
+        const norm = prefix.replace(/\/+$/, '');
+        await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(IndexedDbAdapter.FILES, 'readwrite');
+            const store = tx.objectStore(IndexedDbAdapter.FILES);
+            const req = store.openCursor();
+            req.onsuccess = () => {
+                const cursor = req.result as IDBCursorWithValue | null;
+                if (!cursor) return; // done
+                const key = String(cursor.key);
+                if (key === norm || key.startsWith(norm + '/')) {
+                    cursor.delete();
+                }
+                cursor.continue();
+            };
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error);
+        });
+    }
+
+    async renameDeltaPrefix(oldPrefix: string, newPrefix: string): Promise<void> {
+        const db = await this.openDb();
+        const oldNorm = oldPrefix.replace(/\/+$/, '');
+        const newNorm = newPrefix.replace(/\/+$/, '');
+        await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(IndexedDbAdapter.FILES, 'readwrite');
+            const store = tx.objectStore(IndexedDbAdapter.FILES);
+            const req = store.openCursor();
+            req.onsuccess = () => {
+                const cursor = req.result as IDBCursorWithValue | null;
+                if (!cursor) return; // done
+                const key = String(cursor.key);
+                if (key === oldNorm || key.startsWith(oldNorm + '/')) {
+                    const suffix = key.substring(oldNorm.length);
+                    const newKey = newNorm + suffix;
+                    const value = cursor.value; // { content, size, modified }
+                    // Perform upsert under new key and delete old
+                    const putReq = store.put(value, newKey);
+                    putReq.onsuccess = () => cursor.delete();
+                }
+                cursor.continue();
+            };
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error);
+        });
+    }
+
+    async clearAllDeltas(): Promise<void> {
+        const db = await this.openDb();
+        await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(IndexedDbAdapter.FILES, 'readwrite');
+            const st = tx.objectStore(IndexedDbAdapter.FILES);
+            const req = st.clear();
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+            tx.onabort = () => reject(tx.error);
+        });
+    }
+
+    async saveDeltaFiles(updates: Array<{ path: string; file: FileItem }>): Promise<void> {
+        if (!updates || updates.length === 0) return;
+        const db = await this.openDb();
+        await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(IndexedDbAdapter.FILES, 'readwrite');
+            const store = tx.objectStore(IndexedDbAdapter.FILES);
+            for (const u of updates) {
+                try {
+                    const record = {
+                        content: u.file.content,
+                        size: u.file.size,
+                        modified: u.file.modified,
+                    } as const;
+                    store.put(record as unknown as object, u.path as unknown as IDBValidKey);
+                    // Note: We use out-of-line keys via the second parameter
+                } catch (e) {
+                    console.warn('[VirtualFS][IDB] delta put failed for', u.path, e);
+                }
+            }
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error);
+        });
+    }
+
+    async overlayFilesOnLoad(root: FileSystemRoot): Promise<void> {
+        const db = await this.openDb();
+        await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(IndexedDbAdapter.FILES, 'readonly');
+            const store = tx.objectStore(IndexedDbAdapter.FILES);
+            const req = store.openCursor();
+            req.onsuccess = () => {
+                const cursor = req.result as IDBCursorWithValue | null;
+                if (!cursor) return; // iteration finished
+                const path = String(cursor.key);
+                const rec = cursor.value as { content?: string; size?: number; modified?: string };
+                try {
+                    const parts = path.split('/').filter(Boolean);
+                    let current: Record<string, FSItem> | null = (root['/'] as FolderItem).children;
+                    let found: FSItem | null = null;
+                    for (const part of parts) {
+                        if (!current) {
+                            found = null;
+                            break;
+                        }
+                        const next: FSItem | undefined = current[part];
+                        if (!next) {
+                            found = null;
+                            break;
+                        }
+                        found = next;
+                        current = next.type === 'folder' ? next.children : null;
+                    }
+                    if (found && found.type === 'file') {
+                        const nodeModified = Date.parse(found.modified || '0');
+                        const recModified = Date.parse(String(rec.modified || '0'));
+                        if (
+                            !Number.isNaN(recModified) &&
+                            (Number.isNaN(nodeModified) || recModified >= nodeModified)
+                        ) {
+                            if (typeof rec.content === 'string') found.content = rec.content || '';
+                            if (typeof rec.size === 'number') found.size = rec.size || 0;
+                            if (typeof rec.modified === 'string')
+                                found.modified = rec.modified || found.modified;
+                        }
+                    }
+                } catch {
+                    // ignore individual overlay errors
+                }
+                cursor.continue();
+            };
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error);
+        });
+    }
+}
 
 // ============================================================================
 // Type Definitions
@@ -61,6 +357,12 @@ class VirtualFileSystemManager {
     private readonly STORAGE_KEY = 'virtual-file-system';
     private readonly AUTO_SAVE_DELAY = 1000; // 1 second debounce
     private saveTimeout: number | null = null;
+    private storage: VfsStorageAdapter;
+    private readonly MIGRATION_FLAG = 'vfs:idb:migrated';
+    // Delta save support
+    private dirtyPaths: Set<string> = new Set();
+    private structureDirty = false;
+    private readonly DELTA_THRESHOLD = 10;
 
     private getRootContainer(): Record<string, FSItem> {
         return this.root['/'].children;
@@ -68,7 +370,10 @@ class VirtualFileSystemManager {
 
     constructor() {
         this.root = this.createDefaultStructure();
-        this.load();
+        // Choose best available storage adapter (IndexedDB preferred)
+        this.storage = this.selectStorageAdapter();
+        // Start async load; default structure is available immediately
+        void this.load();
     }
 
     // ========================================================================
@@ -269,7 +574,7 @@ class VirtualFileSystemManager {
     // Persistence
     // ========================================================================
 
-    load(): void {
+    async load(): Promise<void> {
         const perf = (
             window as {
                 PerfMonitor?: {
@@ -281,11 +586,45 @@ class VirtualFileSystemManager {
         perf?.mark('vfs:load:start');
 
         try {
-            const stored = getJSON<FileSystemRoot | null>(this.STORAGE_KEY, null);
+            const adapterName = this.storage.name;
+            perf?.mark(`vfs:load:${adapterName}:start`);
+            let stored = await this.storage.load();
+            perf?.mark(`vfs:load:${adapterName}:end`);
+            perf?.measure(
+                `vfs:${adapterName}:load-duration`,
+                `vfs:load:${adapterName}:start`,
+                `vfs:load:${adapterName}:end`
+            );
+
+            if (!stored && adapterName === 'IndexedDB') {
+                // Attempt one-time migration from localStorage
+                const migrated = getJSON<string | null>(this.MIGRATION_FLAG, null);
+                const lsData = getJSON<FileSystemRoot | null>(this.STORAGE_KEY, null);
+                if (!migrated && lsData && Object.keys(lsData).length > 0) {
+                    console.log('[VirtualFS] Migrating localStorage -> IndexedDB');
+                    stored = lsData;
+                    try {
+                        await this.storage.save(lsData);
+                        setJSON(this.MIGRATION_FLAG, '1');
+                        // Optional: clear legacy to free space
+                        remove(this.STORAGE_KEY);
+                    } catch (err) {
+                        console.warn('[VirtualFS] Migration save failed:', err);
+                    }
+                }
+            }
 
             if (stored && Object.keys(stored).length > 0) {
+                // Overlay delta file contents if supported
+                if (typeof this.storage.overlayFilesOnLoad === 'function') {
+                    try {
+                        await this.storage.overlayFilesOnLoad(stored);
+                    } catch (e) {
+                        console.warn('[VirtualFS] overlayFilesOnLoad failed:', e);
+                    }
+                }
                 this.root = stored;
-                console.log('[VirtualFS] Loaded from localStorage');
+                console.log(`[VirtualFS] Loaded from ${adapterName}`);
             } else {
                 // Use default structure if no valid data in storage
                 this.root = this.createDefaultStructure();
@@ -312,7 +651,7 @@ class VirtualFileSystemManager {
         }, this.AUTO_SAVE_DELAY);
     }
 
-    private save(): void {
+    private async save(): Promise<void> {
         const perf = (
             window as {
                 PerfMonitor?: {
@@ -324,14 +663,60 @@ class VirtualFileSystemManager {
         perf?.mark('vfs:save:start');
 
         try {
-            setJSON(this.STORAGE_KEY, this.root);
-            console.log('[VirtualFS] Saved to localStorage');
+            const adapterName = this.storage.name;
+            const canDelta = typeof this.storage.saveDeltaFiles === 'function';
+            const useDelta =
+                canDelta &&
+                !this.structureDirty &&
+                this.dirtyPaths.size > 0 &&
+                this.dirtyPaths.size < this.DELTA_THRESHOLD;
+
+            if (useDelta) {
+                perf?.mark(`vfs:delta-save:${adapterName}:start`);
+                const updates: Array<{ path: string; file: FileItem }> = [];
+                for (const p of this.dirtyPaths) {
+                    const f = this.getFile(p);
+                    if (f) updates.push({ path: this.normalizePath(p), file: f });
+                }
+                await (
+                    this.storage.saveDeltaFiles as NonNullable<VfsStorageAdapter['saveDeltaFiles']>
+                )(updates);
+                perf?.mark(`vfs:delta-save:${adapterName}:end`);
+                perf?.measure(
+                    `vfs:${adapterName}:delta-save-duration`,
+                    `vfs:delta-save:${adapterName}:start`,
+                    `vfs:delta-save:${adapterName}:end`
+                );
+                console.log(`[VirtualFS] Delta-saved ${updates.length} file(s) to ${adapterName}`);
+            } else {
+                perf?.mark(`vfs:save:${adapterName}:start`);
+                await this.storage.save(this.root);
+                perf?.mark(`vfs:save:${adapterName}:end`);
+                perf?.measure(
+                    `vfs:${adapterName}:save-duration`,
+                    `vfs:save:${adapterName}:start`,
+                    `vfs:save:${adapterName}:end`
+                );
+                console.log(`[VirtualFS] Saved to ${adapterName}`);
+
+                // After a successful full save, clear all delta entries (hygiene)
+                if (typeof this.storage.clearAllDeltas === 'function') {
+                    try {
+                        await this.storage.clearAllDeltas();
+                    } catch (err) {
+                        console.warn('[VirtualFS] clearAllDeltas failed:', err);
+                    }
+                }
+            }
         } catch (error) {
             console.error('[VirtualFS] Failed to save:', error);
         }
 
         perf?.mark('vfs:save:end');
         perf?.measure('vfs:save-duration', 'vfs:save:start', 'vfs:save:end');
+        // Reset dirty markers
+        this.dirtyPaths.clear();
+        this.structureDirty = false;
     }
 
     forceSave(): void {
@@ -339,7 +724,19 @@ class VirtualFileSystemManager {
             window.clearTimeout(this.saveTimeout);
             this.saveTimeout = null;
         }
-        this.save();
+        void this.save();
+    }
+
+    /**
+     * Force a synchronous-to-call, asynchronous persistence of the current filesystem state.
+     * Useful for tests or shutdown hooks that want to ensure data is flushed to disk.
+     */
+    async forceSaveAsync(): Promise<void> {
+        if (this.saveTimeout !== null) {
+            window.clearTimeout(this.saveTimeout);
+            this.saveTimeout = null;
+        }
+        await this.save();
     }
 
     // ========================================================================
@@ -496,6 +893,7 @@ class VirtualFileSystemManager {
             parent.modified = now;
         }
 
+        this.structureDirty = true;
         this.scheduleSave();
         this.emit({ type: 'create', path: this.normalizePath(path), item: file });
 
@@ -535,6 +933,7 @@ class VirtualFileSystemManager {
             parent.modified = now;
         }
 
+        this.structureDirty = true;
         this.scheduleSave();
         this.emit({ type: 'create', path: this.normalizePath(path), item: folder });
 
@@ -553,6 +952,8 @@ class VirtualFileSystemManager {
         file.size = content.length;
         file.modified = new Date().toISOString();
 
+        // mark for delta save
+        this.dirtyPaths.add(this.normalizePath(path));
         this.scheduleSave();
         this.emit({ type: 'update', path: this.normalizePath(path), item: file });
 
@@ -584,8 +985,20 @@ class VirtualFileSystemManager {
             parent.modified = new Date().toISOString();
         }
 
+        this.structureDirty = true;
+        // Clean delta records for this path (file or subtree)
+        const norm = this.normalizePath(path);
+        if (typeof this.storage.deleteDeltaForPrefix === 'function') {
+            try {
+                const prefix = item.type === 'folder' ? norm + '/' : norm;
+                void this.storage.deleteDeltaForPrefix(prefix);
+            } catch (e) {
+                console.warn('[VirtualFS] deleteDeltaForPrefix failed:', e);
+            }
+        }
+        this.structureDirty = true;
         this.scheduleSave();
-        this.emit({ type: 'delete', path: this.normalizePath(path), item });
+        this.emit({ type: 'delete', path: norm, item });
 
         return true;
     }
@@ -625,11 +1038,31 @@ class VirtualFileSystemManager {
 
         const newPath = [...parentPath, newName].join('/');
 
+        // Maintain delta records: rename prefix if supported; else delete old prefix
+        const oldNorm = this.normalizePath(oldPath);
+        const isFolder = item.type === 'folder';
+        const oldPrefix = isFolder ? oldNorm + '/' : oldNorm;
+        const newPrefix = isFolder ? newPath + '/' : newPath;
+        if (typeof this.storage.renameDeltaPrefix === 'function') {
+            try {
+                void this.storage.renameDeltaPrefix(oldPrefix, newPrefix);
+            } catch (e) {
+                console.warn('[VirtualFS] renameDeltaPrefix failed:', e);
+            }
+        } else if (typeof this.storage.deleteDeltaForPrefix === 'function') {
+            try {
+                void this.storage.deleteDeltaForPrefix(oldPrefix);
+            } catch (e) {
+                console.warn('[VirtualFS] deleteDeltaForPrefix (fallback) failed:', e);
+            }
+        }
+
+        this.structureDirty = true;
         this.scheduleSave();
         this.emit({
             type: 'rename',
             path: newPath,
-            oldPath: this.normalizePath(oldPath),
+            oldPath: oldNorm,
             item,
         });
 
@@ -664,7 +1097,8 @@ class VirtualFileSystemManager {
 
     reset(): void {
         this.root = this.createDefaultStructure();
-        this.save();
+        this.structureDirty = true;
+        void this.save();
         console.log('[VirtualFS] Reset to defaults');
     }
 
@@ -680,7 +1114,15 @@ class VirtualFileSystemManager {
             }
 
             this.root = data;
-            this.save();
+            if (typeof this.storage.clearAllDeltas === 'function') {
+                void this.storage
+                    .clearAllDeltas()
+                    .catch(e =>
+                        console.warn('[VirtualFS] clearAllDeltas during import failed:', e)
+                    );
+            }
+            this.structureDirty = true;
+            void this.save();
             console.log('[VirtualFS] Imported successfully');
 
             return true;
@@ -688,6 +1130,19 @@ class VirtualFileSystemManager {
             console.error('[VirtualFS] Import failed:', error);
             return false;
         }
+    }
+
+    private selectStorageAdapter(): VfsStorageAdapter {
+        // Prefer IndexedDB when available
+        try {
+            if (typeof indexedDB !== 'undefined') {
+                return new IndexedDbAdapter();
+            }
+        } catch {
+            // ignore
+        }
+        // Fallback to localStorage
+        return new LocalStorageAdapter(this.STORAGE_KEY);
     }
 }
 
@@ -700,5 +1155,5 @@ export default VirtualFS;
 
 // Expose globally for debugging
 if (typeof window !== 'undefined') {
-    (window as any).VirtualFS = VirtualFS;
+    (window as unknown as Record<string, unknown>)['VirtualFS'] = VirtualFS as unknown as object;
 }

@@ -407,6 +407,67 @@
       "label": "Run specific Playwright test: terminal-autocomplete",
       "type": "shell",
       "command": "npm run test:e2e -- tests/e2e/terminal/terminal-autocomplete.spec.js"
+    },
+    {
+      "label": "Quick Check (typecheck+lint)",
+      "type": "shell",
+      "command": "npm run typecheck ; npm run lint",
+      "group": "build"
+    },
+    {
+      "label": "Quick Check (typecheck+lint) 2",
+      "type": "shell",
+      "command": "npm run typecheck ; npm run lint",
+      "group": "build"
+    },
+    {
+      "label": "E2E: Run VirtualFS Performance test",
+      "type": "shell",
+      "command": "npm run test:e2e -- tests/e2e/integration/virtualfs-performance.spec.js",
+      "args": [],
+      "group": "test"
+    },
+    {
+      "label": "Quick Check (typecheck+lint) 3",
+      "type": "shell",
+      "command": "npm run typecheck ; npm run lint",
+      "group": "build"
+    },
+    {
+      "label": "E2E: Run VirtualFS Delta test",
+      "type": "shell",
+      "command": "npm run test:e2e -- tests/e2e/integration/virtualfs-delta-save.spec.js",
+      "group": "test"
+    },
+    {
+      "label": "E2E: Run VirtualFS Delta test (retry)",
+      "type": "shell",
+      "command": "npm run test:e2e -- tests/e2e/integration/virtualfs-delta-save.spec.js",
+      "group": "test"
+    },
+    {
+      "label": "E2E: Run VirtualFS Delta test (retry 2)",
+      "type": "shell",
+      "command": "npm run test:e2e -- tests/e2e/integration/virtualfs-delta-save.spec.js",
+      "group": "test"
+    },
+    {
+      "label": "Quick Check (typecheck+lint) 4",
+      "type": "shell",
+      "command": "npm run typecheck ; npm run lint",
+      "group": "build"
+    },
+    {
+      "label": "Quick Check (typecheck+lint) 5",
+      "type": "shell",
+      "command": "npm run typecheck ; npm run lint",
+      "group": "build"
+    },
+    {
+      "label": "Quick Check (typecheck+lint) 6",
+      "type": "shell",
+      "command": "npm run typecheck ; npm run lint",
+      "group": "build"
     }
   ]
 }
