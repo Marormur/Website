@@ -50,20 +50,23 @@ function clamp(z: number): number {
  */
 let pendingUpdates: Array<{ element: HTMLElement; zIndex: number }> = [];
 let rafScheduled = false;
+let rafId: number | null = null;
 
 function flushZIndexUpdates(): void {
     if (pendingUpdates.length === 0) return;
     
-    // Filter out detached elements to prevent memory leaks
-    const validUpdates = pendingUpdates.filter(({ element }) => element.isConnected);
-    
-    // Batch all style updates in a single pass
-    for (const { element, zIndex } of validUpdates) {
-        element.style.zIndex = zIndex.toString();
+    // Filter out detached elements during loop to prevent memory leaks
+    // Avoid creating new array if all elements are connected
+    for (let i = 0; i < pendingUpdates.length; i++) {
+        const { element, zIndex } = pendingUpdates[i];
+        if (element.isConnected) {
+            element.style.zIndex = zIndex.toString();
+        }
     }
     
     pendingUpdates = [];
     rafScheduled = false;
+    rafId = null;
 }
 
 /**
@@ -71,8 +74,10 @@ function flushZIndexUpdates(): void {
  * Used when immediate DOM updates are required (e.g., in bringToFront).
  */
 function flushZIndexUpdatesSync(): void {
-    if (rafScheduled) {
-        // Cancel scheduled RAF and flush immediately
+    if (rafScheduled && rafId !== null) {
+        // Cancel scheduled RAF to prevent duplicate execution
+        cancelAnimationFrame(rafId);
+        rafId = null;
         rafScheduled = false;
     }
     flushZIndexUpdates();
@@ -83,7 +88,7 @@ function scheduleZIndexUpdate(element: HTMLElement, zIndex: number): void {
     
     if (!rafScheduled) {
         rafScheduled = true;
-        requestAnimationFrame(flushZIndexUpdates);
+        rafId = requestAnimationFrame(flushZIndexUpdates);
     }
 }
 
