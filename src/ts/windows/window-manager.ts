@@ -189,7 +189,14 @@ import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
         },
 
         open(windowId: string): void {
-            const perf = (window as { PerfMonitor?: { mark: (n: string) => void } }).PerfMonitor;
+            const perf = (
+                window as {
+                    PerfMonitor?: {
+                        mark: (n: string) => void;
+                        measure?: (n: string, s?: string, e?: string) => void;
+                    };
+                }
+            ).PerfMonitor;
             perf?.mark(`window:open:${windowId}:start`);
 
             const config = this.getConfig(windowId);
@@ -235,14 +242,6 @@ import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
                 }
             }
 
-            const perf = (
-                window as {
-                    PerfMonitor?: {
-                        mark: (n: string) => void;
-                        measure: (n: string, s?: string, e?: string) => void;
-                    };
-                }
-            ).PerfMonitor;
             perf?.mark(`window:open:${windowId}:end`);
             perf?.measure(
                 `window:open:${windowId}`,
@@ -277,14 +276,6 @@ import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
                 }
             }
 
-            const perf = (
-                window as {
-                    PerfMonitor?: {
-                        mark: (n: string) => void;
-                        measure: (n: string, s?: string, e?: string) => void;
-                    };
-                }
-            ).PerfMonitor;
             perf?.mark(`window:close:${windowId}:end`);
             perf?.measure(
                 `window:close:${windowId}`,

@@ -38,7 +38,7 @@
       "eslint --fix --ignore-pattern 'js/**/*.js'",
       "prettier --write"
     ],
-    "*.ts": [
+    "src/ts/**/*.ts": [
       "eslint --fix",
       "prettier --write"
     ],

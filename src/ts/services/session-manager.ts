@@ -258,14 +258,6 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
                 );
             }
 
-            const perf = (
-                window as {
-                    PerfMonitor?: {
-                        mark: (n: string) => void;
-                        measure: (n: string, s?: string, e?: string) => void;
-                    };
-                }
-            ).PerfMonitor;
             perf?.mark('session:save:end');
             perf?.measure('session:save-duration', 'session:save:start', 'session:save:end');
 
@@ -416,14 +408,6 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
 
         console.log(`SessionManager: Restored ${restoredCount} instances total`);
 
-        const perf = (
-            window as {
-                PerfMonitor?: {
-                    mark: (n: string) => void;
-                    measure: (n: string, s?: string, e?: string) => void;
-                };
-            }
-        ).PerfMonitor;
         perf?.mark('session:restore:end');
         perf?.measure('session:restore-duration', 'session:restore:start', 'session:restore:end');
 

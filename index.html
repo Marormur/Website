@@ -206,6 +206,11 @@
         <script>
             (() => {
                 const hasCore = () =>
+                    // Primary: explicit bundle/app readiness flags
+                    !!(window.__BUNDLE_READY__ || window.__APP_READY) ||
+                    // Secondary: menu/i18n presence from the bundle
+                    !!(window.MenuSystem && window.appI18n) ||
+                    // Fallback (original heuristic)
                     !!(window.ActionBus && window.WindowRegistry && window.DockSystem);
 
                 const appendScriptOnce =
@@ -452,29 +457,8 @@
                         </li>
                     </ul>
                 </div>
-                <!-- Window Menu (dynamically populated by TypeScript) -->
-                <div id="window-menu-container" class="menubar-trigger" style="display: none">
-                    <button
-                        id="window-menu-trigger"
-                        type="button"
-                        class="menubar-item no-select"
-                        data-i18n="menubar.window.label"
-                        aria-haspopup="menu"
-                        aria-expanded="false"
-                        aria-controls="window-menu-dropdown"
-                        data-menubar-trigger-button="true"
-                    >
-                        Fenster
-                    </button>
-                    <ul
-                        id="window-menu-dropdown"
-                        class="menu-dropdown hidden"
-                        role="menu"
-                        aria-labelledby="window-menu-trigger"
-                    >
-                        <!-- Dynamically populated by window-menu.ts -->
-                    </ul>
-                </div>
+                <!-- Window Menu: removed standalone container. The unified Window section
+                     is rendered by the MenuSystem into #menubar-links. -->
                 <nav
                     id="menubar-links"
                     class="menubar-links"

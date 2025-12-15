@@ -630,60 +630,107 @@ function getMultiInstanceMenuItems(context: MenuContext) {
     let typeLabel: string | null = null;
     let newInstanceKey: string | null = null;
     const modalId = context?.modalId;
-    // Also derive active window type from WindowRegistry for multi-window Terminal
     const registry = window['WindowRegistry'];
-    const activeWindowType = registry?.getActiveWindow?.()?.type || null;
 
-    // Use WindowRegistry for Terminal (modern multi-window system)
-    if (modalId === 'terminal-modal' || activeWindowType === 'terminal') {
-        const terminalWindow = window['TerminalWindow'];
+    // Preferred path: Use WindowRegistry for all multi-window app types
+    if (registry && typeof registry.getAllWindows === 'function') {
+        type LabelConfig = {
+            type: string;
+            label: string;
+            newKey: string;
+            create?: (title: string) => void;
+        };
+        const configs: LabelConfig[] = [
+            {
+                type: 'finder',
+                label: 'Finder',
+                newKey: 'menu.window.newFinder',
+                create: (title: string) => window['FinderWindow']?.create?.({ title }),
+            },
+            {
+                type: 'terminal',
+                label: 'Terminal',
+                newKey: 'menu.window.newTerminal',
+                create: (title: string) => window['TerminalWindow']?.create?.({ title }),
+            },
+            {
+                type: 'text-editor',
+                label: 'Editor',
+                newKey: 'menu.window.newEditor',
+                create: (title: string) => window['TextEditorWindow']?.create?.({ title }),
+            },
+        ];
 
-        if (registry && terminalWindow) {
-            typeLabel = 'Terminal';
-            newInstanceKey = 'menu.window.newTerminal';
+        const active = registry.getActiveWindow?.();
+        let anyListed = false;
 
+        configs.forEach(cfg => {
+            const wins = registry.getAllWindows?.(cfg.type) || [];
+            if (wins.length === 0) return;
+            anyListed = true;
+
+            // New window action for this type
+            if (cfg.create) {
+                items.push({
+                    id: `window-new-${cfg.type}`,
+                    label: () => translate(cfg.newKey),
+                    shortcut: '⌘N',
+                    icon: 'new',
+                    action: () => {
+                        const count = registry.getWindowCount?.(cfg.type) || 0;
+                        const next = count + 1;
+                        cfg.create?.(`${cfg.label} ${next}`);
+                    },
+                });
+            }
+
+            // List windows for this type, sorted by zIndex
+            const sorted = [...wins].sort((a: any, b: any) => (a?.zIndex || 0) - (b?.zIndex || 0));
+            if (sorted.length > 0) items.push({ type: 'separator' });
+            sorted.forEach((win: any, idx: number) => {
+                const isActive = !!active && (active.id ? active.id === win.id : active === win);
+                const numberLabel = `${cfg.label} ${idx + 1}`;
+                items.push({
+                    id: `window-instance-${win.id}`,
+                    label: () => `${isActive ? '✓ ' : ''}${numberLabel}`,
+                    shortcut: idx < 9 ? `⌘${idx + 1}` : undefined,
+                    action: () => {
+                        if (typeof win.bringToFront === 'function') {
+                            win.bringToFront();
+                        } else if (typeof win.focus === 'function') {
+                            win.focus();
+                        } else if (typeof registry.setActiveWindow === 'function') {
+                            registry.setActiveWindow(win.id || null);
+                        }
+                    },
+                });
+            });
+        });
+
+        // Global close all if more than one window across all types
+        const total = registry.getWindowCount?.() || 0;
+        if (anyListed && total > 1) {
+            items.push({ type: 'separator' });
             items.push({
-                id: 'window-new-instance',
-                label: () => translate(newInstanceKey || 'menu.window.newWindow'),
-                shortcut: '⌘N',
-                icon: 'new',
+                id: 'window-close-all',
+                label: () => translate('menu.window.closeAll'),
+                icon: 'close',
                 action: () => {
-                    const count = registry.getWindowCount?.('terminal') || 0;
-                    terminalWindow.create({ title: `Terminal ${count + 1}` });
+                    if (
+                        confirm(
+                            translate('menu.window.closeAllConfirm', {
+                                count: String(total),
+                                type: 'Fenster',
+                            }) || `Alle ${total} Fenster schließen?`
+                        )
+                    ) {
+                        registry.closeAllWindows?.();
+                    }
                 },
             });
-
-            const windows = registry.getAllWindows?.('terminal') || [];
-            if (windows.length > 1) {
-                items.push({ type: 'separator' });
-                windows.forEach((win: any, index: number) => {
-                    const isActive = registry.getActiveWindow?.()?.windowId === win.windowId;
-                    const numberLabel = `Terminal ${index + 1}`;
-                    items.push({
-                        id: `window-instance-${win.windowId}`,
-                        label: () => `${isActive ? '✓ ' : ''}${numberLabel}`,
-                        shortcut: index < 9 ? `⌘${index + 1}` : undefined,
-                        action: () => {
-                            win.focus?.();
-                        },
-                    });
-                });
-                items.push(
-                    { type: 'separator' },
-                    {
-                        id: 'window-close-all',
-                        label: () => translate('menu.window.closeAll'),
-                        icon: 'close',
-                        action: () => {
-                            if (confirm(`Alle ${windows.length} Terminal-Fenster schließen?`)) {
-                                windows.forEach((w: any) => w.close?.());
-                            }
-                        },
-                    }
-                );
-            }
-            return items;
         }
+
+        if (anyListed) return items;
     }
 
     // Legacy fallback for Finder and TextEditor

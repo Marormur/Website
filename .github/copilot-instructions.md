@@ -81,7 +81,7 @@ index.html            # Hauptseite (Bundle-Loader)
 
 ## Wichtige Abhängigkeiten
 
-- **TypeScript 5.9+**: Strict Mode, 79%+ Type Coverage erforderlich
+- **TypeScript 5.9+**: Strict Mode, 77%+ Type Coverage erforderlich
 - **Tailwind CSS 3.4**: Utility-first CSS, Build via PostCSS
 - **Playwright**: E2E Testing Framework (~190 Tests)
 - **esbuild**: Fast bundler für production builds (app.bundle.js)
