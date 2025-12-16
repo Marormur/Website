@@ -20,6 +20,9 @@ import '../core/logger';
 import '../core/error-handler';
 import '../core/perf-monitor';
 
+// Import VDOM core
+import '../core/vdom';
+
 // Import legacy/global modules for their side effects so they register on window.*
 import '../core/api';
 import '../windows/window-manager';
