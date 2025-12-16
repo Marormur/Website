@@ -768,7 +768,7 @@ export class FinderView extends BaseTab {
             // Save scroll position before opening file
             this._saveScrollPosition();
 
-            // Track selection first
+            // Track selection: update DOM without full re-render to preserve scroll position
             this._selectItem(name);
 
             // Try to open file in an appropriate program (Text editor for text files)
@@ -926,7 +926,6 @@ export class FinderView extends BaseTab {
                                 } else {
                                     // fallback to opening the remote URL
                                     window.open(url, '_blank');
-                                    this._renderAll();
                                     return;
                                 }
                             } catch (efetch) {
@@ -935,15 +934,12 @@ export class FinderView extends BaseTab {
                                     efetch
                                 );
                                 window.open(url, '_blank');
-                                this._renderAll();
                                 return;
                             }
-                            this._renderAll();
                             return;
                         }
                         if (pdfExts.has(ext)) {
                             window.open(maybe.download_url, '_blank');
-                            this._renderAll();
                             return;
                         }
                     } catch (eurl) {
@@ -1022,9 +1018,8 @@ export class FinderView extends BaseTab {
 
                     // Otherwise fetch full file object from GitHub API
                     if (API && typeof API.fetchRepoContents === 'function') {
-                        // show a lightweight loading state
-                        this.dom.content!.innerHTML =
-                            '<div class="p-4 text-sm opacity-80">Lade Datei…</div>';
+                        // Do NOT show a loading state - it would destroy scroll position
+                        // Fetch in background silently
                         const fileObj = await API.fetchRepoContents(username, repo, subPath);
                         // If the API returned a direct download URL (common in mocks), prefer that for binaries
                         if (fileObj && fileObj.download_url) {
@@ -1037,7 +1032,6 @@ export class FinderView extends BaseTab {
                                             const blob = await resp.blob();
                                             const obj = URL.createObjectURL(blob);
                                             PreviewInstanceManager.openImages([obj], 0, subPath);
-                                            this._renderAll();
                                             return;
                                         }
                                     } catch (ef) {
@@ -1047,12 +1041,10 @@ export class FinderView extends BaseTab {
                                         );
                                     }
                                     window.open(fileObj.download_url, '_blank');
-                                    this._renderAll();
                                     return;
                                 }
                                 if (pdfExts.has(ext)) {
                                     window.open(fileObj.download_url, '_blank');
-                                    this._renderAll();
                                     return;
                                 }
                             } catch (eurl) {
@@ -1066,7 +1058,6 @@ export class FinderView extends BaseTab {
                             const rawText = atob(rawBase64);
                             if (textExts.has(ext)) {
                                 openInTextEditor(name, rawText, { repo, path: subPath });
-                                this._renderAll();
                                 return;
                             }
                             try {
@@ -1097,7 +1088,6 @@ export class FinderView extends BaseTab {
                                     } else {
                                         window.open(url, '_blank');
                                     }
-                                    this._renderAll();
                                     return;
                                 }
                                 if (pdfExts.has(ext)) {
@@ -1108,7 +1098,6 @@ export class FinderView extends BaseTab {
                                     const blob = new Blob([arr], { type: 'application/pdf' });
                                     const url = URL.createObjectURL(blob);
                                     window.open(url, '_blank');
-                                    this._renderAll();
                                     return;
                                 }
                             } catch (e2) {
@@ -1118,14 +1107,12 @@ export class FinderView extends BaseTab {
                             const raw = fileObj ? fileObj.content || '' : '';
                             if (textExts.has(ext)) {
                                 openInTextEditor(name, raw, { repo, path: subPath });
-                                this._renderAll();
                                 return;
                             }
                         }
                     }
                 } catch (e: any) {
                     console.warn('[FinderView] Failed to load GitHub file:', e);
-                    this._renderAll();
                 }
             }
 
