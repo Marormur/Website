@@ -701,39 +701,49 @@ export class FinderView extends BaseTab {
 
     _selectItem(name: string): void {
         const wasSelected = this.selectedItems.has(name);
+        const previouslySelected = Array.from(this.selectedItems);
         this.selectedItems.clear();
 
         if (!wasSelected) {
             this.selectedItems.add(name);
         }
 
-        // Update selection styling without full re-render
-        // This prevents DOM destruction during double-click sequences
+        // Fast update: only modify changed items instead of querying all items
+        // This significantly improves performance with large file lists
         if (this.dom.content) {
-            const allItems = this.dom.content.querySelectorAll('[data-item-name]');
-            allItems.forEach(el => {
-                const itemName = (el as HTMLElement).dataset.itemName;
-                const isSelected = this.selectedItems.has(itemName || '');
-
-                if (this.viewMode === 'list') {
-                    if (isSelected) {
-                        el.classList.add('bg-blue-100', 'dark:bg-blue-900');
-                    } else {
-                        el.classList.remove('bg-blue-100', 'dark:bg-blue-900');
+            // Remove selection from previously selected items
+            for (const prevName of previouslySelected) {
+                if (prevName !== name || wasSelected) {
+                    const prevEl = this.dom.content.querySelector(
+                        `[data-item-name="${CSS.escape(prevName)}"]`
+                    );
+                    if (prevEl) {
+                        if (this.viewMode === 'list') {
+                            prevEl.classList.remove('bg-blue-100', 'dark:bg-blue-900');
+                        } else {
+                            prevEl.classList.remove(
+                                'ring-2',
+                                'ring-blue-500',
+                                'ring-offset-2',
+                                'dark:ring-offset-gray-900',
+                                'bg-blue-100/60',
+                                'dark:bg-blue-900/40'
+                            );
+                        }
                     }
-                } else {
-                    // Grid mode
-                    if (isSelected) {
-                        el.classList.add(
-                            'ring-2',
-                            'ring-blue-500',
-                            'ring-offset-2',
-                            'dark:ring-offset-gray-900',
-                            'bg-blue-100/60',
-                            'dark:bg-blue-900/40'
-                        );
+                }
+            }
+
+            // Add selection to newly selected item (if not deselecting)
+            if (!wasSelected) {
+                const newEl = this.dom.content.querySelector(
+                    `[data-item-name="${CSS.escape(name)}"]`
+                );
+                if (newEl) {
+                    if (this.viewMode === 'list') {
+                        newEl.classList.add('bg-blue-100', 'dark:bg-blue-900');
                     } else {
-                        el.classList.remove(
+                        newEl.classList.add(
                             'ring-2',
                             'ring-blue-500',
                             'ring-offset-2',
@@ -743,7 +753,7 @@ export class FinderView extends BaseTab {
                         );
                     }
                 }
-            });
+            }
         }
     }
 
