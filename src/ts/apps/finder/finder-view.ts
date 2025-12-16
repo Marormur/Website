@@ -522,7 +522,11 @@ export class FinderView extends BaseTab {
         });
 
         // Create container VNode - we need a wrapper to track the virtual tree
-        const newVTree = h('div', { class: 'breadcrumb-wrapper flex items-center gap-1' }, ...breadcrumbParts);
+        const newVTree = h(
+            'div',
+            { class: 'breadcrumb-wrapper flex items-center gap-1' },
+            ...breadcrumbParts
+        );
 
         // Apply VDOM updates
         if (!this._breadcrumbsVTree || !this.dom.breadcrumbs.firstChild) {
@@ -734,7 +738,11 @@ export class FinderView extends BaseTab {
                                 h(
                                     'div',
                                     { class: 'flex items-center gap-2 min-w-0' },
-                                    h('span', { class: 'finder-item-icon shrink-0' }, item.icon || ''),
+                                    h(
+                                        'span',
+                                        { class: 'finder-item-icon shrink-0' },
+                                        item.icon || ''
+                                    ),
                                     h('span', { class: 'truncate block min-w-0' }, item.name)
                                 )
                             ),
@@ -745,7 +753,9 @@ export class FinderView extends BaseTab {
                             ),
                             h(
                                 'td',
-                                { class: 'text-right text-gray-500 dark:text-gray-400 whitespace-nowrap pl-2' },
+                                {
+                                    class: 'text-right text-gray-500 dark:text-gray-400 whitespace-nowrap pl-2',
+                                },
                                 this.formatDate(item.modified)
                             )
                         );
@@ -778,7 +788,9 @@ export class FinderView extends BaseTab {
         // Build virtual tree for grid view
         const newVTree = h(
             'div',
-            { class: 'finder-grid-container grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 p-3' },
+            {
+                class: 'finder-grid-container grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 p-3',
+            },
             ...items.map((item, i) => {
                 const isSelected = this.selectedItems.has(item.name);
                 const itemClass = isSelected
@@ -1339,6 +1351,8 @@ export class FinderView extends BaseTab {
 
     setViewMode(mode: ViewMode): void {
         this.viewMode = mode;
+        // Reset VDOM tree when switching view modes to force fresh render
+        this._vTree = null;
         this.updateContentState({ viewMode: this.viewMode });
         this.renderContent();
     }
