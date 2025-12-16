@@ -27,7 +27,8 @@ declare global {
         demoCreateTerminals?: () => void;
 
         // E2E hook
-        __APP_READY?: boolean;
+        __APP_READY?: boolean; // Core modules loaded, DOM ready
+        __SESSION_RESTORED?: boolean; // Session restore complete (windows/tabs restored)
 
         // Generic stores
         dialogs?: Record<string, any>;

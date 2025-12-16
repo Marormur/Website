@@ -316,6 +316,9 @@ class MultiWindowSessionManager {
                 '[MultiWindowSessionManager] restoreSession() complete, setting isRestoring=false'
             );
             this.isRestoring = false;
+            // Signal that session restore is complete (even if it failed)
+            (window as any).__SESSION_RESTORED = true;
+            console.info('[MultiWindowSessionManager] __SESSION_RESTORED=true');
         }
     }
 

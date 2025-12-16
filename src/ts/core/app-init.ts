@@ -481,19 +481,12 @@ function initApp(): void {
     // so that later scripts (for example the legacy `app.js` included
     // after this file) have a chance to run and not hide UI elements
     // after tests consider the app ready.
+    // NOTE: __APP_READY now signals CORE readiness only (DOM, modules, API).
+    // Session restore happens asynchronously and sets __SESSION_RESTORED when complete.
     const gw = window as Window & { __APP_READY?: boolean };
     async function markReady() {
         try {
-            // Wait for session restore to complete before marking ready
-            const sessionRestorePromise = (window as any).__sessionRestorePromise;
-            if (sessionRestorePromise) {
-                try {
-                    await sessionRestorePromise;
-                    console.log('[APP-INIT] Waited for session restore before marking ready');
-                } catch (e) {
-                    console.warn('[APP-INIT] Session restore wait failed:', e);
-                }
-            }
+            // No longer wait for session restore - that's now independent
 
             // At load time, ensure the dock is placed under document.body so
             // any legacy scripts that reparent early don't leave it inside a
@@ -760,7 +753,9 @@ function initApp(): void {
             }
 
             gw.__APP_READY = true;
-            console.info('[APP-INIT] __APP_READY=true');
+            console.info(
+                '[APP-INIT] __APP_READY=true (Core ready, session restore may still be in progress)'
+            );
             // After marking ready, some systems may initialize a few ticks later
             // (race with other scripts). Retry exposing singletons a few times so
             // E2E tests can reliably find them even if they appear slightly
