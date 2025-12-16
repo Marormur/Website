@@ -23,6 +23,15 @@ declare global {
         Dialog?: any;
         WindowManager?: any;
 
+        // VDOM System
+        VDOM?: {
+            h: (type: string, props: Record<string, unknown> | null, ...children: any[]) => any;
+            diff: (oldVTree: any, newVTree: any) => any[];
+            patch: (element: HTMLElement, patches: any[], oldVTree?: any) => HTMLElement;
+            EventDelegator: new (rootElement: HTMLElement) => any;
+            measurePerf: <T>(fn: () => T, label?: string) => { result: T; time: number };
+        };
+
         // Demo helpers attached to window by legacy scripts
         demoCreateTerminals?: () => void;
 
