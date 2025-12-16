@@ -85,8 +85,12 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
         const modalIds = getModalIds();
         const transientModalIds = getTransientModalIds();
 
+        // Obsolete modal IDs that have been migrated to multi-instance system
+        const obsoleteModalIds = new Set<string>(['finder-modal']);
+
         const openModals = modalIds.filter(id => {
             if (transientModalIds.has(id)) return false;
+            if (obsoleteModalIds.has(id)) return false; // Skip obsolete modals
             const el = document.getElementById(id) as HTMLElement | null;
             if (!el) return false;
             const minimized = el.dataset && el.dataset.minimized === 'true';
@@ -102,6 +106,10 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
 
     function restoreOpenModals(): void {
         const transientModalIds = getTransientModalIds();
+
+        // Obsolete modal IDs that have been migrated to multi-instance system
+        // These should be ignored during restore to avoid warnings
+        const obsoleteModalIds = new Set<string>(['finder-modal']);
 
         // Collect targets from modern key (OPEN_MODALS_KEY) and legacy 'window-session'
         const toRestore = new Set<string>();
@@ -138,6 +146,12 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
         toRestore.forEach(id => {
             // Skip transient modals
             if (transientModalIds.has(id)) return;
+
+            // Skip obsolete modals (migrated to multi-instance system)
+            if (obsoleteModalIds.has(id)) {
+                console.debug(`Skipping obsolete modal "${id}" (migrated to multi-instance)`);
+                return;
+            }
 
             // Validate modal exists in DOM
             const el = document.getElementById(id);
@@ -260,10 +274,15 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
     function saveWindowPositions(): void {
         const modalIds = getModalIds();
         const transientModalIds = getTransientModalIds();
+
+        // Obsolete modal IDs that have been migrated to multi-instance system
+        const obsoleteModalIds = new Set<string>(['finder-modal']);
+
         const positions: Positions = {};
 
         modalIds.forEach(id => {
             if (transientModalIds.has(id)) return;
+            if (obsoleteModalIds.has(id)) return; // Skip obsolete modals
             const el = document.getElementById(id) as HTMLElement | null;
             const windowEl = getDialogWindowElement(el);
             if (el && windowEl) {
@@ -286,6 +305,10 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
 
     function restoreWindowPositions(): void {
         const transientModalIds = getTransientModalIds();
+
+        // Obsolete modal IDs that have been migrated to multi-instance system
+        const obsoleteModalIds = new Set<string>(['finder-modal']);
+
         let positions: Positions = {};
 
         try {
@@ -297,6 +320,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
 
         Object.keys(positions).forEach(id => {
             if (transientModalIds.has(id)) return;
+            if (obsoleteModalIds.has(id)) return; // Skip obsolete modals
             const el = document.getElementById(id) as HTMLElement | null;
             const windowEl = getDialogWindowElement(el);
             if (el && windowEl) {
