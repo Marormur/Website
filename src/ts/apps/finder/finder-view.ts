@@ -105,6 +105,8 @@ export class FinderView extends BaseTab {
 
     // Track scroll position to restore after file open/close
     private _savedScrollPosition = 0;
+    // Persist scroll positions per logical location (source + path)
+    private _scrollPositions: Map<string, number> = new Map();
 
     constructor(config?: Partial<TabConfig> & { source?: FinderSource }) {
         super({
@@ -1384,7 +1386,10 @@ export class FinderView extends BaseTab {
      */
     private _saveScrollPosition(): void {
         if (this.dom.content) {
-            this._savedScrollPosition = this.dom.content.scrollTop;
+            const pos = this.dom.content.scrollTop;
+            this._savedScrollPosition = pos;
+            const key = this._locationKey();
+            this._scrollPositions.set(key, pos);
         }
     }
 
@@ -1392,14 +1397,27 @@ export class FinderView extends BaseTab {
      * Restore saved scroll position
      */
     private _restoreScrollPosition(): void {
-        if (this.dom.content && this._savedScrollPosition > 0) {
-            // Use requestAnimationFrame to ensure DOM is ready
+        if (!this.dom.content) return;
+
+        // Prefer persisted position for current location
+        const key = this._locationKey();
+        const persisted = this._scrollPositions.get(key) ?? 0;
+        const target = this._savedScrollPosition > 0 ? this._savedScrollPosition : persisted;
+        if (target > 0) {
             requestAnimationFrame(() => {
                 if (this.dom.content) {
-                    this.dom.content.scrollTop = this._savedScrollPosition;
+                    this.dom.content.scrollTop = target;
                 }
             });
         }
+    }
+
+    /**
+     * Build a stable key for current logical location
+     */
+    private _locationKey(): string {
+        const path = this.currentPath.join('/');
+        return `${this.source}:${path}`;
     }
 
     /**
@@ -1466,7 +1484,7 @@ export class FinderView extends BaseTab {
      * Transform GitHub repos into FileItem array
      */
     private _transformRepoItems(repos: GitHubRepo[]): FileItem[] {
-        return repos.map((repo) => ({
+        return repos.map(repo => ({
             name: repo.name,
             type: 'folder' as const,
             icon: '📦',
@@ -1477,7 +1495,7 @@ export class FinderView extends BaseTab {
      * Transform GitHub content items into FileItem array
      */
     private _transformContentItems(contents: GitHubContentItem[]): FileItem[] {
-        return contents.map((it) => ({
+        return contents.map(it => ({
             name: it.name,
             type: (it.type === 'dir' ? 'folder' : 'file') as 'folder' | 'file',
             icon: it.type === 'dir' ? '📁' : '📄',
@@ -1494,7 +1512,7 @@ export class FinderView extends BaseTab {
         const items = this._transformRepoItems(this.githubRepos);
         this.lastGithubItemsMap.clear();
         items.forEach(it => this.lastGithubItemsMap.set(it.name, it));
-        
+
         const filtered = this.filterItems(items, this.searchTerm);
         this.renderListView(this.sortItems(filtered));
     }
@@ -1505,10 +1523,10 @@ export class FinderView extends BaseTab {
     private _renderContentItems(contents: GitHubContentItem[]): void {
         const items = this._transformContentItems(Array.isArray(contents) ? contents : []);
         this.lastGithubItemsMap.clear();
-        (Array.isArray(contents) ? contents : []).forEach((it) =>
+        (Array.isArray(contents) ? contents : []).forEach(it =>
             this.lastGithubItemsMap.set(it.name, it)
         );
-        
+
         const filtered = this.filterItems(items, this.searchTerm);
         this.renderListView(this.sortItems(filtered));
     }
@@ -1530,9 +1548,14 @@ export class FinderView extends BaseTab {
                 const cacheKey = 'repos';
 
                 // Check cache state using the new API
-                const cacheState = API.getCacheState ? API.getCacheState('repos') : 
-                    (API.isCacheStale('repos') ? 'stale' : (API.readCache('repos') ? 'fresh' : 'missing'));
-                
+                const cacheState = API.getCacheState
+                    ? API.getCacheState('repos')
+                    : API.isCacheStale('repos')
+                      ? 'stale'
+                      : API.readCache('repos')
+                        ? 'fresh'
+                        : 'missing';
+
                 const cached = this._readGithubCache(cacheKey);
                 const apiCached = API.readCache('repos');
 
@@ -1574,8 +1597,13 @@ export class FinderView extends BaseTab {
                 const cacheKey = `${repo}/${subPath}`;
 
                 // Check cache state
-                const cacheState = API.getCacheState ? API.getCacheState('contents', repo, subPath) :
-                    (API.isCacheStale('contents', repo, subPath) ? 'stale' : (API.readCache('contents', repo, subPath) ? 'fresh' : 'missing'));
+                const cacheState = API.getCacheState
+                    ? API.getCacheState('contents', repo, subPath)
+                    : API.isCacheStale('contents', repo, subPath)
+                      ? 'stale'
+                      : API.readCache('contents', repo, subPath)
+                        ? 'fresh'
+                        : 'missing';
 
                 const cached = this._readGithubCache(cacheKey);
                 const apiCached = API.readCache('contents', repo, subPath);
@@ -1626,12 +1654,15 @@ export class FinderView extends BaseTab {
         this.dom.content.innerHTML = `
             <div class="p-4">
                 <div class="animate-pulse space-y-2">
-                    ${Array.from({ length: 5 }, () => `
+                    ${Array.from(
+                        { length: 5 },
+                        () => `
                         <div class="flex items-center gap-2">
                             <div class="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded"></div>
                             <div class="flex-1 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
                         </div>
-                    `).join('')}
+                    `
+                    ).join('')}
                 </div>
             </div>
         `;
@@ -1642,12 +1673,13 @@ export class FinderView extends BaseTab {
      */
     private _showRefreshIndicator(): void {
         if (!this.dom.toolbar) return;
-        
+
         // Add a small refresh indicator to the toolbar
         let indicator = this.dom.toolbar.querySelector('.finder-refresh-indicator') as HTMLElement;
         if (!indicator) {
             indicator = document.createElement('div');
-            indicator.className = 'finder-refresh-indicator ml-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1';
+            indicator.className =
+                'finder-refresh-indicator ml-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1';
             indicator.innerHTML = '<span class="animate-spin">⟳</span><span>Aktualisiere…</span>';
             const breadcrumbs = this.dom.toolbar.querySelector('.breadcrumbs');
             if (breadcrumbs?.parentElement) {
@@ -1662,7 +1694,9 @@ export class FinderView extends BaseTab {
      */
     private _hideRefreshIndicator(): void {
         if (!this.dom.toolbar) return;
-        const indicator = this.dom.toolbar.querySelector('.finder-refresh-indicator') as HTMLElement;
+        const indicator = this.dom.toolbar.querySelector(
+            '.finder-refresh-indicator'
+        ) as HTMLElement;
         if (indicator) {
             indicator.style.display = 'none';
             // Clear any error state
@@ -1676,7 +1710,9 @@ export class FinderView extends BaseTab {
      */
     private _showRefreshError(): void {
         if (!this.dom.toolbar) return;
-        const indicator = this.dom.toolbar.querySelector('.finder-refresh-indicator') as HTMLElement;
+        const indicator = this.dom.toolbar.querySelector(
+            '.finder-refresh-indicator'
+        ) as HTMLElement;
         if (indicator) {
             indicator.classList.add('text-red-500');
             indicator.innerHTML = '<span>⚠</span><span>Aktualisierung fehlgeschlagen</span>';
