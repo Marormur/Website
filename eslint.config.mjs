@@ -180,6 +180,11 @@ export default [
                 __filename: 'readonly',
                 process: 'readonly',
                 global: 'readonly',
+
+                // Playwright globals
+                test: 'readonly',
+                expect: 'readonly',
+                describe: 'readonly',
             },
         },
         rules: {
