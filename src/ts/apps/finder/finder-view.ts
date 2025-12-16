@@ -1446,6 +1446,9 @@ export class FinderView extends BaseTab {
             sortOrder: this.sortOrder,
             favorites: Array.from(this.favorites),
             recentFiles: this.recentFiles,
+            // Persist scroll positions for restoration
+            scrollPositions: Array.from(this._scrollPositions.entries()),
+            savedScrollPosition: this._savedScrollPosition,
         };
     }
 
@@ -1466,6 +1469,15 @@ export class FinderView extends BaseTab {
         view.viewMode = state.viewMode || 'list';
         view.sortBy = state.sortBy || 'name';
         view.sortOrder = state.sortOrder || 'asc';
+
+        // Restore scroll positions from serialized data
+        if (state.scrollPositions && Array.isArray(state.scrollPositions)) {
+            view._scrollPositions = new Map(state.scrollPositions);
+        }
+        if (typeof state.savedScrollPosition === 'number') {
+            view._savedScrollPosition = state.savedScrollPosition;
+        }
+
         return view;
     }
 
