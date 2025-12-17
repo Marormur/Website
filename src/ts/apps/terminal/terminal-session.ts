@@ -166,7 +166,7 @@ export class TerminalSession extends BaseTab {
                     class: 'flex-1 ml-2 bg-transparent outline-none text-green-400 terminal-input',
                     'data-terminal-input': 'true',
                     autocomplete: 'off',
-                    spellcheck: 'false',
+                    spellcheck: false,
                     'aria-label': 'Terminal input',
                     key: 'terminal-input', // Ensure input element is never recreated
                 })
