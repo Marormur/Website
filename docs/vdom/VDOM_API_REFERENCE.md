@@ -7,6 +7,7 @@ Complete API documentation for the Mini-VDOM implementation.
 The VDOM (Virtual DOM) system provides efficient, state-preserving DOM updates through a lightweight diffing and patching algorithm. It enables declarative UI development with minimal overhead.
 
 **Performance Targets:**
+
 - Diff Algorithm: < 10ms for 100 nodes
 - Patch Application: < 20ms for 100 nodes
 - Memory Overhead: < 100KB for typical applications
@@ -18,27 +19,34 @@ The VDOM (Virtual DOM) system provides efficient, state-preserving DOM updates t
 Creates a virtual node (JSX-alternative factory function).
 
 **Parameters:**
+
 - `type` (string): Element tag name (e.g., 'div', 'span', 'ul')
 - `props` (Record<string, unknown> | null): Element properties and attributes
-  - Special handling for `key`: Extracted for reconciliation, not set as DOM attribute
-  - Event handlers: Properties starting with `on` (e.g., `onClick`)
-  - Styles: `style` object merged with element.style
-  - Classes: `className` mapped to element.className
+    - Special handling for `key`: Extracted for reconciliation, not set as DOM attribute
+    - Event handlers: Properties starting with `on` (e.g., `onClick`)
+    - Styles: `style` object merged with element.style
+    - Classes: `className` mapped to element.className
 - `children` (...VNode | string): Child nodes or text content (automatically flattened)
 
 **Returns:** `VNode`
 
 **Example:**
+
 ```typescript
-const vnode = h('div', { className: 'container', id: 'app' },
+const vnode = h(
+    'div',
+    { className: 'container', id: 'app' },
     h('h1', {}, 'Hello World'),
     h('p', {}, 'This is VDOM!')
 );
 ```
 
 **With Keys (for lists):**
+
 ```typescript
-const list = h('ul', {},
+const list = h(
+    'ul',
+    {},
     h('li', { key: 1 }, 'Item 1'),
     h('li', { key: 2 }, 'Item 2'),
     h('li', { key: 3 }, 'Item 3')
@@ -46,18 +54,28 @@ const list = h('ul', {},
 ```
 
 **With Event Handlers:**
+
 ```typescript
-const button = h('button', {
-    onClick: () => console.log('Clicked!'),
-    className: 'btn'
-}, 'Click Me');
+const button = h(
+    'button',
+    {
+        onClick: () => console.log('Clicked!'),
+        className: 'btn',
+    },
+    'Click Me'
+);
 ```
 
 **With Inline Styles:**
+
 ```typescript
-const styled = h('div', {
-    style: { color: 'red', fontSize: '16px' }
-}, 'Styled text');
+const styled = h(
+    'div',
+    {
+        style: { color: 'red', fontSize: '16px' },
+    },
+    'Styled text'
+);
 ```
 
 ---
@@ -69,12 +87,14 @@ Computes the difference between two virtual trees and generates patch operations
 **Algorithm:** Uses key-based reconciliation for efficient list updates. Time complexity: O(n) for balanced trees.
 
 **Parameters:**
+
 - `oldVTree` (VNode | null): Previous virtual tree (or null for initial render)
 - `newVTree` (VNode | null): New virtual tree (or null to remove)
 
 **Returns:** `Patch[]` - Array of patch operations
 
 **Patch Types:**
+
 - `CREATE`: Node added
 - `UPDATE`: Properties changed
 - `REMOVE`: Node removed
@@ -82,6 +102,7 @@ Computes the difference between two virtual trees and generates patch operations
 - `REORDER`: Child order changed (with key-based reconciliation)
 
 **Example:**
+
 ```typescript
 const oldVTree = h('div', { className: 'old' }, 'Old text');
 const newVTree = h('div', { className: 'new' }, 'New text');
@@ -91,14 +112,15 @@ const patches = diff(oldVTree, newVTree);
 ```
 
 **Example: Adding Child:**
-```typescript
-const oldVTree = h('ul', {},
-    h('li', { key: 1 }, 'Item 1')
-);
 
-const newVTree = h('ul', {},
+```typescript
+const oldVTree = h('ul', {}, h('li', { key: 1 }, 'Item 1'));
+
+const newVTree = h(
+    'ul',
+    {},
     h('li', { key: 1 }, 'Item 1'),
-    h('li', { key: 2 }, 'Item 2')  // New item
+    h('li', { key: 2 }, 'Item 2') // New item
 );
 
 const patches = diff(oldVTree, newVTree);
@@ -112,17 +134,20 @@ const patches = diff(oldVTree, newVTree);
 Applies patch operations to a real DOM element.
 
 **Parameters:**
+
 - `rootElement` (HTMLElement): DOM element to patch
 - `patches` (Patch[]): Array of patch operations from `diff()`
 
 **Returns:** `HTMLElement` - Updated DOM element
 
 **Side Effects:**
+
 - Modifies the DOM tree
 - Attaches event listeners (if specified in props)
 - Updates element attributes and properties
 
 **Example:**
+
 ```typescript
 const container = document.getElementById('app');
 
@@ -144,6 +169,7 @@ patch(container, patches);
 Creates a real DOM element from a virtual node.
 
 **Parameters:**
+
 - `vnode` (VNode): Virtual node to convert
 
 **Returns:** `HTMLElement | Text` - DOM element or text node
@@ -151,6 +177,7 @@ Creates a real DOM element from a virtual node.
 **Note:** Typically used internally by `patch()`. You can use it directly for initial rendering without diffing.
 
 **Example:**
+
 ```typescript
 const vnode = h('div', { className: 'card' }, 'Content');
 const domElement = createElement(vnode);
@@ -167,21 +194,27 @@ Use this pattern to build components with state-preserving updates.
 class MyComponent {
     private container: HTMLElement;
     private _vTree: VNode | null = null;
-    
+
     constructor(container: HTMLElement) {
         this.container = container;
     }
-    
+
     render(data: any): void {
         // Create new virtual tree based on current data
-        const newVTree = h('div', { className: 'my-component' },
+        const newVTree = h(
+            'div',
+            { className: 'my-component' },
             h('h2', {}, data.title),
             h('p', {}, data.description),
-            h('button', {
-                onClick: () => this.handleClick()
-            }, 'Click Me')
+            h(
+                'button',
+                {
+                    onClick: () => this.handleClick(),
+                },
+                'Click Me'
+            )
         );
-        
+
         // Initial render or update
         if (!this._vTree) {
             // First render: create DOM from scratch
@@ -192,11 +225,11 @@ class MyComponent {
             const patches = diff(this._vTree, newVTree);
             patch(this.container.firstElementChild as HTMLElement, patches);
         }
-        
+
         // Save tree for next render
         this._vTree = newVTree;
     }
-    
+
     handleClick(): void {
         // Update state and re-render
         this.render({ title: 'Updated', description: 'Clicked!' });
@@ -205,6 +238,7 @@ class MyComponent {
 ```
 
 **Usage:**
+
 ```typescript
 const component = new MyComponent(document.getElementById('app'));
 component.render({ title: 'Hello', description: 'World' });
@@ -219,6 +253,7 @@ component.render({ title: 'Hello', description: 'World' });
 Central event delegation handler for better performance with many elements.
 
 **Constructor:**
+
 ```typescript
 constructor(rootElement: HTMLElement)
 ```
@@ -231,7 +266,7 @@ Register a delegated event handler.
 
 ```typescript
 const delegator = new EventDelegator(document.getElementById('app'));
-delegator.on('click', (e) => {
+delegator.on('click', e => {
     console.log('Clicked:', e.target);
 });
 ```
@@ -261,12 +296,14 @@ delegator.destroy();
 Measures execution time of a function.
 
 **Parameters:**
+
 - `fn` (() => T): Function to measure
 - `label` (string, optional): Label for console output
 
 **Returns:** `{ result: T, time: number }`
 
 **Example:**
+
 ```typescript
 const { result, time } = measurePerf(() => {
     const patches = diff(oldTree, newTree);
@@ -286,10 +323,10 @@ Virtual node representation.
 
 ```typescript
 interface VNode {
-    type: string;                      // Tag name or '#text'
-    props: Record<string, unknown>;    // Element attributes/properties
-    children: (VNode | string)[];      // Child nodes
-    key?: string | number;             // Optional key for reconciliation
+    type: string; // Tag name or '#text'
+    props: Record<string, unknown>; // Element attributes/properties
+    children: (VNode | string)[]; // Child nodes
+    key?: string | number; // Optional key for reconciliation
 }
 ```
 
@@ -299,11 +336,11 @@ DOM patch instruction.
 
 ```typescript
 interface Patch {
-    type: PatchType;                   // Operation type
-    node?: VNode;                      // For CREATE/REPLACE
-    props?: Record<string, unknown>;   // For UPDATE
-    index?: number;                    // Position in parent
-    oldNode?: VNode;                   // For REPLACE
+    type: PatchType; // Operation type
+    node?: VNode; // For CREATE/REPLACE
+    props?: Record<string, unknown>; // For UPDATE
+    index?: number; // Position in parent
+    oldNode?: VNode; // For REPLACE
     moves?: Array<{ from: number; to: number }>; // For REORDER
 }
 
@@ -323,11 +360,12 @@ window.VDOM = {
     patch,
     createElement,
     EventDelegator,
-    measurePerf
+    measurePerf,
 };
 ```
 
 **Usage:**
+
 ```typescript
 const { h, diff, patch } = window.VDOM;
 ```
@@ -341,16 +379,16 @@ While the VDOM doesn't have built-in lifecycle hooks, you can implement them in 
 ```typescript
 class Component {
     private _vTree: VNode | null = null;
-    
+
     // Custom lifecycle hooks
     beforeRender?(data: any): void;
     afterRender?(element: HTMLElement): void;
-    
+
     render(data: any): void {
         this.beforeRender?.(data);
-        
+
         const newVTree = this.createVTree(data);
-        
+
         if (!this._vTree) {
             const dom = createElement(newVTree);
             this.container.appendChild(dom);
@@ -358,11 +396,11 @@ class Component {
             const patches = diff(this._vTree, newVTree);
             patch(this.container.firstElementChild as HTMLElement, patches);
         }
-        
+
         this._vTree = newVTree;
         this.afterRender?.(this.container.firstElementChild as HTMLElement);
     }
-    
+
     createVTree(data: any): VNode {
         // Override in subclass
         return h('div', {}, 'Default');
@@ -381,18 +419,21 @@ Keys are critical for efficient list rendering. The diff algorithm uses keys to:
 3. **Preserve component state** across reorders
 
 **Without Keys (inefficient):**
+
 ```typescript
 // If list order changes, ALL items are recreated
-items.map(item => h('li', {}, item.name))
+items.map(item => h('li', {}, item.name));
 ```
 
 **With Keys (efficient):**
+
 ```typescript
 // Only changed items are updated, existing ones are reordered
-items.map(item => h('li', { key: item.id }, item.name))
+items.map(item => h('li', { key: item.id }, item.name));
 ```
 
 **Key Requirements:**
+
 - Must be unique within siblings
 - Should be stable (same item = same key across renders)
 - Prefer IDs over indices when order can change

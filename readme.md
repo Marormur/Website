@@ -88,22 +88,27 @@ npm run format              # Code formatieren
 Das Projekt nutzt ein leichtgewichtiges Virtual DOM System für effiziente, state-erhaltende UI-Updates.
 
 **Performance Metriken:**
+
 - ⚡ Diff Algorithm: < 10ms für 100 Nodes
 - ⚡ Patch Application: < 20ms für 100 Nodes
 - 💾 Memory Overhead: < 100KB
 
 **Dokumentation:**
+
 - 📖 [API Reference](docs/vdom/VDOM_API_REFERENCE.md) - Vollständige API-Dokumentation
 - 🔄 [Migration Guide](docs/vdom/VDOM_MIGRATION_GUIDE.md) - Von innerHTML zu VDOM migrieren
 - ✨ [Best Practices](docs/vdom/VDOM_BEST_PRACTICES.md) - Performance-Tipps & Patterns
 - 🔧 [Troubleshooting](docs/vdom/VDOM_TROUBLESHOOTING.md) - Häufige Probleme & Lösungen
 
 **Quick Example:**
+
 ```typescript
 const { h, diff, patch } = window.VDOM;
 
 // Virtual Tree erstellen
-const vTree = h('ul', {},
+const vTree = h(
+    'ul',
+    {},
     h('li', { key: 1 }, 'Item 1'),
     h('li', { key: 2 }, 'Item 2')
 );
@@ -113,7 +118,9 @@ const dom = createElement(vTree);
 container.appendChild(dom);
 
 // Update: nur Änderungen werden gepatcht
-const newVTree = h('ul', {},
+const newVTree = h(
+    'ul',
+    {},
     h('li', { key: 1 }, 'Item 1'),
     h('li', { key: 2 }, 'Updated Item 2'),
     h('li', { key: 3 }, 'Item 3')

@@ -5,9 +5,11 @@ Complete documentation for the Mini-VDOM implementation used in this project.
 ## 📚 Documentation Structure
 
 ### 1. [API Reference](./VDOM_API_REFERENCE.md)
+
 Complete API documentation for all VDOM functions and classes.
 
 **Topics:**
+
 - Core functions: `h()`, `diff()`, `patch()`, `createElement()`
 - Component patterns and lifecycle
 - Event delegation with `EventDelegator`
@@ -20,9 +22,11 @@ Complete API documentation for all VDOM functions and classes.
 ---
 
 ### 2. [Migration Guide](./VDOM_MIGRATION_GUIDE.md)
+
 Step-by-step guide for migrating from `innerHTML` to VDOM.
 
 **Topics:**
+
 - Why migrate? (Problems with innerHTML vs VDOM benefits)
 - Migration steps (Import → Add state → Convert template → Add keys)
 - Common patterns: Lists, events, conditional rendering
@@ -34,9 +38,11 @@ Step-by-step guide for migrating from `innerHTML` to VDOM.
 ---
 
 ### 3. [Best Practices](./VDOM_BEST_PRACTICES.md)
+
 Performance optimization strategies and recommended patterns.
 
 **Topics:**
+
 - Always use keys for lists
 - Minimize VTree depth
 - Cache static parts
@@ -51,9 +57,11 @@ Performance optimization strategies and recommended patterns.
 ---
 
 ### 4. [Troubleshooting](./VDOM_TROUBLESHOOTING.md)
+
 Common issues, solutions, and debugging tips.
 
 **Topics:**
+
 - 8 common issues with solutions (scroll position, focus, events, memory leaks, etc.)
 - Debugging utilities and strategies
 - Performance debugging
@@ -84,12 +92,11 @@ import { h, diff, patch, createElement, VNode } from '../core/vdom';
 
 ```typescript
 // Create virtual tree
-const vTree = h('div', { className: 'container' },
+const vTree = h(
+    'div',
+    { className: 'container' },
     h('h1', {}, 'Hello VDOM!'),
-    h('ul', {},
-        h('li', { key: 1 }, 'Item 1'),
-        h('li', { key: 2 }, 'Item 2')
-    )
+    h('ul', {}, h('li', { key: 1 }, 'Item 1'), h('li', { key: 2 }, 'Item 2'))
 );
 
 // Initial render
@@ -97,12 +104,16 @@ const dom = createElement(vTree);
 container.appendChild(dom);
 
 // Update (only patches changes)
-const newVTree = h('div', { className: 'container' },
+const newVTree = h(
+    'div',
+    { className: 'container' },
     h('h1', {}, 'Hello VDOM!'),
-    h('ul', {},
+    h(
+        'ul',
+        {},
         h('li', { key: 1 }, 'Item 1'),
         h('li', { key: 2 }, 'Updated Item 2'),
-        h('li', { key: 3 }, 'Item 3')  // New item
+        h('li', { key: 3 }, 'Item 3') // New item
     )
 );
 
@@ -116,17 +127,19 @@ patch(container.firstElementChild as HTMLElement, patches);
 class MyComponent {
     private container: HTMLElement;
     private _vTree: VNode | null = null;
-    
+
     constructor(container: HTMLElement) {
         this.container = container;
     }
-    
+
     render(data: any): void {
-        const newVTree = h('div', { className: 'my-component' },
+        const newVTree = h(
+            'div',
+            { className: 'my-component' },
             h('h2', {}, data.title),
             h('p', {}, data.description)
         );
-        
+
         if (!this._vTree) {
             const dom = createElement(newVTree);
             this.container.appendChild(dom);
@@ -134,7 +147,7 @@ class MyComponent {
             const patches = diff(this._vTree, newVTree);
             patch(this.container.firstElementChild as HTMLElement, patches);
         }
-        
+
         this._vTree = newVTree;
     }
 }
@@ -146,11 +159,11 @@ class MyComponent {
 
 The VDOM implementation meets these performance targets:
 
-| Metric | Target | Status |
-|--------|--------|--------|
-| Diff Algorithm (100 nodes) | < 10ms | ✅ Passed |
-| Patch Application (100 nodes) | < 20ms | ✅ Passed |
-| Memory Overhead | < 100KB | ✅ Passed |
+| Metric                        | Target  | Status    |
+| ----------------------------- | ------- | --------- |
+| Diff Algorithm (100 nodes)    | < 10ms  | ✅ Passed |
+| Patch Application (100 nodes) | < 20ms  | ✅ Passed |
+| Memory Overhead               | < 100KB | ✅ Passed |
 
 See [performance tests](../../tests/e2e/performance/vdom-performance.spec.js) for detailed benchmarks.
 
@@ -161,15 +174,16 @@ See [performance tests](../../tests/e2e/performance/vdom-performance.spec.js) fo
 ### E2E Tests
 
 Comprehensive test coverage:
+
 - **Core VDOM tests**: `tests/e2e/integration/vdom.spec.js` (~420 lines)
-  - VNode creation, diffing, patching
-  - Event delegation
-  - Key-based reconciliation
-  - Edge cases
+    - VNode creation, diffing, patching
+    - Event delegation
+    - Key-based reconciliation
+    - Edge cases
 - **Performance tests**: `tests/e2e/performance/vdom-performance.spec.js`
-  - Diff/patch timing
-  - Memory overhead
-  - Large list performance
+    - Diff/patch timing
+    - Memory overhead
+    - Large list performance
 
 ### Running Tests
 
@@ -191,42 +205,44 @@ MOCK_GITHUB=1 npm run test:e2e:quick
 ### Source Code
 
 - **Main implementation**: [`src/ts/core/vdom.ts`](../../src/ts/core/vdom.ts)
-  - 545 lines of TypeScript
-  - Strict mode compliant
-  - Comprehensive JSDoc comments
+    - 545 lines of TypeScript
+    - Strict mode compliant
+    - Comprehensive JSDoc comments
 
 ### Key Features
 
 1. **Efficient Diffing**
-   - O(n) time complexity for balanced trees
-   - Key-based reconciliation for lists
-   - Minimal DOM operations
+    - O(n) time complexity for balanced trees
+    - Key-based reconciliation for lists
+    - Minimal DOM operations
 
 2. **State Preservation**
-   - Maintains scroll position
-   - Preserves focus state
-   - Keeps input values
+    - Maintains scroll position
+    - Preserves focus state
+    - Keeps input values
 
 3. **Event Handling**
-   - Inline event handlers via props
-   - Optional event delegation
-   - Automatic cleanup
+    - Inline event handlers via props
+    - Optional event delegation
+    - Automatic cleanup
 
 4. **Type Safety**
-   - Full TypeScript support
-   - Strict type checking
-   - Complete type definitions
+    - Full TypeScript support
+    - Strict type checking
+    - Complete type definitions
 
 ---
 
 ## 🔗 Related Resources
 
 ### Project Documentation
+
 - [Main README](../../readme.md) - Project overview
 - [CHANGELOG](../../CHANGELOG.md) - Recent changes
 - [Multi-Instance Guide](../guides/MULTI_INSTANCE.md) - Multi-window architecture
 
 ### External Resources
+
 - [Virtual DOM Concepts](https://github.com/Matt-Esch/virtual-dom/blob/master/docs/vdom.md)
 - [React Reconciliation](https://react.dev/learn/preserving-and-resetting-state)
 - [Diffing Algorithm](https://grfia.dlsi.ua.es/ml/algorithms/references/editsurvey_bille.pdf)
