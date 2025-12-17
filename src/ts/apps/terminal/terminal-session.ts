@@ -68,59 +68,59 @@ export class TerminalSession extends BaseTab {
 
         this.element = container;
 
-        // Initial render with VDOM
+        // Initial render with VDOM (queries DOM elements internally)
         this._renderTerminal();
 
-        // Query DOM elements after initial render
-        this.outputElement = container.querySelector('[data-terminal-output]');
-        this.inputElement = container.querySelector('[data-terminal-input]');
-
-        this._attachEventListeners();
         this.showWelcomeMessage();
 
         return container;
     }
 
-    private _attachEventListeners(): void {
-        if (!this.inputElement) return;
-
-        this.inputElement.addEventListener('keydown', (e: KeyboardEvent) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const command = this.inputElement!.value.trim();
-                if (command) {
-                    this.executeCommand(command);
-                    // Note: commandHistory is now updated in executeCommand()
-                }
-                this.inputElement!.value = '';
-                this.inputElement!.focus();
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                if (this.historyIndex > 0) {
-                    this.historyIndex--;
-                    const historyEntry = this.commandHistory[this.historyIndex];
-                    if (historyEntry !== undefined) {
-                        this.inputElement!.value = historyEntry;
-                    }
-                }
-            } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                if (this.historyIndex < this.commandHistory.length - 1) {
-                    this.historyIndex++;
-                    const historyEntry = this.commandHistory[this.historyIndex];
-                    if (historyEntry !== undefined) {
-                        this.inputElement!.value = historyEntry;
-                    }
-                } else {
-                    this.historyIndex = this.commandHistory.length;
-                    this.inputElement!.value = '';
-                }
-            } else if (e.key === 'Tab') {
-                // Keep focus and prevent browser focus traversal.
-                e.preventDefault();
-                this.handleTabCompletion();
+    /**
+     * Handle keydown events on terminal input
+     * Used as VDOM event handler
+     */
+    private _handleKeyDown(e: KeyboardEvent): void {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const command = this.inputElement!.value.trim();
+            if (command) {
+                this.executeCommand(command);
+                // Note: commandHistory is now updated in executeCommand()
             }
-        });
+            this.inputElement!.value = '';
+            this.inputElement!.focus();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (this.historyIndex > 0) {
+                this.historyIndex--;
+                const historyEntry = this.commandHistory[this.historyIndex];
+                if (historyEntry !== undefined) {
+                    this.inputElement!.value = historyEntry;
+                }
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (this.historyIndex < this.commandHistory.length - 1) {
+                this.historyIndex++;
+                const historyEntry = this.commandHistory[this.historyIndex];
+                if (historyEntry !== undefined) {
+                    this.inputElement!.value = historyEntry;
+                }
+            } else {
+                this.historyIndex = this.commandHistory.length;
+                this.inputElement!.value = '';
+            }
+        } else if (e.key === 'Tab') {
+            // Keep focus and prevent browser focus traversal.
+            e.preventDefault();
+            this.handleTabCompletion();
+        }
+    }
+
+    private _attachEventListeners(): void {
+        // Event handlers are now managed by VDOM (see _renderTerminal)
+        // Keep this method for potential future use or container-level events
     }
 
     /**
@@ -163,6 +163,8 @@ export class TerminalSession extends BaseTab {
                     autocomplete: 'off',
                     spellcheck: 'false',
                     'aria-label': 'Terminal input',
+                    key: 'terminal-input', // Ensure input element is never recreated
+                    onKeydown: this._handleKeyDown.bind(this), // VDOM event handler
                 })
             )
         );
@@ -172,6 +174,10 @@ export class TerminalSession extends BaseTab {
             // Initial render: create DOM from scratch
             const dom = createElement(vTree);
             this.element.appendChild(dom);
+
+            // Query DOM elements after initial render
+            this.outputElement = this.element.querySelector('[data-terminal-output]');
+            this.inputElement = this.element.querySelector('[data-terminal-input]');
         } else {
             // Update: intelligent diff + patch
             const patches = diff(this._vTree, vTree);
