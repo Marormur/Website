@@ -26,16 +26,28 @@ import { getString, setString } from '../services/storage-utils.js';
         TTFB?: number; // Time to First Byte
     }
 
+    interface OperationStats {
+        avg: number;
+        min: number;
+        max: number;
+        p95: number;
+        count: number;
+    }
+
     interface PerfMonitorInstance {
         enabled: boolean;
         marks: Set<string>;
         vitals: CoreWebVitals;
+        metrics: Map<string, number[]>;
         enable(): void;
         disable(): void;
         toggle(): void;
         mark(name: string): void;
         measure(name: string, startMark?: string, endMark?: string): PerformanceMeasure | null;
+        measureFunction<T>(name: string, fn: () => T): T;
+        getStats(name: string): OperationStats | null;
         report(options?: ReportOptions): PerformanceMeasure[];
+        reportStats(): void;
         getVitals(): CoreWebVitals;
     }
 
@@ -58,12 +70,22 @@ import { getString, setString } from '../services/storage-utils.js';
         }
     }
 
+    // ===== Statistics Helper Functions =====
+
+    function percentile(values: number[], p: number): number {
+        if (values.length === 0) return 0;
+        const sorted = [...values].sort((a, b) => a - b);
+        const index = Math.ceil(sorted.length * p) - 1;
+        return sorted[Math.max(0, index)] ?? 0;
+    }
+
     // ===== PerfMonitor Instance =====
 
     const PerfMonitor: PerfMonitorInstance = {
         enabled: isEnabledByDefault(),
         marks: new Set<string>(),
         vitals: {},
+        metrics: new Map<string, number[]>(),
 
         enable() {
             this.enabled = true;
@@ -117,10 +139,63 @@ import { getString, setString } from '../services/storage-utils.js';
                 }
                 const entries = performance.getEntriesByName(name, 'measure');
                 const lastEntry = entries[entries.length - 1];
+                
+                // Track duration in metrics
+                if (lastEntry) {
+                    if (!this.metrics.has(name)) {
+                        this.metrics.set(name, []);
+                    }
+                    this.metrics.get(name)!.push(lastEntry.duration);
+                }
+                
                 return lastEntry ? (lastEntry as PerformanceMeasure) : null;
             } catch (_e) {
                 void _e;
                 return null;
+            }
+        },
+
+        measureFunction<T>(name: string, fn: () => T): T {
+            if (!this.enabled || !name) return fn();
+            const start = performance.now();
+            try {
+                return fn();
+            } finally {
+                const duration = performance.now() - start;
+                if (!this.metrics.has(name)) {
+                    this.metrics.set(name, []);
+                }
+                this.metrics.get(name)!.push(duration);
+            }
+        },
+
+        getStats(name: string): OperationStats | null {
+            const times = this.metrics.get(name);
+            if (!times || times.length === 0) return null;
+            
+            return {
+                avg: times.reduce((a, b) => a + b, 0) / times.length,
+                min: Math.min(...times),
+                max: Math.max(...times),
+                p95: percentile(times, 0.95),
+                count: times.length,
+            };
+        },
+
+        reportStats(): void {
+            if (!this.enabled) return;
+            
+            const stats = Array.from(this.metrics.keys())
+                .map(name => {
+                    const s = this.getStats(name);
+                    return s ? { Operation: name, ...s } : null;
+                })
+                .filter(s => s !== null);
+            
+            if (stats.length > 0) {
+                console.group('Performance Statistics');
+                console.table(stats);
+                console.groupEnd();
             }
         },
 
