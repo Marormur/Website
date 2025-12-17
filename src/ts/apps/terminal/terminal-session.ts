@@ -131,6 +131,9 @@ export class TerminalSession extends BaseTab {
     /**
      * Render terminal UI using VDOM
      * This method efficiently updates the terminal without losing input focus
+     *
+     * Key invariant: The input element is never recreated; it's keyed to persist across
+     * VDOM updates. This preserves focus and value during incremental renders.
      */
     private _renderTerminal(): void {
         console.log('[DEBUG] TerminalSession._renderTerminal() CALLED', {
@@ -182,15 +185,18 @@ export class TerminalSession extends BaseTab {
         if (!this._vTree) {
             // Initial render: create DOM from scratch
             const dom = createElement(vTree);
-            // Clear container first to prevent duplicate renders
+            // Clear container to ensure clean initial state
             this.element.innerHTML = '';
             this.element.appendChild(dom);
         } else {
             // Update: intelligent diff + patch
+            // CRITICAL: patch only accepts the root container element, NOT its wrapper
             const patches = diff(this._vTree, vTree);
-            const container = this.element.firstChild as HTMLElement;
-            if (container) {
-                patch(container, patches);
+            if (patches.length > 0) {
+                const root = this.element.firstChild as HTMLElement;
+                if (root) {
+                    patch(root, patches);
+                }
             }
         }
 
@@ -465,17 +471,32 @@ export class TerminalSession extends BaseTab {
         // Append to output lines array
         this._outputLines.push(lineVNode);
 
-        // Trigger VDOM re-render (only new line will be patched)
-        this._renderTerminal();
-
-        // Auto-scroll to bottom after DOM update
+        // Directly append to DOM instead of full re-render
+        // This avoids VDOM diffing issues and preserves input focus
         if (this.outputElement) {
-            // Use requestAnimationFrame to ensure DOM is updated
+            const lineElement = document.createElement('div');
+            lineElement.className = className;
+            lineElement.textContent = text;
+            this.outputElement.appendChild(lineElement);
+
+            // Auto-scroll to bottom after DOM update
             requestAnimationFrame(() => {
                 if (this.outputElement) {
                     this.outputElement.scrollTop = this.outputElement.scrollHeight;
                 }
             });
+        } else {
+            // Fallback: if output element not yet created, do full render
+            this._renderTerminal();
+
+            // Auto-scroll after full render
+            if (this.outputElement) {
+                requestAnimationFrame(() => {
+                    if (this.outputElement) {
+                        this.outputElement.scrollTop = this.outputElement.scrollHeight;
+                    }
+                });
+            }
         }
     }
 
@@ -483,8 +504,13 @@ export class TerminalSession extends BaseTab {
         // Clear output lines array
         this._outputLines = [];
 
-        // Trigger VDOM re-render (output area will be empty)
-        this._renderTerminal();
+        // Directly clear output element
+        if (this.outputElement) {
+            this.outputElement.innerHTML = '';
+        } else {
+            // Fallback: if output element not yet created, do full render
+            this._renderTerminal();
+        }
     }
 
     showHelp(): void {
@@ -568,9 +594,11 @@ export class TerminalSession extends BaseTab {
     }
 
     updatePrompt(): void {
-        // Trigger VDOM re-render to update prompt text
-        // The prompt content is generated dynamically in _renderTerminal()
-        this._renderTerminal();
+        // Update prompt element directly without full VDOM re-render
+        const prompt = this.element?.querySelector('.terminal-prompt') as HTMLElement | null;
+        if (prompt) {
+            prompt.textContent = `guest@marvin:${this.vfsCwd}$`;
+        }
     }
 
     // ---------------------------
