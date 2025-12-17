@@ -29,6 +29,7 @@
     "format": "prettier --write \"**/*.{js,css,html,md,json}\"",
     "format:check": "prettier --check \"**/*.{js,css,html,md,json}\"",
     "validate": "npm run typecheck && npm run type:baseline && npm run build:ts && npm run lint && npm run build:css && npm run test:e2e",
+    "validate:vdom": "node scripts/validate-vdom-performance.js",
     "docs:clean": "rimraf docs/api",
     "clean:legacy": "rimraf js/legacy",
     "prepare": "husky"

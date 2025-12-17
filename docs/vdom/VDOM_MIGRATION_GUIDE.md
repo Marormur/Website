@@ -22,6 +22,7 @@ renderList(items: Item[]): void {
 ```
 
 **Issues:**
+
 - 🔴 **Destroys all DOM state** - Scroll position, focus, selection lost
 - 🔴 **Detaches event listeners** - Must re-attach after every render
 - 🔴 **Slow for large lists** - Recreates entire subtree even for small changes
@@ -36,14 +37,14 @@ private _vTree: VNode | null = null;
 
 renderList(items: Item[]): void {
     const newVTree = h('ul', {},
-        ...items.map(item => 
-            h('li', { 
+        ...items.map(item =>
+            h('li', {
                 key: item.id,
                 'data-id': item.id
             }, item.name)
         )
     );
-    
+
     if (!this._vTree) {
         const dom = createElement(newVTree);
         this.container.appendChild(dom);
@@ -51,12 +52,13 @@ renderList(items: Item[]): void {
         const patches = diff(this._vTree, newVTree);
         patch(this.container.firstElementChild as HTMLElement, patches);
     }
-    
+
     this._vTree = newVTree;
 }
 ```
 
 **Benefits:**
+
 - ✅ **Preserves DOM state** - Scroll, focus, selection maintained
 - ✅ **Maintains event listeners** - No re-attachment needed
 - ✅ **Fast incremental updates** - Only changed nodes are updated
@@ -75,6 +77,7 @@ const { h, diff, patch, createElement } = window.VDOM;
 ```
 
 Or with TypeScript imports:
+
 ```typescript
 import { h, diff, patch, createElement, VNode } from '../core/vdom';
 ```
@@ -86,7 +89,7 @@ Add a private field to track the current virtual tree:
 ```typescript
 class MyComponent {
     private _vTree: VNode | null = null;
-    
+
     // ... existing code
 }
 ```
@@ -94,6 +97,7 @@ class MyComponent {
 ### Step 3: Convert Template to VDOM
 
 **Before (innerHTML):**
+
 ```typescript
 render(data: MyData): void {
     this.container.innerHTML = `
@@ -107,6 +111,7 @@ render(data: MyData): void {
 ```
 
 **After (VDOM):**
+
 ```typescript
 render(data: MyData): void {
     const newVTree = h('div', { className: 'card' },
@@ -116,7 +121,7 @@ render(data: MyData): void {
             onClick: () => this.handleClick()
         }, 'Click')
     );
-    
+
     if (!this._vTree) {
         const dom = createElement(newVTree);
         this.container.appendChild(dom);
@@ -124,7 +129,7 @@ render(data: MyData): void {
         const patches = diff(this._vTree, newVTree);
         patch(this.container.firstElementChild as HTMLElement, patches);
     }
-    
+
     this._vTree = newVTree;
 }
 ```
@@ -134,13 +139,15 @@ render(data: MyData): void {
 **Critical:** Always use keys for list items to enable efficient reconciliation.
 
 **Before:**
+
 ```typescript
-items.map(item => `<li>${item.name}</li>`).join('')
+items.map(item => `<li>${item.name}</li>`).join('');
 ```
 
 **After:**
+
 ```typescript
-items.map(item => h('li', { key: item.id }, item.name))
+items.map(item => h('li', { key: item.id }, item.name));
 ```
 
 ---
@@ -150,6 +157,7 @@ items.map(item => h('li', { key: item.id }, item.name))
 ### Pattern 1: Simple Static Content
 
 **Before:**
+
 ```typescript
 this.container.innerHTML = `
     <div class="header">
@@ -160,8 +168,11 @@ this.container.innerHTML = `
 ```
 
 **After:**
+
 ```typescript
-const vTree = h('div', { className: 'header' },
+const vTree = h(
+    'div',
+    { className: 'header' },
     h('h1', {}, 'My App'),
     h('p', {}, 'Welcome!')
 );
@@ -172,6 +183,7 @@ this.container.appendChild(dom);
 ### Pattern 2: Dynamic Content
 
 **Before:**
+
 ```typescript
 render(user: User): void {
     this.container.innerHTML = `
@@ -185,6 +197,7 @@ render(user: User): void {
 ```
 
 **After:**
+
 ```typescript
 private _vTree: VNode | null = null;
 
@@ -194,7 +207,7 @@ render(user: User): void {
         h('h3', {}, user.name),
         h('p', {}, user.bio)
     );
-    
+
     if (!this._vTree) {
         const dom = createElement(newVTree);
         this.container.appendChild(dom);
@@ -202,7 +215,7 @@ render(user: User): void {
         const patches = diff(this._vTree, newVTree);
         patch(this.container.firstElementChild as HTMLElement, patches);
     }
-    
+
     this._vTree = newVTree;
 }
 ```
@@ -210,6 +223,7 @@ render(user: User): void {
 ### Pattern 3: Lists with Items
 
 **Before:**
+
 ```typescript
 renderItems(items: Item[]): void {
     this.container.innerHTML = `
@@ -226,12 +240,13 @@ renderItems(items: Item[]): void {
 ```
 
 **After:**
+
 ```typescript
 private _vTree: VNode | null = null;
 
 renderItems(items: Item[]): void {
     const newVTree = h('ul', { className: 'item-list' },
-        ...items.map(item => 
+        ...items.map(item =>
             h('li', {
                 key: item.id,
                 'data-id': item.id,
@@ -242,7 +257,7 @@ renderItems(items: Item[]): void {
             )
         )
     );
-    
+
     if (!this._vTree) {
         const dom = createElement(newVTree);
         this.container.appendChild(dom);
@@ -250,7 +265,7 @@ renderItems(items: Item[]): void {
         const patches = diff(this._vTree, newVTree);
         patch(this.container.firstElementChild as HTMLElement, patches);
     }
-    
+
     this._vTree = newVTree;
 }
 ```
@@ -258,12 +273,13 @@ renderItems(items: Item[]): void {
 ### Pattern 4: Event Handlers
 
 **Before:**
+
 ```typescript
 renderButton(): void {
     this.container.innerHTML = `
         <button id="my-btn" class="btn">Click Me</button>
     `;
-    
+
     // Must attach listener after render
     document.getElementById('my-btn')?.addEventListener('click', () => {
         this.handleClick();
@@ -272,6 +288,7 @@ renderButton(): void {
 ```
 
 **After:**
+
 ```typescript
 private _vTree: VNode | null = null;
 
@@ -280,7 +297,7 @@ renderButton(): void {
         className: 'btn',
         onClick: () => this.handleClick()  // Event handler in props
     }, 'Click Me');
-    
+
     if (!this._vTree) {
         const dom = createElement(newVTree);
         this.container.appendChild(dom);
@@ -288,7 +305,7 @@ renderButton(): void {
         const patches = diff(this._vTree, newVTree);
         patch(this.container.firstElementChild as HTMLElement, patches);
     }
-    
+
     this._vTree = newVTree;
 }
 ```
@@ -296,6 +313,7 @@ renderButton(): void {
 ### Pattern 5: Conditional Rendering
 
 **Before:**
+
 ```typescript
 render(showDetails: boolean, data: Data): void {
     this.container.innerHTML = `
@@ -313,6 +331,7 @@ render(showDetails: boolean, data: Data): void {
 ```
 
 **After:**
+
 ```typescript
 private _vTree: VNode | null = null;
 
@@ -320,7 +339,7 @@ render(showDetails: boolean, data: Data): void {
     const children = [
         h('h2', {}, data.title)
     ];
-    
+
     if (showDetails) {
         children.push(
             h('div', { className: 'details' },
@@ -329,9 +348,9 @@ render(showDetails: boolean, data: Data): void {
             )
         );
     }
-    
+
     const newVTree = h('div', { className: 'card' }, ...children);
-    
+
     if (!this._vTree) {
         const dom = createElement(newVTree);
         this.container.appendChild(dom);
@@ -339,7 +358,7 @@ render(showDetails: boolean, data: Data): void {
         const patches = diff(this._vTree, newVTree);
         patch(this.container.firstElementChild as HTMLElement, patches);
     }
-    
+
     this._vTree = newVTree;
 }
 ```
@@ -353,7 +372,7 @@ Create a helper function to reduce boilerplate:
 ```typescript
 class MyComponent {
     private _vTree: VNode | null = null;
-    
+
     private updateView(newVTree: VNode): void {
         if (!this._vTree) {
             const dom = createElement(newVTree);
@@ -364,9 +383,11 @@ class MyComponent {
         }
         this._vTree = newVTree;
     }
-    
+
     render(data: Data): void {
-        const vTree = h('div', { className: 'my-component' },
+        const vTree = h(
+            'div',
+            { className: 'my-component' }
             // ... your virtual tree
         );
         this.updateView(vTree);
@@ -410,16 +431,16 @@ test('preserves scroll position after update', async ({ page }) => {
         const list = document.querySelector('.my-list');
         list.scrollTop = 500;
     });
-    
+
     // Trigger update
     await page.click('[data-action="update"]');
-    
+
     // Check scroll preserved
     const scrollTop = await page.evaluate(() => {
         const list = document.querySelector('.my-list');
         return list.scrollTop;
     });
-    
+
     expect(scrollTop).toBe(500);
 });
 ```
@@ -428,14 +449,14 @@ test('preserves scroll position after update', async ({ page }) => {
 
 ## Performance Comparison
 
-| Operation | innerHTML | VDOM | Improvement |
-|-----------|-----------|------|-------------|
-| Initial render 100 items | ~50ms | ~30ms | 40% faster |
-| Update 1 item | ~50ms | ~5ms | 90% faster |
-| Reorder items | ~50ms | ~10ms | 80% faster |
-| Add 1 item | ~50ms | ~3ms | 94% faster |
+| Operation                | innerHTML | VDOM  | Improvement |
+| ------------------------ | --------- | ----- | ----------- |
+| Initial render 100 items | ~50ms     | ~30ms | 40% faster  |
+| Update 1 item            | ~50ms     | ~5ms  | 90% faster  |
+| Reorder items            | ~50ms     | ~10ms | 80% faster  |
+| Add 1 item               | ~50ms     | ~3ms  | 94% faster  |
 
-*Note: Times are approximate and vary by browser/hardware*
+_Note: Times are approximate and vary by browser/hardware_
 
 ---
 
@@ -446,6 +467,7 @@ test('preserves scroll position after update', async ({ page }) => {
 **Cause:** Container not initialized before render
 
 **Solution:** Ensure container exists:
+
 ```typescript
 if (!this.container.firstElementChild) {
     const dom = createElement(newVTree);
@@ -458,12 +480,13 @@ if (!this.container.firstElementChild) {
 **Cause:** Missing or unstable keys
 
 **Solution:** Use stable IDs as keys:
+
 ```typescript
 // ❌ Bad: index as key
-items.map((item, i) => h('li', { key: i }, item.name))
+items.map((item, i) => h('li', { key: i }, item.name));
 
 // ✅ Good: stable ID as key
-items.map(item => h('li', { key: item.id }, item.name))
+items.map(item => h('li', { key: item.id }, item.name));
 ```
 
 ### Issue: Event handlers fire multiple times
@@ -471,10 +494,15 @@ items.map(item => h('li', { key: item.id }, item.name))
 **Cause:** Re-attaching listeners on every render
 
 **Solution:** VDOM handles this automatically. Use props:
+
 ```typescript
-h('button', {
-    onClick: () => this.handleClick()  // VDOM manages listener lifecycle
-}, 'Click')
+h(
+    'button',
+    {
+        onClick: () => this.handleClick(), // VDOM manages listener lifecycle
+    },
+    'Click'
+);
 ```
 
 ---

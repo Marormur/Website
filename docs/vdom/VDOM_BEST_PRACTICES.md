@@ -9,10 +9,11 @@ Keys enable efficient reconciliation and prevent unnecessary DOM operations.
 ### ❌ Bad: No Keys
 
 ```typescript
-items.map(item => h('li', {}, item.name))
+items.map(item => h('li', {}, item.name));
 ```
 
 **Problems:**
+
 - Items recreated on reorder
 - Scroll position lost
 - Component state reset
@@ -21,10 +22,11 @@ items.map(item => h('li', {}, item.name))
 ### ✅ Good: Stable Keys
 
 ```typescript
-items.map(item => h('li', { key: item.id }, item.name))
+items.map(item => h('li', { key: item.id }, item.name));
 ```
 
 **Benefits:**
+
 - Items reordered, not recreated
 - State preserved
 - Fast updates
@@ -33,33 +35,37 @@ items.map(item => h('li', { key: item.id }, item.name))
 ### Key Guidelines
 
 **Do:**
+
 - Use stable IDs (database IDs, UUIDs)
 - Ensure uniqueness within siblings
 - Use same key for same item across renders
 
 **Don't:**
+
 - Use array indices (unless list is static and never reordered)
 - Use random values (breaks reconciliation)
 - Reuse keys for different items
 
 ```typescript
 // ❌ Bad: Index as key (breaks on reorder)
-items.map((item, i) => h('li', { key: i }, item.name))
+items.map((item, i) => h('li', { key: i }, item.name));
 
 // ❌ Bad: Random keys (breaks reconciliation)
-items.map(item => h('li', { key: Math.random() }, item.name))
+items.map(item => h('li', { key: Math.random() }, item.name));
 
 // ✅ Good: Stable ID
-items.map(item => h('li', { key: item.id }, item.name))
+items.map(item => h('li', { key: item.id }, item.name));
 
 // ✅ Good: Composite key for nested lists
 users.map(user =>
-    h('div', { key: user.id },
+    h(
+        'div',
+        { key: user.id },
         ...user.posts.map(post =>
             h('div', { key: `${user.id}-${post.id}` }, post.title)
         )
     )
-)
+);
 ```
 
 ---
@@ -71,20 +77,11 @@ Keep virtual trees shallow for better diff performance.
 ### ❌ Bad: Deep Nesting
 
 ```typescript
-h('div', {},
-    h('div', {},
-        h('div', {},
-            h('div', {},
-                h('div', {},
-                    content
-                )
-            )
-        )
-    )
-)
+h('div', {}, h('div', {}, h('div', {}, h('div', {}, h('div', {}, content)))));
 ```
 
 **Problems:**
+
 - Slower diffing
 - More memory
 - Harder to debug
@@ -92,16 +89,19 @@ h('div', {},
 ### ✅ Good: Flat Structure
 
 ```typescript
-h('div', { className: 'wrapper' }, content)
+h('div', { className: 'wrapper' }, content);
 ```
 
 **Or with meaningful semantics:**
+
 ```typescript
-h('article', { className: 'post' },
+h(
+    'article',
+    { className: 'post' },
     h('header', {}, title),
     h('main', {}, content),
     h('footer', {}, metadata)
-)
+);
 ```
 
 ---
@@ -126,7 +126,7 @@ render(data: Data): void {
         ),
         h('main', {}, this.renderContent(data))  // Only this changes
     );
-    
+
     this.updateView(newVTree);
 }
 ```
@@ -137,13 +137,17 @@ render(data: Data): void {
 class MyComponent {
     private _headerVTree: VNode | null = null;
     private _vTree: VNode | null = null;
-    
+
     private getHeaderVTree(): VNode {
         if (!this._headerVTree) {
-            this._headerVTree = h('header', { className: 'app-header' },
+            this._headerVTree = h(
+                'header',
+                { className: 'app-header' },
                 h('img', { src: '/logo.png', alt: 'Logo' }),
                 h('h1', {}, 'My App'),
-                h('nav', {},
+                h(
+                    'nav',
+                    {},
                     h('a', { href: '#home' }, 'Home'),
                     h('a', { href: '#about' }, 'About')
                 )
@@ -151,19 +155,22 @@ class MyComponent {
         }
         return this._headerVTree;
     }
-    
+
     render(data: Data): void {
-        const newVTree = h('div', {},
-            this.getHeaderVTree(),  // Reuse cached header
+        const newVTree = h(
+            'div',
+            {},
+            this.getHeaderVTree(), // Reuse cached header
             h('main', {}, this.renderContent(data))
         );
-        
+
         this.updateView(newVTree);
     }
 }
 ```
 
 **Benefits:**
+
 - Faster diffing (header skipped if reference is same)
 - Less memory allocation
 - Better performance
@@ -179,11 +186,12 @@ Avoid multiple renders in quick succession.
 ```typescript
 items.forEach(item => {
     this.addItem(item);
-    this.render();  // ← N renders!
+    this.render(); // ← N renders!
 });
 ```
 
 **Problems:**
+
 - N diff/patch cycles
 - Slow for large updates
 - Unnecessary DOM operations
@@ -192,28 +200,29 @@ items.forEach(item => {
 
 ```typescript
 items.forEach(item => this.addItem(item));
-this.render();  // ← 1 render!
+this.render(); // ← 1 render!
 ```
 
 **Or with debouncing:**
+
 ```typescript
 class MyComponent {
     private renderTimeout: number | null = null;
-    
+
     scheduleRender(): void {
         if (this.renderTimeout !== null) {
             clearTimeout(this.renderTimeout);
         }
-        
+
         this.renderTimeout = window.setTimeout(() => {
             this.render();
             this.renderTimeout = null;
-        }, 16);  // ~60fps
+        }, 16); // ~60fps
     }
-    
+
     addItem(item: Item): void {
         this.items.push(item);
-        this.scheduleRender();  // Debounced render
+        this.scheduleRender(); // Debounced render
     }
 }
 ```
@@ -228,10 +237,7 @@ When you need multiple root elements without a wrapper.
 
 ```typescript
 // Adds extra <div> to DOM
-h('div', {},
-    h('h1', {}, title),
-    h('p', {}, description)
-)
+h('div', {}, h('h1', {}, title), h('p', {}, description));
 ```
 
 ### ✅ Good: Array of Children (Fragment-like)
@@ -240,11 +246,11 @@ h('div', {},
 // No wrapper needed - parent handles multiple children
 const children = [
     h('h1', { key: 'title' }, title),
-    h('p', { key: 'desc' }, description)
+    h('p', { key: 'desc' }, description),
 ];
 
 // Use in parent
-h('article', {}, ...children)
+h('article', {}, ...children);
 ```
 
 **Note:** Always use keys when returning array of elements.
@@ -260,15 +266,15 @@ For lists with 1000+ items, consider virtualization.
 ```typescript
 class LargeList {
     private _vTree: VNode | null = null;
-    
+
     render(items: Item[]): void {
         // For < 1000 items, direct rendering is fine
-        const newVTree = h('ul', { className: 'large-list' },
-            ...items.map(item => 
-                h('li', { key: item.id }, item.name)
-            )
+        const newVTree = h(
+            'ul',
+            { className: 'large-list' },
+            ...items.map(item => h('li', { key: item.id }, item.name))
         );
-        
+
         this.updateView(newVTree);
     }
 }
@@ -282,43 +288,51 @@ class VirtualList {
     private scrollTop = 0;
     private itemHeight = 50;
     private visibleCount = 20;
-    
+
     render(items: Item[]): void {
         // Only render visible items
         const startIndex = Math.floor(this.scrollTop / this.itemHeight);
         const endIndex = startIndex + this.visibleCount;
         const visibleItems = items.slice(startIndex, endIndex);
-        
-        const newVTree = h('div', {
-            className: 'virtual-list',
-            onScroll: (e: Event) => {
-                this.scrollTop = (e.target as HTMLElement).scrollTop;
-                this.render(items);
-            },
-            style: {
-                height: '1000px',
-                overflow: 'auto'
-            }
-        },
-            h('div', {
+
+        const newVTree = h(
+            'div',
+            {
+                className: 'virtual-list',
+                onScroll: (e: Event) => {
+                    this.scrollTop = (e.target as HTMLElement).scrollTop;
+                    this.render(items);
+                },
                 style: {
-                    height: `${items.length * this.itemHeight}px`,
-                    position: 'relative'
-                }
+                    height: '1000px',
+                    overflow: 'auto',
+                },
             },
+            h(
+                'div',
+                {
+                    style: {
+                        height: `${items.length * this.itemHeight}px`,
+                        position: 'relative',
+                    },
+                },
                 ...visibleItems.map((item, i) =>
-                    h('div', {
-                        key: item.id,
-                        style: {
-                            position: 'absolute',
-                            top: `${(startIndex + i) * this.itemHeight}px`,
-                            height: `${this.itemHeight}px`
-                        }
-                    }, item.name)
+                    h(
+                        'div',
+                        {
+                            key: item.id,
+                            style: {
+                                position: 'absolute',
+                                top: `${(startIndex + i) * this.itemHeight}px`,
+                                height: `${this.itemHeight}px`,
+                            },
+                        },
+                        item.name
+                    )
                 )
             )
         );
-        
+
         this.updateView(newVTree);
     }
 }
@@ -366,7 +380,7 @@ render(data: Data): void {
             h('p', {}, data.copyright)
         )
     );
-    
+
     this.updateView(newVTree);
 }
 ```
@@ -376,69 +390,84 @@ render(data: Data): void {
 ```typescript
 class MyApp {
     private _vTree: VNode | null = null;
-    
+
     private renderHeader(data: Data): VNode {
-        return h('header', {},
+        return h(
+            'header',
+            {},
             h('img', { src: data.logo }),
             h('h1', {}, data.title),
             this.renderNav(data.navItems)
         );
     }
-    
+
     private renderNav(items: NavItem[]): VNode {
-        return h('nav', {},
+        return h(
+            'nav',
+            {},
             ...items.map(item =>
                 h('a', { key: item.id, href: item.url }, item.label)
             )
         );
     }
-    
+
     private renderSidebar(categories: Category[]): VNode {
-        return h('aside', {},
+        return h(
+            'aside',
+            {},
             ...categories.map(cat => this.renderCategory(cat))
         );
     }
-    
+
     private renderCategory(category: Category): VNode {
-        return h('div', { key: category.id, className: 'category' },
+        return h(
+            'div',
+            { key: category.id, className: 'category' },
             h('h3', {}, category.name),
-            h('ul', {},
+            h(
+                'ul',
+                {},
                 ...category.items.map(item =>
                     h('li', { key: item.id }, item.name)
                 )
             )
         );
     }
-    
+
     private renderArticle(article: Article): VNode {
-        return h('article', {},
+        return h(
+            'article',
+            {},
             h('h2', {}, article.title),
             h('p', {}, article.content)
         );
     }
-    
+
     private renderFooter(copyright: string): VNode {
-        return h('footer', {},
-            h('p', {}, copyright)
-        );
+        return h('footer', {}, h('p', {}, copyright));
     }
-    
+
     render(data: Data): void {
-        const newVTree = h('div', { className: 'app' },
+        const newVTree = h(
+            'div',
+            { className: 'app' },
             this.renderHeader(data),
-            h('main', {},
+            h(
+                'main',
+                {},
                 this.renderSidebar(data.categories),
                 this.renderArticle(data.article)
             ),
             this.renderFooter(data.copyright)
         );
-        
+
         this.updateView(newVTree);
     }
 }
 ```
 
 **Benefits:**
+
 - Easier to read and maintain
 - Reusable render functions
 - Better testability
@@ -454,10 +483,14 @@ Inline arrow functions create new function instances on every render.
 
 ```typescript
 items.map(item =>
-    h('button', {
-        onClick: () => this.handleClick(item.id)  // New function every render
-    }, item.name)
-)
+    h(
+        'button',
+        {
+            onClick: () => this.handleClick(item.id), // New function every render
+        },
+        item.name
+    )
+);
 ```
 
 ### ✅ Good: Pre-bound Handlers
@@ -465,24 +498,30 @@ items.map(item =>
 ```typescript
 class MyComponent {
     private handlers = new Map<string, () => void>();
-    
+
     getHandler(itemId: string): () => void {
         if (!this.handlers.has(itemId)) {
             this.handlers.set(itemId, () => this.handleClick(itemId));
         }
         return this.handlers.get(itemId)!;
     }
-    
+
     render(items: Item[]): void {
-        const newVTree = h('ul', {},
+        const newVTree = h(
+            'ul',
+            {},
             ...items.map(item =>
-                h('button', {
-                    key: item.id,
-                    onClick: this.getHandler(item.id)  // Reuse same function
-                }, item.name)
+                h(
+                    'button',
+                    {
+                        key: item.id,
+                        onClick: this.getHandler(item.id), // Reuse same function
+                    },
+                    item.name
+                )
             )
         );
-        
+
         this.updateView(newVTree);
     }
 }
@@ -506,22 +545,34 @@ interface UserCardProps {
 
 class UserCard {
     private _vTree: VNode | null = null;
-    
+
     render(props: UserCardProps): VNode {
         const { user, onEdit, onDelete } = props;
-        
-        return h('div', { className: 'user-card', key: user.id },
+
+        return h(
+            'div',
+            { className: 'user-card', key: user.id },
             h('img', { src: user.avatar, alt: user.name }),
             h('h3', {}, user.name),
             h('p', {}, user.bio),
-            h('div', { className: 'actions' },
-                h('button', {
-                    onClick: () => onEdit(user.id)
-                }, 'Edit'),
-                h('button', {
-                    onClick: () => onDelete(user.id),
-                    className: 'danger'
-                }, 'Delete')
+            h(
+                'div',
+                { className: 'actions' },
+                h(
+                    'button',
+                    {
+                        onClick: () => onEdit(user.id),
+                    },
+                    'Edit'
+                ),
+                h(
+                    'button',
+                    {
+                        onClick: () => onDelete(user.id),
+                        className: 'danger',
+                    },
+                    'Delete'
+                )
             )
         );
     }
@@ -541,7 +592,7 @@ class MyComponent {
     render(data: Data): void {
         const { result, time } = measurePerf(() => {
             const newVTree = this.createVTree(data);
-            
+
             if (!this._vTree) {
                 const dom = createElement(newVTree);
                 this.container.appendChild(dom);
@@ -549,11 +600,12 @@ class MyComponent {
                 const patches = diff(this._vTree, newVTree);
                 patch(this.container.firstElementChild as HTMLElement, patches);
             }
-            
+
             this._vTree = newVTree;
         }, 'MyComponent render');
-        
-        if (time > 16) {  // > 1 frame at 60fps
+
+        if (time > 16) {
+            // > 1 frame at 60fps
             console.warn(`Slow render: ${time.toFixed(2)}ms`);
         }
     }
@@ -583,7 +635,7 @@ class MyComponent {
 
 ```typescript
 // Breaks when list is reordered/filtered
-items.map((item, i) => h('li', { key: i }, item.name))
+items.map((item, i) => h('li', { key: i }, item.name));
 ```
 
 ### ❌ Don't Recreate VDOM Tree from Scratch
@@ -602,7 +654,7 @@ this.container.appendChild(dom);
 this.container.innerHTML += '<div>New content</div>';
 ```
 
-### ❌ Don't Forget to Update _vTree
+### ❌ Don't Forget to Update \_vTree
 
 ```typescript
 // Next render will diff against old tree
