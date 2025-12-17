@@ -57,7 +57,10 @@ console.log('API loaded');
             'toggle',
             'mark',
             'measure',
+            'measureFunction',
+            'getStats',
             'report',
+            'reportStats',
             'getVitals',
         ] as const),
 
