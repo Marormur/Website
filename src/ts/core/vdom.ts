@@ -268,11 +268,11 @@ function diffChildren(oldChildren: (VNode | string)[], newChildren: (VNode | str
 /**
  * Builds a map of keys to indices for efficient lookup
  * 
- * Used internally by diffChildren for O(1) key-based node matching.
+ * Used internally by diffChildren to enable O(1) key-based node matching during reconciliation.
  * Only includes children with explicit keys; text nodes and keyless vnodes are skipped.
  * 
  * @param children - Array of child nodes (VNodes or strings)
- * @returns Map from key to child index
+ * @returns Map from key to child index for O(1) lookup
  */
 function buildKeyMap(children: (VNode | string)[]): Map<string | number, number> {
     const map = new Map<string | number, number>();
@@ -312,13 +312,11 @@ function getNodeKey(node: VNode | string, index: number): string | number | unde
  *
  * @param rootElement - DOM element to patch
  * @param patches - Array of patch operations
- * @param oldVTree - Previous virtual tree (for reference)
  * @returns Updated DOM element
  */
 export function patch(
     rootElement: HTMLElement,
-    patches: Patch[],
-    oldVTree?: VNode | null
+    patches: Patch[]
 ): HTMLElement {
     if (patches.length === 0) {
         return rootElement;

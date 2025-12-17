@@ -107,14 +107,13 @@ const patches = diff(oldVTree, newVTree);
 
 ---
 
-### `patch(rootElement, patches, oldVTree?)`
+### `patch(rootElement, patches)`
 
 Applies patch operations to a real DOM element.
 
 **Parameters:**
 - `rootElement` (HTMLElement): DOM element to patch
 - `patches` (Patch[]): Array of patch operations from `diff()`
-- `oldVTree` (VNode | null, optional): Previous virtual tree (for reference)
 
 **Returns:** `HTMLElement` - Updated DOM element
 
