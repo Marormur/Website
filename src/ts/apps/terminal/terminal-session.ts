@@ -71,14 +71,24 @@ export class TerminalSession extends BaseTab {
         // Initial render with VDOM (queries DOM elements internally)
         this._renderTerminal();
 
+        // Attach event listeners once (they persist across VDOM updates)
+        this._attachEventListeners();
+
         this.showWelcomeMessage();
 
         return container;
     }
 
+    private _attachEventListeners(): void {
+        if (!this.inputElement) return;
+
+        // Attach event listener once - it will persist across VDOM updates
+        // since the input element is keyed and won't be recreated
+        this.inputElement.addEventListener('keydown', this._handleKeyDown.bind(this));
+    }
+
     /**
      * Handle keydown events on terminal input
-     * Used as VDOM event handler
      */
     private _handleKeyDown(e: KeyboardEvent): void {
         if (e.key === 'Enter') {
@@ -116,11 +126,6 @@ export class TerminalSession extends BaseTab {
             e.preventDefault();
             this.handleTabCompletion();
         }
-    }
-
-    private _attachEventListeners(): void {
-        // Event handlers are now managed by VDOM (see _renderTerminal)
-        // Keep this method for potential future use or container-level events
     }
 
     /**
@@ -164,7 +169,6 @@ export class TerminalSession extends BaseTab {
                     spellcheck: 'false',
                     'aria-label': 'Terminal input',
                     key: 'terminal-input', // Ensure input element is never recreated
-                    onKeydown: this._handleKeyDown.bind(this), // VDOM event handler
                 })
             )
         );
