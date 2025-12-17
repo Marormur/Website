@@ -47,8 +47,8 @@ test.describe('Terminal VDOM Focus Preservation', () => {
             }
         });
 
-        // Wait for render
-        await page.waitForTimeout(100);
+        // Wait for output line to appear in DOM
+        await page.waitForSelector('.terminal-line.terminal-output', { timeout: 2000 });
 
         // Verify input still has focus after output update
         hasFocus = await page.evaluate(() => {
@@ -89,8 +89,14 @@ test.describe('Terminal VDOM Focus Preservation', () => {
             }
         });
 
-        // Wait for all renders to complete
-        await page.waitForTimeout(200);
+        // Wait for all 20 output lines to appear in DOM
+        await page.waitForFunction(
+            () => {
+                const lines = document.querySelectorAll('.terminal-line.terminal-output');
+                return lines.length >= 20;
+            },
+            { timeout: 2000 }
+        );
 
         // Verify input still has focus after rapid updates
         hasFocus = await page.evaluate(() => {
@@ -114,8 +120,14 @@ test.describe('Terminal VDOM Focus Preservation', () => {
         await terminalInput.fill('help');
         await terminalInput.press('Enter');
 
-        // Wait for command output
-        await page.waitForTimeout(300);
+        // Wait for help command output to appear (help command produces multiple lines)
+        await page.waitForFunction(
+            () => {
+                const lines = document.querySelectorAll('.terminal-line');
+                return lines.length > 5; // help command produces many output lines
+            },
+            { timeout: 2000 }
+        );
 
         // Verify input has focus after command execution
         const hasFocus = await page.evaluate(() => {
@@ -149,7 +161,14 @@ test.describe('Terminal VDOM Focus Preservation', () => {
             }
         });
 
-        await page.waitForTimeout(100);
+        // Wait for output lines to appear
+        await page.waitForFunction(
+            () => {
+                const lines = document.querySelectorAll('.terminal-line.terminal-output');
+                return lines.length >= 3;
+            },
+            { timeout: 2000 }
+        );
 
         // Clear output
         await page.evaluate(() => {
@@ -160,7 +179,14 @@ test.describe('Terminal VDOM Focus Preservation', () => {
             }
         });
 
-        await page.waitForTimeout(100);
+        // Wait for output to be cleared (should have 0 output lines)
+        await page.waitForFunction(
+            () => {
+                const lines = document.querySelectorAll('.terminal-line.terminal-output');
+                return lines.length === 0;
+            },
+            { timeout: 2000 }
+        );
 
         // Verify input still has focus after clear
         const hasFocus = await page.evaluate(() => {

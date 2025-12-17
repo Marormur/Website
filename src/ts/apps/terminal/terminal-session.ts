@@ -178,10 +178,6 @@ export class TerminalSession extends BaseTab {
             // Initial render: create DOM from scratch
             const dom = createElement(vTree);
             this.element.appendChild(dom);
-
-            // Query DOM elements after initial render
-            this.outputElement = this.element.querySelector('[data-terminal-output]');
-            this.inputElement = this.element.querySelector('[data-terminal-input]');
         } else {
             // Update: intelligent diff + patch
             const patches = diff(this._vTree, vTree);
@@ -192,6 +188,13 @@ export class TerminalSession extends BaseTab {
         }
 
         this._vTree = vTree;
+
+        // Always re-query DOM elements to ensure we have correct references
+        // This is safe because the input element has a key and won't be recreated
+        if (!this.outputElement || !this.inputElement) {
+            this.outputElement = this.element.querySelector('[data-terminal-output]');
+            this.inputElement = this.element.querySelector('[data-terminal-input]');
+        }
     }
 
     /**
