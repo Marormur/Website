@@ -393,7 +393,7 @@ function applyPatch(rootElement: HTMLElement, patchOp: Patch): void {
 /**
  * Creates a real DOM element from a virtual node
  */
-function createElement(vnode: VNode): HTMLElement | Text {
+export function createElement(vnode: VNode): HTMLElement | Text {
     // Handle text nodes
     if (vnode.type === '#text') {
         const textContent = vnode.children[0];
@@ -533,6 +533,7 @@ export const VDOM = {
     h,
     diff,
     patch,
+    createElement,
     EventDelegator,
     measurePerf,
 };

@@ -23,6 +23,7 @@
 import { BaseTab, type TabConfig } from '../../windows/base-tab.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
 import PreviewInstanceManager from '../../windows/preview-instance-manager.js';
+import { h, diff, patch, createElement, type VNode } from '../../core/vdom.js';
 
 const ROOT_FOLDER_NAME = 'Computer';
 
@@ -107,6 +108,10 @@ export class FinderView extends BaseTab {
     private _savedScrollPosition = 0;
     // Persist scroll positions per logical location (source + path)
     private _scrollPositions: Map<string, number> = new Map();
+
+    // VDOM State - tracks virtual tree for efficient updates
+    private _vTree: VNode | null = null;
+    private _breadcrumbsVTree: VNode | null = null;
 
     constructor(config?: Partial<TabConfig> & { source?: FinderSource }) {
         super({
@@ -477,33 +482,87 @@ export class FinderView extends BaseTab {
         if (!this.dom.breadcrumbs) return;
         // Ensure the tab title reflects the current folder/view
         this._updateTabLabel();
-        const parts: string[] = [];
+
+        // Build breadcrumb parts as VNodes
+        const breadcrumbParts: VNode[] = [];
         const viewLabel = this.source === 'github' ? 'GitHub' : 'Computer';
-        parts.push(
-            `<button class="finder-breadcrumb-item" data-action="goRoot">${viewLabel}</button>`
+
+        // Root button
+        breadcrumbParts.push(
+            h(
+                'button',
+                {
+                    class: 'finder-breadcrumb-item',
+                    'data-action': 'goRoot',
+                },
+                viewLabel
+            )
         );
+
+        // Path parts
         this.currentPath.forEach((part, index) => {
             if (this.source === 'computer' && index === 0 && part === ROOT_FOLDER_NAME) return;
             const pathUpToHere = this.currentPath.slice(0, index + 1).join('/');
-            parts.push('<span class="finder-breadcrumb-separator">›</span>');
-            parts.push(
-                `<button class="finder-breadcrumb-item" data-action="goto" data-path="${pathUpToHere}">${part}</button>`
+
+            // Separator
+            breadcrumbParts.push(h('span', { class: 'finder-breadcrumb-separator' }, '›'));
+
+            // Path button
+            breadcrumbParts.push(
+                h(
+                    'button',
+                    {
+                        class: 'finder-breadcrumb-item',
+                        'data-action': 'goto',
+                        'data-path': pathUpToHere,
+                    },
+                    part
+                )
             );
         });
-        this.dom.breadcrumbs.innerHTML = parts.join('');
-        this.dom.breadcrumbs
-            .querySelectorAll<HTMLButtonElement>('button[data-action="goto"]')
-            .forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const path = btn.dataset.path || '';
-                    const parts = path.split('/').filter(Boolean);
-                    this.navigateToPath(parts);
-                });
-            });
-        const rootBtn = this.dom.breadcrumbs.querySelector<HTMLButtonElement>(
-            'button[data-action="goRoot"]'
+
+        // Create container VNode - we need a wrapper to track the virtual tree
+        const newVTree = h(
+            'div',
+            { class: 'breadcrumb-wrapper flex items-center gap-1' },
+            ...breadcrumbParts
         );
-        if (rootBtn) rootBtn.addEventListener('click', () => this.goRoot());
+
+        // Apply VDOM updates
+        if (!this._breadcrumbsVTree || !this.dom.breadcrumbs.firstChild) {
+            // Initial render
+            this.dom.breadcrumbs.innerHTML = '';
+            const dom = createElement(newVTree);
+            this.dom.breadcrumbs.appendChild(dom);
+        } else {
+            // Update: intelligent diff + patch
+            const patches = diff(this._breadcrumbsVTree, newVTree);
+            const container = this.dom.breadcrumbs.firstChild as HTMLElement;
+            if (container) {
+                patch(container, patches);
+            }
+        }
+
+        this._breadcrumbsVTree = newVTree;
+
+        // Set up event delegation for breadcrumb clicks
+        // Note: We only need to attach these once, not on every render
+        if (!this.dom.breadcrumbs.dataset.breadcrumbsInitialized) {
+            this.dom.breadcrumbs.addEventListener('click', (e: Event) => {
+                const target = e.target as HTMLElement;
+                if (target.tagName === 'BUTTON') {
+                    const action = target.dataset.action;
+                    if (action === 'goRoot') {
+                        this.goRoot();
+                    } else if (action === 'goto') {
+                        const path = target.dataset.path || '';
+                        const parts = path.split('/').filter(Boolean);
+                        this.navigateToPath(parts);
+                    }
+                }
+            });
+            this.dom.breadcrumbs.dataset.breadcrumbsInitialized = 'true';
+        }
     }
 
     /**
@@ -623,58 +682,158 @@ export class FinderView extends BaseTab {
 
     renderListView(items: FileItem[]): void {
         this._renderedItems = items;
-        const rows = items
-            .map(
-                (item, i) => `
-            <tr class="finder-list-item ${this.selectedItems.has(item.name) ? 'bg-blue-100 dark:bg-blue-900' : ''}" data-item-index="${i}" data-item-name="${item.name}" data-item-type="${item.type}"${item.path ? ` data-item-path="${item.path}"` : ''}>
-                <td class="pr-2">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="finder-item-icon shrink-0">${item.icon || ''}</span>
-                    <span class="truncate block min-w-0">${item.name}</span>
-                  </div>
-                </td>
-                <td class="text-right whitespace-nowrap pl-2 pr-2">${this.formatSize(item.size)}</td>
-                <td class="text-right text-gray-500 dark:text-gray-400 whitespace-nowrap pl-2">${this.formatDate(item.modified)}</td>
-            </tr>
-        `
+
+        // Build virtual tree for list view
+        const newVTree = h(
+            'div',
+            { class: 'p-2' },
+            h(
+                'table',
+                { class: 'finder-list-table table-fixed w-full' },
+                h(
+                    'colgroup',
+                    {},
+                    h('col', {}),
+                    h('col', { class: 'w-28' }),
+                    h('col', { class: 'w-40' })
+                ),
+                h(
+                    'thead',
+                    {},
+                    h(
+                        'tr',
+                        { class: 'text-left' },
+                        h('th', { class: 'font-medium' }, 'Name'),
+                        h('th', { class: 'text-right font-medium' }, 'Größe'),
+                        h('th', { class: 'text-right font-medium' }, 'Geändert')
+                    )
+                ),
+                h(
+                    'tbody',
+                    {},
+                    ...items.map((item, i) => {
+                        const isSelected = this.selectedItems.has(item.name);
+                        const rowClass = isSelected
+                            ? 'finder-list-item bg-blue-100 dark:bg-blue-900'
+                            : 'finder-list-item';
+
+                        const attrs: Record<string, unknown> = {
+                            key: item.name,
+                            class: rowClass,
+                            'data-item-index': String(i),
+                            'data-item-name': item.name,
+                            'data-item-type': item.type,
+                        };
+
+                        if (item.path) {
+                            attrs['data-item-path'] = item.path;
+                        }
+
+                        return h(
+                            'tr',
+                            attrs,
+                            h(
+                                'td',
+                                { class: 'pr-2' },
+                                h(
+                                    'div',
+                                    { class: 'flex items-center gap-2 min-w-0' },
+                                    h(
+                                        'span',
+                                        { class: 'finder-item-icon shrink-0' },
+                                        item.icon || ''
+                                    ),
+                                    h('span', { class: 'truncate block min-w-0' }, item.name)
+                                )
+                            ),
+                            h(
+                                'td',
+                                { class: 'text-right whitespace-nowrap pl-2 pr-2' },
+                                this.formatSize(item.size)
+                            ),
+                            h(
+                                'td',
+                                {
+                                    class: 'text-right text-gray-500 dark:text-gray-400 whitespace-nowrap pl-2',
+                                },
+                                this.formatDate(item.modified)
+                            )
+                        );
+                    })
+                )
             )
-            .join('');
-        this.dom.content!.innerHTML = `
-            <div class="p-2">
-                <table class="finder-list-table table-fixed w-full">
-                    <colgroup>
-                        <col />
-                        <col class="w-28" />
-                        <col class="w-40" />
-                    </colgroup>
-                    <thead>
-                        <tr class="text-left">
-                            <th class="font-medium">Name</th>
-                            <th class="text-right font-medium">Größe</th>
-                            <th class="text-right font-medium">Geändert</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
-            </div>
-        `;
+        );
+
+        // Apply VDOM updates
+        if (!this._vTree || !this.dom.content?.firstChild) {
+            // Initial render: create DOM from scratch
+            this.dom.content!.innerHTML = '';
+            const dom = createElement(newVTree);
+            this.dom.content!.appendChild(dom);
+        } else {
+            // Update: intelligent diff + patch
+            const patches = diff(this._vTree, newVTree);
+            const container = this.dom.content!.firstChild as HTMLElement;
+            if (container) {
+                patch(container, patches);
+            }
+        }
+
+        this._vTree = newVTree;
     }
 
     renderGridView(items: FileItem[]): void {
         this._renderedItems = items;
-        const tiles = items
-            .map(
-                (item, i) => `
-            <div class="finder-grid-item ${this.selectedItems.has(item.name) ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 bg-blue-100/60 dark:bg-blue-900/40' : ''} min-w-0 p-3 rounded" data-item-index="${i}" data-item-name="${item.name}" data-item-type="${item.type}"${item.path ? ` data-item-path="${item.path}"` : ''}>
-                <div class="finder-grid-icon text-2xl mb-2">${item.icon || ''}</div>
-                <div class="finder-grid-name truncate text-sm">${item.name}</div>
-            </div>
-        `
-            )
-            .join('');
-        this.dom.content!.innerHTML = `
-            <div class="finder-grid-container grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 p-3">${tiles}</div>
-        `;
+
+        // Build virtual tree for grid view
+        const newVTree = h(
+            'div',
+            {
+                class: 'finder-grid-container grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 p-3',
+            },
+            ...items.map((item, i) => {
+                const isSelected = this.selectedItems.has(item.name);
+                const itemClass = isSelected
+                    ? 'finder-grid-item ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 bg-blue-100/60 dark:bg-blue-900/40 min-w-0 p-3 rounded'
+                    : 'finder-grid-item min-w-0 p-3 rounded';
+
+                const attrs: Record<string, unknown> = {
+                    key: item.name,
+                    class: itemClass,
+                    'data-item-index': String(i),
+                    'data-item-name': item.name,
+                    'data-item-type': item.type,
+                };
+
+                if (item.path) {
+                    attrs['data-item-path'] = item.path;
+                }
+
+                return h(
+                    'div',
+                    attrs,
+                    h('div', { class: 'finder-grid-icon text-2xl mb-2' }, item.icon || ''),
+                    h('div', { class: 'finder-grid-name truncate text-sm' }, item.name)
+                );
+            })
+        );
+
+        // Apply VDOM updates
+        if (!this._vTree || !this.dom.content?.firstChild) {
+            // Initial render: create DOM from scratch
+            this.dom.content!.innerHTML = '';
+            const dom = createElement(newVTree);
+            this.dom.content!.appendChild(dom);
+        } else {
+            // Update: intelligent diff + patch
+            const patches = diff(this._vTree, newVTree);
+            const container = this.dom.content!.firstChild as HTMLElement;
+            if (container) {
+                patch(container, patches);
+            }
+        }
+
+        this._vTree = newVTree;
     }
 
     formatSize(size?: number): string {
@@ -1192,6 +1351,8 @@ export class FinderView extends BaseTab {
 
     setViewMode(mode: ViewMode): void {
         this.viewMode = mode;
+        // Reset VDOM tree when switching view modes to force fresh render
+        this._vTree = null;
         this.updateContentState({ viewMode: this.viewMode });
         this.renderContent();
     }
