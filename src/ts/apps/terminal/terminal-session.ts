@@ -3,11 +3,13 @@
  * Terminal session as a tab within a terminal window
  *
  * Uses the shared VirtualFS for file system operations.
+ * Uses VDOM for efficient output rendering without losing input focus.
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BaseTab, type TabConfig } from '../../windows/base-tab.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
+import { h, diff, patch, createElement, type VNode } from '../../core/vdom.js';
 
 /**
  * TerminalSession - Individual terminal session tab
@@ -17,6 +19,7 @@ import { VirtualFS } from '../../services/virtual-fs.js';
  * - Shared file system with Finder
  * - Command history
  * - Path resolution and navigation
+ * - VDOM-based rendering for focus preservation and performance
  */
 export class TerminalSession extends BaseTab {
     outputElement: HTMLElement | null;
@@ -24,6 +27,10 @@ export class TerminalSession extends BaseTab {
     commandHistory: string[];
     historyIndex: number;
     vfsCwd: string;
+
+    // VDOM State - tracks virtual tree for efficient updates
+    private _vTree: VNode | null = null;
+    private _outputLines: VNode[] = [];
 
     constructor(config?: Partial<TabConfig>) {
         super({
@@ -52,34 +59,19 @@ export class TerminalSession extends BaseTab {
     }
 
     /**
-     * Create terminal DOM
+     * Create terminal DOM using VDOM
      */
     createDOM(): HTMLElement {
         const container = document.createElement('div');
         container.id = `${this.id}-container`;
         container.className = 'tab-content hidden w-full h-full';
 
-        const html = `
-            <div class="terminal-wrapper h-full flex flex-col bg-gray-900 text-green-400 font-mono text-sm">
-                <div class="terminal-output flex-1 overflow-y-auto p-4 space-y-1" data-terminal-output>
-                </div>
-                <div class="terminal-input-line flex items-center px-4 py-2 border-t border-gray-700">
-                    <span class="terminal-prompt text-blue-400">guest@marvin:${this.vfsCwd}$</span>
-                    <input
-                        type="text"
-                        class="flex-1 ml-2 bg-transparent outline-none text-green-400 terminal-input"
-                        autocomplete="off"
-                        spellcheck="false"
-                        aria-label="Terminal input"
-                        data-terminal-input
-                    />
-                </div>
-            </div>
-        `;
-
-        container.innerHTML = html;
         this.element = container;
 
+        // Initial render with VDOM
+        this._renderTerminal();
+
+        // Query DOM elements after initial render
         this.outputElement = container.querySelector('[data-terminal-output]');
         this.inputElement = container.querySelector('[data-terminal-input]');
 
@@ -129,6 +121,67 @@ export class TerminalSession extends BaseTab {
                 this.handleTabCompletion();
             }
         });
+    }
+
+    /**
+     * Render terminal UI using VDOM
+     * This method efficiently updates the terminal without losing input focus
+     */
+    private _renderTerminal(): void {
+        if (!this.element) return;
+
+        // Build virtual tree for terminal
+        const vTree = h(
+            'div',
+            {
+                class: 'terminal-wrapper h-full flex flex-col bg-gray-900 text-green-400 font-mono text-sm',
+            },
+            // Output area (append-only via _outputLines array)
+            h(
+                'div',
+                {
+                    class: 'terminal-output flex-1 overflow-y-auto p-4 space-y-1',
+                    'data-terminal-output': 'true',
+                },
+                ...this._outputLines
+            ),
+            // Input line (persistent - never re-created)
+            h(
+                'div',
+                {
+                    class: 'terminal-input-line flex items-center px-4 py-2 border-t border-gray-700',
+                },
+                h(
+                    'span',
+                    { class: 'terminal-prompt text-blue-400' },
+                    `guest@marvin:${this.vfsCwd}$`
+                ),
+                h('input', {
+                    type: 'text',
+                    class: 'flex-1 ml-2 bg-transparent outline-none text-green-400 terminal-input',
+                    'data-terminal-input': 'true',
+                    autocomplete: 'off',
+                    spellcheck: 'false',
+                    'aria-label': 'Terminal input',
+                })
+            )
+        );
+
+        // Apply VDOM updates
+        if (!this._vTree) {
+            // Initial render: create DOM from scratch
+            const dom = createElement(vTree);
+            this.element.appendChild(dom);
+        } else {
+            // Update: intelligent diff + patch
+            const patches = diff(this._vTree, vTree);
+            const container = this.element.firstChild as HTMLElement;
+            if (container) {
+                patch(container, patches);
+            }
+        }
+
+        this._vTree = vTree;
     }
 
     /**
@@ -370,23 +423,48 @@ export class TerminalSession extends BaseTab {
     }
 
     addOutput(text: string, type: 'command' | 'output' | 'error' | 'info' = 'output'): void {
-        if (!this.outputElement) return;
-        const line = document.createElement('div');
-        line.className = `terminal-line terminal-${type}`;
+        // Map type to CSS classes
         const colorMap: Record<string, string> = {
             command: 'text-blue-400',
             output: 'text-green-400',
             error: 'text-red-400',
             info: 'text-yellow-400',
         };
-        line.className += ` ${colorMap[type] || 'text-green-400'}`;
-        line.textContent = text;
-        this.outputElement.appendChild(line);
-        this.outputElement.scrollTop = this.outputElement.scrollHeight;
+        const className = `terminal-line terminal-${type} ${colorMap[type] || 'text-green-400'}`;
+
+        // Create VNode for the new line
+        const lineVNode = h(
+            'div',
+            {
+                class: className,
+                key: `line-${this._outputLines.length}`,
+            },
+            text
+        );
+
+        // Append to output lines array
+        this._outputLines.push(lineVNode);
+
+        // Trigger VDOM re-render (only new line will be patched)
+        this._renderTerminal();
+
+        // Auto-scroll to bottom after DOM update
+        if (this.outputElement) {
+            // Use requestAnimationFrame to ensure DOM is updated
+            requestAnimationFrame(() => {
+                if (this.outputElement) {
+                    this.outputElement.scrollTop = this.outputElement.scrollHeight;
+                }
+            });
+        }
     }
 
     clearOutput(): void {
-        if (this.outputElement) this.outputElement.innerHTML = '';
+        // Clear output lines array
+        this._outputLines = [];
+
+        // Trigger VDOM re-render (output area will be empty)
+        this._renderTerminal();
     }
 
     showHelp(): void {
@@ -470,10 +548,9 @@ export class TerminalSession extends BaseTab {
     }
 
     updatePrompt(): void {
-        const prompt = this.element?.querySelector('.terminal-prompt') as HTMLElement | null;
-        if (prompt) {
-            prompt.textContent = `guest@marvin:${this.vfsCwd}$`;
-        }
+        // Trigger VDOM re-render to update prompt text
+        // The prompt content is generated dynamically in _renderTerminal()
+        this._renderTerminal();
     }
 
     // ---------------------------
