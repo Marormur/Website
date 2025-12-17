@@ -267,6 +267,12 @@ function diffChildren(oldChildren: (VNode | string)[], newChildren: (VNode | str
 
 /**
  * Builds a map of keys to indices for efficient lookup
+ * 
+ * Used internally by diffChildren to enable O(1) key-based node matching during reconciliation.
+ * Only includes children with explicit keys; text nodes and keyless vnodes are skipped.
+ * 
+ * @param children - Array of child nodes (VNodes or strings)
+ * @returns Map from key to child index for O(1) lookup
  */
 function buildKeyMap(children: (VNode | string)[]): Map<string | number, number> {
     const map = new Map<string | number, number>();
@@ -282,7 +288,14 @@ function buildKeyMap(children: (VNode | string)[]): Map<string | number, number>
 }
 
 /**
- * Gets the key for a node (explicit key or index fallback)
+ * Gets the key for a node (explicit key or undefined)
+ * 
+ * Only returns the explicit key if present; does not fall back to index.
+ * This ensures stable reconciliation - nodes without keys are always recreated.
+ * 
+ * @param node - Virtual node or text string
+ * @param index - Position in parent (unused, but kept for potential future use)
+ * @returns Node's explicit key or undefined
  */
 function getNodeKey(node: VNode | string, index: number): string | number | undefined {
     if (typeof node !== 'string' && node.key !== undefined) {
@@ -299,13 +312,11 @@ function getNodeKey(node: VNode | string, index: number): string | number | unde
  *
  * @param rootElement - DOM element to patch
  * @param patches - Array of patch operations
- * @param oldVTree - Previous virtual tree (for reference)
  * @returns Updated DOM element
  */
 export function patch(
     rootElement: HTMLElement,
-    patches: Patch[],
-    oldVTree?: VNode | null
+    patches: Patch[]
 ): HTMLElement {
     if (patches.length === 0) {
         return rootElement;
@@ -321,6 +332,15 @@ export function patch(
 
 /**
  * Applies a single patch operation to the DOM
+ * 
+ * Performs the actual DOM mutation based on patch type:
+ * - CREATE: Appends new element
+ * - UPDATE: Modifies element properties
+ * - REMOVE: Removes element from parent
+ * - REPLACE: Replaces element with new one
+ * 
+ * @param rootElement - Root DOM element to patch
+ * @param patchOp - Patch operation to apply
  */
 function applyPatch(rootElement: HTMLElement, patchOp: Patch): void {
     const { type, node, props, index } = patchOp;
@@ -392,6 +412,20 @@ function applyPatch(rootElement: HTMLElement, patchOp: Patch): void {
 
 /**
  * Creates a real DOM element from a virtual node
+ * 
+ * Recursively creates DOM tree from virtual tree.
+ * Handles text nodes, element properties, and event handlers.
+ * 
+ * @param vnode - Virtual node to convert
+ * @returns DOM element or text node
+ * 
+ * @example
+ * const vnode = h('div', { className: 'card' },
+ *   h('h2', {}, 'Title'),
+ *   h('p', {}, 'Content')
+ * );
+ * const domElement = createElement(vnode);
+ * container.appendChild(domElement);
  */
 export function createElement(vnode: VNode): HTMLElement | Text {
     // Handle text nodes
@@ -420,6 +454,16 @@ export function createElement(vnode: VNode): HTMLElement | Text {
 
 /**
  * Updates element properties/attributes
+ * 
+ * Handles special cases:
+ * - Event handlers (on* props): addEventListener
+ * - className: mapped to element.className
+ * - style objects: merged with element.style
+ * - Properties vs attributes: sets as property if it exists on element, otherwise as attribute
+ * - null/undefined values: removes attribute/property
+ * 
+ * @param element - DOM element or text node to update
+ * @param props - Properties to set
  */
 function updateElement(element: HTMLElement | Text, props: Record<string, unknown>): void {
     if (element instanceof Text) {
@@ -460,7 +504,22 @@ function updateElement(element: HTMLElement | Text, props: Record<string, unknow
 
 /**
  * Central event delegation handler
- * Manages events at the root level for better performance
+ * 
+ * Manages events at the root level for better performance with many elements.
+ * Instead of attaching listeners to each element, delegates to a parent.
+ * 
+ * Benefits:
+ * - Fewer event listeners (better memory usage)
+ * - Works with dynamically added elements
+ * - Simplified cleanup
+ * 
+ * @example
+ * const delegator = new EventDelegator(document.getElementById('app'));
+ * delegator.on('click', (e) => {
+ *   console.log('Clicked:', e.target);
+ * });
+ * // Later: cleanup
+ * delegator.destroy();
  */
 export class EventDelegator {
     private rootElement: HTMLElement;
@@ -473,6 +532,19 @@ export class EventDelegator {
 
     /**
      * Register a delegated event handler
+     * 
+     * Attaches a single listener to the root element that handles all events
+     * of the specified type from child elements.
+     * 
+     * @param eventType - Event type (e.g., 'click', 'input', 'change')
+     * @param handler - Event handler function
+     * 
+     * @example
+     * delegator.on('click', (e) => {
+     *   if (e.target.matches('.button')) {
+     *     handleButtonClick(e);
+     *   }
+     * });
      */
     on(eventType: string, handler: EventListener): void {
         if (!this.handlers.has(eventType)) {
@@ -486,6 +558,13 @@ export class EventDelegator {
 
     /**
      * Unregister a delegated event handler
+     * 
+     * Removes the listener for the specified event type.
+     * 
+     * @param eventType - Event type to remove listener for
+     * 
+     * @example
+     * delegator.off('click');
      */
     off(eventType: string): void {
         const handler = this.handlers.get(eventType);
@@ -497,6 +576,18 @@ export class EventDelegator {
 
     /**
      * Remove all delegated handlers
+     * 
+     * Cleans up all event listeners and clears the internal handlers map.
+     * Call this when destroying a component to prevent memory leaks.
+     * 
+     * @example
+     * class MyComponent {
+     *   private delegator: EventDelegator;
+     * 
+     *   destroy(): void {
+     *     this.delegator.destroy();
+     *   }
+     * }
      */
     destroy(): void {
         for (const [eventType, handler] of this.handlers.entries()) {
