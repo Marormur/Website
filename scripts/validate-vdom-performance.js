@@ -12,7 +12,9 @@
 const fs = require('fs');
 const path = require('path');
 
-// Performance targets from the epic
+// Performance targets from the epic (reference values)
+// Note: Actual performance measurements are done via E2E tests
+// This script validates implementation completeness, not performance
 const TARGETS = {
     finderRender100: 50, // ms - FinderView render 100 items
     finderNavigate: 50, // ms - Folder navigation
@@ -20,6 +22,14 @@ const TARGETS = {
     terminalOutput100: 100, // ms - Terminal output 100 lines
     vdomDiff100: 10, // ms - VDOM diff 100 nodes
     vdomPatch100: 20, // ms - VDOM patch 100 nodes
+};
+
+// App migration status constants
+const STATUS = {
+    MIGRATED: 'MIGRATED',
+    NOT_NEEDED: 'NOT NEEDED',
+    NOT_MIGRATED: 'NOT MIGRATED',
+    MISSING: 'MISSING',
 };
 
 // ANSI color codes
@@ -52,8 +62,8 @@ function crossmark() {
     return `${colors.red}✗${colors.reset}`;
 }
 
-// Check if VDOM core exists
-function checkVDOMCore() {
+// Validate VDOM core implementation by checking for required exports
+function validateVDOMCore() {
     header('Phase 1: VDOM Core Implementation');
 
     const vdomPath = path.join(__dirname, '../src/ts/core/vdom.ts');
@@ -104,26 +114,26 @@ function checkAppMigrations() {
             name: 'Finder',
             path: '../src/ts/apps/finder/finder-view.ts',
             imports: ["from '../../core/vdom.js'", 'import { h, diff, patch'],
-            status: 'MIGRATED',
+            status: STATUS.MIGRATED,
         },
         {
             name: 'Terminal',
             path: '../src/ts/apps/terminal/terminal-session.ts',
             imports: ["from '../../core/vdom.js'", 'import { h, diff, patch'],
-            status: 'MIGRATED',
+            status: STATUS.MIGRATED,
         },
         {
             name: 'TextEditor',
             path: '../src/ts/apps/text-editor/text-editor-document.ts',
             imports: ["from '../../core/vdom.js'"],
-            status: 'NOT NEEDED',
+            status: STATUS.NOT_NEEDED,
             reason: 'Uses innerHTML only for initial setup',
         },
         {
             name: 'Photos',
             path: '../src/ts/apps/photos/photos-app.ts',
             imports: ["from '../../core/vdom.js'"],
-            status: 'NOT NEEDED',
+            status: STATUS.NOT_NEEDED,
             reason: 'Uses createElement for updates',
         },
     ];
@@ -134,12 +144,12 @@ function checkAppMigrations() {
 
         if (!exists) {
             log(`  ${crossmark()} ${app.name}: File not found`, 'red');
-            return { name: app.name, passed: false, status: 'MISSING' };
+            return { name: app.name, passed: false, status: STATUS.MISSING };
         }
 
         const content = fs.readFileSync(filePath, 'utf-8');
 
-        if (app.status === 'NOT NEEDED') {
+        if (app.status === STATUS.NOT_NEEDED) {
             log(`  ${checkmark()} ${app.name}: ${app.status}`, 'yellow');
             log(`      Reason: ${app.reason}`, 'yellow');
             return { name: app.name, passed: true, status: app.status };
@@ -151,13 +161,13 @@ function checkAppMigrations() {
             log(`  ${checkmark()} ${app.name}: ${app.status}`, 'green');
             return { name: app.name, passed: true, status: app.status };
         } else {
-            log(`  ${crossmark()} ${app.name}: NOT MIGRATED`, 'red');
-            return { name: app.name, passed: false, status: 'NOT MIGRATED' };
+            log(`  ${crossmark()} ${app.name}: ${STATUS.NOT_MIGRATED}`, 'red');
+            return { name: app.name, passed: false, status: STATUS.NOT_MIGRATED };
         }
     });
 
-    const migrated = results.filter(r => r.status === 'MIGRATED').length;
-    const total = migrations.filter(m => m.status !== 'NOT NEEDED').length;
+    const migrated = results.filter(r => r.status === STATUS.MIGRATED).length;
+    const total = migrations.filter(m => m.status !== STATUS.NOT_NEEDED).length;
 
     console.log('');
     log(
@@ -288,7 +298,7 @@ function main() {
     log('\n🚀 VDOM Performance Validation\n', 'cyan');
 
     try {
-        const vdomCore = checkVDOMCore();
+        const vdomCore = validateVDOMCore();
         const appMigrations = checkAppMigrations();
         const docs = checkDocumentation();
         const tests = checkTests();
@@ -307,4 +317,4 @@ if (require.main === module) {
     main();
 }
 
-module.exports = { checkVDOMCore, checkAppMigrations, checkDocumentation, checkTests };
+module.exports = { validateVDOMCore, checkAppMigrations, checkDocumentation, checkTests };
