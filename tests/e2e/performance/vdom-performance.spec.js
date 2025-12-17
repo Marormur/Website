@@ -391,7 +391,7 @@ test.describe('VDOM Performance - TextEditor', () => {
         });
 
         console.log(`[TextEditor] Toolbar update: ${timing.toFixed(2)}ms`);
-        
+
         // If updateToolbar doesn't exist or returns -1, skip the performance check
         if (timing > 0) {
             expect(timing).toBeLessThan(20);
@@ -401,7 +401,7 @@ test.describe('VDOM Performance - TextEditor', () => {
     test('TextEditor: Editor focus preservation', async ({ page }) => {
         // Find the CodeMirror editor
         const editor = page.locator('.CodeMirror').first();
-        
+
         // Check if CodeMirror is available
         const hasCodeMirror = await editor.count();
         if (hasCodeMirror === 0) {
@@ -426,8 +426,10 @@ test.describe('VDOM Performance - TextEditor', () => {
         const hasFocus = await page.evaluate(() => {
             const cm = document.querySelector('.CodeMirror');
             if (!cm) return false;
-            return cm.classList.contains('CodeMirror-focused') || 
-                   document.activeElement?.closest('.CodeMirror') !== null;
+            return (
+                cm.classList.contains('CodeMirror-focused') ||
+                document.activeElement?.closest('.CodeMirror') !== null
+            );
         });
 
         expect(hasFocus).toBe(true);
@@ -489,7 +491,9 @@ test.describe('VDOM Performance - Memory Leaks', () => {
             test.skip(true, 'performance.memory not available (Chrome only)');
         }
 
-        console.log(`[VDOM] Memory increase: ${(result.memoryIncrease / 1024 / 1024).toFixed(2)}MB`);
+        console.log(
+            `[VDOM] Memory increase: ${(result.memoryIncrease / 1024 / 1024).toFixed(2)}MB`
+        );
 
         // Memory increase should be reasonable (< 10MB for 10k elements created/destroyed)
         expect(result.memoryIncrease).toBeLessThan(10 * 1024 * 1024);
