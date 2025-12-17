@@ -1,4 +1,5 @@
 console.log('TerminalInstance (TS) loaded');
+console.log('MARKER_AT_TOP: terminal-instance.ts file is being loaded');
 
 /**
  * TerminalInstance - Multi-Instance capable terminal implementation
@@ -69,7 +70,11 @@ console.log('TerminalInstance (TS) loaded');
         // No override of _initializeState to avoid type modifier conflicts
 
         protected render(): void {
+            console.log('[DEBUG] TerminalInstance.render() CALLED - clearing container');
             if (!this.container) return;
+
+            // UNIQUE_MARKER_TEST_123456
+            this.container.innerHTML = '';
 
             const html = `
                 <div class="terminal-wrapper h-full flex flex-col bg-gray-900 text-green-400 font-mono text-sm">

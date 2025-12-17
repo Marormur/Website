@@ -133,6 +133,11 @@ export class TerminalSession extends BaseTab {
      * This method efficiently updates the terminal without losing input focus
      */
     private _renderTerminal(): void {
+        console.log('[DEBUG] TerminalSession._renderTerminal() CALLED', {
+            hasElement: !!this.element,
+            hasVTree: !!this._vTree,
+            outputLines: this._outputLines.length,
+        });
         if (!this.element) return;
 
         // Build virtual tree for terminal
@@ -177,6 +182,8 @@ export class TerminalSession extends BaseTab {
         if (!this._vTree) {
             // Initial render: create DOM from scratch
             const dom = createElement(vTree);
+            // Clear container first to prevent duplicate renders
+            this.element.innerHTML = '';
             this.element.appendChild(dom);
         } else {
             // Update: intelligent diff + patch
