@@ -32,14 +32,20 @@
       ]
     },
     {
-      "name": "Chrome: Launch with Dev Server",
-      "type": "chrome",
+      "name": "Chrome: Launch with Dev Server (pwa)",
+      "type": "pwa-chrome",
       "request": "launch",
       "url": "http://127.0.0.1:5173",
       "webRoot": "${workspaceFolder}",
       "pathMapping": {
         "/": "${workspaceFolder}"
-      }
+      },
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-profile",
+      "runtimeArgs": [
+        "--remote-debugging-port=9222",
+        "--no-first-run",
+        "--no-default-browser-check"
+      ]
     },
     {
       "name": "Edge: Launch with Dev Server",
@@ -52,12 +58,19 @@
       }
     },
     {
-      "name": "Chrome: Dev + Tailwind (Start All)",
-      "type": "chrome",
+      "name": "Chrome: Dev + Tailwind (Start All) (pwa)",
+      "type": "pwa-chrome",
       "request": "launch",
       "url": "http://127.0.0.1:5173",
-      "webRoot": "${workspaceFolder}"
+      "webRoot": "${workspaceFolder}",
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-profile",
+      "runtimeArgs": [
+        "--remote-debugging-port=9222",
+        "--no-first-run",
+        "--no-default-browser-check"
+      ]
     },
+
     {
       "name": "Node: server.js (debug)",
       "type": "node",
