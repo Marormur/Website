@@ -12,17 +12,8 @@
 const fs = require('fs');
 const path = require('path');
 
-// Performance targets from the epic (reference values)
-// Note: Actual performance measurements are done via E2E tests
-// This script validates implementation completeness, not performance
-const TARGETS = {
-    finderRender100: 50, // ms - FinderView render 100 items
-    finderNavigate: 50, // ms - Folder navigation
-    finderSelect: 20, // ms - Item selection
-    terminalOutput100: 100, // ms - Terminal output 100 lines
-    vdomDiff100: 10, // ms - VDOM diff 100 nodes
-    vdomPatch100: 20, // ms - VDOM patch 100 nodes
-};
+// Performance targets are defined and enforced via E2E tests;
+// this script only validates VDOM implementation completeness.
 
 // App migration status constants
 const STATUS = {
@@ -187,6 +178,7 @@ function checkDocumentation() {
         'docs/vdom/VDOM_MIGRATION_GUIDE.md',
         'docs/vdom/VDOM_BEST_PRACTICES.md',
         'docs/vdom/VDOM_TROUBLESHOOTING.md',
+        'docs/vdom/IMPLEMENTATION_SUMMARY.md',
     ];
 
     const results = docs.map(doc => {
