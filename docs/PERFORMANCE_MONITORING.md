@@ -152,7 +152,7 @@ PERF_MONITOR=1 npm run test:e2e -- tests/e2e/performance/
 
 ## Notes & Limitations
 
-1. **Dependency on VDOM Migrations**: Some tests in `vdom-performance.spec.js` depend on completed VDOM migrations (#135, #136, #137). Tests include guards to skip gracefully if features are not yet available.
+1. **Dependency on VDOM Migrations**: Some tests in `vdom-performance.spec.js` depend on completed VDOM migrations (#135, #136, #137). Tests include guards to skip gracefully if required features are not yet available.
 
 2. **Realistic Targets**: Performance targets have been adjusted from the original spec to be more realistic:
     - Terminal addOutput: 100ms (vs 5ms in spec) - accounts for actual DOM manipulation overhead

@@ -55,7 +55,7 @@ This PR successfully implements Phase 3 of the VDOM migration project, deliverin
 **Test Quality:**
 
 - ✅ Proper feature availability guards
-- ✅ Safer optional chaining (`window.WindowRegistry?.getAllWindows?.('type')`)
+- ✅ Consistent optional chaining (`window.WindowRegistry?.getAllWindows('type')`)
 - ✅ VDOM availability checks
 - ✅ Graceful skips for unsupported features/browsers
 - ✅ Clear console logging of measured timings

@@ -138,10 +138,12 @@ test.describe('PerfMonitor Statistics @basic', () => {
                     window.PerfMonitor.measureFunction('test-op-1', () => {
                         let sum = 0;
                         for (let j = 0; j < 100; j++) sum += j;
+                        return sum;
                     });
                     window.PerfMonitor.measureFunction('test-op-2', () => {
                         let sum = 0;
                         for (let j = 0; j < 200; j++) sum += j;
+                        return sum;
                     });
                 }
 
