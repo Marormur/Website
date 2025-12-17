@@ -46,7 +46,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
             }
 
             // Find the Finder instance
-            const wins = window.WindowRegistry?.getAllWindows('finder') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('finder') || [];
             if (wins.length === 0) return -1;
 
             const finder = wins[0];
@@ -84,7 +84,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
                 });
             }
 
-            const wins = window.WindowRegistry?.getAllWindows('finder') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('finder') || [];
             if (wins.length === 0) return -1;
 
             const finder = wins[0];
@@ -115,7 +115,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
 
         // Measure navigation to root
         const timing = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('finder') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('finder') || [];
             if (wins.length === 0) return -1;
 
             const finder = wins[0];
@@ -143,7 +143,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
 
         // Measure selection performance
         const timing = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('finder') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('finder') || [];
             if (wins.length === 0) return -1;
 
             const finder = wins[0];
@@ -181,7 +181,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
                 });
             }
 
-            const wins = window.WindowRegistry?.getAllWindows('finder') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('finder') || [];
             const finder = wins[0];
             const activeTab = finder.activeTab;
             if (activeTab && typeof activeTab.renderListView === 'function') {
@@ -204,7 +204,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
 
         // Navigate into a folder (if any) and back, or just trigger re-render
         await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('finder') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('finder') || [];
             const finder = wins[0];
             const activeTab = finder.activeTab;
             if (activeTab && typeof activeTab.navigateTo === 'function') {
@@ -235,7 +235,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
 
         // Select an item
         const selectedBefore = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('finder') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('finder') || [];
             const finder = wins[0];
             const activeTab = finder.activeTab;
             if (activeTab && typeof activeTab.selectItem === 'function') {
@@ -249,7 +249,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
 
         // Trigger a re-render
         await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('finder') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('finder') || [];
             const finder = wins[0];
             const activeTab = finder.activeTab;
             if (activeTab && typeof activeTab.renderListView === 'function') {
@@ -262,7 +262,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
         await page.waitForTimeout(200);
 
         const selectedAfter = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('finder') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('finder') || [];
             const finder = wins[0];
             const activeTab = finder.activeTab;
             return activeTab ? activeTab.selectedIndex : -1;
@@ -286,7 +286,7 @@ test.describe('VDOM Performance - Terminal', () => {
 
     test('Terminal: Add 100 output lines < 100ms', async ({ page }) => {
         const timing = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
             if (wins.length === 0) return -1;
 
             const terminal = wins[0];
@@ -318,7 +318,7 @@ test.describe('VDOM Performance - Terminal', () => {
 
         // Add output
         await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
             const session = wins[0]?.activeSession;
             if (session && typeof session.addOutput === 'function') {
                 session.addOutput('Test output', 'output');
@@ -343,7 +343,7 @@ test.describe('VDOM Performance - Terminal', () => {
         await terminalInput.fill('echo test');
 
         const timing = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
+            const wins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
             if (wins.length === 0) return -1;
 
             const terminal = wins[0];
@@ -445,9 +445,14 @@ test.describe('VDOM Performance - Memory Leaks', () => {
     test('VDOM cleanup after unmount (no memory leaks)', async ({ page }) => {
         // This test checks that VDOM properly cleans up after component unmount
         const result = await page.evaluate(() => {
+            // Check if VDOM is available
+            if (!window.VDOM || typeof window.VDOM.h !== 'function') {
+                return { supported: false, reason: 'VDOM not available' };
+            }
+
             // Check if performance.memory is available (Chrome only)
             if (!performance.memory) {
-                return { supported: false };
+                return { supported: false, reason: 'performance.memory not available' };
             }
 
             const initialMemory = performance.memory.usedJSHeapSize;
@@ -488,7 +493,7 @@ test.describe('VDOM Performance - Memory Leaks', () => {
         });
 
         if (!result.supported) {
-            test.skip(true, 'performance.memory not available (Chrome only)');
+            test.skip(true, `Skipping: ${result.reason || 'Not supported'}`);
         }
 
         console.log(

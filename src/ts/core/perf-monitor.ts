@@ -42,6 +42,7 @@ import { getString, setString } from '../services/storage-utils.js';
         enable(): void;
         disable(): void;
         toggle(): void;
+        _addMetric(name: string, duration: number): void;
         mark(name: string): void;
         measure(name: string, startMark?: string, endMark?: string): PerformanceMeasure | null;
         measureFunction<T>(name: string, fn: () => T): T;
@@ -117,6 +118,16 @@ import { getString, setString } from '../services/storage-utils.js';
             }
         },
 
+        /**
+         * Helper to add a metric measurement
+         */
+        _addMetric(name: string, duration: number) {
+            if (!this.metrics.has(name)) {
+                this.metrics.set(name, []);
+            }
+            this.metrics.get(name)!.push(duration);
+        },
+
         mark(name: string) {
             if (!this.enabled || !name) return;
             try {
@@ -139,15 +150,12 @@ import { getString, setString } from '../services/storage-utils.js';
                 }
                 const entries = performance.getEntriesByName(name, 'measure');
                 const lastEntry = entries[entries.length - 1];
-                
+
                 // Track duration in metrics
                 if (lastEntry) {
-                    if (!this.metrics.has(name)) {
-                        this.metrics.set(name, []);
-                    }
-                    this.metrics.get(name)!.push(lastEntry.duration);
+                    this._addMetric(name, lastEntry.duration);
                 }
-                
+
                 return lastEntry ? (lastEntry as PerformanceMeasure) : null;
             } catch (_e) {
                 void _e;
@@ -162,17 +170,14 @@ import { getString, setString } from '../services/storage-utils.js';
                 return fn();
             } finally {
                 const duration = performance.now() - start;
-                if (!this.metrics.has(name)) {
-                    this.metrics.set(name, []);
-                }
-                this.metrics.get(name)!.push(duration);
+                this._addMetric(name, duration);
             }
         },
 
         getStats(name: string): OperationStats | null {
             const times = this.metrics.get(name);
             if (!times || times.length === 0) return null;
-            
+
             return {
                 avg: times.reduce((a, b) => a + b, 0) / times.length,
                 min: Math.min(...times),
@@ -184,14 +189,14 @@ import { getString, setString } from '../services/storage-utils.js';
 
         reportStats(): void {
             if (!this.enabled) return;
-            
+
             const stats = Array.from(this.metrics.keys())
                 .map(name => {
                     const s = this.getStats(name);
                     return s ? { Operation: name, ...s } : null;
                 })
                 .filter(s => s !== null);
-            
+
             if (stats.length > 0) {
                 console.group('Performance Statistics');
                 console.table(stats);
