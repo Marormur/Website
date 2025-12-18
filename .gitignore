@@ -48,6 +48,13 @@ app.bundle.js
 # TypeScript incremental build cache
 *.tsbuildinfo
 
+# Bundle & Analysis outputs
+js/bundle-metadata.json
+knip-report.json
+.lighthouse/
+lighthouse-report.json
+bundle-analysis.json
+
 # Logs
 *.log
 npm-debug.log*

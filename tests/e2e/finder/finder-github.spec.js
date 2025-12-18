@@ -5,7 +5,7 @@ const { waitForAppReady, openFinderWindow, mockGithubRepoImageFlow } = require('
 async function openFinderGithub(page) {
     // Ensure Finder window is opened and visible, then open the GitHub sidebar
     await openFinderWindow(page);
-    const githubBtn = page.locator('#finder-sidebar-github');
+    const githubBtn = page.locator('[data-sidebar-id="github"]');
     await githubBtn.waitFor({ state: 'visible', timeout: 5000 });
     await githubBtn.click();
 }

@@ -32,6 +32,12 @@
     "validate:vdom": "node scripts/validate-vdom-performance.js",
     "docs:clean": "rimraf docs/api",
     "clean:legacy": "rimraf js/legacy",
+    "knip": "knip --production",
+    "knip:report": "knip --production --reporter json > knip-report.json",
+    "lighthouse": "lhci collect --config=lighthouserc.json",
+    "lighthouse:upload": "lhci upload",
+    "lighthouse:ci": "lhci autorun --config=lighthouserc.json",
+    "bundle:analyze": "node scripts/analyze-bundle.mjs",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -62,6 +68,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.38.0",
+    "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.57.0",
     "@types/node": "^24.10.3",
     "@typescript-eslint/eslint-plugin": "^8.49.0",
@@ -70,8 +77,10 @@
     "chokidar": "^3.6.0",
     "cross-env": "^10.1.0",
     "esbuild": "^0.27.1",
+    "esbuild-bundle-analyzer": "^0.0.1",
     "eslint": "^9.39.1",
     "husky": "^9.1.7",
+    "knip": "^5.75.1",
     "lint-staged": "^16.2.7",
     "postcss": "^8.5.6",
     "prettier": "^3.7.4",

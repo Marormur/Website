@@ -71,5 +71,11 @@ export function getFinderActions(): ActionMap {
             );
             finder?.openItem?.(name as string, type as string);
         },
+
+        // VDOM-based Finder UI actions (handled locally via onclick, but registered here to avoid ActionBus warnings)
+        'view-list': () => {},
+        'view-grid': () => {},
+        'navigate-up': () => {},
+        'go-root': () => {},
     };
 }

@@ -72,6 +72,21 @@ test.describe('Finder Multi-Instance Tabs', () => {
         const addButton = await getFinderAddTabButton(page, finderWindow);
         const tabs = await getFinderTabs(page, finderWindow);
         await addButton.click();
+
+        // DEBUG: Check why we have too many tabs
+        const tabDetails = await page.evaluate(() => {
+            const tabs = Array.from(document.querySelectorAll('.wt-tab'));
+            return tabs.map(t => ({
+                text: t.textContent?.trim(),
+                visible: t.offsetParent !== null,
+                id: t.id,
+                parentId: t.parentElement?.id,
+                parentClass: t.parentElement?.className,
+                grandParentClass: t.parentElement?.parentElement?.className,
+            }));
+        });
+        console.log('DEBUG TABS:', JSON.stringify(tabDetails, null, 2));
+
         await expect(tabs).toHaveCount(2, { timeout: 5000 });
 
         // Get the two tab buttons (reuse the locator declared above)

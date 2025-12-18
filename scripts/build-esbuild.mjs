@@ -5,6 +5,7 @@ import process from 'node:process';
 
 const root = process.cwd();
 const watch = process.argv.includes('--watch');
+const analyze = process.argv.includes('--analyze');
 
 const common = {
     bundle: true,
@@ -12,6 +13,7 @@ const common = {
     target: ['es2019'],
     sourcemap: !watch, // Sourcemaps nur im Production-Build
     logLevel: 'info',
+    metafile: analyze, // Metafile für Analyse
 };
 
 const entry = path.resolve(root, 'src/ts/compat/expose-globals.ts');
@@ -29,13 +31,24 @@ const outfile = path.resolve(root, 'js/app.bundle.js');
         await ctx.watch();
         console.log(`✔️  Built ${path.relative(root, outfile)} (watching)`);
     } else {
-        await build({
+        const result = await build({
             ...common,
             entryPoints: [entry],
             outfile,
             format: 'iife',
             globalName: 'App',
         });
+
         console.log(`✔️  Built ${path.relative(root, outfile)}`);
+
+        // Bundle-Größe anzeigen
+        if (result.metafile) {
+            const bundleSize = Object.values(result.metafile.outputs).reduce(
+                (sum, output) => sum + output.bytes,
+                0
+            );
+            const sizeKB = (bundleSize / 1024).toFixed(2);
+            console.log(`📦 Bundle size: ${sizeKB} KB`);
+        }
     }
 })();

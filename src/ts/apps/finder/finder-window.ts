@@ -18,28 +18,17 @@ export class FinderWindow extends BaseWindow {
 
     createDOM(): HTMLElement {
         const windowEl = super.createDOM();
-        // Title is now set via i18n in BaseWindow
 
-        // Remove BaseWindow's tab bar and content element
+        // Remove BaseWindow's tab bar from window chrome
         const baseTabBar = windowEl.querySelector('.window-tab-bar');
         if (baseTabBar) {
             baseTabBar.remove();
         }
+
+        // Adjust content element for Finder (flex layout)
         if (this.contentElement) {
-            this.contentElement.remove();
+            this.contentElement.classList.add('flex');
         }
-
-        // Tab bar
-        const tabBar = document.createElement('div');
-        tabBar.id = `${this.id}-tabs`;
-        tabBar.className = 'window-tab-bar';
-        windowEl.appendChild(tabBar);
-
-        // Finder Content container (flex-1 to fill remaining space)
-        this.contentElement = document.createElement('div');
-        this.contentElement.id = `${this.id}-container`;
-        this.contentElement.className = 'flex-1 overflow-hidden flex';
-        windowEl.appendChild(this.contentElement);
 
         return windowEl;
     }
@@ -51,7 +40,12 @@ export class FinderWindow extends BaseWindow {
     }
 
     protected _renderTabs(): void {
-        this._doRenderTabs();
+        // Trigger a re-render of all tabs to ensure their tab lists are up to date
+        this.tabs.forEach(tab => {
+            if ((tab as any).refresh) {
+                (tab as any).refresh();
+            }
+        });
     }
 
     private _doRenderTabs(): void {
@@ -146,6 +140,11 @@ export class FinderWindow extends BaseWindow {
         }
         const view = new W.FinderView({ title: title || `Computer`, source: 'computer' });
         this.addTab(view);
+        this.setActiveTab(view.id);
+
+        // Trigger re-render of all tabs to update their tab lists
+        this._renderTabs();
+
         return view;
     }
 
@@ -157,6 +156,11 @@ export class FinderWindow extends BaseWindow {
         }
         const view = new W.FinderView({ title: title || `GitHub`, source: 'github', icon: '📦' });
         this.addTab(view);
+        this.setActiveTab(view.id);
+
+        // Trigger re-render of all tabs to update their tab lists
+        this._renderTabs();
+
         return view;
     }
 

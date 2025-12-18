@@ -30,7 +30,7 @@ test.describe('FinderView Double-Click Navigation @basic', () => {
         await waitForFinderContent(win, 'list');
 
         // Verify we are at Computer root (breadcrumb should show "Computer")
-        const breadcrumb = win.locator('.breadcrumbs');
+        const breadcrumb = win.locator('.finder-breadcrumbs-active');
         await expect(breadcrumb).toContainText('Computer');
 
         // Look for the first folder item in list view with data-item-type="folder"
@@ -64,7 +64,7 @@ test.describe('FinderView Double-Click Navigation @basic', () => {
         const firstGridItem = await waitForFinderContent(win, 'grid');
 
         // Verify we are at Computer root
-        const breadcrumb = win.locator('.breadcrumbs');
+        const breadcrumb = win.locator('.finder-breadcrumbs-active');
         await expect(breadcrumb).toContainText('Computer');
 
         const itemIndex = await firstGridItem.getAttribute('data-item-index');
@@ -110,7 +110,7 @@ test.describe('FinderView Double-Click Navigation @basic', () => {
         // If we can still reference it and dblclick, that proves stability
         await firstFolder.dblclick();
         // Breadcrumb should now contain the folder name
-        const breadcrumb = win.locator('.breadcrumbs');
+        const breadcrumb = win.locator('.finder-breadcrumbs-active');
         await expect(breadcrumb).toContainText(folderName);
         await expect(breadcrumb).toContainText(folderName);
         console.log('[Test] Successfully double-clicked after single-click selection');

@@ -107,6 +107,7 @@ export class BaseTab {
      * Tab sichtbar machen und ggf. in die Content‑Area des Elternfensters einhängen.
      */
     show(): void {
+        this.isVisible = true;
         if (!this.element) {
             this.render();
 
@@ -124,7 +125,6 @@ export class BaseTab {
                 this.element.classList.remove('hidden');
             }
         }
-        this.isVisible = true;
         this.onShow();
     }
 

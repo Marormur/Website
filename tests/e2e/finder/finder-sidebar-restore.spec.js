@@ -17,12 +17,12 @@ test.describe('Finder sidebar active highlight restore basic', () => {
         const finderWin = await openFinderWindow(page);
 
         // Click Home in the sidebar and wait for breadcrumbs to reflect the path
-        const homeBtn = finderWin.locator('#finder-sidebar-home');
+        const homeBtn = finderWin.locator('[data-sidebar-id="home"]');
         await homeBtn.waitFor({ state: 'visible', timeout: 10000 });
         await homeBtn.click();
 
         // Breadcrumbs should include "home" and likely the username (e.g., "marvin")
-        const breadcrumbs = finderWin.locator('.breadcrumbs');
+        const breadcrumbs = finderWin.locator('.finder-breadcrumbs-active');
         await expect(breadcrumbs).toBeVisible();
         await expect(breadcrumbs).toContainText(/home/i, { timeout: 5000 });
 
@@ -66,14 +66,14 @@ test.describe('Finder sidebar active highlight restore basic', () => {
         await restoredWin.waitFor({ state: 'visible', timeout: 12000 });
 
         // Sidebar should highlight Home based on restored state
-        const restoredHome = restoredWin.locator('#finder-sidebar-home');
-        const restoredComputer = restoredWin.locator('#finder-sidebar-computer');
+        const restoredHome = restoredWin.locator('[data-sidebar-id="home"]');
+        const restoredComputer = restoredWin.locator('[data-sidebar-id="computer"]');
 
         await expect(restoredHome).toHaveClass(/finder-sidebar-active/, { timeout: 5000 });
         await expect(restoredComputer).not.toHaveClass(/finder-sidebar-active/);
 
         // And breadcrumbs should still reflect the Home path
-        const restoredBreadcrumbs = restoredWin.locator('.breadcrumbs');
+        const restoredBreadcrumbs = restoredWin.locator('.finder-breadcrumbs-active');
         await expect(restoredBreadcrumbs).toContainText(/home/i, { timeout: 5000 });
     });
 });

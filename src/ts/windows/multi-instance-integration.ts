@@ -86,6 +86,9 @@ import { getJSON } from '../services/storage-utils.js';
                     onEmpty: () => this.closeModalOrHide('text-modal'),
                 });
 
+            // Finder integration is now handled internally by FinderWindow/FinderUI (VDOM-based)
+            // to allow the tab bar to be placed inside the content area.
+            /*
             if (W.FinderInstanceManager)
                 this.wireManager({
                     type: 'finder',
@@ -98,6 +101,7 @@ import { getJSON } from '../services/storage-utils.js';
                         `Finder ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
                     // onEmpty intentionally no-op for Finder
                 });
+            */
 
             // Ensure tabs/controllers reflect any pre-existing state and show active instance.
             // Session restoration is orchestrated by app-init; we intentionally do not call

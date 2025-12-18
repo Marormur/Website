@@ -29,7 +29,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
         await openFinderWindow(page);
 
         // Click Computer sidebar to show virtual files
-        const computerBtn = page.locator('#finder-sidebar-computer');
+        const computerBtn = page.locator('[data-sidebar-id="computer"]');
         await computerBtn.waitFor({ state: 'visible', timeout: 5000 });
 
         // Measure rendering time
@@ -72,7 +72,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
     test('FinderView: Render 1000 items (stress test) < 200ms', async ({ page }) => {
         await openFinderWindow(page);
 
-        const computerBtn = page.locator('#finder-sidebar-computer');
+        const computerBtn = page.locator('[data-sidebar-id="computer"]');
         await computerBtn.waitFor({ state: 'visible', timeout: 5000 });
 
         const timing = await page.evaluate(() => {
@@ -113,7 +113,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
         await openFinderWindow(page);
 
         // Navigate to Computer to get a baseline
-        const computerBtn = page.locator('#finder-sidebar-computer');
+        const computerBtn = page.locator('[data-sidebar-id="computer"]');
         await computerBtn.click();
 
         // Wait for initial navigation
@@ -146,7 +146,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
     test('FinderView: Selection speed < 20ms', async ({ page }) => {
         await openFinderWindow(page);
 
-        const computerBtn = page.locator('#finder-sidebar-computer');
+        const computerBtn = page.locator('[data-sidebar-id="computer"]');
         await computerBtn.click();
         await page.waitForTimeout(500);
 
@@ -177,7 +177,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
     test('FinderView: Scroll preservation during navigation', async ({ page }) => {
         await openFinderWindow(page);
 
-        const computerBtn = page.locator('#finder-sidebar-computer');
+        const computerBtn = page.locator('[data-sidebar-id="computer"]');
         await computerBtn.click();
         await page.waitForTimeout(500);
 
@@ -241,7 +241,7 @@ test.describe('VDOM Performance - FinderView @basic', () => {
     test('FinderView: Selection preservation during updates', async ({ page }) => {
         await openFinderWindow(page);
 
-        const computerBtn = page.locator('#finder-sidebar-computer');
+        const computerBtn = page.locator('[data-sidebar-id="computer"]');
         await computerBtn.click();
         await page.waitForTimeout(500);
 

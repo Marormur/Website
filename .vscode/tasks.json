@@ -468,6 +468,61 @@
       "type": "shell",
       "command": "npm run typecheck ; npm run lint",
       "group": "build"
+    },
+    {
+      "label": "Code Quality: Check unused deps (knip)",
+      "type": "shell",
+      "command": "npm run knip",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Performance: Lighthouse audit",
+      "type": "shell",
+      "command": "npm run lighthouse",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "Performance: Lighthouse CI",
+      "type": "shell",
+      "command": "npm run lighthouse:ci",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Bundle: Analyze size",
+      "type": "shell",
+      "command": "npm run bundle:analyze",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }

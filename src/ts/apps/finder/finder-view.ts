@@ -24,6 +24,7 @@ import { BaseTab, type TabConfig } from '../../windows/base-tab.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
 import PreviewInstanceManager from '../../windows/preview-instance-manager.js';
 import { h, diff, patch, createElement, type VNode } from '../../core/vdom.js';
+import { FinderUI } from './finder-ui.js';
 
 const ROOT_FOLDER_NAME = 'Computer';
 
@@ -74,7 +75,6 @@ export class FinderView extends BaseTab {
     sortOrder: 'asc' | 'desc';
     selectedItems: Set<string>;
     _renderedItems: FileItem[];
-    _eventHandlersAttached: boolean;
     sidebarWidth: number;
 
     // Favorites and Recent Files
@@ -84,6 +84,10 @@ export class FinderView extends BaseTab {
 
     // Search
     searchTerm: string;
+
+    // History
+    history: { source: FinderSource; path: string[] }[];
+    historyIndex: number;
 
     // GitHub Content Cache
     githubContentCache: Map<string, { data: any; timestamp: number }>;
@@ -102,16 +106,15 @@ export class FinderView extends BaseTab {
     githubRepos: any[];
     githubError = false;
     githubErrorMessage = '';
+    githubLoading = false;
     lastGithubItemsMap: Map<string, any>;
+
+    private ui!: FinderUI;
 
     // Track scroll position to restore after file open/close
     private _savedScrollPosition = 0;
     // Persist scroll positions per logical location (source + path)
     private _scrollPositions: Map<string, number> = new Map();
-
-    // VDOM State - tracks virtual tree for efficient updates
-    private _vTree: VNode | null = null;
-    private _breadcrumbsVTree: VNode | null = null;
 
     constructor(config?: Partial<TabConfig> & { source?: FinderSource }) {
         super({
@@ -128,7 +131,6 @@ export class FinderView extends BaseTab {
         this.sortOrder = 'asc';
         this.selectedItems = new Set();
         this._renderedItems = [];
-        this._eventHandlersAttached = false;
         this.sidebarWidth = config?.content?.sidebarWidth ?? 192; // default 12rem
 
         this.githubRepos = [];
@@ -144,6 +146,10 @@ export class FinderView extends BaseTab {
 
         // Initialize Search
         this.searchTerm = '';
+
+        // Initialize History
+        this.history = [{ source: this.source, path: [...this.currentPath] }];
+        this.historyIndex = 0;
 
         // Initialize GitHub Cache
         this.githubContentCache = new Map();
@@ -161,328 +167,267 @@ export class FinderView extends BaseTab {
     }
 
     createDOM(): HTMLElement {
+        // Create a lightweight placeholder container only. The heavy FinderUI
+        // is instantiated lazily when the tab becomes visible to avoid multiple
+        // FinderUI instances rendering tab bars into the DOM (which caused
+        // duplicate .wt-tab elements being discovered by E2E tests).
         const container = document.createElement('div');
         container.id = `${this.id}-container`;
-        container.className = 'tab-content hidden w-full h-full flex flex-col min-h-0';
-
-        const isGithub = this.source === 'github';
-        container.innerHTML = `
-            <div class="flex-1 flex gap-0 min-h-0 min-w-0 overflow-hidden">
-                <aside id="finder-sidebar" class="shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto" style="width: ${this.sidebarWidth}px;">
-                    <div class="py-2">
-                        <div class="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide" data-i18n="finder.sidebar.favorites">FAVORITEN</div>
-                        <button class="finder-sidebar-item" id="finder-sidebar-home" data-sidebar-action="home">
-                            <span class="finder-sidebar-icon">🏠</span>
-                            <span data-i18n="finder.sidebar.home">Home</span>
-                        </button>
-                        <button class="finder-sidebar-item finder-sidebar-active" id="finder-sidebar-computer" data-sidebar-action="computer">
-                            <span class="finder-sidebar-icon">💻</span>
-                            <span data-i18n="finder.sidebar.computer">Computer</span>
-                        </button>
-                        <button class="finder-sidebar-item" id="finder-sidebar-recent" data-sidebar-action="recent">
-                            <span class="finder-sidebar-icon">🕒</span>
-                            <span data-i18n="finder.sidebar.recent">Zuletzt verwendet</span>
-                        </button>
-                        <div class="px-3 py-1 mt-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide" data-i18n="finder.sidebar.locations">ORTE</div>
-                        <button class="finder-sidebar-item" id="finder-sidebar-github" data-sidebar-action="github">
-                            <span class="finder-sidebar-icon">📂</span>
-                            <span data-i18n="finder.sidebar.github">GitHub Projekte</span>
-                        </button>
-                        <button class="finder-sidebar-item" id="finder-sidebar-starred" data-sidebar-action="starred">
-                            <span class="finder-sidebar-icon">⭐</span>
-                            <span data-i18n="finder.sidebar.starred">Markiert</span>
-                        </button>
-                    </div>
-                </aside>
-                <div class="finder-resizer shrink-0 w-1 md:w-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-blue-400 cursor-col-resize" role="separator" aria-orientation="vertical" title="Größe ändern"></div>
-                <div class="flex-1 flex flex-col min-h-0 min-w-0">
-                    <div class="finder-toolbar px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                        <!-- Back / Root like old Finder -->
-                        <button class="finder-toolbar-btn" data-action="navigate-up" data-i18n-title="finder.toolbar.back" title="Zurück">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-                        </button>
-                        <button class="finder-toolbar-btn" data-action="navigate-root" data-i18n-title="finder.toolbar.forward" title="Nach vorn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                        </button>
-                        <!-- Breadcrumbs centered/left grow -->
-                        <div class="flex-1 mx-2 min-w-0">
-                            <div class="breadcrumbs text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1 overflow-hidden"></div>
-                        </div>
-                        <!-- Optional: sort menu next to view controls -->
-                        <div class="relative hidden md:block">
-                            <button class="finder-toolbar-btn" data-action="toggle-sort" title="Sortierung">⇅</button>
-                            <div class="finder-sort-menu hidden absolute right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10" style="width: 180px;">
-                                <button class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" data-sort="name" data-i18n="context.finder.sortByName">Nach Name</button>
-                                <button class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" data-sort="date" data-i18n="context.finder.sortByDate">Nach Datum</button>
-                                <button class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" data-sort="size" data-i18n="context.finder.sortBySize">Nach Größe</button>
-                                <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                                <button class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" data-order="asc">↑ Aufsteigend</button>
-                                <button class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" data-order="desc">↓ Absteigend</button>
-                            </div>
-                        </div>
-                        <button class="finder-toolbar-btn" data-action="toggle-favorite" title="Zu Favoriten" style="display: none;">⭐</button>
-                        <div class="flex gap-1">
-                            <button class="finder-toolbar-btn" data-action="view-list" data-i18n-title="finder.toolbar.listView" title="Listenansicht">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v2H3V4m0 7h18v2H3v-2m0 7h18v2H3v-2Z" /></svg>
-                            </button>
-                            <button class="finder-toolbar-btn" data-action="view-grid" data-i18n-title="finder.toolbar.gridView" title="Rasteransicht">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3m10 0h8v8h-8V3M3 13h8v8H3v-8m10 0h8v8h-8v-8Z" /></svg>
-                            </button>
-                        </div>
-                        <input type="text" class="finder-search px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0 w-28 sm:w-40 md:w-56 lg:w-72 xl:w-80" data-i18n-placeholder="finder.toolbar.search" placeholder="Suchen" />
-                    </div>
-                    <div class="finder-content flex-1 overflow-auto bg-white dark:bg-gray-800 min-w-0" data-finder-content></div>
-                </div>
-            </div>
-        `;
-
+        container.className = 'tab-content hidden w-full h-full finder-view-placeholder';
+        container.textContent = '';
         this.element = container;
-        this.dom.toolbar = container.querySelector('.finder-toolbar');
-        this.dom.breadcrumbs = container.querySelector('.breadcrumbs');
-        this.dom.content = container.querySelector('.finder-content');
-        this.dom.sidebar = container.querySelector('#finder-sidebar');
-        this.dom.resizer = container.querySelector('.finder-resizer');
-        this.dom.viewListBtn = null;
-        this.dom.viewGridBtn = null;
 
-        // Toolbar/Sidebar/Content Interaktionen anbinden
-        this._attachEvents();
-        this._attachSidebarEvents();
-        this._attachResizeHandlers();
-        this._setupContentEventHandlers();
-        this._renderAll();
-
-        // Apply i18n translations
-        const w = window as any;
-        if (w.appI18n) {
-            w.appI18n.applyTranslations(container);
-        }
-
+        // Do not create FinderUI here; defer to show() so only the active tab
+        // has a mounted FinderUI instance that renders the shared tab bar.
         return container;
     }
 
-    private _attachResizeHandlers(): void {
-        const sidebar = this.dom.sidebar;
-        const resizer = this.dom.resizer;
-        const contentArea = this.element?.querySelector(
-            '.flex-1.flex.gap-0.min-h-0.overflow-hidden'
-        ) as HTMLElement | null;
-        if (!sidebar || !resizer) return;
-
-        const minWidth = 160; // px
-        const maxWidth = 480; // px
-
-        let startX = 0;
-        let startWidth = 0;
-        let dragging = false;
-
-        const onMouseMove = (e: MouseEvent) => {
-            if (!dragging) return;
-            const dx = e.clientX - startX;
-            let newWidth = Math.max(minWidth, Math.min(startWidth + dx, maxWidth));
-
-            // Also ensure there's room for content (min 360px)
-            const container = this.element as HTMLElement;
-            if (container) {
-                const total = container.clientWidth;
-                const minContent = 360;
-                newWidth = Math.min(newWidth, Math.max(total - minContent, minWidth));
+    private handleSidebarAction(action: string): void {
+        if (action === 'home') {
+            this.source = 'computer';
+            this.currentPath = ['home', 'marvin'];
+            this._addToHistory();
+        } else if (action === 'computer') {
+            this.source = 'computer';
+            this.goRoot();
+        } else if (action === 'github') {
+            this.source = 'github';
+            const API = this.getAPI();
+            if (API && typeof API.prefetchUserRepos === 'function') {
+                const username = this.getGithubUsername();
+                API.prefetchUserRepos(username);
             }
-
-            sidebar.style.width = `${newWidth}px`;
-            this.sidebarWidth = newWidth;
-        };
-
-        const stopDragging = () => {
-            if (!dragging) return;
-            dragging = false;
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', stopDragging);
-            document.body.classList.remove('select-none');
-            this._persistState();
-        };
-
-        resizer.addEventListener('mousedown', (e: MouseEvent) => {
-            e.preventDefault();
-            dragging = true;
-            startX = e.clientX;
-            startWidth = sidebar.getBoundingClientRect().width;
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', stopDragging);
-            document.body.classList.add('select-none');
-        });
-    }
-
-    private _attachEvents(): void {
-        if (!this.element) return;
-        const upBtn = this.element.querySelector<HTMLButtonElement>('[data-action="navigate-up"]');
-        const rootBtn = this.element.querySelector<HTMLButtonElement>(
-            '[data-action="navigate-root"]'
-        );
-        const listBtn = this.element.querySelector<HTMLButtonElement>('[data-action="view-list"]');
-        const gridBtn = this.element.querySelector<HTMLButtonElement>('[data-action="view-grid"]');
-        const searchInput = this.element.querySelector<HTMLInputElement>('.finder-search');
-        const sortToggleBtn = this.element.querySelector<HTMLButtonElement>(
-            '[data-action="toggle-sort"]'
-        );
-        const sortMenu = this.element.querySelector<HTMLElement>('.finder-sort-menu');
-        const favoriteBtn = this.element.querySelector<HTMLButtonElement>(
-            '[data-action="toggle-favorite"]'
-        );
-
-        upBtn?.addEventListener('click', () => this.navigateUp());
-        rootBtn?.addEventListener('click', () => this.goRoot());
-        listBtn?.addEventListener('click', () => this.setViewMode('list'));
-        gridBtn?.addEventListener('click', () => this.setViewMode('grid'));
-
-        // Search input
-        searchInput?.addEventListener('input', e => {
-            this.searchTerm = (e.target as HTMLInputElement).value;
-            this.renderContent();
-        });
-
-        // Sort menu toggle
-        sortToggleBtn?.addEventListener('click', () => {
-            sortMenu?.classList.toggle('hidden');
-        });
-
-        // Sort menu items
-        sortMenu?.querySelectorAll<HTMLButtonElement>('[data-sort]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const sortBy = btn.dataset.sort as 'name' | 'date' | 'size' | 'type';
-                this.setSortBy(sortBy);
-                sortMenu.classList.add('hidden');
-            });
-        });
-
-        sortMenu?.querySelectorAll<HTMLButtonElement>('[data-order]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const order = btn.dataset.order as 'asc' | 'desc';
-                this.setSortOrder(order);
-                sortMenu.classList.add('hidden');
-            });
-        });
-
-        // Close sort menu when clicking outside
-        document.addEventListener('click', e => {
-            if (
-                !sortToggleBtn?.contains(e.target as Node) &&
-                !sortMenu?.contains(e.target as Node)
-            ) {
-                sortMenu?.classList.add('hidden');
-            }
-        });
-
-        // Favorite toggle
-        favoriteBtn?.addEventListener('click', () => {
-            if (this.currentPath.length > 0) {
-                this.toggleFavorite(this.currentPath.join('/'));
-            }
-        });
-    }
-
-    private _attachSidebarEvents(): void {
-        if (!this.element) return;
-
-        // Sidebar navigation
-        const sidebarButtons =
-            this.element.querySelectorAll<HTMLButtonElement>('[data-sidebar-action]');
-        sidebarButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const action = btn.dataset.sidebarAction;
-
-                // Handle action
-                if (action === 'home') {
-                    this.source = 'computer';
-                    this.currentPath = ['home', 'marvin'];
-                    this._persistState();
-                    this._renderAll();
-                } else if (action === 'computer') {
-                    this.source = 'computer';
-                    this.goRoot();
-                } else if (action === 'github') {
-                    this.source = 'github';
-                    // Prefetch repos in background before navigating
-                    const API = this.getAPI();
-                    if (API && typeof API.prefetchUserRepos === 'function') {
-                        const username = this.getGithubUsername();
-                        API.prefetchUserRepos(username);
-                    }
-                    this.goRoot();
-                } else if (action === 'recent') {
-                    this.source = 'recent';
-                    this.goRoot();
-                } else if (action === 'starred') {
-                    this.source = 'starred';
-                    this.goRoot();
-                }
-
-                // Stelle sicher, dass das aktive Highlight dem finalen Zustand entspricht
-                this._updateSidebarActiveHighlight();
-            });
-        });
-    }
-
-    private _setupContentEventHandlers(): void {
-        if (this._eventHandlersAttached) {
-            return;
+            this.goRoot();
+        } else if (action === 'recent') {
+            this.source = 'recent';
+            this.goRoot();
+        } else if (action === 'starred') {
+            this.source = 'starred';
+            this.goRoot();
         }
-        // Delegation für Klick/Double‑Klick auf List/Grid‑Items
-        const resolveItemEl = (evt: Event): HTMLElement | null => {
-            const node = evt.target as Node | null;
-            let el: Element | null = null;
-            if (node && (node as Element).closest) {
-                el = (node as Element).closest('[data-item-index]');
-            } else if (node && (node as any).parentElement) {
-                el = ((node as any).parentElement as Element).closest('[data-item-index]');
-            }
-            return el as HTMLElement | null;
-        };
+        this._persistState();
+        this.refresh();
+    }
 
-        this.dom.content?.addEventListener('click', e => {
-            const itemEl = resolveItemEl(e);
-            if (!itemEl) return;
-            const idx = parseInt(itemEl.dataset.itemIndex || '-1', 10);
-            const item = this._renderedItems[idx];
-            if (!item) return;
-            this._selectItem(item.name);
-        });
-        this.dom.content?.addEventListener('dblclick', e => {
-            const itemEl = resolveItemEl(e);
-            if (!itemEl) return;
-            const idx = parseInt(itemEl.dataset.itemIndex || '-1', 10);
-            const item = this._renderedItems[idx];
-            if (!item) return;
-            void this.openItem(item.name, item.type);
-        });
-        this._eventHandlersAttached = true;
+    /**
+     * Public refresh method to trigger a re-render of the UI
+     */
+    public refresh(): void {
+        this._renderAll();
+    }
+
+    protected onShow(): void {
+        super.onShow();
+        // Lazily instantiate FinderUI only when the tab becomes visible.
+        if (!this.ui) {
+            this.ui = new FinderUI({
+                id: this.id,
+                windowId: this.parentWindow?.id || this.id,
+                isActive: this.isVisible,
+                source: this.source,
+                currentPath: this.currentPath,
+                viewMode: this.viewMode,
+                sidebarWidth: this.sidebarWidth,
+                searchTerm: this.searchTerm,
+                canGoBack: this.historyIndex > 0,
+                canGoForward: this.historyIndex < this.history.length - 1,
+                sortBy: this.sortBy,
+                sortOrder: this.sortOrder,
+                tabs: [],
+                activeTabId: this.id,
+                onTabChange: id => this.parentWindow?.setActiveTab(id),
+                onTabClose: id => this.parentWindow?.removeTab(id),
+                onTabAdd: () => (this.parentWindow as any)?.createView(),
+                onTabMove: (tabId, targetWindowId) => this.moveTabToWindow(tabId, targetWindowId),
+                onTabDetach: (id, pos) => this.detachTabToNewWindow(id, pos),
+                onNavigateBack: () => this.navigateBack(),
+                onNavigateForward: () => this.navigateForward(),
+                onNavigateUp: () => this.navigateUp(),
+                onGoRoot: () => this.goRoot(),
+                onSetViewMode: mode => this.setViewMode(mode),
+                onSetSort: by => this.setSortBy(by),
+                onSearch: term => {
+                    this.searchTerm = term;
+                    this._renderAll();
+                },
+                onSidebarAction: action => this.handleSidebarAction(action),
+                onResize: width => {
+                    this.sidebarWidth = width;
+                    this._persistState();
+                },
+                renderContent: () => this.renderContent(),
+                renderBreadcrumbs: () => this.renderBreadcrumbs(),
+            });
+
+            // Mount FinderUI into the tab's element (placeholder)
+            if (this.element) {
+                const mounted = this.ui.mount(this.element);
+                // Clear any textual placeholder
+                mounted.classList.remove('hidden');
+                this.dom.content = mounted.querySelector('[data-finder-content]');
+                this.dom.toolbar = mounted.querySelector('.finder-toolbar');
+                this.dom.sidebar = mounted.querySelector('#finder-sidebar');
+            }
+        }
+
+        this._renderAll();
+    }
+
+    protected onHide(): void {
+        super.onHide();
+        this._renderAll();
     }
 
     private _renderAll(): void {
+        // Ensure the tab title reflects the current folder/view
+        // We call super.setTitle to avoid the recursion of this.setTitle -> refresh -> _renderAll
+        const w = window as any;
+        const t = (key: string, fb: string) =>
+            w.appI18n ? w.appI18n.translate(key, {}, { fallback: fb }) : fb;
+
+        let label = '';
+        const atRoot = this.currentPath.length === 0;
+        switch (this.source) {
+            case 'computer':
+                label = atRoot
+                    ? t('finder.sidebar.computer', 'Computer')
+                    : this.currentPath[this.currentPath.length - 1];
+                break;
+            case 'github':
+                label = atRoot
+                    ? 'GitHub'
+                    : this.currentPath[this.currentPath.length - 1] || 'GitHub';
+                break;
+            case 'recent':
+                label = t('finder.sidebar.recent', 'Zuletzt verwendet');
+                break;
+            case 'starred':
+                label = t('finder.sidebar.starred', 'Markiert');
+                break;
+            default:
+                label = this.title || 'Finder';
+        }
+
+        if (this.title !== label) {
+            super.setTitle(label);
+        }
+
         // Save scroll position before re-rendering
         this._saveScrollPosition();
 
-        this.renderBreadcrumbs();
-        this.renderContent();
-        this._updateSidebarActiveHighlight();
+        // Collect tabs from parent window
+        const tabs = this.parentWindow
+            ? Array.from((this.parentWindow as any).tabs.values()).map((t: any) => ({
+                  id: t.id,
+                  label: t.title,
+                  icon: t.icon,
+                  closable: (this.parentWindow as any).tabs.size > 1,
+              }))
+            : [];
 
-        // Restore scroll position after re-rendering with multiple attempts
-        // to ensure it works even with async rendering
+        // Update UI component with latest state
+        if (this.ui) {
+            this.ui.update({
+                id: this.id,
+                windowId: this.parentWindow?.id || this.id,
+                isActive: this.isVisible,
+                source: this.source,
+                currentPath: this.currentPath,
+                viewMode: this.viewMode,
+                sidebarWidth: this.sidebarWidth,
+                searchTerm: this.searchTerm,
+                canGoBack: this.historyIndex > 0,
+                canGoForward: this.historyIndex < this.history.length - 1,
+                sortBy: this.sortBy,
+                sortOrder: this.sortOrder,
+                tabs,
+                activeTabId: (this.parentWindow as any)?.activeTabId || this.id,
+                onTabChange: id => this.parentWindow?.setActiveTab(id),
+                onTabClose: id => this.parentWindow?.removeTab(id),
+                onTabAdd: () => (this.parentWindow as any)?.createView(),
+                onTabMove: (tabId, targetWindowId) => this.moveTabToWindow(tabId, targetWindowId),
+                onTabDetach: (id, pos) => this.detachTabToNewWindow(id, pos),
+                onNavigateBack: () => this.navigateBack(),
+                onNavigateForward: () => this.navigateForward(),
+                onNavigateUp: () => this.navigateUp(),
+                onGoRoot: () => this.goRoot(),
+                onSetViewMode: mode => this.setViewMode(mode),
+                onSetSort: by => this.setSortBy(by),
+                onSearch: term => {
+                    this.searchTerm = term;
+                    this._renderAll();
+                },
+                onSidebarAction: action => this.handleSidebarAction(action),
+                onResize: width => {
+                    this.sidebarWidth = width;
+                    this._persistState();
+                },
+                renderContent: () => this.renderContent(),
+                renderBreadcrumbs: () => this.renderBreadcrumbs(),
+            });
+
+            // Update DOM references after patch
+            if (this.element) {
+                this.dom.content = this.element.querySelector('[data-finder-content]');
+                this.dom.toolbar = this.element.querySelector('.finder-toolbar');
+                this.dom.sidebar = this.element.querySelector('#finder-sidebar');
+            }
+        }
+
+        // Restore scroll position after re-rendering
         this._restoreScrollPosition();
         requestAnimationFrame(() => {
             this._restoreScrollPosition();
         });
-        // Additional delayed restore for reliability
-        setTimeout(() => {
-            this._restoreScrollPosition();
-        }, 0);
     }
 
-    renderBreadcrumbs(): void {
-        if (!this.dom.breadcrumbs) return;
-        // Ensure the tab title reflects the current folder/view
-        this._updateTabLabel();
+    private _addToHistory(): void {
+        // If we are in the middle of history, truncate the forward part
+        if (this.historyIndex < this.history.length - 1) {
+            this.history = this.history.slice(0, this.historyIndex + 1);
+        }
 
+        // Don't add if it's the same as current
+        const last = this.history[this.history.length - 1];
+        if (
+            last &&
+            last.source === this.source &&
+            JSON.stringify(last.path) === JSON.stringify(this.currentPath)
+        ) {
+            return;
+        }
+
+        this.history.push({ source: this.source, path: [...this.currentPath] });
+        this.historyIndex = this.history.length - 1;
+    }
+
+    navigateBack(): void {
+        if (this.historyIndex > 0) {
+            this.historyIndex--;
+            const state = this.history[this.historyIndex];
+            if (state) {
+                this.source = state.source;
+                this.currentPath = [...state.path];
+                this._persistState();
+                this._renderAll();
+            }
+        }
+    }
+
+    navigateForward(): void {
+        if (this.historyIndex < this.history.length - 1) {
+            this.historyIndex++;
+            const state = this.history[this.historyIndex];
+            if (state) {
+                this.source = state.source;
+                this.currentPath = [...state.path];
+                this._persistState();
+                this._renderAll();
+            }
+        }
+    }
+
+    renderBreadcrumbs(): VNode {
         // Build breadcrumb parts as VNodes
         const breadcrumbParts: VNode[] = [];
         const viewLabel = this.source === 'github' ? 'GitHub' : 'Computer';
@@ -492,7 +437,8 @@ export class FinderView extends BaseTab {
             h(
                 'button',
                 {
-                    class: 'finder-breadcrumb-item',
+                    className:
+                        'px-2 py-0.5 rounded hover:bg-white/10 transition-colors text-sm font-medium',
                     'data-action': 'goRoot',
                 },
                 viewLabel
@@ -505,14 +451,15 @@ export class FinderView extends BaseTab {
             const pathUpToHere = this.currentPath.slice(0, index + 1).join('/');
 
             // Separator
-            breadcrumbParts.push(h('span', { class: 'finder-breadcrumb-separator' }, '›'));
+            breadcrumbParts.push(h('span', { className: 'mx-1 text-white/30 select-none' }, '›'));
 
             // Path button
             breadcrumbParts.push(
                 h(
                     'button',
                     {
-                        class: 'finder-breadcrumb-item',
+                        className:
+                            'px-2 py-0.5 rounded hover:bg-white/10 transition-colors text-sm',
                         'data-action': 'goto',
                         'data-path': pathUpToHere,
                     },
@@ -521,98 +468,46 @@ export class FinderView extends BaseTab {
             );
         });
 
-        // Create container VNode - we need a wrapper to track the virtual tree
-        const newVTree = h(
+        // Create container VNode
+        return h(
             'div',
-            { class: 'breadcrumb-wrapper flex items-center gap-1' },
+            {
+                className:
+                    'finder-breadcrumbs finder-breadcrumbs-active breadcrumb-wrapper flex items-center gap-1',
+                onclick: (e: Event) => {
+                    const target = e.target as HTMLElement;
+                    if (target.tagName === 'BUTTON') {
+                        const action = target.dataset.action;
+                        if (action === 'goRoot') {
+                            this.goRoot();
+                        } else if (action === 'goto') {
+                            const path = target.dataset.path || '';
+                            const parts = path.split('/').filter(Boolean);
+                            this.navigateToPath(parts);
+                        }
+                    }
+                },
+            },
             ...breadcrumbParts
         );
-
-        // Apply VDOM updates
-        if (!this._breadcrumbsVTree || !this.dom.breadcrumbs.firstChild) {
-            // Initial render
-            this.dom.breadcrumbs.innerHTML = '';
-            const dom = createElement(newVTree);
-            this.dom.breadcrumbs.appendChild(dom);
-        } else {
-            // Update: intelligent diff + patch
-            const patches = diff(this._breadcrumbsVTree, newVTree);
-            const container = this.dom.breadcrumbs.firstChild as HTMLElement;
-            if (container) {
-                patch(container, patches);
-            }
-        }
-
-        this._breadcrumbsVTree = newVTree;
-
-        // Set up event delegation for breadcrumb clicks
-        // Note: We only need to attach these once, not on every render
-        if (!this.dom.breadcrumbs.dataset.breadcrumbsInitialized) {
-            this.dom.breadcrumbs.addEventListener('click', (e: Event) => {
-                const target = e.target as HTMLElement;
-                if (target.tagName === 'BUTTON') {
-                    const action = target.dataset.action;
-                    if (action === 'goRoot') {
-                        this.goRoot();
-                    } else if (action === 'goto') {
-                        const path = target.dataset.path || '';
-                        const parts = path.split('/').filter(Boolean);
-                        this.navigateToPath(parts);
-                    }
-                }
-            });
-            this.dom.breadcrumbs.dataset.breadcrumbsInitialized = 'true';
-        }
     }
 
-    /**
-     * Synchronisiert den aktiven Sidebar-Eintrag mit der aktuellen Quelle/Route.
-     * Regeln:
-     * - source=github → GitHub aktiv
-     * - source=recent → Zuletzt verwendet aktiv
-     * - source=starred → Markiert aktiv
-     * - source=computer → Wenn Pfad mit 'home' beginnt → Home aktiv, sonst Computer
-     */
-    private _updateSidebarActiveHighlight(): void {
-        if (!this.element) return;
-
-        const sidebarButtons = this.element.querySelectorAll<HTMLElement>('[data-sidebar-action]');
-        sidebarButtons.forEach(b => b.classList.remove('finder-sidebar-active'));
-
-        let toActivate: string | null = null;
-        switch (this.source) {
-            case 'github':
-                toActivate = '#finder-sidebar-github';
-                break;
-            case 'recent':
-                toActivate = '#finder-sidebar-recent';
-                break;
-            case 'starred':
-                toActivate = '#finder-sidebar-starred';
-                break;
-            case 'computer':
-            default: {
-                const atHome = this.currentPath.length > 0 && this.currentPath[0] === 'home';
-                toActivate = atHome ? '#finder-sidebar-home' : '#finder-sidebar-computer';
-                break;
-            }
-        }
-
-        if (toActivate) {
-            const el = this.element.querySelector(toActivate);
-            el?.classList.add('finder-sidebar-active');
-        }
-    }
-
-    renderContent(): void {
-        if (!this.dom.content) return;
-
+    renderContent(): VNode {
         let items: FileItem[] = [];
 
         if (this.source === 'github') {
-            // GitHub wird asynchron gerendert, da ggf. Netzwerk/Caches betroffen sind
-            void this.renderGithubContent();
-            return;
+            void this.loadGithubContent();
+            if (this.githubLoading && this._renderedItems.length === 0) {
+                return this.renderLoadingSkeleton();
+            }
+            if (this.githubError) {
+                return h(
+                    'div',
+                    { className: 'p-4 text-sm text-red-500' },
+                    `GitHub Fehler: ${this.githubErrorMessage}`
+                );
+            }
+            items = this._renderedItems;
         } else if (this.source === 'recent') {
             items = this.getRecentItems();
         } else if (this.source === 'starred') {
@@ -626,15 +521,28 @@ export class FinderView extends BaseTab {
 
         // Sort only if not in recent view (recent items are already sorted by date, newest first)
         const sorted = this.source === 'recent' ? filtered : this.sortItems(filtered);
+        this._renderedItems = sorted;
 
-        switch (this.viewMode) {
-            case 'list':
-                this.renderListView(sorted);
-                break;
-            case 'grid':
-                this.renderGridView(sorted);
-                break;
-        }
+        return this.viewMode === 'list' ? this.renderListView(sorted) : this.renderGridView(sorted);
+    }
+
+    renderLoadingSkeleton(): VNode {
+        return h(
+            'div',
+            { className: 'p-4' },
+            h(
+                'div',
+                { className: 'animate-pulse space-y-2' },
+                ...Array.from({ length: 5 }, () =>
+                    h(
+                        'div',
+                        { className: 'flex items-center gap-2' },
+                        h('div', { className: 'w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded' }),
+                        h('div', { className: 'flex-1 h-4 bg-gray-300 dark:bg-gray-600 rounded' })
+                    )
+                )
+            )
+        );
     }
 
     getComputerItems(): FileItem[] {
@@ -680,32 +588,32 @@ export class FinderView extends BaseTab {
         return sorted;
     }
 
-    renderListView(items: FileItem[]): void {
-        this._renderedItems = items;
-
-        // Build virtual tree for list view
-        const newVTree = h(
+    renderListView(items: FileItem[]): VNode {
+        return h(
             'div',
-            { class: 'p-2' },
+            {
+                className: 'finder-content p-2',
+                'data-finder-content': 'list',
+            },
             h(
                 'table',
-                { class: 'finder-list-table table-fixed w-full' },
+                { className: 'finder-list-table table-fixed w-full' },
                 h(
                     'colgroup',
                     {},
                     h('col', {}),
-                    h('col', { class: 'w-28' }),
-                    h('col', { class: 'w-40' })
+                    h('col', { className: 'w-28' }),
+                    h('col', { className: 'w-40' })
                 ),
                 h(
                     'thead',
                     {},
                     h(
                         'tr',
-                        { class: 'text-left' },
-                        h('th', { class: 'font-medium' }, 'Name'),
-                        h('th', { class: 'text-right font-medium' }, 'Größe'),
-                        h('th', { class: 'text-right font-medium' }, 'Geändert')
+                        { className: 'text-left' },
+                        h('th', { className: 'font-medium' }, 'Name'),
+                        h('th', { className: 'text-right font-medium' }, 'Größe'),
+                        h('th', { className: 'text-right font-medium' }, 'Geändert')
                     )
                 ),
                 h(
@@ -719,10 +627,18 @@ export class FinderView extends BaseTab {
 
                         const attrs: Record<string, unknown> = {
                             key: item.name,
-                            class: rowClass,
+                            className: rowClass,
                             'data-item-index': String(i),
                             'data-item-name': item.name,
                             'data-item-type': item.type,
+                            onclick: (e: MouseEvent) => {
+                                e.stopPropagation();
+                                this._selectItem(item.name);
+                            },
+                            ondblclick: (e: MouseEvent) => {
+                                e.stopPropagation();
+                                void this.openItem(item.name, item.type);
+                            },
                         };
 
                         if (item.path) {
@@ -734,27 +650,28 @@ export class FinderView extends BaseTab {
                             attrs,
                             h(
                                 'td',
-                                { class: 'pr-2' },
+                                { className: 'pr-2' },
                                 h(
                                     'div',
-                                    { class: 'flex items-center gap-2 min-w-0' },
+                                    { className: 'flex items-center gap-2 min-w-0' },
                                     h(
                                         'span',
-                                        { class: 'finder-item-icon shrink-0' },
+                                        { className: 'finder-item-icon shrink-0' },
                                         item.icon || ''
                                     ),
-                                    h('span', { class: 'truncate block min-w-0' }, item.name)
+                                    h('span', { className: 'truncate block min-w-0' }, item.name)
                                 )
                             ),
                             h(
                                 'td',
-                                { class: 'text-right whitespace-nowrap pl-2 pr-2' },
+                                { className: 'text-right whitespace-nowrap pl-2 pr-2' },
                                 this.formatSize(item.size)
                             ),
                             h(
                                 'td',
                                 {
-                                    class: 'text-right text-gray-500 dark:text-gray-400 whitespace-nowrap pl-2',
+                                    className:
+                                        'text-right text-gray-500 dark:text-gray-400 whitespace-nowrap pl-2',
                                 },
                                 this.formatDate(item.modified)
                             )
@@ -763,33 +680,15 @@ export class FinderView extends BaseTab {
                 )
             )
         );
-
-        // Apply VDOM updates
-        if (!this._vTree || !this.dom.content?.firstChild) {
-            // Initial render: create DOM from scratch
-            this.dom.content!.innerHTML = '';
-            const dom = createElement(newVTree);
-            this.dom.content!.appendChild(dom);
-        } else {
-            // Update: intelligent diff + patch
-            const patches = diff(this._vTree, newVTree);
-            const container = this.dom.content!.firstChild as HTMLElement;
-            if (container) {
-                patch(container, patches);
-            }
-        }
-
-        this._vTree = newVTree;
     }
 
-    renderGridView(items: FileItem[]): void {
-        this._renderedItems = items;
-
-        // Build virtual tree for grid view
-        const newVTree = h(
+    renderGridView(items: FileItem[]): VNode {
+        return h(
             'div',
             {
-                class: 'finder-grid-container grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 p-3',
+                className:
+                    'finder-content finder-grid-container grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 p-3',
+                'data-finder-content': 'grid',
             },
             ...items.map((item, i) => {
                 const isSelected = this.selectedItems.has(item.name);
@@ -799,10 +698,18 @@ export class FinderView extends BaseTab {
 
                 const attrs: Record<string, unknown> = {
                     key: item.name,
-                    class: itemClass,
+                    className: itemClass,
                     'data-item-index': String(i),
                     'data-item-name': item.name,
                     'data-item-type': item.type,
+                    onclick: (e: MouseEvent) => {
+                        e.stopPropagation();
+                        this._selectItem(item.name);
+                    },
+                    ondblclick: (e: MouseEvent) => {
+                        e.stopPropagation();
+                        void this.openItem(item.name, item.type);
+                    },
                 };
 
                 if (item.path) {
@@ -812,28 +719,11 @@ export class FinderView extends BaseTab {
                 return h(
                     'div',
                     attrs,
-                    h('div', { class: 'finder-grid-icon text-2xl mb-2' }, item.icon || ''),
-                    h('div', { class: 'finder-grid-name truncate text-sm' }, item.name)
+                    h('div', { className: 'finder-grid-icon text-2xl mb-2' }, item.icon || ''),
+                    h('div', { className: 'finder-grid-name truncate text-sm' }, item.name)
                 );
             })
         );
-
-        // Apply VDOM updates
-        if (!this._vTree || !this.dom.content?.firstChild) {
-            // Initial render: create DOM from scratch
-            this.dom.content!.innerHTML = '';
-            const dom = createElement(newVTree);
-            this.dom.content!.appendChild(dom);
-        } else {
-            // Update: intelligent diff + patch
-            const patches = diff(this._vTree, newVTree);
-            const container = this.dom.content!.firstChild as HTMLElement;
-            if (container) {
-                patch(container, patches);
-            }
-        }
-
-        this._vTree = newVTree;
     }
 
     formatSize(size?: number): string {
@@ -1315,6 +1205,7 @@ export class FinderView extends BaseTab {
     navigateToFolder(name: string): void {
         if (this.source === 'github') {
             this.currentPath = [...this.currentPath, name];
+            this._addToHistory();
             this._persistState();
             this._renderAll();
             return;
@@ -1325,6 +1216,7 @@ export class FinderView extends BaseTab {
         const folder = VirtualFS.getFolder(targetPath);
         if (folder) {
             this.currentPath = [...this.currentPath, name];
+            this._addToHistory();
             this._persistState();
             this._renderAll();
         }
@@ -1333,28 +1225,29 @@ export class FinderView extends BaseTab {
     navigateUp(): void {
         if (this.currentPath.length === 0) return;
         this.currentPath = this.currentPath.slice(0, -1);
+        this._addToHistory();
         this._persistState();
         this._renderAll();
     }
 
     goRoot(): void {
         this.currentPath = [];
+        this._addToHistory();
         this._persistState();
         this._renderAll();
     }
 
     navigateToPath(parts: string[]): void {
         this.currentPath = parts;
+        this._addToHistory();
         this._persistState();
         this._renderAll();
     }
 
     setViewMode(mode: ViewMode): void {
         this.viewMode = mode;
-        // Reset VDOM tree when switching view modes to force fresh render
-        this._vTree = null;
         this.updateContentState({ viewMode: this.viewMode });
-        this.renderContent();
+        this._renderAll();
     }
 
     setSortBy(sortBy: 'name' | 'date' | 'size' | 'type'): void {
@@ -1675,40 +1568,40 @@ export class FinderView extends BaseTab {
     }
 
     /**
-     * Render repository items (handles mapping, filtering, sorting)
+     * Update internal items from GitHub repos
      */
-    private _renderRepoItems(repos: GitHubRepo[]): void {
+    private _updateRepoItems(repos: GitHubRepo[]): void {
         this.githubRepos = Array.isArray(repos) ? repos : [];
         const items = this._transformRepoItems(this.githubRepos);
         this.lastGithubItemsMap.clear();
         items.forEach(it => this.lastGithubItemsMap.set(it.name, it));
-
-        const filtered = this.filterItems(items, this.searchTerm);
-        this.renderListView(this.sortItems(filtered));
+        this._renderedItems = items;
+        this._renderAll();
     }
 
     /**
-     * Render content items (handles mapping, filtering, sorting)
+     * Update internal items from GitHub contents
      */
-    private _renderContentItems(contents: GitHubContentItem[]): void {
+    private _updateContentItems(contents: GitHubContentItem[]): void {
         const items = this._transformContentItems(Array.isArray(contents) ? contents : []);
         this.lastGithubItemsMap.clear();
         (Array.isArray(contents) ? contents : []).forEach(it =>
             this.lastGithubItemsMap.set(it.name, it)
         );
-
-        const filtered = this.filterItems(items, this.searchTerm);
-        this.renderListView(this.sortItems(filtered));
+        this._renderedItems = items;
+        this._renderAll();
     }
 
-    async renderGithubContent(): Promise<void> {
-        if (!this.dom.content) return;
+    async loadGithubContent(): Promise<void> {
+        if (this.githubLoading) return;
+
         const API = this.getAPI();
         const username = this.getGithubUsername();
 
         if (!API) {
-            this.dom.content.innerHTML =
-                '<div class="p-4 text-sm text-red-500">GitHubAPI nicht geladen</div>';
+            this.githubError = true;
+            this.githubErrorMessage = 'GitHubAPI nicht geladen';
+            this._renderAll();
             return;
         }
 
@@ -1732,7 +1625,7 @@ export class FinderView extends BaseTab {
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
                     const repos = cached || apiCached;
-                    this._renderRepoItems(repos as GitHubRepo[]);
+                    this._updateRepoItems(repos as GitHubRepo[]);
 
                     // If data is stale, show refresh indicator and fetch in background
                     if (cacheState === 'stale') {
@@ -1741,24 +1634,25 @@ export class FinderView extends BaseTab {
                             .then((freshRepos: unknown) => {
                                 API.writeCache('repos', '', '', freshRepos);
                                 this._writeGithubCache(cacheKey, freshRepos);
-                                this._renderRepoItems(freshRepos as GitHubRepo[]);
+                                this._updateRepoItems(freshRepos as GitHubRepo[]);
                                 this._hideRefreshIndicator();
                             })
                             .catch((err: unknown) => {
                                 console.warn('[FinderView] Background refresh failed:', err);
                                 this._hideRefreshIndicator();
-                                // Show subtle error state in refresh indicator
                                 this._showRefreshError();
                             });
                     }
                 } else {
                     // No cache - show loading skeleton
-                    this._showLoadingSkeleton();
+                    this.githubLoading = true;
+                    this._renderAll();
 
                     const repos = await API.fetchUserRepos(username);
                     API.writeCache('repos', '', '', repos);
                     this._writeGithubCache(cacheKey, repos);
-                    this._renderRepoItems(repos as GitHubRepo[]);
+                    this.githubLoading = false;
+                    this._updateRepoItems(repos as GitHubRepo[]);
                 }
             } else {
                 // Repo contents
@@ -1781,7 +1675,7 @@ export class FinderView extends BaseTab {
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
                     const contents = cached || apiCached;
-                    this._renderContentItems(contents as GitHubContentItem[]);
+                    this._updateContentItems(contents as GitHubContentItem[]);
 
                     // If data is stale, show refresh indicator and fetch in background
                     if (cacheState === 'stale') {
@@ -1790,7 +1684,7 @@ export class FinderView extends BaseTab {
                             .then((freshContents: unknown) => {
                                 API.writeCache('contents', repo, subPath, freshContents);
                                 this._writeGithubCache(cacheKey, freshContents);
-                                this._renderContentItems(freshContents as GitHubContentItem[]);
+                                this._updateContentItems(freshContents as GitHubContentItem[]);
                                 this._hideRefreshIndicator();
                             })
                             .catch((err: unknown) => {
@@ -1801,18 +1695,21 @@ export class FinderView extends BaseTab {
                     }
                 } else {
                     // No cache - show loading skeleton
-                    this._showLoadingSkeleton();
+                    this.githubLoading = true;
+                    this._renderAll();
 
                     const contents = await API.fetchRepoContents(username, repo, subPath);
                     API.writeCache('contents', repo, subPath, contents);
                     this._writeGithubCache(cacheKey, contents);
-                    this._renderContentItems(contents as GitHubContentItem[]);
+                    this.githubLoading = false;
+                    this._updateContentItems(contents as GitHubContentItem[]);
                 }
             }
         } catch (e: unknown) {
+            this.githubLoading = false;
             this.githubError = true;
             this.githubErrorMessage = (e as Error)?.message || 'Unbekannter Fehler';
-            this.dom.content.innerHTML = `<div class="p-4 text-sm text-red-500">GitHub Fehler: ${this.githubErrorMessage}</div>`;
+            this._renderAll();
         }
     }
 
@@ -1851,7 +1748,7 @@ export class FinderView extends BaseTab {
             indicator.className =
                 'finder-refresh-indicator ml-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1';
             indicator.innerHTML = '<span class="animate-spin">⟳</span><span>Aktualisiere…</span>';
-            const breadcrumbs = this.dom.toolbar.querySelector('.breadcrumbs');
+            const breadcrumbs = this.dom.toolbar.querySelector('.finder-breadcrumbs-active');
             if (breadcrumbs?.parentElement) {
                 breadcrumbs.parentElement.appendChild(indicator);
             }
@@ -1926,38 +1823,66 @@ export class FinderView extends BaseTab {
      * Ermittelt den sichtbaren Tab‑Titel: Am Root z. B. „GitHub“/„Computer“,
      * ansonsten der letzte Pfadteil. Dadurch entspricht der Tab immer dem Kontext.
      */
-    private _updateTabLabel(): void {
-        const w = window as any;
-        const t = (key: string, fb: string) =>
-            w.appI18n ? w.appI18n.translate(key, {}, { fallback: fb }) : fb;
+    setTitle(title: string): void {
+        if (this.title === title) return;
+        super.setTitle(title);
+        // Re-render to update the tab label in the VDOM tabs
+        this.refresh();
+    }
 
-        let label = '';
-        const atRoot = this.currentPath.length === 0;
-        switch (this.source) {
-            case 'computer':
-                label = atRoot
-                    ? t('finder.sidebar.computer', 'Computer')
-                    : this.currentPath[this.currentPath.length - 1];
-                break;
-            case 'github':
-                // At root show generic GitHub view label, otherwise last path segment (repo or folder)
-                label = atRoot
-                    ? 'GitHub'
-                    : this.currentPath[this.currentPath.length - 1] || 'GitHub';
-                break;
-            case 'recent':
-                label = t('finder.sidebar.recent', 'Zuletzt verwendet');
-                break;
-            case 'starred':
-                label = t('finder.sidebar.starred', 'Markiert');
-                break;
-            default:
-                label = this.title || 'Finder';
-        }
+    private detachTabToNewWindow(tabId: string, pos?: { x: number; y: number }): void {
+        const parentWin = this.parentWindow as any;
+        if (!parentWin || typeof parentWin.detachTab !== 'function') return;
+        if (!parentWin.tabs?.has?.(tabId)) return;
 
-        if (this.title !== label) {
-            this.setTitle(label);
+        const detached = parentWin.detachTab(tabId) as FinderView | null;
+        if (!detached) return;
+
+        const W = window as any;
+        const FinderWindowCtor = W.FinderWindow;
+        if (!FinderWindowCtor) return;
+
+        const basePos = parentWin.position || { x: 120, y: 80, width: 800, height: 600 };
+        const menuBottom = (W.getMenuBarBottom?.() || 0) + 12;
+        const nextPos = pos
+            ? {
+                  x: Math.max(24, pos.x - basePos.width / 2),
+                  y: Math.max(menuBottom, pos.y - 48),
+                  width: basePos.width,
+                  height: basePos.height,
+              }
+            : {
+                  x: basePos.x + 32,
+                  y: basePos.y + 32,
+                  width: basePos.width,
+                  height: basePos.height,
+              };
+
+        const newWin = new FinderWindowCtor({ position: nextPos });
+        if (W.WindowRegistry) {
+            W.WindowRegistry.registerWindow(newWin);
         }
+        newWin.show();
+        newWin.addTab(detached);
+        newWin.setActiveTab(detached.id);
+    }
+
+    private moveTabToWindow(tabId: string, targetWindowId: string): void {
+        const sourceWin = this.parentWindow as any;
+        if (!sourceWin || typeof sourceWin.detachTab !== 'function') return;
+        if (!sourceWin.tabs?.has?.(tabId)) return;
+
+        const W = window as any;
+        const targetWin = W.WindowRegistry?.getWindow?.(targetWindowId) as any;
+        if (!targetWin || targetWin.type !== 'finder') return;
+        if (targetWin.tabs?.has?.(tabId)) return;
+
+        const detached = sourceWin.detachTab(tabId) as FinderView | null;
+        if (!detached) return;
+
+        targetWin.addTab(detached);
+        targetWin.setActiveTab(detached.id);
+        targetWin.bringToFront?.();
     }
 }
 

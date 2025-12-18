@@ -9,7 +9,7 @@ const { waitForAppReady, openFinderWindow } = require('../utils');
 async function openFinderGithub(page) {
     // Ensure Finder window is opened and visible, then open the GitHub sidebar
     await openFinderWindow(page);
-    const githubBtn = page.locator('#finder-sidebar-github');
+    const githubBtn = page.locator('[data-sidebar-id="github"]');
     await githubBtn.waitFor({ state: 'visible', timeout: 5000 });
     await githubBtn.click();
 }
@@ -42,7 +42,7 @@ test.describe('Finder GitHub API Performance', () => {
         await openFinderWindow(page);
 
         // Monitor for loading skeleton when clicking GitHub
-        const githubBtn = page.locator('#finder-sidebar-github');
+        const githubBtn = page.locator('[data-sidebar-id="github"]');
         await githubBtn.waitFor({ state: 'visible', timeout: 5000 });
 
         // Click GitHub button
@@ -99,7 +99,7 @@ test.describe('Finder GitHub API Performance', () => {
         }
 
         // Navigate away from GitHub
-        const computerBtn = page.locator('#finder-sidebar-computer');
+        const computerBtn = page.locator('[data-sidebar-id="computer"]');
         await computerBtn.click();
         await page.waitForTimeout(500); // Brief pause to ensure navigation
 
@@ -107,7 +107,7 @@ test.describe('Finder GitHub API Performance', () => {
         const startTime = Date.now();
 
         // Navigate back to GitHub
-        const githubBtn = page.locator('#finder-sidebar-github');
+        const githubBtn = page.locator('[data-sidebar-id="github"]');
         await githubBtn.click();
 
         // Data should appear almost immediately (cached)
@@ -158,11 +158,11 @@ test.describe('Finder GitHub API Performance', () => {
         });
 
         // Navigate away and back
-        const computerBtn = page.locator('#finder-sidebar-computer');
+        const computerBtn = page.locator('[data-sidebar-id="computer"]');
         await computerBtn.click();
         await page.waitForTimeout(300);
 
-        const githubBtn = page.locator('#finder-sidebar-github');
+        const githubBtn = page.locator('[data-sidebar-id="github"]');
         await githubBtn.click();
 
         // Cached data should appear immediately
@@ -205,7 +205,7 @@ test.describe('Finder GitHub API Performance', () => {
 
         // Open Finder and rapidly click GitHub multiple times
         await openFinderWindow(page);
-        const githubBtn = page.locator('#finder-sidebar-github');
+        const githubBtn = page.locator('[data-sidebar-id="github"]');
 
         // Click multiple times rapidly to trigger potential duplicate requests
         await githubBtn.click();
@@ -258,7 +258,7 @@ test.describe('Finder GitHub API Performance', () => {
         });
 
         // Click GitHub button - should trigger prefetch
-        const githubBtn = page.locator('#finder-sidebar-github');
+        const githubBtn = page.locator('[data-sidebar-id="github"]');
         await githubBtn.click();
 
         // Wait for prefetch to be called with polling instead of fixed timeout

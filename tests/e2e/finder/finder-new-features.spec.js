@@ -177,7 +177,7 @@ test.describe('FinderView New Features', () => {
             .waitFor({ state: 'visible', timeout: 10000 });
 
         // Check breadcrumbs exist
-        const breadcrumbs = finderWindow.locator('.breadcrumbs');
+        const breadcrumbs = finderWindow.locator('.finder-breadcrumbs-active');
         await expect(breadcrumbs).toBeVisible();
 
         // Navigate to Documents folder (if it exists)
@@ -190,7 +190,7 @@ test.describe('FinderView New Features', () => {
             // Wait for breadcrumbs to update
             await page.waitForFunction(
                 () => {
-                    const bc = document.querySelector('.breadcrumbs');
+                    const bc = document.querySelector('.finder-breadcrumbs-active');
                     return bc && bc.textContent && bc.textContent.includes('Documents');
                 },
                 { timeout: 5000 }

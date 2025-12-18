@@ -226,7 +226,7 @@ test.describe('VDOM Core @basic', () => {
             // Update
             const newVNode = window.VDOM.h('div', { className: 'new-class' }, 'New text');
             patches = window.VDOM.diff(oldVNode, newVNode);
-            window.VDOM.patch(container, patches);
+            window.VDOM.patch(container.firstChild, patches);
 
             // Check result
             const element = container.querySelector('div');
@@ -268,7 +268,7 @@ test.describe('VDOM Core @basic', () => {
             // Remove one child
             const newVNode = window.VDOM.h('ul', {}, window.VDOM.h('li', { key: 1 }, 'Item 1'));
             patches = window.VDOM.diff(oldVNode, newVNode);
-            window.VDOM.patch(container, patches);
+            window.VDOM.patch(container.firstChild, patches);
 
             const finalCount = container.querySelectorAll('li').length;
 
@@ -469,7 +469,7 @@ test.describe('VDOM Edge Cases', () => {
 
             const newVNode = window.VDOM.h('div', {}, 'New text');
             patches = window.VDOM.diff(oldVNode, newVNode);
-            window.VDOM.patch(container, patches);
+            window.VDOM.patch(container.firstChild, patches);
 
             const text = container.textContent;
 

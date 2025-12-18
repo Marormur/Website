@@ -49,6 +49,8 @@ export interface Patch {
     oldNode?: VNode;
     /** New positions for REORDER operations */
     moves?: Array<{ from: number; to: number }>;
+    /** Nested patches for child nodes */
+    patches?: Patch[];
 }
 
 // ============================================================================
@@ -182,8 +184,9 @@ function diffProps(
  * @returns Array of patches for children
  */
 function diffChildren(oldChildren: (VNode | string)[], newChildren: (VNode | string)[]): Patch[] {
-    const patches: Patch[] = [];
-    const maxLength = Math.max(oldChildren.length, newChildren.length);
+    const updates: Patch[] = [];
+    const creates: Patch[] = [];
+    const removals: Patch[] = [];
 
     // Build key maps for efficient reconciliation
     const oldKeyMap = buildKeyMap(oldChildren);
@@ -201,26 +204,60 @@ function diffChildren(oldChildren: (VNode | string)[], newChildren: (VNode | str
 
         // Try to find matching old node
         let oldIndex = -1;
-        if (newKey !== undefined && oldKeyMap.has(newKey)) {
-            oldIndex = oldKeyMap.get(newKey)!;
-            matched.add(oldIndex);
+        if (newKey !== undefined) {
+            if (oldKeyMap.has(newKey)) {
+                oldIndex = oldKeyMap.get(newKey)!;
+                matched.add(oldIndex);
+            }
+        } else {
+            // Match by position for keyless nodes of same type
+            // Try same index first
+            const potentialOldChild = oldChildren[i];
+            if (
+                potentialOldChild &&
+                !matched.has(i) &&
+                getNodeKey(potentialOldChild, i) === undefined
+            ) {
+                const sameType =
+                    (typeof newChild === 'string' && typeof potentialOldChild === 'string') ||
+                    (typeof newChild !== 'string' &&
+                        typeof potentialOldChild !== 'string' &&
+                        newChild.type === potentialOldChild.type);
+                if (sameType) {
+                    oldIndex = i;
+                    matched.add(i);
+                }
+            }
+
+            // If not matched at same index, find first available unmatched keyless node of same type
+            if (oldIndex === -1) {
+                for (let j = 0; j < oldChildren.length; j++) {
+                    if (!matched.has(j)) {
+                        const oldChild = oldChildren[j];
+                        if (oldChild && getNodeKey(oldChild, j) === undefined) {
+                            const sameType =
+                                (typeof newChild === 'string' && typeof oldChild === 'string') ||
+                                (typeof newChild !== 'string' &&
+                                    typeof oldChild !== 'string' &&
+                                    newChild.type === oldChild.type);
+                            if (sameType) {
+                                oldIndex = j;
+                                matched.add(j);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         if (oldIndex === -1) {
             // No match found - this is a new node
-            if (typeof newChild === 'string') {
-                patches.push({
-                    type: 'CREATE',
-                    node: h('#text', {}, newChild),
-                    index: i + 1, // +1 because 0 is the parent
-                });
-            } else {
-                patches.push({
-                    type: 'CREATE',
-                    node: newChild,
-                    index: i + 1,
-                });
-            }
+            creates.push({
+                type: 'CREATE',
+                node: typeof newChild === 'string' ? h('#text', {}, newChild) : newChild,
+                index: i + 1,
+            });
         } else {
             // Match found - recursively diff
             const oldChild = oldChildren[oldIndex];
@@ -228,33 +265,33 @@ function diffChildren(oldChildren: (VNode | string)[], newChildren: (VNode | str
 
             if (typeof newChild !== 'string' && typeof oldChild !== 'string') {
                 const childDiff = diff(oldChild, newChild);
-                // Adjust indices for child patches
-                patches.push(
-                    ...childDiff.map(p => ({
-                        ...p,
-                        index: (p.index || 0) + i + 1,
-                    }))
-                );
+                if (childDiff.length > 0) {
+                    updates.push({
+                        type: 'UPDATE',
+                        index: oldIndex + 1,
+                        patches: childDiff,
+                    });
+                }
             } else if (oldChild !== newChild) {
                 // Text content changed
-                patches.push({
+                updates.push({
                     type: 'UPDATE',
                     props: { textContent: newChild },
-                    index: i + 1,
+                    index: oldIndex + 1,
                 });
             }
         }
     }
 
     // Remove old children that weren't matched
-    for (let i = 0; i < oldChildren.length; i++) {
+    for (let i = oldChildren.length - 1; i >= 0; i--) {
         if (!matched.has(i)) {
             const oldChild = oldChildren[i];
-            if (!oldChild) continue; // Skip undefined children
+            if (!oldChild) continue;
 
             const oldKey = getNodeKey(oldChild, i);
             if (oldKey === undefined || !newKeyMap.has(oldKey)) {
-                patches.push({
+                removals.push({
                     type: 'REMOVE',
                     index: i + 1,
                 });
@@ -262,15 +299,19 @@ function diffChildren(oldChildren: (VNode | string)[], newChildren: (VNode | str
         }
     }
 
-    return patches;
+    // Order is critical:
+    // 1. UPDATE existing nodes (using old indices)
+    // 2. REMOVE nodes (using old indices, in reverse order)
+    // 3. CREATE new nodes (using new indices)
+    return [...updates, ...removals, ...creates];
 }
 
 /**
  * Builds a map of keys to indices for efficient lookup
- * 
+ *
  * Used internally by diffChildren to enable O(1) key-based node matching during reconciliation.
  * Only includes children with explicit keys; text nodes and keyless vnodes are skipped.
- * 
+ *
  * @param children - Array of child nodes (VNodes or strings)
  * @returns Map from key to child index for O(1) lookup
  */
@@ -289,10 +330,10 @@ function buildKeyMap(children: (VNode | string)[]): Map<string | number, number>
 
 /**
  * Gets the key for a node (explicit key or undefined)
- * 
+ *
  * Only returns the explicit key if present; does not fall back to index.
  * This ensures stable reconciliation - nodes without keys are always recreated.
- * 
+ *
  * @param node - Virtual node or text string
  * @param index - Position in parent (unused, but kept for potential future use)
  * @returns Node's explicit key or undefined
@@ -314,10 +355,7 @@ function getNodeKey(node: VNode | string, index: number): string | number | unde
  * @param patches - Array of patch operations
  * @returns Updated DOM element
  */
-export function patch(
-    rootElement: HTMLElement,
-    patches: Patch[]
-): HTMLElement {
+export function patch(rootElement: HTMLElement, patches: Patch[]): HTMLElement {
     if (patches.length === 0) {
         return rootElement;
     }
@@ -332,44 +370,53 @@ export function patch(
 
 /**
  * Applies a single patch operation to the DOM
- * 
+ *
  * Performs the actual DOM mutation based on patch type:
  * - CREATE: Appends new element
  * - UPDATE: Modifies element properties
  * - REMOVE: Removes element from parent
  * - REPLACE: Replaces element with new one
- * 
+ *
  * @param rootElement - Root DOM element to patch
  * @param patchOp - Patch operation to apply
  */
 function applyPatch(rootElement: HTMLElement, patchOp: Patch): void {
-    const { type, node, props, index } = patchOp;
+    const { type, node, props, index, patches } = patchOp;
 
     switch (type) {
         case 'CREATE':
             if (node) {
                 const newElement = createElement(node);
-                if (index === 0) {
-                    // Replace root
-                    if (rootElement.parentNode) {
-                        rootElement.parentNode.replaceChild(newElement, rootElement);
-                    }
-                } else {
-                    // Append to root
+                if (index === 0 || index === undefined) {
                     rootElement.appendChild(newElement);
+                } else {
+                    const targetIndex = index - 1;
+                    const beforeNode = rootElement.childNodes[targetIndex];
+                    if (beforeNode) {
+                        rootElement.insertBefore(newElement, beforeNode);
+                    } else {
+                        rootElement.appendChild(newElement);
+                    }
                 }
             }
             break;
 
         case 'UPDATE':
-            if (props) {
-                if (index === 0) {
-                    updateElement(rootElement, props);
-                } else {
-                    const targetIndex = (index || 1) - 1;
-                    const target = rootElement.childNodes[targetIndex] as HTMLElement;
-                    if (target) {
-                        updateElement(target, props);
+            let target: HTMLElement | null = null;
+            if (index === 0) {
+                target = rootElement;
+            } else {
+                const targetIndex = (index || 1) - 1;
+                target = rootElement.childNodes[targetIndex] as HTMLElement;
+            }
+
+            if (target) {
+                if (props) {
+                    updateElement(target, props);
+                }
+                if (patches && patches.length > 0) {
+                    for (const subPatch of patches) {
+                        applyPatch(target, subPatch);
                     }
                 }
             }
@@ -377,15 +424,12 @@ function applyPatch(rootElement: HTMLElement, patchOp: Patch): void {
 
         case 'REMOVE':
             if (index === 0) {
-                // Remove root
-                if (rootElement.parentNode) {
-                    rootElement.parentNode.removeChild(rootElement);
-                }
+                rootElement.innerHTML = '';
             } else {
                 const targetIndex = (index || 1) - 1;
-                const target = rootElement.childNodes[targetIndex];
-                if (target) {
-                    rootElement.removeChild(target);
+                const targetNode = rootElement.childNodes[targetIndex];
+                if (targetNode) {
+                    rootElement.removeChild(targetNode);
                 }
             }
             break;
@@ -394,15 +438,13 @@ function applyPatch(rootElement: HTMLElement, patchOp: Patch): void {
             if (node) {
                 const newElement = createElement(node);
                 if (index === 0) {
-                    // Replace root
-                    if (rootElement.parentNode) {
-                        rootElement.parentNode.replaceChild(newElement, rootElement);
-                    }
+                    rootElement.innerHTML = '';
+                    rootElement.appendChild(newElement);
                 } else {
                     const targetIndex = (index || 1) - 1;
-                    const target = rootElement.childNodes[targetIndex];
-                    if (target) {
-                        rootElement.replaceChild(newElement, target);
+                    const targetNode = rootElement.childNodes[targetIndex];
+                    if (targetNode) {
+                        rootElement.replaceChild(newElement, targetNode);
                     }
                 }
             }
@@ -412,13 +454,13 @@ function applyPatch(rootElement: HTMLElement, patchOp: Patch): void {
 
 /**
  * Creates a real DOM element from a virtual node
- * 
+ *
  * Recursively creates DOM tree from virtual tree.
  * Handles text nodes, element properties, and event handlers.
- * 
+ *
  * @param vnode - Virtual node to convert
  * @returns DOM element or text node
- * 
+ *
  * @example
  * const vnode = h('div', { className: 'card' },
  *   h('h2', {}, 'Title'),
@@ -454,46 +496,48 @@ export function createElement(vnode: VNode): HTMLElement | Text {
 
 /**
  * Updates element properties/attributes
- * 
+ *
  * Handles special cases:
  * - Event handlers (on* props): addEventListener
  * - className: mapped to element.className
  * - style objects: merged with element.style
  * - Properties vs attributes: sets as property if it exists on element, otherwise as attribute
  * - null/undefined values: removes attribute/property
- * 
+ *
  * @param element - DOM element or text node to update
  * @param props - Properties to set
  */
 function updateElement(element: HTMLElement | Text, props: Record<string, unknown>): void {
-    if (element instanceof Text) {
+    if (element.nodeType === 3) {
+        // Text node
         if ('textContent' in props) {
             element.textContent = String(props.textContent);
         }
         return;
     }
 
+    const el = element as HTMLElement;
     for (const [key, value] of Object.entries(props)) {
         if (value === undefined || value === null) {
             // Remove attribute
-            element.removeAttribute(key);
-            if (key in element) {
-                (element as any)[key] = undefined;
+            el.removeAttribute(key);
+            if (key in el) {
+                (el as any)[key] = undefined;
             }
         } else if (key.startsWith('on') && typeof value === 'function') {
             // Event handler
             const eventName = key.substring(2).toLowerCase();
-            element.addEventListener(eventName, value as EventListener);
+            el.addEventListener(eventName, value as EventListener);
         } else if (key === 'className') {
-            element.className = String(value);
+            el.className = String(value);
         } else if (key === 'style' && typeof value === 'object') {
-            Object.assign(element.style, value);
-        } else if (key in element) {
+            Object.assign(el.style, value);
+        } else if (key in el) {
             // Set as property
-            (element as any)[key] = value;
+            (el as any)[key] = value;
         } else {
             // Set as attribute
-            element.setAttribute(key, String(value));
+            el.setAttribute(key, String(value));
         }
     }
 }
@@ -504,15 +548,15 @@ function updateElement(element: HTMLElement | Text, props: Record<string, unknow
 
 /**
  * Central event delegation handler
- * 
+ *
  * Manages events at the root level for better performance with many elements.
  * Instead of attaching listeners to each element, delegates to a parent.
- * 
+ *
  * Benefits:
  * - Fewer event listeners (better memory usage)
  * - Works with dynamically added elements
  * - Simplified cleanup
- * 
+ *
  * @example
  * const delegator = new EventDelegator(document.getElementById('app'));
  * delegator.on('click', (e) => {
@@ -532,13 +576,13 @@ export class EventDelegator {
 
     /**
      * Register a delegated event handler
-     * 
+     *
      * Attaches a single listener to the root element that handles all events
      * of the specified type from child elements.
-     * 
+     *
      * @param eventType - Event type (e.g., 'click', 'input', 'change')
      * @param handler - Event handler function
-     * 
+     *
      * @example
      * delegator.on('click', (e) => {
      *   if (e.target.matches('.button')) {
@@ -558,11 +602,11 @@ export class EventDelegator {
 
     /**
      * Unregister a delegated event handler
-     * 
+     *
      * Removes the listener for the specified event type.
-     * 
+     *
      * @param eventType - Event type to remove listener for
-     * 
+     *
      * @example
      * delegator.off('click');
      */
@@ -576,14 +620,14 @@ export class EventDelegator {
 
     /**
      * Remove all delegated handlers
-     * 
+     *
      * Cleans up all event listeners and clears the internal handlers map.
      * Call this when destroying a component to prevent memory leaks.
-     * 
+     *
      * @example
      * class MyComponent {
      *   private delegator: EventDelegator;
-     * 
+     *
      *   destroy(): void {
      *     this.delegator.destroy();
      *   }
