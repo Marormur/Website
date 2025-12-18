@@ -1,0 +1,79 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build:css": {
+      "description": "Build Tailwind CSS",
+      "outputs": ["dist/**"],
+      "cache": true
+    },
+    "build:ts": {
+      "description": "Build TypeScript",
+      "outputs": ["js/**"],
+      "cache": true,
+      "dependsOn": ["^build:ts"]
+    },
+    "build:bundle": {
+      "description": "Build esbuild bundle",
+      "outputs": ["js/app.bundle.js"],
+      "cache": true,
+      "dependsOn": ["build:ts"]
+    },
+    "watch:css": {
+      "description": "Watch Tailwind CSS",
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck:watch": {
+      "description": "Watch TypeScript type checking",
+      "cache": false,
+      "persistent": true
+    },
+    "dev:bundle": {
+      "description": "Watch esbuild bundle",
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^build:ts"]
+    },
+    "dev": {
+      "description": "Start dev server",
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "description": "Lint TypeScript files",
+      "cache": true,
+      "outputs": []
+    },
+    "typecheck": {
+      "description": "Type check all TypeScript",
+      "cache": true,
+      "outputs": []
+    },
+    "test:e2e": {
+      "description": "Run E2E tests",
+      "cache": false,
+      "dependsOn": ["build:ts", "build:bundle"]
+    },
+    "test:e2e:quick": {
+      "description": "Quick E2E smoke tests",
+      "cache": false
+    },
+    "knip": {
+      "description": "Check unused dependencies",
+      "cache": true,
+      "outputs": []
+    },
+    "bundle:analyze": {
+      "description": "Analyze bundle size",
+      "cache": false,
+      "outputs": ["js/bundle-metadata.json"]
+    },
+    "validate": {
+      "description": "Full validation pipeline",
+      "cache": false,
+      "dependsOn": ["typecheck", "lint", "build:ts", "build:css", "build:bundle", "knip"]
+    }
+  },
+  "globalEnv": ["CI", "NODE_ENV", "USE_BUNDLE", "MOCK_GITHUB", "USE_NODE_SERVER"]
+}

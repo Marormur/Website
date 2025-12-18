@@ -38,6 +38,10 @@
     "lighthouse:upload": "lhci upload",
     "lighthouse:ci": "lhci autorun --config=lighthouserc.json",
     "bundle:analyze": "node scripts/analyze-bundle.mjs",
+    "turbo:build": "turbo run build:css build:ts build:bundle --cache-repo=.turbo",
+    "turbo:lint": "turbo run lint typecheck --cache-repo=.turbo",
+    "turbo:validate": "turbo run validate --cache-repo=.turbo",
+    "turbo:watch": "turbo run watch:css typecheck:watch dev:bundle --parallel",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -86,6 +90,7 @@
     "prettier": "^3.7.4",
     "rimraf": "^6.1.2",
     "tailwindcss": "^3.4.19",
+    "turbo": "^2.6.3",
     "type-coverage": "^2.29.7",
     "typescript": "^5.9.3"
   }

@@ -55,6 +55,11 @@ knip-report.json
 lighthouse-report.json
 bundle-analysis.json
 
+# Turbo cache
+.turbo/
+.turbo/
+turbo-debug.log
+
 # Logs
 *.log
 npm-debug.log*

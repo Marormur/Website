@@ -107,7 +107,128 @@ npm run bundle:analyze
 
 ---
 
-## 📋 VS Code Tasks
+## 🧪 **turbo** – Build Task Orchestration
+
+Parallele Build-Ausführung mit Smart Caching. Reduziert Build-Zeit durch:
+
+- Cache bei unveränderten Inputs
+- Parallele Task-Ausführung
+- Automatische Task-Abhängigkeiten
+
+**Nutzung:**
+
+```bash
+npm run turbo:build       # Schnelle Parallel-Builds (CSS + TS + Bundle)
+npm run turbo:lint       # Lint + TypeCheck parallel
+npm run turbo:validate   # Vollständige Validierung mit Cache
+npm run turbo:watch     # Watch-Mode für alle Dev-Tasks
+```
+
+**Oder direkt turbo commands:**
+
+```bash
+npx turbo run build:css build:ts --parallel      # Spezifische Tasks parallel
+npx turbo run validate --filter="src/**"         # Mit Filtering
+turbo daemon start                               # Daemon für schnellere Runs
+```
+
+**Konfiguration:** `turbo.json`
+
+**Vorteile:**
+
+- ✅ Tasks automatisch parallelisieren
+- ✅ Nur geänderte Files neu bauen
+- ✅ Cache-Management zwischen Runs
+- ✅ Task Dependencies automatisch handhaben
+
+---
+
+## 🧪 Testing Library Utilities
+
+Custom Testing-Utilities für bessere Playwright E2E Tests.
+
+**Nutzung in Tests:**
+
+```typescript
+import { screen, waitFor, userActions, assertions, debug } from './utils';
+
+test('example', async ({ page }) => {
+    // High-level queries
+    await screen.getByRole(page, 'button', { name: 'Submit' }).click();
+
+    // Wait for app to be ready
+    await waitFor.appReady(page);
+
+    // User interactions
+    await userActions.clickByRole(page, 'button', { name: 'Open' });
+    await userActions.type(page, 'input[type="search"]', 'test');
+
+    // Assertions
+    await assertions.isVisible(page, '[data-testid="result"]');
+    await assertions.hasText(page, '[data-testid="result"]', 'test');
+
+    // Debugging
+    await debug.screenshot(page, 'final-state');
+});
+```
+
+**Verfügbare Utilities:**
+
+| Kategorie       | Funktionen                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------- |
+| **screen**      | `getByRole`, `getByLabel`, `getByPlaceholder`, `getByText`, `getByTestId`                                     |
+| **waitFor**     | `appReady`, `element`, `windowCount`, `localStorage`                                                          |
+| **userActions** | `clickByRole`, `fillByLabel`, `type`, `doubleClick`, `contextMenu`, `dragAndDrop`, `keyboard`, `selectOption` |
+| **assertions**  | `isVisible`, `isHidden`, `hasText`, `hasCount`, `isEnabled`, `isDisabled`, `hasValue`, `localStorageValue`    |
+| **debug**       | `screenshot`, `logState`, `dumpHTML`, `pause`                                                                 |
+
+**Location:** `tests/e2e/utils.ts`
+
+---
+
+## 🔄 Optional: Package Manager Upgrades
+
+### **pnpm** – Faster, Leaner Package Manager (Optional)
+
+Wenn du später zu pnpm migrieren möchtest (schneller, bessere Disk-Nutzung):
+
+```bash
+npm install -g pnpm              # Global install
+pnpm install                     # Replaces npm install
+pnpm run dev                     # Same commands as npm
+```
+
+**Vorteile:**
+
+- ✅ Schneller als npm
+- ✅ Weniger Disk-Speicher (shared packages)
+- ✅ Bessere Mono-Repo-Unterstützung
+- ✅ Strikte Dependency-Handling
+
+**Nachteil:** Noch zu experimentell für manche Projekte. Empfehlung: Später probieren!
+
+---
+
+### **Vite** – Alternative Dev Server (Optional)
+
+Falls du später von `server.js` zu Vite migrieren möchtest:
+
+```bash
+npm install -D vite              # Install
+# vite.config.ts Configuration erforderlich
+npm run dev                      # Nutzt dann Vite statt server.js
+```
+
+**Vorteile:**
+
+- ✅ Super schneller Dev-Server
+- ✅ Native ES Modules
+- ✅ Esbuild-powered production builds
+- ✅ HMR (Hot Module Replacement) built-in
+
+**Empfehlung:** Dein minimalistischer `server.js` reicht aus. Vite wäre eine größere Migration – nur wenn nötig!
+
+---
 
 Folgende neue Tasks sind verfügbar (Cmd+Shift+P → "Run Task"):
 
@@ -117,6 +238,56 @@ Folgende neue Tasks sind verfügbar (Cmd+Shift+P → "Run Task"):
 | `Performance: Lighthouse audit`          | Performance-Audit durchführen  |
 | `Performance: Lighthouse CI`             | Wiederholte Audits mit Checks  |
 | `Bundle: Analyze size`                   | Bundle-Größe analysieren       |
+
+---
+
+Folgende neue Tasks sind verfügbar (Cmd+Shift+P → "Run Task"):
+
+| Task                                     | Beschreibung                   |
+| ---------------------------------------- | ------------------------------ |
+| `Code Quality: Check unused deps (knip)` | Ungenutzte Dependencies finden |
+| `Performance: Lighthouse audit`          | Performance-Audit durchführen  |
+| `Performance: Lighthouse CI`             | Wiederholte Audits mit Checks  |
+| `Bundle: Analyze size`                   | Bundle-Größe analysieren       |
+
+---
+
+## 🚀 Build-Optimierung mit turbo
+
+### Schnelle Parallel-Builds
+
+Statt nacheinander auszuführen:
+
+```bash
+# Alt (Sequenziell):
+npm run build:css && npm run build:ts && npm run build:bundle
+
+# Neu (Parallel mit Caching):
+npm run turbo:build  # ~70% schneller!
+```
+
+### Task-Abhängigkeiten automatisch handhaben
+
+turbo versteht Abhängigkeiten aus `turbo.json`:
+
+```json
+{
+    "tasks": {
+        "build:bundle": {
+            "dependsOn": ["build:ts"] // Bundle hängt von TS ab
+        }
+    }
+}
+```
+
+### CI/CD Performance
+
+In GitHub Actions / CI:
+
+```bash
+# Mit turbo caching zwischen Runs
+npm run turbo:validate --cache-repo=.turbo  # Super schnell!
+```
 
 ---
 
