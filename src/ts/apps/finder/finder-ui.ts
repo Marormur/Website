@@ -26,7 +26,7 @@ export interface FinderUIProps {
     onTabChange: (id: string) => void;
     onTabClose: (id: string) => void;
     onTabAdd: () => void;
-    onTabMove?: (id: string, targetWindowId: string) => void;
+    onTabMove?: (id: string, targetWindowId: string, sourceWindowId?: string) => void;
     onTabDetach?: (id: string, dropPosition?: { x: number; y: number }) => void;
 
     onNavigateBack: () => void;
@@ -483,7 +483,7 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
             const targetId = container.id.replace(/-tabs$/, '');
             if (targetId && this.props.onTabMove && targetId !== activeTabDrag.windowId) {
                 console.log(`[FinderUI] Moving tab ${activeTabDrag.tabId} to window ${targetId}`);
-                this.props.onTabMove(activeTabDrag.tabId, targetId);
+                this.props.onTabMove(activeTabDrag.tabId, targetId, activeTabDrag.windowId);
             }
             activeTabDrag = null;
         });

@@ -238,7 +238,8 @@ export class FinderView extends BaseTab {
                 onTabChange: id => this.parentWindow?.setActiveTab(id),
                 onTabClose: id => this.parentWindow?.removeTab(id),
                 onTabAdd: () => (this.parentWindow as any)?.createView(),
-                onTabMove: (tabId, targetWindowId) => this.moveTabToWindow(tabId, targetWindowId),
+                onTabMove: (tabId, targetWindowId, sourceWindowId) =>
+                    this.moveTabToWindow(tabId, targetWindowId, sourceWindowId),
                 onTabDetach: (id, pos) => this.detachTabToNewWindow(id, pos),
                 onNavigateBack: () => this.navigateBack(),
                 onNavigateForward: () => this.navigateForward(),
@@ -345,7 +346,8 @@ export class FinderView extends BaseTab {
                 onTabChange: id => this.parentWindow?.setActiveTab(id),
                 onTabClose: id => this.parentWindow?.removeTab(id),
                 onTabAdd: () => (this.parentWindow as any)?.createView(),
-                onTabMove: (tabId, targetWindowId) => this.moveTabToWindow(tabId, targetWindowId),
+                onTabMove: (tabId, targetWindowId, sourceWindowId) =>
+                    this.moveTabToWindow(tabId, targetWindowId, sourceWindowId),
                 onTabDetach: (id, pos) => this.detachTabToNewWindow(id, pos),
                 onNavigateBack: () => this.navigateBack(),
                 onNavigateForward: () => this.navigateForward(),
@@ -1867,15 +1869,20 @@ export class FinderView extends BaseTab {
         newWin.setActiveTab(detached.id);
     }
 
-    private moveTabToWindow(tabId: string, targetWindowId: string): void {
-        const sourceWin = this.parentWindow as any;
-        if (!sourceWin || typeof sourceWin.detachTab !== 'function') return;
+    private moveTabToWindow(tabId: string, targetWindowId: string, sourceWindowId?: string): void {
+        const W = window as any;
+        const registry = W.WindowRegistry;
+
+        // Resolve source window explicitly (drag origin), fallback to current parent
+        const sourceWin =
+            (sourceWindowId && registry?.getWindow?.(sourceWindowId)) || (this.parentWindow as any);
+        if (!sourceWin || sourceWin.type !== 'finder') return;
         if (!sourceWin.tabs?.has?.(tabId)) return;
 
-        const W = window as any;
-        const targetWin = W.WindowRegistry?.getWindow?.(targetWindowId) as any;
+        const targetWin = registry?.getWindow?.(targetWindowId) as any;
         if (!targetWin || targetWin.type !== 'finder') return;
         if (targetWin.tabs?.has?.(tabId)) return;
+        if (targetWin === sourceWin) return;
 
         const detached = sourceWin.detachTab(tabId) as FinderView | null;
         if (!detached) return;

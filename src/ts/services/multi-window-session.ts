@@ -333,9 +333,8 @@ class MultiWindowSessionManager {
         });
 
         // SAFETY: Limit maximum windows to prevent DOM explosion
-        // Strategy: Allow only 1 window per type on auto-restore to prevent duplicate windows
-        // Users can still manually open multiple windows, but auto-restore keeps it clean
-        const MAX_WINDOWS_PER_TYPE_AUTO_RESTORE = 1;
+        // NOTE: We intentionally allow multiple windows per type (e.g., multiple Finder instances)
+        // while keeping a hard cap on total windows to avoid pathological saves.
         const MAX_TOTAL_WINDOWS = 10;
 
         if (session.windows.length > MAX_TOTAL_WINDOWS) {
@@ -346,23 +345,8 @@ class MultiWindowSessionManager {
             return;
         }
 
-        // Count windows by type and filter to max 1 per type
-        // This ensures clean auto-restore without duplicate windows
-        const windowsByType = new Map<string, number>();
-        const filteredWindows = session.windows.filter(w => {
-            const count = windowsByType.get(w.type) || 0;
-            if (count >= MAX_WINDOWS_PER_TYPE_AUTO_RESTORE) {
-                console.warn(
-                    `[MultiWindowSessionManager] Skipping ${w.type} window during auto-restore (limit ${MAX_WINDOWS_PER_TYPE_AUTO_RESTORE} per type)`
-                );
-                return false;
-            }
-            windowsByType.set(w.type, count + 1);
-            return true;
-        });
-
         // Sort windows by z-index to restore stacking order
-        const sortedWindows = filteredWindows.sort((a, b) => a.zIndex - b.zIndex);
+        const sortedWindows = session.windows.sort((a, b) => a.zIndex - b.zIndex);
 
         // Restore each window
         for (const windowData of sortedWindows) {
@@ -377,13 +361,6 @@ class MultiWindowSessionManager {
         console.log('[MultiWindowSessionManager] Session restored successfully');
 
         // If we filtered out windows, save the cleaned session
-        if (filteredWindows.length < session.windows.length) {
-            console.log(
-                `[MultiWindowSessionManager] Filtered ${session.windows.length - filteredWindows.length} duplicate windows, saving cleaned session`
-            );
-            // Save will happen automatically when isRestoring = false
-        }
-
         // Update dock indicators after session restore
         const W = window as any;
         W.updateDockIndicators?.();
