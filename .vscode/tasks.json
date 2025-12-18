@@ -180,34 +180,7 @@
         "panel": "shared"
       }
     },
-    {
-      "label": "Install Playwright Browsers (once)",
-      "type": "shell",
-      "command": "npm run pw:install",
-      "group": "build"
-    },
-    {
-      "label": "Docs: Generate",
-      "type": "shell",
-      "command": "npm run docs:generate",
-      "group": "build",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Docs: Clean",
-      "type": "shell",
-      "command": "npm run docs:clean",
-      "group": "build",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
+
     {
       "label": "Validate: All",
       "type": "shell",
@@ -283,29 +256,7 @@
         "clear": true
       }
     },
-    {
-      "label": "Dev: Server Only (No Watch)",
-      "dependsOn": ["Start Dev Server (No Watch)"],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Quick E2E to capture readiness and console errors",
-      "type": "shell",
-      "command": "npm run test:e2e:quick",
-      "isBackground": false,
-      "options": {
-        "env": {
-          "USE_NODE_SERVER": "1",
-          "MOCK_GITHUB": "1"
-        }
-      },
-      "problemMatcher": [],
-      "group": "test"
-    },
+
     {
       "label": "Bundle: Build",
       "type": "shell",
@@ -383,7 +334,7 @@
     {
       "label": "Quick Check",
       "type": "shell",
-      "command": "npm run typecheck ; npm run lint",
+      "command": "npm run typecheck && npm run lint",
       "group": {
         "kind": "build"
       },
@@ -402,72 +353,6 @@
         "reveal": "always",
         "panel": "shared"
       }
-    },
-    {
-      "label": "Run specific Playwright test: terminal-autocomplete",
-      "type": "shell",
-      "command": "npm run test:e2e -- tests/e2e/terminal/terminal-autocomplete.spec.js"
-    },
-    {
-      "label": "Quick Check (typecheck+lint)",
-      "type": "shell",
-      "command": "npm run typecheck ; npm run lint",
-      "group": "build"
-    },
-    {
-      "label": "Quick Check (typecheck+lint) 2",
-      "type": "shell",
-      "command": "npm run typecheck ; npm run lint",
-      "group": "build"
-    },
-    {
-      "label": "E2E: Run VirtualFS Performance test",
-      "type": "shell",
-      "command": "npm run test:e2e -- tests/e2e/integration/virtualfs-performance.spec.js",
-      "args": [],
-      "group": "test"
-    },
-    {
-      "label": "Quick Check (typecheck+lint) 3",
-      "type": "shell",
-      "command": "npm run typecheck ; npm run lint",
-      "group": "build"
-    },
-    {
-      "label": "E2E: Run VirtualFS Delta test",
-      "type": "shell",
-      "command": "npm run test:e2e -- tests/e2e/integration/virtualfs-delta-save.spec.js",
-      "group": "test"
-    },
-    {
-      "label": "E2E: Run VirtualFS Delta test (retry)",
-      "type": "shell",
-      "command": "npm run test:e2e -- tests/e2e/integration/virtualfs-delta-save.spec.js",
-      "group": "test"
-    },
-    {
-      "label": "E2E: Run VirtualFS Delta test (retry 2)",
-      "type": "shell",
-      "command": "npm run test:e2e -- tests/e2e/integration/virtualfs-delta-save.spec.js",
-      "group": "test"
-    },
-    {
-      "label": "Quick Check (typecheck+lint) 4",
-      "type": "shell",
-      "command": "npm run typecheck ; npm run lint",
-      "group": "build"
-    },
-    {
-      "label": "Quick Check (typecheck+lint) 5",
-      "type": "shell",
-      "command": "npm run typecheck ; npm run lint",
-      "group": "build"
-    },
-    {
-      "label": "Quick Check (typecheck+lint) 6",
-      "type": "shell",
-      "command": "npm run typecheck ; npm run lint",
-      "group": "build"
     },
     {
       "label": "Code Quality: Check unused deps (knip)",
@@ -493,9 +378,6 @@
       "presentation": {
         "reveal": "always",
         "panel": "shared"
-      },
-      "runOptions": {
-        "runOn": "folderOpen"
       }
     },
     {
