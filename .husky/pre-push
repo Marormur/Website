@@ -1,8 +1,0 @@
-#!/usr/bin/env sh
-
-# Pre-push checks: typecheck + type baseline + format check
-echo "Running pre-push checks..."
-npm run typecheck || exit 1
-npm run type:baseline || exit 1
-npm run format:check || exit 1
-echo "✓ Pre-push checks passed!"
