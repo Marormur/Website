@@ -211,7 +211,7 @@
     {
       "label": "Validate: All",
       "type": "shell",
-      "command": "npm run validate",
+      "command": "npm run turbo:validate",
       "group": {
         "kind": "build"
       },
@@ -515,6 +515,71 @@
       "label": "Bundle: Analyze size",
       "type": "shell",
       "command": "npm run bundle:analyze",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Turbo: Build (parallel)",
+      "type": "shell",
+      "command": "npm run turbo:build",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Turbo: Lint + TypeCheck",
+      "type": "shell",
+      "command": "npm run turbo:lint",
+      "problemMatcher": ["$tsc", "$eslint-stylish"],
+      "group": {
+        "kind": "build"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Turbo: Validate All",
+      "type": "shell",
+      "command": "npm run turbo:validate",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Pre-Commit: Quick Check (turbo)",
+      "type": "shell",
+      "command": "npm run turbo:lint && npm run knip",
+      "problemMatcher": ["$tsc", "$eslint-stylish"],
+      "group": {
+        "kind": "build"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Quality Check: Full (knip + turbo)",
+      "type": "shell",
+      "command": "npm run turbo:lint && npm run knip && npm run bundle:analyze",
       "problemMatcher": [],
       "group": {
         "kind": "build"
