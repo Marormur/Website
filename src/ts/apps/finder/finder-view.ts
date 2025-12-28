@@ -108,6 +108,7 @@ export class FinderView extends BaseTab {
     githubErrorMessage = '';
     githubLoading = false;
     lastGithubItemsMap: Map<string, any>;
+    private githubLoadingInProgress = false; // Prevent recursive calls
 
     private ui!: FinderUI;
 
@@ -115,6 +116,8 @@ export class FinderView extends BaseTab {
     private _savedScrollPosition = 0;
     // Persist scroll positions per logical location (source + path)
     private _scrollPositions: Map<string, number> = new Map();
+    // Cleanup function for keyboard shortcuts
+    private _keyboardCleanup: (() => void) | null = null;
 
     constructor(config?: Partial<TabConfig> & { source?: FinderSource }) {
         super({
@@ -192,6 +195,8 @@ export class FinderView extends BaseTab {
             this.goRoot();
         } else if (action === 'github') {
             this.source = 'github';
+            // Clear rendered items when switching sources to force reload
+            this._renderedItems = [];
             const API = this.getAPI();
             if (API && typeof API.prefetchUserRepos === 'function') {
                 const username = this.getGithubUsername();
@@ -200,9 +205,13 @@ export class FinderView extends BaseTab {
             this.goRoot();
         } else if (action === 'recent') {
             this.source = 'recent';
+            // Clear rendered items when switching sources
+            this._renderedItems = [];
             this.goRoot();
         } else if (action === 'starred') {
             this.source = 'starred';
+            // Clear rendered items when switching sources
+            this._renderedItems = [];
             this.goRoot();
         }
         this._persistState();
@@ -268,6 +277,9 @@ export class FinderView extends BaseTab {
                 this.dom.content = mounted.querySelector('[data-finder-content]');
                 this.dom.toolbar = mounted.querySelector('.finder-toolbar');
                 this.dom.sidebar = mounted.querySelector('#finder-sidebar');
+
+                // Register keyboard shortcuts for navigation (macOS-style)
+                this._setupKeyboardShortcuts(mounted);
             }
         }
 
@@ -277,6 +289,52 @@ export class FinderView extends BaseTab {
     protected onHide(): void {
         super.onHide();
         this._renderAll();
+    }
+
+    /**
+     * Setup keyboard shortcuts for Finder navigation (macOS-style)
+     * - Command+[ : Back
+     * - Command+] : Forward
+     * - Command+↑ : Up
+     */
+    private _setupKeyboardShortcuts(container: HTMLElement): void {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Only handle if this tab is visible/active
+            if (!this.isVisible) return;
+
+            // Check for Command (macOS) or Ctrl (Windows/Linux)
+            const isMeta = e.metaKey || e.ctrlKey;
+
+            // Command+[ -> Back
+            if (isMeta && e.key === '[') {
+                e.preventDefault();
+                if (this.historyIndex > 0) {
+                    this.navigateBack();
+                }
+            }
+            // Command+] -> Forward
+            else if (isMeta && e.key === ']') {
+                e.preventDefault();
+                if (this.historyIndex < this.history.length - 1) {
+                    this.navigateForward();
+                }
+            }
+            // Command+↑ -> Up
+            else if (isMeta && e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (this.currentPath.length > 0) {
+                    this.navigateUp();
+                }
+            }
+        };
+
+        // Attach listener to container
+        container.addEventListener('keydown', handleKeyDown, true);
+
+        // Store cleanup function for when tab is destroyed
+        this._keyboardCleanup = () => {
+            container.removeEventListener('keydown', handleKeyDown, true);
+        };
     }
 
     private _renderAll(): void {
@@ -401,6 +459,14 @@ export class FinderView extends BaseTab {
 
         this.history.push({ source: this.source, path: [...this.currentPath] });
         this.historyIndex = this.history.length - 1;
+
+        // Limit history size to prevent unbounded memory growth
+        if (this.history.length > FinderView.MAX_HISTORY_SIZE) {
+            // Keep only the most recent entries, adjust index accordingly
+            const removeCount = this.history.length - FinderView.MAX_HISTORY_SIZE;
+            this.history = this.history.slice(removeCount);
+            this.historyIndex = Math.max(0, this.historyIndex - removeCount);
+        }
     }
 
     navigateBack(): void {
@@ -498,7 +564,19 @@ export class FinderView extends BaseTab {
         let items: FileItem[] = [];
 
         if (this.source === 'github') {
-            void this.loadGithubContent();
+            // Only initiate GitHub content loading if not already in progress
+            // to prevent infinite recursion during rendering
+            if (
+                !this.githubLoadingInProgress &&
+                !this.githubLoading &&
+                this._renderedItems.length === 0
+            ) {
+                // Start loading asynchronously without blocking render
+                this.githubLoadingInProgress = true;
+                void this.loadGithubContent().finally(() => {
+                    this.githubLoadingInProgress = false;
+                });
+            }
             if (this.githubLoading && this._renderedItems.length === 0) {
                 return this.renderLoadingSkeleton();
             }
@@ -1205,19 +1283,30 @@ export class FinderView extends BaseTab {
     }
 
     navigateToFolder(name: string): void {
+        // Defensive: Prevent duplicate navigation to the same folder
+        const cleanName = name.trim();
+        const lastPathElement = this.currentPath[this.currentPath.length - 1];
+        if (lastPathElement === cleanName) {
+            // Already in this folder, skip navigation
+            return;
+        }
+
         if (this.source === 'github') {
-            this.currentPath = [...this.currentPath, name];
+            this.currentPath = [...this.currentPath, cleanName];
             this._addToHistory();
             this._persistState();
+            // Clear rendered items to force reload of new GitHub content
+            this._renderedItems = [];
             this._renderAll();
             return;
         }
         // Check VirtualFS if folder exists
         // VirtualFS expects path without leading '/' for arrays, or string path like '/home'
-        const targetPath = this.currentPath.length === 0 ? name : [...this.currentPath, name];
+        const targetPath =
+            this.currentPath.length === 0 ? cleanName : [...this.currentPath, cleanName];
         const folder = VirtualFS.getFolder(targetPath);
         if (folder) {
-            this.currentPath = [...this.currentPath, name];
+            this.currentPath = [...this.currentPath, cleanName];
             this._addToHistory();
             this._persistState();
             this._renderAll();
@@ -1236,6 +1325,8 @@ export class FinderView extends BaseTab {
         this.currentPath = [];
         this._addToHistory();
         this._persistState();
+        // Clear rendered items when navigating to root to force reload
+        this._renderedItems = [];
         this._renderAll();
     }
 
@@ -1243,6 +1334,8 @@ export class FinderView extends BaseTab {
         this.currentPath = parts;
         this._addToHistory();
         this._persistState();
+        // Clear rendered items when navigating to a new path to force reload
+        this._renderedItems = [];
         this._renderAll();
     }
 
@@ -1293,6 +1386,7 @@ export class FinderView extends BaseTab {
     // --- Recent Files System (Global Shared) ---
     private static RECENT_FILES_KEY = 'finder-recent-files';
     private static MAX_RECENT_FILES = 20;
+    private static MAX_HISTORY_SIZE = 50; // Maximum history entries to prevent unbounded memory usage
 
     /**
      * Load recent files from global storage
@@ -1490,6 +1584,12 @@ export class FinderView extends BaseTab {
     }
 
     serialize(): any {
+        // Cleanup keyboard listeners before serialization
+        if (this._keyboardCleanup) {
+            this._keyboardCleanup();
+            this._keyboardCleanup = null;
+        }
+
         return {
             ...super.serialize(),
             source: this.source,
@@ -1571,6 +1671,7 @@ export class FinderView extends BaseTab {
 
     /**
      * Update internal items from GitHub repos
+     * Note: Does NOT call _renderAll() to prevent infinite recursion during renderContent()
      */
     private _updateRepoItems(repos: GitHubRepo[]): void {
         this.githubRepos = Array.isArray(repos) ? repos : [];
@@ -1578,11 +1679,53 @@ export class FinderView extends BaseTab {
         this.lastGithubItemsMap.clear();
         items.forEach(it => this.lastGithubItemsMap.set(it.name, it));
         this._renderedItems = items;
-        this._renderAll();
+        // Trigger a focused re-render instead of full _renderAll() to prevent recursion
+        if (this.ui) {
+            this.ui.update({
+                id: this.id,
+                windowId: this.parentWindow?.id || this.id,
+                isActive: this.isVisible,
+                source: this.source,
+                currentPath: this.currentPath,
+                viewMode: this.viewMode,
+                sidebarWidth: this.sidebarWidth,
+                searchTerm: this.searchTerm,
+                canGoBack: this.historyIndex > 0,
+                canGoForward: this.historyIndex < this.history.length - 1,
+                sortBy: this.sortBy,
+                sortOrder: this.sortOrder,
+                tabs: [],
+                activeTabId: this.id,
+                onTabChange: id => this.parentWindow?.setActiveTab(id),
+                onTabClose: id => this.parentWindow?.removeTab(id),
+                onTabAdd: () => (this.parentWindow as any)?.createView(),
+                onTabMove: (tabId, targetWindowId, sourceWindowId) =>
+                    this.moveTabToWindow(tabId, targetWindowId, sourceWindowId),
+                onTabDetach: (id, pos) => this.detachTabToNewWindow(id, pos),
+                onNavigateBack: () => this.navigateBack(),
+                onNavigateForward: () => this.navigateForward(),
+                onNavigateUp: () => this.navigateUp(),
+                onGoRoot: () => this.goRoot(),
+                onSetViewMode: mode => this.setViewMode(mode),
+                onSetSort: by => this.setSortBy(by),
+                onSearch: term => {
+                    this.searchTerm = term;
+                    this._renderAll();
+                },
+                onSidebarAction: action => this.handleSidebarAction(action),
+                onResize: width => {
+                    this.sidebarWidth = width;
+                    this._persistState();
+                },
+                renderContent: () => this.renderContent(),
+                renderBreadcrumbs: () => this.renderBreadcrumbs(),
+            });
+        }
     }
 
     /**
      * Update internal items from GitHub contents
+     * Note: Does NOT call _renderAll() to prevent infinite recursion during renderContent()
      */
     private _updateContentItems(contents: GitHubContentItem[]): void {
         const items = this._transformContentItems(Array.isArray(contents) ? contents : []);
@@ -1591,7 +1734,48 @@ export class FinderView extends BaseTab {
             this.lastGithubItemsMap.set(it.name, it)
         );
         this._renderedItems = items;
-        this._renderAll();
+        // Trigger a focused re-render instead of full _renderAll() to prevent recursion
+        if (this.ui) {
+            this.ui.update({
+                id: this.id,
+                windowId: this.parentWindow?.id || this.id,
+                isActive: this.isVisible,
+                source: this.source,
+                currentPath: this.currentPath,
+                viewMode: this.viewMode,
+                sidebarWidth: this.sidebarWidth,
+                searchTerm: this.searchTerm,
+                canGoBack: this.historyIndex > 0,
+                canGoForward: this.historyIndex < this.history.length - 1,
+                sortBy: this.sortBy,
+                sortOrder: this.sortOrder,
+                tabs: [],
+                activeTabId: this.id,
+                onTabChange: id => this.parentWindow?.setActiveTab(id),
+                onTabClose: id => this.parentWindow?.removeTab(id),
+                onTabAdd: () => (this.parentWindow as any)?.createView(),
+                onTabMove: (tabId, targetWindowId, sourceWindowId) =>
+                    this.moveTabToWindow(tabId, targetWindowId, sourceWindowId),
+                onTabDetach: (id, pos) => this.detachTabToNewWindow(id, pos),
+                onNavigateBack: () => this.navigateBack(),
+                onNavigateForward: () => this.navigateForward(),
+                onNavigateUp: () => this.navigateUp(),
+                onGoRoot: () => this.goRoot(),
+                onSetViewMode: mode => this.setViewMode(mode),
+                onSetSort: by => this.setSortBy(by),
+                onSearch: term => {
+                    this.searchTerm = term;
+                    this._renderAll();
+                },
+                onSidebarAction: action => this.handleSidebarAction(action),
+                onResize: width => {
+                    this.sidebarWidth = width;
+                    this._persistState();
+                },
+                renderContent: () => this.renderContent(),
+                renderBreadcrumbs: () => this.renderBreadcrumbs(),
+            });
+        }
     }
 
     async loadGithubContent(): Promise<void> {

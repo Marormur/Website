@@ -151,74 +151,63 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
         const toolbar = new Toolbar({
             className: this.props.isActive ? 'finder-toolbar' : 'hidden',
             left: [
+                // Navigation buttons - macOS Segmented Control style
                 h(
                     'div',
                     {
                         className:
-                            'flex items-center bg-gray-100 dark:bg-gray-800 rounded-md p-0.5 border border-gray-300 dark:border-gray-600',
+                            'inline-flex items-center rounded-lg bg-gray-200/40 dark:bg-gray-700/40 p-0.5 backdrop-blur-sm border border-gray-300/40 dark:border-gray-600/40 shadow-sm',
                     },
+                    // Back button
                     h(
                         'button',
                         {
-                            className: `p-1 rounded ${canGoBack ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700' : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'}`,
+                            className: `finder-nav-btn transition-all px-3 py-2 rounded-md text-lg font-semibold flex items-center justify-center ${
+                                canGoBack
+                                    ? 'text-gray-700 dark:text-gray-100 hover:bg-white/60 dark:hover:bg-gray-600/60 active:bg-gray-300/60 dark:active:bg-gray-500/60 cursor-pointer'
+                                    : 'text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-40'
+                            } transition-colors duration-150`,
                             onclick: canGoBack ? () => onNavigateBack() : undefined,
-                            title: 'Zurück',
+                            disabled: !canGoBack,
+                            title: 'Zurück (⌘[)',
                             'data-action': 'navigate-back',
+                            'aria-label': 'Back',
                         },
-                        h(
-                            'svg',
-                            {
-                                width: '16',
-                                height: '16',
-                                viewBox: '0 0 24 24',
-                                fill: 'none',
-                                stroke: 'currentColor',
-                                strokeWidth: '2.5',
-                            },
-                            h('path', { d: 'M15 18l-6-6 6-6' })
-                        )
+                        '‹'
                     ),
+                    // Forward button
                     h(
                         'button',
                         {
-                            className: `p-1 rounded ${canGoForward ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700' : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'}`,
+                            className: `finder-nav-btn transition-all px-3 py-2 rounded-md text-lg font-semibold flex items-center justify-center ${
+                                canGoForward
+                                    ? 'text-gray-700 dark:text-gray-100 hover:bg-white/60 dark:hover:bg-gray-600/60 active:bg-gray-300/60 dark:active:bg-gray-500/60 cursor-pointer'
+                                    : 'text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-40'
+                            } transition-colors duration-150`,
                             onclick: canGoForward ? () => onNavigateForward() : undefined,
-                            title: 'Vorwärts',
+                            disabled: !canGoForward,
+                            title: 'Vorwärts (⌘])',
                             'data-action': 'navigate-forward',
+                            'aria-label': 'Forward',
                         },
-                        h(
-                            'svg',
-                            {
-                                width: '16',
-                                height: '16',
-                                viewBox: '0 0 24 24',
-                                fill: 'none',
-                                stroke: 'currentColor',
-                                strokeWidth: '2.5',
-                            },
-                            h('path', { d: 'M9 18l6-6-6-6' })
-                        )
-                    )
-                ),
-                h(
-                    'button',
-                    {
-                        className: 'finder-toolbar-btn ml-2',
-                        'data-action': 'navigate-up',
-                        onclick: () => onNavigateUp(),
-                        title: 'Übergeordneter Ordner',
-                    },
+                        '›'
+                    ),
+                    // Separator
+                    h('div', {
+                        className: 'w-px h-6 bg-gray-300/40 dark:bg-gray-600/40 mx-0.5',
+                    }),
+                    // Up button
                     h(
-                        'svg',
+                        'button',
                         {
-                            width: '16',
-                            height: '16',
-                            viewBox: '0 0 24 24',
-                            fill: 'none',
-                            stroke: 'currentColor',
-                            strokeWidth: '2',
+                            className:
+                                'finder-nav-btn transition-all px-3 py-2 rounded-md text-lg font-semibold flex items-center justify-center text-gray-700 dark:text-gray-100 hover:bg-white/60 dark:hover:bg-gray-600/60 active:bg-gray-300/60 dark:active:bg-gray-500/60 cursor-pointer transition-colors duration-150',
+                            'data-action': 'navigate-up',
+                            onclick: () => onNavigateUp(),
+                            title: 'Übergeordneter Ordner (⌘↑)',
+                            'aria-label': 'Up',
                         },
-                        h('path', { d: 'M12 19V5M5 12l7-7 7 7' })
+                        '⬆'
                     )
                 ),
             ],
