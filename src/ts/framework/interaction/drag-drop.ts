@@ -7,7 +7,7 @@
 
 export interface DragData {
     type: string;
-    data: any;
+    data: unknown;
 }
 
 export interface DragOptions {

@@ -2,7 +2,7 @@ import { h, VNode } from '../../core/vdom.js';
 import { BaseComponent } from '../core/component.js';
 import { ComponentConfig } from '../core/types.js';
 
-export interface VirtualListProps<T = any> extends ComponentConfig {
+export interface VirtualListProps<T> extends ComponentConfig {
     items: T[];
     itemHeight: number;
     height: number;
@@ -31,7 +31,7 @@ export interface VirtualListState {
  * });
  * ```
  */
-export class VirtualList<T = any> extends BaseComponent<VirtualListProps<T>, VirtualListState> {
+export class VirtualList<T> extends BaseComponent<VirtualListProps<T>, VirtualListState> {
     constructor(props: VirtualListProps<T>) {
         super(props);
         this.state = {

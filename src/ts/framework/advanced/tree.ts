@@ -7,7 +7,7 @@ export interface TreeNode {
     label: string;
     icon?: string;
     children?: TreeNode[];
-    data?: any;
+    data?: unknown;
     expanded?: boolean;
     selected?: boolean;
 }

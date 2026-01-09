@@ -6,7 +6,7 @@
  */
 
 export type Selector<S, R> = (state: S) => R;
-export type Middleware<S> = (state: S, action: string, payload: any) => S | void;
+export type Middleware<S> = (state: S, action: string, payload: unknown) => S | void;
 export type StateListener<S> = (state: S, prevState: S) => void;
 export type ComputedValue<S, R> = (state: S) => R;
 
@@ -52,12 +52,12 @@ export interface StateManagerConfig<S> {
  * stateManager.dispatch('SET_USER', { name: 'John', email: 'john@example.com' });
  * ```
  */
-export class StateManager<S = any> {
+export class StateManager<S> {
     private state: S;
     private listeners: Set<StateListener<S>> = new Set();
     private middleware: Middleware<S>[];
     private debug: boolean;
-    private computedCache: Map<Selector<S, any>, any> = new Map();
+    private computedCache: Map<Selector<S, unknown>, unknown> = new Map();
 
     constructor(config: StateManagerConfig<S>) {
         this.state = config.initialState;
@@ -91,7 +91,7 @@ export class StateManager<S = any> {
     /**
      * Dispatch action through middleware chain
      */
-    dispatch(action: string, payload?: any): void {
+    dispatch(action: string, payload?: unknown): void {
         if (this.debug) {
             console.log(`[StateManager] Action: ${action}`, payload);
         }
@@ -195,7 +195,7 @@ export class StateManager<S = any> {
 /**
  * Logging middleware
  */
-export const loggingMiddleware = <S>(state: S, action: string, payload: any): void => {
+export const loggingMiddleware = <S>(state: S, action: string, payload: unknown): void => {
     console.group(`Action: ${action}`);
     console.log('Payload:', payload);
     console.log('State:', state);
@@ -206,7 +206,7 @@ export const loggingMiddleware = <S>(state: S, action: string, payload: any): vo
  * Persistence middleware
  */
 export const createPersistenceMiddleware = <S>(key: string) => {
-    return (state: S, action: string, payload: any): S => {
+    return (state: S): S => {
         localStorage.setItem(key, JSON.stringify(state));
         return state;
     };
@@ -216,7 +216,7 @@ export const createPersistenceMiddleware = <S>(key: string) => {
  * Validation middleware
  */
 export const createValidationMiddleware = <S>(validator: (state: S) => boolean) => {
-    return (state: S, action: string, payload: any): S => {
+    return (state: S, action: string): S => {
         if (!validator(state)) {
             console.warn(`[StateManager] Invalid state after action: ${action}`);
         }

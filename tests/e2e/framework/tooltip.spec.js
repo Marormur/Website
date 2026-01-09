@@ -17,7 +17,6 @@ test.describe('MacUI Framework - Tooltip Component', () => {
     test('Tooltip renders with content', async ({ page }) => {
         await page.evaluate(() => {
             const { Tooltip, Button } = window.MacUI;
-            const { h } = window.VDOM;
             const container = document.createElement('div');
             container.id = 'test-container';
             document.body.appendChild(container);

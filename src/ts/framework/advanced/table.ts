@@ -2,15 +2,15 @@ import { h, VNode } from '../../core/vdom.js';
 import { BaseComponent } from '../core/component.js';
 import { ComponentConfig } from '../core/types.js';
 
-export interface TableColumn<T = any> {
+export interface TableColumn<T> {
     key: string;
     label: string;
     width?: string;
     sortable?: boolean;
-    render?: (value: any, row: T, index: number) => VNode | string;
+    render?: (value: unknown, row: T, index: number) => VNode | string;
 }
 
-export interface TableProps<T = any> extends ComponentConfig {
+export interface TableProps<T> extends ComponentConfig {
     columns: TableColumn<T>[];
     data: T[];
     onSort?: (key: string, direction: 'asc' | 'desc') => void;
@@ -49,7 +49,7 @@ export interface TableState {
  * });
  * ```
  */
-export class Table<T = any> extends BaseComponent<TableProps<T>, TableState> {
+export class Table<T> extends BaseComponent<TableProps<T>, TableState> {
     constructor(props: TableProps<T>) {
         super(props);
         this.state = {
@@ -59,7 +59,7 @@ export class Table<T = any> extends BaseComponent<TableProps<T>, TableState> {
     }
 
     render(): VNode {
-        const { columns, data, striped = false, hoverable = true } = this.props;
+        const { striped = false } = this.props;
 
         return h(
             'div',
@@ -148,7 +148,7 @@ export class Table<T = any> extends BaseComponent<TableProps<T>, TableState> {
     }
 
     private renderCell(column: TableColumn<T>, row: T, rowIndex: number): VNode | string {
-        const value = (row as any)[column.key];
+        const value = (row as Record<string, unknown>)[column.key];
 
         if (column.render) {
             return column.render(value, row, rowIndex);

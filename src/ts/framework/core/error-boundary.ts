@@ -95,8 +95,13 @@ export class ErrorBoundary extends BaseComponent<ErrorBoundaryProps, ErrorBounda
         this.props.onError?.(error, error.stack || '');
 
         // Log to global error handler if available
-        if ((window as any).ErrorHandler) {
-            (window as any).ErrorHandler.handleError(error, { context: 'ErrorBoundary' });
+        const win = window as typeof window & {
+            ErrorHandler?: {
+                handleError: (error: Error, context: { context: string }) => void;
+            };
+        };
+        if (win.ErrorHandler) {
+            win.ErrorHandler.handleError(error, { context: 'ErrorBoundary' });
         }
     }
 
@@ -110,7 +115,12 @@ export class ErrorBoundary extends BaseComponent<ErrorBoundaryProps, ErrorBounda
             this.handleError(error as Error);
             // Re-render with error state
             this.vTree = this.render();
-            const dom = (window as any).VDOM.createElement(this.vTree);
+            const win = window as typeof window & {
+                VDOM?: {
+                    createElement: (vnode: VNode) => Node;
+                };
+            };
+            const dom = win.VDOM?.createElement(this.vTree) || document.createElement('div');
             if (dom instanceof HTMLElement) {
                 this.element = dom;
             } else {

@@ -95,7 +95,7 @@ export class ComponentPerformanceMonitor {
 			if (measure.duration > 16) {
 				console.warn(`[MacUI Performance] Slow render: ${componentName} took ${measure.duration.toFixed(2)}ms`);
 			}
-		} catch (error) {
+		} catch {
 			// Mark might not exist, ignore
 		}
 	}
@@ -106,9 +106,9 @@ export class ComponentPerformanceMonitor {
 	takeMemorySnapshot(): void {
 		if (!this.enabled) return;
 
-		// @ts-ignore - performance.memory is non-standard but widely supported
+		// @ts-expect-error - performance.memory is non-standard but widely supported
 		if (performance.memory) {
-			// @ts-ignore
+			// @ts-expect-error - performance.memory is non-standard but widely supported
 			const { usedJSHeapSize, totalJSHeapSize, jsHeapSizeLimit } = performance.memory;
 
 			this.memorySnapshots.push({

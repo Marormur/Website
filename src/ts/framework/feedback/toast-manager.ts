@@ -1,4 +1,4 @@
-import { Toast, ToastType, ToastProps } from './toast.js';
+import { Toast, ToastType } from './toast.js';
 
 export interface ToastOptions {
     type?: ToastType;

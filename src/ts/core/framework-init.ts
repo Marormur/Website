@@ -9,8 +9,16 @@ import { toast } from '../framework/feedback/toast-manager.js';
 import * as MacUI from '../framework/index.js';
 
 // Initialize toast manager and make it available via API
-if (window.API) {
-    (window.API as any).toast = toast;
+const win = window as typeof window & {
+    API?: {
+        toast?: typeof toast;
+        // Allow additional properties on API without over-constraining its shape
+        [key: string]: unknown;
+    };
+};
+
+if (win.API) {
+    win.API.toast = toast;
 }
 
 // Make MacUI framework available globally
