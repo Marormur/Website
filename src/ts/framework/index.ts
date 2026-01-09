@@ -42,5 +42,10 @@ export * from './advanced/virtual-list.js';
 export * from './advanced/table.js';
 export * from './advanced/state-manager.js';
 
+// Utils (Phase 4)
+export * from './utils/performance-monitor.js';
+export * from './utils/bundle-analyzer.js';
+export * from './utils/accessibility.js';
+
 // Templates
 export * from './templates/standard-app.js';
