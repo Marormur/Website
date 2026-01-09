@@ -30,5 +30,11 @@ export * from './feedback/toast-manager.js';
 export * from './feedback/badge.js';
 export * from './feedback/empty-state.js';
 
+// Interaction (Phase 2)
+export * from './interaction/tooltip.js';
+export * from './interaction/context-menu.js';
+export * from './interaction/keyboard-shortcuts.js';
+export * from './interaction/drag-drop.js';
+
 // Templates
 export * from './templates/standard-app.js';
