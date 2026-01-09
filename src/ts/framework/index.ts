@@ -36,5 +36,11 @@ export * from './interaction/context-menu.js';
 export * from './interaction/keyboard-shortcuts.js';
 export * from './interaction/drag-drop.js';
 
+// Advanced (Phase 3)
+export * from './advanced/tree.js';
+export * from './advanced/virtual-list.js';
+export * from './advanced/table.js';
+export * from './advanced/state-manager.js';
+
 // Templates
 export * from './templates/standard-app.js';
