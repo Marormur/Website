@@ -65,6 +65,7 @@ export class Sidebar extends BaseComponent<SidebarProps> {
             {
                 key: item.id,
                 'data-sidebar-id': item.id,
+                'data-sidebar-action': item.id,
                 className: `finder-sidebar-item w-full text-left ${activeClass}`,
                 onclick: () => {
                     if (item.onClick) item.onClick(item.id);

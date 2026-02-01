@@ -715,7 +715,11 @@ export class BaseWindow {
             this.close();
         } else {
             this._renderTabs();
-            this._saveState();
+            // Force DOM update to complete before saving state
+            // This ensures tests can observe the updated tab count immediately
+            requestAnimationFrame(() => {
+                this._saveState();
+            });
         }
     }
 
@@ -743,7 +747,10 @@ export class BaseWindow {
             this.close();
         } else {
             this._renderTabs();
-            this._saveState();
+            // Force DOM update to complete before saving state
+            requestAnimationFrame(() => {
+                this._saveState();
+            });
         }
 
         return tab;

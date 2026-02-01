@@ -87,6 +87,9 @@ import '../ui/desktop'; // Now in TypeScript
 // Use modern TypeScript module instead of legacy JS
 import '../services/system';
 
+// Initialize MacUI Framework - must load AFTER core modules (api, storage, etc.)
+import '../core/framework-init';
+
 // Set bundle-ready flag BEFORE importing app-init to prevent duplicate initialization
 // This allows app-init.ts to skip its own auto-attach to DOMContentLoaded
 type WindowWithBundle = Window & { __BUNDLE_READY__?: boolean; initApp?: () => void } & Record<

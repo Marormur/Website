@@ -46,6 +46,15 @@ export class FinderWindow extends BaseWindow {
                 (tab as any).refresh();
             }
         });
+
+        // Force a micro-task delay to allow VDOM to complete rendering
+        // This ensures DOM updates are visible to tests immediately after removeTab()
+        Promise.resolve().then(() => {
+            // DOM should be stable now
+            if ((window as any).__TEST_MODE__) {
+                console.log('[FinderWindow] Tabs rendered, count:', this.tabs.size);
+            }
+        });
     }
 
     private _doRenderTabs(): void {

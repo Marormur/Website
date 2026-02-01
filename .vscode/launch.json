@@ -104,6 +104,14 @@
       "env": {
         "MOCK_GITHUB": "1"
       }
+    },
+    {
+      "name": "Safari: Launch with Dev Server",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/launch-safari.js",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
     }
   ]
 }
