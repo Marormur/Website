@@ -92,6 +92,7 @@ export class FinderView extends BaseTab {
     // GitHub Content Cache
     githubContentCache: Map<string, { data: any; timestamp: number }>;
     cacheTTL: number;
+    private _cacheCleanupInterval: number | null = null;
 
     dom: {
         toolbar: HTMLElement | null;
@@ -157,6 +158,14 @@ export class FinderView extends BaseTab {
         // Initialize GitHub Cache
         this.githubContentCache = new Map();
         this.cacheTTL = 5 * 60 * 1000; // 5 minutes
+
+        // Start periodic cache cleanup (every 10 minutes)
+        this._cacheCleanupInterval = window.setInterval(
+            () => {
+                this._pruneExpiredCache();
+            },
+            10 * 60 * 1000
+        );
 
         this.dom = {
             toolbar: null,
@@ -2006,6 +2015,23 @@ export class FinderView extends BaseTab {
     }
 
     /**
+     * Proactively remove expired entries from the cache.
+     * Called periodically to prevent memory leaks.
+     */
+    private _pruneExpiredCache(): void {
+        const now = Date.now();
+        const keysToDelete: string[] = [];
+
+        this.githubContentCache.forEach((value, key) => {
+            if (now - value.timestamp > this.cacheTTL) {
+                keysToDelete.push(key);
+            }
+        });
+
+        keysToDelete.forEach(key => this.githubContentCache.delete(key));
+    }
+
+    /**
      * Ermittelt den sichtbaren Tab‑Titel: Am Root z. B. „GitHub“/„Computer“,
      * ansonsten der letzte Pfadteil. Dadurch entspricht der Tab immer dem Kontext.
      */
@@ -2074,6 +2100,23 @@ export class FinderView extends BaseTab {
         targetWin.addTab(detached);
         targetWin.setActiveTab(detached.id);
         targetWin.bringToFront?.();
+    }
+
+    /**
+     * Override destroy to clean up cache cleanup interval
+     */
+    destroy(): void {
+        // Clear cache cleanup interval to prevent memory leak
+        if (this._cacheCleanupInterval !== null) {
+            clearInterval(this._cacheCleanupInterval);
+            this._cacheCleanupInterval = null;
+        }
+
+        // Clear the cache itself
+        this.githubContentCache.clear();
+
+        // Call parent destroy
+        super.destroy();
     }
 }
 

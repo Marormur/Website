@@ -88,6 +88,12 @@ export class BaseWindow {
         offsetX: number;
         offsetY: number;
     };
+    // Event listeners for cleanup
+    private _eventListeners: {
+        dragMove?: (e: MouseEvent) => void;
+        dragEnd?: () => void;
+        focusHandler?: () => void;
+    };
 
     constructor(config: WindowConfig) {
         // Set type FIRST, before generating ID (ID generation uses this.type)
@@ -110,6 +116,7 @@ export class BaseWindow {
             offsetX: 0,
             offsetY: 0,
         };
+        this._eventListeners = {};
 
         // Add initial tabs if provided
         if (config.tabs) {
@@ -272,7 +279,8 @@ export class BaseWindow {
             e.preventDefault();
         });
 
-        document.addEventListener('mousemove', (e: MouseEvent) => {
+        // Store references for cleanup
+        this._eventListeners.dragMove = (e: MouseEvent) => {
             if (!this.dragState.isDragging || !this.element) return;
 
             const newX = e.clientX - this.dragState.offsetX;
@@ -282,14 +290,17 @@ export class BaseWindow {
             this.position.y = newY;
 
             this._updatePosition();
-        });
+        };
 
-        document.addEventListener('mouseup', () => {
+        this._eventListeners.dragEnd = () => {
             if (this.dragState.isDragging) {
                 this.dragState.isDragging = false;
                 this._saveState();
             }
-        });
+        };
+
+        document.addEventListener('mousemove', this._eventListeners.dragMove);
+        document.addEventListener('mouseup', this._eventListeners.dragEnd);
     }
 
     /**
@@ -299,9 +310,10 @@ export class BaseWindow {
         if (!this.element) return;
 
         // Bring window to front when clicked anywhere
-        this.element.addEventListener('mousedown', () => {
+        this._eventListeners.focusHandler = () => {
             this.bringToFront();
-        });
+        };
+        this.element.addEventListener('mousedown', this._eventListeners.focusHandler);
     }
 
     /**
@@ -585,6 +597,9 @@ export class BaseWindow {
     close(): void {
         this.hide();
 
+        // Clean up event listeners to prevent memory leaks
+        this._cleanup();
+
         // Remove from z-index manager stack
         const W = window as any;
         const zIndexManager = getZIndexManager();
@@ -603,6 +618,32 @@ export class BaseWindow {
             const current = menuSystem.getCurrentMenuModalId?.();
             menuSystem.renderApplicationMenu(current);
         }
+    }
+
+    /**
+     * Clean up event listeners to prevent memory leaks
+     */
+    private _cleanup(): void {
+        // Remove document-level drag event listeners
+        if (this._eventListeners.dragMove) {
+            document.removeEventListener('mousemove', this._eventListeners.dragMove);
+        }
+        if (this._eventListeners.dragEnd) {
+            document.removeEventListener('mouseup', this._eventListeners.dragEnd);
+        }
+
+        // Remove focus handler
+        if (this._eventListeners.focusHandler && this.element) {
+            this.element.removeEventListener('mousedown', this._eventListeners.focusHandler);
+        }
+
+        // Remove resize handles (they are child elements that will be removed with the window)
+        // but ensure any associated event listeners are cleaned up
+        const existingHandles = this.element?.querySelectorAll('.resizer');
+        existingHandles?.forEach(handle => handle.remove());
+
+        // Clear event listener references
+        this._eventListeners = {};
     }
 
     /**

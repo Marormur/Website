@@ -135,7 +135,8 @@
             // Find first matching binding for current context or global
             const binding = state.bindings.find(b => {
                 if (b.key.toLowerCase() !== key) return false;
-                if (!!b.ctrl !== true) return false; // API expects ctrl/meta always true
+                // If ctrl is explicitly false in binding, skip (though this shouldn't happen)
+                if (b.ctrl === false) return false;
                 if (!!b.shift !== !!e.shiftKey && b.shift !== undefined) return false;
                 if (b.context && b.context !== context) return false;
                 return true;
