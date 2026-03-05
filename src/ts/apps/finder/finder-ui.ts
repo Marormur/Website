@@ -1,10 +1,30 @@
-import { h, VNode } from '../../core/vdom.js';
-import { BaseComponent } from '../../framework/core/component.js';
-import { AppShell } from '../../framework/layout/app-shell.js';
-import { SplitView } from '../../framework/layout/split-view.js';
-import { Sidebar, SidebarGroup } from '../../framework/navigation/sidebar.js';
-import { Toolbar } from '../../framework/navigation/toolbar.js';
-import { Tabs, TabItem } from '../../framework/navigation/tabs.js';
+import { h, VNode, diff, patch, createElement } from '../../core/vdom.js';
+
+// ---------------------------------------------------------------------------
+// Minimal standalone types (previously imported from MacUI framework)
+// ---------------------------------------------------------------------------
+
+export interface TabItem {
+    id: string;
+    label: string;
+    icon?: string;
+    closable?: boolean;
+    metadata?: unknown;
+}
+
+interface SidebarItem {
+    id: string;
+    label: string;
+    icon?: string;
+    i18nKey?: string;
+    onClick?: (id: string) => void;
+}
+
+interface SidebarGroup {
+    label: string;
+    i18nKey?: string;
+    items: SidebarItem[];
+}
 
 export interface FinderUIProps {
     id: string;
@@ -51,7 +71,86 @@ interface FinderTabDragContext {
 let activeTabDrag: FinderTabDragContext | null = null;
 let globalDragListenersAttached = false;
 
-export class FinderUI extends BaseComponent<FinderUIProps> {
+/**
+ * FinderUI – standalone UI component for the Finder.
+ * Replaces the MacUI BaseComponent-based version with a direct VDOM implementation
+ * so the MacUI framework is no longer a dependency.
+ */
+export class FinderUI {
+    protected props: FinderUIProps;
+    protected element: HTMLElement | null = null;
+    protected container: HTMLElement | null = null;
+    protected vTree: VNode | null = null;
+
+    constructor(props: FinderUIProps) {
+        this.props = props;
+    }
+
+    /** Mount into a container element and return the rendered root. */
+    mount(container?: HTMLElement): HTMLElement {
+        this.vTree = this.render();
+        const dom = createElement(this.vTree);
+        if (dom instanceof HTMLElement) {
+            this.element = dom;
+        } else {
+            const wrapper = document.createElement('span');
+            wrapper.appendChild(dom);
+            this.element = wrapper;
+        }
+        if (container) {
+            this.container = container;
+            container.appendChild(this.element);
+        }
+        this.onMount();
+        return this.element;
+    }
+
+    /** Re-render and patch the DOM with updated props. */
+    update(newProps?: Partial<FinderUIProps>): void {
+        if (newProps) {
+            this.props = { ...this.props, ...newProps };
+        }
+        if (!this.element || !this.vTree) return;
+        const newVTree = this.render();
+        const patches = diff(this.vTree, newVTree);
+        patch(this.element, patches);
+        this.vTree = newVTree;
+        this.onUpdate();
+    }
+
+    /** Lifecycle hook called after mount. */
+    onMount(): void {
+        // Populate manual tab container and set up sidebar resize after initial render
+        this._syncTabContainer();
+        if (this.element) {
+            this._setupSidebarResize(this.element);
+        }
+    }
+
+    /** Lifecycle hook called after each update. */
+    onUpdate(): void {
+        // Keep manual tab container in sync during updates
+        this._syncTabContainer();
+    }
+
+    /** Render the tab bar VNode into the manual tabs container. */
+    private _syncTabContainer(): void {
+        try {
+            const winId = this.props.windowId;
+            const container = document.getElementById(`${winId}-tabs`);
+            const builder = (this as any)._renderTabsVNode as (() => VNode) | undefined;
+            if (container && builder) {
+                container.innerHTML = '';
+                const tabsVNode = builder();
+                const node = createElement(tabsVNode);
+                container.appendChild(node);
+                this.bindTabDragHandlers(container);
+            }
+        } catch (e) {
+            console.warn('[FinderUI] tab container sync failed', e);
+        }
+    }
+
     render(): VNode {
         const {
             id,
@@ -141,17 +240,15 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
             activeSidebarId = atHome ? 'home' : 'computer';
         }
 
-        // Components
-        const sidebar = new Sidebar({
-            groups: sidebarGroups,
-            activeId: activeSidebarId,
-            idPrefix: id,
-        });
-
-        const toolbar = new Toolbar({
-            className: this.props.isActive ? 'finder-toolbar' : 'hidden',
-            left: [
-                // Navigation buttons - macOS Segmented Control style
+        // Toolbar (inlined from former Toolbar component)
+        const toolbarClass = `finder-toolbar px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2${this.props.isActive ? '' : ' hidden'}`;
+        const toolbarVNode = h(
+            'div',
+            { className: toolbarClass },
+            h(
+                'div',
+                { className: 'flex items-center gap-1' },
+                // Navigation buttons – macOS Segmented Control style
                 h(
                     'div',
                     {
@@ -209,10 +306,14 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
                         },
                         '⬆'
                     )
-                ),
-            ],
-            center: [renderBreadcrumbs()],
-            right: [
+                )
+            ),
+            // Center: breadcrumbs
+            h('div', { className: 'flex-1 mx-2 min-w-0' }, renderBreadcrumbs()),
+            // Right: view toggle, sort, search
+            h(
+                'div',
+                { className: 'flex items-center gap-2' },
                 h(
                     'div',
                     {
@@ -237,7 +338,9 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
                                 stroke: 'currentColor',
                                 strokeWidth: '2',
                             },
-                            h('path', { d: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01' })
+                            h('path', {
+                                d: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+                            })
                         )
                     ),
                     h(
@@ -311,96 +414,231 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
                         h('circle', { cx: '11', cy: '11', r: '8' }),
                         h('path', { d: 'M21 21l-4.35-4.35' })
                     )
-                ),
-            ],
-        });
+                )
+            )
+        );
 
-        // Tabs Component (macOS style)
+        // Sidebar (inlined from former Sidebar component)
         console.log(
             `[FinderUI] Rendering tab ${id} (active: ${this.props.isActive}) in window ${windowId}`
         );
-        // Store tabsComponent on the instance so lifecycle hooks can imperatively
-        // manage the container content to avoid duplicate DOM insertions from VDOM
-        // reconciliation edge-cases.
-        (this as any).tabsComponent = new Tabs({
-            tabs,
-            activeTabId,
-            onTabChange,
-            onTabClose,
-            onTabAdd,
-            showAddButton: true,
-            variant: 'macos',
-            className: 'bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm',
-        });
 
-        const splitView = new SplitView({
-            initialSize: sidebarWidth,
-            minSize: 150,
-            maxSize: 400,
-            onResize: width => onResize(width),
-            left: h('div', { className: 'split-view-left h-full overflow-auto' }, sidebar.render()),
-            right: h(
+        // Store tab VNode builder so lifecycle hooks can imperatively refresh the tab bar
+        (this as any)._renderTabsVNode = () =>
+            this._buildTabsVNode(tabs, activeTabId, onTabChange, onTabClose, onTabAdd);
+
+        // Sidebar VNode (inlined from former Sidebar component)
+        const sidebarVNode = h(
+            'aside',
+            {
+                className:
+                    'flex flex-col h-full bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto',
+                style: { width: '100%' },
+            },
+            h(
                 'div',
-                { className: 'split-view-right flex flex-col h-full overflow-hidden' },
-                // Only render Tabs in the active tab's UI to avoid duplicates in the DOM
-                // This ensures that E2E tests only find one set of tabs per window
-                this.props.isActive
-                    ? h('div', {
-                          className: 'finder-tabs-container',
-                          id: `${windowId}-tabs`,
-                          'data-tabs-manual': '1',
-                      })
-                    : h('div', { className: 'finder-tabs-placeholder hidden' }),
-                h('div', { className: 'flex-1 overflow-hidden relative' }, renderContent())
-            ),
-        });
+                { className: 'py-2' },
+                ...sidebarGroups.map(group =>
+                    h(
+                        'div',
+                        { className: 'mb-4', key: group.label },
+                        h(
+                            'div',
+                            {
+                                className:
+                                    'px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide',
+                                'data-i18n': group.i18nKey,
+                            },
+                            group.label
+                        ),
+                        ...group.items.map(item => {
+                            const isActive = activeSidebarId === item.id;
+                            return h(
+                                'button',
+                                {
+                                    key: item.id,
+                                    'data-sidebar-id': item.id,
+                                    className: `finder-sidebar-item w-full text-left${isActive ? ' finder-sidebar-active' : ''}`,
+                                    onclick: () => item.onClick?.(item.id),
+                                },
+                                item.icon
+                                    ? h('span', { className: 'finder-sidebar-icon' }, item.icon)
+                                    : '',
+                                h('span', { 'data-i18n': item.i18nKey }, item.label)
+                            );
+                        })
+                    )
+                )
+            )
+        );
 
-        const shell = new AppShell({
-            toolbar: toolbar.render(),
-            content: splitView.render(),
-        });
-
-        const vnode = shell.render();
-        vnode.props['data-testid'] = 'finder-ui';
-        vnode.props['className'] =
-            ((vnode.props['className'] as string) || '') + ' finder-vdom-root';
-
-        return vnode;
+        // Full layout (inlined from AppShell + SplitView)
+        return h(
+            'div',
+            {
+                className:
+                    'flex flex-col h-full w-full overflow-hidden bg-white dark:bg-gray-800 finder-vdom-root',
+                'data-testid': 'finder-ui',
+            },
+            // Toolbar strip
+            h('div', { className: 'shrink-0' }, toolbarVNode),
+            // Main area
+            h(
+                'div',
+                { className: 'flex-1 flex min-h-0 overflow-hidden' },
+                h(
+                    'main',
+                    { className: 'flex-1 min-w-0 overflow-hidden relative' },
+                    // SplitView (sidebar + resizer + content)
+                    h(
+                        'div',
+                        { className: 'flex h-full w-full overflow-hidden flex-row' },
+                        h(
+                            'div',
+                            {
+                                className: 'split-view-sidebar shrink-0 overflow-auto',
+                                style: { width: `${sidebarWidth}px` },
+                            },
+                            h(
+                                'div',
+                                { className: 'split-view-left h-full overflow-auto' },
+                                sidebarVNode
+                            )
+                        ),
+                        h('div', {
+                            className:
+                                'split-view-resizer shrink-0 w-1 cursor-col-resize bg-gray-200 dark:bg-gray-700 hover:bg-blue-400 transition-colors',
+                        }),
+                        h(
+                            'div',
+                            { className: 'flex-1 min-w-0 min-h-0 overflow-auto' },
+                            h(
+                                'div',
+                                {
+                                    className:
+                                        'split-view-right flex flex-col h-full overflow-hidden',
+                                },
+                                // Only render Tabs container in the active tab's UI
+                                this.props.isActive
+                                    ? h('div', {
+                                          className: 'finder-tabs-container',
+                                          id: `${windowId}-tabs`,
+                                          'data-tabs-manual': '1',
+                                      })
+                                    : h('div', { className: 'finder-tabs-placeholder hidden' }),
+                                h(
+                                    'div',
+                                    { className: 'flex-1 overflow-hidden relative' },
+                                    renderContent()
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        );
     }
 
-    onMount(): void {
-        // After initial mount, ensure manual tab container is populated if active
-        try {
-            const winId = this.props.windowId;
-            const container = document.getElementById(`${winId}-tabs`);
-            if (container && (this as any).tabsComponent) {
-                // Clear and append rendered tabs
-                container.innerHTML = '';
-                const tabsVNode = (this as any).tabsComponent.render();
-                const node = (window as any).VDOM.createElement(tabsVNode);
-                container.appendChild(node);
-                this.bindTabDragHandlers(container);
-            }
-        } catch (e) {
-            console.warn('[FinderUI] onMount tab render failed', e);
-        }
+    /** Build the VNode for the tab bar (previously delegated to MacUI Tabs component). */
+    private _buildTabsVNode(
+        tabs: TabItem[],
+        activeTabId: string,
+        onTabChange: (id: string) => void,
+        onTabClose: (id: string) => void,
+        onTabAdd: () => void
+    ): VNode {
+        const containerClass =
+            `macui-tabs flex items-end gap-1 px-2 border-b border-gray-300 dark:border-gray-700` +
+            ' bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm';
+
+        return h(
+            'div',
+            { className: containerClass },
+            ...tabs.map(tab => {
+                const isActive = tab.id === activeTabId;
+                const tabClass =
+                    `macui-tab wt-tab group relative flex items-center gap-2 px-3 py-1.5 text-sm rounded-t-md border border-b-0 transition-all cursor-pointer select-none ` +
+                    (isActive
+                        ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700 z-10 -mb-[1px]'
+                        : 'bg-gray-200/50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 border-transparent hover:bg-gray-200 dark:hover:bg-gray-800');
+                return h(
+                    'div',
+                    {
+                        className: tabClass,
+                        onclick: () => onTabChange(tab.id),
+                        draggable: true,
+                        'data-tab-id': tab.id,
+                        'data-instance-id': tab.id,
+                    },
+                    tab.icon ? h('span', { className: 'tab-icon' }, tab.icon) : '',
+                    h(
+                        'span',
+                        { className: 'wt-tab-title tab-label truncate max-w-[150px]' },
+                        tab.label
+                    ),
+                    tab.closable !== false
+                        ? h(
+                              'button',
+                              {
+                                  className: `wt-tab-close tab-close opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full w-4 h-4 flex items-center justify-center transition-all ${isActive ? 'opacity-60' : ''}`,
+                                  onclick: (e: MouseEvent) => {
+                                      e.stopPropagation();
+                                      onTabClose(tab.id);
+                                  },
+                              },
+                              '×'
+                          )
+                        : ''
+                );
+            }),
+            h(
+                'button',
+                {
+                    className:
+                        'wt-add p-1 mb-1 text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-800 rounded transition-colors',
+                    onclick: (e: MouseEvent) => {
+                        e.stopPropagation();
+                        onTabAdd();
+                    },
+                    title: 'Neuer Tab',
+                },
+                '+'
+            )
+        );
     }
 
-    onUpdate(): void {
-        // Keep manual tab container in sync during updates to avoid duplication
-        try {
-            const winId = this.props.windowId;
-            const container = document.getElementById(`${winId}-tabs`);
-            if (container && (this as any).tabsComponent) {
-                container.innerHTML = '';
-                const tabsVNode = (this as any).tabsComponent.render();
-                const node = (window as any).VDOM.createElement(tabsVNode);
-                container.appendChild(node);
-                this.bindTabDragHandlers(container);
-            }
-        } catch (e) {
-            console.warn('[FinderUI] onUpdate tab render failed', e);
-        }
+    /** Attach imperative mouse-drag logic for the sidebar resizer after mount. */
+    private _setupSidebarResize(root: HTMLElement): void {
+        const resizer = root.querySelector('.split-view-resizer') as HTMLElement | null;
+        const sidebarEl = root.querySelector('.split-view-sidebar') as HTMLElement | null;
+        if (!resizer || !sidebarEl) return;
+
+        let startX = 0;
+        let startWidth = 0;
+        const minSize = 150;
+        const maxSize = 400;
+
+        const onMouseMove = (e: MouseEvent) => {
+            const delta = e.clientX - startX;
+            const newWidth = Math.max(minSize, Math.min(startWidth + delta, maxSize));
+            sidebarEl.style.width = `${newWidth}px`;
+            this.props.onResize(newWidth);
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            document.body.classList.remove('select-none');
+        };
+
+        resizer.addEventListener('mousedown', (e: MouseEvent) => {
+            e.preventDefault();
+            startX = e.clientX;
+            startWidth = sidebarEl.offsetWidth;
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+            document.body.classList.add('select-none');
+        });
     }
 
     private bindTabDragHandlers(container: HTMLElement): void {

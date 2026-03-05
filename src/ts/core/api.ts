@@ -244,17 +244,6 @@ console.log('API loaded');
                 }
             },
         },
-
-        // Toast notifications (singleton instance)
-        toast: undefined as unknown as {
-            show: (options: unknown) => string;
-            success: (message: string, duration?: number) => string;
-            error: (message: string, duration?: number) => string;
-            warning: (message: string, duration?: number) => string;
-            info: (message: string, duration?: number) => string;
-            remove: (id: string) => void;
-            clearAll: () => void;
-        },
     } as const;
 
     (window as unknown as { API: typeof API }).API = API;
