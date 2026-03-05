@@ -214,6 +214,30 @@ export default [
         },
     },
 
+    // Unit-Test-Dateien (TypeScript, Vitest globals)
+    {
+        files: ['tests/unit/**/*.test.ts'],
+        languageOptions: {
+            globals: {
+                // Vitest injected globals (via globals: true in vitest.config.ts)
+                describe: 'readonly',
+                it: 'readonly',
+                test: 'readonly',
+                expect: 'readonly',
+                beforeAll: 'readonly',
+                afterAll: 'readonly',
+                beforeEach: 'readonly',
+                afterEach: 'readonly',
+                vi: 'readonly',
+            },
+        },
+        rules: {
+            // @ts-expect-error is a TypeScript directive, not a lint concern
+            '@typescript-eslint/ban-ts-comment': 'off',
+        },
+    },
+
+
     // TypeScript Dateien
     {
         files: ['**/*.ts'],
