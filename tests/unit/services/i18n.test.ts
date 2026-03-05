@@ -7,7 +7,7 @@
  * language switching logic in isolation using jsdom globals.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // i18n uses module-level state (activeLanguage, languagePreference).
 // Import the individual pure exports to keep tests predictable.
@@ -16,7 +16,8 @@ import {
     setLanguagePreference,
     getActiveLanguage,
     getLanguagePreference,
-} from '../../../src/ts/services/i18n.js';
+    appI18n,
+} from '../../../src/ts/services/i18n.ts';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -69,32 +70,39 @@ describe('translate – missing key fallback', () => {
     });
 
     it('falls back to English when the key is missing in the active language', () => {
-        // Force German, then translate a key that only exists in English
+        // Temporarily inject a key only into the English translations so we can
+        // verify the fallback path (resolveKey(lang) → undefined → resolveKey('en')).
+        const translations = appI18n.translations;
+        (translations['en'] as Record<string, unknown>)['__test_en_only__'] = 'English only';
+
         setLanguagePreference('de');
-        // 'context.open' exists in both languages; pick a key that exists in en
-        // but simulate a direct override via the options API.
-        const enResult = translate('context.open', {}, { language: 'en' });
-        const deResult = translate('context.open', {}, { language: 'de' });
-        // Both should return non-empty strings (German has this key too)
-        expect(enResult).toBeTruthy();
-        expect(deResult).toBeTruthy();
+        const result = translate('__test_en_only__');
+
+        // Cleanup before asserting so a failed assertion doesn't leak state
+        delete (translations['en'] as Record<string, unknown>)['__test_en_only__'];
+
+        expect(result).toBe('English only');
     });
 });
 
 // ─── translate() – parameter interpolation ───────────────────────────────────
 
 describe('translate – parameter interpolation', () => {
-    it('replaces a single {token} with the given value', () => {
-        // Use a key that is known to support parameters, or test with options.language
-        // directly against a template string.  Since we cannot guarantee a template
-        // key in the dictionary we test the underlying formatTemplate via translate:
-        // We inject a custom key by calling translate with a key that doesn't exist
-        // so it returns the key itself (no interpolation needed), but the unit we
-        // want to cover is that params ARE passed through.
-        // Instead, verify that params don't break a normal translation.
-        const result = translate('context.open', { name: 'World' });
-        expect(typeof result).toBe('string');
-        expect(result.length).toBeGreaterThan(0);
+    it('replaces {token} placeholders in a known template string', () => {
+        // 'textEditor.status.wordCount' = 'Words: {words} | Characters: {chars}' in English
+        const result = translate('textEditor.status.wordCount', { words: 42, chars: 256 });
+        expect(result).toContain('42');
+        expect(result).toContain('256');
+        // Must NOT contain the raw placeholder tokens
+        expect(result).not.toContain('{words}');
+        expect(result).not.toContain('{chars}');
+    });
+
+    it('leaves unreferenced {tokens} in the template when param is not supplied', () => {
+        // Provide only 'words', omit 'chars' → {chars} placeholder stays in output
+        const result = translate('textEditor.status.wordCount', { words: 10 });
+        expect(result).toContain('10');
+        expect(result).toContain('{chars}');
     });
 
     it('leaves unreferenced {tokens} intact when the key returns the key itself', () => {
@@ -160,3 +168,4 @@ describe('translate – language override option', () => {
         expect(forced).not.toBe(active);
     });
 });
+

@@ -67,13 +67,13 @@ export default defineConfig({
                 },
             },
         },
-        // Quiet down console output during tests
-        silent: false,
+        // Suppress console output during tests to keep output readable
+        silent: true,
     },
     resolve: {
         alias: {
-            // Allow TypeScript path alias @/* used throughout the codebase
-            '@': resolve(__dirname, 'js'),
+            // Align the @/* alias with the TypeScript source tree that coverage targets
+            '@': resolve(__dirname, 'src/ts'),
         },
     },
 });

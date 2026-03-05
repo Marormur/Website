@@ -72,9 +72,6 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Run Unit Tests
-              run: npm run test:unit
-
             - name: Run Coverage Check
               run: npm run test:coverage
               continue-on-error: false

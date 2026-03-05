@@ -21,7 +21,7 @@ afterAll(() => {
 
 // Import the singleton after fake timers are installed so the constructor's
 // `void this.load()` uses the mocked timer environment.
-const { VirtualFS } = await import('../../../src/ts/services/virtual-fs.js');
+const { VirtualFS } = await import('../../../src/ts/services/virtual-fs.ts');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

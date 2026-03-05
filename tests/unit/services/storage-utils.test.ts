@@ -14,7 +14,7 @@ import {
     remove,
     getJSON,
     setJSON,
-} from '../../../src/ts/services/storage-utils.js';
+} from '../../../src/ts/services/storage-utils.ts';
 
 beforeEach(() => {
     localStorage.clear();

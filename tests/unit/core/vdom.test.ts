@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { h, diff, patch, createElement, measurePerf, EventDelegator } from '../../../src/ts/core/vdom.js';
+import { h, diff, patch, createElement, measurePerf, EventDelegator } from '../../../src/ts/core/vdom.ts';
 
 // ─── h() – VNode factory ─────────────────────────────────────────────────────
 
@@ -45,7 +45,7 @@ describe('h – VNode factory', () => {
     it('flattens array children', () => {
         // Pass an array as a child – h() calls .flat() so it should be unwrapped
         const items = ['a', 'b', 'c'];
-        // @ts-expect-error – testing runtime flatting
+        // @ts-expect-error – testing runtime flattening
         const vnode = h('ul', null, items);
         expect(vnode.children).toEqual(['a', 'b', 'c']);
     });
