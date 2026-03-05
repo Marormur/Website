@@ -82,6 +82,9 @@ export class FinderUI {
     protected container: HTMLElement | null = null;
     protected vTree: VNode | null = null;
 
+    /** Typed builder for the tab bar VNode, set in render() and consumed by _syncTabContainer(). */
+    private _renderTabsVNode?: () => VNode;
+
     constructor(props: FinderUIProps) {
         this.props = props;
     }
@@ -120,11 +123,8 @@ export class FinderUI {
 
     /** Lifecycle hook called after mount. */
     onMount(): void {
-        // Populate manual tab container and set up sidebar resize after initial render
+        // Populate manual tab container after initial render
         this._syncTabContainer();
-        if (this.element) {
-            this._setupSidebarResize(this.element);
-        }
     }
 
     /** Lifecycle hook called after each update. */
@@ -138,7 +138,7 @@ export class FinderUI {
         try {
             const winId = this.props.windowId;
             const container = document.getElementById(`${winId}-tabs`);
-            const builder = (this as any)._renderTabsVNode as (() => VNode) | undefined;
+            const builder = this._renderTabsVNode;
             if (container && builder) {
                 container.innerHTML = '';
                 const tabsVNode = builder();
@@ -424,7 +424,7 @@ export class FinderUI {
         );
 
         // Store tab VNode builder so lifecycle hooks can imperatively refresh the tab bar
-        (this as any)._renderTabsVNode = () =>
+        this._renderTabsVNode = () =>
             this._buildTabsVNode(tabs, activeTabId, onTabChange, onTabClose, onTabAdd);
 
         // Sidebar VNode (inlined from former Sidebar component)
@@ -508,6 +508,36 @@ export class FinderUI {
                         h('div', {
                             className:
                                 'split-view-resizer shrink-0 w-1 cursor-col-resize bg-gray-200 dark:bg-gray-700 hover:bg-blue-400 transition-colors',
+                            // Inline handler so it survives VDOM re-renders without re-binding
+                            onmousedown: (e: MouseEvent) => {
+                                e.preventDefault();
+                                const resizer = e.currentTarget as HTMLElement | null;
+                                const sidebar = resizer?.parentElement?.querySelector<HTMLElement>(
+                                    '.split-view-sidebar'
+                                );
+                                if (!sidebar) return;
+                                const startX = e.clientX;
+                                const startWidth = sidebar.getBoundingClientRect().width;
+                                const minSize = 150;
+                                const maxSize = 400;
+                                const prevUserSelect = document.body.style.userSelect;
+                                document.body.style.userSelect = 'none';
+                                const onMove = (ev: MouseEvent) => {
+                                    const newWidth = Math.max(
+                                        minSize,
+                                        Math.min(startWidth + ev.clientX - startX, maxSize)
+                                    );
+                                    sidebar.style.width = `${newWidth}px`;
+                                    this.props.onResize(newWidth);
+                                };
+                                const onUp = () => {
+                                    document.removeEventListener('mousemove', onMove);
+                                    document.removeEventListener('mouseup', onUp);
+                                    document.body.style.userSelect = prevUserSelect;
+                                };
+                                document.addEventListener('mousemove', onMove);
+                                document.addEventListener('mouseup', onUp);
+                            },
                         }),
                         h(
                             'div',
@@ -605,40 +635,6 @@ export class FinderUI {
                 '+'
             )
         );
-    }
-
-    /** Attach imperative mouse-drag logic for the sidebar resizer after mount. */
-    private _setupSidebarResize(root: HTMLElement): void {
-        const resizer = root.querySelector('.split-view-resizer') as HTMLElement | null;
-        const sidebarEl = root.querySelector('.split-view-sidebar') as HTMLElement | null;
-        if (!resizer || !sidebarEl) return;
-
-        let startX = 0;
-        let startWidth = 0;
-        const minSize = 150;
-        const maxSize = 400;
-
-        const onMouseMove = (e: MouseEvent) => {
-            const delta = e.clientX - startX;
-            const newWidth = Math.max(minSize, Math.min(startWidth + delta, maxSize));
-            sidebarEl.style.width = `${newWidth}px`;
-            this.props.onResize(newWidth);
-        };
-
-        const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            document.body.classList.remove('select-none');
-        };
-
-        resizer.addEventListener('mousedown', (e: MouseEvent) => {
-            e.preventDefault();
-            startX = e.clientX;
-            startWidth = sidebarEl.offsetWidth;
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-            document.body.classList.add('select-none');
-        });
     }
 
     private bindTabDragHandlers(container: HTMLElement): void {
