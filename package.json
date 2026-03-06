@@ -99,5 +99,8 @@
     "type-coverage": "^2.29.7",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "tmp": "^0.2.4"
   }
 }
