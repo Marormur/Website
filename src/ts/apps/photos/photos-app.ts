@@ -1,5 +1,6 @@
-import logger from '../../core/logger.js'; /*
- * Fotos-App ΓÇô inspiriert von der macOS Fotos Anwendung.
+import logger from '../../core/logger.js';
+/*
+ * Fotos-App – inspiriert von der macOS Fotos Anwendung.
  * L├ñdt Bilder aus der Picsum API, gruppiert sie in verschiedene Ansichten
  * und stellt einen Detail-Viewer inklusive Favoritenverwaltung bereit.
  */

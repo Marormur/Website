@@ -97,7 +97,7 @@ import { getString, setString } from '../services/storage-utils.js';
             } catch (_e) {
                 void _e;
             }
-            logger.info('PerfMonitor', 'Enabled');
+            logger.info('APP', 'Enabled');
         },
 
         disable() {
@@ -107,7 +107,7 @@ import { getString, setString } from '../services/storage-utils.js';
             } catch (_e) {
                 void _e;
             }
-            logger.info('PerfMonitor', 'Disabled');
+            logger.info('APP', 'Disabled');
         },
 
         toggle() {

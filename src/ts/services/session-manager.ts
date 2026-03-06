@@ -5,10 +5,10 @@
  * Handles storage quota limits gracefully and coordinates saves across multiple instances.
  */
 
-logger.debug('SESSION', 'SessionManager loaded');
-
 import { getJSON, setJSON, remove } from '../services/storage-utils.js';
 import logger from '../core/logger.js';
+
+logger.debug('SESSION', 'SessionManager loaded');
 
 (() => {
     'use strict';
