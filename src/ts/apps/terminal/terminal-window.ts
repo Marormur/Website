@@ -2,7 +2,6 @@
  * src/ts/terminal-window.ts
  * Terminal-specific multi-window implementation
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
@@ -16,6 +15,13 @@ import type { BaseTab } from '../../windows/base-tab.js';
  * - Session management
  */
 export class TerminalWindow extends BaseWindow {
+    /** WindowTabs controller for the tab bar – created lazily in _renderTabs. */
+    private tabController?: {
+        refresh: () => void;
+        destroy: () => void;
+        setTitle: (id: string, title: string) => void;
+    } | null;
+
     constructor(config?: Partial<WindowConfig>) {
         super({
             type: 'terminal',
@@ -53,14 +59,13 @@ export class TerminalWindow extends BaseWindow {
      * Override tab rendering to use WindowTabs system
      */
     protected _renderTabs(): void {
-        const W = window as any;
-        if (!W.WindowTabs || !this.element) return;
+        if (!window.WindowTabs || !this.element) return;
 
         const tabBar = this.element.querySelector(`#${this.id}-tabs`);
         if (!tabBar) return;
 
         // Create a simple adapter for WindowTabs
-        const makeInst = (tab: any) => ({
+        const makeInst = (tab: BaseTab) => ({
             instanceId: tab.id,
             title: tab.title,
             metadata: { tabLabel: tab.title },
@@ -81,16 +86,16 @@ export class TerminalWindow extends BaseWindow {
                 return t ? makeInst(t) : null;
             },
             setActiveInstance: (id: string) => this.setActiveTab(id),
-            createInstance: (cfg?: any) => {
-                const W = window as any;
-                const session = W.TerminalSession
-                    ? new W.TerminalSession({
+            createInstance: (cfg?: { title?: string }) => {
+                const TerminalSessionCtor = window.TerminalSession;
+                const session = TerminalSessionCtor
+                    ? new TerminalSessionCtor({
                           title: cfg?.title || `Terminal ${this.tabs.size + 1}`,
                       })
                     : null;
                 if (session) {
-                    this.addTab(session);
-                    return makeInst(session);
+                    this.addTab(session as unknown as BaseTab);
+                    return makeInst(session as unknown as BaseTab);
                 }
                 return null;
             },
@@ -98,7 +103,7 @@ export class TerminalWindow extends BaseWindow {
             getInstanceCount: () => this.tabs.size,
             reorderInstances: (newOrder: string[]) => {
                 const old = this.tabs;
-                const rebuilt = new Map<string, any>();
+                const rebuilt = new Map<string, BaseTab>();
                 newOrder.forEach(id => {
                     const t = old.get(id);
                     if (t) rebuilt.set(id, t);
@@ -106,28 +111,28 @@ export class TerminalWindow extends BaseWindow {
                 old.forEach((t, id) => {
                     if (!rebuilt.has(id)) rebuilt.set(id, t);
                 });
-                (this as any).tabs = rebuilt;
+                this.tabs = rebuilt;
                 this._renderTabs();
             },
             detachInstance: (id: string) => {
-                const t = this.detachTab(id) as any;
+                const t = this.detachTab(id);
                 return t ? makeInst(t) : null;
             },
-            adoptInstance: (inst: any) => {
-                const tab = inst.__tab || inst;
+            adoptInstance: (inst: { instanceId?: string; __tab?: BaseTab; id?: string }) => {
+                const tab = inst.__tab || (inst as unknown as BaseTab);
                 this.addTab(tab);
-                this.setActiveTab(tab.id);
+                this.setActiveTab((tab as BaseTab).id);
                 return makeInst(tab);
             },
         };
 
         // Clear existing tab controller if any
-        if ((this as any).tabController) {
-            (this as any).tabController.destroy();
+        if (this.tabController) {
+            this.tabController.destroy();
         }
 
         // Create WindowTabs controller
-        (this as any).tabController = W.WindowTabs.create(adapter, tabBar as HTMLElement, {
+        this.tabController = window.WindowTabs.create!(adapter, tabBar as HTMLElement, {
             addButton: true,
             onCreateInstanceTitle: () => `Terminal ${this.tabs.size + 1}`,
         });
@@ -137,18 +142,17 @@ export class TerminalWindow extends BaseWindow {
      * Create a new terminal session in this window
      */
     createSession(title?: string): BaseTab | null {
-        const W = window as any;
-        if (!W.TerminalSession) {
+        if (!window.TerminalSession) {
             console.error('TerminalSession class not loaded');
             return null;
         }
 
-        const session = new W.TerminalSession({
+        const session = new window.TerminalSession({
             title: title || `Terminal ${this.tabs.size + 1}`,
         });
 
-        this.addTab(session);
-        return session;
+        this.addTab(session as unknown as BaseTab);
+        return session as unknown as BaseTab;
     }
 
     /**
@@ -161,16 +165,15 @@ export class TerminalWindow extends BaseWindow {
         window.createSession();
 
         // Register window BEFORE showing it, so updateDockIndicators() can find it
-        const W = globalThis as any;
-        if (W.WindowRegistry) {
-            W.WindowRegistry.registerWindow(window);
+        if (globalThis.WindowRegistry) {
+            globalThis.WindowRegistry.registerWindow?.(window);
         }
 
         // Show window
         window.show();
 
         // Explicitly render tabs (timing: must happen after window is shown and in DOM)
-        (window as any)._renderTabs?.();
+        window.requestTabsRender();
 
         return window;
     }
@@ -181,14 +184,14 @@ export class TerminalWindow extends BaseWindow {
      * - If Terminal windows exist, focus the most recently active one
      */
     static focusOrCreate(config?: Partial<WindowConfig>): TerminalWindow {
-        const W = globalThis as any;
-        if (!W.WindowRegistry) {
+        if (!globalThis.WindowRegistry) {
             // Fallback: create new if registry unavailable
             return TerminalWindow.create(config);
         }
 
         // Get all existing Terminal windows
-        const terminalWindows = W.WindowRegistry.getWindowsByType('terminal');
+        const terminalWindows = (globalThis.WindowRegistry.getWindowsByType?.('terminal') ??
+            []) as TerminalWindow[];
 
         if (terminalWindows.length === 0) {
             // No Terminal window exists → create new one
@@ -196,14 +199,14 @@ export class TerminalWindow extends BaseWindow {
         }
 
         // Find the most recently active Terminal window (highest z-index)
-        let mostRecentWindow = terminalWindows[0];
+        let mostRecentWindow = terminalWindows[0]!;
         for (const win of terminalWindows) {
             if (win.zIndex > mostRecentWindow.zIndex) {
                 mostRecentWindow = win;
             }
         }
         // Ensure the window has at least one session
-        if (mostRecentWindow.tabs.size === 0 && W.TerminalSession) {
+        if (mostRecentWindow.tabs.size === 0 && window.TerminalSession) {
             mostRecentWindow.createSession();
         }
 
@@ -214,4 +217,4 @@ export class TerminalWindow extends BaseWindow {
 }
 
 // Export to window for global access
-(window as any).TerminalWindow = TerminalWindow;
+window.TerminalWindow = TerminalWindow;

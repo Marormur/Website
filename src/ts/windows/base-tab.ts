@@ -3,8 +3,6 @@
  * Base class for tabs within a window
  * Each tab represents a content instance (Terminal Session, Document, etc.)
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import type { BaseWindow } from '../windows/base-window.js';
 
 export interface TabConfig {
@@ -12,8 +10,8 @@ export interface TabConfig {
     type: string;
     title?: string;
     icon?: string;
-    content?: any;
-    metadata?: Record<string, any>;
+    content?: unknown;
+    metadata?: Record<string, unknown>;
 }
 
 export interface TabState {
@@ -21,7 +19,7 @@ export interface TabState {
     type: string;
     title: string;
     icon?: string;
-    contentState: any;
+    contentState: unknown;
     created: number;
     modified: number;
 }
@@ -51,8 +49,8 @@ export class BaseTab {
     icon?: string;
     parentWindow: BaseWindow | null;
     element: HTMLElement | null;
-    contentState: any;
-    metadata: Record<string, any>;
+    contentState: unknown;
+    metadata: Record<string, unknown>;
     isVisible: boolean;
 
     constructor(config: TabConfig) {
@@ -77,7 +75,7 @@ export class BaseTab {
     /**
      * Set parent window (called when tab is added to a window)
      */
-    setParentWindow(window: BaseWindow): void {
+    setParentWindow(window: BaseWindow | null): void {
         this.parentWindow = window;
     }
 
@@ -118,7 +116,7 @@ export class BaseTab {
         }
 
         if (this.element) {
-            const domUtils = (window as any).DOMUtils;
+            const domUtils = window.DOMUtils;
             if (domUtils && typeof domUtils.show === 'function') {
                 domUtils.show(this.element);
             } else {
@@ -133,7 +131,7 @@ export class BaseTab {
      */
     hide(): void {
         if (this.element) {
-            const domUtils = (window as any).DOMUtils;
+            const domUtils = window.DOMUtils;
             if (domUtils && typeof domUtils.hide === 'function') {
                 domUtils.hide(this.element);
             } else {
@@ -167,16 +165,16 @@ export class BaseTab {
 
         // Notify parent window to re-render tabs
         if (this.parentWindow) {
-            (this.parentWindow as any)._renderTabs?.();
+            this.parentWindow.requestTabsRender();
         }
     }
 
     /**
      * Content‑State aktualisieren (z. B. Cursorposition, offene Datei, Sortierung,...)
      */
-    updateContentState(updates: any): void {
+    updateContentState(updates: Record<string, unknown>): void {
         this.contentState = {
-            ...this.contentState,
+            ...(this.contentState as Record<string, unknown>),
             ...updates,
         };
         this.metadata.modified = Date.now();
@@ -193,8 +191,8 @@ export class BaseTab {
             title: this.title,
             icon: this.icon,
             contentState: this.contentState,
-            created: this.metadata.created,
-            modified: this.metadata.modified || Date.now(),
+            created: (this.metadata.created as number | undefined) ?? Date.now(),
+            modified: (this.metadata.modified as number | undefined) ?? Date.now(),
         };
     }
 
@@ -220,7 +218,7 @@ export class BaseTab {
         // Save tab state via parent window's session manager
         if (this.parentWindow) {
             // Trigger parent window to save its state (which includes all tabs)
-            (this.parentWindow as any)._saveState?.();
+            this.parentWindow.requestSave();
         }
     }
 
@@ -252,4 +250,4 @@ export class BaseTab {
 }
 
 // Export to window for global access
-(window as any).BaseTab = BaseTab;
+window.BaseTab = BaseTab;

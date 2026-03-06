@@ -451,8 +451,12 @@ import { getString, setString } from '../../services/storage-utils.js';
             }
 
             // Dann den gespeicherten Content laden
-            if (this.editor && this.state && typeof (this.state as any).content === 'string') {
-                this.editor.value = (this.state as any).content;
+            if (
+                this.editor &&
+                this.state &&
+                typeof (this.state as Record<string, unknown>).content === 'string'
+            ) {
+                this.editor.value = (this.state as Record<string, unknown>).content as string;
                 this._updateWordCount();
                 this._updateCursorPosition();
             }

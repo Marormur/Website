@@ -16,17 +16,25 @@ declare global {
     }
 }
 
-// Helper to safely access window managers with casts
-const W = window as any;
+// Helper types for demo functions
+type InstanceShape = {
+    instanceId: string;
+    state?: Record<string, unknown>;
+    currentPath?: string;
+    commandHistory?: string[];
+    on?: (event: string, cb: (data: unknown) => void) => void;
+    appendOutput?: (txt: string) => void;
+    clearOutput?: () => void;
+};
 
-W.demoCreateTerminals = function demoCreateTerminals() {
-    if (!W.TerminalInstanceManager) return null;
+window.demoCreateTerminals = function demoCreateTerminals() {
+    if (!window.TerminalInstanceManager) return null;
     console.group('Creating Terminals...');
-    const term1 = W.TerminalInstanceManager.createInstance?.({ title: 'Terminal 1 - Main' });
-    const term2 = W.TerminalInstanceManager.createInstance?.({ title: 'Terminal 2 - Dev' });
-    const term3 = W.TerminalInstanceManager.createInstance?.({ title: 'Terminal 3 - Logs' });
+    const term1 = window.TerminalInstanceManager.createInstance?.({ title: 'Terminal 1 - Main' });
+    const term2 = window.TerminalInstanceManager.createInstance?.({ title: 'Terminal 2 - Dev' });
+    const term3 = window.TerminalInstanceManager.createInstance?.({ title: 'Terminal 3 - Logs' });
     try {
-        console.log('Total terminals:', W.TerminalInstanceManager.getInstanceCount?.());
+        console.log('Total terminals:', window.TerminalInstanceManager.getInstanceCount?.());
     } catch {
         // ignore
     }
@@ -34,20 +42,20 @@ W.demoCreateTerminals = function demoCreateTerminals() {
     return { term1, term2, term3 };
 };
 
-W.demoCreateEditors = function demoCreateEditors() {
-    if (!W.TextEditorInstanceManager) return null;
+window.demoCreateEditors = function demoCreateEditors() {
+    if (!window.TextEditorInstanceManager) return null;
     console.group('Creating Text Editors...');
-    const editor1 = W.TextEditorInstanceManager.createInstance?.({
+    const editor1 = window.TextEditorInstanceManager.createInstance?.({
         title: 'README.md',
         initialState: { content: '# My Project\n', filename: 'README.md' },
     });
-    const editor2 = W.TextEditorInstanceManager.createInstance?.({
+    const editor2 = window.TextEditorInstanceManager.createInstance?.({
         title: 'notes.txt',
         initialState: { content: 'Notes', filename: 'notes.txt' },
     });
-    const editor3 = W.TextEditorInstanceManager.createInstance?.({ title: 'Untitled' });
+    const editor3 = window.TextEditorInstanceManager.createInstance?.({ title: 'Untitled' });
     try {
-        console.log('Total editors:', W.TextEditorInstanceManager.getInstanceCount?.());
+        console.log('Total editors:', window.TextEditorInstanceManager.getInstanceCount?.());
     } catch {
         // ignore
     }
@@ -55,15 +63,15 @@ W.demoCreateEditors = function demoCreateEditors() {
     return { editor1, editor2, editor3 };
 };
 
-W.demoSaveTerminals = function demoSaveTerminals() {
-    if (!W.TerminalInstanceManager) return;
+window.demoSaveTerminals = function demoSaveTerminals() {
+    if (!window.TerminalInstanceManager) return;
     console.group('Save Terminal State...');
-    const terminals = W.demoCreateTerminals?.() as Record<string, any> | undefined;
+    const terminals = window.demoCreateTerminals?.() as Record<string, unknown> | undefined;
     if (terminals && terminals.term1) {
         terminals.term1.currentPath = '/home';
         terminals.term1.commandHistory = ['ls', 'pwd', 'cd documents'];
     }
-    const savedState = W.TerminalInstanceManager.serializeAll?.() || [];
+    const savedState = window.TerminalInstanceManager.serializeAll?.() || [];
     try {
         localStorage.setItem('demo_terminals', JSON.stringify(savedState));
         console.log('Saved state:', savedState);
@@ -73,14 +81,14 @@ W.demoSaveTerminals = function demoSaveTerminals() {
     console.groupEnd();
 };
 
-W.demoRestoreTerminals = function demoRestoreTerminals() {
-    if (!W.TerminalInstanceManager) return;
+window.demoRestoreTerminals = function demoRestoreTerminals() {
+    if (!window.TerminalInstanceManager) return;
     console.group('Restore Terminal State...');
     try {
-        W.TerminalInstanceManager.destroyAllInstances?.();
+        window.TerminalInstanceManager.destroyAllInstances?.();
         const savedState = JSON.parse(localStorage.getItem('demo_terminals') || '[]');
-        W.TerminalInstanceManager.deserializeAll?.(savedState);
-        const restored = W.TerminalInstanceManager.getAllInstances?.() || [];
+        window.TerminalInstanceManager.deserializeAll?.(savedState);
+        const restored = window.TerminalInstanceManager.getAllInstances?.() || [];
         console.log(`Restored ${restored.length} terminals`);
     } catch (e) {
         console.warn('Restore failed', e);
@@ -89,7 +97,7 @@ W.demoRestoreTerminals = function demoRestoreTerminals() {
 };
 
 // other helpers can be added similarly, keeping runtime guards
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /*
  * Multi-Instance Demo Helpers (TypeScript)
  * Ported from js/multi-instance-demo.js — kept as runtime demo helpers exposed on window.
@@ -140,7 +148,7 @@ function logDemo(title: string, description: string): void {
 
     window.demoCreateTerminals = function () {
         console.group('Creating Terminals...');
-        const manager = window.TerminalInstanceManager as any;
+        const manager = window.TerminalInstanceManager!;
         const term1 = manager.createInstance({ title: 'Terminal 1 - Main' });
         console.log('✓ Terminal 1:', term1?.instanceId);
         const term2 = manager.createInstance({ title: 'Terminal 2 - Dev' });
@@ -149,12 +157,12 @@ function logDemo(title: string, description: string): void {
         console.log('✓ Terminal 3:', term3?.instanceId);
         console.log(`Total terminals: ${manager.getInstanceCount()}`);
         console.groupEnd();
-        return { term1, term2, term3 } as Record<string, any>;
+        return { term1, term2, term3 } as Record<string, unknown>;
     };
 
     window.demoTerminalIsolation = function () {
         console.group('Terminal Isolation Demo...');
-            const terminals = window.demoCreateTerminals?.() as Record<string, any> | undefined;
+        const terminals = window.demoCreateTerminals?.() as Record<string, unknown> | undefined;
         if (!terminals) return;
         if (terminals.term1) {
             terminals.term1.currentPath = '/home/user';
@@ -186,7 +194,7 @@ function logDemo(title: string, description: string): void {
 
     window.demoCreateEditors = function () {
         console.group('Creating Text Editors...');
-        const mgr = window.TextEditorInstanceManager as any;
+        const mgr = window.TextEditorInstanceManager!;
         const editor1 = mgr.createInstance({
             title: 'README.md',
             initialState: {
@@ -207,16 +215,25 @@ function logDemo(title: string, description: string): void {
         console.log('✓ Editor 3:', editor3?.instanceId);
         console.log('Total editors:', mgr.getInstanceCount());
         console.groupEnd();
-        return { editor1, editor2, editor3 } as Record<string, any>;
+        return { editor1, editor2, editor3 } as Record<string, unknown>;
     };
 
     window.demoEditorContent = function () {
         console.group('Editor Content Demo...');
-            const editors = window.demoCreateEditors?.() as Record<string, unknown> | undefined;
+        const editors = window.demoCreateEditors?.() as Record<string, unknown> | undefined;
         if (!editors) return;
-        console.log('Editor 1 content:', (editors.editor1 as any)?.state?.content);
-        console.log('Editor 2 content:', (editors.editor2 as any)?.state?.content);
-        console.log('Editor 3 content:', (editors.editor3 as any)?.state?.content);
+        console.log(
+            'Editor 1 content:',
+            (editors['editor1'] as InstanceShape | undefined)?.state?.content
+        );
+        console.log(
+            'Editor 2 content:',
+            (editors['editor2'] as InstanceShape | undefined)?.state?.content
+        );
+        console.log(
+            'Editor 3 content:',
+            (editors['editor3'] as InstanceShape | undefined)?.state?.content
+        );
         console.log('%c✓ Jeder Editor hat eigenen Content!', 'color: #00ff00');
         console.groupEnd();
     };
@@ -226,7 +243,7 @@ function logDemo(title: string, description: string): void {
 
     window.demoSaveTerminals = function () {
         console.group('Save Terminal State...');
-            const terminals = window.demoCreateTerminals?.() as Record<string, any> | undefined;
+        const terminals = window.demoCreateTerminals?.() as Record<string, unknown> | undefined;
         if (!terminals) return;
         if (terminals.term1) {
             terminals.term1.currentPath = '/home';
@@ -325,14 +342,14 @@ function logDemo(title: string, description: string): void {
 
     window.demoActiveInstance = function () {
         console.group('Active Instance Tracking...');
-            const terminals = window.demoCreateTerminals?.() as Record<string, unknown> | undefined;
+        const terminals = window.demoCreateTerminals?.() as Record<string, unknown> | undefined;
         console.log(
             'Active instance:',
             window.TerminalInstanceManager?.getActiveInstance?.()?.instanceId
         );
         if (terminals?.term1)
             window.TerminalInstanceManager?.setActiveInstance?.(
-                    (terminals.term1 as any).instanceId as string
+                (terminals['term1'] as InstanceShape | undefined).instanceId as string
             );
         console.log(
             'Switched to:',
@@ -340,7 +357,7 @@ function logDemo(title: string, description: string): void {
         );
         if (terminals?.term2)
             window.TerminalInstanceManager?.setActiveInstance?.(
-                    (terminals.term2 as any).instanceId as string
+                (terminals['term2'] as InstanceShape | undefined).instanceId as string
             );
         console.log(
             'Switched to:',
@@ -359,7 +376,7 @@ function logDemo(title: string, description: string): void {
             title: 'Event Demo Terminal',
         });
         if (!terminal) return;
-        terminal.on('stateChanged', (data: any) => {
+        terminal.on('stateChanged', (data: unknown) => {
             console.log('State changed:', data.newState);
         });
         terminal.on('focused', () => {
@@ -416,9 +433,9 @@ function logDemo(title: string, description: string): void {
         console.group('Keyboard Shortcuts Demo...');
         const shortcuts = window.KeyboardShortcuts.getAllShortcuts?.() || [];
         console.log(`Registered shortcuts: ${shortcuts.length}`);
-        shortcuts.forEach((s: any) => {
+        shortcuts.forEach((s: Record<string, unknown>) => {
             if (s.description) {
-            const display = window.KeyboardShortcuts.getShortcutDisplay?.(s);
+                const display = window.KeyboardShortcuts.getShortcutDisplay?.(s);
                 console.log(`  ${display}: ${s.description}`);
             }
         });

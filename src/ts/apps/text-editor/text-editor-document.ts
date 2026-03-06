@@ -2,7 +2,6 @@
  * src/ts/text-editor-document.ts
  * Text editor document as a tab within an editor window
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BaseTab, type TabConfig } from '../../windows/base-tab.js';
 import { getString, setString } from '../../services/storage-utils.js';
@@ -382,7 +381,7 @@ export class TextEditorDocument extends BaseTab {
     /**
      * Serialize document state
      */
-    serialize(): any {
+    serialize(): Record<string, unknown> {
         return {
             ...super.serialize(),
             filename: this.filename,
@@ -391,19 +390,17 @@ export class TextEditorDocument extends BaseTab {
         };
     }
 
-    /**
-     * Restore document from state
-     */
-    static deserialize(state: any): TextEditorDocument {
+    static deserialize(state: Record<string, unknown>): TextEditorDocument {
         const doc = new TextEditorDocument({
-            id: state.id,
-            title: state.title || state.filename,
-            content: state.contentState,
+            id: state['id'] as string | undefined,
+            title:
+                (state['title'] as string | undefined) || (state['filename'] as string | undefined),
+            content: state['contentState'] as { content?: string } | undefined,
         });
 
-        if (state.filename) doc.filename = state.filename;
-        if (state.wrapMode) doc.wrapMode = state.wrapMode;
-        if (state.isDirty !== undefined) doc.isDirty = state.isDirty;
+        if (state['filename']) doc.filename = state['filename'] as string;
+        if (state['wrapMode']) doc.wrapMode = state['wrapMode'] as string;
+        if (state['isDirty'] !== undefined) doc.isDirty = state['isDirty'] as boolean;
 
         return doc;
     }
@@ -419,4 +416,4 @@ export class TextEditorDocument extends BaseTab {
 }
 
 // Export to window
-(window as any).TextEditorDocument = TextEditorDocument;
+window.TextEditorDocument = TextEditorDocument;

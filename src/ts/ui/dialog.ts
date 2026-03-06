@@ -3,8 +3,6 @@
  * Typed port of js/dialog.js
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { getZIndexManager } from '../windows/z-index-manager.js';
 
 export class Dialog {
@@ -22,7 +20,7 @@ export class Dialog {
         }
         this.modal = el as HTMLElement;
         // Legacy helper may provide an element wrapper
-        const helper = (window as any).StorageSystem?.getDialogWindowElement;
+        const helper = window.StorageSystem?.getDialogWindowElement;
         this.windowEl = helper
             ? helper(this.modal)
             : (this.modal.querySelector('.autopointer') as HTMLElement) || this.modal;
@@ -38,9 +36,9 @@ export class Dialog {
         ) as HTMLElement | null;
         if (closeButton) {
             closeButton.style.cursor = 'pointer';
-            (closeButton as any).dataset.dialogAction = 'close';
-            if (!(closeButton as any).dataset.dialogBoundClose) {
-                (closeButton as any).dataset.dialogBoundClose = 'true';
+            closeButton.dataset.dialogAction = 'close';
+            if (!closeButton.dataset.dialogBoundClose) {
+                closeButton.dataset.dialogBoundClose = 'true';
                 closeButton.addEventListener('click', e => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -58,7 +56,7 @@ export class Dialog {
         if (minimizeEl) {
             minimizeEl.style.cursor = 'pointer';
             minimizeEl.title = minimizeEl.title || 'Minimieren';
-            (minimizeEl as any).dataset.dialogAction = 'minimize';
+            minimizeEl.dataset.dialogAction = 'minimize';
             minimizeEl.addEventListener('click', e => {
                 e.stopPropagation();
                 this.minimize();
@@ -67,7 +65,7 @@ export class Dialog {
         if (maximizeEl) {
             maximizeEl.style.cursor = 'pointer';
             maximizeEl.title = maximizeEl.title || 'Maximieren';
-            (maximizeEl as any).dataset.dialogAction = 'maximize';
+            maximizeEl.dataset.dialogAction = 'maximize';
             maximizeEl.addEventListener('click', e => {
                 e.stopPropagation();
                 this.toggleMaximize();
@@ -85,36 +83,41 @@ export class Dialog {
         this._ensureInstanceIfNeeded();
 
         // preserve original behavior
-        (window as any).hideMenuDropdowns?.();
+        window.hideMenuDropdowns?.();
 
         // Use DOMUtils if available, fallback to classList
-        const domUtils = (window as any).DOMUtils;
+        const domUtils = window.DOMUtils;
         if (domUtils && typeof domUtils.show === 'function') {
             domUtils.show(this.modal);
         } else {
             this.modal.classList.remove('hidden');
         }
 
-        if (this.modal && this.modal.dataset) delete (this.modal.dataset as any).minimized;
+        if (this.modal && this.modal.dataset) delete this.modal.dataset.minimized;
         this.bringToFront();
         this.enforceMenuBarBoundary();
-        (window as any).saveOpenModals?.();
-        (window as any).updateDockIndicators?.();
-        (window as any).updateProgramLabelByTopModal?.();
+        window.saveOpenModals?.();
+        window.updateDockIndicators?.();
+        window.updateProgramLabelByTopModal?.();
     }
 
     private _ensureInstanceIfNeeded() {
         // Check if this window has the ensureInstanceOnOpen flag
-        const win = window as any;
-        const config = win.WindowManager?.getConfig?.(this.modalId);
-        if (!config || !config.metadata?.ensureInstanceOnOpen) return;
+        const config = window.WindowManager?.getConfig?.(this.modalId) as
+            | Record<string, unknown>
+            | undefined;
+        if (
+            !config ||
+            !(config.metadata as Record<string, unknown> | undefined)?.ensureInstanceOnOpen
+        )
+            return;
     }
 
     close() {
         if (this.modal.classList.contains('hidden')) return;
 
         // Use DOMUtils if available, fallback to classList
-        const domUtils = (window as any).DOMUtils;
+        const domUtils = window.DOMUtils;
         if (domUtils && typeof domUtils.hide === 'function') {
             domUtils.hide(this.modal);
         } else {
@@ -125,16 +128,16 @@ export class Dialog {
         const zIndexManager = getZIndexManager();
         zIndexManager.removeWindow(this.modal.id);
 
-        (window as any).saveOpenModals?.();
-        (window as any).updateDockIndicators?.();
-        (window as any).updateProgramLabelByTopModal?.();
+        window.saveOpenModals?.();
+        window.updateDockIndicators?.();
+        window.updateProgramLabelByTopModal?.();
     }
 
     minimize() {
-        if (this.modal.dataset) (this.modal.dataset as any).minimized = 'true';
+        if (this.modal.dataset) this.modal.dataset.minimized = 'true';
 
         // Use DOMUtils if available, fallback to classList
-        const domUtils = (window as any).DOMUtils;
+        const domUtils = window.DOMUtils;
         if (domUtils && typeof domUtils.hide === 'function') {
             if (!this.modal.classList.contains('hidden')) {
                 domUtils.hide(this.modal);
@@ -145,16 +148,16 @@ export class Dialog {
             }
         }
 
-        (window as any).saveOpenModals?.();
-        (window as any).updateDockIndicators?.();
-        (window as any).updateProgramLabelByTopModal?.();
+        window.saveOpenModals?.();
+        window.updateDockIndicators?.();
+        window.updateProgramLabelByTopModal?.();
     }
 
     toggleMaximize() {
         const target = this.windowEl || this.modal;
         if (!target) return;
         this.unsnap({ silent: true });
-        const ds = (this.modal.dataset as any) || {};
+        const ds = this.modal.dataset || {};
         const isMax = ds.maximized === 'true';
         if (isMax) {
             if (ds.prevLeft !== undefined) target.style.left = ds.prevLeft;
@@ -169,37 +172,37 @@ export class Dialog {
             delete ds.prevHeight;
             delete ds.prevPosition;
             this.enforceMenuBarBoundary();
-            (window as any).saveWindowPositions?.();
+            window.saveWindowPositions?.();
             return;
         }
         const computed = window.getComputedStyle(target);
-        (this.modal.dataset as any).prevLeft = target.style.left || computed.left || '';
-        (this.modal.dataset as any).prevTop = target.style.top || computed.top || '';
-        (this.modal.dataset as any).prevWidth = target.style.width || computed.width || '';
-        (this.modal.dataset as any).prevHeight = target.style.height || computed.height || '';
-        (this.modal.dataset as any).prevPosition = target.style.position || computed.position || '';
-        const minTop = Math.round((window as any).getMenuBarBottom?.() || 0);
+        this.modal.dataset.prevLeft = target.style.left || computed.left || '';
+        this.modal.dataset.prevTop = target.style.top || computed.top || '';
+        this.modal.dataset.prevWidth = target.style.width || computed.width || '';
+        this.modal.dataset.prevHeight = target.style.height || computed.height || '';
+        this.modal.dataset.prevPosition = target.style.position || computed.position || '';
+        const minTop = Math.round(window.getMenuBarBottom?.() || 0);
         target.style.position = 'fixed';
         target.style.left = '0px';
         target.style.top = `${minTop}px`;
         target.style.width = '100vw';
         target.style.height = `calc(100vh - ${minTop}px)`;
         try {
-            const __dockReserve = (window as any).getDockReservedBottom?.() || 0;
+            const __dockReserve = window.getDockReservedBottom?.() || 0;
             const __maxHeight = Math.max(0, (window.innerHeight || 0) - minTop - __dockReserve);
             target.style.height = `${__maxHeight}px`;
         } catch {}
-        (this.modal.dataset as any).maximized = 'true';
+        this.modal.dataset.maximized = 'true';
         this.bringToFront();
-        (window as any).saveWindowPositions?.();
+        window.saveWindowPositions?.();
     }
 
-    snapTo(side: 'left' | 'right', options: any = {}) {
+    snapTo(side: 'left' | 'right', options: { silent?: boolean } = {}) {
         const target = this.windowEl || this.modal;
         if (!target) return null;
         if (side !== 'left' && side !== 'right') return null;
         const { silent = false } = options;
-        const ds = (this.modal.dataset as any) || {};
+        const ds = this.modal.dataset || {};
         const alreadySnapped = ds.snapped;
         if (!alreadySnapped) {
             const computed = window.getComputedStyle(target);
@@ -211,7 +214,7 @@ export class Dialog {
             ds.prevSnapRight = target.style.right || computed.right || '';
             ds.prevSnapBottom = target.style.bottom || computed.bottom || '';
         }
-        const metrics = (window as any).computeSnapMetrics?.(side);
+        const metrics = window.computeSnapMetrics?.(side);
         if (!metrics) {
             this.unsnap({ silent: true });
             return null;
@@ -223,27 +226,27 @@ export class Dialog {
         target.style.height = `${metrics.height}px`;
         target.style.right = '';
         target.style.bottom = '';
-        (this.modal.dataset as any).snapped = side;
+        this.modal.dataset.snapped = side;
         this.bringToFront();
-        (window as any).hideSnapPreview?.();
-        if (!silent) (window as any).saveWindowPositions?.();
+        window.hideSnapPreview?.();
+        if (!silent) window.saveWindowPositions?.();
         return side;
     }
 
-    unsnap(options: any = {}) {
+    unsnap(options: { silent?: boolean } = {}) {
         const target = this.windowEl || this.modal;
         if (!target) return false;
         const { silent = false } = options;
-        const ds = (this.modal.dataset as any) || {};
+        const ds = this.modal.dataset || {};
         if (!ds.snapped) return false;
         const restore = (key: string, prop: string) => {
+            const style = target.style as unknown as Record<string, string>;
             if (Object.prototype.hasOwnProperty.call(ds, key)) {
                 const value = ds[key];
-                if (value === '') target.style[prop as any] = '';
-                else target.style[prop as any] = value;
+                style[prop] = value ?? '';
                 delete ds[key];
             } else {
-                target.style[prop as any] = '';
+                style[prop] = '';
             }
         };
         restore('prevSnapLeft', 'left');
@@ -254,25 +257,25 @@ export class Dialog {
         restore('prevSnapRight', 'right');
         restore('prevSnapBottom', 'bottom');
         delete ds.snapped;
-        (window as any).hideSnapPreview?.();
+        window.hideSnapPreview?.();
         this.enforceMenuBarBoundary();
-        if (!silent) (window as any).saveWindowPositions?.();
+        if (!silent) window.saveWindowPositions?.();
         return true;
     }
 
     applySnapAfterDrag(target: HTMLElement | null, pointerX: number | null) {
         if (!target) {
-            (window as any).hideSnapPreview?.();
+            window.hideSnapPreview?.();
             return null;
         }
         const candidate = this.getSnapCandidate(target, pointerX);
         if (candidate) {
             this.snapTo(candidate, { silent: true });
-            (window as any).hideSnapPreview?.();
+            window.hideSnapPreview?.();
             return candidate;
         }
         this.unsnap({ silent: true });
-        (window as any).hideSnapPreview?.();
+        window.hideSnapPreview?.();
         return null;
     }
 
@@ -303,9 +306,9 @@ export class Dialog {
 
     refocus() {
         this.bringToFront();
-        (window as any).hideMenuDropdowns?.();
-        (window as any).saveOpenModals?.();
-        (window as any).updateProgramLabelByTopModal?.();
+        window.hideMenuDropdowns?.();
+        window.saveOpenModals?.();
+        window.updateProgramLabelByTopModal?.();
     }
 
     makeDraggable() {
@@ -327,10 +330,10 @@ export class Dialog {
                 (e.target as Element).closest('[data-dialog-action]')
             )
                 return;
-            if (this.modal.dataset && (this.modal.dataset as any).maximized === 'true') return;
+            if (this.modal.dataset && this.modal.dataset.maximized === 'true') return;
             const pointerX = e.clientX;
             const pointerY = e.clientY;
-            const initialSnapSide = this.modal.dataset ? (this.modal.dataset as any).snapped : null;
+            const initialSnapSide = this.modal.dataset ? this.modal.dataset.snapped : null;
             let rect = target.getBoundingClientRect();
             let localOffsetX = pointerX - rect.left;
             let localOffsetY = pointerY - rect.top;
@@ -338,7 +341,7 @@ export class Dialog {
                 const preservedOffsetX = localOffsetX;
                 const preservedOffsetY = localOffsetY;
                 this.unsnap({ silent: true });
-                const minTopAfterUnsnap = (window as any).getMenuBarBottom?.() || 0;
+                const minTopAfterUnsnap = window.getMenuBarBottom?.() || 0;
                 target.style.position = 'fixed';
                 target.style.left = `${pointerX - preservedOffsetX}px`;
                 target.style.top = `${Math.max(minTopAfterUnsnap, pointerY - preservedOffsetY)}px`;
@@ -352,10 +355,10 @@ export class Dialog {
             } else if (!target.style.position) {
                 target.style.position = computedPosition;
             }
-            const minTop = (window as any).getMenuBarBottom?.() || 0;
+            const minTop = window.getMenuBarBottom?.() || 0;
             target.style.left = `${pointerX - localOffsetX}px`;
             target.style.top = `${Math.max(minTop, pointerY - localOffsetY)}px`;
-            (window as any).clampWindowToMenuBar?.(target);
+            window.clampWindowToMenuBar?.(target);
             const adjustedRect = target.getBoundingClientRect();
             offsetX = pointerX - adjustedRect.left;
             offsetY = pointerY - adjustedRect.top;
@@ -381,14 +384,14 @@ export class Dialog {
                 window.removeEventListener('mouseup', mouseUpHandler);
                 window.removeEventListener('blur', blurHandler);
                 window.removeEventListener('mousemove', mouseMoveHandler);
-                (window as any).hideSnapPreview?.();
+                window.hideSnapPreview?.();
                 if (shouldSave) {
                     if (moved) {
                         this.applySnapAfterDrag(target, this.lastDragPointerX);
                     } else if (initialSnapSide) {
                         this.snapTo(initialSnapSide, { silent: true });
                     }
-                    (window as any).saveWindowPositions?.();
+                    window.saveWindowPositions?.();
                 }
                 this.lastDragPointerX = null;
             };
@@ -397,13 +400,13 @@ export class Dialog {
                 window.requestAnimationFrame(() => {
                     const newLeft = e2.clientX - offsetX;
                     const newTop = e2.clientY - offsetY;
-                    const minTop = (window as any).getMenuBarBottom?.() || 0;
+                    const minTop = window.getMenuBarBottom?.() || 0;
                     target.style.left = newLeft + 'px';
                     target.style.top = Math.max(minTop, newTop) + 'px';
                     this.lastDragPointerX = e2.clientX;
                     const candidate = this.getSnapCandidate(target, this.lastDragPointerX);
-                    if (candidate) (window as any).showSnapPreview?.(candidate);
-                    else (window as any).hideSnapPreview?.();
+                    if (candidate) window.showSnapPreview?.(candidate);
+                    else window.hideSnapPreview?.();
                 });
             };
             const mouseUpHandler = () => cleanup(true);
@@ -418,7 +421,7 @@ export class Dialog {
     }
 
     makeResizable() {
-        if ((this.modal.dataset as any).noResize === 'true') return;
+        if (this.modal.dataset.noResize === 'true') return;
         const target = this.windowEl || this.modal;
         if (!target) return;
         const existingHandles = target.querySelectorAll('.resizer');
@@ -439,7 +442,14 @@ export class Dialog {
             }
         };
 
-        const createHandle = (handle: any) => {
+        type ResizeHandle = {
+            name: string;
+            cursor: string;
+            directions: ('n' | 's' | 'e' | 'w')[];
+            style?: Record<string, string>;
+        };
+
+        const createHandle = (handle: ResizeHandle) => {
             const resizer = document.createElement('div');
             resizer.classList.add('resizer', `resizer-${handle.name}`);
             Object.assign(resizer.style, {
@@ -461,10 +471,10 @@ export class Dialog {
                 const startY = event.clientY;
                 const rect = target.getBoundingClientRect();
                 const computed = window.getComputedStyle(target);
-                const minWidth = parseFloat(computed.minWidth as any) || 240;
-                const minHeight = parseFloat(computed.minHeight as any) || 160;
-                let startLeft = parseFloat(computed.left as any);
-                let startTop = parseFloat(computed.top as any);
+                const minWidth = parseFloat(computed.minWidth) || 240;
+                const minHeight = parseFloat(computed.minHeight) || 160;
+                let startLeft = parseFloat(computed.left);
+                let startTop = parseFloat(computed.top);
                 if (!Number.isFinite(startLeft)) startLeft = rect.left;
                 if (!Number.isFinite(startTop)) startTop = rect.top;
                 const startWidth = rect.width;
@@ -512,7 +522,7 @@ export class Dialog {
                             if (handle.directions.includes('n')) newTop -= deficit;
                             newHeight = minHeight;
                         }
-                        const minTop = (window as any).getMenuBarBottom?.() || 0;
+                        const minTop = window.getMenuBarBottom?.() || 0;
                         if (handle.directions.includes('n') && newTop < minTop) {
                             const overshoot = minTop - newTop;
                             newTop = minTop;
@@ -535,8 +545,8 @@ export class Dialog {
                     window.removeEventListener('mousemove', windowMouseMove);
                     window.removeEventListener('mouseup', windowMouseUp);
                     window.removeEventListener('blur', onBlur);
-                    (window as any).clampWindowToMenuBar?.(target);
-                    (window as any).saveWindowPositions?.();
+                    window.clampWindowToMenuBar?.(target);
+                    window.saveWindowPositions?.();
                 };
                 const overlayMouseMove = (moveEvent: MouseEvent) =>
                     applySize(moveEvent.clientX, moveEvent.clientY);
@@ -609,7 +619,7 @@ export class Dialog {
     }
 
     enforceMenuBarBoundary() {
-        (window as any).clampWindowToMenuBar?.(this.windowEl || this.modal);
+        window.clampWindowToMenuBar?.(this.windowEl || this.modal);
     }
 
     loadIframe(url: string) {
@@ -631,18 +641,18 @@ export class Dialog {
         contentArea.appendChild(iframe);
         iframe.addEventListener('load', () => {
             try {
-                const cw = (iframe as any).contentWindow as Window | null;
-                if (cw && (cw as any).document) {
+                const cw = iframe.contentWindow as Window | null;
+                if (cw && cw.document) {
                     const handler = () =>
                         requestAnimationFrame(() => {
                             this.refocus();
                         });
                     ['mousedown', 'click', 'touchstart'].forEach(evt => {
-                        (cw as any).document.addEventListener(evt, handler);
+                        cw.document.addEventListener(evt, handler);
                     });
                 } else if (cw) {
                     ['mousedown', 'click', 'touchstart'].forEach(evt => {
-                        (cw as any).addEventListener(evt, () =>
+                        cw.addEventListener(evt, () =>
                             requestAnimationFrame(() => {
                                 this.refocus();
                             })
@@ -665,7 +675,13 @@ export class Dialog {
         };
     }
 
-    restoreState(state: any) {
+    restoreState(state: {
+        left?: string;
+        top?: string;
+        width?: string;
+        height?: string;
+        zIndex?: string;
+    }) {
         if (!state) return;
         if (state.left) this.modal.style.left = state.left;
         if (state.top) this.modal.style.top = state.top;
@@ -675,5 +691,5 @@ export class Dialog {
     }
 }
 // Note: Type declaration is in types/index.d.ts
-(window as any).Dialog = Dialog;
+window.Dialog = Dialog;
 export default Dialog;

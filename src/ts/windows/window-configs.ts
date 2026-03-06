@@ -4,8 +4,6 @@
  * Replaces legacy src/ts/legacy/window-configs.js
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 type WindowType = 'persistent' | 'transient';
 
 export interface WindowConfiguration {
@@ -39,7 +37,7 @@ export const windowConfigurations: WindowConfiguration[] = [
             skipMenubarUpdate: true,
             initHandler: function () {
                 // Initialize Launchpad module if not already
-                if (window.LaunchpadSystem && !(window as any).LaunchpadSystem?.container) {
+                if (window.LaunchpadSystem && !window.LaunchpadSystem?.container) {
                     const container = document.getElementById('launchpad-container');
                     if (container) window.LaunchpadSystem.init(container);
                 }
@@ -70,7 +68,7 @@ export const windowConfigurations: WindowConfiguration[] = [
         closeButtonId: 'close-settings-modal',
         metadata: {
             initHandler: function () {
-                if (window.SettingsSystem && !(window as any).SettingsSystem?.container) {
+                if (window.SettingsSystem && !window.SettingsSystem?.container) {
                     const container = document.getElementById('settings-container');
                     if (container) window.SettingsSystem.init(container);
                 }
@@ -98,7 +96,7 @@ export const windowConfigurations: WindowConfiguration[] = [
                 else if (
                     !window.TextEditorInstanceManager &&
                     window.TextEditorSystem &&
-                    !(window as any).TextEditorSystem?.container
+                    !window.TextEditorSystem?.container
                 ) {
                     const container = document.getElementById('text-editor-container');
                     if (container) window.TextEditorSystem.init(container);
@@ -146,7 +144,7 @@ export const windowConfigurations: WindowConfiguration[] = [
                 else if (
                     !window.TerminalInstanceManager &&
                     window.TerminalSystem &&
-                    !(window as any).TerminalSystem?.container
+                    !window.TerminalSystem?.container
                 ) {
                     const container = document.getElementById('terminal-container');
                     if (container) window.TerminalSystem.init(container);

@@ -82,7 +82,7 @@ console.log('✅ SystemUI loaded');
     const hideMenuDropdowns =
         window.hideMenuDropdowns ||
         (() => {
-            const domUtils = (window as any).DOMUtils;
+            const domUtils = window.DOMUtils;
             document.querySelectorAll('.menu-dropdown').forEach(dropdown => {
                 if (!dropdown.classList.contains('hidden')) {
                     if (domUtils && typeof domUtils.hide === 'function') {

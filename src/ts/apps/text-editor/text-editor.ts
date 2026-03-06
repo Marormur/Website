@@ -720,30 +720,35 @@ const TextEditorSystem: TextEditorSystemInternal = {
         const fallbackMessages = {
             'textEditor.documentTitle': () => 'Texteditor',
             'textEditor.documentTitleWithFile': (p: unknown) => {
-                const fileName = p && (p as any).fileName ? (p as any).fileName : '';
+                const params = p as Record<string, unknown> | null;
+                const fileName = params?.fileName ? String(params.fileName) : '';
                 return fileName ? `Texteditor – ${fileName}` : 'Texteditor';
             },
             'textEditor.status.loading': () => 'Lade Datei …',
             'textEditor.status.loadingWithLabel': (p: unknown) => {
-                const label = p && (p as any).label ? (p as any).label : '';
+                const params = p as Record<string, unknown> | null;
+                const label = params?.label ? String(params.label) : '';
                 return label ? `${label} (lädt …)` : 'Lade Datei …';
             },
             'textEditor.status.loadError': () => 'Datei konnte nicht geladen werden.',
             'textEditor.status.rateLimit': () =>
                 'GitHub Rate Limit erreicht. Bitte versuche es später erneut.',
             'textEditor.status.wordCount': (p: unknown) => {
-                const words = p && typeof (p as any).words === 'number' ? (p as any).words : 0;
-                const chars = p && typeof (p as any).chars === 'number' ? (p as any).chars : 0;
+                const params = p as Record<string, unknown> | null;
+                const words = typeof params?.words === 'number' ? params.words : 0;
+                const chars = typeof params?.chars === 'number' ? params.chars : 0;
                 return `Words: ${words} | Characters: ${chars}`;
             },
             'textEditor.status.position': (p: unknown) => {
-                const line = p && typeof (p as any).line === 'number' ? (p as any).line : 1;
-                const col = p && typeof (p as any).col === 'number' ? (p as any).col : 1;
+                const params = p as Record<string, unknown> | null;
+                const line = typeof params?.line === 'number' ? params.line : 1;
+                const col = typeof params?.col === 'number' ? params.col : 1;
                 return `Line ${line}, Col ${col}`;
             },
             'textEditor.findReplace.noMatch': () => 'No match found',
             'textEditor.findReplace.replacedCount': (p: unknown) => {
-                const count = p && typeof (p as any).count === 'number' ? (p as any).count : 0;
+                const params = p as Record<string, unknown> | null;
+                const count = typeof params?.count === 'number' ? params.count : 0;
                 return `Replaced ${count} occurrence(s)`;
             },
         } as Record<string, ((...args: unknown[]) => string) | (() => string)>;

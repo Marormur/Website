@@ -192,8 +192,14 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
 
             // Capture active instanceId per type if available
             try {
-                if (typeof (mgr as any).getActiveInstance === 'function') {
-                    const activeInst = (mgr as any).getActiveInstance.call(mgr);
+                if (
+                    typeof (
+                        mgr as { getActiveInstance?: () => { instanceId?: string | null } | null }
+                    ).getActiveInstance === 'function'
+                ) {
+                    const activeInst = (
+                        mgr as { getActiveInstance: () => { instanceId?: string | null } | null }
+                    ).getActiveInstance.call(mgr);
                     active[type] = activeInst?.instanceId || null;
                 } else {
                     active[type] = null;
@@ -233,7 +239,7 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
             const { instances, active } = serializeAllInstances();
 
             // Capture current window z-index order from Dialog's __zIndexManager
-            const zIndexManager = (window as any).__zIndexManager;
+            const zIndexManager = window.__zIndexManager;
             const windowStack =
                 zIndexManager && typeof zIndexManager.getWindowStack === 'function'
                     ? zIndexManager.getWindowStack()
@@ -381,9 +387,15 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
 
                 // Restore previously active instance for this type if present
                 const activeId = activeMap[type] || null;
-                if (activeId && typeof (mgr as any).setActiveInstance === 'function') {
+                if (
+                    activeId &&
+                    typeof (mgr as { setActiveInstance?: (id: string) => void })
+                        .setActiveInstance === 'function'
+                ) {
                     try {
-                        (mgr as any).setActiveInstance(activeId);
+                        (mgr as { setActiveInstance: (id: string) => void }).setActiveInstance(
+                            activeId
+                        );
                     } catch (e) {
                         console.warn(
                             `SessionManager: Failed to set active instance for ${type}:`,
@@ -408,7 +420,7 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
         // sodass der Stack hier befüllt ist und konsistent wiederhergestellt werden kann.
         const windowStack = session.windowStack || [];
         if (windowStack.length > 0) {
-            const zIndexManager = (window as any).__zIndexManager;
+            const zIndexManager = window.__zIndexManager;
             if (zIndexManager && typeof zIndexManager.restoreWindowStack === 'function') {
                 try {
                     zIndexManager.restoreWindowStack(windowStack);
