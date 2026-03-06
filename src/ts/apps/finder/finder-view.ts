@@ -1642,10 +1642,12 @@ export class FinderView extends BaseTab {
                     192,
             },
         });
-        view.currentPath = (state['currentPath'] as string[]) || [];
-        view.viewMode = (state['viewMode'] as string) || 'list';
-        view.sortBy = (state['sortBy'] as string) || 'name';
-        view.sortOrder = (state['sortOrder'] as 'asc' | 'desc') || 'asc';
+        view.currentPath = Array.isArray(state['currentPath'])
+            ? (state['currentPath'] as string[])
+            : [];
+        view.viewMode = typeof state['viewMode'] === 'string' ? state['viewMode'] : 'list';
+        view.sortBy = typeof state['sortBy'] === 'string' ? state['sortBy'] : 'name';
+        view.sortOrder = state['sortOrder'] === 'desc' ? 'desc' : 'asc';
 
         // Restore scroll positions from serialized data
         if (state['scrollPositions'] && Array.isArray(state['scrollPositions'])) {
