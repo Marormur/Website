@@ -1,0 +1,28 @@
+{
+  "name": "symphony",
+  "version": "1.0.0",
+  "description": "Symphony orchestration service — runs coding agents against Linear issues",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "bin": {
+    "symphony": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "liquidjs": "^10.21.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
