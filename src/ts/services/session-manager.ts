@@ -627,25 +627,6 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
         console.log(`SessionManager: Initialized with ${debounceDelay}ms debounce`);
     }
 
-    // ===== Global API =====
-
-    /**
-     * Legacy no-op: Managers are auto-discovered
-     * @deprecated Use automatic discovery instead
-     */
-    function registerManager(_type: string, _manager: unknown): void {
-        // No-op: Auto-discovery handles this
-        console.log(`SessionManager: registerManager() is deprecated - using auto-discovery`);
-    }
-
-    /**
-     * Legacy no-op: Managers are auto-discovered
-     * @deprecated Use automatic discovery instead
-     */
-    function unregisterManager(_type: string): void {
-        // No-op: Auto-discovery handles this
-    }
-
     const SessionManager = {
         init,
         saveAll,
@@ -659,8 +640,6 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
         getStorageInfo,
         exportSession,
         importSession,
-        registerManager, // Legacy compatibility
-        unregisterManager, // Legacy compatibility
     };
 
     (window as unknown as { SessionManager: typeof SessionManager }).SessionManager =
