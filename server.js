@@ -7,7 +7,6 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-let chokidar;
 
 const PORT = 5173;
 const HOST = '127.0.0.1';
@@ -89,106 +88,115 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, HOST, () => {
     console.log(`Server running at http://${HOST}:${PORT}/`);
     // Start file watcher for live reload (dev only)
-    try {
-        chokidar = require('chokidar');
-        if (process.env.NO_WATCH === '1' || process.env.CI === 'true') {
-            console.log('[LR] Live reload disabled by environment (NO_WATCH/CI).');
-            return;
-        }
+    // chokidar 5+ is ESM-only, so use dynamic import in this CommonJS server
+    (async () => {
+        try {
+            const chokidar = await import('chokidar');
+            if (process.env.NO_WATCH === '1' || process.env.CI === 'true') {
+                console.log('[LR] Live reload disabled by environment (NO_WATCH/CI).');
+                return;
+            }
 
-        // Keep the watch surface small to avoid excessive memory on Windows
-        const watchPaths = [
-            path.join(__dirname, 'index.html'),
-            path.join(__dirname, '*.html'), // root-level html
-            path.join(__dirname, 'js/**/*.js'),
-            path.join(__dirname, 'style.css'),
-            // CSS: only built files → reload after successful Tailwind build
-            path.join(__dirname, 'dist/**/*.css'),
-        ];
+            // Keep the watch surface small to avoid excessive memory on Windows
+            const watchPaths = [
+                path.join(__dirname, 'index.html'),
+                path.join(__dirname, '*.html'), // root-level html
+                path.join(__dirname, 'js/**/*.js'),
+                path.join(__dirname, 'style.css'),
+                // CSS: only built files → reload after successful Tailwind build
+                path.join(__dirname, 'dist/**/*.css'),
+            ];
 
-        const watcher = chokidar.watch(watchPaths, {
-            ignored: [
-                // dotfiles
-                /(^|[\/\\])\../,
-                // heavy dirs
-                '**/node_modules/**',
-                '**/.git/**',
-                '**/test-results/**',
-                '**/.vscode/**',
-            ],
-            ignoreInitial: true,
-            awaitWriteFinish: { stabilityThreshold: 150, pollInterval: 50 },
-            depth: 6,
-        });
+            const watcher = chokidar.watch(watchPaths, {
+                ignored: [
+                    // dotfiles
+                    /(^|[\/\\])\../,
+                    // heavy dirs
+                    '**/node_modules/**',
+                    '**/.git/**',
+                    '**/test-results/**',
+                    '**/.vscode/**',
+                ],
+                ignoreInitial: true,
+                awaitWriteFinish: { stabilityThreshold: 150, pollInterval: 50 },
+                depth: 6,
+            });
 
-        const broadcastReload = changedPath => {
-            const rel = path.relative(__dirname, changedPath || '');
-            const ext = path.extname(rel).toLowerCase();
-            const kind = ext === '.css' ? 'css' : ext === '.html' ? 'html' : 'js';
-            const msg = `event: reload\ndata: ${JSON.stringify({ path: rel, kind, ts: Date.now() })}\n\n`;
-            for (const client of sseClients) {
-                try {
-                    if (client.writableEnded || client.destroyed) {
-                        sseClients.delete(client);
-                    } else {
-                        client.write(msg);
+            const broadcastReload = changedPath => {
+                const rel = path.relative(__dirname, changedPath || '');
+                const ext = path.extname(rel).toLowerCase();
+                const kind = ext === '.css' ? 'css' : ext === '.html' ? 'html' : 'js';
+                const msg = `event: reload\ndata: ${JSON.stringify({ path: rel, kind, ts: Date.now() })}\n\n`;
+                for (const client of sseClients) {
+                    try {
+                        if (client.writableEnded || client.destroyed) {
+                            sseClients.delete(client);
+                        } else {
+                            client.write(msg);
+                        }
+                    } catch (_) {
+                        /* drop broken client on next tick */
                     }
-                } catch (_) {
-                    /* drop broken client on next tick */
                 }
+                console.log(`[LR] Reload triggered by: ${rel}`);
+            };
+
+            // Throttle bursts of events
+            let lastEventPath = '';
+            let timer = null;
+            function scheduleReload(p) {
+                lastEventPath = p;
+                if (timer) return;
+                timer = setTimeout(() => {
+                    const pth = lastEventPath;
+                    lastEventPath = '';
+                    timer = null;
+                    broadcastReload(pth);
+                }, 120);
             }
-            console.log(`[LR] Reload triggered by: ${rel}`);
-        };
 
-        // Throttle bursts of events
-        let lastEventPath = '';
-        let timer = null;
-        function scheduleReload(p) {
-            lastEventPath = p;
-            if (timer) return;
-            timer = setTimeout(() => {
-                const pth = lastEventPath;
-                lastEventPath = '';
-                timer = null;
-                broadcastReload(pth);
-            }, 120);
-        }
+            watcher
+                .on('add', scheduleReload)
+                .on('change', scheduleReload)
+                .on('unlink', scheduleReload);
 
-        watcher.on('add', scheduleReload).on('change', scheduleReload).on('unlink', scheduleReload);
-
-        // Periodic heartbeat to prune dead SSE clients
-        setInterval(() => {
-            const ping = `: ping ${Date.now()}\n\n`;
-            for (const client of sseClients) {
-                try {
-                    if (client.writableEnded || client.destroyed) {
-                        sseClients.delete(client);
-                    } else {
-                        client.write(ping);
+            // Periodic heartbeat to prune dead SSE clients
+            setInterval(() => {
+                const ping = `: ping ${Date.now()}\n\n`;
+                for (const client of sseClients) {
+                    try {
+                        if (client.writableEnded || client.destroyed) {
+                            sseClients.delete(client);
+                        } else {
+                            client.write(ping);
+                        }
+                    } catch (_) {
+                        /* ignore */
                     }
-                } catch (_) {
-                    /* ignore */
                 }
-            }
-        }, 30000).unref();
-        console.log('[LR] Live reload enabled (SSE).');
+            }, 30000).unref();
+            console.log('[LR] Live reload enabled (SSE).');
 
-        // Graceful shutdown for Playwright tests
-        const cleanup = () => {
-            console.log('[LR] Shutting down file watcher...');
-            watcher.close();
-            for (const client of sseClients) {
-                try {
-                    client.end();
-                } catch (_) {}
-            }
-            sseClients.clear();
-        };
-        process.on('SIGTERM', cleanup);
-        process.on('SIGINT', cleanup);
-    } catch (err) {
-        console.log(
-            '[LR] Live reload disabled (chokidar not installed). Run "npm i -D chokidar" to enable.'
-        );
-    }
+            // Graceful shutdown for Playwright tests
+            const cleanup = () => {
+                console.log('[LR] Shutting down file watcher...');
+                watcher.close();
+                for (const client of sseClients) {
+                    try {
+                        client.end();
+                    } catch (_) {}
+                }
+                sseClients.clear();
+            };
+            process.on('SIGTERM', cleanup);
+            process.on('SIGINT', cleanup);
+        } catch (err) {
+            console.log(
+                '[LR] Live reload disabled: ' +
+                    (err && err.code === 'ERR_MODULE_NOT_FOUND'
+                        ? 'chokidar not installed. Run "npm i -D chokidar" to enable.'
+                        : `unexpected error – ${err && err.message}`)
+            );
+        }
+    })();
 });
