@@ -738,7 +738,7 @@ export class BaseWindow {
 
         // Hide but do not destroy
         tab.hide();
-        tab.setParentWindow(null!);
+        tab.setParentWindow(null);
         this.tabs.delete(tabId);
 
         // Adjust active tab

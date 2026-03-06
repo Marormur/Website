@@ -158,8 +158,9 @@ import { translate } from '../services/i18n';
             return;
         }
         const dialog = window.dialogs && window.dialogs[windowId];
-        if (dialog?.close) dialog.close();
-        else {
+        if (dialog?.open) {
+            dialog.open();
+        } else {
             const modalElement = document.getElementById(windowId);
             if (modalElement) {
                 const domUtils = window.DOMUtils;

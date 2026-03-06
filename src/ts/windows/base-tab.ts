@@ -75,7 +75,7 @@ export class BaseTab {
     /**
      * Set parent window (called when tab is added to a window)
      */
-    setParentWindow(window: BaseWindow): void {
+    setParentWindow(window: BaseWindow | null): void {
         this.parentWindow = window;
     }
 

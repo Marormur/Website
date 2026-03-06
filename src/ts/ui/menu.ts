@@ -1043,7 +1043,12 @@ function closeContextWindow(context: MenuContext) {
 
 function hasAnyVisibleDialog() {
     if (!window.dialogs) return false;
-    return Object.values(window.dialogs).some(d => d && typeof d.close === 'function');
+    return Object.entries(window.dialogs).some(([id, d]) => {
+        if (!d || typeof d.close !== 'function') return false;
+        // Check that the corresponding modal element is actually visible
+        const el = document.getElementById(id);
+        return el ? !el.classList.contains('hidden') : false;
+    });
 }
 
 function sendTextEditorMenuAction(actionType: string) {
