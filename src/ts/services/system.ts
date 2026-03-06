@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 /**
  * system.ts
  * System Status UI Module
@@ -10,7 +11,7 @@
  * - Icon updates and UI state synchronization
  */
 
-console.log('✅ SystemUI loaded');
+logger.debug('APP', '✅ SystemUI loaded');
 
 (() => {
     'use strict';
@@ -397,14 +398,14 @@ console.log('✅ SystemUI loaded');
                     if (dialogs?.['settings-modal']) {
                         dialogs['settings-modal'].open();
                     } else {
-                        console.info(`Aktion "${actionKey}" würde Einstellungen öffnen.`);
+                        logger.info('APP', `Aktion "${actionKey}" würde Einstellungen öffnen.`);
                     }
                     hideMenuDropdowns();
                 }
                 break;
             case 'open-spotlight':
             case 'open-siri':
-                console.info(`Aktion "${actionKey}" ausgelöst.`);
+                logger.info('APP', `Aktion "${actionKey}" ausgelöst.`);
                 hideMenuDropdowns();
                 break;
             default:

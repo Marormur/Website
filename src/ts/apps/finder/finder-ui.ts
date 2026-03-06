@@ -5,6 +5,7 @@ import { SplitView } from '../../framework/layout/split-view.js';
 import { Sidebar, SidebarGroup } from '../../framework/navigation/sidebar.js';
 import { Toolbar } from '../../framework/navigation/toolbar.js';
 import { Tabs, TabItem } from '../../framework/navigation/tabs.js';
+import logger from '../../core/logger.js';
 
 export interface FinderUIProps {
     id: string;
@@ -327,7 +328,8 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
         });
 
         // Tabs Component (macOS style)
-        console.log(
+        logger.debug(
+            'FINDER',
             `[FinderUI] Rendering tab ${id} (active: ${this.props.isActive}) in window ${windowId}`
         );
         // Store tabsComponent on the instance so lifecycle hooks can imperatively
@@ -393,7 +395,7 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
                 this.bindTabDragHandlers(container);
             }
         } catch (e) {
-            console.warn('[FinderUI] onMount tab render failed', e);
+            logger.warn('FINDER', '[FinderUI] onMount tab render failed', e);
         }
     }
 
@@ -410,7 +412,7 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
                 this.bindTabDragHandlers(container);
             }
         } catch (e) {
-            console.warn('[FinderUI] onUpdate tab render failed', e);
+            logger.warn('FINDER', '[FinderUI] onUpdate tab render failed', e);
         }
     }
 
@@ -482,14 +484,18 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
             );
             const targetId = container.id.replace(/-tabs$/, '');
             if (targetId && this.props.onTabMove && targetId !== activeTabDrag.windowId) {
-                console.log(`[FinderUI] Moving tab ${activeTabDrag.tabId} to window ${targetId}`);
+                logger.debug(
+                    'FINDER',
+                    `[FinderUI] Moving tab ${activeTabDrag.tabId} to window ${targetId}`
+                );
                 this.props.onTabMove(activeTabDrag.tabId, targetId, activeTabDrag.windowId);
             }
             activeTabDrag = null;
         });
 
         const tabs = Array.from(container.querySelectorAll('.wt-tab')) as HTMLElement[];
-        console.log(
+        logger.debug(
+            'FINDER',
             `[FinderUI] Binding drag handlers to ${tabs.length} tab elements in window ${this.props.windowId}`
         );
         tabs.forEach(tabEl => {
@@ -500,10 +506,11 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
             tabEl.addEventListener('dragstart', (e: DragEvent) => {
                 const resolvedTabId = tabEl.dataset.tabId || tabEl.dataset.instanceId;
                 if (!resolvedTabId) {
-                    console.warn('[FinderUI] dragstart: no tab ID found on element');
+                    logger.warn('FINDER', '[FinderUI] dragstart: no tab ID found on element');
                     return;
                 }
-                console.log(
+                logger.debug(
+                    'FINDER',
                     `[FinderUI] dragstart: tab ${resolvedTabId} from window ${this.props.windowId}`
                 );
                 activeTabDrag = {

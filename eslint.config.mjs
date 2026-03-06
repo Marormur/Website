@@ -238,6 +238,14 @@ export default [
     },
 
 
+    // Logger implementation is allowed to use console directly
+    {
+        files: ['src/ts/core/logger.ts'],
+        rules: {
+            'no-console': 'off',
+        },
+    },
+
     // TypeScript Dateien
     {
         files: ['**/*.ts'],
@@ -256,6 +264,7 @@ export default [
             '@typescript-eslint/no-explicit-any': 'warn',
             '@typescript-eslint/explicit-function-return-type': 'off',
             '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+            'no-console': 'error',
         },
     },
 

@@ -4,7 +4,9 @@
  * This file is used as the single esbuild entry to produce an IIFE bundle.
  */
 
-console.log('[BUNDLE] expose-globals.ts loading...');
+import logger from '../core/logger.js';
+
+logger.debug('APP', '[BUNDLE] expose-globals.ts loading...');
 
 // i18n must load FIRST - provides window.appI18n for all modules
 import '../services/i18n';
@@ -119,7 +121,7 @@ try {
 }
 
 try {
-    console.log('[BUNDLE] Globals present:', {
+    logger.debug('APP', '[BUNDLE] Globals present:', {
         FinderView: !!w.FinderView,
         FinderWindow: !!w.FinderWindow,
         TerminalWindow: !!w.TerminalWindow,
@@ -133,12 +135,12 @@ try {
 // Trigger app initialization manually since the IIFE in app-init.ts
 // runs in module scope and may not execute due to esbuild bundling
 if (typeof w.initApp === 'function') {
-    console.log('[BUNDLE] Triggering initApp; readyState:', document.readyState);
+    logger.debug('APP', '[BUNDLE] Triggering initApp; readyState:', document.readyState);
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', w.initApp);
     } else {
         w.initApp();
     }
 } else {
-    console.error('[BUNDLE] window.initApp is not defined; app initialization failed');
+    logger.error('APP', '[BUNDLE] window.initApp is not defined; app initialization failed');
 }

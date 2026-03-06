@@ -1,4 +1,5 @@
 import { getJSON, setJSON, getString } from '../services/storage-utils.js';
+import logger from '../core/logger.js';
 
 (function () {
     'use strict';
@@ -130,10 +131,9 @@ import { getJSON, setJSON, getString } from '../services/storage-utils.js';
             return existing as Promise<T>;
         }
 
-        const promise = fetchFunction()
-            .finally(() => {
-                pendingRequests.delete(key);
-            });
+        const promise = fetchFunction().finally(() => {
+            pendingRequests.delete(key);
+        });
 
         pendingRequests.set(key, promise);
         return promise as Promise<T>;
@@ -157,7 +157,7 @@ import { getJSON, setJSON, getString } from '../services/storage-utils.js';
         search.set('per_page', String(params?.per_page ?? 100));
         search.set('sort', params?.sort ?? 'updated');
         const url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?${search.toString()}`;
-        
+
         // Use deduplication to prevent concurrent duplicate requests
         const dedupeKey = `repos:${username}:${search.toString()}`;
         const result = await deduplicatedFetch(dedupeKey, () => fetchJSON<unknown[]>(url));
@@ -189,7 +189,7 @@ import { getJSON, setJSON, getString } from '../services/storage-utils.js';
 
         const pathPart = subPath ? `/${encodeURIComponent(subPath).replace(/%2F/g, '/')}` : '';
         const url = `https://api.github.com/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/contents${pathPart}`;
-        
+
         // Use deduplication to prevent concurrent duplicate requests
         const dedupeKey = `contents:${username}:${repo}:${subPath}`;
         const result = await deduplicatedFetch(dedupeKey, () => fetchJSON<unknown>(url));
@@ -245,7 +245,7 @@ import { getJSON, setJSON, getString } from '../services/storage-utils.js';
                 writeCache('repos', '', '', repos);
             })
             .catch(err => {
-                console.warn('[GitHubAPI] Prefetch failed:', err);
+                logger.warn('GITHUB', '[GitHubAPI] Prefetch failed:', err);
             });
     }
 

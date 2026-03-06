@@ -3,6 +3,7 @@
  */
 import type { ActionMap, Params } from './helpers.js';
 import { getGlobal } from './helpers.js';
+import logger from '../../core/logger.js';
 
 export function getFinderActions(): ActionMap {
     return {
@@ -23,7 +24,7 @@ export function getFinderActions(): ActionMap {
         'finder:switchView': (params: Params) => {
             const view = params['finderView'] || params.view;
             if (!view) {
-                console.warn('finder:switchView: missing finderView');
+                logger.warn('UI', 'finder:switchView: missing finderView');
                 return;
             }
             const finder = getGlobal<{ navigateTo?: (parts: string[], view?: string) => void }>(
@@ -35,7 +36,7 @@ export function getFinderActions(): ActionMap {
         'finder:setViewMode': (params: Params) => {
             const mode = params['viewMode'] || params['mode'];
             if (!mode) {
-                console.warn('finder:setViewMode: missing viewMode');
+                logger.warn('UI', 'finder:setViewMode: missing viewMode');
                 return;
             }
             const finder = getGlobal<{ setViewMode?: (mode: string) => void }>('FinderSystem');
@@ -45,7 +46,7 @@ export function getFinderActions(): ActionMap {
         'finder:setSortBy': (params: Params) => {
             const field = params['sortBy'] || params['field'];
             if (!field) {
-                console.warn('finder:setSortBy: missing sortBy');
+                logger.warn('UI', 'finder:setSortBy: missing sortBy');
                 return;
             }
             const finder = getGlobal<{ setSortBy?: (field: string) => void }>('FinderSystem');
@@ -63,7 +64,7 @@ export function getFinderActions(): ActionMap {
             const name = params['itemName'] || params['name'];
             const type = params['itemType'] || params['type'];
             if (!name || !type) {
-                console.warn('finder:openItem: missing name/type');
+                logger.warn('UI', 'finder:openItem: missing name/type');
                 return;
             }
             const finder = getGlobal<{ openItem?: (name: string, type: string) => void }>(

@@ -5,6 +5,7 @@
 
 import { BaseTab, type TabConfig } from '../../windows/base-tab.js';
 import { getString, setString } from '../../services/storage-utils.js';
+import logger from '../../core/logger.js';
 
 type WrapMode = 'off' | 'soft';
 
@@ -291,7 +292,7 @@ export class TextEditorDocument extends BaseTab {
         try {
             setString(`textEditorWrapMode_${this.id}`, this.wrapMode);
         } catch (e) {
-            console.warn('Could not save wrap mode', e);
+            logger.warn('UI', 'Could not save wrap mode', e);
         }
         this.updateContentState({ wrapMode: this.wrapMode });
     }
@@ -305,7 +306,7 @@ export class TextEditorDocument extends BaseTab {
                 this.editor.style.whiteSpace = this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
             }
         } catch (e) {
-            console.warn('Could not load wrap mode', e);
+            logger.warn('UI', 'Could not load wrap mode', e);
         }
     }
 

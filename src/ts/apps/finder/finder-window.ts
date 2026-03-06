@@ -5,6 +5,7 @@
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
+import logger from '../../core/logger.js';
 
 export class FinderWindow extends BaseWindow {
     /** WindowTabs controller for the tab bar – created lazily in _doRenderTabs. */
@@ -57,7 +58,7 @@ export class FinderWindow extends BaseWindow {
         // Force a micro-task delay to allow VDOM to complete rendering
         Promise.resolve().then(() => {
             if (window.__TEST_MODE__) {
-                console.log('[FinderWindow] Tabs rendered, count:', this.tabs.size);
+                logger.debug('FINDER', '[FinderWindow] Tabs rendered, count:', this.tabs.size);
             }
         });
     }
@@ -145,7 +146,7 @@ export class FinderWindow extends BaseWindow {
 
     createView(title?: string): BaseTab | null {
         if (!window.FinderView) {
-            console.error('FinderView class not loaded');
+            logger.error('FINDER', 'FinderView class not loaded');
             return null;
         }
         const view = new window.FinderView({ title: title || `Computer`, source: 'computer' });
@@ -160,7 +161,7 @@ export class FinderWindow extends BaseWindow {
 
     createGithubView(title?: string): BaseTab | null {
         if (!window.FinderView) {
-            console.error('FinderView class not loaded');
+            logger.error('FINDER', 'FinderView class not loaded');
             return null;
         }
         const view = new window.FinderView({

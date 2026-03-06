@@ -2,13 +2,17 @@
  * Settings-related actions for the ActionBus
  */
 import type { ActionMap, Params } from './helpers.js';
+import logger from '../../core/logger.js';
 
 export function getSettingsActions(): ActionMap {
     return {
         'settings:showSection': (params: Params, element: HTMLElement | null) => {
             const section = params.section || element?.getAttribute('data-section');
             if (!section) {
-                console.warn('[Settings Action] No section specified for settings:showSection');
+                logger.warn(
+                    'UI',
+                    '[Settings Action] No section specified for settings:showSection'
+                );
                 return;
             }
 
@@ -21,7 +25,8 @@ export function getSettingsActions(): ActionMap {
             if (win.SettingsSystem && typeof win.SettingsSystem.showSection === 'function') {
                 win.SettingsSystem.showSection(section as 'general' | 'display' | 'language');
             } else {
-                console.warn(
+                logger.warn(
+                    'UI',
                     '[Settings Action] SettingsSystem not available or showSection method missing'
                 );
             }

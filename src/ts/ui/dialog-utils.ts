@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 /**
  * Dialog Utilities Module
  * Provides window/dialog z-index management and focus control functions.
@@ -60,10 +61,7 @@ function getModalIds(): string[] {
  */
 function syncTopZIndexWithDOM(): void {
     const win = window as Window & { WindowManager?: IWindowManager };
-    if (
-        win.WindowManager &&
-        typeof win.WindowManager.syncZIndexWithDOM === 'function'
-    ) {
+    if (win.WindowManager && typeof win.WindowManager.syncZIndexWithDOM === 'function') {
         win.WindowManager.syncZIndexWithDOM();
         return;
     }
@@ -72,7 +70,7 @@ function syncTopZIndexWithDOM(): void {
     let maxZ = 1000;
     const modalIds = getModalIds();
 
-    modalIds.forEach((id) => {
+    modalIds.forEach(id => {
         const modal = document.getElementById(id);
         if (!modal) return;
         const modalZ = parseInt(window.getComputedStyle(modal).zIndex, 10);
@@ -99,7 +97,7 @@ function bringDialogToFront(dialogId: string): void {
     if (window.dialogs?.[dialogId]) {
         window.dialogs[dialogId].bringToFront?.();
     } else {
-        console.error('Kein Dialog mit der ID ' + dialogId + ' gefunden.');
+        logger.error('UI', 'Kein Dialog mit der ID ' + dialogId + ' gefunden.');
     }
 }
 
@@ -112,7 +110,7 @@ function bringAllWindowsToFront(): void {
     const modalIds = getModalIds();
     if (!window.dialogs || !modalIds || !Array.isArray(modalIds)) return;
 
-    modalIds.forEach((id) => {
+    modalIds.forEach(id => {
         const dialog = window.dialogs?.[id];
         if (
             dialog &&

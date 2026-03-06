@@ -16,6 +16,7 @@
 
 import { de } from '../i18n/de';
 import { en } from '../i18n/en';
+import logger from '../core/logger.js';
 
 // ========================================
 // Type Definitions
@@ -209,7 +210,7 @@ function parseParams(element: Element): TranslationParams | undefined {
     try {
         return JSON.parse(paramsAttr) as TranslationParams;
     } catch (err) {
-        console.warn('Could not parse data-i18n-params:', err);
+        logger.warn('I18N', 'Could not parse data-i18n-params:', err);
         return undefined;
     }
 }

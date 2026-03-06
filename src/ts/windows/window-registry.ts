@@ -4,6 +4,7 @@
  */
 import type { BaseWindow, WindowState } from '../windows/base-window.js';
 import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
+import logger from '../core/logger.js';
 
 /**
  * WindowRegistry - Singleton for managing all windows
@@ -69,7 +70,10 @@ class WindowRegistry {
      */
     registerWindow(window: BaseWindow): void {
         this.windows.set(window.id, window);
-        console.log(`[WindowRegistry] Registered window: ${window.id} (type: ${window.type})`);
+        logger.debug(
+            'WINDOW',
+            `[WindowRegistry] Registered window: ${window.id} (type: ${window.type})`
+        );
         // If no active window yet, set the first registered as active
         if (!this.activeWindowId) this.activeWindowId = window.id;
     }
@@ -82,7 +86,7 @@ class WindowRegistry {
         if (window) {
             window.destroy();
             this.windows.delete(windowId);
-            console.log(`[WindowRegistry] Removed window: ${windowId}`);
+            logger.debug('WINDOW', `[WindowRegistry] Removed window: ${windowId}`);
             // Update active window if needed
             if (this.activeWindowId === windowId) {
                 const top = this.getTopWindow();
@@ -203,7 +207,10 @@ class WindowRegistry {
         states.forEach(state => {
             // Window types need to create their specific window classes
             // This will be handled by the session manager with window factories
-            console.log(`[WindowRegistry] Restore window ${state.id} (type: ${state.type})`);
+            logger.debug(
+                'WINDOW',
+                `[WindowRegistry] Restore window ${state.id} (type: ${state.type})`
+            );
         });
     }
 
@@ -240,7 +247,7 @@ class WindowRegistry {
      * Debug: Log all windows
      */
     debugLogWindows(): void {
-        console.log('[WindowRegistry] Open windows:', {
+        logger.debug('WINDOW', '[WindowRegistry] Open windows:', {
             total: this.windows.size,
             windows: Array.from(this.windows.values()).map(w => ({
                 id: w.id,

@@ -1,6 +1,7 @@
+import logger from '../../core/logger.js';
 /**
  * Drag & Drop Framework
- * 
+ *
  * Generalized drag and drop system that works across all apps.
  * Supports dragging elements, data transfer, visual feedback, and drop zones.
  */
@@ -29,18 +30,18 @@ export interface DropZoneOptions {
 
 /**
  * Drag & Drop Manager
- * 
+ *
  * @example
  * ```typescript
  * const dragDrop = DragDropManager.getInstance();
- * 
+ *
  * // Make element draggable
  * dragDrop.makeDraggable({
  *     element: fileElement,
  *     data: { type: 'file', data: fileInfo },
- *     onDragStart: () => console.log('Drag started')
+ *     onDragStart: () => logger.debug('FRAMEWORK', 'Drag started')
  * });
- * 
+ *
  * // Create drop zone
  * dragDrop.makeDropZone({
  *     element: folderElement,
@@ -75,11 +76,11 @@ export class DragDropManager {
 
         const handleDragStart = (event: DragEvent) => {
             this.currentDragData = data;
-            
+
             if (event.dataTransfer) {
                 event.dataTransfer.effectAllowed = 'move';
                 event.dataTransfer.setData('application/json', JSON.stringify(data));
-                
+
                 if (dragImage) {
                     event.dataTransfer.setDragImage(dragImage, 0, 0);
                 }

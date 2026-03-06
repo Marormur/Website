@@ -9,6 +9,7 @@
 import { BaseTab, type TabConfig } from '../../windows/base-tab.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
 import { h, diff, patch, createElement, type VNode } from '../../core/vdom.js';
+import logger from '../../core/logger.js';
 
 /**
  * TerminalSession - Individual terminal session tab
@@ -48,11 +49,11 @@ export class TerminalSession extends BaseTab {
         try {
             const home = VirtualFS.getFolder('/home/marvin');
             if (!home || !home.children) {
-                console.warn('[TerminalSession] VirtualFS missing defaults, resetting');
+                logger.warn('TERMINAL', '[TerminalSession] VirtualFS missing defaults, resetting');
                 VirtualFS.reset();
             }
         } catch (error) {
-            console.warn('[TerminalSession] VirtualFS check failed, resetting', error);
+            logger.warn('TERMINAL', '[TerminalSession] VirtualFS check failed, resetting', error);
             VirtualFS.reset();
         }
     }
@@ -135,7 +136,7 @@ export class TerminalSession extends BaseTab {
      * VDOM updates. This preserves focus and value during incremental renders.
      */
     private _renderTerminal(): void {
-        console.log('[DEBUG] TerminalSession._renderTerminal() CALLED', {
+        logger.debug('TERMINAL', '[DEBUG] TerminalSession._renderTerminal() CALLED', {
             hasElement: !!this.element,
             hasVTree: !!this._vTree,
             outputLines: this._outputLines.length,
@@ -251,14 +252,14 @@ export class TerminalSession extends BaseTab {
 
         // Debug: current CWD and raw input
         try {
-            console.debug('[TerminalSession] Tab on input', { input, cwd: this.vfsCwd });
+            logger.debug('TERMINAL', '[TerminalSession] Tab on input', { input, cwd: this.vfsCwd });
         } catch {}
 
         // Command completion (first token).
         if (tokens.length <= 1 && !endsWithSpace) {
             const matches = availableCommands.filter(c => c.startsWith(cmd));
             try {
-                console.debug('[TerminalSession] Command matches', { cmd, matches });
+                logger.debug('TERMINAL', '[TerminalSession] Command matches', { cmd, matches });
             } catch {}
             if (matches.length === 1) {
                 const match = matches[0];
@@ -343,7 +344,7 @@ export class TerminalSession extends BaseTab {
 
         const folder = VirtualFS.getFolder(dirForResolve);
         try {
-            console.debug('[TerminalSession] Dir resolve', {
+            logger.debug('TERMINAL', '[TerminalSession] Dir resolve', {
                 rawArg,
                 dirPrefix,
                 basePrefix,
@@ -363,7 +364,7 @@ export class TerminalSession extends BaseTab {
             .map(([name, item]) => ({ name, item }));
 
         try {
-            console.debug('[TerminalSession] Path matches', {
+            logger.debug('TERMINAL', '[TerminalSession] Path matches', {
                 cmd,
                 basePrefix,
                 count: matches.length,

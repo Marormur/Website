@@ -4,11 +4,12 @@
 // ============================================================================
 
 import { getJSON, setJSON, getString, remove } from '../services/storage-utils.js';
+import logger from '../core/logger.js';
 
 (() => {
     'use strict';
 
-    console.log('✅ StorageSystem (TS) loaded');
+    logger.debug('STORAGE', '✅ StorageSystem (TS) loaded');
 
     // ===== Types =====
     type FinderState = { repo: string; path?: string } | null;
@@ -50,7 +51,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
                 path: typeof po.path === 'string' ? po.path : '',
             };
         } catch (err) {
-            console.warn('Finder state konnte nicht gelesen werden:', err);
+            logger.warn('STORAGE', 'Finder state konnte nicht gelesen werden:', err);
             return null;
         }
     }
@@ -67,7 +68,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
         try {
             setJSON(FINDER_STATE_KEY, payload);
         } catch (err) {
-            console.warn('Finder state konnte nicht gespeichert werden:', err);
+            logger.warn('STORAGE', 'Finder state konnte nicht gespeichert werden:', err);
         }
     }
 
@@ -75,7 +76,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
         try {
             remove(FINDER_STATE_KEY);
         } catch (err) {
-            console.warn('Finder state konnte nicht gelöscht werden:', err);
+            logger.warn('STORAGE', 'Finder state konnte nicht gelöscht werden:', err);
         }
     }
 
@@ -100,7 +101,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
         try {
             setJSON(OPEN_MODALS_KEY, openModals);
         } catch (err) {
-            console.warn('Open modals konnte nicht gespeichert werden:', err);
+            logger.warn('STORAGE', 'Open modals konnte nicht gespeichert werden:', err);
         }
     }
 
@@ -117,7 +118,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
             const arr = getJSON<string[]>(OPEN_MODALS_KEY, []);
             if (Array.isArray(arr)) arr.forEach((id: string) => toRestore.add(id));
         } catch (err) {
-            console.warn('Open modals konnte nicht gelesen werden:', err);
+            logger.warn('STORAGE', 'Open modals konnte nicht gelesen werden:', err);
         }
 
         // Legacy compatibility: support { modalState: { [id]: { visible: boolean, minimized, zIndex } } }
@@ -140,7 +141,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
                 }
             }
         } catch (err) {
-            console.warn('Legacy window-session konnte nicht gelesen werden:', err);
+            logger.warn('STORAGE', 'Legacy window-session konnte nicht gelesen werden:', err);
         }
 
         toRestore.forEach(id => {
@@ -149,7 +150,10 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
 
             // Skip obsolete modals (migrated to multi-instance system)
             if (obsoleteModalIds.has(id)) {
-                console.debug(`Skipping obsolete modal "${id}" (migrated to multi-instance)`);
+                logger.debug(
+                    'STORAGE',
+                    `Skipping obsolete modal "${id}" (migrated to multi-instance)`
+                );
                 return;
             }
 
@@ -157,7 +161,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
             const el = document.getElementById(id);
             if (!el) {
                 // Align with legacy expectation in tests
-                console.warn(`SessionManager: Modal "${id}" not found in DOM`);
+                logger.warn('STORAGE', `SessionManager: Modal "${id}" not found in DOM`);
                 return;
             }
 
@@ -168,7 +172,8 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
             if (WindowManager && typeof WindowManager.getConfig === 'function') {
                 const config = WindowManager.getConfig(id);
                 if (!config) {
-                    console.warn(
+                    logger.warn(
+                        'STORAGE',
                         `Skipping restore of modal "${id}": not registered in WindowManager`
                     );
                     return;
@@ -181,7 +186,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
                 try {
                     wm.open(id);
                 } catch (err) {
-                    console.warn(`Error restoring modal "${id}" via WindowManager:`, err);
+                    logger.warn('STORAGE', `Error restoring modal "${id}" via WindowManager:`, err);
                     // Fallback: try direct dialog open
                     const dialogs = w['dialogs'] as Record<string, unknown> | undefined;
                     const dialogInstance =
@@ -193,7 +198,8 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
                         try {
                             openFn();
                         } catch (openErr) {
-                            console.warn(
+                            logger.warn(
+                                'STORAGE',
                                 `Error restoring modal "${id}" via dialog.open():`,
                                 openErr
                             );
@@ -230,7 +236,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
                     try {
                         openFn();
                     } catch (err) {
-                        console.warn(`Error restoring modal "${id}":`, err);
+                        logger.warn('STORAGE', `Error restoring modal "${id}":`, err);
                         // Fallback: show element directly
                         const domUtils = (
                             w as unknown as { DOMUtils?: { show?: (el: Element) => void } }
@@ -299,7 +305,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
         try {
             setJSON(MODAL_POSITIONS_KEY, positions);
         } catch (err) {
-            console.warn('Window positions konnte nicht gespeichert werden:', err);
+            logger.warn('STORAGE', 'Window positions konnte nicht gespeichert werden:', err);
         }
     }
 
@@ -314,7 +320,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
         try {
             positions = getJSON<Positions>(MODAL_POSITIONS_KEY, {});
         } catch (err) {
-            console.warn('Window positions konnte nicht gelesen werden:', err);
+            logger.warn('STORAGE', 'Window positions konnte nicht gelesen werden:', err);
             return;
         }
 
@@ -376,7 +382,7 @@ import { getJSON, setJSON, getString, remove } from '../services/storage-utils.j
         try {
             remove(MODAL_POSITIONS_KEY);
         } catch (err) {
-            console.warn('Modal positions konnte nicht gelöscht werden:', err);
+            logger.warn('STORAGE', 'Modal positions konnte nicht gelöscht werden:', err);
         }
 
         const hideMenuDropdowns = w['hideMenuDropdowns'] as (() => void) | undefined;

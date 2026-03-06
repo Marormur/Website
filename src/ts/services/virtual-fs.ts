@@ -14,6 +14,7 @@
  */
 
 import { getJSON, setJSON, remove } from './storage-utils.js';
+import logger from '../core/logger.js';
 
 // Lightweight storage adapter abstraction to support different persistence backends
 interface VfsStorageAdapter {
@@ -78,7 +79,7 @@ class IndexedDbAdapter implements VfsStorageAdapter {
                 req.onerror = () => reject(req.error);
                 req.onblocked = () => {
                     // Continue to wait; consumer may retry later
-                    console.warn('[VirtualFS][IDB] open blocked');
+                    logger.warn('STORAGE', '[VirtualFS][IDB] open blocked');
                 };
             } catch (err) {
                 reject(err);
@@ -127,7 +128,7 @@ class IndexedDbAdapter implements VfsStorageAdapter {
                 });
             });
         } catch (err) {
-            console.warn('[VirtualFS][IDB] load failed:', err);
+            logger.warn('STORAGE', '[VirtualFS][IDB] load failed:', err);
             return null;
         }
     }
@@ -142,7 +143,7 @@ class IndexedDbAdapter implements VfsStorageAdapter {
                 });
             });
         } catch (err) {
-            console.warn('[VirtualFS][IDB] save failed:', err);
+            logger.warn('STORAGE', '[VirtualFS][IDB] save failed:', err);
             throw err;
         }
     }
@@ -167,7 +168,7 @@ class IndexedDbAdapter implements VfsStorageAdapter {
                 tx.onabort = () => reject(tx.error);
             });
         } catch (err) {
-            console.warn('[VirtualFS][IDB] clear failed:', err);
+            logger.warn('STORAGE', '[VirtualFS][IDB] clear failed:', err);
         }
     }
 
@@ -249,7 +250,7 @@ class IndexedDbAdapter implements VfsStorageAdapter {
                     store.put(record as unknown as object, u.path as unknown as IDBValidKey);
                     // Note: We use out-of-line keys via the second parameter
                 } catch (e) {
-                    console.warn('[VirtualFS][IDB] delta put failed for', u.path, e);
+                    logger.warn('STORAGE', '[VirtualFS][IDB] delta put failed for', u.path, e);
                 }
             }
             tx.oncomplete = () => resolve();
@@ -601,7 +602,7 @@ class VirtualFileSystemManager {
                 const migrated = getJSON<string | null>(this.MIGRATION_FLAG, null);
                 const lsData = getJSON<FileSystemRoot | null>(this.STORAGE_KEY, null);
                 if (!migrated && lsData && Object.keys(lsData).length > 0) {
-                    console.log('[VirtualFS] Migrating localStorage -> IndexedDB');
+                    logger.debug('STORAGE', '[VirtualFS] Migrating localStorage -> IndexedDB');
                     stored = lsData;
                     try {
                         await this.storage.save(lsData);
@@ -609,7 +610,7 @@ class VirtualFileSystemManager {
                         // Optional: clear legacy to free space
                         remove(this.STORAGE_KEY);
                     } catch (err) {
-                        console.warn('[VirtualFS] Migration save failed:', err);
+                        logger.warn('STORAGE', '[VirtualFS] Migration save failed:', err);
                     }
                 }
             }
@@ -620,18 +621,18 @@ class VirtualFileSystemManager {
                     try {
                         await this.storage.overlayFilesOnLoad(stored);
                     } catch (e) {
-                        console.warn('[VirtualFS] overlayFilesOnLoad failed:', e);
+                        logger.warn('STORAGE', '[VirtualFS] overlayFilesOnLoad failed:', e);
                     }
                 }
                 this.root = stored;
-                console.log(`[VirtualFS] Loaded from ${adapterName}`);
+                logger.debug('STORAGE', `[VirtualFS] Loaded from ${adapterName}`);
             } else {
                 // Use default structure if no valid data in storage
                 this.root = this.createDefaultStructure();
-                console.log('[VirtualFS] No stored data, initialized with defaults');
+                logger.debug('STORAGE', '[VirtualFS] No stored data, initialized with defaults');
             }
         } catch (error) {
-            console.error('[VirtualFS] Failed to load:', error);
+            logger.error('STORAGE', '[VirtualFS] Failed to load:', error);
             // Fallback to defaults on error
             this.root = this.createDefaultStructure();
         }
@@ -687,7 +688,10 @@ class VirtualFileSystemManager {
                     `vfs:delta-save:${adapterName}:start`,
                     `vfs:delta-save:${adapterName}:end`
                 );
-                console.log(`[VirtualFS] Delta-saved ${updates.length} file(s) to ${adapterName}`);
+                logger.debug(
+                    'STORAGE',
+                    `[VirtualFS] Delta-saved ${updates.length} file(s) to ${adapterName}`
+                );
             } else {
                 perf?.mark(`vfs:save:${adapterName}:start`);
                 await this.storage.save(this.root);
@@ -697,19 +701,19 @@ class VirtualFileSystemManager {
                     `vfs:save:${adapterName}:start`,
                     `vfs:save:${adapterName}:end`
                 );
-                console.log(`[VirtualFS] Saved to ${adapterName}`);
+                logger.debug('STORAGE', `[VirtualFS] Saved to ${adapterName}`);
 
                 // After a successful full save, clear all delta entries (hygiene)
                 if (typeof this.storage.clearAllDeltas === 'function') {
                     try {
                         await this.storage.clearAllDeltas();
                     } catch (err) {
-                        console.warn('[VirtualFS] clearAllDeltas failed:', err);
+                        logger.warn('STORAGE', '[VirtualFS] clearAllDeltas failed:', err);
                     }
                 }
             }
         } catch (error) {
-            console.error('[VirtualFS] Failed to save:', error);
+            logger.error('STORAGE', '[VirtualFS] Failed to save:', error);
         }
 
         perf?.mark('vfs:save:end');
@@ -759,7 +763,7 @@ class VirtualFileSystemManager {
             try {
                 listener(event);
             } catch (error) {
-                console.error('[VirtualFS] Listener error:', error);
+                logger.error('STORAGE', '[VirtualFS] Listener error:', error);
             }
         });
     }
@@ -873,7 +877,7 @@ class VirtualFileSystemManager {
         const container: Record<string, FSItem> = parent?.children || this.getRootContainer();
 
         if (container[fileName]) {
-            console.warn('[VirtualFS] File already exists:', this.normalizePath(path));
+            logger.warn('STORAGE', '[VirtualFS] File already exists:', this.normalizePath(path));
             return false;
         }
 
@@ -914,7 +918,7 @@ class VirtualFileSystemManager {
         const container: Record<string, FSItem> = parent?.children || this.getRootContainer();
 
         if (container[folderName]) {
-            console.warn('[VirtualFS] Folder already exists:', this.normalizePath(path));
+            logger.warn('STORAGE', '[VirtualFS] Folder already exists:', this.normalizePath(path));
             return false;
         }
 
@@ -944,7 +948,7 @@ class VirtualFileSystemManager {
         const file = this.getFile(path);
 
         if (!file) {
-            console.warn('[VirtualFS] File not found:', this.normalizePath(path));
+            logger.warn('STORAGE', '[VirtualFS] File not found:', this.normalizePath(path));
             return false;
         }
 
@@ -974,7 +978,7 @@ class VirtualFileSystemManager {
         const container: Record<string, FSItem> = parent?.children || this.getRootContainer();
 
         if (!container[itemName]) {
-            console.warn('[VirtualFS] Item not found:', this.normalizePath(path));
+            logger.warn('STORAGE', '[VirtualFS] Item not found:', this.normalizePath(path));
             return false;
         }
 
@@ -993,7 +997,7 @@ class VirtualFileSystemManager {
                 const prefix = item.type === 'folder' ? norm + '/' : norm;
                 void this.storage.deleteDeltaForPrefix(prefix);
             } catch (e) {
-                console.warn('[VirtualFS] deleteDeltaForPrefix failed:', e);
+                logger.warn('STORAGE', '[VirtualFS] deleteDeltaForPrefix failed:', e);
             }
         }
         this.structureDirty = true;
@@ -1017,12 +1021,12 @@ class VirtualFileSystemManager {
         const container: Record<string, FSItem> = parent?.children || this.getRootContainer();
 
         if (!container[oldName]) {
-            console.warn('[VirtualFS] Item not found:', this.normalizePath(oldPath));
+            logger.warn('STORAGE', '[VirtualFS] Item not found:', this.normalizePath(oldPath));
             return false;
         }
 
         if (container[newName]) {
-            console.warn('[VirtualFS] Target name already exists:', newName);
+            logger.warn('STORAGE', '[VirtualFS] Target name already exists:', newName);
             return false;
         }
 
@@ -1047,13 +1051,13 @@ class VirtualFileSystemManager {
             try {
                 void this.storage.renameDeltaPrefix(oldPrefix, newPrefix);
             } catch (e) {
-                console.warn('[VirtualFS] renameDeltaPrefix failed:', e);
+                logger.warn('STORAGE', '[VirtualFS] renameDeltaPrefix failed:', e);
             }
         } else if (typeof this.storage.deleteDeltaForPrefix === 'function') {
             try {
                 void this.storage.deleteDeltaForPrefix(oldPrefix);
             } catch (e) {
-                console.warn('[VirtualFS] deleteDeltaForPrefix (fallback) failed:', e);
+                logger.warn('STORAGE', '[VirtualFS] deleteDeltaForPrefix (fallback) failed:', e);
             }
         }
 
@@ -1099,7 +1103,7 @@ class VirtualFileSystemManager {
         this.root = this.createDefaultStructure();
         this.structureDirty = true;
         void this.save();
-        console.log('[VirtualFS] Reset to defaults');
+        logger.debug('STORAGE', '[VirtualFS] Reset to defaults');
     }
 
     export(): FileSystemRoot {
@@ -1118,16 +1122,20 @@ class VirtualFileSystemManager {
                 void this.storage
                     .clearAllDeltas()
                     .catch(e =>
-                        console.warn('[VirtualFS] clearAllDeltas during import failed:', e)
+                        logger.warn(
+                            'STORAGE',
+                            '[VirtualFS] clearAllDeltas during import failed:',
+                            e
+                        )
                     );
             }
             this.structureDirty = true;
             void this.save();
-            console.log('[VirtualFS] Imported successfully');
+            logger.debug('STORAGE', '[VirtualFS] Imported successfully');
 
             return true;
         } catch (error) {
-            console.error('[VirtualFS] Import failed:', error);
+            logger.error('STORAGE', '[VirtualFS] Import failed:', error);
             return false;
         }
     }

@@ -3,6 +3,7 @@
  * Typed port of js/base-window-instance.js
  */
 import { triggerAutoSave } from '../utils/auto-save-helper.js';
+import logger from '../core/logger.js';
 
 export type EventCallback = (data?: unknown) => void;
 
@@ -55,7 +56,7 @@ export class BaseWindowInstance {
 
     init(container: HTMLElement) {
         if (this.isInitialized) {
-            console.warn(`Instance ${this.instanceId} already initialized`);
+            logger.warn('WINDOW', `Instance ${this.instanceId} already initialized`);
             return;
         }
         this.container = container;
@@ -140,7 +141,7 @@ export class BaseWindowInstance {
             try {
                 window.SessionManager.saveInstanceType(this.type);
             } catch (error) {
-                console.warn('Failed to trigger auto-save:', error);
+                logger.warn('WINDOW', 'Failed to trigger auto-save:', error);
             }
         }
     }
@@ -179,7 +180,7 @@ export class BaseWindowInstance {
             try {
                 callback.call(this, data);
             } catch (error) {
-                console.error(`Error in event listener for ${eventName}:`, error);
+                logger.error('WINDOW', `Error in event listener for ${eventName}:`, error);
             }
         });
     }
@@ -215,7 +216,7 @@ if (typeof window !== 'undefined') {
 }
 
 export default BaseWindowInstance;
-console.log('BaseWindowInstance loaded');
+logger.debug('WINDOW', 'BaseWindowInstance loaded');
 
 (function () {
     'use strict';
@@ -284,7 +285,7 @@ console.log('BaseWindowInstance loaded');
 
         init(container: HTMLElement): void {
             if (this.isInitialized) {
-                console.warn(`Instance ${this.instanceId} already initialized`);
+                logger.warn('WINDOW', `Instance ${this.instanceId} already initialized`);
                 return;
             }
 
@@ -411,7 +412,7 @@ console.log('BaseWindowInstance loaded');
                 try {
                     callback.call(this, data);
                 } catch (error) {
-                    console.error(`Error in event listener for ${eventName}:`, error);
+                    logger.error('WINDOW', `Error in event listener for ${eventName}:`, error);
                 }
             });
         }

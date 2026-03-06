@@ -11,8 +11,9 @@ import { getPreviewActions } from './actions/preview.js';
 import { getSessionActions } from './actions/session.js';
 import { getSettingsActions } from './actions/settings.js';
 import { getWindowActions } from './actions/windows.js';
+import logger from '../core/logger.js';
 
-console.log('ActionBus loaded');
+logger.debug('UI', 'ActionBus loaded');
 
 (function () {
     'use strict';
@@ -23,7 +24,7 @@ console.log('ActionBus loaded');
     const ActionBus = {
         register(actionName: string, handler: Handler) {
             if (!actionName || typeof handler !== 'function') {
-                console.error('Invalid action registration:', actionName);
+                logger.error('UI', 'Invalid action registration:', actionName);
                 return;
             }
             actionHandlers.set(actionName, handler);
@@ -38,14 +39,14 @@ console.log('ActionBus loaded');
         execute(actionName: string, params: Params = {}, element: HTMLElement | null = null) {
             const handler = actionHandlers.get(actionName);
             if (!handler) {
-                console.warn(`No handler registered for action: ${actionName}`);
+                logger.warn('UI', `No handler registered for action: ${actionName}`);
                 return;
             }
 
             try {
                 handler(params, element);
             } catch (error) {
-                console.error(`Error executing action ${actionName}:`, error);
+                logger.error('UI', `Error executing action ${actionName}:`, error);
             }
         },
 
@@ -89,7 +90,7 @@ console.log('ActionBus loaded');
                 this.execute(actionName, params, element);
             });
 
-            console.log('ActionBus initialized');
+            logger.debug('UI', 'ActionBus initialized');
         },
 
         delegateEvent(

@@ -5,6 +5,7 @@
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
+import logger from '../../core/logger.js';
 
 /**
  * TerminalWindow - Window for terminal sessions
@@ -143,7 +144,7 @@ export class TerminalWindow extends BaseWindow {
      */
     createSession(title?: string): BaseTab | null {
         if (!window.TerminalSession) {
-            console.error('TerminalSession class not loaded');
+            logger.error('TERMINAL', 'TerminalSession class not loaded');
             return null;
         }
 

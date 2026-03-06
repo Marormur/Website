@@ -4,6 +4,7 @@
  */
 
 import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
+import logger from '../core/logger.js';
 
 (() => {
     'use strict';
@@ -174,7 +175,7 @@ import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
 
             const modal = document.getElementById(windowId);
             if (!modal) {
-                console.warn(`Keine Dialog-Instanz für ${windowId} gefunden.`);
+                logger.warn('WINDOW', `Keine Dialog-Instanz für ${windowId} gefunden.`);
                 return;
             }
             const windowEl = this.getDialogWindowElement(modal);
@@ -223,7 +224,7 @@ import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
                     };
                     if (typeof md.initHandler === 'function') md.initHandler();
                 } catch (e) {
-                    console.warn(`Init handler for ${windowId} threw:`, e);
+                    logger.warn('WINDOW', `Init handler for ${windowId} threw:`, e);
                 }
             }
             const instance = this.getDialogInstance(windowId);

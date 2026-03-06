@@ -3,6 +3,7 @@
  */
 import type { ActionMap } from './helpers.js';
 import { getGlobal } from './helpers.js';
+import logger from '../../core/logger.js';
 
 export function getSessionActions(): ActionMap {
     return {
@@ -14,7 +15,7 @@ export function getSessionActions(): ActionMap {
             const translate = W?.appI18n?.translate || ((k: string) => k);
 
             if (!W?.SessionManager?.exportSession) {
-                console.error('SessionManager not available');
+                logger.error('UI', 'SessionManager not available');
                 return;
             }
 
@@ -34,7 +35,7 @@ export function getSessionActions(): ActionMap {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            console.log('Session exported successfully');
+            logger.debug('UI', 'Session exported successfully');
         },
 
         'session:import': () => {
@@ -45,7 +46,7 @@ export function getSessionActions(): ActionMap {
             const translate = W?.appI18n?.translate || ((k: string) => k);
 
             if (!W?.SessionManager?.importSession) {
-                console.error('SessionManager not available');
+                logger.error('UI', 'SessionManager not available');
                 return;
             }
 
@@ -66,7 +67,7 @@ export function getSessionActions(): ActionMap {
 
                     const success = W.SessionManager?.importSession?.(json);
                     if (success) {
-                        console.log('Session imported successfully');
+                        logger.debug('UI', 'Session imported successfully');
                     } else {
                         alert(translate('menu.session.importError'));
                     }

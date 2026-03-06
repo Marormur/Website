@@ -7,6 +7,7 @@
 
 import { toast } from '../framework/feedback/toast-manager.js';
 import * as MacUI from '../framework/index.js';
+import logger from './logger.js';
 
 // Initialize toast manager and make it available via API
 const win = window as typeof window & {
@@ -32,6 +33,6 @@ declare global {
 window.MacUI = MacUI;
 window.toast = toast;
 
-console.log('[MacUI] Framework initialized');
+logger.debug('APP', '[MacUI] Framework initialized');
 
 export {};

@@ -1,9 +1,10 @@
+import logger from '../../core/logger.js';
 /**
  * terminal.ts
  * Terminal System - A functional terminal emulator with basic command support
  */
 
-console.log('Terminal System loaded');
+logger.debug('TERMINAL', 'Terminal System loaded');
 
 (() => {
     'use strict';
@@ -88,7 +89,7 @@ console.log('Terminal System loaded');
 
         init(container: HTMLElement): void {
             if (this.container) {
-                console.log('Terminal already initialized');
+                logger.debug('TERMINAL', 'Terminal already initialized');
                 return;
             }
 
@@ -124,12 +125,16 @@ console.log('Terminal System loaded');
             `;
             this.container.innerHTML = html;
             this.outputElement = document.getElementById('terminal-output');
-            this.inputElement = document.getElementById('terminal-input') as HTMLInputElement | null;
+            this.inputElement = document.getElementById(
+                'terminal-input'
+            ) as HTMLInputElement | null;
 
             // Provide localized aria-label when possible
             try {
-                const appI18n = (window as Window & { appI18n?: { getActiveLanguage(): string } }).appI18n;
-                const lang = appI18n?.getActiveLanguage?.() || document.documentElement?.lang || 'en';
+                const appI18n = (window as Window & { appI18n?: { getActiveLanguage(): string } })
+                    .appI18n;
+                const lang =
+                    appI18n?.getActiveLanguage?.() || document.documentElement?.lang || 'en';
                 const label = String(lang).toLowerCase().startsWith('de')
                     ? 'Terminal-Eingabe'
                     : 'Terminal input';
@@ -548,7 +553,8 @@ console.log('Terminal System loaded');
         },
     };
 
-    (window as unknown as Window & { TerminalSystem: TerminalSystemType }).TerminalSystem = TerminalSystem;
+    (window as unknown as Window & { TerminalSystem: TerminalSystemType }).TerminalSystem =
+        TerminalSystem;
 })();
 
 export {};

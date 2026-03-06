@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 /**
  * Compatibility shim factory for legacy InstanceManager APIs.
  * Bridges old window.*InstanceManager callers to new multi-window/tab architecture.
@@ -35,8 +36,8 @@ export function installShim(opts: ShimOptions, win: Window & typeof globalThis):
             getActiveInstance: opts.getActiveInstance,
             setActiveInstance: opts.setActiveInstance,
         };
-        console.info(`[COMPAT] ${opts.legacyName} shim installed`);
+        logger.info('APP', `[COMPAT] ${opts.legacyName} shim installed`);
     } catch (err) {
-        console.warn(`[COMPAT] ${opts.legacyName} shim failed:`, err);
+        logger.warn('APP', `[COMPAT] ${opts.legacyName} shim failed:`, err);
     }
 }

@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 /**
  * src/ts/storage-utils.ts
  * Small, safe helpers around localStorage with JSON handling.
@@ -15,7 +16,7 @@ export function setString(key: string, value: string): void {
     try {
         localStorage.setItem(key, value);
     } catch (err) {
-        console.warn(`[storage-utils] setString failed for key="${key}":`, err);
+        logger.warn('STORAGE', `[storage-utils] setString failed for key="${key}":`, err);
     }
 }
 
@@ -23,7 +24,7 @@ export function remove(key: string): void {
     try {
         localStorage.removeItem(key);
     } catch (err) {
-        console.warn(`[storage-utils] remove failed for key="${key}":`, err);
+        logger.warn('STORAGE', `[storage-utils] remove failed for key="${key}":`, err);
     }
 }
 
@@ -33,7 +34,7 @@ export function getJSON<T>(key: string, fallback: T): T {
         if (!raw) return fallback;
         return JSON.parse(raw) as T;
     } catch (err) {
-        console.warn(`[storage-utils] getJSON failed for key="${key}":`, err);
+        logger.warn('STORAGE', `[storage-utils] getJSON failed for key="${key}":`, err);
         return fallback;
     }
 }
@@ -42,6 +43,6 @@ export function setJSON(key: string, value: unknown): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
     } catch (err) {
-        console.warn(`[storage-utils] setJSON failed for key="${key}":`, err);
+        logger.warn('STORAGE', `[storage-utils] setJSON failed for key="${key}":`, err);
     }
 }

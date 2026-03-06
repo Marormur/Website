@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 /**
  * WindowTabs – generische Tab-Leiste für Fenster
  *
@@ -148,7 +149,8 @@
         const activeId = active?.instanceId ?? null;
 
         // Diagnostic: log all instance IDs being rendered as tabs
-        console.log(
+        logger.debug(
+            'WINDOW',
             '[WindowTabs] Rendering tabs for instance IDs:',
             instances.map(i => i.instanceId)
         );

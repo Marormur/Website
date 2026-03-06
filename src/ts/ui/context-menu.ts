@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 /*
  * src/ts/context-menu.ts
  * Typed port of js/context-menu.js
@@ -184,7 +185,7 @@ if (guardedWindow[guardKey]) {
                         id: 'finder-get-info',
                         label: i18n.translate('context.finder.getInfo') || 'Informationen',
                         action: () => {
-                            console.log('Get info for:', itemName, itemType);
+                            logger.debug('UI', 'Get info for:', itemName, itemType);
                         },
                     });
                     return items;
@@ -389,7 +390,7 @@ if (guardedWindow[guardKey]) {
                         it.action();
                     }
                 } catch (e) {
-                    console.warn('Context action failed', e);
+                    logger.warn('UI', 'Context action failed', e);
                 }
             });
             li.appendChild(btn);
