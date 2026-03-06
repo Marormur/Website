@@ -12,7 +12,7 @@
     }
 
     function hideMenuDropdowns(): void {
-        const domUtils = (window as any).DOMUtils;
+        const domUtils = window.DOMUtils;
 
         document.querySelectorAll('.menu-dropdown').forEach(dropdown => {
             if (!dropdown.classList.contains('hidden')) {
@@ -75,7 +75,7 @@
                 if (!menu) return;
             }
 
-            const domUtils = (window as any).DOMUtils;
+            const domUtils = window.DOMUtils;
             if (domUtils && typeof domUtils.show === 'function') {
                 domUtils.show(menu);
             } else {
@@ -191,4 +191,3 @@
         initMenubarWiring();
     }
 })();
-

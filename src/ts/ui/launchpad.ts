@@ -56,7 +56,7 @@ import { translate } from '../services/i18n';
     }
 
     function loadApps(): void {
-        const WM = (window as any).WindowManager;
+        const WM = window.WindowManager;
         if (!WM) {
             console.warn('LaunchpadSystem: WindowManager not available');
             return;
@@ -145,32 +145,31 @@ import { translate } from '../services/i18n';
 
     function openApp(windowId: string): void {
         if (!windowId) return;
-        const w: any = window as any;
         const launchpadModal = document.getElementById('launchpad-modal');
-        if (launchpadModal && w.dialogs && w.dialogs['launchpad-modal']) {
-            w.dialogs['launchpad-modal'].close?.();
+        if (launchpadModal && window.dialogs && window.dialogs['launchpad-modal']) {
+            window.dialogs['launchpad-modal'].close?.();
         } else if (launchpadModal) {
             launchpadModal.classList.add('hidden');
         }
 
-        const WM = w.WindowManager;
+        const WM = window.WindowManager;
         if (WM?.open) {
             WM.open(windowId);
             return;
         }
-        const dialog = w.dialogs && w.dialogs[windowId];
-        if (dialog?.open) dialog.open();
+        const dialog = window.dialogs && window.dialogs[windowId];
+        if (dialog?.close) dialog.close();
         else {
             const modalElement = document.getElementById(windowId);
             if (modalElement) {
-                const domUtils = (window as any).DOMUtils;
+                const domUtils = window.DOMUtils;
                 if (domUtils && typeof domUtils.show === 'function') {
                     domUtils.show(modalElement);
                 } else {
                     modalElement.classList.remove('hidden');
                 }
-                w.bringDialogToFront?.(windowId);
-                w.updateProgramLabelByTopModal?.();
+                window.bringDialogToFront?.(windowId);
+                window.updateProgramLabelByTopModal?.();
             }
         }
     }
@@ -190,15 +189,19 @@ import { translate } from '../services/i18n';
     });
 
     // Register ActionBus action to open window and close launchpad
-    const AB = (window as any).ActionBus;
+    const AB = window.ActionBus;
     if (typeof AB?.register === 'function') {
-        (AB as any).register('launchpadOpenWindow', (params: any) => {
-            const id = params?.windowId || params?.windowid || params?.window || params?.id;
-            if (id) openApp(id);
+        AB.register('launchpadOpenWindow', (params: Record<string, unknown> | undefined) => {
+            const id =
+                params?.['windowId'] ||
+                params?.['windowid'] ||
+                params?.['window'] ||
+                params?.['id'];
+            if (id) openApp(id as string);
         });
     }
 
-    (window as any).LaunchpadSystem = {
+    window.LaunchpadSystem = {
         init,
         refresh,
         clearSearch,

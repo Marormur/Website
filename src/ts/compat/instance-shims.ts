@@ -25,7 +25,7 @@ export type ShimOptions = {
     setActiveInstance: (id: string) => void;
 };
 
-export function installShim(opts: ShimOptions, win: any): void {
+export function installShim(opts: ShimOptions, win: Window & typeof globalThis): void {
     if (typeof win[opts.legacyName] !== 'undefined') return; // already exists
     try {
         win[opts.legacyName] = {

@@ -34,10 +34,10 @@ export function safeExecute(label: string, fn: () => void): void {
  */
 export function getGlobal<T = unknown>(path: string): T | undefined {
     const parts = path.split('.').filter(Boolean);
-    let current: any = window;
+    let current: unknown = window;
     for (const p of parts) {
         if (current && typeof current === 'object' && p in current) {
-            current = current[p];
+            current = (current as Record<string, unknown>)[p];
         } else {
             return undefined;
         }

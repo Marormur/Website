@@ -26,16 +26,12 @@ export const DESKTOP_SHORTCUTS: DesktopShortcut[] = [
         labelKey: 'desktop.projects',
         fallbackLabel: 'Projekte',
         onOpen: () => {
-            const W = window as any;
-            if (W.FinderWindow?.focusOrCreate) {
-                W.FinderWindow.focusOrCreate();
+            if (window.FinderWindow?.focusOrCreate) {
+                window.FinderWindow.focusOrCreate();
             }
             // Navigiere zum Projects-Ordner
-            const w = window as unknown as {
-                FinderSystem?: { navigateTo?: (path: string) => void };
-            };
-            if (w.FinderSystem?.navigateTo) {
-                w.FinderSystem.navigateTo('projects');
+            if (window.FinderSystem?.navigateTo) {
+                window.FinderSystem.navigateTo('projects');
             }
         },
     },

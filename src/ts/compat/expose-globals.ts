@@ -111,20 +111,20 @@ if (!('DOMUtils' in w)) {
 
 // Ensure critical classes are attached on window and not eliminated by tree-shaking
 try {
-    if (!(w as any).FinderView) (w as any).FinderView = __FinderView__;
-    if (!(w as any).FinderWindow) (w as any).FinderWindow = __FinderWindow__;
-    if (!(w as any).TerminalWindow) (w as any).TerminalWindow = __TerminalWindow__;
+    if (!w.FinderView) w.FinderView = __FinderView__;
+    if (!w.FinderWindow) w.FinderWindow = __FinderWindow__;
+    if (!w.TerminalWindow) w.TerminalWindow = __TerminalWindow__;
 } catch {
     /* ignore */
 }
 
 try {
     console.log('[BUNDLE] Globals present:', {
-        FinderView: !!(w as any).FinderView,
-        FinderWindow: !!(w as any).FinderWindow,
-        TerminalWindow: !!(w as any).TerminalWindow,
-        WindowRegistry: !!(w as any).WindowRegistry,
-        ActionBus: !!(w as any).ActionBus,
+        FinderView: !!w.FinderView,
+        FinderWindow: !!w.FinderWindow,
+        TerminalWindow: !!w.TerminalWindow,
+        WindowRegistry: !!w.WindowRegistry,
+        ActionBus: !!w.ActionBus,
     });
 } catch {
     /* ignore */
