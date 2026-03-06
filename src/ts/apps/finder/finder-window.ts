@@ -2,12 +2,18 @@
  * src/ts/finder-window.ts
  * Finder-specific multi-window implementation
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
 
 export class FinderWindow extends BaseWindow {
+    /** WindowTabs controller for the tab bar – created lazily in _doRenderTabs. */
+    private tabController?: {
+        refresh: () => void;
+        destroy: () => void;
+        setTitle: (id: string, title: string) => void;
+    } | null;
+
     constructor(config?: Partial<WindowConfig>) {
         super({
             type: 'finder',
@@ -42,24 +48,22 @@ export class FinderWindow extends BaseWindow {
     protected _renderTabs(): void {
         // Trigger a re-render of all tabs to ensure their tab lists are up to date
         this.tabs.forEach(tab => {
-            if ((tab as any).refresh) {
-                (tab as any).refresh();
+            const t = tab as BaseTab & { refresh?: () => void };
+            if (typeof t.refresh === 'function') {
+                t.refresh();
             }
         });
 
         // Force a micro-task delay to allow VDOM to complete rendering
-        // This ensures DOM updates are visible to tests immediately after removeTab()
         Promise.resolve().then(() => {
-            // DOM should be stable now
-            if ((window as any).__TEST_MODE__) {
+            if (window.__TEST_MODE__) {
                 console.log('[FinderWindow] Tabs rendered, count:', this.tabs.size);
             }
         });
     }
 
     private _doRenderTabs(): void {
-        const W = window as any;
-        if (!W.WindowTabs || !this.element) {
+        if (!window.WindowTabs || !this.element) {
             return;
         }
         const tabBar = this.element.querySelector(`#${this.id}-tabs`);
@@ -68,10 +72,9 @@ export class FinderWindow extends BaseWindow {
         }
 
         // Always show tab bar for Finder (unlike Terminal/TextEditor)
-        // Tab bar contains navigation and "+" button
         (tabBar as HTMLElement).style.display = '';
 
-        const makeInst = (tab: any) => ({
+        const makeInst = (tab: BaseTab) => ({
             instanceId: tab.id,
             title: tab.title,
             metadata: { tabLabel: tab.title },
@@ -92,15 +95,14 @@ export class FinderWindow extends BaseWindow {
                 return t ? makeInst(t) : null;
             },
             setActiveInstance: (id: string) => this.setActiveTab(id),
-            createInstance: (cfg?: any) => {
-                const view = W.FinderView
-                    ? new W.FinderView({ title: cfg?.title || `Computer`, source: 'computer' })
+            createInstance: (cfg?: { title?: string }) => {
+                const view = window.FinderView
+                    ? new window.FinderView({ title: cfg?.title || `Computer`, source: 'computer' })
                     : null;
                 if (view) {
-                    this.addTab(view);
-                    // Aktiviere den neuen Tab direkt nach dem Erstellen
-                    this.setActiveTab(view.id);
-                    return makeInst(view);
+                    this.addTab(view as unknown as BaseTab);
+                    this.setActiveTab((view as unknown as BaseTab).id);
+                    return makeInst(view as unknown as BaseTab);
                 }
                 return null;
             },
@@ -108,7 +110,7 @@ export class FinderWindow extends BaseWindow {
             getInstanceCount: () => this.tabs.size,
             reorderInstances: (newOrder: string[]) => {
                 const old = this.tabs;
-                const rebuilt = new Map<string, any>();
+                const rebuilt = new Map<string, BaseTab>();
                 newOrder.forEach(id => {
                     const t = old.get(id);
                     if (t) rebuilt.set(id, t);
@@ -116,111 +118,102 @@ export class FinderWindow extends BaseWindow {
                 old.forEach((t, id) => {
                     if (!rebuilt.has(id)) rebuilt.set(id, t);
                 });
-                (this as any).tabs = rebuilt;
+                this.tabs = rebuilt;
                 this._renderTabs();
             },
             detachInstance: (id: string) => {
-                const t = this.detachTab(id) as any;
+                const t = this.detachTab(id);
                 return t ? makeInst(t) : null;
             },
-            adoptInstance: (inst: any) => {
-                const tab = inst.__tab || inst;
+            adoptInstance: (inst: { instanceId?: string; __tab?: BaseTab; id?: string }) => {
+                const tab = inst.__tab || (inst as unknown as BaseTab);
                 this.addTab(tab);
-                this.setActiveTab(tab.id);
+                this.setActiveTab((tab as BaseTab).id);
                 return makeInst(tab);
             },
         };
 
         // Destroy existing controller before creating new one
-        if ((this as any).tabController) {
-            (this as any).tabController.destroy();
+        if (this.tabController) {
+            this.tabController.destroy();
         }
-        (this as any).tabController = W.WindowTabs.create(adapter, tabBar as HTMLElement, {
+        this.tabController = window.WindowTabs.create!(adapter, tabBar as HTMLElement, {
             addButton: true,
             onCreateInstanceTitle: () => `Tab ${this.tabs.size + 1}`,
         });
     }
 
     createView(title?: string): BaseTab | null {
-        const W = window as any;
-        if (!W.FinderView) {
+        if (!window.FinderView) {
             console.error('FinderView class not loaded');
             return null;
         }
-        const view = new W.FinderView({ title: title || `Computer`, source: 'computer' });
-        this.addTab(view);
-        this.setActiveTab(view.id);
+        const view = new window.FinderView({ title: title || `Computer`, source: 'computer' });
+        this.addTab(view as unknown as BaseTab);
+        this.setActiveTab((view as unknown as BaseTab).id);
 
         // Trigger re-render of all tabs to update their tab lists
         this._renderTabs();
 
-        return view;
+        return view as unknown as BaseTab;
     }
 
     createGithubView(title?: string): BaseTab | null {
-        const W = window as any;
-        if (!W.FinderView) {
+        if (!window.FinderView) {
             console.error('FinderView class not loaded');
             return null;
         }
-        const view = new W.FinderView({ title: title || `GitHub`, source: 'github', icon: '📦' });
-        this.addTab(view);
-        this.setActiveTab(view.id);
+        const view = new window.FinderView({
+            title: title || `GitHub`,
+            source: 'github',
+            icon: '📦',
+        });
+        this.addTab(view as unknown as BaseTab);
+        this.setActiveTab((view as unknown as BaseTab).id);
 
         // Trigger re-render of all tabs to update their tab lists
         this._renderTabs();
 
-        return view;
+        return view as unknown as BaseTab;
     }
 
     static create(config?: Partial<WindowConfig>): FinderWindow {
-        const window = new FinderWindow(config);
-        window.createView('Computer');
+        const win = new FinderWindow(config);
+        win.createView('Computer');
 
         // Register window BEFORE showing it, so updateDockIndicators() can find it
-        const W = globalThis as any;
-        if (W.WindowRegistry) W.WindowRegistry.registerWindow(window);
+        if (globalThis.WindowRegistry) globalThis.WindowRegistry.registerWindow?.(win);
 
-        window.show();
+        win.show();
 
         // Explicitly render tabs (timing: must happen after window is shown and in DOM)
-        (window as any)._renderTabs?.();
+        win.requestTabsRender();
 
-        return window;
+        return win;
     }
 
-    /**
-     * Focus existing Finder window or create new one (macOS-like Dock behavior)
-     * - If no Finder window exists, create a new one
-     * - If Finder windows exist, focus the most recently active one
-     */
     static focusOrCreate(config?: Partial<WindowConfig>): FinderWindow {
-        const W = globalThis as any;
-        if (!W.WindowRegistry) {
-            // Fallback: create new if registry unavailable
+        if (!globalThis.WindowRegistry) {
             return FinderWindow.create(config);
         }
 
-        // Get all existing Finder windows
-        const finderWindows = W.WindowRegistry.getWindowsByType('finder');
+        const finderWindows = (globalThis.WindowRegistry.getWindowsByType?.('finder') ??
+            []) as FinderWindow[];
 
         if (finderWindows.length === 0) {
-            // No Finder window exists → create new one
             return FinderWindow.create(config);
         }
 
-        // Find the most recently active Finder window (highest z-index)
-        let mostRecentWindow = finderWindows[0];
+        let mostRecentWindow = finderWindows[0]!;
         for (const win of finderWindows) {
             if (win.zIndex > mostRecentWindow.zIndex) {
                 mostRecentWindow = win;
             }
         }
 
-        // Focus the most recent Finder window
         mostRecentWindow.bringToFront();
         return mostRecentWindow;
     }
 }
 
-(window as any).FinderWindow = FinderWindow;
+window.FinderWindow = FinderWindow;

@@ -5,7 +5,6 @@
  * Uses the shared VirtualFS for file system operations.
  * Uses VDOM for efficient output rendering without losing input focus.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BaseTab, type TabConfig } from '../../windows/base-tab.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
@@ -718,7 +717,7 @@ export class TerminalSession extends BaseTab {
     /**
      * Serialize session state
      */
-    serialize(): any {
+    serialize(): Record<string, unknown> {
         return {
             ...super.serialize(),
             currentPath: this.vfsCwd,
@@ -727,26 +726,21 @@ export class TerminalSession extends BaseTab {
         };
     }
 
-    /**
-     * Restore session from state
-     */
-    static deserialize(state: any): TerminalSession {
+    static deserialize(state: Record<string, unknown>): TerminalSession {
         const session = new TerminalSession({
-            id: state.id,
-            title: state.title,
+            id: state['id'] as string | undefined,
+            title: state['title'] as string | undefined,
         });
 
         // Use vfsCwd if available, otherwise fall back to currentPath
-        // Note: Path migration is handled centrally in MultiWindowSessionManager
-        // before this method is called, so paths are already in the correct format
-        if (state.vfsCwd) {
-            session.vfsCwd = state.vfsCwd;
-        } else if (state.currentPath) {
-            session.vfsCwd = state.currentPath;
+        if (state['vfsCwd']) {
+            session.vfsCwd = state['vfsCwd'] as string;
+        } else if (state['currentPath']) {
+            session.vfsCwd = state['currentPath'] as string;
         }
 
-        if (state.commandHistory) {
-            session.commandHistory = state.commandHistory;
+        if (state['commandHistory']) {
+            session.commandHistory = state['commandHistory'] as string[];
             session.historyIndex = session.commandHistory.length;
         }
 
@@ -764,4 +758,4 @@ export class TerminalSession extends BaseTab {
 }
 
 // Export to window
-(window as any).TerminalSession = TerminalSession;
+window.TerminalSession = TerminalSession;

@@ -2,18 +2,16 @@
  * src/ts/base-window-instance.ts
  * Typed port of js/base-window-instance.js
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { triggerAutoSave } from '../utils/auto-save-helper.js';
 
-export type EventCallback = (data?: any) => void;
+export type EventCallback = (data?: unknown) => void;
 
 export interface BaseWindowConfig {
     id?: string;
     type?: string;
     title?: string;
-    initialState?: Record<string, any>;
-    metadata?: Record<string, any>;
+    initialState?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
 }
 
 export class BaseWindowInstance {
@@ -22,11 +20,11 @@ export class BaseWindowInstance {
     title: string;
     container: HTMLElement | null;
     windowElement: HTMLElement | null;
-    state: Record<string, any>;
+    state: Record<string, unknown>;
     eventListeners: Map<string, EventCallback[]>;
     isInitialized: boolean;
     isVisible: boolean;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
     protected _skipInitialRender: boolean;
 
     constructor(config: BaseWindowConfig) {
@@ -47,7 +45,7 @@ export class BaseWindowInstance {
         return `${this.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     }
 
-    private _initializeState(initialState: Record<string, any>): Record<string, any> {
+    private _initializeState(initialState: Record<string, unknown>): Record<string, unknown> {
         return {
             ...initialState,
             created: Date.now(),
@@ -78,7 +76,7 @@ export class BaseWindowInstance {
 
     show(): void {
         if (this.container) {
-            const domUtils = (window as any).DOMUtils;
+            const domUtils = window.DOMUtils;
             if (domUtils && typeof domUtils.show === 'function') {
                 domUtils.show(this.container);
             } else {
@@ -91,7 +89,7 @@ export class BaseWindowInstance {
 
     hide(): void {
         if (this.container) {
-            const domUtils = (window as any).DOMUtils;
+            const domUtils = window.DOMUtils;
             if (domUtils && typeof domUtils.hide === 'function') {
                 domUtils.hide(this.container);
             } else {
@@ -107,11 +105,8 @@ export class BaseWindowInstance {
         this.removeAllEventListeners();
         if (this.container) {
             try {
-                if (typeof (this.container as any).remove === 'function') {
-                    (this.container as any).remove();
-                } else if (this.container.parentNode) {
-                    this.container.parentNode.removeChild(this.container);
-                }
+                // HTMLElement always has .remove(), use it directly
+                this.container.remove();
             } catch {
                 try {
                     this.container.innerHTML = '';
@@ -127,7 +122,7 @@ export class BaseWindowInstance {
         this.emit('destroyed');
     }
 
-    updateState(updates: Record<string, any>): void {
+    updateState(updates: Record<string, unknown>): void {
         const oldState = { ...this.state };
         this.state = {
             ...this.state,
@@ -141,17 +136,16 @@ export class BaseWindowInstance {
     }
 
     private _triggerAutoSave(): void {
-        const w = window as any;
-        if (w.SessionManager && typeof w.SessionManager.saveInstanceType === 'function') {
+        if (window.SessionManager && typeof window.SessionManager.saveInstanceType === 'function') {
             try {
-                w.SessionManager.saveInstanceType(this.type);
+                window.SessionManager.saveInstanceType(this.type);
             } catch (error) {
                 console.warn('Failed to trigger auto-save:', error);
             }
         }
     }
 
-    getState(): Record<string, any> {
+    getState(): Record<string, unknown> {
         return { ...this.state };
     }
 
@@ -165,7 +159,11 @@ export class BaseWindowInstance {
         };
     }
 
-    deserialize(data: any) {
+    deserialize(data: {
+        state?: Record<string, unknown>;
+        title?: string;
+        metadata?: Record<string, unknown>;
+    }) {
         // Setze Flag, um doppeltes Rendern bei Session Restore zu verhindern
         this._skipInitialRender = true;
 
@@ -175,7 +173,7 @@ export class BaseWindowInstance {
         this.emit('deserialized');
     }
 
-    emit(eventName: string, data?: any): void {
+    emit(eventName: string, data?: unknown): void {
         const listeners = this.eventListeners.get(eventName) || [];
         listeners.forEach(callback => {
             try {
@@ -212,9 +210,8 @@ export class BaseWindowInstance {
 }
 
 // Attach to window for legacy compatibility
-// Note: Type declaration is in types/index.d.ts
 if (typeof window !== 'undefined') {
-    (window as any).BaseWindowInstance = BaseWindowInstance;
+    window.BaseWindowInstance = BaseWindowInstance;
 }
 
 export default BaseWindowInstance;
@@ -308,7 +305,7 @@ console.log('BaseWindowInstance loaded');
 
         show(): void {
             if (this.container) {
-                const domUtils = (window as any).DOMUtils;
+                const domUtils = window.DOMUtils;
                 if (domUtils && typeof domUtils.show === 'function') {
                     domUtils.show(this.container);
                 } else {
@@ -319,7 +316,7 @@ console.log('BaseWindowInstance loaded');
 
         hide(): void {
             if (this.container) {
-                const domUtils = (window as any).DOMUtils;
+                const domUtils = window.DOMUtils;
                 if (domUtils && typeof domUtils.hide === 'function') {
                     domUtils.hide(this.container);
                 } else {

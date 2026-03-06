@@ -18,9 +18,9 @@
  * - FinderView ruft bei relevanten Änderungen _persistState() auf, was den Window‑State
  *   speichert; die Session enthält so alle offenen Finder‑Tabs inklusive Pfad/Ansicht.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BaseTab, type TabConfig } from '../../windows/base-tab.js';
+import type { FinderWindow } from './finder-window.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
 import PreviewInstanceManager from '../../windows/preview-instance-manager.js';
 import { h, diff, patch, createElement, type VNode } from '../../core/vdom.js';
@@ -90,7 +90,7 @@ export class FinderView extends BaseTab {
     historyIndex: number;
 
     // GitHub Content Cache
-    githubContentCache: Map<string, { data: any; timestamp: number }>;
+    githubContentCache: Map<string, { data: unknown; timestamp: number }>;
     cacheTTL: number;
 
     dom: {
@@ -103,7 +103,7 @@ export class FinderView extends BaseTab {
         resizer: HTMLElement | null;
     };
 
-    githubRepos: any[];
+    githubRepos: GitHubRepo[];
     githubError = false;
     githubErrorMessage = '';
     githubLoading = false;
@@ -246,7 +246,7 @@ export class FinderView extends BaseTab {
                 activeTabId: this.id,
                 onTabChange: id => this.parentWindow?.setActiveTab(id),
                 onTabClose: id => this.parentWindow?.removeTab(id),
-                onTabAdd: () => (this.parentWindow as any)?.createView(),
+                onTabAdd: () => (this.parentWindow as FinderWindow | null)?.createView(),
                 onTabMove: (tabId, targetWindowId, sourceWindowId) =>
                     this.moveTabToWindow(tabId, targetWindowId, sourceWindowId),
                 onTabDetach: (id, pos) => this.detachTabToNewWindow(id, pos),
@@ -340,9 +340,10 @@ export class FinderView extends BaseTab {
     private _renderAll(): void {
         // Ensure the tab title reflects the current folder/view
         // We call super.setTitle to avoid the recursion of this.setTitle -> refresh -> _renderAll
-        const w = window as any;
         const t = (key: string, fb: string) =>
-            w.appI18n ? w.appI18n.translate(key, {}, { fallback: fb }) : fb;
+            window.appI18n
+                ? window.appI18n.translate(key, {}, { fallback: fb } as Record<string, unknown>)
+                : fb;
 
         let label = '';
         const atRoot = this.currentPath.length === 0;
@@ -375,12 +376,13 @@ export class FinderView extends BaseTab {
         this._saveScrollPosition();
 
         // Collect tabs from parent window
-        const tabs = this.parentWindow
-            ? Array.from((this.parentWindow as any).tabs.values()).map((t: any) => ({
+        const finderWindow = this.parentWindow as FinderWindow | null;
+        const tabs = finderWindow
+            ? Array.from(finderWindow.tabs.values()).map(t => ({
                   id: t.id,
                   label: t.title,
                   icon: t.icon,
-                  closable: (this.parentWindow as any).tabs.size > 1,
+                  closable: finderWindow.tabs.size > 1,
               }))
             : [];
 
@@ -400,10 +402,10 @@ export class FinderView extends BaseTab {
                 sortBy: this.sortBy,
                 sortOrder: this.sortOrder,
                 tabs,
-                activeTabId: (this.parentWindow as any)?.activeTabId || this.id,
+                activeTabId: finderWindow?.activeTabId || this.id,
                 onTabChange: id => this.parentWindow?.setActiveTab(id),
                 onTabClose: id => this.parentWindow?.removeTab(id),
-                onTabAdd: () => (this.parentWindow as any)?.createView(),
+                onTabAdd: () => finderWindow?.createView(),
                 onTabMove: (tabId, targetWindowId, sourceWindowId) =>
                     this.moveTabToWindow(tabId, targetWindowId, sourceWindowId),
                 onTabDetach: (id, pos) => this.detachTabToNewWindow(id, pos),
@@ -957,31 +959,36 @@ export class FinderView extends BaseTab {
                 meta?: { repo?: string; path?: string }
             ) => {
                 try {
-                    const W = window as any;
-                    let editorWindow: any = null;
+                    type EditorWindow = {
+                        tabs: Map<string, { id: string; title: string }>;
+                        createDocument: (name: string, content: string) => { id: string } | null;
+                        setActiveTab: (id: string) => void;
+                        bringToFront?: () => void;
+                    };
+                    let editorWindow: EditorWindow | null = null;
                     // Prefer existing text-editor window
                     if (
-                        W.WindowRegistry &&
-                        typeof W.WindowRegistry.getWindowsByType === 'function'
+                        window.WindowRegistry &&
+                        typeof window.WindowRegistry.getWindowsByType === 'function'
                     ) {
-                        const existing = W.WindowRegistry.getWindowsByType('text-editor');
+                        const existing = window.WindowRegistry.getWindowsByType('text-editor');
                         if (existing && existing.length > 0) {
-                            editorWindow = existing[0];
+                            editorWindow = existing[0] as EditorWindow;
                         }
                     }
 
                     if (
                         !editorWindow &&
-                        W.TextEditorWindow &&
-                        typeof W.TextEditorWindow.create === 'function'
+                        window.TextEditorWindow &&
+                        typeof window.TextEditorWindow.create === 'function'
                     ) {
-                        editorWindow = W.TextEditorWindow.create();
+                        editorWindow = window.TextEditorWindow.create() as unknown as EditorWindow;
                     }
 
                     if (editorWindow && typeof editorWindow.createDocument === 'function') {
                         // Check if file is already open in a tab
-                        const existingTabs = Array.from(editorWindow.tabs.values()) as any[];
-                        const existingTab = existingTabs.find((tab: any) => tab.title === fileName);
+                        const existingTabs = Array.from(editorWindow.tabs.values());
+                        const existingTab = existingTabs.find(tab => tab.title === fileName);
 
                         if (existingTab) {
                             // File already open, just switch to that tab
@@ -1024,7 +1031,7 @@ export class FinderView extends BaseTab {
                     // VirtualFS expects path without leading '/' for arrays
                     const pathParts =
                         this.currentPath.length > 0 ? [...this.currentPath, name] : [name];
-                    const content = (VirtualFS as any).readFile(pathParts);
+                    const content = VirtualFS.readFile(pathParts);
                     if (content !== null && textExts.has(ext)) {
                         openInTextEditor(name, content);
                         return;
@@ -1250,7 +1257,7 @@ export class FinderView extends BaseTab {
                             }
                         }
                     }
-                } catch (e: any) {
+                } catch (e) {
                     console.warn('[FinderView] Failed to load GitHub file:', e);
                 }
             }
@@ -1524,7 +1531,7 @@ export class FinderView extends BaseTab {
 
         // Trigger parent window to save its state (which includes all tabs)
         if (this.parentWindow) {
-            (this.parentWindow as any)._saveState?.();
+            this.parentWindow.requestSave();
         }
     }
 
@@ -1583,7 +1590,7 @@ export class FinderView extends BaseTab {
         super.hide();
     }
 
-    serialize(): any {
+    serialize(): Record<string, unknown> {
         // Cleanup keyboard listeners before serialization
         if (this._keyboardCleanup) {
             this._keyboardCleanup();
@@ -1605,30 +1612,47 @@ export class FinderView extends BaseTab {
         };
     }
 
-    static deserialize(state: any): FinderView {
+    static deserialize(state: Record<string, unknown>): FinderView {
         const view = new FinderView({
-            id: state.id,
-            title: state.title || (state.source === 'github' ? 'GitHub' : 'Computer'),
-            icon: state.icon || (state.source === 'github' ? '📦' : '💻'),
-            source: (state.source as FinderSource) || 'computer',
+            id: state['id'] as string | undefined,
+            title:
+                (state['title'] as string | undefined) ||
+                (state['source'] === 'github' ? 'GitHub' : 'Computer'),
+            icon:
+                (state['icon'] as string | undefined) ||
+                (state['source'] === 'github' ? '📦' : '💻'),
+            source: (state['source'] as FinderSource) || 'computer',
             content: {
-                ...state.contentState,
-                favorites: state.favorites || state.contentState?.favorites || [],
-                recentFiles: state.recentFiles || state.contentState?.recentFiles || [],
-                sidebarWidth: state.sidebarWidth || state.contentState?.sidebarWidth || 192,
+                ...(state['contentState'] as Record<string, unknown> | undefined),
+                favorites:
+                    (state['favorites'] as string[] | undefined) ||
+                    (state['contentState'] as Record<string, unknown> | undefined)?.['favorites'] ||
+                    [],
+                recentFiles:
+                    (state['recentFiles'] as string[] | undefined) ||
+                    (state['contentState'] as Record<string, unknown> | undefined)?.[
+                        'recentFiles'
+                    ] ||
+                    [],
+                sidebarWidth:
+                    (state['sidebarWidth'] as number | undefined) ||
+                    (state['contentState'] as Record<string, unknown> | undefined)?.[
+                        'sidebarWidth'
+                    ] ||
+                    192,
             },
         });
-        view.currentPath = state.currentPath || [];
-        view.viewMode = state.viewMode || 'list';
-        view.sortBy = state.sortBy || 'name';
-        view.sortOrder = state.sortOrder || 'asc';
+        view.currentPath = (state['currentPath'] as string[]) || [];
+        view.viewMode = (state['viewMode'] as string) || 'list';
+        view.sortBy = (state['sortBy'] as string) || 'name';
+        view.sortOrder = (state['sortOrder'] as 'asc' | 'desc') || 'asc';
 
         // Restore scroll positions from serialized data
-        if (state.scrollPositions && Array.isArray(state.scrollPositions)) {
-            view._scrollPositions = new Map(state.scrollPositions);
+        if (state['scrollPositions'] && Array.isArray(state['scrollPositions'])) {
+            view._scrollPositions = new Map(state['scrollPositions'] as [string, number][]);
         }
-        if (typeof state.savedScrollPosition === 'number') {
-            view._savedScrollPosition = state.savedScrollPosition;
+        if (typeof state['savedScrollPosition'] === 'number') {
+            view._savedScrollPosition = state['savedScrollPosition'];
         }
 
         return view;
@@ -1636,13 +1660,21 @@ export class FinderView extends BaseTab {
 
     // --- GitHub Integration ---
     private getGithubUsername(): string {
-        const w = window as any;
-        return w.GITHUB_USERNAME || 'Marormur';
+        return window.GITHUB_USERNAME || 'Marormur';
     }
 
-    private getAPI(): any {
-        const w = window as any;
-        return w.GitHubAPI || null;
+    private getAPI(): {
+        fetchRepoContents?: (
+            user: string,
+            repo: string,
+            path?: string,
+            opts?: Record<string, unknown>
+        ) => Promise<unknown>;
+        prefetchUserRepos?: (user: string) => void;
+        fetchUserRepos?: (user: string, opts?: Record<string, unknown>) => Promise<unknown>;
+        getCached?: (key: string) => unknown;
+    } | null {
+        return window.GitHubAPI || null;
     }
 
     /**
@@ -1698,7 +1730,7 @@ export class FinderView extends BaseTab {
                 activeTabId: this.id,
                 onTabChange: id => this.parentWindow?.setActiveTab(id),
                 onTabClose: id => this.parentWindow?.removeTab(id),
-                onTabAdd: () => (this.parentWindow as any)?.createView(),
+                onTabAdd: () => (this.parentWindow as FinderWindow | null)?.createView(),
                 onTabMove: (tabId, targetWindowId, sourceWindowId) =>
                     this.moveTabToWindow(tabId, targetWindowId, sourceWindowId),
                 onTabDetach: (id, pos) => this.detachTabToNewWindow(id, pos),
@@ -1753,7 +1785,7 @@ export class FinderView extends BaseTab {
                 activeTabId: this.id,
                 onTabChange: id => this.parentWindow?.setActiveTab(id),
                 onTabClose: id => this.parentWindow?.removeTab(id),
-                onTabAdd: () => (this.parentWindow as any)?.createView(),
+                onTabAdd: () => (this.parentWindow as FinderWindow | null)?.createView(),
                 onTabMove: (tabId, targetWindowId, sourceWindowId) =>
                     this.moveTabToWindow(tabId, targetWindowId, sourceWindowId),
                 onTabDetach: (id, pos) => this.detachTabToNewWindow(id, pos),
@@ -1983,7 +2015,7 @@ export class FinderView extends BaseTab {
      * Kleines In‑Memory‑TTL‑Cache pro FinderView. Verhindert übermäßige Re‑Renders
      * und beschleunigt Navigieren zwischen Ordnern/Repos.
      */
-    private _readGithubCache(key: string): any | null {
+    private _readGithubCache(key: string): unknown | null {
         const cached = this.githubContentCache.get(key);
         if (!cached) return null;
 
@@ -1998,7 +2030,7 @@ export class FinderView extends BaseTab {
     }
 
     /** Schreibt einen Eintrag in den In‑Memory‑Cache. */
-    private _writeGithubCache(key: string, data: any): void {
+    private _writeGithubCache(key: string, data: unknown): void {
         this.githubContentCache.set(key, {
             data,
             timestamp: Date.now(),
@@ -2017,36 +2049,41 @@ export class FinderView extends BaseTab {
     }
 
     private detachTabToNewWindow(tabId: string, pos?: { x: number; y: number }): void {
-        const parentWin = this.parentWindow as any;
+        const parentWin = this.parentWindow as FinderWindow | null;
         if (!parentWin || typeof parentWin.detachTab !== 'function') return;
         if (!parentWin.tabs?.has?.(tabId)) return;
 
         const detached = parentWin.detachTab(tabId) as FinderView | null;
         if (!detached) return;
 
-        const W = window as any;
-        const FinderWindowCtor = W.FinderWindow;
+        const FinderWindowCtor = window.FinderWindow;
         if (!FinderWindowCtor) return;
 
-        const basePos = parentWin.position || { x: 120, y: 80, width: 800, height: 600 };
-        const menuBottom = (W.getMenuBarBottom?.() || 0) + 12;
+        const position = (
+            parentWin as unknown as {
+                position?: { x: number; y: number; width: number; height: number };
+            }
+        ).position || { x: 120, y: 80, width: 800, height: 600 };
+        const menuBottom = (window.getMenuBarBottom?.() || 0) + 12;
         const nextPos = pos
             ? {
-                  x: Math.max(24, pos.x - basePos.width / 2),
+                  x: Math.max(24, pos.x - position.width / 2),
                   y: Math.max(menuBottom, pos.y - 48),
-                  width: basePos.width,
-                  height: basePos.height,
+                  width: position.width,
+                  height: position.height,
               }
             : {
-                  x: basePos.x + 32,
-                  y: basePos.y + 32,
-                  width: basePos.width,
-                  height: basePos.height,
+                  x: position.x + 32,
+                  y: position.y + 32,
+                  width: position.width,
+                  height: position.height,
               };
 
-        const newWin = new FinderWindowCtor({ position: nextPos });
-        if (W.WindowRegistry) {
-            W.WindowRegistry.registerWindow(newWin);
+        const newWin = new (FinderWindowCtor as unknown as new (cfg?: {
+            position?: { x: number; y: number; width: number; height: number };
+        }) => FinderWindow)({ position: nextPos });
+        if (window.WindowRegistry) {
+            window.WindowRegistry.registerWindow?.(newWin);
         }
         newWin.show();
         newWin.addTab(detached);
@@ -2054,17 +2091,16 @@ export class FinderView extends BaseTab {
     }
 
     private moveTabToWindow(tabId: string, targetWindowId: string, sourceWindowId?: string): void {
-        const W = window as any;
-        const registry = W.WindowRegistry;
+        const registry = window.WindowRegistry;
 
         // Resolve source window explicitly (drag origin), fallback to current parent
-        const sourceWin =
-            (sourceWindowId && registry?.getWindow?.(sourceWindowId)) || (this.parentWindow as any);
-        if (!sourceWin || sourceWin.type !== 'finder') return;
+        const sourceWin = ((sourceWindowId ? registry?.getWindow?.(sourceWindowId) : null) ||
+            this.parentWindow) as FinderWindow | null;
+        if (!sourceWin || (sourceWin as unknown as { type?: string }).type !== 'finder') return;
         if (!sourceWin.tabs?.has?.(tabId)) return;
 
-        const targetWin = registry?.getWindow?.(targetWindowId) as any;
-        if (!targetWin || targetWin.type !== 'finder') return;
+        const targetWin = registry?.getWindow?.(targetWindowId) as FinderWindow | null;
+        if (!targetWin || (targetWin as unknown as { type?: string }).type !== 'finder') return;
         if (targetWin.tabs?.has?.(tabId)) return;
         if (targetWin === sourceWin) return;
 
@@ -2073,8 +2109,8 @@ export class FinderView extends BaseTab {
 
         targetWin.addTab(detached);
         targetWin.setActiveTab(detached.id);
-        targetWin.bringToFront?.();
+        (targetWin as unknown as { bringToFront?: () => void }).bringToFront?.();
     }
 }
 
-(window as any).FinderView = FinderView;
+window.FinderView = FinderView;

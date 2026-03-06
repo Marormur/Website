@@ -1,7 +1,7 @@
 /*
  * PhotosWindow — integrates the Photos app into the BaseWindow system
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 
 export class PhotosWindow extends BaseWindow {
@@ -26,7 +26,7 @@ export class PhotosWindow extends BaseWindow {
         }
 
         // Build app content via global PhotosApp helper (in photos-app.ts)
-        const builder = (window as any).PhotosAppBuildContent as
+        const builder = window.PhotosAppBuildContent as
             | (() => { container: HTMLElement; detailOverlay: HTMLElement })
             | undefined;
         if (typeof builder === 'function') {
@@ -36,11 +36,11 @@ export class PhotosWindow extends BaseWindow {
         }
 
         // Create and attach status bar (use WindowChrome if available)
-        const WindowChrome = (window as any).WindowChrome;
+        const WindowChrome = window.WindowChrome;
         if (WindowChrome && win) {
             const status = WindowChrome.createStatusBar({
                 leftContent:
-                    (window as any).appI18n?.translate?.('photos.status.countPlaceholder', {
+                    window.appI18n?.translate?.('photos.status.countPlaceholder', {
                         fallback: '– Fotos',
                     }) || '– Fotos',
                 rightContent: '',
@@ -48,10 +48,10 @@ export class PhotosWindow extends BaseWindow {
             win.appendChild(status);
 
             // Expose statusbar for photos app to use
-            (window as any).PhotosAppAttachToWindow?.(win as HTMLElement);
+            window.PhotosAppAttachToWindow?.(win as HTMLElement);
         } else {
             // Still call attach so the app can cache elements and init
-            (window as any).PhotosAppAttachToWindow?.(win as HTMLElement);
+            window.PhotosAppAttachToWindow?.(win as HTMLElement);
         }
 
         return win;
@@ -60,11 +60,10 @@ export class PhotosWindow extends BaseWindow {
     static create(config?: Partial<WindowConfig>): PhotosWindow {
         const w = new PhotosWindow(config);
         w.show();
-        const W = globalThis as any;
-        if (W.WindowRegistry) W.WindowRegistry.registerWindow(w);
+        if (globalThis.WindowRegistry) globalThis.WindowRegistry.registerWindow?.(w);
         return w;
     }
 }
 
 // Expose on window for global access
-(window as any).PhotosWindow = PhotosWindow;
+window.PhotosWindow = PhotosWindow;

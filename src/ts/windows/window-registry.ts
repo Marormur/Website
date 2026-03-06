@@ -2,8 +2,6 @@
  * src/ts/window-registry.ts
  * Central registry for managing all windows in the multi-window system
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import type { BaseWindow, WindowState } from '../windows/base-window.js';
 import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
 
@@ -36,8 +34,7 @@ class WindowRegistry {
      * Sync z-index with WindowManager to avoid conflicts
      */
     private _syncZIndexWithWindowManager(): void {
-        const W = window as any;
-        const legacyTopZ = W.WindowManager?.getTopZIndex?.();
+        const legacyTopZ = window.WindowManager?.getTopZIndex?.();
         if (typeof legacyTopZ === 'number') {
             this.nextZIndex = this.zIndexManager.ensureTopZIndex(legacyTopZ);
         } else {
@@ -259,7 +256,7 @@ class WindowRegistry {
 
 // Create and expose singleton
 const registry = new WindowRegistry();
-(window as any).WindowRegistry = registry;
+window.WindowRegistry = registry;
 
 // Initialize registry when DOM is ready
 if (document.readyState === 'loading') {

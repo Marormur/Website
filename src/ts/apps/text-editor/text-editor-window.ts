@@ -2,20 +2,18 @@
  * src/ts/text-editor-window.ts
  * TextEditor-specific multi-window implementation
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
 
-/**
- * TextEditorWindow - Window for text editor documents
- *
- * Features:
- * - Multiple document tabs per window
- * - Text editing toolbar
- * - Document management
- */
 export class TextEditorWindow extends BaseWindow {
+    /** WindowTabs controller for the tab bar – created lazily in _renderTabs. */
+    private tabController?: {
+        refresh: () => void;
+        destroy: () => void;
+        setTitle: (id: string, title: string) => void;
+    } | null;
+
     constructor(config?: Partial<WindowConfig>) {
         super({
             type: 'text-editor',
@@ -24,27 +22,18 @@ export class TextEditorWindow extends BaseWindow {
         });
     }
 
-    /**
-     * Create text-editor-specific window DOM
-     */
     createDOM(): HTMLElement {
         const modal = super.createDOM();
-        // Title is now set via i18n in BaseWindow
         return modal;
     }
 
-    /**
-     * Override tab rendering to use WindowTabs system
-     */
     protected _renderTabs(): void {
-        const W = window as any;
-        if (!W.WindowTabs || !this.element) return;
+        if (!window.WindowTabs || !this.element) return;
 
         const tabBar = this.element.querySelector(`#${this.id}-tabs`);
         if (!tabBar) return;
 
-        // Create a simple adapter for WindowTabs
-        const makeInst = (tab: any) => ({
+        const makeInst = (tab: BaseTab) => ({
             instanceId: tab.id,
             title: tab.title,
             metadata: { tabLabel: tab.title },
@@ -65,16 +54,15 @@ export class TextEditorWindow extends BaseWindow {
                 return t ? makeInst(t) : null;
             },
             setActiveInstance: (id: string) => this.setActiveTab(id),
-            createInstance: (cfg?: any) => {
-                const W = window as any;
-                const doc = W.TextEditorDocument
-                    ? new W.TextEditorDocument({
+            createInstance: (cfg?: { title?: string }) => {
+                const doc = window.TextEditorDocument
+                    ? new window.TextEditorDocument({
                           title: cfg?.title || `Editor ${this.tabs.size + 1}`,
                       })
                     : null;
                 if (doc) {
-                    this.addTab(doc);
-                    return makeInst(doc);
+                    this.addTab(doc as unknown as BaseTab);
+                    return makeInst(doc as unknown as BaseTab);
                 }
                 return null;
             },
@@ -82,7 +70,7 @@ export class TextEditorWindow extends BaseWindow {
             getInstanceCount: () => this.tabs.size,
             reorderInstances: (newOrder: string[]) => {
                 const old = this.tabs;
-                const rebuilt = new Map<string, any>();
+                const rebuilt = new Map<string, BaseTab>();
                 newOrder.forEach(id => {
                     const t = old.get(id);
                     if (t) rebuilt.set(id, t);
@@ -90,55 +78,46 @@ export class TextEditorWindow extends BaseWindow {
                 old.forEach((t, id) => {
                     if (!rebuilt.has(id)) rebuilt.set(id, t);
                 });
-                (this as any).tabs = rebuilt;
+                this.tabs = rebuilt;
                 this._renderTabs();
             },
             detachInstance: (id: string) => {
-                const t = this.detachTab(id) as any;
+                const t = this.detachTab(id);
                 return t ? makeInst(t) : null;
             },
-            adoptInstance: (inst: any) => {
-                const tab = inst.__tab || inst;
+            adoptInstance: (inst: { instanceId?: string; __tab?: BaseTab; id?: string }) => {
+                const tab = inst.__tab || (inst as unknown as BaseTab);
                 this.addTab(tab);
-                this.setActiveTab(tab.id);
+                this.setActiveTab((tab as BaseTab).id);
                 return makeInst(tab);
             },
         };
 
-        // Clear existing tab controller if any
-        if ((this as any).tabController) {
-            (this as any).tabController.destroy();
+        if (this.tabController) {
+            this.tabController.destroy();
         }
 
-        // Create WindowTabs controller
-        (this as any).tabController = W.WindowTabs.create(adapter, tabBar as HTMLElement, {
+        this.tabController = window.WindowTabs.create!(adapter, tabBar as HTMLElement, {
             addButton: true,
             onCreateInstanceTitle: () => `Editor ${this.tabs.size + 1}`,
         });
     }
 
-    /**
-     * Create a new document in this window
-     */
     createDocument(title?: string, content?: string): BaseTab | null {
-        const W = window as any;
-        if (!W.TextEditorDocument) {
+        if (!window.TextEditorDocument) {
             console.error('TextEditorDocument class not loaded');
             return null;
         }
 
-        const doc = new W.TextEditorDocument({
+        const doc = new window.TextEditorDocument({
             title: title || `Editor ${this.tabs.size + 1}`,
             content: { content: content || '' },
         });
 
-        this.addTab(doc);
-        return doc;
+        this.addTab(doc as unknown as BaseTab);
+        return doc as unknown as BaseTab;
     }
 
-    /**
-     * Static factory method to create a text editor window with one document
-     */
     static create(config?: Partial<WindowConfig>): TextEditorWindow {
         const window = new TextEditorWindow(config);
 
@@ -149,9 +128,8 @@ export class TextEditorWindow extends BaseWindow {
         window.show();
 
         // Register with WindowRegistry
-        const W = globalThis as any;
-        if (W.WindowRegistry) {
-            W.WindowRegistry.registerWindow(window);
+        if (globalThis.WindowRegistry) {
+            globalThis.WindowRegistry.registerWindow?.(window);
         }
 
         return window;
@@ -159,4 +137,4 @@ export class TextEditorWindow extends BaseWindow {
 }
 
 // Export to window for global access
-(window as any).TextEditorWindow = TextEditorWindow;
+window.TextEditorWindow = TextEditorWindow;

@@ -2,27 +2,25 @@
  * src/ts/context-menu.ts
  * Typed port of js/context-menu.js
  */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 const guardKey = '__customContextMenuInit';
-if ((window as any)[guardKey]) {
+const guardedWindow = window as unknown as Record<string, boolean>;
+if (guardedWindow[guardKey]) {
     // already initialized
 } else {
-    (window as any)[guardKey] = true;
+    guardedWindow[guardKey] = true;
 
     const i18n =
-        (window as any).appI18n ||
+        window.appI18n ||
         ({
             translate: (k: string) => k,
             applyTranslations: (_el?: Element) => {},
         } as { translate: (k: string) => string; applyTranslations: (el?: Element) => void });
 
     const hideAllDropdowns =
-        typeof (window as any).hideMenuDropdowns === 'function'
-            ? (window as any).hideMenuDropdowns
+        typeof window.hideMenuDropdowns === 'function'
+            ? window.hideMenuDropdowns
             : () => {
-                  const domUtils = (window as any).DOMUtils;
+                  const domUtils = window.DOMUtils;
                   document.querySelectorAll('.menu-dropdown').forEach(d => {
                       if (domUtils && typeof domUtils.hide === 'function') {
                           domUtils.hide(d);
@@ -38,47 +36,41 @@ if ((window as any)[guardKey]) {
     function openModal(id: string) {
         const el = document.getElementById(id);
         if (!el) return;
-        if (!(window as any).dialogs) (window as any).dialogs = {};
-        if (!(window as any).dialogs[id] && typeof (window as any).Dialog === 'function') {
+        if (!window.dialogs) window.dialogs = {};
+        if (!window.dialogs[id] && typeof window.Dialog === 'function') {
             try {
-                (window as any).dialogs[id] = new (window as any).Dialog(id);
+                window.dialogs[id] = new window.Dialog(id);
             } catch {
                 // noop
             }
         }
-        const dlg = (window as any).dialogs[id];
+        const dlg = window.dialogs[id];
         if (dlg && typeof dlg.open === 'function') {
             dlg.open();
         } else {
-            const domUtils = (window as any).DOMUtils;
+            const domUtils = window.DOMUtils;
             if (domUtils && typeof domUtils.show === 'function') {
                 domUtils.show(el);
             } else {
                 el.classList.remove('hidden');
             }
-            if (typeof (window as any).bringDialogToFront === 'function') {
-                (window as any).bringDialogToFront(id);
+            if (typeof window.bringDialogToFront === 'function') {
+                window.bringDialogToFront(id);
             }
         }
-        if (typeof (window as any).updateProgramLabelByTopModal === 'function') {
-            (window as any).updateProgramLabelByTopModal();
+        if (typeof window.updateProgramLabelByTopModal === 'function') {
+            window.updateProgramLabelByTopModal();
         }
     }
 
     function toggleDarkMode() {
-        if (
-            (window as any).SystemUI &&
-            typeof (window as any).SystemUI.handleSystemToggle === 'function'
-        ) {
-            (window as any).SystemUI.handleSystemToggle('dark-mode');
+        if (window.SystemUI && typeof window.SystemUI.handleSystemToggle === 'function') {
+            window.SystemUI.handleSystemToggle('dark-mode');
         } else {
             const next = !document.documentElement.classList.contains('dark');
             document.documentElement.classList.toggle('dark', next);
-            if (
-                (window as any).ThemeSystem &&
-                typeof (window as any).ThemeSystem.setThemePreference === 'function'
-            ) {
-                (window as any).ThemeSystem.setThemePreference(next ? 'dark' : 'light');
+            if (window.ThemeSystem && typeof window.ThemeSystem.setThemePreference === 'function') {
+                window.ThemeSystem.setThemePreference(next ? 'dark' : 'light');
             }
         }
     }
@@ -119,8 +111,8 @@ if ((window as any)[guardKey]) {
             }
         }
 
-        if (inImageModal && typeof (window as any).getImageViewerState === 'function') {
-            const st = (window as any).getImageViewerState();
+        if (inImageModal && typeof window.getImageViewerState === 'function') {
+            const st = window.getImageViewerState();
             if (st && st.hasImage) {
                 items.push({
                     id: 'image-open-tab',
@@ -129,8 +121,8 @@ if ((window as any)[guardKey]) {
                         i18n.translate('menu.image.openInTab') ||
                         'Bild in neuem Tab öffnen',
                     action: () => {
-                        if (typeof (window as any).openActiveImageInNewTab === 'function')
-                            (window as any).openActiveImageInNewTab();
+                        if (typeof window.openActiveImageInNewTab === 'function')
+                            window.openActiveImageInNewTab();
                     },
                 });
                 items.push({
@@ -140,8 +132,8 @@ if ((window as any)[guardKey]) {
                         i18n.translate('menu.image.saveImage') ||
                         'Bild sichern …',
                     action: () => {
-                        if (typeof (window as any).downloadActiveImage === 'function')
-                            (window as any).downloadActiveImage();
+                        if (typeof window.downloadActiveImage === 'function')
+                            window.downloadActiveImage();
                     },
                 });
                 items.push({ type: 'separator' });
@@ -162,10 +154,10 @@ if ((window as any)[guardKey]) {
                         label: i18n.translate('context.finder.openItem') || 'Öffnen',
                         action: () => {
                             if (
-                                (window as any).FinderSystem &&
-                                typeof (window as any).FinderSystem.openItem === 'function'
+                                window.FinderSystem &&
+                                typeof window.FinderSystem.openItem === 'function'
                             )
-                                (window as any).FinderSystem.openItem(itemName, itemType);
+                                window.FinderSystem.openItem(itemName, itemType);
                         },
                     });
 
@@ -179,7 +171,7 @@ if ((window as any)[guardKey]) {
                                 'Öffnen mit Vorschau',
                             action: () => {
                                 // Use ActionBus for simplicity
-                                const ab = (window as any).ActionBus;
+                                const ab = window.ActionBus;
                                 if (ab && typeof ab.execute === 'function') {
                                     ab.execute('openWithPreview', { itemName });
                                 }
@@ -204,15 +196,12 @@ if ((window as any)[guardKey]) {
                 label: i18n.translate('context.finder.refresh') || 'Aktualisieren',
                 action: () => {
                     if (
-                        (window as any).FinderSystem &&
-                        typeof (window as any).FinderSystem.navigateTo === 'function'
+                        window.FinderSystem &&
+                        typeof window.FinderSystem.navigateTo === 'function'
                     ) {
-                        const state = (window as any).FinderSystem.getState();
+                        const state = window.FinderSystem.getState();
                         if (state) {
-                            (window as any).FinderSystem.navigateTo(
-                                state.currentPath,
-                                state.currentView
-                            );
+                            window.FinderSystem.navigateTo(state.currentPath, state.currentView);
                         }
                     }
                 },
@@ -220,8 +209,8 @@ if ((window as any)[guardKey]) {
             items.push({ type: 'separator' });
 
             const currentViewMode =
-                (window as any).FinderSystem && (window as any).FinderSystem.getState
-                    ? (window as any).FinderSystem.getState().viewMode
+                window.FinderSystem && window.FinderSystem.getState
+                    ? window.FinderSystem.getState().viewMode
                     : 'list';
             if (currentViewMode !== 'list') {
                 items.push({
@@ -229,10 +218,10 @@ if ((window as any)[guardKey]) {
                     label: i18n.translate('context.finder.viewList') || 'Als Liste',
                     action: () => {
                         if (
-                            (window as any).FinderSystem &&
-                            typeof (window as any).FinderSystem.setViewMode === 'function'
+                            window.FinderSystem &&
+                            typeof window.FinderSystem.setViewMode === 'function'
                         )
-                            (window as any).FinderSystem.setViewMode('list');
+                            window.FinderSystem.setViewMode('list');
                     },
                 });
             }
@@ -242,10 +231,10 @@ if ((window as any)[guardKey]) {
                     label: i18n.translate('context.finder.viewGrid') || 'Als Raster',
                     action: () => {
                         if (
-                            (window as any).FinderSystem &&
-                            typeof (window as any).FinderSystem.setViewMode === 'function'
+                            window.FinderSystem &&
+                            typeof window.FinderSystem.setViewMode === 'function'
                         )
-                            (window as any).FinderSystem.setViewMode('grid');
+                            window.FinderSystem.setViewMode('grid');
                     },
                 });
             }
@@ -255,33 +244,24 @@ if ((window as any)[guardKey]) {
                 id: 'finder-sort-name',
                 label: i18n.translate('context.finder.sortByName') || 'Nach Name sortieren',
                 action: () => {
-                    if (
-                        (window as any).FinderSystem &&
-                        typeof (window as any).FinderSystem.setSortBy === 'function'
-                    )
-                        (window as any).FinderSystem.setSortBy('name');
+                    if (window.FinderSystem && typeof window.FinderSystem.setSortBy === 'function')
+                        window.FinderSystem.setSortBy('name');
                 },
             });
             items.push({
                 id: 'finder-sort-date',
                 label: i18n.translate('context.finder.sortByDate') || 'Nach Datum sortieren',
                 action: () => {
-                    if (
-                        (window as any).FinderSystem &&
-                        typeof (window as any).FinderSystem.setSortBy === 'function'
-                    )
-                        (window as any).FinderSystem.setSortBy('date');
+                    if (window.FinderSystem && typeof window.FinderSystem.setSortBy === 'function')
+                        window.FinderSystem.setSortBy('date');
                 },
             });
             items.push({
                 id: 'finder-sort-size',
                 label: i18n.translate('context.finder.sortBySize') || 'Nach Größe sortieren',
                 action: () => {
-                    if (
-                        (window as any).FinderSystem &&
-                        typeof (window as any).FinderSystem.setSortBy === 'function'
-                    )
-                        (window as any).FinderSystem.setSortBy('size');
+                    if (window.FinderSystem && typeof window.FinderSystem.setSortBy === 'function')
+                        window.FinderSystem.setSortBy('size');
                 },
             });
 
@@ -293,8 +273,7 @@ if ((window as any)[guardKey]) {
                 id: 'open-finder',
                 label: i18n.translate('context.openFinder') || 'Finder öffnen',
                 action: () => {
-                    const W = window as any;
-                    W.FinderWindow?.focusOrCreate();
+                    window.FinderWindow?.focusOrCreate();
                 },
             });
             items.push({
@@ -331,8 +310,7 @@ if ((window as any)[guardKey]) {
             id: 'open-finder',
             label: i18n.translate('context.openFinder') || 'Finder öffnen',
             action: () => {
-                const W = window as any;
-                W.FinderWindow?.focusOrCreate();
+                window.FinderWindow?.focusOrCreate();
             },
         });
         items.push({
@@ -382,7 +360,9 @@ if ((window as any)[guardKey]) {
         clearMenu();
         const fragment = document.createDocumentFragment();
         let firstFocusable: HTMLElement | null = null;
-        items.forEach((it: any, idx: number) => {
+        (
+            items as Array<{ type?: string; id?: string; label?: string; action?: () => void }>
+        ).forEach((it, idx: number) => {
             if (it.type === 'separator') {
                 const sep = document.createElement('li');
                 sep.className = 'menu-separator';
@@ -451,7 +431,7 @@ if ((window as any)[guardKey]) {
         } else if (document.body && document.body.lastElementChild !== menu) {
             document.body.appendChild(menu);
         }
-        const domUtils = (window as any).DOMUtils;
+        const domUtils = window.DOMUtils;
         if (domUtils && typeof domUtils.show === 'function') {
             domUtils.show(menu);
         } else {
@@ -469,7 +449,7 @@ if ((window as any)[guardKey]) {
     }
 
     function hideContextMenu() {
-        const domUtils = (window as any).DOMUtils;
+        const domUtils = window.DOMUtils;
         if (!menu.classList.contains('hidden')) {
             if (domUtils && typeof domUtils.hide === 'function') {
                 domUtils.hide(menu);
@@ -568,7 +548,7 @@ if ((window as any)[guardKey]) {
 
     document.addEventListener('contextmenu', showContextMenu);
 
-    if (typeof (window as any).bindDropdownTrigger === 'function') {
+    if (typeof window.bindDropdownTrigger === 'function') {
         document.querySelectorAll('[data-menubar-trigger-button="true"]').forEach(btn => {
             btn.addEventListener('click', () => hideContextMenu());
         });

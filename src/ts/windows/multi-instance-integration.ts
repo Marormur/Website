@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Multi-Instance Modal Integration (TypeScript)
  * Integrates the tab system with existing modals (Terminal, TextEditor, Finder)
@@ -110,7 +109,10 @@ import { getJSON } from '../services/storage-utils.js';
                 const { manager, tabManager } = integration;
                 // Support both legacy adapter ({controller: {refresh}}) and new controller ({refresh})
                 try {
-                    const maybe = tabManager as any;
+                    const maybe = tabManager as {
+                        refresh?: () => void;
+                        controller?: { refresh?: () => void };
+                    };
                     const refreshFn =
                         typeof maybe?.refresh === 'function'
                             ? maybe.refresh.bind(maybe)
@@ -123,10 +125,17 @@ import { getJSON } from '../services/storage-utils.js';
                 try {
                     const map = getJSON<Record<string, string | null>>('windowActiveInstances', {});
                     const wanted = map?.[type] || null;
-                    if (wanted && typeof (manager as any).setActiveInstance === 'function') {
+                    if (
+                        wanted &&
+                        typeof (
+                            manager as InstanceManagerShape & {
+                                setActiveInstance?: (id: string) => void;
+                            }
+                        ).setActiveInstance === 'function'
+                    ) {
                         // Only set if the instance exists to avoid creating new ones
                         const exists = manager.getAllInstances().some(i => i.instanceId === wanted);
-                        if (exists) (manager as any).setActiveInstance(wanted);
+                        if (exists) manager.setActiveInstance(wanted);
                     }
                 } catch {}
 
@@ -218,14 +227,14 @@ import { getJSON } from '../services/storage-utils.js';
         /** Close modal via API.window.close or DOM hide fallback */
         private closeModalOrHide(modalId: string) {
             try {
-                const API = (window as any).API;
+                const API = window.API;
                 if (API?.window?.close) {
                     API.window.close(modalId);
                     return;
                 }
                 const modal = document.getElementById(modalId);
                 if (!modal) return;
-                const domUtils = (window as any).DOMUtils;
+                const domUtils = window.DOMUtils;
                 if (domUtils && typeof domUtils.hide === 'function') {
                     domUtils.hide(modal);
                 } else {
@@ -279,7 +288,7 @@ import { getJSON } from '../services/storage-utils.js';
             // Applicable for terminal/text-editor which have a modal container.
             try {
                 if (integration.modalId) {
-                    const wm = (window as any).WindowManager;
+                    const wm = window.WindowManager;
                     const modal = document.getElementById(integration.modalId);
                     if (modal) {
                         const isHidden = modal.classList.contains('hidden');
@@ -343,7 +352,7 @@ import { getJSON } from '../services/storage-utils.js';
 
     // Create and expose singleton (retain both names for compatibility)
     const integration = new MultiInstanceIntegration();
-    (window as any).MultiInstanceIntegration = integration;
-    (window as any).multiInstanceIntegration = integration;
+    window.MultiInstanceIntegration = integration;
+    window.multiInstanceIntegration = integration;
     integration.init();
 })();

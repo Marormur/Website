@@ -5,8 +5,6 @@
 
 import { getJSON, setJSON } from '../services/storage-utils.js';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // getDockReservedBottom
 export function getDockReservedBottom(): number {
     try {
@@ -334,8 +332,7 @@ export function initDockDragDrop(): void {
 }
 
 export function updateDockIndicators(): void {
-    const W = window as any;
-    const domUtils = W.DOMUtils;
+    const domUtils = window.DOMUtils;
 
     const indicatorMappings = [
         { indicatorId: 'finder-indicator', windowType: 'finder' },
@@ -352,9 +349,9 @@ export function updateDockIndicators(): void {
         let hasOpenWindow = false;
 
         // Check multi-window system first (for finder, terminal, text-editor)
-        if (mapping.windowType && W.WindowRegistry) {
-            const windows = W.WindowRegistry.getWindowsByType(mapping.windowType);
-            hasOpenWindow = windows && windows.length > 0;
+        if (mapping.windowType && window.WindowRegistry) {
+            const windows = window.WindowRegistry.getWindowsByType?.(mapping.windowType);
+            hasOpenWindow = Array.isArray(windows) && windows.length > 0;
         }
 
         // Fallback: check legacy modal system
@@ -384,14 +381,8 @@ export function updateDockIndicators(): void {
 }
 
 // Global export for legacy compatibility
-declare global {
-    interface Window {
-        DockSystem?: any;
-        updateDockIndicators?: any;
-    }
-}
 if (typeof window !== 'undefined') {
-    (window as any).DockSystem = {
+    window.DockSystem = {
         getDockReservedBottom,
         initDockMagnification,
         initDockDragDrop,
@@ -402,8 +393,8 @@ if (typeof window !== 'undefined') {
         applyDockOrder,
     };
 
-    if (typeof (window as any).updateDockIndicators !== 'function') {
-        (window as any).updateDockIndicators = updateDockIndicators;
+    if (typeof window.updateDockIndicators !== 'function') {
+        window.updateDockIndicators = updateDockIndicators;
     }
 }
 

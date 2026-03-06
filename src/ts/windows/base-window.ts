@@ -3,8 +3,6 @@
  * Base class for multi-window system
  * Each window can contain multiple tabs with drag & drop support
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import type { BaseTab } from '../windows/base-tab.js';
 import { getZIndexManager } from './z-index-manager.js';
 
@@ -21,7 +19,7 @@ export interface WindowConfig {
     title?: string;
     position?: WindowPosition;
     tabs?: BaseTab[];
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface WindowState {
@@ -80,7 +78,7 @@ export class BaseWindow {
     isMaximized: boolean;
     tabs: Map<string, BaseTab>;
     activeTabId: string | null;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
     private dragState: {
         isDragging: boolean;
         startX: number;
@@ -185,7 +183,7 @@ export class BaseWindow {
         this._registerWithWindowManager();
 
         // Apply i18n translations to window elements
-        const W = window as any;
+        const W = window;
         if (W.appI18n && typeof W.appI18n.applyTranslations === 'function') {
             W.appI18n.applyTranslations(windowEl);
         }
@@ -241,7 +239,7 @@ export class BaseWindow {
         const typeKey = this.type === 'text-editor' ? 'text' : this.type;
         const titleKey = `desktop.${typeKey}`;
         title.setAttribute('data-i18n', titleKey);
-        title.textContent = this.metadata.title || this.type; // Fallback before i18n
+        title.textContent = (this.metadata.title as string | undefined) || this.type; // Fallback before i18n
 
         titlebar.appendChild(controls);
         titlebar.appendChild(title);
@@ -316,7 +314,14 @@ export class BaseWindow {
         const existingHandles = this.element.querySelectorAll('.resizer');
         existingHandles.forEach(handle => handle.remove());
 
-        const createHandle = (handle: any) => {
+        type ResizeHandle = {
+            name: string;
+            cursor: string;
+            directions: ('n' | 's' | 'e' | 'w')[];
+            style?: Record<string, string>;
+        };
+
+        const createHandle = (handle: ResizeHandle) => {
             const resizer = document.createElement('div');
             resizer.classList.add('resizer', `resizer-${handle.name}`);
             Object.assign(resizer.style, {
@@ -405,7 +410,7 @@ export class BaseWindow {
                         }
 
                         // Enforce menu bar boundary
-                        const minTop = (window as any).getMenuBarBottom?.() || 0;
+                        const minTop = window.getMenuBarBottom?.() || 0;
                         if (handle.directions.includes('n') && newTop < minTop) {
                             const overshoot = minTop - newTop;
                             newTop = minTop;
@@ -547,7 +552,7 @@ export class BaseWindow {
         }
 
         if (this.element) {
-            const domUtils = (window as any).DOMUtils;
+            const domUtils = window.DOMUtils;
             if (domUtils && typeof domUtils.show === 'function') {
                 domUtils.show(this.element);
             } else {
@@ -556,7 +561,7 @@ export class BaseWindow {
         }
         this.bringToFront();
         // Update menubar to reflect new active window
-        const W = window as any;
+        const W = window;
         W.updateProgramLabelByTopModal?.();
         W.updateDockIndicators?.();
         this._saveState();
@@ -568,7 +573,7 @@ export class BaseWindow {
     hide(): void {
         this.element?.classList.add('hidden');
         // Update menubar to reflect next top window
-        const W = window as any;
+        const W = window;
         W.updateProgramLabelByTopModal?.();
         const menuSystem = W.MenuSystem;
         if (menuSystem?.renderApplicationMenu) {
@@ -586,7 +591,7 @@ export class BaseWindow {
         this.hide();
 
         // Remove from z-index manager stack
-        const W = window as any;
+        const W = window;
         const zIndexManager = getZIndexManager();
         zIndexManager.removeWindow(this.id);
 
@@ -641,7 +646,7 @@ export class BaseWindow {
      * WindowRegistry.getNextZIndex(). Aktualisiert die Menubar.
      */
     bringToFront(): void {
-        const W = window as any;
+        const W = window;
         const zIndexManager = getZIndexManager();
         zIndexManager.bringToFront(this.id, this.element, this.element);
         // Sync local zIndex with DOM assignment
@@ -733,7 +738,7 @@ export class BaseWindow {
 
         // Hide but do not destroy
         tab.hide();
-        tab.setParentWindow(null as unknown as any);
+        tab.setParentWindow(null!);
         this.tabs.delete(tabId);
 
         // Adjust active tab
@@ -807,6 +812,22 @@ export class BaseWindow {
     }
 
     /**
+     * Public entry point to trigger a tab bar re-render.
+     * Called by BaseTab when the tab title changes.
+     */
+    requestTabsRender(): void {
+        this._renderTabs();
+    }
+
+    /**
+     * Public entry point to trigger a session state save.
+     * Called by contained tabs when their content state changes.
+     */
+    requestSave(): void {
+        this._saveState();
+    }
+
+    /**
      * Serialisierung des Fensterzustands (für Session‑Restore).
      */
     serialize(): WindowState {
@@ -819,7 +840,7 @@ export class BaseWindow {
             isMaximized: this.isMaximized,
             activeTabId: this.activeTabId,
             tabs: Array.from(this.tabs.keys()),
-            created: this.metadata.created || Date.now(),
+            created: (this.metadata.created as number | undefined) ?? Date.now(),
             modified: Date.now(),
         };
     }
@@ -846,8 +867,8 @@ export class BaseWindow {
         return window;
     }
 
-    private _saveState(): void {
-        const W = window as any;
+    protected _saveState(): void {
+        const W = window;
 
         // Trigger multi-window session save (debounced)
         if (W.MultiWindowSessionManager) {
@@ -877,7 +898,7 @@ export class BaseWindow {
 
         this._saveState();
         // Update menubar after destruction
-        const W = window as any;
+        const W = window;
         W.updateProgramLabelByTopModal?.();
     }
 
@@ -887,7 +908,7 @@ export class BaseWindow {
      * Multi‑Window‑Welt kompatibel zur bestehenden Menubar.
      */
     private _registerWithWindowManager(): void {
-        const W = window as any;
+        const W = window;
         const WM = W.WindowManager;
         if (!WM || typeof WM.getConfig !== 'function' || typeof WM.register !== 'function') return;
         if (WM.getConfig(this.id)) return; // already registered
@@ -925,4 +946,4 @@ export class BaseWindow {
 }
 
 // Export to window for global access
-(window as any).BaseWindow = BaseWindow;
+window.BaseWindow = BaseWindow;

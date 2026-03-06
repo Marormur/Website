@@ -3,9 +3,8 @@
  * Multi-Window Session Management
  * Handles saving/restoring window layouts and tab states for the new multi-window system
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import type { BaseWindow } from '../windows/base-window.js';
+import type { BaseTab } from '../windows/base-tab.js';
 import type { TabState } from '../windows/base-tab.js';
 import WindowRegistry from '../windows/window-registry.js';
 import { TerminalWindow } from '../apps/terminal/terminal-window.js';
@@ -25,7 +24,7 @@ export interface MultiWindowSession {
     metadata?: {
         theme?: string;
         language?: string;
-        [key: string]: any;
+        [key: string]: unknown;
     };
 }
 
@@ -43,7 +42,7 @@ export interface WindowSessionData {
     isMaximized: boolean;
     activeTabId: string | null;
     tabs: TabState[];
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -52,8 +51,65 @@ export interface WindowSessionData {
 export interface LegacySession {
     version?: string;
     timestamp?: number;
-    instances?: Record<string, any[]>; // Old instance manager format
-    [key: string]: any;
+    instances?: Record<string, unknown[]>; // Old instance manager format
+    [key: string]: unknown;
+}
+
+/**
+ * Raw tab data as it may appear in a legacy or partially-migrated session.
+ * Extends TabState with optional legacy path/history fields stored at the tab level.
+ */
+interface LegacyTabData extends TabState {
+    vfsCwd?: string;
+    currentPath?: string;
+    commandHistory?: unknown[];
+}
+
+/** Window session data that may use the legacy `sessions` key instead of `tabs`. */
+interface LegacyWindowData extends Omit<WindowSessionData, 'tabs'> {
+    tabs?: LegacyTabData[];
+    sessions?: LegacyTabData[];
+}
+
+/** Multi-window session that may contain legacy window/tab data used during migration. */
+interface LegacyMultiWindowSession extends Omit<MultiWindowSession, 'windows'> {
+    windows: LegacyWindowData[];
+}
+
+/**
+ * Shape of an individual tab record in a raw/legacy session (before normalization).
+ * All fields are optional since the raw data may not be fully formed.
+ */
+interface RawTabData {
+    id?: string;
+    sessionId?: string; // Legacy ID field in older session formats
+    type?: string;
+    title?: string;
+    icon?: string;
+    contentState?: Record<string, unknown>;
+    created?: number;
+    modified?: number;
+    vfsCwd?: string;
+    currentPath?: string;
+    commandHistory?: unknown[];
+}
+
+/**
+ * Shape of an individual window record in a raw/legacy session (before normalization).
+ */
+interface RawWindowData {
+    id?: string;
+    windowId?: string; // Legacy ID field
+    type?: string;
+    position?: WindowSessionData['position'];
+    zIndex?: number;
+    isMinimized?: boolean;
+    isMaximized?: boolean;
+    activeTabId?: string | null;
+    metadata?: Record<string, unknown>;
+    tabs?: RawTabData[];
+    sessions?: RawTabData[]; // Legacy alias for tabs
+    windowType?: string; // Used in some old formats
 }
 
 /**
@@ -234,7 +290,7 @@ class MultiWindowSessionManager {
     /**
      * Serialize a tab
      */
-    private serializeTab(tab: any): TabState {
+    private serializeTab(tab: BaseTab): TabState {
         // Use tab's own serialize method if available
         if (typeof tab.serialize === 'function') {
             return tab.serialize();
@@ -317,7 +373,7 @@ class MultiWindowSessionManager {
             );
             this.isRestoring = false;
             // Signal that session restore is complete (even if it failed)
-            (window as any).__SESSION_RESTORED = true;
+            window.__SESSION_RESTORED = true;
             console.info('[MultiWindowSessionManager] __SESSION_RESTORED=true');
         }
     }
@@ -362,8 +418,7 @@ class MultiWindowSessionManager {
 
         // If we filtered out windows, save the cleaned session
         // Update dock indicators after session restore
-        const W = window as any;
-        W.updateDockIndicators?.();
+        window.updateDockIndicators?.();
     }
 
     /**
@@ -401,8 +456,8 @@ class MultiWindowSessionManager {
 
             // Force tab rendering after window is shown and in DOM
             // This ensures tabs are visible even if they were added before the window was shown
-            if (typeof (window as any)._renderTabs === 'function') {
-                (window as any)._renderTabs();
+            if (typeof window._renderTabs === 'function') {
+                window._renderTabs();
             }
 
             // Apply window state after DOM is ready
@@ -467,7 +522,7 @@ class MultiWindowSessionManager {
     /**
      * Restore a single tab
      */
-    private restoreTab(data: TabState): any {
+    private restoreTab(data: TabState): BaseTab | null {
         try {
             // Determine tab class based on type
             switch (data.type) {
@@ -531,7 +586,7 @@ class MultiWindowSessionManager {
     /**
      * Migrate paths in session data
      */
-    private migrateSessionPaths(session: any): void {
+    private migrateSessionPaths(session: LegacyMultiWindowSession): void {
         if (!session || !session.windows) return;
 
         for (const window of session.windows) {
@@ -582,31 +637,32 @@ class MultiWindowSessionManager {
      * Normalize legacy session format to current format
      * Handles old format with windowId/sessions instead of id/tabs
      */
-    private normalizeLegacyV1Session(session: any): MultiWindowSession {
-        const normalized: MultiWindowSession = {
+    private normalizeLegacyV1Session(session: LegacySession): LegacyMultiWindowSession {
+        const normalized: LegacyMultiWindowSession = {
             version: MultiWindowSessionManager.VERSION,
             timestamp: session.timestamp || Date.now(),
             windows: [],
             metadata: session.metadata || {},
         };
 
-        for (const window of session.windows || []) {
-            const windowData: WindowSessionData = {
-                id: window.id || window.windowId || `window-${Date.now()}`,
-                type: window.type || session.windowType || 'terminal',
-                position: window.position || { x: 100, y: 100, width: 800, height: 600 },
-                zIndex: window.zIndex || 100,
-                isMinimized: window.isMinimized || false,
-                isMaximized: window.isMaximized || false,
-                activeTabId: window.activeTabId || null,
+        const rawWindows = (session.windows as RawWindowData[] | undefined) || [];
+        for (const win of rawWindows) {
+            const windowData: LegacyWindowData = {
+                id: win.id || win.windowId || `window-${Date.now()}`,
+                type: win.type || (session.windowType as string | undefined) || 'terminal',
+                position: win.position || { x: 100, y: 100, width: 800, height: 600 },
+                zIndex: win.zIndex || 100,
+                isMinimized: win.isMinimized || false,
+                isMaximized: win.isMaximized || false,
+                activeTabId: win.activeTabId ?? null,
                 tabs: [],
-                metadata: window.metadata || {},
+                metadata: win.metadata || {},
             };
 
             // Convert sessions[] to tabs[]
-            const tabsSource = window.tabs || window.sessions || [];
+            const tabsSource: RawTabData[] = win.tabs || win.sessions || [];
             for (const tab of tabsSource) {
-                const tabData: any = {
+                const tabData: LegacyTabData = {
                     id: tab.id || tab.sessionId || `tab-${Date.now()}-${Math.random()}`,
                     type: tab.type || 'terminal-session',
                     title: tab.title || 'Terminal',
@@ -616,17 +672,17 @@ class MultiWindowSessionManager {
                     modified: tab.modified || Date.now(),
                 };
 
-                // Copy relevant fields to tab data
+                // Preserve top-level legacy path fields so migrateSessionPaths can find them
                 if (tab.vfsCwd) tabData.vfsCwd = tab.vfsCwd;
                 if (tab.currentPath) tabData.currentPath = tab.currentPath;
                 if (tab.commandHistory) tabData.commandHistory = tab.commandHistory;
 
-                windowData.tabs.push(tabData);
+                windowData.tabs!.push(tabData);
             }
 
             // Set activeTabId if not set
-            if (!windowData.activeTabId && windowData.tabs.length > 0) {
-                const firstTab = windowData.tabs[0];
+            if (!windowData.activeTabId && windowData.tabs!.length > 0) {
+                const firstTab = windowData.tabs![0];
                 if (firstTab) {
                     windowData.activeTabId = firstTab.id;
                 }
@@ -779,7 +835,7 @@ class MultiWindowSessionManager {
     /**
      * Restore session metadata
      */
-    private restoreMetadata(metadata: Record<string, any>): void {
+    private restoreMetadata(metadata: Record<string, unknown>): void {
         // Theme and language are handled by existing systems
         console.log('[MultiWindowSessionManager] Session metadata:', metadata);
     }
@@ -787,7 +843,7 @@ class MultiWindowSessionManager {
     /**
      * Get session info (for debugging)
      */
-    getSessionInfo(): any {
+    getSessionInfo(): Record<string, unknown> | null {
         const sessionData = localStorage.getItem(MultiWindowSessionManager.STORAGE_KEY);
         if (!sessionData) return null;
 
@@ -821,6 +877,6 @@ class MultiWindowSessionManager {
 
 // Create and expose singleton
 const multiWindowSessionManager = new MultiWindowSessionManager();
-(window as any).MultiWindowSessionManager = multiWindowSessionManager;
+window.MultiWindowSessionManager = multiWindowSessionManager;
 
 export default multiWindowSessionManager;

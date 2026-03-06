@@ -3,18 +3,9 @@
  * Typed port of js/menu.js
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { translate } from '../services/i18n';
 
-// Allow dynamic access on window via string keys for legacy globals
-declare global {
-    interface Window {
-        [key: string]: any;
-    }
-}
-
-type MenuHandler = (...args: any[]) => unknown;
+type MenuHandler = (...args: unknown[]) => unknown;
 const menuActionHandlers = new Map<string, MenuHandler>();
 let menuActionIdCounter = 0;
 
@@ -35,21 +26,21 @@ export function normalizeMenuItems(items: unknown[], context: MenuContext) {
     const normalized: Record<string, unknown>[] = [];
     let previousWasSeparator = true;
     items.forEach(raw => {
-        const item = raw as any;
+        const item = raw as Record<string, unknown>;
         if (!item) return;
-        if (item.type === 'separator') {
+        if (item['type'] === 'separator') {
             if (previousWasSeparator) return;
             normalized.push({ type: 'separator' });
             previousWasSeparator = true;
             return;
         }
         const clone = Object.assign({}, item) as Record<string, unknown>;
-        if (typeof item.disabled === 'function')
-            (clone.disabled as unknown) = (item.disabled as (ctx: MenuContext) => boolean)(context);
-        if (typeof item.label === 'function')
-            (clone.label as unknown) = (item.label as (ctx: MenuContext) => string)(context);
-        if (typeof item.shortcut === 'function')
-            (clone.shortcut as unknown) = (item.shortcut as (ctx: MenuContext) => string)(context);
+        if (typeof item['disabled'] === 'function')
+            clone['disabled'] = (item['disabled'] as (ctx: MenuContext) => boolean)(context);
+        if (typeof item['label'] === 'function')
+            clone['label'] = (item['label'] as (ctx: MenuContext) => string)(context);
+        if (typeof item['shortcut'] === 'function')
+            clone['shortcut'] = (item['shortcut'] as (ctx: MenuContext) => string)(context);
         normalized.push(clone);
         previousWasSeparator = false;
     });
@@ -394,7 +385,7 @@ function buildProgramInfoMenuDefinition(context: MenuContext) {
     ];
 }
 
-function buildTerminalMenuDefinition(context: any) {
+function buildTerminalMenuDefinition(context: MenuContext) {
     // Determine active TerminalWindow (multi-window system)
     const registry = window['WindowRegistry'];
     const activeWin = registry?.getActiveWindow?.();
@@ -442,13 +433,30 @@ function buildTerminalMenuDefinition(context: any) {
                     action: () => {
                         const activeId = terminalWin?.activeTabId;
                         if (!activeId) return;
-                        const tabs = (terminalWin as any).tabs as Map<string, any>;
+                        const tabs = (
+                            terminalWin as unknown as {
+                                tabs: Map<
+                                    string,
+                                    {
+                                        title: string;
+                                        buffer?: string;
+                                        appendOutput?: (buf: string) => void;
+                                    }
+                                >;
+                            }
+                        ).tabs;
                         const orig = tabs.get(activeId);
                         if (orig && terminalWin.createSession) {
-                            const newSession = terminalWin.createSession(orig.title + ' Copy');
+                            const newSession = terminalWin.createSession(orig.title + ' Copy') as
+                                | { appendOutput?: (buf: string) => void }
+                                | undefined;
                             // Optionally copy buffer if available
-                            if (orig.buffer && newSession && (newSession as any).appendOutput) {
-                                (newSession as any).appendOutput(orig.buffer);
+                            if (
+                                orig.buffer &&
+                                newSession &&
+                                typeof newSession.appendOutput === 'function'
+                            ) {
+                                newSession.appendOutput(orig.buffer);
                             }
                         }
                     },
@@ -463,7 +471,8 @@ function buildTerminalMenuDefinition(context: any) {
                     disabled: () => !terminalWin || !terminalWin.activeTabId,
                     action: () => {
                         if (!terminalWin) return;
-                        const tabs: Map<string, any> = (terminalWin as any).tabs;
+                        const tabs = (terminalWin as unknown as { tabs: Map<string, unknown> })
+                            .tabs;
                         if (tabs.size <= 1) {
                             terminalWin.close?.();
                             return;
@@ -496,7 +505,11 @@ function buildTerminalMenuDefinition(context: any) {
                     action: () => {
                         if (!terminalWin) return;
                         const activeId = terminalWin.activeTabId;
-                        const tabs: Map<string, any> = (terminalWin as any).tabs;
+                        const tabs = (
+                            terminalWin as unknown as {
+                                tabs: Map<string, { clearOutput?: () => void }>;
+                            }
+                        ).tabs;
                         const tab = activeId ? tabs.get(activeId) : null;
                         const inst = tab || null;
                         if (inst?.clearOutput) inst.clearOutput();
@@ -571,9 +584,9 @@ function createWindowMenuSection(context: MenuContext) {
 }
 
 function getWindowMenuItems(context: MenuContext) {
-    const dialog = context && (context.dialog as any);
+    const dialog = context?.dialog;
     const hasDialog = Boolean(dialog && typeof dialog.close === 'function');
-    const items: any[] = [
+    const items: Record<string, unknown>[] = [
         {
             id: 'window-minimize',
             label: () => translate('menu.window.minimize'),
@@ -625,8 +638,8 @@ function getWindowMenuItems(context: MenuContext) {
 }
 
 function getMultiInstanceMenuItems(context: MenuContext) {
-    const items: any[] = [];
-    let manager: any = null;
+    const items: Record<string, unknown>[] = [];
+    let manager: InstanceManagerShape | null = null;
     let typeLabel: string | null = null;
     let newInstanceKey: string | null = null;
     const modalId = context?.modalId;
@@ -685,22 +698,32 @@ function getMultiInstanceMenuItems(context: MenuContext) {
             }
 
             // List windows for this type, sorted by zIndex
-            const sorted = [...wins].sort((a: any, b: any) => (a?.zIndex || 0) - (b?.zIndex || 0));
+            type WinItem = {
+                id?: string;
+                zIndex?: number;
+                bringToFront?: () => void;
+                focus?: () => void;
+            };
+            const sorted = [...wins].sort(
+                (a: unknown, b: unknown) =>
+                    ((a as WinItem)?.zIndex || 0) - ((b as WinItem)?.zIndex || 0)
+            );
             if (sorted.length > 0) items.push({ type: 'separator' });
-            sorted.forEach((win: any, idx: number) => {
-                const isActive = !!active && (active.id ? active.id === win.id : active === win);
+            sorted.forEach((win: unknown, idx: number) => {
+                const w = win as WinItem;
+                const isActive = !!active && (active.id ? active.id === w.id : active === win);
                 const numberLabel = `${cfg.label} ${idx + 1}`;
                 items.push({
-                    id: `window-instance-${win.id}`,
+                    id: `window-instance-${w.id}`,
                     label: () => `${isActive ? '✓ ' : ''}${numberLabel}`,
                     shortcut: idx < 9 ? `⌘${idx + 1}` : undefined,
                     action: () => {
-                        if (typeof win.bringToFront === 'function') {
-                            win.bringToFront();
-                        } else if (typeof win.focus === 'function') {
-                            win.focus();
+                        if (typeof w.bringToFront === 'function') {
+                            w.bringToFront();
+                        } else if (typeof w.focus === 'function') {
+                            w.focus();
                         } else if (typeof registry.setActiveWindow === 'function') {
-                            registry.setActiveWindow(win.id || null);
+                            registry.setActiveWindow(w.id ?? null);
                         }
                     },
                 });
@@ -755,13 +778,13 @@ function getMultiInstanceMenuItems(context: MenuContext) {
         icon: 'new',
         action: () => {
             const count = manager.getInstanceCount();
-            manager.createInstance({ title: `${typeLabel} ${count + 1}` } as any);
+            manager.createInstance({ title: `${typeLabel} ${count + 1}` });
         },
     });
     const instances = manager.getAllInstances();
     if (instances.length > 1) {
         items.push({ type: 'separator' });
-        instances.forEach((instance: any, index: number) => {
+        instances.forEach((instance, index: number) => {
             const isActive = manager.getActiveInstance()?.instanceId === instance.instanceId;
             // Normalize label to always include index-based numbering for stable UI/test selection
             const numberLabel = `${typeLabel} ${index + 1}`;
@@ -772,15 +795,13 @@ function getMultiInstanceMenuItems(context: MenuContext) {
                 action: () => {
                     manager.setActiveInstance(instance.instanceId);
                     // Also update visibility via MultiInstanceIntegration
-                    const integration = (window as any).multiInstanceIntegration;
+                    const integration = window.multiInstanceIntegration;
                     if (integration && typeof integration.updateInstanceVisibility === 'function') {
                         // Determine type based on manager
                         let type: string | null = null;
-                        if (manager === (window as any).FinderInstanceManager) type = 'finder';
-                        else if (manager === (window as any).TerminalInstanceManager)
-                            type = 'terminal';
-                        else if (manager === (window as any).TextEditorInstanceManager)
-                            type = 'text-editor';
+                        if (manager === window.FinderInstanceManager) type = 'finder';
+                        else if (manager === window.TerminalInstanceManager) type = 'terminal';
+                        else if (manager === window.TextEditorInstanceManager) type = 'text-editor';
 
                         if (type) {
                             integration.updateInstanceVisibility(type);
@@ -804,14 +825,14 @@ function getMultiInstanceMenuItems(context: MenuContext) {
                     if (confirm(confirmMsg)) {
                         manager.destroyAllInstances();
                         // If we closed all instances for a modal-backed window, also hide the modal
-                        const targetModal = (context as any)?.modalId;
+                        const targetModal = context?.modalId;
                         if (targetModal) {
                             if (typeof window['API']?.window?.close === 'function') {
                                 window['API'].window.close(targetModal);
                             } else {
                                 const el = document.getElementById(targetModal);
                                 if (el && !el.classList.contains('hidden')) {
-                                    const domUtils = (window as any).DOMUtils;
+                                    const domUtils = window.DOMUtils;
                                     if (domUtils && typeof domUtils.hide === 'function') {
                                         domUtils.hide(el);
                                     } else {
@@ -828,7 +849,15 @@ function getMultiInstanceMenuItems(context: MenuContext) {
     return items;
 }
 
-function createHelpMenuSection(context: any, overrides: any = {}) {
+type HelpMenuOverrides = {
+    sectionKey?: string;
+    itemKey?: string;
+    infoModalId?: string;
+    id?: string;
+    itemIcon?: string;
+};
+
+function createHelpMenuSection(context: MenuContext, overrides: HelpMenuOverrides = {}) {
     const sectionKey = overrides.sectionKey || 'menu.sections.help';
     const itemKey = overrides.itemKey || 'menu.help.showHelp';
     const infoModalId = overrides.infoModalId || context.modalId || null;
@@ -849,8 +878,10 @@ function createHelpMenuSection(context: any, overrides: any = {}) {
     };
 }
 
+type MenuSectionBuilder = (context: MenuContext) => Record<string, unknown>[];
+
 // --- Rendering ---
-const menuDefinitions: any = {
+const menuDefinitions: Record<string, MenuSectionBuilder> = {
     default: buildDefaultMenuDefinition,
     'projects-modal': buildFinderMenuDefinition,
     'settings-modal': buildSettingsMenuDefinition,
@@ -867,7 +898,7 @@ export function renderApplicationMenu(activeModalId?: string | null) {
     const container = document.getElementById('menubar-links');
     if (!container) return;
     // Detect active window type from WindowRegistry to switch menu dynamically
-    const registry = (window as any).WindowRegistry;
+    const registry = window.WindowRegistry;
     const activeType = registry?.getActiveWindow?.()?.type;
     // If a Terminal window is focused but no explicit terminal-modal passed, force terminal modal key
     if (activeType === 'terminal' && activeModalId !== 'terminal-modal') {
@@ -883,7 +914,7 @@ export function renderApplicationMenu(activeModalId?: string | null) {
     menuActionIdCounter = 0;
     currentMenuModalId = activeModalId || null;
     if (!Array.isArray(sections) || sections.length === 0) return;
-    sections.forEach((section: any, sectionIndex: number) => {
+    sections.forEach((section: Record<string, unknown>, sectionIndex: number) => {
         if (!section) return;
         const items = normalizeMenuItems(section.items, context);
         if (!items.length) return;
@@ -919,7 +950,9 @@ export function renderApplicationMenu(activeModalId?: string | null) {
             const li = document.createElement('li');
             li.setAttribute('role', 'none');
             const tagName = item.href ? 'a' : 'button';
-            const actionEl = document.createElement(tagName) as any;
+            const actionEl = document.createElement(tagName) as
+                | HTMLButtonElement
+                | HTMLAnchorElement;
             actionEl.className = 'menu-item';
             if (tagName === 'button') actionEl.type = 'button';
             else {
@@ -937,14 +970,14 @@ export function renderApplicationMenu(activeModalId?: string | null) {
                     : '';
             const labelSpan = document.createElement('span');
             labelSpan.className = 'menu-item-label';
-            if (item.icon && (window as any).IconSystem) {
+            if (item.icon && window.IconSystem) {
                 const iconSpan = document.createElement('span');
                 iconSpan.className = 'menu-item-icon';
-                const iconSvg = (window as any).IconSystem.getMenuIconSvg
-                    ? (window as any).IconSystem.getMenuIconSvg(item.icon)
+                const iconSvg = window.IconSystem.getMenuIconSvg
+                    ? window.IconSystem.getMenuIconSvg(item.icon)
                     : '';
-                if ((window as any).IconSystem.renderIconIntoElement)
-                    (window as any).IconSystem.renderIconIntoElement(iconSpan, iconSvg, item.icon);
+                if (window.IconSystem.renderIconIntoElement)
+                    window.IconSystem.renderIconIntoElement(iconSpan, iconSvg, item.icon);
                 labelSpan.appendChild(iconSpan);
             }
             labelSpan.appendChild(document.createTextNode(itemLabel));
@@ -979,8 +1012,8 @@ export function renderApplicationMenu(activeModalId?: string | null) {
         trigger.appendChild(button);
         trigger.appendChild(dropdown);
         container.appendChild(trigger);
-        if ((window as any).bindDropdownTrigger)
-            (window as any).bindDropdownTrigger(button, { hoverRequiresOpen: true });
+        if (window.bindDropdownTrigger)
+            window.bindDropdownTrigger(button, { hoverRequiresOpen: true });
     });
 }
 
@@ -995,7 +1028,7 @@ export function handleMenuActionActivation(event: Event) {
     if (typeof handler !== 'function') return;
     event.preventDefault();
     event.stopPropagation();
-    if ((window as any).hideMenuDropdowns) (window as any).hideMenuDropdowns();
+    if (window.hideMenuDropdowns) window.hideMenuDropdowns();
     try {
         handler();
     } catch (err) {
@@ -1003,35 +1036,32 @@ export function handleMenuActionActivation(event: Event) {
     }
 }
 
-function closeContextWindow(context: any) {
+function closeContextWindow(context: MenuContext) {
     const dialog = context && context.dialog;
     if (dialog && typeof dialog.close === 'function') dialog.close();
 }
 
 function hasAnyVisibleDialog() {
-    if (!window['dialogs']) return false;
-    return Object.values(window['dialogs']).some((d: any) =>
-        d && typeof d.isOpen === 'function' ? d.isOpen() : Boolean(d && d.isOpen)
-    );
+    if (!window.dialogs) return false;
+    return Object.values(window.dialogs).some(d => d && typeof d.close === 'function');
 }
 
 function sendTextEditorMenuAction(actionType: string) {
-    if ((window as any).sendTextEditorMenuAction)
-        (window as any).sendTextEditorMenuAction(actionType);
+    if (window.sendTextEditorMenuAction) window.sendTextEditorMenuAction(actionType);
 }
 
-function createMenuContext(modalId: string | null) {
-    const w = window as any;
+function createMenuContext(modalId: string | null): MenuContext {
     // Allow external override but avoid self-recursion when this function is
     // hoisted onto window as a global in non-module script context.
-    if (w.createMenuContext && w.createMenuContext !== (createMenuContext as any)) {
+    const extCreate = window.createMenuContext;
+    if (extCreate && extCreate !== (createMenuContext as typeof extCreate)) {
         try {
-            return w.createMenuContext(modalId);
+            return extCreate(modalId) as MenuContext;
         } catch (e) {
             console.warn('[Menu] createMenuContext override threw; falling back', e);
         }
     }
-    return { modalId: modalId, dialog: null };
+    return { modalId: modalId ?? undefined, dialog: null };
 }
 
 // translate() wird zentral aus i18n.ts importiert
@@ -1042,30 +1072,23 @@ export function refreshCurrentMenu() {
 
 export function setupInstanceManagerListeners() {
     const managers = [
-        window['FinderInstanceManager'],
-        window['TerminalInstanceManager'],
-        window['TextEditorInstanceManager'],
+        window.FinderInstanceManager,
+        window.TerminalInstanceManager,
+        window.TextEditorInstanceManager,
     ];
     managers.forEach(manager => {
         if (!manager || !manager.getAllInstances) return;
-        const originalCreate = manager.createInstance;
-        const originalDestroy = manager.destroyInstance;
-        const originalDestroyAll = manager.destroyAllInstances;
+        const originalCreate = manager.createInstance.bind(manager);
+        const originalDestroy = manager.destroyInstance.bind(manager);
         if (originalCreate)
-            manager.createInstance = function (...args: any[]) {
-                const result = originalCreate.apply(this, args);
+            manager.createInstance = function (...args: Parameters<typeof originalCreate>) {
+                const result = originalCreate(...args);
                 if (result) setTimeout(refreshCurrentMenu, 50);
                 return result;
             };
         if (originalDestroy)
-            manager.destroyInstance = function (...args: any[]) {
-                const result = originalDestroy.apply(this, args);
-                setTimeout(refreshCurrentMenu, 50);
-                return result;
-            };
-        if (originalDestroyAll)
-            manager.destroyAllInstances = function (...args: any[]) {
-                const result = originalDestroyAll.apply(this, args);
+            manager.destroyInstance = function (...args: Parameters<typeof originalDestroy>) {
+                const result = originalDestroy(...args);
                 setTimeout(refreshCurrentMenu, 50);
                 return result;
             };
@@ -1076,13 +1099,7 @@ if (document.readyState === 'loading')
     document.addEventListener('DOMContentLoaded', setupInstanceManagerListeners);
 else setTimeout(setupInstanceManagerListeners, 100);
 
-// Export
-declare global {
-    interface Window {
-        MenuSystem?: any;
-    }
-}
-(window as any).MenuSystem = {
+window.MenuSystem = {
     renderApplicationMenu,
     handleMenuActionActivation,
     menuDefinitions,
