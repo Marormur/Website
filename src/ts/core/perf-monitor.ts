@@ -4,10 +4,9 @@
  */
 
 import logger from './logger.js';
+import { getString, setString } from '../services/storage-utils.js';
 
 logger.debug('APP', 'PerfMonitor loaded');
-
-import { getString, setString } from '../services/storage-utils.js';
 
 (() => {
     'use strict';

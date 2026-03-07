@@ -1,7 +1,7 @@
 import logger from '../../core/logger.js';
-logger.debug('UI', 'TextEditorInstance (TS) loaded');
-
 import { getString, setString } from '../../services/storage-utils.js';
+
+logger.debug('UI', 'TextEditorInstance (TS) loaded');
 
 /**
  * TextEditorInstance - Multi-Instance capable text editor

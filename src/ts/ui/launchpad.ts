@@ -4,10 +4,9 @@
  */
 
 import logger from '../core/logger.js';
+import { translate } from '../services/i18n';
 
 logger.debug('UI', 'Launchpad (TS) loaded');
-
-import { translate } from '../services/i18n';
 
 (() => {
     'use strict';

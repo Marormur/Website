@@ -654,7 +654,7 @@ export function measurePerf<T>(fn: () => T, label?: string): { result: T; time: 
     const result = fn();
     const time = performance.now() - start;
 
-    if (label && typeof console !== 'undefined') {
+    if (label) {
         logger.debug('APP', `[VDOM] ${label}: ${time.toFixed(2)}ms`);
     }
 
