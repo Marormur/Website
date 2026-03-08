@@ -44,7 +44,7 @@ export function cleanupObsoleteStorage(): number {
             }
         }
     } catch (err) {
-        logger.warn('STORAGE-MIGRATION', 'Failed to clean openModals:', err);
+        logger.warn('STORAGE', '[STORAGE-MIGRATION] Failed to clean openModals:', err);
     }
 
     // --- modalPositions (Record<string, ...>) ----------------------------------
@@ -64,7 +64,7 @@ export function cleanupObsoleteStorage(): number {
             }
         }
     } catch (err) {
-        logger.warn('STORAGE-MIGRATION', 'Failed to clean modalPositions:', err);
+        logger.warn('STORAGE', '[STORAGE-MIGRATION] Failed to clean modalPositions:', err);
     }
 
     // --- window-session (legacy format) ---------------------------------------
@@ -87,11 +87,11 @@ export function cleanupObsoleteStorage(): number {
             }
         }
     } catch (err) {
-        logger.warn('STORAGE-MIGRATION', 'Failed to clean window-session:', err);
+        logger.warn('STORAGE', '[STORAGE-MIGRATION] Failed to clean window-session:', err);
     }
 
     if (cleaned > 0) {
-        logger.info('STORAGE-MIGRATION', `Cleaned ${cleaned} obsolete storage entries`);
+        logger.warn('STORAGE', `[STORAGE-MIGRATION] Cleaned ${cleaned} obsolete storage entries`);
     }
 
     return cleaned;
