@@ -25,6 +25,7 @@ import { VirtualFS } from '../../services/virtual-fs.js';
 import PreviewInstanceManager from '../../windows/preview-instance-manager.js';
 import { h, diff, patch, createElement, type VNode } from '../../core/vdom.js';
 import { FinderUI } from './finder-ui.js';
+import logger from '../../core/logger.js';
 
 const ROOT_FOLDER_NAME = 'Computer';
 
@@ -1020,7 +1021,7 @@ export class FinderView extends BaseTab {
                         return true;
                     }
                 } catch (e) {
-                    console.warn('[FinderView] Failed to open in text editor:', e);
+                    logger.warn('FINDER', '[FinderView] Failed to open in text editor:', e);
                 }
                 return false;
             };
@@ -1037,7 +1038,7 @@ export class FinderView extends BaseTab {
                         return;
                     }
                 } catch (e) {
-                    console.warn('[FinderView] VirtualFS read failed:', e);
+                    logger.warn('FINDER', '[FinderView] VirtualFS read failed:', e);
                 }
             }
 
@@ -1075,7 +1076,8 @@ export class FinderView extends BaseTab {
                                     return;
                                 }
                             } catch (efetch) {
-                                console.warn(
+                                logger.warn(
+                                    'FINDER',
                                     '[FinderView] fetch of download_url failed, falling back to open:',
                                     efetch
                                 );
@@ -1089,7 +1091,11 @@ export class FinderView extends BaseTab {
                             return;
                         }
                     } catch (eurl) {
-                        console.warn('[FinderView] failed to open maybe.download_url:', eurl);
+                        logger.warn(
+                            'FINDER',
+                            '[FinderView] failed to open maybe.download_url:',
+                            eurl
+                        );
                     }
                 }
 
@@ -1158,7 +1164,11 @@ export class FinderView extends BaseTab {
                                 }
                             }
                         } catch (eimg) {
-                            console.warn('[FinderView] failed to open embedded object:', eimg);
+                            logger.warn(
+                                'FINDER',
+                                '[FinderView] failed to open embedded object:',
+                                eimg
+                            );
                         }
                     }
 
@@ -1181,7 +1191,8 @@ export class FinderView extends BaseTab {
                                             return;
                                         }
                                     } catch (ef) {
-                                        console.warn(
+                                        logger.warn(
+                                            'FINDER',
                                             '[FinderView] failed to fetch image download_url:',
                                             ef
                                         );
@@ -1194,7 +1205,11 @@ export class FinderView extends BaseTab {
                                     return;
                                 }
                             } catch (eurl) {
-                                console.warn('[FinderView] failed to open download_url:', eurl);
+                                logger.warn(
+                                    'FINDER',
+                                    '[FinderView] failed to open download_url:',
+                                    eurl
+                                );
                             }
                         }
 
@@ -1247,7 +1262,11 @@ export class FinderView extends BaseTab {
                                     return;
                                 }
                             } catch (e2) {
-                                console.warn('[FinderView] Failed to open binary file:', e2);
+                                logger.warn(
+                                    'FINDER',
+                                    '[FinderView] Failed to open binary file:',
+                                    e2
+                                );
                             }
                         } else {
                             const raw = fileObj ? fileObj.content || '' : '';
@@ -1258,7 +1277,7 @@ export class FinderView extends BaseTab {
                         }
                     }
                 } catch (e) {
-                    console.warn('[FinderView] Failed to load GitHub file:', e);
+                    logger.warn('FINDER', '[FinderView] Failed to load GitHub file:', e);
                 }
             }
 
@@ -1405,7 +1424,7 @@ export class FinderView extends BaseTab {
                 return JSON.parse(stored) as RecentFile[];
             }
         } catch (e) {
-            console.warn('[FinderView] Failed to load recent files:', e);
+            logger.warn('FINDER', '[FinderView] Failed to load recent files:', e);
         }
         return FinderView.getDefaultRecentFiles();
     }
@@ -1417,7 +1436,7 @@ export class FinderView extends BaseTab {
         try {
             localStorage.setItem(FinderView.RECENT_FILES_KEY, JSON.stringify(files));
         } catch (e) {
-            console.warn('[FinderView] Failed to save recent files:', e);
+            logger.warn('FINDER', '[FinderView] Failed to save recent files:', e);
         }
     }
 
@@ -1858,7 +1877,11 @@ export class FinderView extends BaseTab {
                                 this._hideRefreshIndicator();
                             })
                             .catch((err: unknown) => {
-                                console.warn('[FinderView] Background refresh failed:', err);
+                                logger.warn(
+                                    'FINDER',
+                                    '[FinderView] Background refresh failed:',
+                                    err
+                                );
                                 this._hideRefreshIndicator();
                                 this._showRefreshError();
                             });
@@ -1908,7 +1931,11 @@ export class FinderView extends BaseTab {
                                 this._hideRefreshIndicator();
                             })
                             .catch((err: unknown) => {
-                                console.warn('[FinderView] Background refresh failed:', err);
+                                logger.warn(
+                                    'FINDER',
+                                    '[FinderView] Background refresh failed:',
+                                    err
+                                );
                                 this._hideRefreshIndicator();
                                 this._showRefreshError();
                             });

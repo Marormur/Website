@@ -1,6 +1,7 @@
+import logger from '../../core/logger.js';
 /**
  * Enhanced State Management
- * 
+ *
  * Advanced state management with selectors, middleware, and computed values.
  * Inspired by Redux/Zustand patterns but optimized for the MacUI framework.
  */
@@ -18,9 +19,9 @@ export interface StateManagerConfig<S> {
 
 /**
  * State Manager
- * 
+ *
  * Centralized state management with advanced features.
- * 
+ *
  * @example
  * ```typescript
  * interface AppState {
@@ -28,26 +29,26 @@ export interface StateManagerConfig<S> {
  *     theme: 'light' | 'dark';
  *     count: number;
  * }
- * 
+ *
  * const stateManager = new StateManager<AppState>({
  *     initialState: { user: null, theme: 'light', count: 0 },
  *     middleware: [loggingMiddleware, persistenceMiddleware],
  *     debug: true
  * });
- * 
+ *
  * // Subscribe to state changes
  * stateManager.subscribe((state, prev) => {
- *     console.log('State changed:', state);
+ *     logger.debug('FRAMEWORK', 'State changed:', state);
  * });
- * 
+ *
  * // Create selector
  * const userNameSelector = stateManager.createSelector(
  *     (state) => state.user?.name ?? 'Guest'
  * );
- * 
+ *
  * // Use selector
  * const userName = userNameSelector();
- * 
+ *
  * // Dispatch action
  * stateManager.dispatch('SET_USER', { name: 'John', email: 'john@example.com' });
  * ```
@@ -93,7 +94,7 @@ export class StateManager<S> {
      */
     dispatch(action: string, payload?: unknown): void {
         if (this.debug) {
-            console.log(`[StateManager] Action: ${action}`, payload);
+            logger.debug('FRAMEWORK', `[StateManager] Action: ${action}`, payload);
         }
 
         const prevState = this.state;
@@ -161,7 +162,7 @@ export class StateManager<S> {
     }
 
     private notifyListeners(prevState: S): void {
-        this.listeners.forEach((listener) => {
+        this.listeners.forEach(listener => {
             listener(this.state, prevState);
         });
     }
@@ -196,10 +197,10 @@ export class StateManager<S> {
  * Logging middleware
  */
 export const loggingMiddleware = <S>(state: S, action: string, payload: unknown): void => {
-    console.group(`Action: ${action}`);
-    console.log('Payload:', payload);
-    console.log('State:', state);
-    console.groupEnd();
+    logger.group('FRAMEWORK', `Action: ${action}`);
+    logger.debug('FRAMEWORK', 'Payload:', payload);
+    logger.debug('FRAMEWORK', 'State:', state);
+    logger.groupEnd();
 };
 
 /**
@@ -218,7 +219,7 @@ export const createPersistenceMiddleware = <S>(key: string) => {
 export const createValidationMiddleware = <S>(validator: (state: S) => boolean) => {
     return (state: S, action: string): S => {
         if (!validator(state)) {
-            console.warn(`[StateManager] Invalid state after action: ${action}`);
+            logger.warn('FRAMEWORK', `[StateManager] Invalid state after action: ${action}`);
         }
         return state;
     };

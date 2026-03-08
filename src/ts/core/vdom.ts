@@ -1,3 +1,4 @@
+import logger from './logger.js';
 /**
  * Mini-VDOM Core Implementation
  *
@@ -560,7 +561,7 @@ function updateElement(element: HTMLElement | Text, props: Record<string, unknow
  * @example
  * const delegator = new EventDelegator(document.getElementById('app'));
  * delegator.on('click', (e) => {
- *   console.log('Clicked:', e.target);
+ *   logger.debug('APP', 'Clicked:', e.target);
  * });
  * // Later: cleanup
  * delegator.destroy();
@@ -653,8 +654,8 @@ export function measurePerf<T>(fn: () => T, label?: string): { result: T; time: 
     const result = fn();
     const time = performance.now() - start;
 
-    if (label && typeof console !== 'undefined') {
-        console.log(`[VDOM] ${label}: ${time.toFixed(2)}ms`);
+    if (label) {
+        logger.debug('APP', `[VDOM] ${label}: ${time.toFixed(2)}ms`);
     }
 
     return { result, time };

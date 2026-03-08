@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 /**
  * icons.ts
  * Icon-Definitionen und SVG-Rendering-System für den macOS Desktop-Klon
@@ -166,7 +167,10 @@ function renderIconIntoElement(
             const svgEl = doc?.documentElement;
 
             if (svgEl && svgEl.tagName && svgEl.tagName.toLowerCase() === 'svg') {
-                const imported = target.ownerDocument.importNode(svgEl, true) as unknown as SVGSVGElement;
+                const imported = target.ownerDocument.importNode(
+                    svgEl,
+                    true
+                ) as unknown as SVGSVGElement;
 
                 // Set dimensions if not present
                 if (!imported.getAttribute('width')) {
@@ -184,7 +188,7 @@ function renderIconIntoElement(
                 return;
             }
         } catch (err) {
-            console.warn('SVG parsing failed; falling back to emoji.', err);
+            logger.warn('UI', 'SVG parsing failed; falling back to emoji.', err);
         }
     }
 

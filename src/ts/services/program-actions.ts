@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 (function () {
     'use strict';
 
@@ -11,7 +12,7 @@
         sendTextEditorMenuAction?: (command: string) => void;
     } & Window;
 
-    const gw = (window as unknown as GlobalWindow);
+    const gw = window as unknown as GlobalWindow;
 
     // --- Text Editor Menu Action Bridge ---
     function getTextEditorIframe(): HTMLIFrameElement | null {
@@ -45,7 +46,7 @@
         if (attempt < 10) {
             setTimeout(() => postToTextEditor(message, attempt + 1), 120);
         } else {
-            console.warn('Texteditor iframe nicht verfügbar, Nachricht verworfen.', message);
+            logger.warn('APP', 'Texteditor iframe nicht verfügbar, Nachricht verworfen.', message);
         }
     }
 
@@ -90,7 +91,9 @@
 
     // Export globals (do not override if already present)
     if (typeof gw.getImageViewerState !== 'function') gw.getImageViewerState = getImageViewerState;
-    if (typeof gw.openActiveImageInNewTab !== 'function') gw.openActiveImageInNewTab = openActiveImageInNewTab;
+    if (typeof gw.openActiveImageInNewTab !== 'function')
+        gw.openActiveImageInNewTab = openActiveImageInNewTab;
     if (typeof gw.downloadActiveImage !== 'function') gw.downloadActiveImage = downloadActiveImage;
-    if (typeof gw.sendTextEditorMenuAction !== 'function') gw.sendTextEditorMenuAction = sendTextEditorMenuAction;
+    if (typeof gw.sendTextEditorMenuAction !== 'function')
+        gw.sendTextEditorMenuAction = sendTextEditorMenuAction;
 })();

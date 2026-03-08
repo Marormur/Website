@@ -3,13 +3,14 @@
  */
 import type { ActionMap, Params } from './helpers.js';
 import { getGlobal, safeExecute } from './helpers.js';
+import logger from '../../core/logger.js';
 
 export function getWindowActions(): ActionMap {
     return {
         closeWindow: (params: Params) => {
             const windowId = params.windowId;
             if (!windowId) {
-                console.warn('closeWindow: missing windowId');
+                logger.warn('UI', 'closeWindow: missing windowId');
                 return;
             }
 
@@ -43,7 +44,8 @@ export function getWindowActions(): ActionMap {
                     finder.focusOrCreate();
                     return;
                 }
-                console.warn(
+                logger.warn(
+                    'UI',
                     '[ActionBus] openWindow called without windowId and FinderWindow not available'
                 );
                 return;
@@ -61,7 +63,8 @@ export function getWindowActions(): ActionMap {
                     g?.updateProgramLabelByTopModal?.();
                     return;
                 }
-                console.warn(
+                logger.warn(
+                    'UI',
                     '[ActionBus] FinderWindow not available; falling back to WindowManager.open("finder-modal")'
                 );
             }
@@ -78,7 +81,8 @@ export function getWindowActions(): ActionMap {
                     g?.updateProgramLabelByTopModal?.();
                     return;
                 }
-                console.warn(
+                logger.warn(
+                    'UI',
                     '[ActionBus] TerminalWindow not available; falling back to WindowManager.open("terminal-modal")'
                 );
             }
@@ -158,7 +162,7 @@ export function getWindowActions(): ActionMap {
         openDesktopItem: (params: Params) => {
             const itemId = params.itemId;
             if (!itemId) {
-                console.warn('openDesktopItem: missing itemId');
+                logger.warn('UI', 'openDesktopItem: missing itemId');
                 return;
             }
             // Lazy import to avoid circular dependency
@@ -167,7 +171,7 @@ export function getWindowActions(): ActionMap {
                 if (shortcut?.onOpen) {
                     shortcut.onOpen();
                 } else {
-                    console.warn(`openDesktopItem: no shortcut found for id "${itemId}"`);
+                    logger.warn('UI', `openDesktopItem: no shortcut found for id "${itemId}"`);
                 }
             });
         },

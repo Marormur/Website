@@ -1,9 +1,9 @@
-﻿/*
- * Fotos-App ΓÇô inspiriert von der macOS Fotos Anwendung.
+import logger from '../../core/logger.js';
+/*
+ * Fotos-App – inspiriert von der macOS Fotos Anwendung.
  * L├ñdt Bilder aus der Picsum API, gruppiert sie in verschiedene Ansichten
  * und stellt einen Detail-Viewer inklusive Favoritenverwaltung bereit.
  */
-
 type Orientation = 'landscape' | 'portrait' | 'square';
 type SidebarFilter = 'all' | 'favorites' | Orientation;
 type SegmentView = 'moments' | 'collections' | 'years';
@@ -215,7 +215,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
     function renderWindow(): HTMLElement | null {
         const WindowChrome = globalWindow.WindowChrome;
         if (!WindowChrome) {
-            console.error('WindowChrome not available');
+            logger.error('UI', 'WindowChrome not available');
             return null;
         }
 
@@ -434,7 +434,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                 // Fallback: create the old modal-based UI
                 const frame = renderWindow();
                 if (!frame) {
-                    console.error('Failed to render photos window');
+                    logger.error('UI', 'Failed to render photos window');
                     return;
                 }
 
@@ -702,7 +702,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             applyFilters();
             updateSidebarCounts();
         } catch (error) {
-            console.warn('Photos app: failed to load', error);
+            logger.warn('UI', 'Photos app: failed to load', error);
             setError(true);
         } finally {
             setLoading(false);

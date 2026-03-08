@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 /**
  * src/ts/utils/auto-save-helper.ts
  * Shared utility for triggering auto-save via SessionManager
@@ -14,7 +15,7 @@ export function triggerAutoSave(type: string): void {
         try {
             (SessionManager.saveInstanceType as (type: string) => void)(type);
         } catch (error) {
-            console.warn('Failed to trigger auto-save:', error);
+            logger.warn('APP', 'Failed to trigger auto-save:', error);
         }
     }
 }

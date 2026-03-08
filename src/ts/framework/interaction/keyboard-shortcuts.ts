@@ -1,6 +1,7 @@
+import logger from '../../core/logger.js';
 /**
  * Keyboard Shortcuts Framework
- * 
+ *
  * Centralized keyboard shortcut management with:
  * - Platform-aware key mappings (Cmd vs Ctrl)
  * - Scoping (global, window, component)
@@ -22,11 +23,11 @@ export interface ShortcutRegistration {
 
 /**
  * Keyboard Shortcuts Manager
- * 
+ *
  * @example
  * ```typescript
  * const shortcuts = KeyboardShortcuts.getInstance();
- * 
+ *
  * // Register global shortcut
  * shortcuts.register({
  *     id: 'save',
@@ -35,7 +36,7 @@ export interface ShortcutRegistration {
  *     description: 'Save file',
  *     callback: () => this.save()
  * });
- * 
+ *
  * // Platform-aware
  * shortcuts.register({
  *     id: 'copy',
@@ -66,10 +67,13 @@ export class KeyboardShortcuts {
      */
     register(registration: ShortcutRegistration): void {
         const normalizedKey = this.normalizeKey(registration.key);
-        
+
         // Check for conflicts
         if (this.shortcuts.has(registration.id)) {
-            console.warn(`[KeyboardShortcuts] Shortcut '${registration.id}' already registered. Overwriting.`);
+            logger.warn(
+                'FRAMEWORK',
+                `[KeyboardShortcuts] Shortcut '${registration.id}' already registered. Overwriting.`
+            );
         }
 
         this.shortcuts.set(registration.id, {
@@ -132,7 +136,7 @@ export class KeyboardShortcuts {
         }
         if (event.altKey) parts.push('alt');
         if (event.shiftKey) parts.push('shift');
-        
+
         const key = event.key.toLowerCase();
         if (key !== 'control' && key !== 'alt' && key !== 'shift' && key !== 'meta') {
             parts.push(key);
@@ -160,13 +164,13 @@ export class KeyboardShortcuts {
 
                 // Execute callback
                 const result = shortcut.callback(event);
-                
+
                 // Prevent default if callback returns false or undefined
                 if (result !== true) {
                     event.preventDefault();
                     event.stopPropagation();
                 }
-                
+
                 break;
             }
         }

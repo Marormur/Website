@@ -5,6 +5,7 @@
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
+import logger from '../../core/logger.js';
 
 export class TextEditorWindow extends BaseWindow {
     /** WindowTabs controller for the tab bar – created lazily in _renderTabs. */
@@ -105,7 +106,7 @@ export class TextEditorWindow extends BaseWindow {
 
     createDocument(title?: string, content?: string): BaseTab | null {
         if (!window.TextEditorDocument) {
-            console.error('TextEditorDocument class not loaded');
+            logger.error('UI', 'TextEditorDocument class not loaded');
             return null;
         }
 

@@ -4,6 +4,7 @@
  */
 
 import { getZIndexManager } from '../windows/z-index-manager.js';
+import logger from '../core/logger.js';
 
 export class Dialog {
     modal: HTMLElement;
@@ -15,7 +16,7 @@ export class Dialog {
         this.modalId = modalId;
         const el = document.getElementById(modalId);
         if (!el) {
-            console.error(`Dialog: No element found with id "${modalId}"`);
+            logger.error('UI', `Dialog: No element found with id "${modalId}"`);
             throw new Error(`No dialog with id ${modalId}`);
         }
         this.modal = el as HTMLElement;
@@ -75,7 +76,10 @@ export class Dialog {
 
     open() {
         if (!this.modal) {
-            console.error(`Cannot open dialog: modal element is undefined (id: ${this.modalId})`);
+            logger.error(
+                'UI',
+                `Cannot open dialog: modal element is undefined (id: ${this.modalId})`
+            );
             return;
         }
 
@@ -660,7 +664,7 @@ export class Dialog {
                     });
                 }
             } catch (err) {
-                console.error('Could not attach mousedown event in iframe:', err);
+                logger.error('UI', 'Could not attach mousedown event in iframe:', err);
             }
         });
     }

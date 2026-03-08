@@ -1,6 +1,7 @@
-console.log('TextEditorInstance (TS) loaded');
-
+import logger from '../../core/logger.js';
 import { getString, setString } from '../../services/storage-utils.js';
+
+logger.debug('UI', 'TextEditorInstance (TS) loaded');
 
 /**
  * TextEditorInstance - Multi-Instance capable text editor
@@ -343,7 +344,7 @@ import { getString, setString } from '../../services/storage-utils.js';
                     this.wrapMode
                 );
             } catch (e) {
-                console.warn('Could not save wrap mode', e);
+                logger.warn('UI', 'Could not save wrap mode', e);
             }
             this.updateState({ wrapMode: this.wrapMode });
             this._showStatusBar(
@@ -361,7 +362,7 @@ import { getString, setString } from '../../services/storage-utils.js';
                     this.editor.style.whiteSpace = this.wrapMode === 'soft' ? 'pre-wrap' : 'pre';
                 }
             } catch (e) {
-                console.warn('Could not load wrap mode', e);
+                logger.warn('UI', 'Could not load wrap mode', e);
             }
         }
 
@@ -543,7 +544,7 @@ import { getString, setString } from '../../services/storage-utils.js';
                         const editorModalContainer =
                             document.getElementById('text-editor-container');
                         if (!editorModalContainer) {
-                            console.error('Text editor container not found');
+                            logger.error('UI', 'Text editor container not found');
                             return null;
                         }
                         const container = document.createElement('div');
@@ -562,10 +563,14 @@ import { getString, setString } from '../../services/storage-utils.js';
                         return container;
                     },
                 });
-            console.log('[TextEditorInstance] TextEditorInstanceManager created');
+            logger.debug('UI', '[TextEditorInstance] TextEditorInstanceManager created');
             return true;
         } catch (err) {
-            console.error('[TextEditorInstance] Failed to create TextEditorInstanceManager:', err);
+            logger.error(
+                'UI',
+                '[TextEditorInstance] Failed to create TextEditorInstanceManager:',
+                err
+            );
             return false;
         }
     };

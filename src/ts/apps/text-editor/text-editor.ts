@@ -1,4 +1,5 @@
 import { getString, setString, remove } from '../../services/storage-utils.js';
+import logger from '../../core/logger.js';
 
 /**
  * Text Editor Module
@@ -122,7 +123,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
                 : containerOrId;
 
         if (!container) {
-            console.error('Text editor container not found:', containerOrId);
+            logger.error('UI', 'Text editor container not found:', containerOrId);
             return;
         }
 
@@ -287,7 +288,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
         try {
             setString('textEditorWrapMode', normalized);
         } catch (err) {
-            console.warn('Wrap preference could not be stored:', err);
+            logger.warn('UI', 'Wrap preference could not be stored:', err);
         }
     },
 
@@ -397,7 +398,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
         try {
             setString('textEditorContent', this.editor.value);
         } catch (err) {
-            console.warn('Could not save editor content to localStorage:', err);
+            logger.warn('UI', 'Could not save editor content to localStorage:', err);
         }
 
         this.syncSaveButtonState();
@@ -447,7 +448,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
                 this.updateCursorPosition();
             }
         } catch (err) {
-            console.warn('Could not load saved content:', err);
+            logger.warn('UI', 'Could not load saved content:', err);
         }
     },
 
@@ -534,7 +535,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
                 this.setStatusPlain(`Command ${command} not available`);
             }
         } catch (err) {
-            console.warn(`Command ${command} failed:`, err);
+            logger.warn('UI', `Command ${command} failed:`, err);
             this.setStatusPlain(`Command ${command} failed`);
         }
     },
@@ -761,7 +762,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
                 }
             }
         } catch (err) {
-            console.warn('Translation failed, falling back:', err);
+            logger.warn('UI', 'Translation failed, falling back:', err);
         }
 
         const fallbackFn = fallbackMessages[key];
@@ -784,7 +785,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
      */
     loadRemoteFile(payload: Partial<RemoteFilePayload>): void {
         if (typeof payload.content !== 'string') {
-            console.warn('Invalid payload for loadRemoteFile:', payload);
+            logger.warn('UI', 'Invalid payload for loadRemoteFile:', payload);
             return;
         }
 
@@ -809,7 +810,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
         try {
             setString('textEditorContent', remotePayload.content);
         } catch (err) {
-            console.warn('Could not save to localStorage:', err);
+            logger.warn('UI', 'Could not save to localStorage:', err);
         }
 
         this.syncSaveButtonState();
@@ -878,7 +879,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
         if (mappedAction && window.ActionBus) {
             window.ActionBus.execute(mappedAction);
         } else {
-            console.warn('Unknown menu action:', action);
+            logger.warn('UI', 'Unknown menu action:', action);
         }
     },
 

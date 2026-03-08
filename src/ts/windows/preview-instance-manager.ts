@@ -1,4 +1,5 @@
 import PreviewWindowInstance, { PreviewWindowState } from './preview-window-instance';
+import logger from '../core/logger.js';
 
 export class PreviewInstanceManager {
     static type = 'preview';
@@ -25,7 +26,7 @@ export class PreviewInstanceManager {
         if (existing && (existing as any).isInitialized) return existing;
         const containerRoot = document.getElementById('preview-container');
         if (!containerRoot) {
-            console.error('Preview container #preview-container not found');
+            logger.error('WINDOW', 'Preview container #preview-container not found');
             return null;
         }
         // Create/ensure inner container for the instance
@@ -47,7 +48,7 @@ export class PreviewInstanceManager {
         try {
             instance.init(instContainer);
         } catch (e) {
-            console.error('Failed to initialize Preview instance:', e);
+            logger.error('WINDOW', 'Failed to initialize Preview instance:', e);
             return null;
         }
         this.instances.set(this.singletonId, instance);

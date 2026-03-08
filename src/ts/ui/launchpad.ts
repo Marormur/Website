@@ -3,9 +3,10 @@
  * Displays all registered persistent apps as a grid and opens selected apps.
  */
 
-console.log('Launchpad (TS) loaded');
-
+import logger from '../core/logger.js';
 import { translate } from '../services/i18n';
+
+logger.debug('UI', 'Launchpad (TS) loaded');
 
 (() => {
     'use strict';
@@ -22,11 +23,11 @@ import { translate } from '../services/i18n';
 
     function init(containerElement: HTMLElement): void {
         if (!containerElement) {
-            console.warn('LaunchpadSystem: No container element provided');
+            logger.warn('UI', 'LaunchpadSystem: No container element provided');
             return;
         }
         if (container) {
-            console.warn('LaunchpadSystem: Already initialized');
+            logger.warn('UI', 'LaunchpadSystem: Already initialized');
             return;
         }
         container = containerElement;
@@ -58,7 +59,7 @@ import { translate } from '../services/i18n';
     function loadApps(): void {
         const WM = window.WindowManager;
         if (!WM) {
-            console.warn('LaunchpadSystem: WindowManager not available');
+            logger.warn('UI', 'LaunchpadSystem: WindowManager not available');
             return;
         }
         const windowIds: string[] = WM.getAllWindowIds();

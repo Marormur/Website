@@ -1,4 +1,5 @@
-console.log('API loaded');
+import logger from './logger.js';
+logger.debug('APP', 'API loaded');
 
 (function () {
     'use strict';
@@ -34,7 +35,7 @@ console.log('API loaded');
                 if (module && typeof (module as Record<string, unknown>)[method] === 'function') {
                     return ((module as Record<string, unknown>)[method] as ModuleMethod)(...args);
                 }
-                console.warn(`${moduleName}.${method} ist nicht verfügbar`);
+                logger.warn('APP', `${moduleName}.${method} ist nicht verfügbar`);
                 return undefined;
             };
         });
@@ -267,7 +268,7 @@ console.log('API loaded');
             for (const part of parts) {
                 fn = (fn as Record<string, unknown>)[part];
                 if (!fn) {
-                    console.warn(`Legacy wrapper: ${apiPath} nicht gefunden`);
+                    logger.warn('APP', `Legacy wrapper: ${apiPath} nicht gefunden`);
                     return undefined;
                 }
             }

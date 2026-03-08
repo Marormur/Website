@@ -1,6 +1,7 @@
 import { h, VNode } from '../../core/vdom.js';
 import { BaseComponent } from './component.js';
 import { ComponentConfig } from './types.js';
+import logger from '../../core/logger.js';
 
 interface ErrorBoundaryProps extends ComponentConfig {
     fallback?: (error: Error) => VNode;
@@ -23,7 +24,7 @@ interface ErrorBoundaryState {
  * ```typescript
  * const app = new ErrorBoundary({
  *     onError: (error) => {
- *         console.error('Component Error:', error);
+ *         logger.error('FRAMEWORK', 'Component Error:', error);
  *         API.toast?.error('An error occurred');
  *     },
  *     children: new MyApp({ ... }).render()

@@ -4,6 +4,7 @@
  */
 
 import { translate } from '../services/i18n';
+import logger from '../core/logger.js';
 
 type MenuHandler = (...args: unknown[]) => unknown;
 const menuActionHandlers = new Map<string, MenuHandler>();
@@ -105,7 +106,7 @@ function buildFinderMenuDefinition(context: MenuContext) {
                                 if (st && Array.isArray(st.githubRepos)) st.githubRepos = [];
                                 window['FinderSystem'].navigateTo([], 'github');
                             } catch (e) {
-                                console.warn('Finder reload failed', e);
+                                logger.warn('UI', 'Finder reload failed', e);
                             }
                         }
                     },
@@ -547,7 +548,7 @@ function buildTerminalMenuDefinition(context: MenuContext) {
                             input.value += text;
                             input.dispatchEvent(new Event('input'));
                         } catch (e) {
-                            console.warn('Clipboard read failed', e);
+                            logger.warn('UI', 'Clipboard read failed', e);
                         }
                     },
                 },
@@ -1032,7 +1033,7 @@ export function handleMenuActionActivation(event: Event) {
     try {
         handler();
     } catch (err) {
-        console.error('Error executing menu action:', err);
+        logger.error('UI', 'Error executing menu action:', err);
     }
 }
 
@@ -1063,7 +1064,7 @@ function createMenuContext(modalId: string | null): MenuContext {
         try {
             return extCreate(modalId) as MenuContext;
         } catch (e) {
-            console.warn('[Menu] createMenuContext override threw; falling back', e);
+            logger.warn('UI', '[Menu] createMenuContext override threw; falling back', e);
         }
     }
     return { modalId: modalId ?? undefined, dialog: null };
@@ -1110,6 +1111,6 @@ window.MenuSystem = {
     menuDefinitions,
     getCurrentMenuModalId: () => currentMenuModalId,
 };
-console.log('✅ MenuSystem loaded');
+logger.debug('UI', '✅ MenuSystem loaded');
 
 export default {};

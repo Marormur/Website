@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 /**
  * Session Guard: centralized validation and clearing for legacy and multi-window sessions.
  * Keeps existing heuristics: too many windows/instances (>10) or too many per type (>3) → clear.
@@ -33,7 +34,7 @@ export function validateMultiWindowSession(
         }
         return { parsed: session, shouldClear: false };
     } catch (err) {
-        console.warn('[SESSION-GUARD] Multi-window session invalid JSON:', err);
+        logger.warn('SESSION', '[SESSION-GUARD] Multi-window session invalid JSON:', err);
         return { parsed: null, shouldClear: true, reason: 'invalid-json' };
     }
 }
@@ -43,7 +44,7 @@ export function validateLegacySession(
 ): ValidationResult<LegacySession> {
     const raw = storage.getItem(LEGACY_KEY);
     if (!raw) {
-        console.log('[SESSION-GUARD] Legacy session exists? false');
+        logger.debug('SESSION', '[SESSION-GUARD] Legacy session exists? false');
         return { parsed: null, shouldClear: false };
     }
     try {
@@ -83,7 +84,7 @@ export function validateLegacySession(
         }
         return { parsed: session, shouldClear: false };
     } catch (err) {
-        console.warn('[SESSION-GUARD] Legacy session invalid JSON:', err);
+        logger.warn('SESSION', '[SESSION-GUARD] Legacy session invalid JSON:', err);
         return { parsed: null, shouldClear: true, reason: 'invalid-json' };
     }
 }
@@ -92,7 +93,7 @@ export function clearSessionKey(key: string, storage: Storage = localStorage): v
     try {
         storage.removeItem(key);
     } catch (err) {
-        console.warn(`[SESSION-GUARD] Failed to clear ${key}:`, err);
+        logger.warn('SESSION', `[SESSION-GUARD] Failed to clear ${key}:`, err);
     }
 }
 
@@ -120,7 +121,7 @@ function logFound(
     items?: Array<{ type?: string; id?: string }>
 ): void {
     const plural = label === 'legacy' ? 'instances' : 'windows';
-    console.log(`[SESSION-GUARD] Found ${label} session:`, {
+    logger.debug('SESSION', `[SESSION-GUARD] Found ${label} session:`, {
         [`${label}Count`]: count,
         items: items?.map(i => ({ type: i?.type, id: i?.id })) || [],
         label,
@@ -130,10 +131,10 @@ function logFound(
 
 function warnTooMany(label: 'legacy' | 'multi-window'): void {
     const noun = label === 'legacy' ? 'instances' : 'windows';
-    console.warn(`[SESSION-GUARD] ${label} session corrupted (too many ${noun})`);
+    logger.warn('SESSION', `[SESSION-GUARD] ${label} session corrupted (too many ${noun})`);
 }
 
 function warnTypeOverflow(label: 'legacy' | 'multi-window'): void {
     const noun = label === 'legacy' ? 'instances' : 'windows';
-    console.warn(`[SESSION-GUARD] ${label} session has too many ${noun} per type (>3)`);
+    logger.warn('SESSION', `[SESSION-GUARD] ${label} session has too many ${noun} per type (>3)`);
 }

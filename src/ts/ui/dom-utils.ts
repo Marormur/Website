@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 /**
  * DOM Utility Functions
  * Centralized helpers for common DOM manipulations
@@ -124,5 +125,4 @@ if (typeof window !== 'undefined') {
     };
 }
 
-console.log('✅ DOMUtils loaded');
-
+logger.debug('UI', '✅ DOMUtils loaded');

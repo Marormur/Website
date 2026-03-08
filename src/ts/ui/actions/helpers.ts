@@ -1,3 +1,4 @@
+import logger from '../../core/logger.js';
 /**
  * Shared helpers for ActionBus modules
  */
@@ -25,7 +26,7 @@ export function safeExecute(label: string, fn: () => void): void {
     try {
         fn();
     } catch (error) {
-        console.warn(`${label} failed:`, error);
+        logger.warn('UI', `${label} failed:`, error);
     }
 }
 

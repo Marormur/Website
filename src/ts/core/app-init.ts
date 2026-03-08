@@ -17,6 +17,7 @@ import {
     validateMultiWindowSession,
 } from '../services/session-guard';
 import { installShim } from '../compat/instance-shims';
+import logger from './logger.js';
 
 /**
  * Global window interface extensions for app initialization
@@ -126,7 +127,7 @@ function initApp(): void {
     // Guard against duplicate initialization (can happen with bundle + direct import)
     const w = window as Window & { __APP_INITIALIZED__?: boolean };
     if (w.__APP_INITIALIZED__) {
-        console.warn('[APP-INIT] initApp() already ran, skipping duplicate call');
+        logger.warn('APP', '[APP-INIT] initApp() already ran, skipping duplicate call');
         return;
     }
     w.__APP_INITIALIZED__ = true;
@@ -182,7 +183,7 @@ function initApp(): void {
                     win.WindowManager.setDialogInstance?.(id, dialogInstance);
                 }
             } catch (err) {
-                console.error(`Failed to create dialog instance for "${id}":`, err);
+                logger.error('APP', `Failed to create dialog instance for "${id}":`, err);
             }
         });
     }
@@ -300,17 +301,17 @@ function initApp(): void {
             const legacyCheck = validateLegacySession();
 
             if (legacyCheck.shouldClear) {
-                console.warn('[APP-INIT] Clearing ONLY legacy session (corrupted)');
+                logger.warn('APP', '[APP-INIT] Clearing ONLY legacy session (corrupted)');
                 clearSessionKey('windowInstancesSession');
             }
 
             if (multiCheck.shouldClear) {
-                console.warn('[APP-INIT] Clearing multi-window session (corrupted)');
+                logger.warn('APP', '[APP-INIT] Clearing multi-window session (corrupted)');
                 clearSessionKey('multi-window-session');
             }
 
             win.MultiWindowSessionManager.init?.();
-            console.log('[APP-INIT] MultiWindowSessionManager initialized');
+            logger.debug('APP', '[APP-INIT] MultiWindowSessionManager initialized');
 
             // Attempt to restore multi-window session
             setTimeout(async () => {
@@ -318,18 +319,18 @@ function initApp(): void {
                     if (win.MultiWindowSessionManager?.restoreSession) {
                         const restored = await win.MultiWindowSessionManager.restoreSession();
                         if (restored) {
-                            console.log('[APP-INIT] Multi-window session restored');
+                            logger.debug('APP', '[APP-INIT] Multi-window session restored');
                         }
                     }
                 } catch (err) {
-                    console.warn('[APP-INIT] Multi-window session restore failed:', err);
+                    logger.warn('APP', '[APP-INIT] Multi-window session restore failed:', err);
                 } finally {
                     // Mark session restore as complete
                     sessionRestoreComplete();
                 }
             }, 150); // Delay to ensure all managers are ready
         } catch (err) {
-            console.warn('[APP-INIT] MultiWindowSessionManager initialization failed:', err);
+            logger.warn('APP', '[APP-INIT] MultiWindowSessionManager initialization failed:', err);
             // Mark session restore as complete even on error
             sessionRestoreComplete();
         }
@@ -363,7 +364,7 @@ function initApp(): void {
                 }
             }, 100); // Small delay to ensure all managers are ready
         } catch (err) {
-            console.warn('SessionManager initialization failed:', err);
+            logger.warn('APP', 'SessionManager initialization failed:', err);
         }
     }
 
@@ -393,7 +394,10 @@ function initApp(): void {
         const dockEl = document.getElementById('dock');
         if (dockEl && dockEl.parentElement && dockEl.parentElement !== document.body) {
             document.body.appendChild(dockEl);
-            console.info('[APP-INIT] moved #dock to document.body to avoid hidden ancestor(s)');
+            logger.info(
+                'APP',
+                '[APP-INIT] moved #dock to document.body to avoid hidden ancestor(s)'
+            );
         }
     } catch {
         /* ignore */
@@ -415,7 +419,8 @@ function initApp(): void {
                     }
                 });
                 if (moved)
-                    console.info(
+                    logger.info(
+                        'APP',
                         '[APP-INIT] reparented misplaced .modal elements to document.body'
                     );
                 return moved;
@@ -439,7 +444,7 @@ function initApp(): void {
         if (dockEl) {
             const rect = dockEl.getBoundingClientRect();
             const cs = window.getComputedStyle(dockEl);
-            console.info('[APP-INIT] Dock debug:', {
+            logger.info('APP', '[APP-INIT] Dock debug:', {
                 className: dockEl.className,
                 display: cs.display,
                 visibility: cs.visibility,
@@ -470,10 +475,10 @@ function initApp(): void {
                 /* swallow */
             }
         } else {
-            console.info('[APP-INIT] Dock debug: element not found');
+            logger.info('APP', '[APP-INIT] Dock debug: element not found');
         }
     } catch (e) {
-        console.warn('[APP-INIT] Dock debug failed', e);
+        logger.warn('APP', '[APP-INIT] Dock debug failed', e);
     }
 
     // Signal that the app is ready for E2E tests.
@@ -497,7 +502,10 @@ function initApp(): void {
                     const dockEl = document.getElementById('dock');
                     if (dockEl && dockEl.parentElement && dockEl.parentElement !== document.body) {
                         document.body.appendChild(dockEl);
-                        console.info('[APP-INIT] moved #dock to document.body (ensured at load)');
+                        logger.info(
+                            'APP',
+                            '[APP-INIT] moved #dock to document.body (ensured at load)'
+                        );
                         return true;
                     }
                 } catch {
@@ -538,57 +546,61 @@ function initApp(): void {
                     };
                     // Mark that VirtualFS should be accessible
                     gw2.__VirtualFS_Ready = getVFS();
-                    console.info('[APP-INIT] VirtualFS state made queryable');
+                    logger.info('APP', '[APP-INIT] VirtualFS state made queryable');
                 } catch (e) {
-                    console.debug('[APP-INIT] VirtualFS exposure skipped:', (e as Error).message);
+                    logger.debug(
+                        'APP',
+                        '[APP-INIT] VirtualFS exposure skipped:',
+                        (e as Error).message
+                    );
                 }
             }
 
             // WindowRegistry - Expose for window/tab introspection
             if (gw2.WindowRegistry) {
                 gw2.__WindowRegistry = gw2.WindowRegistry;
-                console.info('[APP-INIT] WindowRegistry exposed as __WindowRegistry');
+                logger.info('APP', '[APP-INIT] WindowRegistry exposed as __WindowRegistry');
             }
 
             // FinderSystem - Expose for finder operations
             if (gw2.FinderSystem) {
                 gw2.__FinderSystem = gw2.FinderSystem;
-                console.info('[APP-INIT] FinderSystem exposed as __FinderSystem');
+                logger.info('APP', '[APP-INIT] FinderSystem exposed as __FinderSystem');
             }
 
             // TerminalSystem - Expose for terminal operations
             if (gw2.TerminalSystem) {
                 gw2.__TerminalSystem = gw2.TerminalSystem;
-                console.info('[APP-INIT] TerminalSystem exposed as __TerminalSystem');
+                logger.info('APP', '[APP-INIT] TerminalSystem exposed as __TerminalSystem');
             }
 
             // LaunchpadSystem - Expose for launchpad operations
             if (gw2.LaunchpadSystem) {
                 gw2.__LaunchpadSystem = gw2.LaunchpadSystem;
-                console.info('[APP-INIT] LaunchpadSystem exposed as __LaunchpadSystem');
+                logger.info('APP', '[APP-INIT] LaunchpadSystem exposed as __LaunchpadSystem');
             }
 
             // SettingsSystem - Expose for settings operations
             if (gw2.SettingsSystem) {
                 gw2.__SettingsSystem = gw2.SettingsSystem;
-                console.info('[APP-INIT] SettingsSystem exposed as __SettingsSystem');
+                logger.info('APP', '[APP-INIT] SettingsSystem exposed as __SettingsSystem');
             }
 
             // SessionManager - Already exposed by legacy JS, but ensure it's available
             if (gw2.SessionManager) {
-                console.info('[APP-INIT] SessionManager available (legacy)');
+                logger.info('APP', '[APP-INIT] SessionManager available (legacy)');
             }
 
             // DockSystem - Expose for dock operations
             if (gw2.DockSystem) {
                 gw2.__DockSystem = gw2.DockSystem;
-                console.info('[APP-INIT] DockSystem exposed as __DockSystem');
+                logger.info('APP', '[APP-INIT] DockSystem exposed as __DockSystem');
             }
 
             // ActionBus - Expose for action dispatch
             if (gw2.ActionBus) {
                 gw2.__ActionBus = gw2.ActionBus;
-                console.info('[APP-INIT] ActionBus exposed as __ActionBus');
+                logger.info('APP', '[APP-INIT] ActionBus exposed as __ActionBus');
             }
 
             // =====================================================================
@@ -623,7 +635,8 @@ function initApp(): void {
                                     }
                                     return null;
                                 } catch (e) {
-                                    console.warn(
+                                    logger.warn(
+                                        'APP',
                                         '[FinderInstanceManager shim] createInstance failed:',
                                         e
                                     );
@@ -720,7 +733,8 @@ function initApp(): void {
                                     }
                                     return null;
                                 } catch (e) {
-                                    console.warn(
+                                    logger.warn(
+                                        'APP',
                                         '[FinderInstanceManager shim] getActiveInstance failed:',
                                         e
                                     );
@@ -738,7 +752,8 @@ function initApp(): void {
                                         }
                                     }
                                 } catch (e) {
-                                    console.warn(
+                                    logger.warn(
+                                        'APP',
                                         '[FinderInstanceManager shim] setActiveInstance failed:',
                                         e
                                     );
@@ -748,12 +763,13 @@ function initApp(): void {
                         gw2
                     );
                 } catch (e) {
-                    console.warn('[APP-INIT] FinderInstanceManager shim failed:', e);
+                    logger.warn('APP', '[APP-INIT] FinderInstanceManager shim failed:', e);
                 }
             }
 
             gw.__APP_READY = true;
-            console.info(
+            logger.info(
+                'APP',
                 '[APP-INIT] __APP_READY=true (Core ready, session restore may still be in progress)'
             );
             // After marking ready, some systems may initialize a few ticks later
@@ -817,7 +833,8 @@ function initApp(): void {
         // make sure tests can proceed by marking ready after a short grace period.
         setTimeout(() => {
             if (!gw.__APP_READY) {
-                console.warn(
+                logger.warn(
+                    'APP',
                     '[APP-INIT] load event not observed within timeout; forcing __APP_READY'
                 );
                 markReady();

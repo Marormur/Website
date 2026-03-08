@@ -1,9 +1,10 @@
+import logger from '../core/logger.js';
 /**
  * settings.ts
  * Settings Module - Inline settings UI with theme and language preferences
  */
 
-console.log('Settings Module loaded');
+logger.debug('APP', 'Settings Module loaded');
 
 (() => {
     'use strict';
@@ -40,7 +41,7 @@ console.log('Settings Module loaded');
                     : containerOrId;
 
             if (!container) {
-                console.error('Settings container not found:', containerOrId);
+                logger.error('APP', 'Settings container not found:', containerOrId);
                 return;
             }
 
@@ -196,7 +197,9 @@ console.log('Settings Module loaded');
             `;
 
             // Apply i18n translations
-            const appI18n = (window as Window & { appI18n?: { applyTranslations(el: HTMLElement): void } }).appI18n;
+            const appI18n = (
+                window as Window & { appI18n?: { applyTranslations(el: HTMLElement): void } }
+            ).appI18n;
             if (appI18n?.applyTranslations) {
                 appI18n.applyTranslations(this.container);
             }
@@ -209,19 +212,29 @@ console.log('Settings Module loaded');
             if (!this.container) return;
 
             // Theme preference change listeners
-            const themeRadios = this.container.querySelectorAll<HTMLInputElement>('input[name="theme-mode"]');
+            const themeRadios = this.container.querySelectorAll<HTMLInputElement>(
+                'input[name="theme-mode"]'
+            );
             themeRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
                     if (!radio.checked) return;
 
                     const theme = radio.value;
                     // Call global API if available
-                    const API = (window as Window & { API?: { theme?: { setThemePreference(mode: string): void } } }).API;
+                    const API = (
+                        window as Window & {
+                            API?: { theme?: { setThemePreference(mode: string): void } };
+                        }
+                    ).API;
                     if (API?.theme?.setThemePreference) {
                         API.theme.setThemePreference(theme);
                     } else {
                         // Fallback to ThemeSystem
-                        const ThemeSystem = (window as Window & { ThemeSystem?: { setThemePreference(mode: string): void } }).ThemeSystem;
+                        const ThemeSystem = (
+                            window as Window & {
+                                ThemeSystem?: { setThemePreference(mode: string): void };
+                            }
+                        ).ThemeSystem;
                         if (ThemeSystem?.setThemePreference) {
                             ThemeSystem.setThemePreference(theme);
                         }
@@ -230,19 +243,29 @@ console.log('Settings Module loaded');
             });
 
             // Language preference change listeners
-            const languageRadios = this.container.querySelectorAll<HTMLInputElement>('input[name="language-preference"]');
+            const languageRadios = this.container.querySelectorAll<HTMLInputElement>(
+                'input[name="language-preference"]'
+            );
             languageRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
                     if (!radio.checked) return;
 
                     const lang = radio.value;
                     // Call global API if available
-                    const API = (window as Window & { API?: { i18n?: { setLanguagePreference(lang: string): void } } }).API;
+                    const API = (
+                        window as Window & {
+                            API?: { i18n?: { setLanguagePreference(lang: string): void } };
+                        }
+                    ).API;
                     if (API?.i18n?.setLanguagePreference) {
                         API.i18n.setLanguagePreference(lang);
                     } else {
                         // Fallback to appI18n
-                        const appI18n = (window as Window & { appI18n?: { setLanguagePreference(lang: string): void } }).appI18n;
+                        const appI18n = (
+                            window as Window & {
+                                appI18n?: { setLanguagePreference(lang: string): void };
+                            }
+                        ).appI18n;
                         if (appI18n?.setLanguagePreference) {
                             appI18n.setLanguagePreference(lang);
                         }
@@ -258,8 +281,11 @@ console.log('Settings Module loaded');
             if (!this.container) return;
 
             let preference = 'system';
-            const API = (window as Window & { API?: { theme?: { getThemePreference(): string } } }).API;
-            const ThemeSystem = (window as Window & { ThemeSystem?: { getThemePreference(): string } }).ThemeSystem;
+            const API = (window as Window & { API?: { theme?: { getThemePreference(): string } } })
+                .API;
+            const ThemeSystem = (
+                window as Window & { ThemeSystem?: { getThemePreference(): string } }
+            ).ThemeSystem;
 
             if (API?.theme?.getThemePreference) {
                 preference = API.theme.getThemePreference();
@@ -267,7 +293,9 @@ console.log('Settings Module loaded');
                 preference = ThemeSystem.getThemePreference();
             }
 
-            const themeRadios = this.container.querySelectorAll<HTMLInputElement>('input[name="theme-mode"]');
+            const themeRadios = this.container.querySelectorAll<HTMLInputElement>(
+                'input[name="theme-mode"]'
+            );
             themeRadios.forEach(radio => {
                 radio.checked = radio.value === preference;
             });
@@ -280,8 +308,11 @@ console.log('Settings Module loaded');
             if (!this.container) return;
 
             let preference = 'system';
-            const API = (window as Window & { API?: { i18n?: { getLanguagePreference(): string } } }).API;
-            const appI18n = (window as Window & { appI18n?: { getLanguagePreference(): string } }).appI18n;
+            const API = (
+                window as Window & { API?: { i18n?: { getLanguagePreference(): string } } }
+            ).API;
+            const appI18n = (window as Window & { appI18n?: { getLanguagePreference(): string } })
+                .appI18n;
 
             if (API?.i18n?.getLanguagePreference) {
                 preference = API.i18n.getLanguagePreference();
@@ -289,7 +320,9 @@ console.log('Settings Module loaded');
                 preference = appI18n.getLanguagePreference();
             }
 
-            const languageRadios = this.container.querySelectorAll<HTMLInputElement>('input[name="language-preference"]');
+            const languageRadios = this.container.querySelectorAll<HTMLInputElement>(
+                'input[name="language-preference"]'
+            );
             languageRadios.forEach(radio => {
                 radio.checked = radio.value === preference;
             });
@@ -319,7 +352,9 @@ console.log('Settings Module loaded');
             }
 
             // Update nav highlighting
-            const navItems = this.container.querySelectorAll('[data-action="settings:showSection"]');
+            const navItems = this.container.querySelectorAll(
+                '[data-action="settings:showSection"]'
+            );
             navItems.forEach(item => {
                 const itemSection = item.getAttribute('data-section');
                 if (itemSection === section) {

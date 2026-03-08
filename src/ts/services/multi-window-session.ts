@@ -13,6 +13,7 @@ import { FinderWindow } from '../apps/finder/finder-window.js';
 import { TerminalSession } from '../apps/terminal/terminal-session.js';
 import { TextEditorDocument } from '../apps/text-editor/text-editor-document.js';
 import { FinderView } from '../apps/finder/finder-view.js';
+import logger from '../core/logger.js';
 
 /**
  * Multi-Window Session Schema v1.0
@@ -140,7 +141,7 @@ class MultiWindowSessionManager {
     init(): void {
         if (this.initialized) return;
 
-        console.log('[MultiWindowSessionManager] Initializing...');
+        logger.debug('SESSION', '[MultiWindowSessionManager] Initializing...');
 
         // Save on window blur
         window.addEventListener('blur', () => {
@@ -160,20 +161,20 @@ class MultiWindowSessionManager {
         });
 
         this.initialized = true;
-        console.log('[MultiWindowSessionManager] Initialized');
+        logger.debug('SESSION', '[MultiWindowSessionManager] Initialized');
     }
 
     /**
      * Save current session to localStorage
      */
     saveSession(options: { immediate?: boolean } = {}): void {
-        console.log('[MultiWindowSessionManager] saveSession called:', {
+        logger.debug('SESSION', '[MultiWindowSessionManager] saveSession called:', {
             immediate: options.immediate,
             isRestoring: this.isRestoring,
         });
 
         if (this.isRestoring) {
-            console.log('[MultiWindowSessionManager] Skipping save during restore');
+            logger.debug('SESSION', '[MultiWindowSessionManager] Skipping save during restore');
             return;
         }
 
@@ -188,7 +189,7 @@ class MultiWindowSessionManager {
      * Save session immediately (bypasses debounce)
      */
     private saveSessionImmediate(): void {
-        console.log('[MultiWindowSessionManager] saveSessionImmediate called');
+        logger.debug('SESSION', '[MultiWindowSessionManager] saveSessionImmediate called');
 
         if (this.autoSaveTimer !== null) {
             clearTimeout(this.autoSaveTimer);
@@ -196,31 +197,32 @@ class MultiWindowSessionManager {
         }
 
         try {
-            console.log('[MultiWindowSessionManager] Creating session snapshot...');
+            logger.debug('SESSION', '[MultiWindowSessionManager] Creating session snapshot...');
             const session = this.createSession();
-            console.log('[MultiWindowSessionManager] Session created:', {
+            logger.debug('SESSION', '[MultiWindowSessionManager] Session created:', {
                 windows: session.windows.length,
                 totalTabs: session.windows.reduce((sum, w) => sum + w.tabs.length, 0),
             });
 
             const serialized = JSON.stringify(session);
-            console.log(
+            logger.debug(
+                'SESSION',
                 '[MultiWindowSessionManager] Session serialized, length:',
                 serialized.length
             );
 
             localStorage.setItem(MultiWindowSessionManager.STORAGE_KEY, serialized);
-            console.log('[MultiWindowSessionManager] Session saved to localStorage');
+            logger.debug('SESSION', '[MultiWindowSessionManager] Session saved to localStorage');
 
-            console.log('[MultiWindowSessionManager] Session saved:', {
+            logger.debug('SESSION', '[MultiWindowSessionManager] Session saved:', {
                 windows: session.windows.length,
                 totalTabs: session.windows.reduce((sum, w) => sum + w.tabs.length, 0),
                 isRestoring: this.isRestoring,
             });
         } catch (error) {
-            console.error('[MultiWindowSessionManager] Failed to save session:', error);
+            logger.error('SESSION', '[MultiWindowSessionManager] Failed to save session:', error);
             if (error instanceof Error) {
-                console.error('[MultiWindowSessionManager] Error stack:', error.stack);
+                logger.error('SESSION', '[MultiWindowSessionManager] Error stack:', error.stack);
             }
         }
     }
@@ -312,7 +314,8 @@ class MultiWindowSessionManager {
      * Restore session from localStorage
      */
     async restoreSession(): Promise<boolean> {
-        console.log(
+        logger.debug(
+            'SESSION',
             '[MultiWindowSessionManager] restoreSession() called, setting isRestoring=true'
         );
         this.isRestoring = true;
@@ -322,16 +325,22 @@ class MultiWindowSessionManager {
             const sessionData = localStorage.getItem(MultiWindowSessionManager.STORAGE_KEY);
 
             if (sessionData) {
-                console.log('[MultiWindowSessionManager] Found session data, parsing...');
+                logger.debug(
+                    'SESSION',
+                    '[MultiWindowSessionManager] Found session data, parsing...'
+                );
                 const session = JSON.parse(sessionData) as MultiWindowSession;
-                console.log('[MultiWindowSessionManager] Session parsed:', {
+                logger.debug('SESSION', '[MultiWindowSessionManager] Session parsed:', {
                     windows: session.windows.length,
                     windowTypes: session.windows.map(w => w.type),
                 });
                 // Apply path migration in case there are legacy paths
                 this.migrateSessionPaths(session);
                 await this.restoreMultiWindowSession(session);
-                console.log('[MultiWindowSessionManager] Session restored successfully');
+                logger.debug(
+                    'SESSION',
+                    '[MultiWindowSessionManager] Session restored successfully'
+                );
                 return true;
             }
 
@@ -340,7 +349,10 @@ class MultiWindowSessionManager {
                 MultiWindowSessionManager.LEGACY_STORAGE_KEY_V1
             );
             if (legacyV1Data) {
-                console.log('[MultiWindowSessionManager] Migrating legacy v1 session...');
+                logger.debug(
+                    'SESSION',
+                    '[MultiWindowSessionManager] Migrating legacy v1 session...'
+                );
                 const rawSession = JSON.parse(legacyV1Data);
                 // Normalize legacy format to current format
                 const session = this.normalizeLegacyV1Session(rawSession);
@@ -356,25 +368,30 @@ class MultiWindowSessionManager {
             // Try to migrate legacy session
             const legacyData = localStorage.getItem(MultiWindowSessionManager.LEGACY_STORAGE_KEY);
             if (legacyData) {
-                console.log('[MultiWindowSessionManager] Migrating legacy session...');
+                logger.debug('SESSION', '[MultiWindowSessionManager] Migrating legacy session...');
                 const legacySession = JSON.parse(legacyData) as LegacySession;
                 await this.migrateLegacySession(legacySession);
                 return true;
             }
 
-            console.log('[MultiWindowSessionManager] No session to restore');
+            logger.debug('SESSION', '[MultiWindowSessionManager] No session to restore');
             return false;
         } catch (error) {
-            console.error('[MultiWindowSessionManager] Failed to restore session:', error);
+            logger.error(
+                'SESSION',
+                '[MultiWindowSessionManager] Failed to restore session:',
+                error
+            );
             return false;
         } finally {
-            console.log(
+            logger.debug(
+                'SESSION',
                 '[MultiWindowSessionManager] restoreSession() complete, setting isRestoring=false'
             );
             this.isRestoring = false;
             // Signal that session restore is complete (even if it failed)
             window.__SESSION_RESTORED = true;
-            console.info('[MultiWindowSessionManager] __SESSION_RESTORED=true');
+            logger.info('SESSION', '[MultiWindowSessionManager] __SESSION_RESTORED=true');
         }
     }
 
@@ -382,7 +399,7 @@ class MultiWindowSessionManager {
      * Restore multi-window session
      */
     private async restoreMultiWindowSession(session: MultiWindowSession): Promise<void> {
-        console.log('[MultiWindowSessionManager] Restoring session:', {
+        logger.debug('SESSION', '[MultiWindowSessionManager] Restoring session:', {
             version: session.version,
             windows: session.windows.length,
             timestamp: new Date(session.timestamp),
@@ -394,7 +411,8 @@ class MultiWindowSessionManager {
         const MAX_TOTAL_WINDOWS = 10;
 
         if (session.windows.length > MAX_TOTAL_WINDOWS) {
-            console.warn(
+            logger.warn(
+                'SESSION',
                 `[MultiWindowSessionManager] Session has ${session.windows.length} windows (max ${MAX_TOTAL_WINDOWS}). Clearing corrupted session.`
             );
             localStorage.removeItem(MultiWindowSessionManager.STORAGE_KEY);
@@ -414,7 +432,7 @@ class MultiWindowSessionManager {
             this.restoreMetadata(session.metadata);
         }
 
-        console.log('[MultiWindowSessionManager] Session restored successfully');
+        logger.debug('SESSION', '[MultiWindowSessionManager] Session restored successfully');
 
         // If we filtered out windows, save the cleaned session
         // Update dock indicators after session restore
@@ -429,7 +447,10 @@ class MultiWindowSessionManager {
             // Create window based on type (without showing it yet)
             const window = this.createWindowByType(data.type, data);
             if (!window) {
-                console.error(`[MultiWindowSessionManager] Unknown window type: ${data.type}`);
+                logger.error(
+                    'SESSION',
+                    `[MultiWindowSessionManager] Unknown window type: ${data.type}`
+                );
                 return null;
             }
 
@@ -488,7 +509,7 @@ class MultiWindowSessionManager {
 
             return window;
         } catch (error) {
-            console.error('[MultiWindowSessionManager] Failed to restore window:', error);
+            logger.error('SESSION', '[MultiWindowSessionManager] Failed to restore window:', error);
             return null;
         }
     }
@@ -536,11 +557,14 @@ class MultiWindowSessionManager {
                     return FinderView.deserialize(data);
 
                 default:
-                    console.warn(`[MultiWindowSessionManager] Unknown tab type: ${data.type}`);
+                    logger.warn(
+                        'SESSION',
+                        `[MultiWindowSessionManager] Unknown tab type: ${data.type}`
+                    );
                     return null;
             }
         } catch (error) {
-            console.error('[MultiWindowSessionManager] Failed to restore tab:', error);
+            logger.error('SESSION', '[MultiWindowSessionManager] Failed to restore tab:', error);
             return null;
         }
     }
@@ -597,7 +621,8 @@ class MultiWindowSessionManager {
                 // Migrate vfsCwd for terminal sessions (only if it's a string)
                 if (tab.vfsCwd && typeof tab.vfsCwd === 'string') {
                     const migrated = this.migrateLegacyPath(tab.vfsCwd);
-                    console.log(
+                    logger.debug(
+                        'SESSION',
                         `[MultiWindowSessionManager] Migrating path: ${tab.vfsCwd} → ${migrated}`
                     );
                     tab.vfsCwd = migrated;
@@ -607,7 +632,8 @@ class MultiWindowSessionManager {
                 // Skip Finder currentPath (it's an array of path segments, not a string)
                 if (tab.currentPath && !tab.vfsCwd && typeof tab.currentPath === 'string') {
                     const migrated = this.migrateLegacyPath(tab.currentPath);
-                    console.log(
+                    logger.debug(
+                        'SESSION',
                         `[MultiWindowSessionManager] Migrating currentPath: ${tab.currentPath} → ${migrated}`
                     );
                     tab.vfsCwd = migrated;
@@ -698,7 +724,7 @@ class MultiWindowSessionManager {
      * Migrate legacy single-window session to multi-window format
      */
     private async migrateLegacySession(legacy: LegacySession): Promise<void> {
-        console.log('[MultiWindowSessionManager] Starting legacy migration...');
+        logger.debug('SESSION', '[MultiWindowSessionManager] Starting legacy migration...');
 
         const instances = legacy.instances || {};
 
@@ -711,7 +737,8 @@ class MultiWindowSessionManager {
                     const session = TerminalSession.deserialize(sessionData);
                     termWindow.addTab(session);
                 } catch (error) {
-                    console.error(
+                    logger.error(
+                        'SESSION',
                         '[MultiWindowSessionManager] Failed to migrate terminal session:',
                         error
                     );
@@ -733,7 +760,8 @@ class MultiWindowSessionManager {
                     const doc = TextEditorDocument.deserialize(docData);
                     editorWindow.addTab(doc);
                 } catch (error) {
-                    console.error(
+                    logger.error(
+                        'SESSION',
                         '[MultiWindowSessionManager] Failed to migrate text editor document:',
                         error
                     );
@@ -755,7 +783,8 @@ class MultiWindowSessionManager {
                     const view = FinderView.deserialize(viewData);
                     finderWindow.addTab(view);
                 } catch (error) {
-                    console.error(
+                    logger.error(
+                        'SESSION',
                         '[MultiWindowSessionManager] Failed to migrate finder view:',
                         error
                     );
@@ -772,7 +801,7 @@ class MultiWindowSessionManager {
         this.saveSessionImmediate();
         localStorage.removeItem(MultiWindowSessionManager.LEGACY_STORAGE_KEY);
 
-        console.log('[MultiWindowSessionManager] Legacy migration completed');
+        logger.debug('SESSION', '[MultiWindowSessionManager] Legacy migration completed');
     }
 
     /**
@@ -792,7 +821,8 @@ class MultiWindowSessionManager {
 
             // Validate version
             if (session.version !== MultiWindowSessionManager.VERSION) {
-                console.warn(
+                logger.warn(
+                    'SESSION',
                     '[MultiWindowSessionManager] Version mismatch, attempting import anyway'
                 );
             }
@@ -805,7 +835,7 @@ class MultiWindowSessionManager {
 
             return true;
         } catch (error) {
-            console.error('[MultiWindowSessionManager] Failed to import session:', error);
+            logger.error('SESSION', '[MultiWindowSessionManager] Failed to import session:', error);
             return false;
         }
     }
@@ -815,7 +845,7 @@ class MultiWindowSessionManager {
      */
     clearSession(): void {
         localStorage.removeItem(MultiWindowSessionManager.STORAGE_KEY);
-        console.log('[MultiWindowSessionManager] Session cleared');
+        logger.debug('SESSION', '[MultiWindowSessionManager] Session cleared');
     }
 
     /**
@@ -837,7 +867,7 @@ class MultiWindowSessionManager {
      */
     private restoreMetadata(metadata: Record<string, unknown>): void {
         // Theme and language are handled by existing systems
-        console.log('[MultiWindowSessionManager] Session metadata:', metadata);
+        logger.debug('SESSION', '[MultiWindowSessionManager] Session metadata:', metadata);
     }
 
     /**
@@ -871,7 +901,7 @@ class MultiWindowSessionManager {
      */
     debugLog(): void {
         const info = this.getSessionInfo();
-        console.log('[MultiWindowSessionManager] Current session:', info);
+        logger.debug('SESSION', '[MultiWindowSessionManager] Current session:', info);
     }
 }
 

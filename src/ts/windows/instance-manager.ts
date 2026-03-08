@@ -1,7 +1,8 @@
 import { triggerAutoSave } from '../utils/auto-save-helper.js';
 import { getJSON, setJSON } from '../services/storage-utils.js';
+import logger from '../core/logger.js';
 
-console.log('InstanceManager loaded');
+logger.debug('WINDOW', 'InstanceManager loaded');
 
 (function () {
     'use strict';
@@ -56,7 +57,10 @@ console.log('InstanceManager loaded');
 
         createInstance(config: CreateInstanceConfig = {}): BaseInstanceLike | null {
             if (this.maxInstances > 0 && this.instances.size >= this.maxInstances) {
-                console.warn(`Maximum instances (${this.maxInstances}) reached for ${this.type}`);
+                logger.warn(
+                    'WINDOW',
+                    `Maximum instances (${this.maxInstances}) reached for ${this.type}`
+                );
                 return null;
             }
 
@@ -67,7 +71,8 @@ console.log('InstanceManager loaded');
             // a new container. This prevents duplicate DOM containers and double-rendering
             // when restore flows or legacy init handlers accidentally create the same ID twice.
             if (config.id && this.instances.has(instanceId)) {
-                console.warn(
+                logger.warn(
+                    'WINDOW',
                     `Instance with id ${instanceId} already exists for ${this.type}; reusing existing instance.`
                 );
                 const existing = this.instances.get(instanceId)!;
@@ -88,7 +93,7 @@ console.log('InstanceManager loaded');
 
             const container = this.createContainer(instanceId);
             if (!container) {
-                console.error('Failed to create container for instance');
+                logger.error('WINDOW', 'Failed to create container for instance');
                 return null;
             }
 
@@ -114,10 +119,10 @@ console.log('InstanceManager loaded');
                 // Trigger auto-save after instance creation
                 this._triggerAutoSave();
 
-                console.log(`Created instance: ${instanceId}`);
+                logger.debug('WINDOW', `Created instance: ${instanceId}`);
                 return instance;
             } catch (error) {
-                console.error('Failed to initialize instance:', error);
+                logger.error('WINDOW', 'Failed to initialize instance:', error);
                 container.remove();
                 return null;
             }
@@ -182,7 +187,7 @@ console.log('InstanceManager loaded');
         destroyInstance(instanceId: string): void {
             const instance = this.instances.get(instanceId);
             if (!instance) {
-                console.warn(`Instance ${instanceId} not found`);
+                logger.warn('WINDOW', `Instance ${instanceId} not found`);
                 return;
             }
 
@@ -201,7 +206,7 @@ console.log('InstanceManager loaded');
             // Trigger auto-save after instance destruction
             this._triggerAutoSave();
 
-            console.log(`Destroyed instance: ${instanceId}`);
+            logger.debug('WINDOW', `Destroyed instance: ${instanceId}`);
         }
 
         destroyAllInstances(): void {
@@ -298,7 +303,8 @@ console.log('InstanceManager loaded');
             // Validate that all IDs exist
             const validIds = newOrder.filter(id => this.instances.has(id));
             if (validIds.length !== this.instances.size) {
-                console.warn(
+                logger.warn(
+                    'WINDOW',
                     'Invalid reorder: not all instance IDs provided or some IDs do not exist'
                 );
                 return;
@@ -315,7 +321,7 @@ console.log('InstanceManager loaded');
 
             // Replace the instances map
             this.instances = newMap;
-            console.log('Instances reordered:', validIds);
+            logger.debug('WINDOW', 'Instances reordered:', validIds);
         }
 
         private _triggerAutoSave(): void {

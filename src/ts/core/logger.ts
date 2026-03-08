@@ -21,6 +21,23 @@ const LOG_COLORS: Record<LogLevelName, string> = {
     TRACE: '#607d8b',
 };
 
+/** Predefined log categories for structured filtering */
+export const LOG_CATEGORIES = {
+    APP: 'APP',
+    SESSION: 'SESSION',
+    STORAGE: 'STORAGE',
+    VDOM: 'VDOM',
+    WINDOW: 'WINDOW',
+    FINDER: 'FINDER',
+    TERMINAL: 'TERMINAL',
+    I18N: 'I18N',
+    GITHUB: 'GITHUB',
+    UI: 'UI',
+    FRAMEWORK: 'FRAMEWORK',
+} as const;
+
+export type LogCategory = (typeof LOG_CATEGORIES)[keyof typeof LOG_CATEGORIES];
+
 export class Logger {
     level: number;
     enabledCategories: Set<string>;
@@ -77,6 +94,7 @@ export class Logger {
         const timestamp = new Date().toLocaleTimeString();
 
         if (this.format === 'detailed') {
+            // eslint-disable-next-line no-console
             console.log(
                 `%c[${timestamp}] [${level}] [${category}]`,
                 `color: ${color}; font-weight: bold`,
@@ -84,6 +102,7 @@ export class Logger {
                 ...args
             );
         } else {
+            // eslint-disable-next-line no-console
             console.log(`%c[${category}]`, `color: ${color}`, message, ...args);
         }
     }
@@ -110,18 +129,22 @@ export class Logger {
 
     group(category: string, title?: string) {
         if (!this.isCategoryEnabled(category)) return;
+        // eslint-disable-next-line no-console
         console.group(title ?? category);
     }
 
     groupEnd() {
+        // eslint-disable-next-line no-console
         console.groupEnd();
     }
 
     time(label: string) {
+        // eslint-disable-next-line no-console
         console.time(label);
     }
 
     timeEnd(label: string) {
+        // eslint-disable-next-line no-console
         console.timeEnd(label);
     }
 }

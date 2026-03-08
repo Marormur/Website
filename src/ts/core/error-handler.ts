@@ -4,8 +4,9 @@
  */
 
 import { getJSON, setJSON } from '../services/storage-utils.js';
+import logger from './logger.js';
 
-console.log('ErrorHandler loaded');
+logger.info('APP', 'ErrorHandler loaded');
 
 (() => {
     'use strict';
@@ -128,8 +129,7 @@ console.log('ErrorHandler loaded');
                 URL.revokeObjectURL(url);
             } catch (_e) {
                 void _e;
-                const logger = (window as typeof window & { Logger?: Console }).Logger || console;
-                logger.error('ErrorHandler', 'Failed to export logs');
+                logger.error('APP', 'Failed to export logs');
             }
         },
 
@@ -160,8 +160,7 @@ console.log('ErrorHandler loaded');
             column: colno || null,
             error: plain,
         };
-        const logger = (window as typeof window & { Logger?: Console }).Logger || console;
-        logger.error('ErrorHandler', 'Unhandled error', entry);
+        logger.error('APP', 'Unhandled error', entry);
         ErrorHandler._record(entry);
         // Let the browser continue its default handling
         return false;
@@ -179,8 +178,7 @@ console.log('ErrorHandler loaded');
             reason: safeStringify(reason),
             error: plain,
         };
-        const logger = (window as typeof window & { Logger?: Console }).Logger || console;
-        logger.error('ErrorHandler', 'Unhandled promise rejection', entry);
+        logger.error('APP', 'Unhandled promise rejection', entry);
         ErrorHandler._record(entry);
     }
 

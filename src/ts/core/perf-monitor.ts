@@ -3,9 +3,10 @@
  * Performance monitoring and measurement utility for development
  */
 
-console.log('PerfMonitor loaded');
-
+import logger from './logger.js';
 import { getString, setString } from '../services/storage-utils.js';
+
+logger.debug('APP', 'PerfMonitor loaded');
 
 (() => {
     'use strict';
@@ -95,8 +96,7 @@ import { getString, setString } from '../services/storage-utils.js';
             } catch (_e) {
                 void _e;
             }
-            const logger = (window as typeof window & { Logger?: Console }).Logger || console;
-            logger.info('PerfMonitor', 'Enabled');
+            logger.info('APP', 'Enabled');
         },
 
         disable() {
@@ -106,8 +106,7 @@ import { getString, setString } from '../services/storage-utils.js';
             } catch (_e) {
                 void _e;
             }
-            const logger = (window as typeof window & { Logger?: Console }).Logger || console;
-            logger.info('PerfMonitor', 'Disabled');
+            logger.info('APP', 'Disabled');
         },
 
         toggle() {
@@ -198,9 +197,9 @@ import { getString, setString } from '../services/storage-utils.js';
                 .filter(s => s !== null);
 
             if (stats.length > 0) {
-                console.group('Performance Statistics');
-                console.table(stats);
-                console.groupEnd();
+                logger.group('APP', 'Performance Statistics');
+                logger.debug('APP', stats);
+                logger.groupEnd();
             }
         },
 
@@ -212,39 +211,40 @@ import { getString, setString } from '../services/storage-utils.js';
                 .slice()
                 .sort((a, b) => b.duration - a.duration)
                 .slice(0, topN) as PerformanceMeasure[];
-
-            const logger = (window as typeof window & { Logger?: Console }).Logger || console;
-            console.group('PerfMonitor report');
+            logger.group('APP', 'PerfMonitor report');
 
             // Report Core Web Vitals first
             const vitals = this.getVitals();
             if (Object.keys(vitals).length > 0) {
-                console.group('Core Web Vitals');
+                logger.group('APP', 'Core Web Vitals');
                 if (vitals.LCP !== undefined) {
-                    console.info(`LCP (Largest Contentful Paint): ${vitals.LCP.toFixed(2)}ms`);
+                    logger.info(
+                        'APP',
+                        `LCP (Largest Contentful Paint): ${vitals.LCP.toFixed(2)}ms`
+                    );
                 }
                 if (vitals.FID !== undefined) {
-                    console.info(`FID (First Input Delay): ${vitals.FID.toFixed(2)}ms`);
+                    logger.info('APP', `FID (First Input Delay): ${vitals.FID.toFixed(2)}ms`);
                 }
                 if (vitals.CLS !== undefined) {
-                    console.info(`CLS (Cumulative Layout Shift): ${vitals.CLS.toFixed(4)}`);
+                    logger.info('APP', `CLS (Cumulative Layout Shift): ${vitals.CLS.toFixed(4)}`);
                 }
                 if (vitals.TTFB !== undefined) {
-                    console.info(`TTFB (Time to First Byte): ${vitals.TTFB.toFixed(2)}ms`);
+                    logger.info('APP', `TTFB (Time to First Byte): ${vitals.TTFB.toFixed(2)}ms`);
                 }
-                console.groupEnd();
+                logger.groupEnd();
             }
 
             // Report custom measures
             if (measures.length) {
-                console.group('Custom Measures');
+                logger.group('APP', 'Custom Measures');
                 for (const m of measures) {
-                    console.info(`${m.name}: ${m.duration.toFixed(2)}ms`);
+                    logger.info('APP', `${m.name}: ${m.duration.toFixed(2)}ms`);
                 }
-                console.groupEnd();
+                logger.groupEnd();
             }
 
-            console.groupEnd();
+            logger.groupEnd();
 
             if (clear) {
                 performance.clearMeasures();

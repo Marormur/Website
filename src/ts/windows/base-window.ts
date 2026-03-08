@@ -5,6 +5,7 @@
  */
 import type { BaseTab } from '../windows/base-tab.js';
 import { getZIndexManager } from './z-index-manager.js';
+import logger from '../core/logger.js';
 
 export interface WindowPosition {
     x: number;
@@ -940,7 +941,7 @@ export class BaseWindow {
                 });
             }
         } catch (e) {
-            console.warn('[BaseWindow] WM.register failed for', this.id, e);
+            logger.warn('WINDOW', '[BaseWindow] WM.register failed for', this.id, e);
         }
     }
 }

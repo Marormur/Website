@@ -1,5 +1,6 @@
-console.log('TerminalInstance (TS) loaded');
-console.log('MARKER_AT_TOP: terminal-instance.ts file is being loaded');
+import logger from '../../core/logger.js';
+logger.debug('TERMINAL', 'TerminalInstance (TS) loaded');
+logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being loaded');
 
 /**
  * TerminalInstance - Multi-Instance capable terminal implementation
@@ -70,7 +71,10 @@ console.log('MARKER_AT_TOP: terminal-instance.ts file is being loaded');
         // No override of _initializeState to avoid type modifier conflicts
 
         protected render(): void {
-            console.log('[DEBUG] TerminalInstance.render() CALLED - clearing container');
+            logger.debug(
+                'TERMINAL',
+                '[DEBUG] TerminalInstance.render() CALLED - clearing container'
+            );
             if (!this.container) return;
 
             // UNIQUE_MARKER_TEST_123456
@@ -566,7 +570,7 @@ console.log('MARKER_AT_TOP: terminal-instance.ts file is being loaded');
             createContainer: function (instanceId: string): HTMLElement | null {
                 const terminalModalContainer = document.getElementById('terminal-container');
                 if (!terminalModalContainer) {
-                    console.error('Terminal container not found');
+                    logger.error('TERMINAL', 'Terminal container not found');
                     return null;
                 }
                 const container = document.createElement('div');
@@ -587,14 +591,14 @@ console.log('MARKER_AT_TOP: terminal-instance.ts file is being loaded');
         });
 
         try {
-            console.debug('TerminalInstanceManager created', {
+            logger.debug('TERMINAL', 'TerminalInstanceManager created', {
                 type: (G['TerminalInstanceManager'] as { type?: string })?.type,
                 instanceCount: (
                     G['TerminalInstanceManager'] as { getInstanceCount?: () => number }
                 )?.getInstanceCount?.(),
             });
         } catch (error) {
-            console.debug('TerminalInstanceManager created (debug log failed)', error);
+            logger.debug('TERMINAL', 'TerminalInstanceManager created (debug log failed)', error);
         }
     }
 })();

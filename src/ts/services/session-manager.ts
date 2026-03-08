@@ -5,9 +5,10 @@
  * Handles storage quota limits gracefully and coordinates saves across multiple instances.
  */
 
-console.log('SessionManager loaded');
-
 import { getJSON, setJSON, remove } from '../services/storage-utils.js';
+import logger from '../core/logger.js';
+
+logger.debug('SESSION', 'SessionManager loaded');
 
 (() => {
     'use strict';
@@ -77,14 +78,15 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
             const parsed = getJSON<SessionData | null>(SESSION_STORAGE_KEY, null);
             if (!parsed || typeof parsed !== 'object') return null;
             if (parsed.version !== SESSION_VERSION) {
-                console.warn(
+                logger.warn(
+                    'SESSION',
                     `SessionManager: Version mismatch (stored: ${parsed.version}, expected: ${SESSION_VERSION})`
                 );
                 return null;
             }
             return parsed;
         } catch (err) {
-            console.warn('SessionManager: Failed to read session:', err);
+            logger.warn('SESSION', 'SessionManager: Failed to read session:', err);
             return null;
         }
     }
@@ -97,8 +99,12 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
 
         if (!checkStorageQuota(size)) {
             if (!quotaExceeded) {
-                console.error('SessionManager: Storage quota exceeded. Auto-save disabled.');
-                console.error(
+                logger.error(
+                    'SESSION',
+                    'SessionManager: Storage quota exceeded. Auto-save disabled.'
+                );
+                logger.error(
+                    'SESSION',
                     `Attempted to save ${(size / 1024).toFixed(2)}KB, limit is ${(MAX_STORAGE_SIZE / 1024).toFixed(2)}KB`
                 );
                 quotaExceeded = true;
@@ -112,10 +118,10 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
             return true;
         } catch (err) {
             if (err instanceof Error && err.name === 'QuotaExceededError') {
-                console.error('SessionManager: Storage quota exceeded:', err);
+                logger.error('SESSION', 'SessionManager: Storage quota exceeded:', err);
                 quotaExceeded = true;
             } else {
-                console.error('SessionManager: Failed to write session:', err);
+                logger.error('SESSION', 'SessionManager: Failed to write session:', err);
             }
             return false;
         }
@@ -127,9 +133,9 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
     function clearSession(): void {
         try {
             remove(SESSION_STORAGE_KEY);
-            console.log('SessionManager: Session cleared');
+            logger.debug('SESSION', 'SessionManager: Session cleared');
         } catch (err) {
-            console.warn('SessionManager: Failed to clear session:', err);
+            logger.warn('SESSION', 'SessionManager: Failed to clear session:', err);
         }
     }
 
@@ -183,7 +189,8 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
                         result[type] = instances as InstanceData[];
                     }
                 } catch (err) {
-                    console.error(
+                    logger.error(
+                        'SESSION',
                         `SessionManager: Failed to serialize instances for type "${type}":`,
                         err
                     );
@@ -229,7 +236,7 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
         perf?.mark('session:save:start');
 
         if (saveInProgress) {
-            console.warn('SessionManager: Save already in progress, skipping');
+            logger.warn('SESSION', 'SessionManager: Save already in progress, skipping');
             return;
         }
 
@@ -259,7 +266,8 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
                     (sum, arr) => sum + arr.length,
                     0
                 );
-                console.log(
+                logger.debug(
+                    'SESSION',
                     `SessionManager: Saved ${instanceCount} instances across ${Object.keys(instances).length} types`
                 );
             }
@@ -269,7 +277,7 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
 
             pendingSaveTypes.clear();
         } catch (err) {
-            console.error('SessionManager: Save failed:', err);
+            logger.error('SESSION', 'SessionManager: Save failed:', err);
         } finally {
             saveInProgress = false;
         }
@@ -342,19 +350,23 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
         const session = readSession();
         // Debugging: surface session contents and available managers to E2E traces
         try {
-            console.info('[SessionManager] restoreSession invoked');
-            console.debug('[SessionManager] raw session:', session);
+            logger.info('SESSION', '[SessionManager] restoreSession invoked');
+            logger.debug('SESSION', '[SessionManager] raw session:', session);
         } catch {
             /* ignore */
         }
         if (!session) {
-            console.log('SessionManager: No session to restore');
+            logger.debug('SESSION', 'SessionManager: No session to restore');
             return false;
         }
 
         const managers = getInstanceManagers();
         try {
-            console.info('[SessionManager] discovered managers:', Array.from(managers.keys()));
+            logger.info(
+                'SESSION',
+                '[SessionManager] discovered managers:',
+                Array.from(managers.keys())
+            );
         } catch {
             /* ignore */
         }
@@ -370,7 +382,7 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
         Object.entries(session.instances).forEach(([type, instances]) => {
             const manager = managers.get(type);
             if (!manager) {
-                console.warn(`SessionManager: No manager found for type "${type}"`);
+                logger.warn('SESSION', `SessionManager: No manager found for type "${type}"`);
                 return;
             }
 
@@ -383,7 +395,10 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
                 // Batch restore all instances of this type
                 (mgr.deserializeAll as (data: InstanceData[]) => void)(instances);
                 restoredCount += instances.length;
-                console.log(`SessionManager: Restored ${instances.length} "${type}" instances`);
+                logger.debug(
+                    'SESSION',
+                    `SessionManager: Restored ${instances.length} "${type}" instances`
+                );
 
                 // Restore previously active instance for this type if present
                 const activeId = activeMap[type] || null;
@@ -397,14 +412,16 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
                             activeId
                         );
                     } catch (e) {
-                        console.warn(
+                        logger.warn(
+                            'SESSION',
                             `SessionManager: Failed to set active instance for ${type}:`,
                             e
                         );
                     }
                 }
             } catch (err) {
-                console.error(
+                logger.error(
+                    'SESSION',
                     `SessionManager: Failed to restore instances for type "${type}":`,
                     err
                 );
@@ -424,16 +441,21 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
             if (zIndexManager && typeof zIndexManager.restoreWindowStack === 'function') {
                 try {
                     zIndexManager.restoreWindowStack(windowStack);
-                    console.log(
+                    logger.debug(
+                        'SESSION',
                         `SessionManager: Restored z-index order for ${windowStack.length} windows`
                     );
                 } catch (err) {
-                    console.warn('SessionManager: Failed to restore window z-index order:', err);
+                    logger.warn(
+                        'SESSION',
+                        'SessionManager: Failed to restore window z-index order:',
+                        err
+                    );
                 }
             }
         }
 
-        console.log(`SessionManager: Restored ${restoredCount} instances total`);
+        logger.debug('SESSION', `SessionManager: Restored ${restoredCount} instances total`);
 
         perf?.mark('session:restore:end');
         perf?.measure('session:restore-duration', 'session:restore:start', 'session:restore:end');
@@ -446,11 +468,14 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
      */
     function setDebounceDelay(ms: number): void {
         if (ms < 100 || ms > 5000) {
-            console.warn(`SessionManager: Invalid debounce delay ${ms}ms, must be 100-5000ms`);
+            logger.warn(
+                'SESSION',
+                `SessionManager: Invalid debounce delay ${ms}ms, must be 100-5000ms`
+            );
             return;
         }
         debounceDelay = ms;
-        console.log(`SessionManager: Debounce delay set to ${ms}ms`);
+        logger.debug('SESSION', `SessionManager: Debounce delay set to ${ms}ms`);
     }
 
     /**
@@ -531,17 +556,20 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
 
         const session = readSession();
         if (!session) {
-            console.warn('SessionManager: No session to export');
+            logger.warn('SESSION', 'SessionManager: No session to export');
             return null;
         }
 
         try {
             // Pretty-print for human readability
             const json = JSON.stringify(session, null, 2);
-            console.log(`SessionManager: Exported session (${(json.length / 1024).toFixed(2)}KB)`);
+            logger.debug(
+                'SESSION',
+                `SessionManager: Exported session (${(json.length / 1024).toFixed(2)}KB)`
+            );
             return json;
         } catch (err) {
-            console.error('SessionManager: Failed to export session:', err);
+            logger.error('SESSION', 'SessionManager: Failed to export session:', err);
             return null;
         }
     }
@@ -553,7 +581,10 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
      */
     function importSession(json: string): boolean {
         if (!json || typeof json !== 'string') {
-            console.error('SessionManager: Invalid import data (must be non-empty string)');
+            logger.error(
+                'SESSION',
+                'SessionManager: Invalid import data (must be non-empty string)'
+            );
             return false;
         }
 
@@ -561,51 +592,52 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
         try {
             session = JSON.parse(json) as SessionData;
         } catch (err) {
-            console.error('SessionManager: Failed to parse import JSON:', err);
+            logger.error('SESSION', 'SessionManager: Failed to parse import JSON:', err);
             return false;
         }
 
         // Validate schema
         if (!session || typeof session !== 'object') {
-            console.error('SessionManager: Invalid session data (must be object)');
+            logger.error('SESSION', 'SessionManager: Invalid session data (must be object)');
             return false;
         }
 
         if (!session.version || typeof session.version !== 'string') {
-            console.error('SessionManager: Missing or invalid version field');
+            logger.error('SESSION', 'SessionManager: Missing or invalid version field');
             return false;
         }
 
         // Version compatibility check
         if (session.version !== SESSION_VERSION) {
-            console.warn(
+            logger.warn(
+                'SESSION',
                 `SessionManager: Version mismatch (imported: ${session.version}, current: ${SESSION_VERSION})`
             );
             // For now, we're strict about versions. Future: implement migration logic
-            console.error('SessionManager: Cannot import session from different version');
+            logger.error('SESSION', 'SessionManager: Cannot import session from different version');
             return false;
         }
 
         if (!session.instances || typeof session.instances !== 'object') {
-            console.error('SessionManager: Missing or invalid instances field');
+            logger.error('SESSION', 'SessionManager: Missing or invalid instances field');
             return false;
         }
 
         // Write to localStorage (will validate quota)
         const success = writeSession(session);
         if (!success) {
-            console.error('SessionManager: Failed to save imported session to storage');
+            logger.error('SESSION', 'SessionManager: Failed to save imported session to storage');
             return false;
         }
 
         // Restore the imported session
         const restored = restoreSession();
         if (!restored) {
-            console.warn('SessionManager: Imported session saved but restoration failed');
+            logger.warn('SESSION', 'SessionManager: Imported session saved but restoration failed');
             return false;
         }
 
-        console.log('SessionManager: Successfully imported and restored session');
+        logger.debug('SESSION', 'SessionManager: Successfully imported and restored session');
         return true;
     }
 
@@ -615,7 +647,7 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
      * Initialize auto-save system and browser lifecycle hooks
      */
     function init(): void {
-        console.log('SessionManager: Initializing auto-save system');
+        logger.debug('SESSION', 'SessionManager: Initializing auto-save system');
 
         // Save on window blur (user switching away)
         window.addEventListener('blur', () => {
@@ -636,7 +668,7 @@ import { getJSON, setJSON, remove } from '../services/storage-utils.js';
             }
         });
 
-        console.log(`SessionManager: Initialized with ${debounceDelay}ms debounce`);
+        logger.debug('SESSION', `SessionManager: Initialized with ${debounceDelay}ms debounce`);
     }
 
     const SessionManager = {

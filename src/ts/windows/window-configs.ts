@@ -1,3 +1,4 @@
+import logger from '../core/logger.js';
 /*
  * src/ts/window-configs.ts
  * Single source of truth for all window/modal definitions.
@@ -157,13 +158,14 @@ export const windowConfigurations: WindowConfiguration[] = [
 // Auto-register with WindowManager when available (module load time)
 if (window.WindowManager) {
     window.WindowManager.registerAll(windowConfigurations);
-    console.log(`[WindowConfigs] Registered ${windowConfigurations.length} windows`);
+    logger.debug('WINDOW', `[WindowConfigs] Registered ${windowConfigurations.length} windows`);
 } else {
     // Fallback: register after DOMContentLoaded if WindowManager loads later
     document.addEventListener('DOMContentLoaded', () => {
         if (window.WindowManager) {
             window.WindowManager.registerAll(windowConfigurations);
-            console.log(
+            logger.debug(
+                'WINDOW',
                 `[WindowConfigs] Registered ${windowConfigurations.length} windows (delayed)`
             );
         }

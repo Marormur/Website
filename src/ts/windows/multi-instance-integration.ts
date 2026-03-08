@@ -5,6 +5,7 @@
  */
 
 import { getJSON } from '../services/storage-utils.js';
+import logger from '../core/logger.js';
 
 (() => {
     'use strict';
@@ -55,7 +56,10 @@ import { getJSON } from '../services/storage-utils.js';
         private setup() {
             const W = window as unknown as Record<string, any>;
             if (!W.InstanceManager || !W.WindowTabs || !W.KeyboardShortcuts) {
-                console.error('MultiInstanceIntegration: Required dependencies not loaded');
+                logger.error(
+                    'WINDOW',
+                    'MultiInstanceIntegration: Required dependencies not loaded'
+                );
                 return;
             }
 
@@ -335,7 +339,8 @@ import { getJSON } from '../services/storage-utils.js';
             if (modalId) {
                 const modalEl = document.getElementById(modalId);
                 if (!modalEl) {
-                    console.error(
+                    logger.error(
+                        'WINDOW',
                         `Cannot register shortcuts for ${type}: modal ${modalId} not found`
                     );
                     return;
