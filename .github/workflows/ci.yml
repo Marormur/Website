@@ -76,6 +76,15 @@ jobs:
               run: npm run test:coverage
               continue-on-error: false
 
+            - name: Upload coverage to Codecov
+              if: always()
+              uses: codecov/codecov-action@v4.5.0
+              with:
+                  token: ${{ secrets.CODECOV_TOKEN }}
+                  files: ./coverage/lcov.info
+                  flags: unittests
+                  fail_ci_if_error: false
+
             - name: Upload coverage report
               if: always()
               uses: actions/upload-artifact@v4
