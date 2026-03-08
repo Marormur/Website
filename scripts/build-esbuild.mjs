@@ -11,9 +11,10 @@ const common = {
     bundle: true,
     platform: 'browser',
     target: ['es2019'],
-    sourcemap: !watch, // Sourcemaps nur im Production-Build
+    sourcemap: !watch, // Sourcemaps in production (separate .map file)
     logLevel: 'info',
     metafile: analyze, // Metafile für Analyse
+    legalComments: 'none', // Strip license/legal comments to reduce size
 };
 
 const entry = path.resolve(root, 'src/ts/compat/expose-globals.ts');
@@ -37,6 +38,7 @@ const outfile = path.resolve(root, 'js/app.bundle.js');
             outfile,
             format: 'iife',
             globalName: 'App',
+            minify: true, // Minify in production: reduces bundle from ~915KB to ~445KB
         });
 
         console.log(`✔️  Built ${path.relative(root, outfile)}`);

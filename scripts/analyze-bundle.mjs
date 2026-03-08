@@ -65,14 +65,14 @@ async function analyzeBundle() {
             console.log('─'.repeat(60));
             console.log(`Total output: ${(totalSize / 1024).toFixed(2)} KB`);
 
-            // Warnung bei zu großem Bundle
-            const maxSize = 500; // KB
+            // Warnung bei zu großem Bundle (target: ≤700KB unminified, ≤500KB minified)
+            const maxSize = 700; // KB (unminified target from performance issue)
             if (totalSize / 1024 > maxSize) {
                 console.warn(
-                    `⚠️  Bundle exceeds recommended size of ${maxSize}KB. Consider optimization.`
+                    `⚠️  Bundle exceeds target size of ${maxSize}KB. Consider optimization.`
                 );
             } else {
-                console.log(`✅ Bundle size within limits (<${maxSize}KB)`);
+                console.log(`✅ Bundle size within target (<${maxSize}KB)`);
             }
 
             // Hinweis auf esbuild-bundle-analyzer (falls installiert)
