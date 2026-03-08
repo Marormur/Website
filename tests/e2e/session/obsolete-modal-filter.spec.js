@@ -1,6 +1,7 @@
 /**
  * @file tests/e2e/session/obsolete-modal-filter.spec.js
- * Test that obsolete modal IDs (like 'finder-modal') are gracefully ignored during session restore
+ * Test that obsolete modal IDs (like 'finder-modal') are cleaned up by the
+ * storage migration helper and are not restored during session restore.
  * Addresses issue #133
  */
 
@@ -30,7 +31,7 @@ test.describe('Obsolete Modal Filter (Issue #133)', () => {
             }
         });
 
-        // Reload to trigger session restore
+        // Reload to trigger migration + session restore
         await page.reload();
         await page.waitForFunction(() => window.__APP_READY === true, { timeout: 10000 });
 
@@ -49,47 +50,32 @@ test.describe('Obsolete Modal Filter (Issue #133)', () => {
         }
     });
 
-    test('should log debug message when skipping obsolete modal', async ({ page }) => {
+    test('should clean up finder-modal from openModals during migration', async ({ page }) => {
         // Setup: Inject legacy session data with obsolete 'finder-modal'
         await page.evaluate(() => {
             localStorage.setItem('openModals', JSON.stringify(['finder-modal']));
         });
 
-        // Capture console debug messages
-        const debugMessages = [];
-        page.on('console', msg => {
-            if (msg.type() === 'debug') {
-                debugMessages.push(msg.text());
-            }
-        });
-
-        // Reload to trigger session restore
+        // Reload to trigger migration
         await page.reload();
         await page.waitForFunction(() => window.__APP_READY === true, { timeout: 10000 });
 
-        // Wait a bit for debug messages
-        await page.waitForTimeout(500);
-
-        // Assert: Debug message about skipping obsolete modal should exist
-        const skipMessage = debugMessages.find(
-            m =>
-                m.includes('finder-modal') && m.includes('obsolete') && m.includes('multi-instance')
-        );
-
-        // Note: console.debug might not be captured by Playwright in all browsers
-        // This assertion is optional and informational
-        if (!skipMessage) {
-            console.log('ℹ️  Debug message not captured (browser may filter console.debug)');
-        }
+        // Assert: openModals should be empty after migration cleans up finder-modal
+        const openModals = await page.evaluate(() => {
+            return JSON.parse(localStorage.getItem('openModals') || '[]');
+        });
+        expect(openModals).not.toContain('finder-modal');
     });
 
     test('should still restore valid modals while ignoring obsolete ones', async ({ page }) => {
-        // Setup: Mix of obsolete and valid modals
+        // Setup: Mix of obsolete and valid modals in localStorage
+        // The migration (cleanupObsoleteStorage) runs on page load and removes finder-modal,
+        // leaving only about-modal for session restore to open.
         await page.evaluate(() => {
             localStorage.setItem('openModals', JSON.stringify(['finder-modal', 'about-modal']));
         });
 
-        // Reload to trigger session restore
+        // Reload to trigger migration + session restore
         await page.reload();
         await page.waitForFunction(() => window.__APP_READY === true, { timeout: 10000 });
 

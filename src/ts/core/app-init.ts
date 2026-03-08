@@ -17,6 +17,7 @@ import {
     validateMultiWindowSession,
 } from '../services/session-guard';
 import { installShim } from '../compat/instance-shims';
+import { cleanupObsoleteStorage } from '../services/storage-migration';
 import logger from './logger.js';
 
 /**
@@ -227,6 +228,8 @@ function initApp(): void {
     }
 
     funcs.syncTopZIndexWithDOM?.();
+    // Clean up obsolete localStorage entries before session restore runs
+    cleanupObsoleteStorage();
     funcs.restoreWindowPositions?.();
     // Suppress default init handlers while we restore previously open modals
     (
