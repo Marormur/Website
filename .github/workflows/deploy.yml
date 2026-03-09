@@ -46,6 +46,14 @@ jobs:
             - name: Build production bundle
               run: npm run build:bundle
 
+            # Compress the bundle for bandwidth savings
+            - name: Compress bundle
+              run: |
+                  gzip -9 -k js/app.bundle.js
+                  brotli -9 -k js/app.bundle.js || echo "⚠️  brotli not available, skipping .br compression"
+                  echo "📦 Bundle sizes:"
+                  du -sh js/app.bundle.js js/app.bundle.js.gz js/app.bundle.js.br 2>/dev/null || du -sh js/app.bundle.js js/app.bundle.js.gz
+
             # Upload all files needed for Pages to serve
             # We upload everything, but with explicit exclusions for unnecessary files
             # (Ignore-patterns in .gitignore are respected, but we list files explicitly)
