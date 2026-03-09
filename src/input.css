@@ -1,7 +1,5 @@
 /* stylelint-disable at-rule-no-unknown */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 /* stylelint-enable at-rule-no-unknown */
 
 /* Custom styles to preserve existing design */

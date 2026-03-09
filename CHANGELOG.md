@@ -2,6 +2,39 @@
 
 ## [Unreleased]
 
+### Major Upgrade - Tailwind CSS 4.x Migration (9. März 2026)
+
+- **Breaking Changes**
+  - Migrated from Tailwind CSS 3.4.19 to 4.2.1
+  - PostCSS plugin moved to separate package `@tailwindcss/postcss`
+  - Updated PostCSS from 8.5.6 to 8.5.8
+  - Updated Autoprefixer to 10.4.27  
+  - Removed Tailwind CLI (no longer exists in v4)
+  
+- **CSS Changes**
+  - New import syntax: `@import "tailwindcss"` (replaces `@tailwind base/components/utilities`)
+  - Enhanced CSS architecture with `@layer` system
+  - Modern color space: oklch() for improved color accuracy
+  - Production CSS minified to 46KB (from ~50KB)
+
+- **Build System Changes**
+  - All CSS build scripts now use PostCSS CLI instead of Tailwind CLI
+  - Updated `build:css`, `build:css:dev`, and `watch:css` scripts
+  - PostCSS configuration updated to use `@tailwindcss/postcss`
+  - Added `postcss-cli` as development dependency
+
+- **Testing & Verification**
+  - All 81 E2E tests passing ✅
+  - No visual regressions detected
+  - Build system working correctly
+  - Dark/Light theme modes functioning properly
+
+- **Files Changed**
+  - `package.json`: Updated dependencies and build scripts  
+  - `postcss.config.js`: Updated to use `@tailwindcss/postcss` plugin
+  - `src/input.css`: Updated import syntax for Tailwind 4.x
+  - `package-lock.json`: Dependency updates
+
 ### Documentation - VDOM System (Phase 4 - 17. Dezember 2025)
 
 - **Comprehensive VDOM Documentation**
