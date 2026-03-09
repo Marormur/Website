@@ -243,7 +243,7 @@ export class FinderWindow extends BaseWindow {
         win.createView('Computer');
 
         // Register window BEFORE showing it, so updateDockIndicators() can find it
-        if (globalThis.WindowRegistry) globalThis.WindowRegistry.registerWindow?.(win);
+        if (window.WindowRegistry) window.WindowRegistry.registerWindow?.(win);
 
         win.show();
 
@@ -254,11 +254,11 @@ export class FinderWindow extends BaseWindow {
     }
 
     static focusOrCreate(config?: Partial<WindowConfig>): FinderWindow {
-        if (!globalThis.WindowRegistry) {
+        if (!window.WindowRegistry) {
             return FinderWindow.create(config);
         }
 
-        const finderWindows = (globalThis.WindowRegistry.getWindowsByType?.('finder') ??
+        const finderWindows = (window.WindowRegistry.getWindowsByType?.('finder') ??
             []) as FinderWindow[];
 
         if (finderWindows.length === 0) {

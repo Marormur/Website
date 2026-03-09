@@ -6,7 +6,7 @@
  * Uses VDOM for efficient output rendering without losing input focus.
  */
 
-import { BaseTab, type TabConfig } from '../../windows/base-tab.js';
+import { BaseTab, type TabConfig, type TabState } from '../../windows/base-tab.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
 import { h, diff, patch, createElement, type VNode } from '../../core/vdom.js';
 import logger from '../../core/logger.js';
@@ -718,13 +718,13 @@ export class TerminalSession extends BaseTab {
     /**
      * Serialize session state
      */
-    serialize(): Record<string, unknown> {
+    serialize(): TabState {
         return {
             ...super.serialize(),
             currentPath: this.vfsCwd,
             commandHistory: this.commandHistory,
             vfsCwd: this.vfsCwd,
-        };
+        } as TabState;
     }
 
     static deserialize(state: Record<string, unknown>): TerminalSession {

@@ -166,8 +166,8 @@ export class TerminalWindow extends BaseWindow {
         window.createSession();
 
         // Register window BEFORE showing it, so updateDockIndicators() can find it
-        if (globalThis.WindowRegistry) {
-            globalThis.WindowRegistry.registerWindow?.(window);
+        if (window.WindowRegistry) {
+            window.WindowRegistry.registerWindow?.(window);
         }
 
         // Show window
@@ -185,13 +185,13 @@ export class TerminalWindow extends BaseWindow {
      * - If Terminal windows exist, focus the most recently active one
      */
     static focusOrCreate(config?: Partial<WindowConfig>): TerminalWindow {
-        if (!globalThis.WindowRegistry) {
+        if (!window.WindowRegistry) {
             // Fallback: create new if registry unavailable
             return TerminalWindow.create(config);
         }
 
         // Get all existing Terminal windows
-        const terminalWindows = (globalThis.WindowRegistry.getWindowsByType?.('terminal') ??
+        const terminalWindows = (window.WindowRegistry.getWindowsByType?.('terminal') ??
             []) as TerminalWindow[];
 
         if (terminalWindows.length === 0) {

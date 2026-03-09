@@ -1,7 +1,7 @@
 // Ambient types for i18n system
 
 declare interface AppI18nAPI {
-  translate(key: string): string;
+  translate(key: string, params?: Record<string, unknown>, options?: { fallback?: string }): string;
   setLanguagePreference(lang: 'system' | 'de' | 'en'): void;
   getLanguagePreference(): 'system' | 'de' | 'en';
   getActiveLanguage(): 'de' | 'en';
@@ -10,6 +10,6 @@ declare interface AppI18nAPI {
 
 declare const appI18n: AppI18nAPI;
 
-declare function translate(key: string): string;
+declare function translate(key: string, fallback?: string): string;
 
 // Note: Window interface extension moved to types/index.d.ts to avoid duplicate identifiers

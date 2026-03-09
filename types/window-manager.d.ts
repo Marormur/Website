@@ -17,6 +17,7 @@ declare interface WindowManagerAPI {
   close(id: string): void;
   bringToFront(id: string): void;
   getTopWindow(): string | null;
+  getTopZIndex?(): number;
   getProgramInfo(id: string): unknown;
   getAllWindowIds(): string[];
   getPersistentWindowIds(): string[];

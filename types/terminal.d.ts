@@ -1,6 +1,7 @@
 // Ambient types for TerminalSystem
 
 declare interface TerminalSystemAPI {
+  container?: HTMLElement | null;
   init(container: HTMLElement): void;
 }
 

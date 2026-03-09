@@ -14,8 +14,8 @@ if (guardedWindow[guardKey]) {
         window.appI18n ||
         ({
             translate: (k: string) => k,
-            applyTranslations: (_el?: Element) => {},
-        } as { translate: (k: string) => string; applyTranslations: (el?: Element) => void });
+            applyTranslations: (_el?: HTMLElement) => {},
+        } as { translate: (k: string) => string; applyTranslations: (el?: HTMLElement) => void });
 
     const hideAllDropdowns =
         typeof window.hideMenuDropdowns === 'function'
@@ -24,7 +24,7 @@ if (guardedWindow[guardKey]) {
                   const domUtils = window.DOMUtils;
                   document.querySelectorAll('.menu-dropdown').forEach(d => {
                       if (domUtils && typeof domUtils.hide === 'function') {
-                          domUtils.hide(d);
+                          domUtils.hide(d as HTMLElement);
                       } else {
                           d.classList.add('hidden');
                       }
@@ -40,12 +40,12 @@ if (guardedWindow[guardKey]) {
         if (!window.dialogs) window.dialogs = {};
         if (!window.dialogs[id] && typeof window.Dialog === 'function') {
             try {
-                window.dialogs[id] = new window.Dialog(id);
+                window.dialogs[id] = new window.Dialog(id) as any;
             } catch {
                 // noop
             }
         }
-        const dlg = window.dialogs[id];
+        const dlg = window.dialogs[id] as any;
         if (dlg && typeof dlg.open === 'function') {
             dlg.open();
         } else {
@@ -113,7 +113,7 @@ if (guardedWindow[guardKey]) {
         }
 
         if (inImageModal && typeof window.getImageViewerState === 'function') {
-            const st = window.getImageViewerState();
+            const st = window.getImageViewerState() as any;
             if (st && st.hasImage) {
                 items.push({
                     id: 'image-open-tab',
@@ -274,7 +274,7 @@ if (guardedWindow[guardKey]) {
                 id: 'open-finder',
                 label: i18n.translate('context.openFinder') || 'Finder öffnen',
                 action: () => {
-                    window.FinderWindow?.focusOrCreate();
+                    window.FinderWindow?.focusOrCreate?.();
                 },
             });
             items.push({
@@ -317,7 +317,9 @@ if (guardedWindow[guardKey]) {
         items.push({
             id: 'open-text',
             label: i18n.translate('context.openTextEditor') || 'Texteditor öffnen',
-            action: () => openModal('text-modal'),
+            action: () => {
+                if (openModal) openModal('text-modal');
+            },
         });
         items.push({ type: 'separator' });
         items.push({
@@ -349,7 +351,7 @@ if (guardedWindow[guardKey]) {
     document.addEventListener('DOMContentLoaded', () => {
         if (!document.body.contains(menu)) document.body.appendChild(menu);
         try {
-            i18n.applyTranslations(menu);
+            i18n.applyTranslations(menu as HTMLElement);
         } catch {}
     });
 
@@ -399,7 +401,7 @@ if (guardedWindow[guardKey]) {
         });
         menu.appendChild(fragment);
         try {
-            i18n.applyTranslations(menu);
+            i18n.applyTranslations(menu as HTMLElement);
         } catch {}
         return firstFocusable;
     }

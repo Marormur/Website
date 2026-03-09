@@ -545,11 +545,11 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         } = this.props;
         const activeSortOption =
             FINDER_SORT_MENU_OPTIONS.find(option => option.key === this.normalizeSortKey(sortBy)) ||
-            FINDER_SORT_MENU_OPTIONS[1];
+            FINDER_SORT_MENU_OPTIONS[1]!;
         const activeViewOption =
             FINDER_VIEW_MENU_OPTIONS.find(
                 option => option.key === this.normalizeViewMenuKey(viewMode)
-            ) || FINDER_VIEW_MENU_OPTIONS[0];
+            ) || FINDER_VIEW_MENU_OPTIONS[0]!;
 
         // Prepare Sidebar Groups
         const sidebarGroups: SidebarGroup[] = [
@@ -612,7 +612,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         }
 
         const currentFolderName =
-            currentPath.length > 0 ? currentPath[currentPath.length - 1] : 'Computer';
+            currentPath.length > 0 ? currentPath[currentPath.length - 1]! : 'Computer';
         const isSearchExpanded = this.state.isSearchExpanded || searchTerm.length > 0;
 
         // Render Sidebar Groups inline to ensure state updates work correctly

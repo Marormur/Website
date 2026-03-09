@@ -40,7 +40,7 @@ export const windowConfigurations: WindowConfiguration[] = [
                 // Initialize Launchpad module if not already
                 if (window.LaunchpadSystem && !window.LaunchpadSystem?.container) {
                     const container = document.getElementById('launchpad-container');
-                    if (container) window.LaunchpadSystem.init(container);
+                    if (container) window.LaunchpadSystem.init?.(container);
                 }
                 // Refresh apps when opening
                 if (window.LaunchpadSystem?.refresh) window.LaunchpadSystem.refresh();
@@ -71,7 +71,7 @@ export const windowConfigurations: WindowConfiguration[] = [
             initHandler: function () {
                 if (window.SettingsSystem && !window.SettingsSystem?.container) {
                     const container = document.getElementById('settings-container');
-                    if (container) window.SettingsSystem.init(container);
+                    if (container) window.SettingsSystem.init?.(container);
                 }
             },
         },

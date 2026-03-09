@@ -42,7 +42,7 @@ declare interface Window {
     ActionBus: ActionBusAPI;
 
     /** API - Unified interface to all modules */
-    API: typeof API;
+    API: APIObject;
 
     /** BaseWindowInstance - Base class for window instances */
     BaseWindowInstance: typeof BaseWindowInstance;

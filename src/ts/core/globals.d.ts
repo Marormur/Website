@@ -97,6 +97,8 @@ interface WindowManagerShape {
 /** Shape of the application menu / menu rendering system. */
 interface MenuSystemShape {
     renderApplicationMenu(activeModalId?: string | null): void;
+    handleMenuActionActivation?: (actionId: string) => void;
+    menuDefinitions?: Record<string, unknown>;
     getCurrentMenuModalId(): string | null;
 }
 
@@ -138,6 +140,17 @@ declare global {
         };
         PhotosApp?: {
             init?: () => void;
+        };
+        /** Build Photos app content DOM (called by PhotosWindow) */
+        PhotosAppBuildContent?: () => {
+            container: HTMLElement;
+            detailOverlay: HTMLElement;
+        };
+        /** Attach Photos app to window element */
+        PhotosAppAttachToWindow?: (win: HTMLElement) => void;
+        /** PhotosWindow class for creating photos viewer windows */
+        PhotosWindow?: {
+            create?: (config?: { title?: string }) => unknown;
         };
         DockSystem?: {
             init?: () => void;
@@ -395,6 +408,10 @@ declare global {
         __APP_READY?: boolean;
         /** Set to true once session restore is complete. */
         __SESSION_RESTORED?: boolean;
+
+        // ── Configuration ─────────────────────────────────────────────────
+        /** GitHub username for the portfolio owner (fallback: 'Marormur') */
+        GITHUB_USERNAME?: string;
 
         // ── Dialog registry ───────────────────────────────────────────────
         dialogs?: Record<

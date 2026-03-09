@@ -316,9 +316,9 @@ function buildTextEditorMenuDefinition(context: MenuContext) {
 }
 
 function buildImageViewerMenuDefinition(context: MenuContext) {
-    const state = window['getImageViewerState']
-        ? window['getImageViewerState']()
-        : { hasImage: false };
+    const state = (
+        window['getImageViewerState'] ? window['getImageViewerState']() : { hasImage: false }
+    ) as { hasImage?: boolean; src?: string; title?: string };
     return [
         {
             id: 'file',
@@ -327,7 +327,7 @@ function buildImageViewerMenuDefinition(context: MenuContext) {
                 {
                     id: 'image-open-tab',
                     label: () => translate('menu.image.openInTab'),
-                    disabled: !state.hasImage,
+                    disabled: !state?.hasImage,
                     icon: 'imageOpen',
                     action: () => {
                         if (window['openActiveImageInNewTab']) window['openActiveImageInNewTab']();
@@ -336,7 +336,7 @@ function buildImageViewerMenuDefinition(context: MenuContext) {
                 {
                     id: 'image-download',
                     label: () => translate('menu.image.saveImage'),
-                    disabled: !state.hasImage,
+                    disabled: !state?.hasImage,
                     icon: 'download',
                     action: () => {
                         if (window['downloadActiveImage']) window['downloadActiveImage']();
@@ -500,7 +500,7 @@ function buildTerminalMenuDefinition(context: MenuContext) {
                             return;
                         }
                         const activeId = terminalWin.activeTabId;
-                        if (activeId) terminalWin.removeTab(activeId);
+                        if (activeId) terminalWin.removeTab?.(activeId);
                     },
                 },
                 // Close entire window (⇧⌘W)
@@ -675,7 +675,7 @@ function getWindowMenuItems(context: MenuContext) {
 
 function getMultiInstanceMenuItems(context: MenuContext) {
     const items: Record<string, unknown>[] = [];
-    let manager: InstanceManagerShape | null = null;
+    let manager: any = null;
     let typeLabel: string | null = null;
     let newInstanceKey: string | null = null;
     const modalId = context?.modalId;
@@ -834,7 +834,7 @@ function getMultiInstanceMenuItems(context: MenuContext) {
     const instances = manager.getAllInstances();
     if (instances.length > 1) {
         items.push({ type: 'separator' });
-        instances.forEach((instance, index: number) => {
+        instances.forEach((instance: any, index: number) => {
             const isActive = manager.getActiveInstance()?.instanceId === instance.instanceId;
             // Normalize label to always include index-based numbering for stable UI/test selection
             const numberLabel = `${typeLabel} ${index + 1}`;
@@ -910,7 +910,7 @@ type HelpMenuOverrides = {
 function createHelpMenuSection(context: MenuContext, overrides: HelpMenuOverrides = {}) {
     const sectionKey = overrides.sectionKey || 'menu.sections.help';
     const itemKey = overrides.itemKey || 'menu.help.showHelp';
-    const infoModalId = overrides.infoModalId || context.modalId || null;
+    const infoModalId = overrides.infoModalId || context?.modalId || null;
     return {
         id: overrides.id || 'help',
         label: () => translate(sectionKey),
@@ -966,7 +966,10 @@ export function renderApplicationMenu(activeModalId?: string | null) {
     if (!Array.isArray(sections) || sections.length === 0) return;
     sections.forEach((section: Record<string, unknown>, sectionIndex: number) => {
         if (!section) return;
-        const items = normalizeMenuItems(section.items, context);
+        const items = normalizeMenuItems(
+            Array.isArray(section.items) ? (section.items as unknown[]) : [],
+            context
+        );
         if (!items.length) return;
         const trigger = document.createElement('div');
         trigger.className = 'menubar-trigger';
@@ -1004,9 +1007,10 @@ export function renderApplicationMenu(activeModalId?: string | null) {
                 | HTMLButtonElement
                 | HTMLAnchorElement;
             actionEl.className = 'menu-item';
-            if (tagName === 'button') actionEl.type = 'button';
-            else {
-                actionEl.href = item.href;
+            if (tagName === 'button') {
+                actionEl.type = 'button';
+            } else if (actionEl instanceof HTMLAnchorElement) {
+                actionEl.href = (item.href as string) || '#';
                 if (item.external) {
                     actionEl.rel = 'noopener noreferrer';
                     actionEl.target = '_blank';
@@ -1024,10 +1028,10 @@ export function renderApplicationMenu(activeModalId?: string | null) {
                 const iconSpan = document.createElement('span');
                 iconSpan.className = 'menu-item-icon';
                 const iconSvg = window.IconSystem.getMenuIconSvg
-                    ? window.IconSystem.getMenuIconSvg(item.icon)
+                    ? window.IconSystem.getMenuIconSvg(String(item.icon))
                     : '';
                 if (window.IconSystem.renderIconIntoElement)
-                    window.IconSystem.renderIconIntoElement(iconSpan, iconSvg, item.icon);
+                    window.IconSystem.renderIconIntoElement(iconSpan, iconSvg, String(item.icon));
                 labelSpan.appendChild(iconSpan);
             }
             labelSpan.appendChild(document.createTextNode(itemLabel));
@@ -1040,11 +1044,13 @@ export function renderApplicationMenu(activeModalId?: string | null) {
                 actionEl.appendChild(shortcutSpan);
             }
             actionEl.setAttribute('role', 'menuitem');
-            if (item.title) actionEl.title = item.title;
+            if (item.title) actionEl.title = String(item.title);
             const isDisabled = Boolean(item.disabled);
             if (isDisabled) {
                 actionEl.setAttribute('aria-disabled', 'true');
-                if (tagName === 'button') actionEl.disabled = true;
+                if (tagName === 'button' && actionEl instanceof HTMLButtonElement) {
+                    actionEl.disabled = true;
+                }
             } else if (typeof item.action === 'function') {
                 const actionId = registerMenuAction(item.action as MenuHandler);
                 if (actionId) actionEl.dataset.menuAction = actionId;
@@ -1087,7 +1093,7 @@ export function handleMenuActionActivation(event: Event) {
 }
 
 function closeContextWindow(context: MenuContext) {
-    const dialog = context && context.dialog;
+    const dialog = context && (context.dialog as any);
     if (dialog && typeof dialog.close === 'function') dialog.close();
 }
 

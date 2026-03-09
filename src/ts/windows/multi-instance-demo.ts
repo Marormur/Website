@@ -426,29 +426,29 @@ function logDemo(title: string, description: string): void {
         window.TerminalInstanceManager?.createInstance?.({ title: 'Test Terminal' });
         window.TextEditorInstanceManager?.createInstance?.({ title: 'notes.txt' });
         logger.debug('WINDOW', 'Saving session...');
-        window.SessionManager.saveAllSessions();
-        const info = window.SessionManager.getStorageInfo();
+        (window.SessionManager as any).saveAllSessions();
+        const info = (window.SessionManager as any)?.getStorageInfo();
         logger.debug('WINDOW', '✓ Session saved:', info);
         logger.groupEnd();
     };
 
-    window.demoSessionExport = function () {
+    (window as any).demoSessionExport = function () {
         logger.group('WINDOW', 'Session Export Demo...');
         if ((window.TerminalInstanceManager?.getInstanceCount?.() || 0) === 0) {
             window.TerminalInstanceManager?.createInstance?.({ title: 'Terminal 1' });
             window.TerminalInstanceManager?.createInstance?.({ title: 'Terminal 2' });
         }
-        const sessionJson = window.SessionManager?.exportSession?.();
+        const sessionJson = (window.SessionManager as any)?.exportSession?.();
         logger.debug('WINDOW', 'Exported session:', sessionJson);
         logger.groupEnd();
         return sessionJson;
     };
 
-    window.demoKeyboardShortcuts = function () {
+    (window as any).demoKeyboardShortcuts = function () {
         logger.group('WINDOW', 'Keyboard Shortcuts Demo...');
-        const shortcuts = window.KeyboardShortcuts.getAllShortcuts?.() || [];
+        const shortcuts = (window.KeyboardShortcuts as any)?.getAllShortcuts?.() || [];
         logger.debug('WINDOW', `Registered shortcuts: ${shortcuts.length}`);
-        shortcuts.forEach((s: Record<string, unknown>) => {
+        shortcuts.forEach((s: any) => {
             if (s.description) {
                 const display = window.KeyboardShortcuts.getShortcutDisplay?.(s);
                 logger.debug('WINDOW', `  ${display}: ${s.description}`);

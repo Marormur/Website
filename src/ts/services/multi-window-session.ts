@@ -305,8 +305,9 @@ class MultiWindowSessionManager {
             title: tab.title,
             icon: tab.icon,
             contentState: tab.contentState || {},
-            created: tab.metadata?.created || Date.now(),
-            modified: tab.metadata?.modified || Date.now(),
+            created: typeof tab.metadata?.created === 'number' ? tab.metadata.created : Date.now(),
+            modified:
+                typeof tab.metadata?.modified === 'number' ? tab.metadata.modified : Date.now(),
         };
     }
 
@@ -355,7 +356,7 @@ class MultiWindowSessionManager {
                 );
                 const rawSession = JSON.parse(legacyV1Data);
                 // Normalize legacy format to current format
-                const session = this.normalizeLegacyV1Session(rawSession);
+                const session = this.normalizeLegacyV1Session(rawSession) as MultiWindowSession;
                 // Apply path migration
                 this.migrateSessionPaths(session);
                 await this.restoreMultiWindowSession(session);
@@ -477,8 +478,8 @@ class MultiWindowSessionManager {
 
             // Force tab rendering after window is shown and in DOM
             // This ensures tabs are visible even if they were added before the window was shown
-            if (typeof window._renderTabs === 'function') {
-                window._renderTabs();
+            if (typeof (window as any)._renderTabs === 'function') {
+                (window as any)._renderTabs();
             }
 
             // Apply window state after DOM is ready
@@ -548,13 +549,15 @@ class MultiWindowSessionManager {
             // Determine tab class based on type
             switch (data.type) {
                 case 'terminal-session':
-                    return TerminalSession.deserialize(data);
+                    return TerminalSession.deserialize(data as unknown as Record<string, unknown>);
 
                 case 'text-editor-document':
-                    return TextEditorDocument.deserialize(data);
+                    return TextEditorDocument.deserialize(
+                        data as unknown as Record<string, unknown>
+                    );
 
                 case 'finder-view':
-                    return FinderView.deserialize(data);
+                    return FinderView.deserialize(data as unknown as Record<string, unknown>);
 
                 default:
                     logger.warn(
@@ -641,19 +644,17 @@ class MultiWindowSessionManager {
                 }
 
                 // Migrate contentState.vfsCwd if it exists (only if string)
-                if (tab.contentState?.vfsCwd && typeof tab.contentState.vfsCwd === 'string') {
-                    const migrated = this.migrateLegacyPath(tab.contentState.vfsCwd);
-                    tab.contentState.vfsCwd = migrated;
+                const contentState = tab.contentState as Record<string, unknown> | undefined;
+                if (contentState?.vfsCwd && typeof contentState.vfsCwd === 'string') {
+                    const migrated = this.migrateLegacyPath(contentState.vfsCwd);
+                    contentState.vfsCwd = migrated;
                 }
 
                 // Migrate contentState.currentPath if it exists (only if string)
                 // Skip Finder currentPath arrays
-                if (
-                    tab.contentState?.currentPath &&
-                    typeof tab.contentState.currentPath === 'string'
-                ) {
-                    const migrated = this.migrateLegacyPath(tab.contentState.currentPath);
-                    tab.contentState.currentPath = migrated;
+                if (contentState?.currentPath && typeof contentState.currentPath === 'string') {
+                    const migrated = this.migrateLegacyPath(contentState.currentPath);
+                    contentState.currentPath = migrated;
                 }
             }
         }
@@ -668,7 +669,11 @@ class MultiWindowSessionManager {
             version: MultiWindowSessionManager.VERSION,
             timestamp: session.timestamp || Date.now(),
             windows: [],
-            metadata: session.metadata || {},
+            metadata: (session.metadata || {}) as {
+                [key: string]: unknown;
+                theme?: string;
+                language?: string;
+            },
         };
 
         const rawWindows = (session.windows as RawWindowData[] | undefined) || [];
@@ -734,7 +739,9 @@ class MultiWindowSessionManager {
 
             for (const sessionData of instances['terminal']) {
                 try {
-                    const session = TerminalSession.deserialize(sessionData);
+                    const session = TerminalSession.deserialize(
+                        sessionData as Record<string, unknown>
+                    );
                     termWindow.addTab(session);
                 } catch (error) {
                     logger.error(
@@ -757,7 +764,7 @@ class MultiWindowSessionManager {
 
             for (const docData of instances['text-editor']) {
                 try {
-                    const doc = TextEditorDocument.deserialize(docData);
+                    const doc = TextEditorDocument.deserialize(docData as Record<string, unknown>);
                     editorWindow.addTab(doc);
                 } catch (error) {
                     logger.error(
@@ -780,7 +787,7 @@ class MultiWindowSessionManager {
 
             for (const viewData of instances['finder']) {
                 try {
-                    const view = FinderView.deserialize(viewData);
+                    const view = FinderView.deserialize(viewData as Record<string, unknown>);
                     finderWindow.addTab(view);
                 } catch (error) {
                     logger.error(

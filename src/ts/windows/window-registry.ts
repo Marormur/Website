@@ -263,7 +263,7 @@ class WindowRegistry {
 
 // Create and expose singleton
 const registry = new WindowRegistry();
-window.WindowRegistry = registry;
+window.WindowRegistry = registry as any;
 
 // Initialize registry when DOM is ready
 if (document.readyState === 'loading') {

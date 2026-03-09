@@ -1,6 +1,7 @@
 // Ambient types for TextEditorSystem
 
 declare interface TextEditorSystemAPI {
+  container?: HTMLElement | null;
   init(container: HTMLElement): void;
   loadRemoteFile(payload: unknown): void;
   showLoading(payload?: unknown): void;

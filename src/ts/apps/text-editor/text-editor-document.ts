@@ -3,7 +3,7 @@
  * Text editor document as a tab within an editor window
  */
 
-import { BaseTab, type TabConfig } from '../../windows/base-tab.js';
+import { BaseTab, type TabConfig, type TabState } from '../../windows/base-tab.js';
 import { getString, setString } from '../../services/storage-utils.js';
 import logger from '../../core/logger.js';
 
@@ -125,8 +125,9 @@ export class TextEditorDocument extends BaseTab {
         this._loadWrapPreference();
 
         // Load initial content if any
-        if (this.contentState && this.contentState.content && this.editor) {
-            this.editor.value = this.contentState.content;
+        const state = this.contentState as { content?: string } | undefined;
+        if (state && state.content && this.editor) {
+            this.editor.value = state.content;
             this._updateWordCount();
             this._updateCursorPosition();
         }
@@ -382,13 +383,13 @@ export class TextEditorDocument extends BaseTab {
     /**
      * Serialize document state
      */
-    serialize(): Record<string, unknown> {
+    serialize(): TabState {
         return {
             ...super.serialize(),
             filename: this.filename,
             wrapMode: this.wrapMode,
             isDirty: this.isDirty,
-        };
+        } as TabState;
     }
 
     static deserialize(state: Record<string, unknown>): TextEditorDocument {

@@ -19,7 +19,7 @@
  *   speichert; die Session enthält so alle offenen Finder‑Tabs inklusive Pfad/Ansicht.
  */
 
-import { BaseTab, type TabConfig } from '../../windows/base-tab.js';
+import { BaseTab, type TabConfig, type TabState } from '../../windows/base-tab.js';
 import type { FinderWindow } from './finder-window.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
 import PreviewInstanceManager from '../../windows/preview-instance-manager.js';
@@ -92,6 +92,12 @@ interface GitHubContentItem {
     [key: string]: unknown;
 }
 
+interface FinderViewContentState {
+    sidebarWidth?: number;
+    columnWidths?: { name: number; size: number; modified: number };
+    favorites?: string[];
+}
+
 type FinderSource = 'computer' | 'github' | 'recent' | 'starred';
 
 export class FinderView extends BaseTab {
@@ -162,8 +168,10 @@ export class FinderView extends BaseTab {
         this.sortOrder = 'asc';
         this.selectedItems = new Set();
         this._renderedItems = [];
-        this.sidebarWidth = config?.content?.sidebarWidth ?? 192; // default 12rem
-        this.columnWidths = config?.content?.columnWidths || {
+
+        const contentState = config?.content as FinderViewContentState | undefined;
+        this.sidebarWidth = contentState?.sidebarWidth ?? 192; // default 12rem
+        this.columnWidths = contentState?.columnWidths || {
             name: 0, // flex column
             size: 112, // w-28
             modified: 160, // w-40
@@ -173,7 +181,7 @@ export class FinderView extends BaseTab {
         this.lastGithubItemsMap = new Map();
 
         // Initialize Favorites from saved state
-        const savedFavorites = config?.content?.favorites || [];
+        const savedFavorites = contentState?.favorites || [];
         this.favorites = new Set(savedFavorites);
 
         // Load recent files from global storage (shared across all tabs/windows)
@@ -374,9 +382,7 @@ export class FinderView extends BaseTab {
         // Ensure the tab title reflects the current folder/view
         // We call super.setTitle to avoid the recursion of this.setTitle -> refresh -> _renderAll
         const t = (key: string, fb: string) =>
-            window.appI18n
-                ? window.appI18n.translate(key, {}, { fallback: fb } as Record<string, unknown>)
-                : fb;
+            window.appI18n ? window.appI18n.translate(key, {}, { fallback: fb }) : fb;
 
         let label = '';
         const atRoot = this.currentPath.length === 0;
@@ -384,7 +390,7 @@ export class FinderView extends BaseTab {
             case 'computer':
                 label = atRoot
                     ? t('finder.sidebar.computer', 'Computer')
-                    : this.currentPath[this.currentPath.length - 1];
+                    : this.currentPath[this.currentPath.length - 1]!;
                 break;
             case 'github':
                 label = atRoot
@@ -856,29 +862,9 @@ export class FinderView extends BaseTab {
 
             this.columnWidths[columnKey] = newWidth;
 
-            // Update UI during drag
-            if (this.ui) {
-                this.ui.update({
-                    id: this.id,
-                    windowId: this.parentWindow?.id || this.id,
-                    isActive: this.isVisible,
-                    source: this.source,
-                    currentPath: this.currentPath,
-                    viewMode: this.viewMode,
-                    sortBy: this.sortBy,
-                    sortOrder: this.sortOrder,
-                    items: this._renderedItems,
-                    selectedItems: this.selectedItems,
-                    favorites: this.favorites,
-                    recentFiles: this.recentFiles,
-                    githubRepos: this.githubRepos,
-                    githubError: this.githubError,
-                    githubErrorMessage: this.githubErrorMessage,
-                    githubLoading: this.githubLoading,
-                    sidebarWidth: this.sidebarWidth,
-                    searchTerm: this.searchTerm,
-                });
-            }
+            // Update UI during drag - unfortunately we need to provide all required props
+            // even though we're only updating the columnWidths
+            this._renderAll();
         };
 
         const onMouseUp = () => {
@@ -1141,10 +1127,10 @@ export class FinderView extends BaseTab {
 
                     // Fallback: if a global TextEditorSystem exists, load remote file there
                     if (
-                        W.TextEditorSystem &&
-                        typeof W.TextEditorSystem.loadRemoteFile === 'function'
+                        (window as any).TextEditorSystem &&
+                        typeof (window as any).TextEditorSystem.loadRemoteFile === 'function'
                     ) {
-                        W.TextEditorSystem.loadRemoteFile({
+                        (window as any).TextEditorSystem.loadRemoteFile({
                             content,
                             fileName,
                             repo: meta?.repo,
@@ -1308,12 +1294,21 @@ export class FinderView extends BaseTab {
                     if (API && typeof API.fetchRepoContents === 'function') {
                         // Do NOT show a loading state - it would destroy scroll position
                         // Fetch in background silently
-                        const fileObj = await API.fetchRepoContents(username, repo, subPath);
+                        const response = await API.fetchRepoContents(username, repo, subPath);
+                        // When fetching a single file, GitHub returns an object (not array)
+                        const fileObj = Array.isArray(response) ? response[0] : response;
                         // If the API returned a direct download URL (common in mocks), prefer that for binaries
-                        if (fileObj && fileObj.download_url) {
+                        if (fileObj && 'download_url' in fileObj && fileObj.download_url) {
                             try {
                                 if (imageExts.has(ext)) {
-                                    const url = fileObj.download_url;
+                                    const url =
+                                        'download_url' in fileObj && fileObj.download_url
+                                            ? fileObj.download_url
+                                            : '';
+                                    if (!url) {
+                                        logger.warn('FINDER', 'No download_url for image');
+                                        return;
+                                    }
                                     try {
                                         const resp = await fetch(url);
                                         if (resp.ok) {
@@ -1346,7 +1341,13 @@ export class FinderView extends BaseTab {
                         }
 
                         // If fileObj contains base64 content we can handle text, images and pdfs
-                        if (fileObj && fileObj.content && fileObj.encoding === 'base64') {
+                        if (
+                            fileObj &&
+                            'content' in fileObj &&
+                            'encoding' in fileObj &&
+                            fileObj.content &&
+                            fileObj.encoding === 'base64'
+                        ) {
                             const rawBase64 = (fileObj.content || '').replace(/\n/g, '');
                             const rawText = atob(rawBase64);
                             if (textExts.has(ext)) {
@@ -1401,7 +1402,10 @@ export class FinderView extends BaseTab {
                                 );
                             }
                         } else {
-                            const raw = fileObj ? fileObj.content || '' : '';
+                            const raw =
+                                fileObj && 'content' in fileObj && fileObj.content
+                                    ? String(fileObj.content)
+                                    : '';
                             if (textExts.has(ext)) {
                                 openInTextEditor(name, raw, { repo, path: subPath });
                                 return;
@@ -1742,7 +1746,7 @@ export class FinderView extends BaseTab {
         super.hide();
     }
 
-    serialize(): Record<string, unknown> {
+    serialize(): TabState {
         // Cleanup keyboard listeners before serialization
         if (this._keyboardCleanup) {
             this._keyboardCleanup();
@@ -1761,7 +1765,7 @@ export class FinderView extends BaseTab {
             // Persist scroll positions for restoration
             scrollPositions: Array.from(this._scrollPositions.entries()),
             savedScrollPosition: this._savedScrollPosition,
-        };
+        } as TabState;
     }
 
     static deserialize(state: Record<string, unknown>): FinderView {
@@ -1797,7 +1801,11 @@ export class FinderView extends BaseTab {
         view.currentPath = Array.isArray(state['currentPath'])
             ? (state['currentPath'] as string[])
             : [];
-        view.viewMode = typeof state['viewMode'] === 'string' ? state['viewMode'] : 'list';
+        const viewModeFromState = state['viewMode'];
+        view.viewMode =
+            viewModeFromState === 'list' || viewModeFromState === 'grid'
+                ? viewModeFromState
+                : 'list';
         const restoredSortBy =
             typeof state['sortBy'] === 'string' ? LEGACY_SORT_KEY_MAP[state['sortBy']] : undefined;
         view.sortBy = restoredSortBy || 'name';
@@ -1987,14 +1995,14 @@ export class FinderView extends BaseTab {
                 // Check cache state using the new API
                 const cacheState = API.getCacheState
                     ? API.getCacheState('repos')
-                    : API.isCacheStale('repos')
+                    : API.isCacheStale?.('repos')
                       ? 'stale'
-                      : API.readCache('repos')
+                      : API.readCache?.('repos')
                         ? 'fresh'
                         : 'missing';
 
                 const cached = this._readGithubCache(cacheKey);
-                const apiCached = API.readCache('repos');
+                const apiCached = API.readCache?.('repos');
 
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
@@ -2002,11 +2010,11 @@ export class FinderView extends BaseTab {
                     this._updateRepoItems(repos as GitHubRepo[]);
 
                     // If data is stale, show refresh indicator and fetch in background
-                    if (cacheState === 'stale') {
+                    if (cacheState === 'stale' && API.fetchUserRepos) {
                         this._showRefreshIndicator();
                         API.fetchUserRepos(username)
                             .then((freshRepos: unknown) => {
-                                API.writeCache('repos', '', '', freshRepos);
+                                API.writeCache?.('repos', '', '', freshRepos);
                                 this._writeGithubCache(cacheKey, freshRepos);
                                 this._updateRepoItems(freshRepos as GitHubRepo[]);
                                 this._hideRefreshIndicator();
@@ -2026,8 +2034,8 @@ export class FinderView extends BaseTab {
                     this.githubLoading = true;
                     this._renderAll();
 
-                    const repos = await API.fetchUserRepos(username);
-                    API.writeCache('repos', '', '', repos);
+                    const repos = API.fetchUserRepos ? await API.fetchUserRepos(username) : [];
+                    API.writeCache?.('repos', '', '', repos);
                     this._writeGithubCache(cacheKey, repos);
                     this.githubLoading = false;
                     this._updateRepoItems(repos as GitHubRepo[]);
@@ -2041,14 +2049,14 @@ export class FinderView extends BaseTab {
                 // Check cache state
                 const cacheState = API.getCacheState
                     ? API.getCacheState('contents', repo, subPath)
-                    : API.isCacheStale('contents', repo, subPath)
+                    : API.isCacheStale?.('contents', repo, subPath)
                       ? 'stale'
-                      : API.readCache('contents', repo, subPath)
+                      : API.readCache?.('contents', repo, subPath)
                         ? 'fresh'
                         : 'missing';
 
                 const cached = this._readGithubCache(cacheKey);
-                const apiCached = API.readCache('contents', repo, subPath);
+                const apiCached = API.readCache?.('contents', repo, subPath);
 
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
@@ -2056,11 +2064,11 @@ export class FinderView extends BaseTab {
                     this._updateContentItems(contents as GitHubContentItem[]);
 
                     // If data is stale, show refresh indicator and fetch in background
-                    if (cacheState === 'stale') {
+                    if (cacheState === 'stale' && API.fetchRepoContents) {
                         this._showRefreshIndicator();
                         API.fetchRepoContents(username, repo, subPath)
                             .then((freshContents: unknown) => {
-                                API.writeCache('contents', repo, subPath, freshContents);
+                                API.writeCache?.('contents', repo, subPath, freshContents);
                                 this._writeGithubCache(cacheKey, freshContents);
                                 this._updateContentItems(freshContents as GitHubContentItem[]);
                                 this._hideRefreshIndicator();
@@ -2080,8 +2088,10 @@ export class FinderView extends BaseTab {
                     this.githubLoading = true;
                     this._renderAll();
 
-                    const contents = await API.fetchRepoContents(username, repo, subPath);
-                    API.writeCache('contents', repo, subPath, contents);
+                    const contents = API.fetchRepoContents
+                        ? await API.fetchRepoContents(username, repo, subPath)
+                        : [];
+                    API.writeCache?.('contents', repo, subPath, contents);
                     this._writeGithubCache(cacheKey, contents);
                     this.githubLoading = false;
                     this._updateContentItems(contents as GitHubContentItem[]);

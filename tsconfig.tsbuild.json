@@ -13,5 +13,14 @@
     "removeComments": false
   },
   "include": ["src/ts/**/*.ts", "types/**/*.d.ts"],
-  "exclude": ["node_modules", "dist", "tests", "test-results"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "test-results",
+    "**/multi-instance-demo.ts",
+    "**/*-demo.ts",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
 }

@@ -132,7 +132,7 @@ import logger from '../core/logger.js';
                     if (
                         wanted &&
                         typeof (
-                            manager as InstanceManagerShape & {
+                            manager as any & {
                                 setActiveInstance?: (id: string) => void;
                             }
                         ).setActiveInstance === 'function'
