@@ -1084,8 +1084,13 @@ export function setupInstanceManagerListeners() {
     ];
     managers.forEach(manager => {
         if (!manager || !manager.getAllInstances) return;
-        const originalCreate = manager.createInstance.bind(manager);
-        const originalDestroy = manager.destroyInstance.bind(manager);
+
+        // Check if methods exist before binding
+        const originalCreate = manager.createInstance ? manager.createInstance.bind(manager) : null;
+        const originalDestroy = manager.destroyInstance
+            ? manager.destroyInstance.bind(manager)
+            : null;
+
         if (originalCreate)
             manager.createInstance = function (...args: Parameters<typeof originalCreate>) {
                 const result = originalCreate(...args);

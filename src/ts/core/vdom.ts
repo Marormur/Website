@@ -531,6 +531,11 @@ function updateElement(element: HTMLElement | Text, props: Record<string, unknow
     }
 
     const el = element as HTMLElement;
+
+    // Track old event handlers to properly clean them up
+    const oldHandlers = (el as any).__vdomHandlers || {};
+    const newHandlers: Record<string, EventListener> = {};
+
     for (const [key, value] of Object.entries(props)) {
         if (value === undefined || value === null) {
             // Remove attribute
@@ -538,10 +543,24 @@ function updateElement(element: HTMLElement | Text, props: Record<string, unknow
             if (key in el) {
                 (el as any)[key] = undefined;
             }
+            // Clean up old event handler if it was one
+            if (key.startsWith('on') && oldHandlers[key]) {
+                const eventName = key.substring(2).toLowerCase();
+                el.removeEventListener(eventName, oldHandlers[key]);
+            }
         } else if (key.startsWith('on') && typeof value === 'function') {
-            // Event handler
+            // Event handler - remove old one first, then add new one
             const eventName = key.substring(2).toLowerCase();
-            el.addEventListener(eventName, value as EventListener);
+            const handler = value as EventListener;
+
+            // Remove old handler if it exists
+            if (oldHandlers[key]) {
+                el.removeEventListener(eventName, oldHandlers[key]);
+            }
+
+            // Add new handler
+            el.addEventListener(eventName, handler);
+            newHandlers[key] = handler;
         } else if (key === 'className') {
             el.className = String(value);
         } else if (key === 'style' && typeof value === 'object') {
@@ -554,6 +573,9 @@ function updateElement(element: HTMLElement | Text, props: Record<string, unknow
             el.setAttribute(key, String(value));
         }
     }
+
+    // Store new handlers for next update
+    (el as any).__vdomHandlers = newHandlers;
 }
 
 // ============================================================================

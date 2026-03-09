@@ -11,6 +11,7 @@ export interface SidebarItem {
 }
 
 export interface SidebarGroup {
+    id?: string;
     label: string;
     i18nKey?: string;
     items: SidebarItem[];
@@ -20,6 +21,8 @@ export interface SidebarProps extends ComponentConfig {
     groups: SidebarGroup[];
     activeId?: string;
     onItemClick?: (id: string) => void;
+    collapsedGroupIds?: string[];
+    onToggleGroup?: (groupId: string) => void;
     idPrefix?: string;
 }
 
@@ -40,19 +43,44 @@ export class Sidebar extends BaseComponent<SidebarProps> {
     }
 
     private renderGroup(group: SidebarGroup): VNode {
+        const groupId = group.id || group.label;
+        const isCollapsed = !!this.props.collapsedGroupIds?.includes(groupId);
+
         return h(
             'div',
-            { className: 'mb-5', key: group.label },
+            { className: 'mb-5', key: groupId },
             h(
                 'div',
                 {
                     className:
-                        'px-3 py-1 mb-1 text-[11px] font-semibold text-gray-500/80 dark:text-gray-400/70 uppercase tracking-wider',
-                    'data-i18n': group.i18nKey,
+                        'finder-sidebar-group-header px-3 py-1 mb-1 text-[11px] font-semibold text-gray-500/80 dark:text-gray-400/70 uppercase tracking-wider',
                 },
-                group.label
+                h('span', { 'data-i18n': group.i18nKey }, group.label),
+                h(
+                    'button',
+                    {
+                        type: 'button',
+                        className: 'finder-sidebar-group-toggle',
+                        title: isCollapsed ? 'Gruppe ausklappen' : 'Gruppe einklappen',
+                        'aria-label': isCollapsed ? 'Gruppe ausklappen' : 'Gruppe einklappen',
+                        'aria-expanded': String(!isCollapsed),
+                        onclick: (e: Event) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.props.onToggleGroup?.(groupId);
+                        },
+                    },
+                    h(
+                        'span',
+                        {
+                            className: `finder-sidebar-group-toggle-icon ${isCollapsed ? 'is-collapsed' : ''}`,
+                            'aria-hidden': 'true',
+                        },
+                        '▾'
+                    )
+                )
             ),
-            ...group.items.map(item => this.renderItem(item))
+            ...(isCollapsed ? [] : group.items.map(item => this.renderItem(item)))
         );
     }
 

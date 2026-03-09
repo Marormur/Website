@@ -31,6 +31,32 @@ const ROOT_FOLDER_NAME = 'Computer';
 
 type ViewMode = 'list' | 'grid';
 
+type FinderSortKey =
+    | 'none'
+    | 'name'
+    | 'type'
+    | 'program'
+    | 'lastOpened'
+    | 'dateAdded'
+    | 'dateModified'
+    | 'dateCreated'
+    | 'size'
+    | 'tags';
+
+const LEGACY_SORT_KEY_MAP: Record<string, FinderSortKey> = {
+    date: 'dateModified',
+    name: 'name',
+    size: 'size',
+    type: 'type',
+    none: 'none',
+    program: 'program',
+    lastOpened: 'lastOpened',
+    dateAdded: 'dateAdded',
+    dateModified: 'dateModified',
+    dateCreated: 'dateCreated',
+    tags: 'tags',
+};
+
 interface FileItem {
     name: string;
     type: 'folder' | 'file';
@@ -72,11 +98,12 @@ export class FinderView extends BaseTab {
     source: FinderSource;
     currentPath: string[];
     viewMode: ViewMode;
-    sortBy: 'name' | 'date' | 'size' | 'type';
+    sortBy: FinderSortKey;
     sortOrder: 'asc' | 'desc';
     selectedItems: Set<string>;
     _renderedItems: FileItem[];
     sidebarWidth: number;
+    columnWidths: { name: number; size: number; modified: number };
 
     // Favorites and Recent Files
     favorites: Set<string>;
@@ -136,6 +163,11 @@ export class FinderView extends BaseTab {
         this.selectedItems = new Set();
         this._renderedItems = [];
         this.sidebarWidth = config?.content?.sidebarWidth ?? 192; // default 12rem
+        this.columnWidths = config?.content?.columnWidths || {
+            name: 0, // flex column
+            size: 112, // w-28
+            modified: 160, // w-40
+        };
 
         this.githubRepos = [];
         this.lastGithubItemsMap = new Map();
@@ -644,6 +676,11 @@ export class FinderView extends BaseTab {
     }
 
     sortItems(items: FileItem[]): FileItem[] {
+        if (this.sortBy === 'none') {
+            // "Ohne" in the Finder sort menu should preserve the source order.
+            return [...items];
+        }
+
         const sorted = [...items];
         sorted.sort((a, b) => {
             if (a.type === 'folder' && b.type !== 'folder') return -1;
@@ -656,14 +693,21 @@ export class FinderView extends BaseTab {
                 case 'size':
                     comparison = (a.size || 0) - (b.size || 0);
                     break;
-                case 'date': {
+                case 'dateModified':
+                case 'dateAdded':
+                case 'lastOpened':
+                case 'dateCreated': {
                     const aTime = a.modified ? Date.parse(a.modified) : 0;
                     const bTime = b.modified ? Date.parse(b.modified) : 0;
                     comparison = bTime - aTime;
                     break;
                 }
                 case 'type':
+                case 'program':
                     comparison = (a.type || '').localeCompare(b.type || '');
+                    break;
+                case 'tags':
+                    comparison = a.name.localeCompare(b.name);
                     break;
             }
             return this.sortOrder === 'asc' ? comparison : -comparison;
@@ -684,9 +728,11 @@ export class FinderView extends BaseTab {
                 h(
                     'colgroup',
                     {},
-                    h('col', {}),
-                    h('col', { className: 'w-28' }),
-                    h('col', { className: 'w-40' })
+                    h('col', {
+                        style: this.columnWidths.name ? `width: ${this.columnWidths.name}px` : '',
+                    }),
+                    h('col', { style: `width: ${this.columnWidths.size}px` }),
+                    h('col', { style: `width: ${this.columnWidths.modified}px` })
                 ),
                 h(
                     'thead',
@@ -694,9 +740,9 @@ export class FinderView extends BaseTab {
                     h(
                         'tr',
                         { className: 'text-left' },
-                        h('th', { className: 'font-medium' }, 'Name'),
-                        h('th', { className: 'text-right font-medium' }, 'Größe'),
-                        h('th', { className: 'text-right font-medium' }, 'Geändert')
+                        this.renderColumnHeader('name', 'Name', 'font-medium'),
+                        this.renderColumnHeader('size', 'Größe', 'text-right font-medium'),
+                        this.renderColumnHeader('modified', 'Geändert', 'text-right font-medium')
                     )
                 ),
                 h(
@@ -704,9 +750,10 @@ export class FinderView extends BaseTab {
                     {},
                     ...items.map((item, i) => {
                         const isSelected = this.selectedItems.has(item.name);
+                        const isEven = i % 2 === 0;
                         const rowClass = isSelected
                             ? 'finder-list-item bg-blue-100 dark:bg-blue-900'
-                            : 'finder-list-item';
+                            : `finder-list-item ${isEven ? 'finder-list-item-even' : 'finder-list-item-odd'}`;
 
                         const attrs: Record<string, unknown> = {
                             key: item.name,
@@ -763,6 +810,91 @@ export class FinderView extends BaseTab {
                 )
             )
         );
+    }
+
+    /**
+     * Renders a column header with resize handle
+     */
+    renderColumnHeader(
+        columnKey: 'name' | 'size' | 'modified',
+        label: string,
+        className: string
+    ): VNode {
+        const isLastColumn = columnKey === 'modified';
+
+        const children: (VNode | string)[] = [h('span', {}, label)];
+
+        if (!isLastColumn) {
+            children.push(
+                h('div', {
+                    className: 'finder-column-resizer',
+                    onmousedown: (e: MouseEvent) => {
+                        e.preventDefault();
+                        this.startColumnResize(e, columnKey);
+                    },
+                })
+            );
+        }
+
+        return h(
+            'th',
+            { className },
+            h('div', { className: 'flex items-center justify-between relative' }, ...children)
+        );
+    }
+
+    /**
+     * Initiates column resize on mousedown
+     */
+    startColumnResize(e: MouseEvent, columnKey: 'name' | 'size' | 'modified'): void {
+        const startX = e.clientX;
+        const startWidth = this.columnWidths[columnKey];
+
+        const onMouseMove = (moveEvent: MouseEvent) => {
+            const deltaX = moveEvent.clientX - startX;
+            const newWidth = Math.max(50, startWidth + deltaX); // minimum 50px
+
+            this.columnWidths[columnKey] = newWidth;
+
+            // Update UI during drag
+            if (this.ui) {
+                this.ui.update({
+                    id: this.id,
+                    windowId: this.parentWindow?.id || this.id,
+                    isActive: this.isVisible,
+                    source: this.source,
+                    currentPath: this.currentPath,
+                    viewMode: this.viewMode,
+                    sortBy: this.sortBy,
+                    sortOrder: this.sortOrder,
+                    items: this._renderedItems,
+                    selectedItems: this.selectedItems,
+                    favorites: this.favorites,
+                    recentFiles: this.recentFiles,
+                    githubRepos: this.githubRepos,
+                    githubError: this.githubError,
+                    githubErrorMessage: this.githubErrorMessage,
+                    githubLoading: this.githubLoading,
+                    sidebarWidth: this.sidebarWidth,
+                    searchTerm: this.searchTerm,
+                });
+            }
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+
+            // Persist state after resize is complete
+            this._persistState();
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
     }
 
     renderGridView(items: FileItem[]): VNode {
@@ -1371,7 +1503,7 @@ export class FinderView extends BaseTab {
         this._renderAll();
     }
 
-    setSortBy(sortBy: 'name' | 'date' | 'size' | 'type'): void {
+    setSortBy(sortBy: FinderSortKey): void {
         this.sortBy = sortBy;
         this._persistState();
         this.renderContent();
@@ -1545,6 +1677,7 @@ export class FinderView extends BaseTab {
             favorites: Array.from(this.favorites),
             recentFiles: this.recentFiles,
             sidebarWidth: this.sidebarWidth,
+            columnWidths: this.columnWidths,
         };
         this.metadata.modified = Date.now();
 
@@ -1665,7 +1798,9 @@ export class FinderView extends BaseTab {
             ? (state['currentPath'] as string[])
             : [];
         view.viewMode = typeof state['viewMode'] === 'string' ? state['viewMode'] : 'list';
-        view.sortBy = typeof state['sortBy'] === 'string' ? state['sortBy'] : 'name';
+        const restoredSortBy =
+            typeof state['sortBy'] === 'string' ? LEGACY_SORT_KEY_MAP[state['sortBy']] : undefined;
+        view.sortBy = restoredSortBy || 'name';
         view.sortOrder = state['sortOrder'] === 'desc' ? 'desc' : 'asc';
 
         // Restore scroll positions from serialized data

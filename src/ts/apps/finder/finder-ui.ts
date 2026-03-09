@@ -34,7 +34,7 @@ export interface FinderUIProps {
     onNavigateUp: () => void;
     onGoRoot: () => void;
     onSetViewMode: (mode: 'list' | 'grid') => void;
-    onSetSort: (by: 'name' | 'date' | 'size' | 'type') => void;
+    onSetSort: (by: FinderSortKey) => void;
     onSearch: (term: string) => void;
     onSidebarAction: (action: string) => void;
     onResize: (width: number) => void;
@@ -48,11 +48,82 @@ interface FinderTabDragContext {
     detach: (pos?: { x: number; y: number }) => void;
 }
 
+interface FinderUIState {
+    isSearchExpanded: boolean;
+    collapsedSidebarGroups: string[];
+    isSortMenuOpen: boolean;
+    isViewMenuOpen: boolean;
+}
+
+type FinderViewMenuKey = 'list' | 'grid' | 'columns' | 'gallery';
+
+type FinderViewMenuOption = {
+    key: FinderViewMenuKey;
+    label: string;
+    icon: string;
+    dividerAbove?: boolean;
+    disabled?: boolean;
+    subtitle?: string;
+};
+
+type FinderSortKey =
+    | 'none'
+    | 'name'
+    | 'type'
+    | 'program'
+    | 'lastOpened'
+    | 'dateAdded'
+    | 'dateModified'
+    | 'dateCreated'
+    | 'size'
+    | 'tags';
+
+type FinderSortMenuOption = {
+    key: FinderSortKey;
+    label: string;
+    dividerAbove?: boolean;
+};
+
+const FINDER_SORT_MENU_OPTIONS: FinderSortMenuOption[] = [
+    { key: 'none', label: 'Ohne' },
+    { key: 'name', label: 'Name', dividerAbove: true },
+    { key: 'type', label: 'Art' },
+    { key: 'program', label: 'Programm' },
+    { key: 'lastOpened', label: 'Zuletzt geöffnet' },
+    { key: 'dateAdded', label: 'Hinzugefügt am' },
+    { key: 'dateModified', label: 'Änderungsdatum' },
+    { key: 'dateCreated', label: 'Erstellungsdatum' },
+    { key: 'size', label: 'Größe' },
+    { key: 'tags', label: 'Tags' },
+];
+
+const FINDER_VIEW_MENU_OPTIONS: FinderViewMenuOption[] = [
+    { key: 'list', label: 'Als Liste', icon: '☰' },
+    { key: 'grid', label: 'Als grosse Symbole', icon: '⌗' },
+    {
+        key: 'columns',
+        label: 'Als Spalten',
+        icon: '▥',
+        dividerAbove: true,
+        disabled: true,
+        subtitle: 'Platzhalter',
+    },
+    {
+        key: 'gallery',
+        label: 'Als Galerie',
+        icon: '▦',
+        disabled: true,
+        subtitle: 'Platzhalter',
+    },
+];
+
 let activeTabDrag: FinderTabDragContext | null = null;
 let globalDragListenersAttached = false;
 
-export class FinderUI extends BaseComponent<FinderUIProps> {
+export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
     private resizeHandlersBound = false;
+    private sortMenuOverlayEl: HTMLDivElement | null = null;
+    private viewMenuOverlayEl: HTMLDivElement | null = null;
     private sidebarResizeState: {
         isResizing: boolean;
         startX: number;
@@ -66,6 +137,308 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
         moved: false,
         currentWidth: 0,
     };
+
+    constructor(props: FinderUIProps) {
+        super(props);
+        this.state = {
+            // Keep search expanded when a search term already exists (e.g. restored views).
+            isSearchExpanded: props.searchTerm.length > 0,
+            collapsedSidebarGroups: [],
+            isSortMenuOpen: false,
+            isViewMenuOpen: false,
+        };
+    }
+
+    private normalizeSortKey(sortBy: string): FinderSortKey {
+        const isKnownKey = FINDER_SORT_MENU_OPTIONS.some(option => option.key === sortBy);
+        return isKnownKey ? (sortBy as FinderSortKey) : 'name';
+    }
+
+    private toggleSortMenu(): void {
+        if (this.state.isSortMenuOpen) {
+            this.closeSortMenu();
+            return;
+        }
+        this.closeViewMenu();
+        this.setState({ isSortMenuOpen: true });
+
+        requestAnimationFrame(() => {
+            this.renderSortMenuOverlay();
+            this.positionSortMenuOverlay();
+        });
+    }
+
+    private closeSortMenu(): void {
+        if (!this.state.isSortMenuOpen) return;
+        this.destroySortMenuOverlay();
+        this.setState({ isSortMenuOpen: false });
+    }
+
+    private normalizeViewMenuKey(mode: string): FinderViewMenuKey {
+        return mode === 'grid' ? 'grid' : 'list';
+    }
+
+    private toggleViewMenu(): void {
+        if (this.state.isViewMenuOpen) {
+            this.closeViewMenu();
+            return;
+        }
+        this.closeSortMenu();
+        this.setState({ isViewMenuOpen: true });
+
+        requestAnimationFrame(() => {
+            this.renderViewMenuOverlay();
+            this.positionViewMenuOverlay();
+        });
+    }
+
+    private closeViewMenu(): void {
+        if (!this.state.isViewMenuOpen) return;
+        this.destroyViewMenuOverlay();
+        this.setState({ isViewMenuOpen: false });
+    }
+
+    private handleViewSelect(viewKey: FinderViewMenuKey): void {
+        if (viewKey !== 'list' && viewKey !== 'grid') return;
+        this.props.onSetViewMode(viewKey);
+        this.closeViewMenu();
+    }
+
+    private handleSortSelect(sortKey: FinderSortKey): void {
+        this.props.onSetSort(sortKey);
+        this.closeSortMenu();
+    }
+
+    private boundDocumentMouseDown = (event: MouseEvent) => {
+        if (!this.state.isSortMenuOpen && !this.state.isViewMenuOpen) return;
+        const target = event.target as HTMLElement | null;
+        if (target?.closest('[data-finder-sort-control]')) return;
+        if (target?.closest('[data-finder-view-control]')) return;
+        if (this.sortMenuOverlayEl?.contains(target || null)) return;
+        if (this.viewMenuOverlayEl?.contains(target || null)) return;
+        this.closeSortMenu();
+        this.closeViewMenu();
+    };
+
+    private boundDocumentKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+            this.closeSortMenu();
+            this.closeViewMenu();
+        }
+    };
+
+    private boundWindowResize = () => {
+        if (this.state.isSortMenuOpen) {
+            this.positionSortMenuOverlay();
+        }
+        if (this.state.isViewMenuOpen) {
+            this.positionViewMenuOverlay();
+        }
+    };
+
+    private renderViewMenuOverlay(): void {
+        this.destroyViewMenuOverlay();
+
+        const activeViewKey = this.normalizeViewMenuKey(this.props.viewMode);
+        const menu = document.createElement('div');
+        menu.className = 'finder-sort-menu finder-sort-menu-overlay finder-view-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', 'Darstellung');
+        menu.addEventListener('mousedown', event => event.stopPropagation());
+
+        FINDER_VIEW_MENU_OPTIONS.forEach(option => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.setAttribute('role', 'menuitemradio');
+            item.setAttribute(
+                'aria-checked',
+                !option.disabled && activeViewKey === option.key ? 'true' : 'false'
+            );
+            item.className = `finder-sort-menu-item ${option.dividerAbove ? 'with-divider' : ''} ${option.disabled ? 'is-disabled' : ''}`;
+
+            if (option.disabled) {
+                item.disabled = true;
+                item.setAttribute('aria-disabled', 'true');
+            }
+
+            const check = document.createElement('span');
+            check.className = 'finder-sort-menu-check';
+            check.setAttribute('aria-hidden', 'true');
+            check.textContent = !option.disabled && activeViewKey === option.key ? '✓' : '';
+
+            const content = document.createElement('span');
+            content.className = 'finder-sort-menu-content';
+
+            const label = document.createElement('span');
+            label.className = 'finder-sort-menu-label';
+            label.textContent = `${option.icon} ${option.label}`;
+
+            content.appendChild(label);
+
+            if (option.subtitle) {
+                const subtitle = document.createElement('span');
+                subtitle.className = 'finder-sort-menu-meta';
+                subtitle.textContent = option.subtitle;
+                content.appendChild(subtitle);
+            }
+
+            item.append(check, content);
+            item.addEventListener('click', event => {
+                event.stopPropagation();
+                if (option.disabled) return;
+                this.handleViewSelect(option.key);
+            });
+
+            menu.appendChild(item);
+        });
+
+        document.body.appendChild(menu);
+        this.viewMenuOverlayEl = menu;
+    }
+
+    private positionViewMenuOverlay(): void {
+        const trigger = this.element?.querySelector(
+            '[data-finder-view-trigger]'
+        ) as HTMLElement | null;
+        if (!trigger || !this.viewMenuOverlayEl) return;
+
+        const viewportPadding = 8;
+        const triggerRect = trigger.getBoundingClientRect();
+        const menu = this.viewMenuOverlayEl;
+
+        menu.style.left = '0px';
+        menu.style.top = '0px';
+        menu.style.visibility = 'hidden';
+
+        const menuRect = menu.getBoundingClientRect();
+        let left = triggerRect.left;
+        let top = triggerRect.bottom + 8;
+
+        if (left + menuRect.width > window.innerWidth - viewportPadding) {
+            left = window.innerWidth - menuRect.width - viewportPadding;
+        }
+        if (left < viewportPadding) {
+            left = viewportPadding;
+        }
+
+        if (top + menuRect.height > window.innerHeight - viewportPadding) {
+            top = Math.max(viewportPadding, triggerRect.top - menuRect.height - 6);
+        }
+
+        menu.style.left = `${Math.round(left)}px`;
+        menu.style.top = `${Math.round(top)}px`;
+        menu.style.visibility = 'visible';
+    }
+
+    private destroyViewMenuOverlay(): void {
+        if (!this.viewMenuOverlayEl) return;
+        this.viewMenuOverlayEl.remove();
+        this.viewMenuOverlayEl = null;
+    }
+
+    private renderSortMenuOverlay(): void {
+        this.destroySortMenuOverlay();
+
+        const activeSortKey = this.normalizeSortKey(this.props.sortBy);
+        const menu = document.createElement('div');
+        menu.className = 'finder-sort-menu finder-sort-menu-overlay';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', 'Sortierung');
+        menu.addEventListener('mousedown', event => event.stopPropagation());
+
+        FINDER_SORT_MENU_OPTIONS.forEach(option => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.setAttribute('role', 'menuitemradio');
+            item.setAttribute('aria-checked', activeSortKey === option.key ? 'true' : 'false');
+            item.className = `finder-sort-menu-item ${option.dividerAbove ? 'with-divider' : ''}`;
+
+            const check = document.createElement('span');
+            check.className = 'finder-sort-menu-check';
+            check.setAttribute('aria-hidden', 'true');
+            check.textContent = activeSortKey === option.key ? '✓' : '';
+
+            const label = document.createElement('span');
+            label.className = 'finder-sort-menu-label';
+            label.textContent = option.label;
+
+            item.append(check, label);
+            item.addEventListener('click', event => {
+                event.stopPropagation();
+                this.handleSortSelect(option.key);
+            });
+            menu.appendChild(item);
+        });
+
+        document.body.appendChild(menu);
+        this.sortMenuOverlayEl = menu;
+    }
+
+    private positionSortMenuOverlay(): void {
+        const trigger = this.element?.querySelector(
+            '[data-finder-sort-trigger]'
+        ) as HTMLElement | null;
+        if (!trigger || !this.sortMenuOverlayEl) return;
+
+        const viewportPadding = 8;
+        const triggerRect = trigger.getBoundingClientRect();
+        const menu = this.sortMenuOverlayEl;
+
+        menu.style.left = '0px';
+        menu.style.top = '0px';
+        menu.style.visibility = 'hidden';
+
+        const menuRect = menu.getBoundingClientRect();
+        let left = triggerRect.left;
+        let top = triggerRect.bottom + 8;
+
+        if (left + menuRect.width > window.innerWidth - viewportPadding) {
+            left = window.innerWidth - menuRect.width - viewportPadding;
+        }
+        if (left < viewportPadding) {
+            left = viewportPadding;
+        }
+
+        if (top + menuRect.height > window.innerHeight - viewportPadding) {
+            top = Math.max(viewportPadding, triggerRect.top - menuRect.height - 6);
+        }
+
+        menu.style.left = `${Math.round(left)}px`;
+        menu.style.top = `${Math.round(top)}px`;
+        menu.style.visibility = 'visible';
+    }
+
+    private destroySortMenuOverlay(): void {
+        if (!this.sortMenuOverlayEl) return;
+        this.sortMenuOverlayEl.remove();
+        this.sortMenuOverlayEl = null;
+    }
+
+    private toggleSidebarGroup(groupId: string): void {
+        const isCollapsed = this.state.collapsedSidebarGroups.includes(groupId);
+        const collapsedSidebarGroups = isCollapsed
+            ? this.state.collapsedSidebarGroups.filter(id => id !== groupId)
+            : [...this.state.collapsedSidebarGroups, groupId];
+
+        this.setState({ collapsedSidebarGroups });
+    }
+
+    private expandSearchField(): void {
+        if (this.state.isSearchExpanded) return;
+
+        this.setState({ isSearchExpanded: true });
+        requestAnimationFrame(() => {
+            const searchInput = this.element?.querySelector(
+                '.finder-search'
+            ) as HTMLInputElement | null;
+            searchInput?.focus();
+        });
+    }
+
+    private collapseSearchFieldIfEmpty(value: string): void {
+        if (value.trim().length > 0) return;
+        this.setState({ isSearchExpanded: false });
+    }
 
     private applySidebarWidth(width: number): void {
         if (!this.element) return;
@@ -163,20 +536,25 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
             onTabAdd,
             onNavigateBack,
             onNavigateForward,
-            onNavigateUp,
             onGoRoot,
-            onSetViewMode,
-            onSetSort,
             onSearch,
             onSidebarAction,
             onResize,
             renderContent,
             renderBreadcrumbs,
         } = this.props;
+        const activeSortOption =
+            FINDER_SORT_MENU_OPTIONS.find(option => option.key === this.normalizeSortKey(sortBy)) ||
+            FINDER_SORT_MENU_OPTIONS[1];
+        const activeViewOption =
+            FINDER_VIEW_MENU_OPTIONS.find(
+                option => option.key === this.normalizeViewMenuKey(viewMode)
+            ) || FINDER_VIEW_MENU_OPTIONS[0];
 
         // Prepare Sidebar Groups
         const sidebarGroups: SidebarGroup[] = [
             {
+                id: 'favorites',
                 label: 'FAVORITEN',
                 i18nKey: 'finder.sidebar.favorites',
                 items: [
@@ -204,6 +582,7 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
                 ],
             },
             {
+                id: 'locations',
                 label: 'ORTE',
                 i18nKey: 'finder.sidebar.locations',
                 items: [
@@ -232,13 +611,90 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
             activeSidebarId = atHome ? 'home' : 'computer';
         }
 
-        // Components
-        const sidebar = new Sidebar({
-            groups: sidebarGroups,
-            activeId: activeSidebarId,
-            idPrefix: id,
-            className: 'finder-sidebar-core',
-        });
+        const currentFolderName =
+            currentPath.length > 0 ? currentPath[currentPath.length - 1] : 'Computer';
+        const isSearchExpanded = this.state.isSearchExpanded || searchTerm.length > 0;
+
+        // Render Sidebar Groups inline to ensure state updates work correctly
+        const renderSidebarGroup = (group: SidebarGroup) => {
+            const groupId = group.id || group.label;
+            const isCollapsed = this.state.collapsedSidebarGroups.includes(groupId);
+
+            return h(
+                'div',
+                { className: 'mb-5', key: groupId },
+                h(
+                    'div',
+                    {
+                        className:
+                            'finder-sidebar-group-header px-3 py-1 mb-1 text-[11px] font-semibold text-gray-500/80 dark:text-gray-400/70 uppercase tracking-wider',
+                    },
+                    h('span', { 'data-i18n': group.i18nKey }, group.label),
+                    h(
+                        'button',
+                        {
+                            type: 'button',
+                            className: 'finder-sidebar-group-toggle',
+                            title: isCollapsed ? 'Gruppe ausklappen' : 'Gruppe einklappen',
+                            'aria-label': isCollapsed ? 'Gruppe ausklappen' : 'Gruppe einklappen',
+                            'aria-expanded': String(!isCollapsed),
+                            onclick: (e: Event) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                this.toggleSidebarGroup(groupId);
+                            },
+                        },
+                        h(
+                            'span',
+                            {
+                                className: `finder-sidebar-group-toggle-icon ${isCollapsed ? 'is-collapsed' : ''}`,
+                                'aria-hidden': 'true',
+                            },
+                            '▾'
+                        )
+                    )
+                ),
+                h(
+                    'div',
+                    {
+                        className: `finder-sidebar-group-items ${isCollapsed ? 'is-collapsed' : ''}`,
+                    },
+                    ...group.items.map(item => {
+                        const isActive = activeSidebarId === item.id;
+                        const activeClass = isActive ? 'finder-sidebar-active' : '';
+
+                        return h(
+                            'button',
+                            {
+                                key: item.id,
+                                'data-sidebar-id': item.id,
+                                'data-sidebar-action': item.id,
+                                className: `finder-sidebar-item w-full text-left ${activeClass}`,
+                                onclick: () => item.onClick?.(item.id),
+                            },
+                            item.icon
+                                ? h('span', { className: 'finder-sidebar-icon' }, item.icon)
+                                : '',
+                            h('span', { 'data-i18n': item.i18nKey }, item.label)
+                        );
+                    })
+                )
+            );
+        };
+
+        const sidebarContent = h(
+            'aside',
+            {
+                className:
+                    'flex flex-col h-full bg-gray-50/80 dark:bg-gray-900/95 border-r border-gray-200/60 dark:border-gray-700/50 overflow-y-auto finder-sidebar-core',
+                style: { width: '100%' },
+            },
+            h(
+                'div',
+                { className: 'py-3 px-2' },
+                ...sidebarGroups.map(group => renderSidebarGroup(group))
+            )
+        );
 
         const toolbar = new Toolbar({
             className: this.props.isActive ? 'finder-toolbar' : 'hidden',
@@ -247,124 +703,105 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
                     'div',
                     {
                         className:
-                            'flex items-center bg-gray-100 dark:bg-gray-800 rounded-md p-0.5 border border-gray-300 dark:border-gray-600',
+                            'relative flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-1 py-0.5 border border-gray-300 dark:border-gray-600 overflow-hidden',
+                        style: { width: '78px', height: '30px' },
                     },
                     h(
                         'button',
                         {
-                            className: `p-1 rounded ${canGoBack ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700' : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'}`,
+                            className: `w-9 h-7 flex items-center justify-center ${canGoBack ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-200/80 dark:hover:bg-gray-700' : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'} rounded-full font-semibold`,
                             onclick: canGoBack ? () => onNavigateBack() : undefined,
                             title: 'Zurück',
                             'data-action': 'navigate-back',
-                        },
-                        h(
-                            'svg',
-                            {
-                                width: '16',
-                                height: '16',
-                                viewBox: '0 0 24 24',
-                                fill: 'none',
-                                stroke: 'currentColor',
-                                strokeWidth: '2.5',
+                            style: {
+                                fontSize: '18px',
+                                lineHeight: '1',
+                                fontFamily: 'SF Pro Text, -apple-system, sans-serif',
+                                paddingBottom: '1px',
                             },
-                            h('path', { d: 'M15 18l-6-6 6-6' })
-                        )
+                        },
+                        '<'
                     ),
+                    h('div', {
+                        className: 'pointer-events-none absolute',
+                        style: {
+                            left: '50%',
+                            top: '6px',
+                            bottom: '6px',
+                            width: '1px',
+                            transform: 'translateX(-0.5px)',
+                            backgroundColor: 'rgb(156 163 175 / 0.9)',
+                        },
+                    }),
                     h(
                         'button',
                         {
-                            className: `p-1 rounded ${canGoForward ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700' : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'}`,
+                            className: `w-9 h-7 flex items-center justify-center ${canGoForward ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-200/80 dark:hover:bg-gray-700' : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'} rounded-full font-semibold`,
                             onclick: canGoForward ? () => onNavigateForward() : undefined,
                             title: 'Vorwärts',
                             'data-action': 'navigate-forward',
-                        },
-                        h(
-                            'svg',
-                            {
-                                width: '16',
-                                height: '16',
-                                viewBox: '0 0 24 24',
-                                fill: 'none',
-                                stroke: 'currentColor',
-                                strokeWidth: '2.5',
+                            style: {
+                                fontSize: '18px',
+                                lineHeight: '1',
+                                fontFamily: 'SF Pro Text, -apple-system, sans-serif',
+                                paddingBottom: '1px',
                             },
-                            h('path', { d: 'M9 18l6-6-6-6' })
-                        )
-                    )
-                ),
-                h(
-                    'button',
-                    {
-                        className: 'finder-toolbar-btn ml-2',
-                        'data-action': 'navigate-up',
-                        onclick: () => onNavigateUp(),
-                        title: 'Übergeordneter Ordner',
-                    },
-                    h(
-                        'svg',
-                        {
-                            width: '16',
-                            height: '16',
-                            viewBox: '0 0 24 24',
-                            fill: 'none',
-                            stroke: 'currentColor',
-                            strokeWidth: '2',
                         },
-                        h('path', { d: 'M12 19V5M5 12l7-7 7 7' })
+                        '>'
                     )
                 ),
             ],
-            center: [renderBreadcrumbs()],
+            center: [
+                h(
+                    'div',
+                    {
+                        className:
+                            'truncate text-sm font-medium text-gray-800 dark:text-gray-100 px-1',
+                        title: currentFolderName,
+                    },
+                    currentFolderName
+                ),
+            ],
             right: [
                 h(
                     'div',
                     {
                         className:
-                            'flex items-center bg-gray-100 dark:bg-gray-800 rounded-md p-0.5 border border-gray-300 dark:border-gray-600 mr-2',
+                            'relative flex items-center finder-toolbar-pill-control mr-2 finder-no-drag',
+                        'data-finder-view-control': '1',
+                        style: { height: '30px' },
                     },
                     h(
                         'button',
                         {
-                            className: `p-1 rounded ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-500' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`,
-                            onclick: () => onSetViewMode('list'),
-                            title: 'Listenansicht',
-                            'data-action': 'view-list',
+                            className:
+                                'finder-view-trigger finder-sort-trigger h-7 px-3 rounded-full text-xs text-gray-700 dark:text-gray-200',
+                            type: 'button',
+                            'data-finder-view-trigger': '1',
+                            title: `Darstellung: ${activeViewOption.label}`,
+                            'aria-label': `Darstellung: ${activeViewOption.label}`,
+                            'aria-haspopup': 'menu',
+                            'aria-expanded': this.state.isViewMenuOpen ? 'true' : 'false',
+                            onclick: (event: Event) => {
+                                event.stopPropagation();
+                                this.toggleViewMenu();
+                            },
                         },
                         h(
-                            'svg',
+                            'span',
                             {
-                                width: '16',
-                                height: '16',
-                                viewBox: '0 0 24 24',
-                                fill: 'none',
-                                stroke: 'currentColor',
-                                strokeWidth: '2',
+                                className: 'finder-sort-trigger-icon',
+                                'aria-hidden': 'true',
                             },
-                            h('path', { d: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01' })
-                        )
-                    ),
-                    h(
-                        'button',
-                        {
-                            className: `p-1 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-500' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`,
-                            onclick: () => onSetViewMode('grid'),
-                            title: 'Rasteransicht',
-                            'data-action': 'view-grid',
-                        },
+                            activeViewOption.icon
+                        ),
                         h(
-                            'svg',
+                            'span',
                             {
-                                width: '16',
-                                height: '16',
-                                viewBox: '0 0 24 24',
-                                fill: 'none',
-                                stroke: 'currentColor',
-                                strokeWidth: '2',
+                                className: 'finder-sort-trigger-caret',
+                                'aria-hidden': 'true',
                             },
-                            h('rect', { x: '3', y: '3', width: '7', height: '7' }),
-                            h('rect', { x: '14', y: '3', width: '7', height: '7' }),
-                            h('rect', { x: '14', y: '14', width: '7', height: '7' }),
-                            h('rect', { x: '3', y: '14', width: '7', height: '7' })
+                            '⌄'
                         )
                     )
                 ),
@@ -372,47 +809,98 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
                     'div',
                     {
                         className:
-                            'flex items-center bg-gray-100 dark:bg-gray-800 rounded-md p-0.5 border border-gray-300 dark:border-gray-600 mr-2',
+                            'relative flex items-center finder-toolbar-pill-control mr-2 finder-no-drag',
+                        'data-finder-sort-control': '1',
+                        style: { height: '30px' },
                     },
                     h(
-                        'select',
+                        'button',
                         {
                             className:
-                                'bg-transparent text-xs px-1 focus:outline-none text-gray-700 dark:text-gray-200',
-                            onchange: (e: Event) =>
-                                onSetSort((e.target as HTMLSelectElement).value as any),
-                            value: sortBy,
+                                'finder-sort-trigger h-7 px-3 rounded-full text-xs text-gray-700 dark:text-gray-200',
+                            type: 'button',
+                            'data-finder-sort-trigger': '1',
+                            title: `Sortieren: ${activeSortOption.label}`,
+                            'aria-label': `Sortieren: ${activeSortOption.label}`,
+                            'aria-haspopup': 'menu',
+                            'aria-expanded': this.state.isSortMenuOpen ? 'true' : 'false',
+                            onclick: (event: Event) => {
+                                event.stopPropagation();
+                                this.toggleSortMenu();
+                            },
                         },
-                        h('option', { value: 'name' }, 'Name'),
-                        h('option', { value: 'date' }, 'Datum'),
-                        h('option', { value: 'size' }, 'Größe'),
-                        h('option', { value: 'type' }, 'Art')
+                        h(
+                            'span',
+                            {
+                                className: 'finder-sort-trigger-icon',
+                                'aria-hidden': 'true',
+                            },
+                            '☰'
+                        ),
+                        h(
+                            'span',
+                            {
+                                className: 'finder-sort-trigger-caret',
+                                'aria-hidden': 'true',
+                            },
+                            '⌄'
+                        )
                     )
                 ),
                 h(
                     'div',
-                    { className: 'relative' },
+                    {
+                        className:
+                            'finder-no-drag relative h-8 flex items-center justify-end overflow-hidden shrink-0 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus-within:ring-2 focus-within:ring-blue-500',
+                        style: {
+                            height: '30px',
+                            width: isSearchExpanded ? '160px' : '30px',
+                            transition: 'width 220ms cubic-bezier(0.4, 0, 0.2, 1)',
+                        },
+                    },
                     h('input', {
                         type: 'text',
-                        className:
-                            'finder-search pl-8 pr-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-40',
+                        className: `finder-search finder-no-drag absolute right-0 h-8 w-40 pl-8 pr-3 py-1 text-sm border-0 rounded-full bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none transition-opacity duration-150 ${isSearchExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`,
                         placeholder: 'Suchen',
                         value: searchTerm,
+                        style: { height: '30px' },
                         oninput: (e: Event) => onSearch((e.target as HTMLInputElement).value),
+                        onblur: (e: Event) =>
+                            this.collapseSearchFieldIfEmpty((e.target as HTMLInputElement).value),
+                        onkeydown: (e: KeyboardEvent) => {
+                            if (e.key !== 'Escape') return;
+
+                            const input = e.target as HTMLInputElement;
+                            if (input.value.length > 0) {
+                                onSearch('');
+                            }
+
+                            this.setState({ isSearchExpanded: false });
+                        },
                     }),
                     h(
-                        'svg',
+                        'button',
                         {
-                            className: 'absolute left-2.5 top-1.5 text-gray-400',
-                            width: '14',
-                            height: '14',
-                            viewBox: '0 0 24 24',
-                            fill: 'none',
-                            stroke: 'currentColor',
-                            strokeWidth: '2',
+                            type: 'button',
+                            className: `finder-no-drag absolute right-0 w-8 h-8 rounded-full transition-colors flex items-center justify-center focus:outline-none ${
+                                isSearchExpanded
+                                    ? 'border border-transparent bg-transparent text-gray-500 dark:text-gray-300 hover:bg-transparent'
+                                    : 'border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                            }`,
+                            title: 'Suche öffnen',
+                            'aria-label': 'Suche öffnen',
+                            style: { width: '30px', height: '30px' },
+                            onclick: () => this.expandSearchField(),
                         },
-                        h('circle', { cx: '11', cy: '11', r: '8' }),
-                        h('path', { d: 'M21 21l-4.35-4.35' })
+                        h(
+                            'span',
+                            {
+                                className:
+                                    'text-[13px] leading-none font-semibold text-gray-700 dark:text-gray-100',
+                                'aria-hidden': 'true',
+                            },
+                            '⌕'
+                        )
                     )
                 ),
             ],
@@ -448,13 +936,13 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
             h(
                 'div',
                 {
-                    className: 'finder-sidebar-panel-shell h-full pt-2 pb-2 pl-2 pr-0',
+                    className: 'finder-sidebar-panel-shell h-full',
                 },
                 h(
                     'div',
                     {
                         className: 'finder-sidebar-panel flex flex-col',
-                        style: { height: 'calc(100% - 0.4rem)' },
+                        style: { height: '100%' },
                     },
                     // Traffic Lights (macOS style)
                     h(
@@ -484,7 +972,7 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
                         })
                     ),
                     // Sidebar Content
-                    h('div', { className: 'flex-1 overflow-y-auto' }, sidebar.render())
+                    h('div', { className: 'flex-1 overflow-y-auto' }, sidebarContent)
                 )
             )
         );
@@ -505,7 +993,7 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
             // This ensures that E2E tests only find one set of tabs per window
             this.props.isActive
                 ? h('div', {
-                      className: 'finder-tabs-container',
+                      className: 'finder-tabs-container pt-2 pl-2 pr-2',
                       id: `${windowId}-tabs`,
                       'data-tabs-manual': '1',
                   })
@@ -570,6 +1058,9 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
         }
 
         this.bindSidebarResizer();
+        document.addEventListener('mousedown', this.boundDocumentMouseDown);
+        document.addEventListener('keydown', this.boundDocumentKeyDown);
+        window.addEventListener('resize', this.boundWindowResize);
     }
 
     onUpdate(): void {
@@ -590,9 +1081,24 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
 
         // Ensure resizer stays functional after VDOM updates.
         this.bindSidebarResizer();
+
+        if (this.state.isSortMenuOpen) {
+            this.renderSortMenuOverlay();
+            this.positionSortMenuOverlay();
+        }
+        if (this.state.isViewMenuOpen) {
+            this.renderViewMenuOverlay();
+            this.positionViewMenuOverlay();
+        }
     }
 
     onUnmount(): void {
+        document.removeEventListener('mousedown', this.boundDocumentMouseDown);
+        document.removeEventListener('keydown', this.boundDocumentKeyDown);
+        window.removeEventListener('resize', this.boundWindowResize);
+        this.destroySortMenuOverlay();
+        this.destroyViewMenuOverlay();
+
         if (!this.resizeHandlersBound || !this.element) return;
         this.element.removeEventListener('mousedown', this.boundSidebarMouseDown);
         document.removeEventListener('mousemove', this.boundSidebarMouseMove);

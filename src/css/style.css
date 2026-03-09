@@ -1,6 +1,6 @@
 /* Ermöglicht Scrollen der Dateiliste im Finder */
 .finder-content {
-    max-height: 100%;
+    height: 100%;
     overflow-y: auto;
 }
 /*
@@ -859,6 +859,157 @@ html.dark .dock-indicator {
     color: #f9fafb;
 }
 
+.finder-toolbar-pill-control {
+    border-radius: 9999px;
+    padding: 1px;
+    border: 1px solid rgb(209 213 219);
+    background: rgb(255 255 255);
+}
+
+.dark .finder-toolbar-pill-control {
+    border-color: rgb(75 85 99);
+    background: rgb(55 65 81);
+}
+
+.finder-sort-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition:
+        background-color 0.14s ease,
+        color 0.14s ease;
+}
+
+.finder-sort-trigger:hover,
+.finder-sort-trigger:focus-visible {
+    background: rgba(15, 23, 42, 0.08);
+    outline: none;
+}
+
+.dark .finder-sort-trigger:hover,
+.dark .finder-sort-trigger:focus-visible {
+    background: rgba(148, 163, 184, 0.18);
+}
+
+.finder-sort-trigger-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1;
+    color: rgba(55, 65, 81, 0.95);
+}
+
+.dark .finder-sort-trigger-icon {
+    color: rgba(226, 232, 240, 0.95);
+}
+
+.finder-sort-trigger-caret {
+    font-size: 0.78rem;
+    transform: translateY(-1px);
+    opacity: 0.8;
+}
+
+.finder-sort-menu {
+    position: absolute;
+    top: calc(100% + 7px);
+    left: 0;
+    min-width: 15.25rem;
+    padding: 0.44rem;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(226, 232, 240, 0.28);
+    background:
+        linear-gradient(180deg, rgba(24, 28, 38, 0.86) 0%, rgba(18, 21, 30, 0.9) 100%),
+        radial-gradient(circle at 20% 15%, rgba(56, 189, 248, 0.18), transparent 32%);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.08) inset,
+        0 20px 44px rgba(3, 7, 18, 0.52);
+    color: rgba(241, 245, 249, 0.96);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(22px) saturate(140%);
+    z-index: 60;
+}
+
+.finder-sort-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2147483606;
+}
+
+.finder-sort-menu-item {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1.05rem 1fr;
+    align-items: center;
+    gap: 0.5rem;
+    border: 0;
+    border-radius: 0.55rem;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    font: inherit;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    padding: 0.34rem 0.48rem;
+    cursor: pointer;
+    transition: background-color 0.13s ease;
+}
+
+.finder-sort-menu-item.with-divider {
+    margin-top: 0.26rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.27);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.finder-sort-menu-item:hover,
+.finder-sort-menu-item:focus-visible {
+    background: rgba(56, 189, 248, 0.2);
+    outline: none;
+}
+
+.finder-sort-menu-check {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.finder-sort-menu-label {
+    display: inline-block;
+    letter-spacing: 0.01em;
+}
+
+.finder-sort-menu-content {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.08rem;
+}
+
+.finder-sort-menu-meta {
+    font-size: 0.72rem;
+    line-height: 1.25;
+    color: rgba(148, 163, 184, 0.92);
+}
+
+.finder-sort-menu-item.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+}
+
+.finder-sort-menu-item.is-disabled:hover,
+.finder-sort-menu-item.is-disabled:focus-visible {
+    background: transparent;
+}
+
 /* Breadcrumbs */
 .finder-breadcrumb-item {
     padding: 0.25rem 0.5rem;
@@ -883,7 +1034,10 @@ html.dark .dock-indicator {
 /* Sidebar - macOS 26 Style (Full Height) */
 /* Traffic Lights Bar & Sidebar Container */
 .finder-sidebar-panel {
-    border-radius: 0.85rem;
+    border-radius: var(
+        --finder-sidebar-radius,
+        calc(var(--finder-window-radius, 1.125rem) - var(--finder-sidebar-inset, 0.5rem))
+    );
     border: 1px solid rgba(148, 163, 184, 0.28);
     background: linear-gradient(
         180deg,
@@ -897,6 +1051,19 @@ html.dark .dock-indicator {
     -webkit-backdrop-filter: blur(8px);
 }
 
+/* Finder corner geometry: keep inner sidebar at a constant offset from
+   the outer window arc by deriving radius from window radius minus inset. */
+.finder-window-shell {
+    border-radius: var(--finder-window-radius, 1.125rem);
+}
+
+.finder-window-shell .finder-sidebar-panel-shell {
+    padding-top: var(--finder-sidebar-inset, 0.5rem);
+    padding-right: 0;
+    padding-bottom: var(--finder-sidebar-inset, 0.5rem);
+    padding-left: var(--finder-sidebar-inset, 0.5rem);
+}
+
 .dark .finder-sidebar-panel {
     border-color: rgba(100, 116, 139, 0.35);
     background: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, rgba(17, 24, 39, 0.82) 100%);
@@ -908,6 +1075,88 @@ html.dark .dock-indicator {
 .finder-sidebar-panel .finder-sidebar-core {
     background: transparent !important;
     border-right: 0 !important;
+}
+
+.finder-sidebar-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem;
+    padding-right: 0.5rem;
+}
+
+.finder-sidebar-group-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+    color: rgba(107, 114, 128, 0.9);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        opacity 0.14s ease,
+        background-color 0.14s ease,
+        color 0.14s ease;
+}
+
+.finder-sidebar-group-header:hover .finder-sidebar-group-toggle,
+.finder-sidebar-group-header:focus-within .finder-sidebar-group-toggle {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.finder-sidebar-group-toggle:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+    color: #374151;
+}
+
+.finder-sidebar-group-toggle:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+    outline: 1px solid rgba(59, 130, 246, 0.45);
+    outline-offset: 1px;
+}
+
+.finder-sidebar-group-toggle-icon {
+    display: inline-block;
+    font-size: 0.75rem;
+    line-height: 1;
+    transform: rotate(0deg);
+    transition: transform 0.14s ease;
+}
+
+.finder-sidebar-group-toggle-icon.is-collapsed {
+    transform: rotate(-90deg);
+}
+
+.finder-sidebar-group-items {
+    max-height: 500px;
+    opacity: 1;
+    overflow: hidden;
+    transform: scaleY(1);
+    transform-origin: top;
+    transition:
+        max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.2s ease,
+        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.finder-sidebar-group-items.is-collapsed {
+    max-height: 0;
+    opacity: 0;
+    transform: scaleY(0);
+    pointer-events: none;
+}
+
+.dark .finder-sidebar-group-toggle {
+    color: rgba(156, 163, 175, 0.9);
+}
+
+.dark .finder-sidebar-group-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #e5e7eb;
 }
 
 .finder-sidebar-resizer {
@@ -983,6 +1232,7 @@ html.dark .dock-indicator {
     cursor: pointer;
     -webkit-user-select: none;
     user-select: none;
+    position: relative;
 }
 
 .finder-list-table thead th:hover {
@@ -998,8 +1248,48 @@ html.dark .dock-indicator {
     background-color: #1f2937;
 }
 
+/* Column resize handle */
+.finder-column-resizer {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: col-resize;
+    background: transparent;
+    border-right: 1px solid #d1d5db;
+    transition: background-color 0.15s ease;
+}
+
+.finder-column-resizer:hover {
+    background-color: rgba(59, 130, 246, 0.15);
+    border-right-color: #3b82f6;
+}
+
+.dark .finder-column-resizer {
+    border-right-color: #4b5563;
+}
+
+.dark .finder-column-resizer:hover {
+    background-color: rgba(59, 130, 246, 0.25);
+    border-right-color: #60a5fa;
+}
+
 .finder-list-item {
     cursor: pointer;
+}
+
+/* Alternating row colors (zebra striping like macOS Finder) */
+.finder-list-item-even {
+    background-color: transparent;
+}
+
+.finder-list-item-odd {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.dark .finder-list-item-odd {
+    background-color: rgba(255, 255, 255, 0.03);
 }
 
 /* Only transition hover state, not selection for instant feedback */

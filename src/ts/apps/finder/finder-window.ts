@@ -31,8 +31,12 @@ export class FinderWindow extends BaseWindow {
     createDOM(): HTMLElement {
         const windowEl = super.createDOM();
 
-        // Match the outer window curvature with the Finder sidebar panel curvature.
-        windowEl.style.borderRadius = '0.85rem';
+        // Keep Finder-specific corner geometry centralized via CSS custom properties
+        // so outer window and inset sidebar stay perfectly aligned.
+        windowEl.classList.add('finder-window-shell');
+        windowEl.style.setProperty('--finder-window-radius', '1.125rem');
+        windowEl.style.setProperty('--finder-sidebar-inset', '0.5rem');
+        windowEl.style.borderRadius = 'var(--finder-window-radius)';
 
         // Finder ships its own in-content top chrome. Remove legacy BaseWindow titlebar
         // so traffic lights are not duplicated.
