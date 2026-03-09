@@ -14,6 +14,11 @@ export class FinderWindow extends BaseWindow {
         destroy: () => void;
         setTitle: (id: string, title: string) => void;
     } | null;
+    private finderDragState = {
+        isDragging: false,
+        offsetX: 0,
+        offsetY: 0,
+    };
 
     constructor(config?: Partial<WindowConfig>) {
         super({
@@ -26,6 +31,14 @@ export class FinderWindow extends BaseWindow {
     createDOM(): HTMLElement {
         const windowEl = super.createDOM();
 
+        // Match the outer window curvature with the Finder sidebar panel curvature.
+        windowEl.style.borderRadius = '0.85rem';
+
+        // Finder ships its own in-content top chrome. Remove legacy BaseWindow titlebar
+        // so traffic lights are not duplicated.
+        this.titlebarElement?.remove();
+        this.titlebarElement = null;
+
         // Remove BaseWindow's tab bar from window chrome
         const baseTabBar = windowEl.querySelector('.window-tab-bar');
         if (baseTabBar) {
@@ -37,7 +50,50 @@ export class FinderWindow extends BaseWindow {
             this.contentElement.classList.add('flex');
         }
 
+        this.attachFinderDragHandlers(windowEl);
+
         return windowEl;
+    }
+
+    private attachFinderDragHandlers(windowEl: HTMLElement): void {
+        const isInteractiveTarget = (target: HTMLElement | null): boolean => {
+            if (!target) return false;
+            if (target.closest('.finder-no-drag')) return true;
+            if (target.closest('.finder-tabs-container')) return true;
+            if (target.closest('[data-resize-handle="sidebar"]')) return true;
+            return Boolean(target.closest('button, input, select, textarea, a, [role="button"]'));
+        };
+
+        windowEl.addEventListener('mousedown', (e: MouseEvent) => {
+            const target = e.target as HTMLElement | null;
+            const inFinderDragZone = target?.closest('.finder-window-drag-zone');
+            if (!inFinderDragZone || isInteractiveTarget(target)) return;
+
+            const rect = windowEl.getBoundingClientRect();
+            this.finderDragState.isDragging = true;
+            this.finderDragState.offsetX = e.clientX - rect.left;
+            this.finderDragState.offsetY = e.clientY - rect.top;
+            this.bringToFront();
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e: MouseEvent) => {
+            if (!this.finderDragState.isDragging || !this.element) return;
+
+            const newX = e.clientX - this.finderDragState.offsetX;
+            const newY = e.clientY - this.finderDragState.offsetY;
+            this.position.x = newX;
+            this.position.y = newY;
+            this.element.style.left = `${newX}px`;
+            this.element.style.top = `${newY}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!this.finderDragState.isDragging) return;
+            this.finderDragState.isDragging = false;
+            // Persist final position through BaseWindow's existing state mechanism.
+            (this as unknown as { _saveState?: () => void })._saveState?.();
+        });
     }
 
     show(): void {

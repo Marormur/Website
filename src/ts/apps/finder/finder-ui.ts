@@ -1,7 +1,6 @@
 import { h, VNode } from '../../core/vdom.js';
 import { BaseComponent } from '../../framework/core/component.js';
 import { AppShell } from '../../framework/layout/app-shell.js';
-import { SplitView } from '../../framework/layout/split-view.js';
 import { Sidebar, SidebarGroup } from '../../framework/navigation/sidebar.js';
 import { Toolbar } from '../../framework/navigation/toolbar.js';
 import { Tabs, TabItem } from '../../framework/navigation/tabs.js';
@@ -53,6 +52,97 @@ let activeTabDrag: FinderTabDragContext | null = null;
 let globalDragListenersAttached = false;
 
 export class FinderUI extends BaseComponent<FinderUIProps> {
+    private resizeHandlersBound = false;
+    private sidebarResizeState: {
+        isResizing: boolean;
+        startX: number;
+        startWidth: number;
+        moved: boolean;
+        currentWidth: number;
+    } = {
+        isResizing: false,
+        startX: 0,
+        startWidth: 0,
+        moved: false,
+        currentWidth: 0,
+    };
+
+    private applySidebarWidth(width: number): void {
+        if (!this.element) return;
+
+        const sidebarContainer = this.element.querySelector(
+            '[data-sidebar-container]'
+        ) as HTMLElement | null;
+        const sidebarResizer = this.element.querySelector(
+            '[data-resize-handle="sidebar"]'
+        ) as HTMLElement | null;
+        const toolbarWrap = this.element.querySelector(
+            '[data-main-toolbar-wrap]'
+        ) as HTMLElement | null;
+        const contentWrap = this.element.querySelector(
+            '[data-main-content-wrap]'
+        ) as HTMLElement | null;
+
+        if (sidebarContainer) {
+            sidebarContainer.style.width = `${width}px`;
+        }
+        if (sidebarResizer) {
+            sidebarResizer.style.left = `${width - 4}px`;
+        }
+        if (toolbarWrap) {
+            toolbarWrap.style.marginLeft = `${width}px`;
+        }
+        if (contentWrap) {
+            contentWrap.style.marginLeft = `${width}px`;
+        }
+    }
+
+    private boundSidebarMouseMove = (e: MouseEvent) => {
+        if (!this.sidebarResizeState.isResizing) return;
+
+        const delta = e.clientX - this.sidebarResizeState.startX;
+        // Ignore micro movement to avoid accidental width changes from regular clicks.
+        if (!this.sidebarResizeState.moved && Math.abs(delta) < 3) return;
+        this.sidebarResizeState.moved = true;
+
+        const newWidth = Math.max(150, Math.min(400, this.sidebarResizeState.startWidth + delta));
+        if (newWidth !== this.sidebarResizeState.currentWidth) {
+            this.sidebarResizeState.currentWidth = newWidth;
+            this.applySidebarWidth(newWidth);
+        }
+    };
+
+    private boundSidebarMouseUp = () => {
+        if (!this.sidebarResizeState.isResizing) return;
+
+        if (
+            this.sidebarResizeState.moved &&
+            this.sidebarResizeState.currentWidth !== this.props.sidebarWidth
+        ) {
+            this.props.onResize(this.sidebarResizeState.currentWidth);
+        }
+
+        this.sidebarResizeState.isResizing = false;
+        this.sidebarResizeState.moved = false;
+        this.sidebarResizeState.currentWidth = 0;
+        document.body.classList.remove('select-none');
+    };
+
+    private boundSidebarMouseDown = (e: MouseEvent) => {
+        const target = e.target as HTMLElement | null;
+        const handle = target?.closest('[data-resize-handle="sidebar"]') as HTMLElement | null;
+        if (!handle || e.button !== 0) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        this.sidebarResizeState.isResizing = true;
+        this.sidebarResizeState.startX = e.clientX;
+        this.sidebarResizeState.startWidth = this.props.sidebarWidth;
+        this.sidebarResizeState.moved = false;
+        this.sidebarResizeState.currentWidth = this.props.sidebarWidth;
+        document.body.classList.add('select-none');
+    };
+
     render(): VNode {
         const {
             id,
@@ -147,6 +237,7 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
             groups: sidebarGroups,
             activeId: activeSidebarId,
             idPrefix: id,
+            className: 'finder-sidebar-core',
         });
 
         const toolbar = new Toolbar({
@@ -346,31 +437,104 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
             className: 'bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm',
         });
 
-        const splitView = new SplitView({
-            initialSize: sidebarWidth,
-            minSize: 150,
-            maxSize: 400,
-            onResize: width => onResize(width),
-            left: h('div', { className: 'split-view-left h-full overflow-auto' }, sidebar.render()),
-            right: h(
+        // macOS 26 Style: Sidebar über volle Höhe mit Traffic Lights
+        const sidebarWithTrafficLights = h(
+            'div',
+            {
+                className: 'absolute top-0 left-0 bottom-0 z-10 flex flex-col',
+                style: { width: `${sidebarWidth}px` },
+                'data-sidebar-container': '1',
+            },
+            h(
                 'div',
-                { className: 'split-view-right flex flex-col h-full overflow-hidden' },
-                // Only render Tabs in the active tab's UI to avoid duplicates in the DOM
-                // This ensures that E2E tests only find one set of tabs per window
-                this.props.isActive
-                    ? h('div', {
-                          className: 'finder-tabs-container',
-                          id: `${windowId}-tabs`,
-                          'data-tabs-manual': '1',
-                      })
-                    : h('div', { className: 'finder-tabs-placeholder hidden' }),
-                h('div', { className: 'flex-1 overflow-hidden relative' }, renderContent())
-            ),
+                {
+                    className: 'finder-sidebar-panel-shell h-full pt-2 pb-2 pl-2 pr-0',
+                },
+                h(
+                    'div',
+                    {
+                        className: 'finder-sidebar-panel flex flex-col',
+                        style: { height: 'calc(100% - 0.4rem)' },
+                    },
+                    // Traffic Lights (macOS style)
+                    h(
+                        'div',
+                        {
+                            className:
+                                'finder-window-drag-zone flex items-center gap-2 px-3 py-2.5',
+                            style: { height: '44px' },
+                        },
+                        h('div', {
+                            className:
+                                'finder-no-drag w-3 h-3 bg-red-500 rounded-full cursor-pointer hover:bg-red-600 transition-colors',
+                            title: 'Schließen',
+                            'data-action': 'window-close',
+                        }),
+                        h('div', {
+                            className:
+                                'finder-no-drag w-3 h-3 bg-yellow-500 rounded-full cursor-pointer hover:bg-yellow-600 transition-colors',
+                            title: 'Minimieren',
+                            'data-action': 'window-minimize',
+                        }),
+                        h('div', {
+                            className:
+                                'finder-no-drag w-3 h-3 bg-green-500 rounded-full cursor-pointer hover:bg-green-600 transition-colors',
+                            title: 'Zoomen',
+                            'data-action': 'window-maximize',
+                        })
+                    ),
+                    // Sidebar Content
+                    h('div', { className: 'flex-1 overflow-y-auto' }, sidebar.render())
+                )
+            )
+        );
+
+        // Resizer für Sidebar-Breite
+        const sidebarResizer = h('div', {
+            className:
+                'finder-sidebar-resizer absolute top-0 bottom-0 z-20 w-2 -translate-x-1 cursor-col-resize transition-colors',
+            style: { left: `${sidebarWidth - 4}px` },
+            'data-resize-handle': 'sidebar',
         });
 
+        // Content Area (ohne SplitView, da Sidebar jetzt absolut positioniert ist)
+        const contentArea = h(
+            'div',
+            { className: 'flex flex-col h-full overflow-hidden' },
+            // Only render Tabs in the active tab's UI to avoid duplicates in the DOM
+            // This ensures that E2E tests only find one set of tabs per window
+            this.props.isActive
+                ? h('div', {
+                      className: 'finder-tabs-container',
+                      id: `${windowId}-tabs`,
+                      'data-tabs-manual': '1',
+                  })
+                : h('div', { className: 'finder-tabs-placeholder hidden' }),
+            h('div', { className: 'flex-1 overflow-hidden relative' }, renderContent())
+        );
+
+        // Toolbar mit Margin für Sidebar
+        const toolbarWithMargin = h(
+            'div',
+            {
+                className: 'finder-window-drag-zone',
+                style: { marginLeft: `${sidebarWidth}px` },
+                'data-main-toolbar-wrap': '1',
+            },
+            toolbar.render()
+        );
+
         const shell = new AppShell({
-            toolbar: toolbar.render(),
-            content: splitView.render(),
+            toolbar: toolbarWithMargin,
+            content: h(
+                'div',
+                {
+                    className: 'relative h-full',
+                    style: { marginLeft: `${sidebarWidth}px` },
+                    'data-main-content-wrap': '1',
+                },
+                contentArea
+            ),
         });
 
         const vnode = shell.render();
@@ -378,7 +542,14 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
         vnode.props['className'] =
             ((vnode.props['className'] as string) || '') + ' finder-vdom-root';
 
-        return vnode;
+        // Wrapper mit Sidebar und Resizer
+        return h(
+            'div',
+            { className: 'relative w-full h-full overflow-hidden' },
+            sidebarWithTrafficLights,
+            sidebarResizer,
+            vnode
+        );
     }
 
     onMount(): void {
@@ -397,6 +568,8 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
         } catch (e) {
             logger.warn('FINDER', '[FinderUI] onMount tab render failed', e);
         }
+
+        this.bindSidebarResizer();
     }
 
     onUpdate(): void {
@@ -414,6 +587,17 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
         } catch (e) {
             logger.warn('FINDER', '[FinderUI] onUpdate tab render failed', e);
         }
+
+        // Ensure resizer stays functional after VDOM updates.
+        this.bindSidebarResizer();
+    }
+
+    onUnmount(): void {
+        if (!this.resizeHandlersBound || !this.element) return;
+        this.element.removeEventListener('mousedown', this.boundSidebarMouseDown);
+        document.removeEventListener('mousemove', this.boundSidebarMouseMove);
+        document.removeEventListener('mouseup', this.boundSidebarMouseUp);
+        this.resizeHandlersBound = false;
     }
 
     private bindTabDragHandlers(container: HTMLElement): void {
@@ -535,5 +719,14 @@ export class FinderUI extends BaseComponent<FinderUIProps> {
                 tabEl.classList.remove('opacity-50');
             });
         });
+    }
+
+    private bindSidebarResizer(): void {
+        if (!this.element || this.resizeHandlersBound) return;
+
+        this.element.addEventListener('mousedown', this.boundSidebarMouseDown);
+        document.addEventListener('mousemove', this.boundSidebarMouseMove);
+        document.addEventListener('mouseup', this.boundSidebarMouseUp);
+        this.resizeHandlersBound = true;
     }
 }

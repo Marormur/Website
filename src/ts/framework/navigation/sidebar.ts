@@ -28,12 +28,12 @@ export class Sidebar extends BaseComponent<SidebarProps> {
         return h(
             'aside',
             {
-                className: `flex flex-col h-full bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto ${this.props.className || ''}`,
-                style: { width: '100%' }, // Usually controlled by SplitView
+                className: `flex flex-col h-full bg-gray-50/80 dark:bg-gray-900/95 border-r border-gray-200/60 dark:border-gray-700/50 overflow-y-auto ${this.props.className || ''}`,
+                style: { width: '100%' },
             },
             h(
                 'div',
-                { className: 'py-2' },
+                { className: 'py-3 px-2' },
                 ...this.props.groups.map(group => this.renderGroup(group))
             )
         );
@@ -42,12 +42,12 @@ export class Sidebar extends BaseComponent<SidebarProps> {
     private renderGroup(group: SidebarGroup): VNode {
         return h(
             'div',
-            { className: 'mb-4', key: group.label },
+            { className: 'mb-5', key: group.label },
             h(
                 'div',
                 {
                     className:
-                        'px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide',
+                        'px-3 py-1 mb-1 text-[11px] font-semibold text-gray-500/80 dark:text-gray-400/70 uppercase tracking-wider',
                     'data-i18n': group.i18nKey,
                 },
                 group.label
