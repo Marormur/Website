@@ -178,6 +178,24 @@ function resolveKey(lang: LanguageCode, key: string): unknown {
     return current;
 }
 
+/**
+ * Translate a key to the active language, with optional interpolation.
+ *
+ * Falls back to `FALLBACK_LANGUAGE` (`'en'`) if the key is missing in the active language.
+ * Returns `options.fallback` (or the raw `key`) when no translation is found.
+ *
+ * @param key - Dot-separated translation key, e.g. `'menu.file.new'`.
+ * @param params - Optional interpolation variables, e.g. `{ name: 'Marvin' }`.
+ * @param options - Override language or provide a custom fallback string.
+ * @returns The translated and interpolated string.
+ *
+ * @example
+ * ```typescript
+ * translate('menu.file');               // "File" (or "Datei" in German)
+ * translate('greeting', { name: 'World' }); // "Hello, World!"
+ * translate('missing.key', {}, { fallback: 'Default' }); // "Default"
+ * ```
+ */
 export function translate(
     key: string,
     params: TranslationParams = {},
@@ -237,6 +255,21 @@ function translateElement(element: Element): void {
     });
 }
 
+/**
+ * Apply translations to all `[data-i18n]` elements within `root`.
+ *
+ * Also handles `[data-i18n-html]` (innerHTML) and arbitrary `[data-i18n-<attr>]` attribute translations.
+ * Called automatically on language change; can also be called manually on dynamically inserted DOM.
+ *
+ * @param root - Root element or document to start from. Defaults to `document`.
+ *
+ * @example
+ * ```typescript
+ * // Re-apply translations after injecting dynamic HTML
+ * const panel = document.getElementById('my-panel');
+ * applyTranslations(panel!);
+ * ```
+ */
 export function applyTranslations(root: Document | Element = document): void {
     if (!root) return;
     const base = root === document ? document.documentElement : root;
@@ -272,6 +305,21 @@ function refreshActiveLanguage(emitEvent = true): void {
     }
 }
 
+/**
+ * Set the user's language preference and immediately apply it.
+ *
+ * Persists the preference in `localStorage` and triggers a `languagePreferenceChange`
+ * DOM event so other modules can react.
+ *
+ * @param pref - `'system'` to follow the browser locale, or a specific `LanguageCode`.
+ * @returns The `LanguageCode` that became active after the change.
+ *
+ * @example
+ * ```typescript
+ * setLanguagePreference('de'); // Switch to German
+ * setLanguagePreference('system'); // Follow browser language
+ * ```
+ */
 export function setLanguagePreference(pref: LanguagePreference): LanguageCode {
     const normalized = parsePreference(pref);
     if (normalized === languagePreference) {
@@ -290,10 +338,23 @@ export function setLanguagePreference(pref: LanguagePreference): LanguageCode {
     return activeLanguage;
 }
 
+/**
+ * Return the stored language preference (`'system'`, `'de'`, or `'en'`).
+ *
+ * @returns Current `LanguagePreference` setting.
+ */
 export function getLanguagePreference(): LanguagePreference {
     return languagePreference;
 }
 
+/**
+ * Return the language code that is currently active for translations.
+ *
+ * Unlike {@link getLanguagePreference}, this always returns a concrete language code
+ * (`'de'` or `'en'`), never `'system'`.
+ *
+ * @returns Active `LanguageCode`.
+ */
 export function getActiveLanguage(): LanguageCode {
     return activeLanguage;
 }

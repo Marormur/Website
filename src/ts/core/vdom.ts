@@ -9,6 +9,19 @@ import logger from './logger.js';
  * - Diff Algorithm: < 10ms for 100 nodes
  * - Patch Application: < 20ms for 100 nodes
  * - Memory Overhead: < 100KB for typical app
+ *
+ * @module vdom
+ *
+ * @example
+ * ```typescript
+ * import { h, diff, patch } from '@/core/vdom';
+ *
+ * const oldTree = h('div', {}, 'Hello');
+ * const newTree = h('div', {}, 'World');
+ *
+ * const patches = diff(oldTree, newTree);
+ * patch(document.getElementById('app')!, patches);
+ * ```
  */
 
 // ============================================================================
@@ -647,7 +660,17 @@ export class EventDelegator {
 // ============================================================================
 
 /**
- * Measures execution time of a function
+ * Measure execution time of a function and optionally log the result.
+ *
+ * @param fn - The function to benchmark.
+ * @param label - Optional label for the debug log entry.
+ * @returns Object with `result` (function return value) and `time` (elapsed ms).
+ *
+ * @example
+ * ```typescript
+ * const { result, time } = measurePerf(() => diff(oldTree, newTree), 'diff');
+ * console.log(`Diff took ${time.toFixed(2)}ms`);
+ * ```
  */
 export function measurePerf<T>(fn: () => T, label?: string): { result: T; time: number } {
     const start = performance.now();

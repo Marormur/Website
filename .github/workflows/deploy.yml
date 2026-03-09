@@ -46,6 +46,10 @@ jobs:
             - name: Build production bundle
               run: npm run build:bundle
 
+            # Generate API documentation (included in the Pages artifact alongside the site)
+            - name: Generate API docs
+              run: npm run docs:generate
+
             # Compress the bundle for bandwidth savings
             - name: Compress bundle
               run: |

@@ -36,6 +36,9 @@
     "validate": "npm run typecheck && npm run type:baseline && npm run build:ts && npm run lint && npm run build:css && npm run test:e2e",
     "validate:vdom": "node scripts/validate-vdom-performance.js",
     "docs:clean": "rimraf docs/api",
+    "docs:generate": "typedoc",
+    "docs:serve": "npx serve docs/api",
+    "docs:watch": "typedoc --watch",
     "clean:legacy": "rimraf js/legacy",
     "knip": "knip --production",
     "knip:report": "knip --production --reporter json > knip-report.json",
@@ -100,6 +103,7 @@
     "tailwindcss": "^3.4.19",
     "turbo": "^2.6.3",
     "type-coverage": "^2.29.7",
+    "typedoc": "^0.28.17",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },

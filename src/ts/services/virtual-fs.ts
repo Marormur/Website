@@ -2,15 +2,31 @@
  * virtual-fs.ts
  * Central Virtual File System
  *
- * Provides a persistent, in-memory file system that can be shared across
- * multiple modules (Finder, Terminal, TextEditor, etc.).
+ * Provides a persistent, in-browser file system shared across all modules
+ * (Finder, Terminal, TextEditor, etc.). Data is stored in IndexedDB with an
+ * automatic fallback to localStorage.
  *
  * Features:
  * - CRUD operations (Create, Read, Update, Delete)
- * - LocalStorage persistence
- * - Path-based navigation
- * - File metadata (size, modified, type)
- * - Event system for change notifications
+ * - IndexedDB persistence (delta-save optimisation for frequent writes)
+ * - Path-based navigation (Unix-style: `'/home/marvin/file.txt'` or string arrays)
+ * - File metadata (size, icon, created/modified timestamps)
+ * - Event system for real-time change notifications
+ *
+ * @module virtual-fs
+ *
+ * @example
+ * ```typescript
+ * import { VirtualFS } from '@/services/virtual-fs';
+ *
+ * VirtualFS.createFolder('/projects');
+ * VirtualFS.createFile('/projects/hello.txt', 'Hello World');
+ * console.log(VirtualFS.readFile('/projects/hello.txt')); // "Hello World"
+ *
+ * VirtualFS.addEventListener(event => {
+ *     console.log(event.type, event.path); // e.g. "create /projects/hello.txt"
+ * });
+ * ```
  */
 
 import { getJSON, setJSON, remove } from './storage-utils.js';
@@ -352,6 +368,22 @@ type FSListener = (event: FSEvent) => void;
 // Virtual File System Manager
 // ============================================================================
 
+/**
+ * Manages a Unix-style virtual file system stored in the browser (IndexedDB / localStorage).
+ *
+ * Exposes read, write, delete, rename operations and an event system. The singleton
+ * instance is exported as {@link VirtualFS}.
+ *
+ * Paths can be provided as Unix strings (`'/home/marvin/file.txt'`) or as pre-split
+ * string arrays (`['home', 'marvin', 'file.txt']`).
+ *
+ * @example
+ * ```typescript
+ * VirtualFS.createFolder('/projects');
+ * VirtualFS.createFile('/projects/notes.md', '# Notes');
+ * const content = VirtualFS.readFile('/projects/notes.md');
+ * ```
+ */
 class VirtualFileSystemManager {
     private root: FileSystemRoot;
     private listeners: FSListener[] = [];
@@ -723,6 +755,11 @@ class VirtualFileSystemManager {
         this.structureDirty = false;
     }
 
+    /**
+     * Immediately flush any pending debounced saves to storage.
+     *
+     * Prefer {@link forceSaveAsync} when you need to await completion.
+     */
     forceSave(): void {
         if (this.saveTimeout !== null) {
             window.clearTimeout(this.saveTimeout);
@@ -734,6 +771,8 @@ class VirtualFileSystemManager {
     /**
      * Force a synchronous-to-call, asynchronous persistence of the current filesystem state.
      * Useful for tests or shutdown hooks that want to ensure data is flushed to disk.
+     *
+     * @returns Promise that resolves once the save is complete.
      */
     async forceSaveAsync(): Promise<void> {
         if (this.saveTimeout !== null) {
@@ -747,10 +786,27 @@ class VirtualFileSystemManager {
     // Event System
     // ========================================================================
 
+    /**
+     * Subscribe to filesystem change events (create, update, delete, rename).
+     *
+     * @param listener - Callback invoked on each filesystem change.
+     *
+     * @example
+     * ```typescript
+     * VirtualFS.addEventListener(event => {
+     *     console.log(`[VFS] ${event.type}: ${event.path}`);
+     * });
+     * ```
+     */
     addEventListener(listener: FSListener): void {
         this.listeners.push(listener);
     }
 
+    /**
+     * Unsubscribe a previously registered change listener.
+     *
+     * @param listener - The exact listener reference passed to {@link addEventListener}.
+     */
     removeEventListener(listener: FSListener): void {
         const index = this.listeners.indexOf(listener);
         if (index !== -1) {
@@ -779,10 +835,22 @@ class VirtualFileSystemManager {
         return path.split('/').filter(p => p.length > 0);
     }
 
+    /**
+     * Normalize a path to a canonical slash-joined string.
+     *
+     * @param path - Unix path string or pre-split array of segments.
+     * @returns Normalized path string, e.g. `'home/marvin/file.txt'` (no leading slash).
+     */
     normalizePath(path: string | string[]): string {
         return this.parsePath(path).join('/');
     }
 
+    /**
+     * Navigate the virtual file-system tree and return the item at `path`.
+     *
+     * @param path - Unix path string or array of path segments.
+     * @returns The `FSItem` (file or folder) at the path, or `null` if not found.
+     */
     navigate(path: string | string[]): FSItem | null {
         const parts = this.parsePath(path);
 
@@ -823,24 +891,67 @@ class VirtualFileSystemManager {
     // Read Operations
     // ========================================================================
 
+    /**
+     * Check whether a file or folder exists at `path`.
+     *
+     * @param path - Target path (string or array).
+     * @returns `true` if the item exists, `false` otherwise.
+     *
+     * @example
+     * ```typescript
+     * if (!VirtualFS.exists('/projects')) {
+     *     VirtualFS.createFolder('/projects');
+     * }
+     * ```
+     */
     exists(path: string | string[]): boolean {
         return this.navigate(path) !== null;
     }
 
+    /**
+     * Return the raw `FSItem` (file or folder) at `path`, or `null` if not found.
+     *
+     * @param path - Target path.
+     * @returns The item, or `null`.
+     */
     get(path: string | string[]): FSItem | null {
         return this.navigate(path);
     }
 
+    /**
+     * Return the folder at `path`, or `null` if the path does not point to a folder.
+     *
+     * @param path - Target path.
+     * @returns `FolderItem` or `null`.
+     */
     getFolder(path: string | string[]): FolderItem | null {
         const item = this.navigate(path);
         return item?.type === 'folder' ? item : null;
     }
 
+    /**
+     * Return the file at `path`, or `null` if the path does not point to a file.
+     *
+     * @param path - Target path.
+     * @returns `FileItem` or `null`.
+     */
     getFile(path: string | string[]): FileItem | null {
         const item = this.navigate(path);
         return item?.type === 'file' ? item : null;
     }
 
+    /**
+     * List the direct children of a directory.
+     *
+     * @param path - Target directory path. Defaults to root (`'/'`).
+     * @returns A record mapping child names to their `FSItem`s, or `{}` if not a directory.
+     *
+     * @example
+     * ```typescript
+     * const entries = VirtualFS.list('/home/marvin');
+     * console.log(Object.keys(entries)); // ["Documents", "welcome.txt"]
+     * ```
+     */
     list(path: string | string[] = []): Record<string, FSItem> {
         const parts = this.parsePath(path);
 
@@ -854,6 +965,18 @@ class VirtualFileSystemManager {
         return folder?.children || {};
     }
 
+    /**
+     * Read the text content of a file.
+     *
+     * @param path - Path to an existing file.
+     * @returns File content string, or `null` if the file does not exist or has empty content.
+     *
+     * @example
+     * ```typescript
+     * const content = VirtualFS.readFile('/home/marvin/welcome.txt');
+     * if (content !== null) console.log(content);
+     * ```
+     */
     readFile(path: string | string[]): string | null {
         const file = this.getFile(path);
         return file?.content || null;
@@ -863,6 +986,21 @@ class VirtualFileSystemManager {
     // Write Operations
     // ========================================================================
 
+    /**
+     * Create a new file at `path` with optional initial content.
+     *
+     * Fails silently (returns `false`) if the path already exists.
+     *
+     * @param path - Absolute path for the new file.
+     * @param content - Initial file content. Defaults to `''`.
+     * @param icon - Emoji icon for the file. Defaults to `'📝'`.
+     * @returns `true` on success, `false` if the path already exists or the path is invalid.
+     *
+     * @example
+     * ```typescript
+     * VirtualFS.createFile('/projects/notes.md', '# Notes', '📄');
+     * ```
+     */
     createFile(path: string | string[], content = '', icon = '📝'): boolean {
         const parts = this.parsePath(path);
 
@@ -904,6 +1042,20 @@ class VirtualFileSystemManager {
         return true;
     }
 
+    /**
+     * Create a new directory at `path`.
+     *
+     * Fails silently (returns `false`) if the path already exists.
+     *
+     * @param path - Absolute path for the new directory.
+     * @param icon - Emoji icon for the folder. Defaults to `'📁'`.
+     * @returns `true` on success, `false` if the path already exists or is invalid.
+     *
+     * @example
+     * ```typescript
+     * VirtualFS.createFolder('/projects/my-app');
+     * ```
+     */
     createFolder(path: string | string[], icon = '📁'): boolean {
         const parts = this.parsePath(path);
 
@@ -944,6 +1096,20 @@ class VirtualFileSystemManager {
         return true;
     }
 
+    /**
+     * Overwrite the content of an existing file.
+     *
+     * The file must already exist (use {@link createFile} to create it first).
+     *
+     * @param path - Path to an existing file.
+     * @param content - New content to write.
+     * @returns `true` on success, `false` if the file does not exist.
+     *
+     * @example
+     * ```typescript
+     * VirtualFS.writeFile('/projects/notes.md', '# Updated Notes');
+     * ```
+     */
     writeFile(path: string | string[], content: string): boolean {
         const file = this.getFile(path);
 
@@ -964,6 +1130,18 @@ class VirtualFileSystemManager {
         return true;
     }
 
+    /**
+     * Delete a file or folder (and all its contents) at `path`.
+     *
+     * @param path - Path to the item to remove.
+     * @returns `true` on success, `false` if the item does not exist or the path is invalid.
+     *
+     * @example
+     * ```typescript
+     * VirtualFS.delete('/projects/old-notes.md');
+     * VirtualFS.delete('/projects/archive'); // removes directory recursively
+     * ```
+     */
     delete(path: string | string[]): boolean {
         const parts = this.parsePath(path);
 
@@ -1007,6 +1185,20 @@ class VirtualFileSystemManager {
         return true;
     }
 
+    /**
+     * Rename a file or folder in-place (same directory, new name only).
+     *
+     * To move an item to a different directory, use the Terminal `mv` command.
+     *
+     * @param oldPath - Current path of the item.
+     * @param newName - New name (not a full path – just the basename).
+     * @returns `true` on success, `false` if `oldPath` does not exist or `newName` is taken.
+     *
+     * @example
+     * ```typescript
+     * VirtualFS.rename('/projects/old-name.md', 'new-name.md');
+     * ```
+     */
     rename(oldPath: string | string[], newName: string): boolean {
         const parts = this.parsePath(oldPath);
 
@@ -1077,6 +1269,17 @@ class VirtualFileSystemManager {
     // Stats & Utilities
     // ========================================================================
 
+    /**
+     * Return aggregate statistics for the entire virtual filesystem.
+     *
+     * @returns An object with `totalFiles`, `totalFolders`, and `totalSize` (bytes).
+     *
+     * @example
+     * ```typescript
+     * const { totalFiles, totalSize } = VirtualFS.getStats();
+     * console.log(`${totalFiles} files, ${totalSize} bytes`);
+     * ```
+     */
     getStats(): { totalFiles: number; totalFolders: number; totalSize: number } {
         let totalFiles = 0;
         let totalFolders = 0;
@@ -1099,6 +1302,11 @@ class VirtualFileSystemManager {
         return { totalFiles, totalFolders, totalSize };
     }
 
+    /**
+     * Reset the filesystem to its default structure, clearing all user data.
+     *
+     * @remarks **Warning:** This is destructive and cannot be undone.
+     */
     reset(): void {
         this.root = this.createDefaultStructure();
         this.structureDirty = true;
@@ -1106,10 +1314,30 @@ class VirtualFileSystemManager {
         logger.debug('STORAGE', '[VirtualFS] Reset to defaults');
     }
 
+    /**
+     * Export a deep copy of the current filesystem state as a plain object.
+     *
+     * The returned object can be serialized to JSON and later restored via {@link import}.
+     *
+     * @returns Deep-cloned `FileSystemRoot` snapshot.
+     */
     export(): FileSystemRoot {
         return JSON.parse(JSON.stringify(this.root));
     }
 
+    /**
+     * Replace the current filesystem with a previously exported snapshot.
+     *
+     * @param data - A `FileSystemRoot` object (e.g. from {@link export}).
+     * @returns `true` on success, `false` if `data` is invalid.
+     *
+     * @example
+     * ```typescript
+     * const backup = VirtualFS.export();
+     * // ... later ...
+     * VirtualFS.import(backup);
+     * ```
+     */
     import(data: FileSystemRoot): boolean {
         try {
             // Basic validation
