@@ -1,6 +1,22 @@
 /**
  * WindowManager - Central registry for windows/modals with z-index and program metadata (TypeScript).
  * Mirrors js/window-manager.js behavior while adding types and preserving global API.
+ *
+ * Exposed globally as `window.WindowManager`.
+ *
+ * @module window-manager
+ *
+ * @example
+ * ```typescript
+ * // Open a registered window
+ * window.WindowManager.open('finder-window');
+ *
+ * // Bring a window to the foreground
+ * window.WindowManager.bringToFront('terminal-window');
+ *
+ * // Query all persistent windows
+ * const ids = window.WindowManager.getPersistentWindowIds();
+ * ```
  */
 
 import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
@@ -86,36 +102,69 @@ import logger from '../core/logger.js';
 
     const WindowManager = {
         /**
-         * Get current top z-index for synchronization
+         * Get current top z-index for synchronization.
+         *
+         * @returns The highest z-index currently in use.
          */
         getTopZIndex(): number {
             return zIndexManager.getTopZIndex();
         },
 
         /**
-         * Update top z-index from external source (e.g., WindowRegistry)
+         * Ensure the internal top-z-index is at least `newZIndex`.
+         *
+         * Used to synchronize after external z-index changes (e.g., from WindowRegistry).
+         *
+         * @param newZIndex - Minimum z-index to enforce.
          */
         updateTopZIndex(newZIndex: number): void {
             zIndexManager.ensureTopZIndex(newZIndex);
         },
+        /**
+         * Register a window configuration.
+         *
+         * @param config - Window configuration options.
+         * @returns The created `WindowConfig` instance.
+         */
         register(config: WindowConfigOptions): WindowConfig {
             const windowConfig = new WindowConfig(config);
             windowRegistry.set(config.id, windowConfig);
             return windowConfig;
         },
 
+        /**
+         * Register multiple window configurations at once.
+         *
+         * @param configs - Array of window configuration options.
+         */
         registerAll(configs: WindowConfigOptions[]): void {
             configs.forEach(c => this.register(c));
         },
 
+        /**
+         * Retrieve the `WindowConfig` for a registered window.
+         *
+         * @param windowId - The HTML element ID of the window.
+         * @returns `WindowConfig` or `null` if not registered.
+         */
         getConfig(windowId: string): WindowConfig | null {
             return windowRegistry.get(windowId) || null;
         },
 
+        /**
+         * Return the IDs of all registered windows.
+         *
+         * @returns Array of window ID strings.
+         */
         getAllWindowIds(): string[] {
             return Array.from(windowRegistry.keys());
         },
 
+        /**
+         * Return the IDs of all registered persistent (non-transient) windows.
+         *
+         * @returns Array of window ID strings.
+         */
         getPersistentWindowIds(): string[] {
             return this.getAllWindowIds().filter(id => {
                 const config = this.getConfig(id);
@@ -123,6 +172,11 @@ import logger from '../core/logger.js';
             });
         },
 
+        /**
+         * Return the IDs of all registered transient windows.
+         *
+         * @returns Array of window ID strings.
+         */
         getTransientWindowIds(): string[] {
             return this.getAllWindowIds().filter(id => {
                 const config = this.getConfig(id);
@@ -130,6 +184,12 @@ import logger from '../core/logger.js';
             });
         },
 
+        /**
+         * Attach a `DialogLike` instance to a registered window.
+         *
+         * @param windowId - The window's element ID.
+         * @param instance - The dialog controller to attach.
+         */
         setDialogInstance(windowId: string, instance: DialogLike): void {
             const config = this.getConfig(windowId);
             if (config) {
@@ -137,11 +197,22 @@ import logger from '../core/logger.js';
             }
         },
 
+        /**
+         * Retrieve the `DialogLike` instance associated with a window.
+         *
+         * @param windowId - The window's element ID.
+         * @returns The dialog instance, or `null`.
+         */
         getDialogInstance(windowId: string): DialogLike {
             const config = this.getConfig(windowId);
             return (config && config.dialogInstance) || null;
         },
 
+        /**
+         * Return all registered dialog instances keyed by window ID.
+         *
+         * @returns Record mapping window IDs to `DialogLike` instances.
+         */
         getAllDialogInstances(): Record<string, DialogLike> {
             const dialogs: Record<string, DialogLike> = {};
             windowRegistry.forEach((config, id) => {
@@ -152,10 +223,23 @@ import logger from '../core/logger.js';
             return dialogs;
         },
 
+        /**
+         * Return the DOM element with the highest z-index (the topmost window).
+         *
+         * @returns The topmost window `HTMLElement`, or `null`.
+         */
         getTopWindow(): HTMLElement | null {
             return zIndexManager.getTopWindowElement();
         },
 
+        /**
+         * Bring a window to the foreground by raising its z-index.
+         *
+         * If the window has a registered `DialogLike` instance, its `bringToFront` method
+         * is called. Otherwise the DOM element's z-index is updated directly.
+         *
+         * @param windowId - The window's element ID.
+         */
         bringToFront(windowId: string): void {
             const perf = (
                 window as {
@@ -189,6 +273,14 @@ import logger from '../core/logger.js';
             );
         },
 
+        /**
+         * Open a window (make it visible and bring it to the front).
+         *
+         * If the window has a `DialogLike` instance registered, its `open()` method is called.
+         * Otherwise the DOM element's `hidden` class is removed.
+         *
+         * @param windowId - The window's element ID.
+         */
         open(windowId: string): void {
             const perf = (
                 window as {
@@ -253,6 +345,14 @@ import logger from '../core/logger.js';
             }
         },
 
+        /**
+         * Close a window (hide it).
+         *
+         * If the window has a `DialogLike` instance registered, its `close()` method is called.
+         * Otherwise the DOM element is hidden via the `hidden` CSS class.
+         *
+         * @param windowId - The window's element ID.
+         */
         close(windowId: string): void {
             const perf = (
                 window as {
@@ -287,19 +387,45 @@ import logger from '../core/logger.js';
             );
         },
 
+        /**
+         * Allocate the next available z-index value.
+         *
+         * @returns The next z-index integer.
+         */
         getNextZIndex(): number {
             return zIndexManager.bumpZIndex();
         },
 
+        /**
+         * Synchronize the internal z-index counter with the highest value currently in the DOM.
+         *
+         * @returns The discovered maximum z-index.
+         */
         syncZIndexWithDOM(): number {
             return zIndexManager.syncFromDOM();
         },
 
+        /**
+         * Return the draggable window element inside a modal overlay.
+         *
+         * Looks for a `.autopointer` child first; falls back to the modal itself.
+         *
+         * @param modal - The modal overlay element.
+         * @returns The inner window element, or `null` if `modal` is `null`.
+         */
         getDialogWindowElement(modal: HTMLElement | null): HTMLElement | null {
             if (!modal) return null;
             return (modal.querySelector('.autopointer') as HTMLElement | null) || modal;
         },
 
+        /**
+         * Return program metadata (label, icon, about) for a registered window.
+         *
+         * Falls back to default program info if the window is not registered.
+         *
+         * @param windowId - The window's element ID.
+         * @returns `ProgramInfo` for the window.
+         */
         getProgramInfo(windowId: string): ProgramInfo {
             const config = this.getConfig(windowId);
             if (config) return config.getProgramInfo();

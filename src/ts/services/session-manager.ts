@@ -3,6 +3,23 @@
  *
  * Provides centralized, debounced persistence of window instance state to localStorage.
  * Handles storage quota limits gracefully and coordinates saves across multiple instances.
+ *
+ * All state is stored under the key `'windowInstancesSession'` in localStorage.
+ * Exposed globally as `window.SessionManager`.
+ *
+ * @module session-manager
+ *
+ * @example
+ * ```typescript
+ * // Save all open instances (debounced)
+ * window.SessionManager.saveAll();
+ *
+ * // Restore on startup
+ * window.SessionManager.restoreSession();
+ *
+ * // Export session snapshot
+ * const json = window.SessionManager.exportSession();
+ * ```
  */
 
 import { getJSON, setJSON, remove } from '../services/storage-utils.js';
@@ -304,7 +321,10 @@ logger.debug('SESSION', 'SessionManager loaded');
     // ===== Public API =====
 
     /**
-     * Save all instances immediately (skip debounce)
+     * Save all instances immediately or with debounce.
+     *
+     * @param options - Save options.
+     * @param options.immediate - When `true`, skips the debounce and saves synchronously.
      */
     function saveAll(options: SaveOptions = {}): void {
         if (options.immediate) {
@@ -319,7 +339,11 @@ logger.debug('SESSION', 'SessionManager loaded');
     }
 
     /**
-     * Save instances of a specific type (debounced by default)
+     * Save instances of a specific type only.
+     *
+     * @param instanceType - The type key (e.g. `'terminal'`, `'text-editor'`).
+     * @param options - Save options.
+     * @param options.immediate - When `true`, saves synchronously without debounce.
      */
     function saveInstanceType(instanceType: string, options: SaveOptions = {}): void {
         if (options.immediate) {
@@ -334,7 +358,11 @@ logger.debug('SESSION', 'SessionManager loaded');
     }
 
     /**
-     * Restore session from localStorage with Batch Restore for performance
+     * Restore all window instances from the last saved session.
+     *
+     * Calls each registered instance manager's `restoreInstances` method.
+     *
+     * @returns `true` if a valid session was found and restored, `false` otherwise.
      */
     function restoreSession(): boolean {
         const perf = (
@@ -464,7 +492,9 @@ logger.debug('SESSION', 'SessionManager loaded');
     }
 
     /**
-     * Configure debounce delay
+     * Set the debounce delay for auto-save.
+     *
+     * @param ms - Delay in milliseconds. Must be between 100 and 5000.
      */
     function setDebounceDelay(ms: number): void {
         if (ms < 100 || ms > 5000) {
@@ -479,14 +509,18 @@ logger.debug('SESSION', 'SessionManager loaded');
     }
 
     /**
-     * Get current debounce delay
+     * Get the current debounce delay in milliseconds.
+     *
+     * @returns Current debounce delay (ms).
      */
     function getDebounceDelay(): number {
         return debounceDelay;
     }
 
     /**
-     * Clear all saved session data
+     * Clear all saved session data from localStorage and reset internal state.
+     *
+     * Any pending debounced save is also cancelled.
      */
     function clear(): void {
         if (saveTimer !== null) {
@@ -499,7 +533,9 @@ logger.debug('SESSION', 'SessionManager loaded');
     }
 
     /**
-     * Get session statistics
+     * Return aggregate statistics for the current session.
+     *
+     * @returns Object with `hasSession`, `instanceCount`, `types`, `timestamp`, `sizeBytes`, and `quotaExceeded`.
      */
     function getStats() {
         const session = readSession();
@@ -547,8 +583,17 @@ logger.debug('SESSION', 'SessionManager loaded');
     }
 
     /**
-     * Export current session as JSON string
-     * @returns JSON string of current session or null if no session exists
+     * Export the current session as a JSON string.
+     *
+     * Forces an immediate save before exporting to ensure the snapshot is up-to-date.
+     *
+     * @returns JSON string, or `null` if there is no active session.
+     *
+     * @example
+     * ```typescript
+     * const backup = window.SessionManager.exportSession();
+     * if (backup) localStorage.setItem('my-backup', backup);
+     * ```
      */
     function exportSession(): string | null {
         // First save current state to ensure we export the latest

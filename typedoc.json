@@ -1,0 +1,25 @@
+{
+    "entryPoints": ["src/ts"],
+    "entryPointStrategy": "expand",
+    "tsconfig": "tsconfig.tsbuild.json",
+    "out": "docs/api",
+    "exclude": [
+        "**/node_modules/**",
+        "**/*.test.ts",
+        "**/tests/**",
+        "**/i18n/de.ts",
+        "**/i18n/en.ts"
+    ],
+    "excludePrivate": true,
+    "excludeProtected": false,
+    "excludeInternal": true,
+    "readme": "docs/api-intro.md",
+    "categorizeByGroup": true,
+    "categoryOrder": ["Core", "Services", "Windows", "UI", "Apps", "*"],
+    "navigation": {
+        "includeCategories": true,
+        "includeGroups": true
+    },
+    "skipErrorChecking": true,
+    "logLevel": "Warn"
+}
