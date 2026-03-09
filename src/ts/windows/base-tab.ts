@@ -200,7 +200,7 @@ export class BaseTab {
      * Rehydrierung – Subklassen überschreiben diese Methode meist, um ihren
      * konkreten Zustand zurückzusetzen.
      */
-    static deserialize(state: TabState): BaseTab {
+    static deserialize(state: TabState & Record<string, unknown>): BaseTab {
         return new BaseTab({
             id: state.id,
             type: state.type,

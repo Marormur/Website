@@ -549,15 +549,15 @@ class MultiWindowSessionManager {
             // Determine tab class based on type
             switch (data.type) {
                 case 'terminal-session':
-                    return TerminalSession.deserialize(data as unknown as Record<string, unknown>);
+                    return TerminalSession.deserialize(data as TabState & Record<string, unknown>);
 
                 case 'text-editor-document':
                     return TextEditorDocument.deserialize(
-                        data as unknown as Record<string, unknown>
+                        data as TabState & Record<string, unknown>
                     );
 
                 case 'finder-view':
-                    return FinderView.deserialize(data as unknown as Record<string, unknown>);
+                    return FinderView.deserialize(data as TabState & Record<string, unknown>);
 
                 default:
                     logger.warn(
@@ -740,7 +740,7 @@ class MultiWindowSessionManager {
             for (const sessionData of instances['terminal']) {
                 try {
                     const session = TerminalSession.deserialize(
-                        sessionData as Record<string, unknown>
+                        sessionData as TabState & Record<string, unknown>
                     );
                     termWindow.addTab(session);
                 } catch (error) {
@@ -764,7 +764,9 @@ class MultiWindowSessionManager {
 
             for (const docData of instances['text-editor']) {
                 try {
-                    const doc = TextEditorDocument.deserialize(docData as Record<string, unknown>);
+                    const doc = TextEditorDocument.deserialize(
+                        docData as TabState & Record<string, unknown>
+                    );
                     editorWindow.addTab(doc);
                 } catch (error) {
                     logger.error(
@@ -787,7 +789,9 @@ class MultiWindowSessionManager {
 
             for (const viewData of instances['finder']) {
                 try {
-                    const view = FinderView.deserialize(viewData as Record<string, unknown>);
+                    const view = FinderView.deserialize(
+                        viewData as TabState & Record<string, unknown>
+                    );
                     finderWindow.addTab(view);
                 } catch (error) {
                     logger.error(

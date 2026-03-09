@@ -727,7 +727,7 @@ export class TerminalSession extends BaseTab {
         } as TabState;
     }
 
-    static deserialize(state: Record<string, unknown>): TerminalSession {
+    static deserialize(state: TabState & Record<string, unknown>): TerminalSession {
         const session = new TerminalSession({
             id: state['id'] as string | undefined,
             title: state['title'] as string | undefined,

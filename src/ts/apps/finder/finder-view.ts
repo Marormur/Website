@@ -1768,7 +1768,7 @@ export class FinderView extends BaseTab {
         } as TabState;
     }
 
-    static deserialize(state: Record<string, unknown>): FinderView {
+    static deserialize(state: TabState & Record<string, unknown>): FinderView {
         const view = new FinderView({
             id: state['id'] as string | undefined,
             title:
@@ -1993,16 +1993,16 @@ export class FinderView extends BaseTab {
                 const cacheKey = 'repos';
 
                 // Check cache state using the new API
-                const cacheState = API.getCacheState
-                    ? API.getCacheState('repos')
-                    : API.isCacheStale?.('repos')
-                      ? 'stale'
-                      : API.readCache?.('repos')
-                        ? 'fresh'
-                        : 'missing';
+                const cacheState =
+                    (API as any).getCacheState?.('repos') ??
+                    ((API as any).isCacheStale?.('repos')
+                        ? 'stale'
+                        : (API as any).readCache?.('repos')
+                          ? 'fresh'
+                          : 'missing');
 
                 const cached = this._readGithubCache(cacheKey);
-                const apiCached = API.readCache?.('repos');
+                const apiCached = (API as any).readCache?.('repos');
 
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
@@ -2014,7 +2014,7 @@ export class FinderView extends BaseTab {
                         this._showRefreshIndicator();
                         API.fetchUserRepos(username)
                             .then((freshRepos: unknown) => {
-                                API.writeCache?.('repos', '', '', freshRepos);
+                                (API as any).writeCache?.('repos', '', '', freshRepos);
                                 this._writeGithubCache(cacheKey, freshRepos);
                                 this._updateRepoItems(freshRepos as GitHubRepo[]);
                                 this._hideRefreshIndicator();
@@ -2035,7 +2035,7 @@ export class FinderView extends BaseTab {
                     this._renderAll();
 
                     const repos = API.fetchUserRepos ? await API.fetchUserRepos(username) : [];
-                    API.writeCache?.('repos', '', '', repos);
+                    (API as any).writeCache?.('repos', '', '', repos);
                     this._writeGithubCache(cacheKey, repos);
                     this.githubLoading = false;
                     this._updateRepoItems(repos as GitHubRepo[]);
@@ -2047,16 +2047,16 @@ export class FinderView extends BaseTab {
                 const cacheKey = `${repo}/${subPath}`;
 
                 // Check cache state
-                const cacheState = API.getCacheState
-                    ? API.getCacheState('contents', repo, subPath)
-                    : API.isCacheStale?.('contents', repo, subPath)
-                      ? 'stale'
-                      : API.readCache?.('contents', repo, subPath)
-                        ? 'fresh'
-                        : 'missing';
+                const cacheState =
+                    (API as any).getCacheState?.('contents', repo, subPath) ??
+                    ((API as any).isCacheStale?.('contents', repo, subPath)
+                        ? 'stale'
+                        : (API as any).readCache?.('contents', repo, subPath)
+                          ? 'fresh'
+                          : 'missing');
 
                 const cached = this._readGithubCache(cacheKey);
-                const apiCached = API.readCache?.('contents', repo, subPath);
+                const apiCached = (API as any).readCache?.('contents', repo, subPath);
 
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
@@ -2068,7 +2068,7 @@ export class FinderView extends BaseTab {
                         this._showRefreshIndicator();
                         API.fetchRepoContents(username, repo, subPath)
                             .then((freshContents: unknown) => {
-                                API.writeCache?.('contents', repo, subPath, freshContents);
+                                (API as any).writeCache?.('contents', repo, subPath, freshContents);
                                 this._writeGithubCache(cacheKey, freshContents);
                                 this._updateContentItems(freshContents as GitHubContentItem[]);
                                 this._hideRefreshIndicator();
@@ -2091,7 +2091,7 @@ export class FinderView extends BaseTab {
                     const contents = API.fetchRepoContents
                         ? await API.fetchRepoContents(username, repo, subPath)
                         : [];
-                    API.writeCache?.('contents', repo, subPath, contents);
+                    (API as any).writeCache?.('contents', repo, subPath, contents);
                     this._writeGithubCache(cacheKey, contents);
                     this.githubLoading = false;
                     this._updateContentItems(contents as GitHubContentItem[]);

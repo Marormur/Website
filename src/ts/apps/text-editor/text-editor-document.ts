@@ -392,7 +392,7 @@ export class TextEditorDocument extends BaseTab {
         } as TabState;
     }
 
-    static deserialize(state: Record<string, unknown>): TextEditorDocument {
+    static deserialize(state: TabState & Record<string, unknown>): TextEditorDocument {
         const doc = new TextEditorDocument({
             id: state['id'] as string | undefined,
             title:
