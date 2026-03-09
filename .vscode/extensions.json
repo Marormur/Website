@@ -13,6 +13,9 @@
     // Playwright Testing
     "ms-playwright.playwright",
 
+    // Vitest Testing
+    "vitest.explorer",
+
     // Git & Version Control
     "github.vscode-pull-request-github",
 

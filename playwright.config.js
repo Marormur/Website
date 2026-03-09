@@ -12,7 +12,8 @@ import { defineConfig, devices } from '@playwright/test';
 const BASE_URL = 'http://127.0.0.1:5173';
 
 export default defineConfig({
-    testDir: './tests',
+    // Keep Playwright discovery scoped to E2E specs; unit tests are executed by Vitest.
+    testDir: './tests/e2e',
     // Reduced timeout for faster feedback - individual tests can override if needed
     timeout: 30 * 1000,
     expect: { timeout: 8000 },

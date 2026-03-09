@@ -33,6 +33,12 @@
   "playwright.reuseBrowser": false,
   "playwright.showTrace": false,
 
+  // Vitest Testing
+  // Explicitly pin the root config so the VS Code Vitest TestController
+  // discovers unit tests from tests/unit/**/*.test.ts in this workspace.
+  "vitest.rootConfig": "vitest.config.ts",
+  "vitest.cliArguments": "--silent",
+
   // File Associations
   "files.associations": {
     "*.config.mjs": "javascript"
