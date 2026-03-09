@@ -131,10 +131,10 @@ export function getWindowActions(): ActionMap {
         openProgramInfo: () => {
             const g = getGlobal<{
                 hideMenuDropdowns?: () => void;
-                openProgramInfoDialog?: (arg: unknown) => void;
+                openProgramInfoFromMenu?: (arg?: unknown) => void;
             }>('');
             g?.hideMenuDropdowns?.();
-            g?.openProgramInfoDialog?.(null);
+            g?.openProgramInfoFromMenu?.();
         },
 
         openAbout: () => {
@@ -174,6 +174,117 @@ export function getWindowActions(): ActionMap {
                     logger.warn('UI', `openDesktopItem: no shortcut found for id "${itemId}"`);
                 }
             });
+        },
+
+        /**
+         * Traffic-Light Button: Close Window
+         * Closes the window containing the clicked element
+         */
+        'window-close': (_params: Params, element?: HTMLElement) => {
+            if (!element) {
+                logger.warn('UI', '[ActionBus] window-close: no element provided');
+                return;
+            }
+
+            const modal = element.closest('.modal') as HTMLElement | null;
+            if (!modal) {
+                logger.warn('UI', '[ActionBus] window-close: no .modal ancestor found');
+                return;
+            }
+
+            const windowId = modal.id;
+
+            // Try WindowRegistry first (for multi-window system)
+            const registry = getGlobal<{
+                getWindow?: (id: string) => { close?: () => void } | null;
+            }>('WindowRegistry');
+            const win = registry?.getWindow?.(windowId);
+            if (win?.close) {
+                win.close();
+                return;
+            }
+
+            // Fallback: legacy WindowManager
+            const wm = getGlobal<{ close?: (id: string) => void }>('WindowManager');
+            wm?.close?.(windowId);
+
+            const g = getGlobal<{
+                saveOpenModals?: () => void;
+                updateDockIndicators?: () => void;
+                updateProgramLabelByTopModal?: () => void;
+            }>('');
+            g?.saveOpenModals?.();
+            g?.updateDockIndicators?.();
+            g?.updateProgramLabelByTopModal?.();
+        },
+
+        /**
+         * Traffic-Light Button: Minimize Window
+         * Minimizes the window containing the clicked element
+         */
+        'window-minimize': (_params: Params, element?: HTMLElement) => {
+            if (!element) {
+                logger.warn('UI', '[ActionBus] window-minimize: no element provided');
+                return;
+            }
+
+            const modal = element.closest('.modal') as HTMLElement | null;
+            if (!modal) {
+                logger.warn('UI', '[ActionBus] window-minimize: no .modal ancestor found');
+                return;
+            }
+
+            const windowId = modal.id;
+
+            // Try WindowRegistry first
+            const registry = getGlobal<{
+                getWindow?: (id: string) => { minimize?: () => void } | null;
+            }>('WindowRegistry');
+            const win = registry?.getWindow?.(windowId);
+            if (win?.minimize) {
+                win.minimize();
+                return;
+            }
+
+            // Fallback: legacy WindowManager
+            const wm = getGlobal<{ minimize?: (id: string) => void }>('WindowManager');
+            wm?.minimize?.(windowId);
+
+            const g = getGlobal<{ updateDockIndicators?: () => void }>('');
+            g?.updateDockIndicators?.();
+        },
+
+        /**
+         * Traffic-Light Button: Maximize/Zoom Window
+         * Toggles fullscreen for the window containing the clicked element
+         */
+        'window-maximize': (_params: Params, element?: HTMLElement) => {
+            if (!element) {
+                logger.warn('UI', '[ActionBus] window-maximize: no element provided');
+                return;
+            }
+
+            const modal = element.closest('.modal') as HTMLElement | null;
+            if (!modal) {
+                logger.warn('UI', '[ActionBus] window-maximize: no .modal ancestor found');
+                return;
+            }
+
+            const windowId = modal.id;
+
+            // Try WindowRegistry first
+            const registry = getGlobal<{
+                getWindow?: (id: string) => { toggleFullscreen?: () => void } | null;
+            }>('WindowRegistry');
+            const win = registry?.getWindow?.(windowId);
+            if (win?.toggleFullscreen) {
+                win.toggleFullscreen();
+                return;
+            }
+
+            // Fallback: legacy WindowManager maximize behavior
+            const wm = getGlobal<{ maximize?: (id: string) => void }>('WindowManager');
+            wm?.maximize?.(windowId);
         },
     };
 }

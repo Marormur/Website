@@ -139,9 +139,30 @@ function buildFinderMenuDefinition(context: MenuContext) {
                     id: 'finder-close',
                     label: () => translate('menu.finder.close'),
                     shortcut: '⌘W',
-                    disabled: () => !(context && context.dialog),
+                    disabled: () => {
+                        // Check if there's an active Finder window via WindowRegistry (Multi-Window)
+                        const registry = window['WindowRegistry'];
+                        if (registry) {
+                            const finderWindows = registry.getAllWindows?.('finder') || [];
+                            if (finderWindows.length > 0) return false;
+                        }
+                        // Fallback: Legacy dialog check
+                        return !(context && context.dialog);
+                    },
                     icon: 'close',
-                    action: () => closeContextWindow(context),
+                    action: () => {
+                        // Try Multi-Window System first
+                        const registry = window['WindowRegistry'];
+                        if (registry) {
+                            const activeWindow = registry.getActiveWindow?.();
+                            if (activeWindow && activeWindow.type === 'finder') {
+                                activeWindow.close?.();
+                                return;
+                            }
+                        }
+                        // Fallback to legacy dialog close
+                        closeContextWindow(context);
+                    },
                 },
             ],
         },
@@ -587,6 +608,12 @@ function createWindowMenuSection(context: MenuContext) {
 function getWindowMenuItems(context: MenuContext) {
     const dialog = context?.dialog;
     const hasDialog = Boolean(dialog && typeof dialog.close === 'function');
+
+    // Check if we're in Finder context
+    const isFinder =
+        context?.modalId === 'projects-modal' ||
+        window['WindowRegistry']?.getActiveWindow?.()?.type === 'finder';
+
     const items: Record<string, unknown>[] = [
         {
             id: 'window-minimize',
@@ -624,17 +651,25 @@ function getWindowMenuItems(context: MenuContext) {
             action: () => {
                 if (window['bringAllWindowsToFront']) window['bringAllWindowsToFront']();
             },
-        },
-        { type: 'separator' },
-        {
-            id: 'window-close',
-            label: () => translate('menu.window.close'),
-            shortcut: '⌘W',
-            disabled: !hasDialog,
-            icon: 'close',
-            action: () => closeContextWindow(context),
         }
     );
+
+    // "Fenster schließen" only for non-Finder windows
+    // (Finder has this in Ablage menu as per macOS convention)
+    if (!isFinder) {
+        items.push(
+            { type: 'separator' },
+            {
+                id: 'window-close',
+                label: () => translate('menu.window.close'),
+                shortcut: '⌘W',
+                disabled: !hasDialog,
+                icon: 'close',
+                action: () => closeContextWindow(context),
+            }
+        );
+    }
+
     return items;
 }
 
@@ -645,6 +680,10 @@ function getMultiInstanceMenuItems(context: MenuContext) {
     let newInstanceKey: string | null = null;
     const modalId = context?.modalId;
     const registry = window['WindowRegistry'];
+
+    // Check if we're in Finder context
+    const isFinder =
+        modalId === 'projects-modal' || registry?.getActiveWindow?.()?.type === 'finder';
 
     // Preferred path: Use WindowRegistry for all multi-window app types
     if (registry && typeof registry.getAllWindows === 'function') {
@@ -683,8 +722,11 @@ function getMultiInstanceMenuItems(context: MenuContext) {
             if (wins.length === 0) return;
             anyListed = true;
 
-            // New window action for this type
-            if (cfg.create) {
+            // SKIP "New Finder Window" in Window menu when in Finder (it's in Ablage/File menu)
+            const skipNewAction = isFinder && cfg.type === 'finder';
+
+            // New window action for this type (except Finder in Finder context)
+            if (cfg.create && !skipNewAction) {
                 items.push({
                     id: `window-new-${cfg.type}`,
                     label: () => translate(cfg.newKey),
@@ -772,16 +814,23 @@ function getMultiInstanceMenuItems(context: MenuContext) {
         newInstanceKey = 'menu.window.newEditor';
     }
     if (!manager) return items;
-    items.push({
-        id: 'window-new-instance',
-        label: () => translate(newInstanceKey || 'menu.window.newWindow'),
-        shortcut: '⌘N',
-        icon: 'new',
-        action: () => {
-            const count = manager.getInstanceCount();
-            manager.createInstance({ title: `${typeLabel} ${count + 1}` });
-        },
-    });
+
+    // SKIP "New Finder Window" in legacy path too (it's in Ablage/File menu)
+    const skipNewAction = isFinder && typeLabel === 'Finder';
+
+    if (!skipNewAction) {
+        items.push({
+            id: 'window-new-instance',
+            label: () => translate(newInstanceKey || 'menu.window.newWindow'),
+            shortcut: '⌘N',
+            icon: 'new',
+            action: () => {
+                const count = manager.getInstanceCount();
+                manager.createInstance({ title: `${typeLabel} ${count + 1}` });
+            },
+        });
+    }
+
     const instances = manager.getAllInstances();
     if (instances.length > 1) {
         items.push({ type: 'separator' });

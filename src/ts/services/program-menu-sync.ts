@@ -10,14 +10,88 @@
         about?: { name?: string; tagline?: string; version?: string; copyright?: string };
     };
 
-    // Resolve Program Info via WindowManager or fallback
+    // Resolve Program Info via WindowManager, WindowRegistry, or fallback
     function resolveProgramInfo(modalId: string | null): ProgramInfo {
-        const wm = (window as unknown as { WindowManager?: { getProgramInfo: (id: string | null) => ProgramInfo } }).WindowManager;
+        const translate = (window as unknown as { translate?: (k: string, fb?: string) => string })
+            .translate;
+        const t = (k: string, fb?: string) => (translate ? translate(k, fb) : fb || k);
+
+        // First try WindowRegistry for multi-window apps
+        const registry = (
+            window as unknown as {
+                WindowRegistry?: { getActiveWindow?: () => { type?: string; id?: string } | null };
+            }
+        ).WindowRegistry;
+        if (registry && typeof registry.getActiveWindow === 'function' && !modalId) {
+            const activeWindow = registry.getActiveWindow();
+            if (activeWindow && activeWindow.type) {
+                // Map window types to program info
+                const typeMap: Record<string, ProgramInfo> = {
+                    finder: {
+                        modalId: null,
+                        programLabel: t('programs.finder.label', 'Finder'),
+                        infoLabel: t('programs.finder.infoLabel', 'Über Finder'),
+                        fallbackInfoModalId: 'program-info-modal',
+                        icon: './img/sucher.png',
+                        about: {
+                            name: 'Finder',
+                            tagline: t(
+                                'programs.finder.about.tagline',
+                                'der innovative Marvintosh-Schreibtisch'
+                            ),
+                            version: '1.0.0',
+                            copyright: '© 2024-2026',
+                        },
+                    },
+                    terminal: {
+                        modalId: null,
+                        programLabel: t('programs.terminal.label', 'Terminal'),
+                        infoLabel: t('programs.terminal.infoLabel', 'Über Terminal'),
+                        fallbackInfoModalId: 'program-info-modal',
+                        icon: './img/terminal.png',
+                        about: {
+                            name: 'Terminal',
+                            tagline: t(
+                                'programs.terminal.about.tagline',
+                                'Kommandozeilen-Interface'
+                            ),
+                            version: '1.0.0',
+                            copyright: '© 2024-2026',
+                        },
+                    },
+                    'text-editor': {
+                        modalId: null,
+                        programLabel: t('programs.text.label', 'TextEdit'),
+                        infoLabel: t('programs.text.infoLabel', 'Über TextEdit'),
+                        fallbackInfoModalId: 'program-info-modal',
+                        icon: './img/notepad.png',
+                        about: {
+                            name: 'TextEdit',
+                            tagline: t('programs.text.about.tagline', 'Einfacher Texteditor'),
+                            version: '1.0.0',
+                            copyright: '© 2024-2026',
+                        },
+                    },
+                };
+
+                const typeInfo = typeMap[activeWindow.type];
+                if (typeInfo) {
+                    return typeInfo;
+                }
+            }
+        }
+
+        // Then try WindowManager (legacy)
+        const wm = (
+            window as unknown as {
+                WindowManager?: { getProgramInfo: (id: string | null) => ProgramInfo };
+            }
+        ).WindowManager;
         if (wm && typeof wm.getProgramInfo === 'function') {
             return wm.getProgramInfo(modalId);
         }
-        const translate = (window as unknown as { translate?: (k: string, fb?: string) => string }).translate;
-        const t = (k: string, fb?: string) => (translate ? translate(k, fb) : fb || k);
+
+        // Fallback to default
         return {
             modalId: modalId || null,
             programLabel: t('programs.default.label'),
@@ -34,13 +108,15 @@
     }
 
     function getTopModal(): HTMLElement | null {
-        const wm = (window as unknown as { WindowManager?: { getTopWindow: () => HTMLElement | null } }).WindowManager;
+        const wm = (
+            window as unknown as { WindowManager?: { getTopWindow: () => HTMLElement | null } }
+        ).WindowManager;
         if (wm && typeof wm.getTopWindow === 'function') {
             return wm.getTopWindow();
         }
         let top: HTMLElement | null = null;
         let highest = 0;
-        document.querySelectorAll<HTMLElement>('.modal:not(.hidden)').forEach((modal) => {
+        document.querySelectorAll<HTMLElement>('.modal:not(.hidden)').forEach(modal => {
             const z = parseInt(getComputedStyle(modal).zIndex, 10) || 0;
             if (z > highest) {
                 highest = z;
@@ -66,7 +142,8 @@
     function renderProgramInfo(info: ProgramInfo): void {
         const modal = document.getElementById('program-info-modal');
         if (!modal) return;
-        (modal as HTMLElement & { dataset: { infoTarget?: string } }).dataset.infoTarget = info.modalId || '';
+        (modal as HTMLElement & { dataset: { infoTarget?: string } }).dataset.infoTarget =
+            info.modalId || '';
         const fallbackInfo = resolveProgramInfo(null);
         const about = info.about || fallbackInfo.about || {};
         const iconEl = modal.querySelector('#program-info-icon') as HTMLImageElement | null;
@@ -104,7 +181,11 @@
     }
 
     function renderApplicationMenu(modalId: string | null): void {
-        const MenuSystem = (window as unknown as { MenuSystem?: { renderApplicationMenu?: (id: string | null) => void } }).MenuSystem;
+        const MenuSystem = (
+            window as unknown as {
+                MenuSystem?: { renderApplicationMenu?: (id: string | null) => void };
+            }
+        ).MenuSystem;
         if (MenuSystem && typeof MenuSystem.renderApplicationMenu === 'function') {
             MenuSystem.renderApplicationMenu(modalId);
         }
@@ -119,7 +200,8 @@
             event.preventDefault();
             event.stopPropagation();
         }
-        const hideMenus = (window as unknown as { hideMenuDropdowns?: () => void }).hideMenuDropdowns;
+        const hideMenus = (window as unknown as { hideMenuDropdowns?: () => void })
+            .hideMenuDropdowns;
         if (hideMenus) hideMenus();
         const info = infoOverride || currentProgramInfo || getProgramInfo(null);
         currentProgramInfo = info;
@@ -134,7 +216,8 @@
         if (fallbackId === 'program-info-modal') {
             renderProgramInfo(info);
         }
-        const dialogs = (window as unknown as { dialogs?: Record<string, { open?: () => void }> }).dialogs;
+        const dialogs = (window as unknown as { dialogs?: Record<string, { open?: () => void }> })
+            .dialogs;
         const dialogInstance = dialogs && dialogs[fallbackId];
         if (dialogInstance && typeof dialogInstance.open === 'function') {
             dialogInstance.open();
@@ -142,7 +225,9 @@
             const modalElement = document.getElementById(fallbackId);
             if (modalElement) {
                 modalElement.classList.remove('hidden');
-                const bringToFront = (window as unknown as { dialogs?: Record<string, { bringToFront?: () => void }> }).dialogs?.[fallbackId]?.bringToFront;
+                const bringToFront = (
+                    window as unknown as { dialogs?: Record<string, { bringToFront?: () => void }> }
+                ).dialogs?.[fallbackId]?.bringToFront;
                 if (bringToFront) bringToFront();
                 updateProgramLabelByTopModal();
             }
@@ -158,12 +243,26 @@
 
     function updateProgramLabelByTopModal(): ProgramInfo {
         const topModal = getTopModal();
-        const wm = (window as unknown as { WindowManager?: { getConfig: (id: string) => { metadata?: { skipMenubarUpdate?: boolean } } | null } }).WindowManager;
+        const wm = (
+            window as unknown as {
+                WindowManager?: {
+                    getConfig: (
+                        id: string
+                    ) => { metadata?: { skipMenubarUpdate?: boolean } } | null;
+                };
+            }
+        ).WindowManager;
         if (topModal && wm) {
             const config = wm.getConfig(topModal.id);
             if (config && config.metadata && config.metadata.skipMenubarUpdate) {
-                const all = Array.from(document.querySelectorAll<HTMLElement>('.modal:not(.hidden)'));
-                const sorted = all.sort((a, b) => (parseInt(getComputedStyle(b).zIndex, 10) || 0) - (parseInt(getComputedStyle(a).zIndex, 10) || 0));
+                const all = Array.from(
+                    document.querySelectorAll<HTMLElement>('.modal:not(.hidden)')
+                );
+                const sorted = all.sort(
+                    (a, b) =>
+                        (parseInt(getComputedStyle(b).zIndex, 10) || 0) -
+                        (parseInt(getComputedStyle(a).zIndex, 10) || 0)
+                );
                 let next: HTMLElement | null = null;
                 for (const m of sorted) {
                     const mc = wm.getConfig(m.id);
@@ -183,7 +282,12 @@
             }
         }
         let info: ProgramInfo;
-        if (topModal && topModal.id === 'program-info-modal' && currentProgramInfo && currentProgramInfo.modalId) {
+        if (
+            topModal &&
+            topModal.id === 'program-info-modal' &&
+            currentProgramInfo &&
+            currentProgramInfo.modalId
+        ) {
             info = resolveProgramInfo(currentProgramInfo.modalId);
             currentProgramInfo = info;
         } else {
@@ -198,32 +302,45 @@
 
     // React to language/theme changes similar to legacy
     // Avoid double-binding if legacy already wired these listeners
-    const alreadyWired = (window as unknown as { __programMenuSyncWired?: boolean }).__programMenuSyncWired;
+    const alreadyWired = (window as unknown as { __programMenuSyncWired?: boolean })
+        .__programMenuSyncWired;
     if (!alreadyWired) {
         (window as unknown as { __programMenuSyncWired?: boolean }).__programMenuSyncWired = true;
     }
 
-    if (!alreadyWired) window.addEventListener('languagePreferenceChange', () => {
-        const info = updateProgramLabelByTopModal();
-        const programInfoModal = document.getElementById('program-info-modal') as HTMLElement | null;
-        if (programInfoModal && !programInfoModal.classList.contains('hidden')) {
-            const ds: DOMStringMap = programInfoModal.dataset;
-            const targetId = ds['infoTarget'] || (info ? info.modalId : null) || null;
-            const infoForDialog = resolveProgramInfo(targetId);
-            renderProgramInfo(infoForDialog);
-            if (info && info.modalId === infoForDialog.modalId) {
-                currentProgramInfo = infoForDialog;
+    if (!alreadyWired)
+        window.addEventListener('languagePreferenceChange', () => {
+            const info = updateProgramLabelByTopModal();
+            const programInfoModal = document.getElementById(
+                'program-info-modal'
+            ) as HTMLElement | null;
+            if (programInfoModal && !programInfoModal.classList.contains('hidden')) {
+                const ds: DOMStringMap = programInfoModal.dataset;
+                const targetId = ds['infoTarget'] || (info ? info.modalId : null) || null;
+                const infoForDialog = resolveProgramInfo(targetId);
+                renderProgramInfo(infoForDialog);
+                if (info && info.modalId === infoForDialog.modalId) {
+                    currentProgramInfo = infoForDialog;
+                }
             }
-        }
-        const updateAllSystemStatusUI = (window as unknown as { updateAllSystemStatusUI?: () => void }).updateAllSystemStatusUI;
-        if (updateAllSystemStatusUI) updateAllSystemStatusUI();
-    });
-    if (!alreadyWired) window.addEventListener('themePreferenceChange', () => {
-        const updateAllSystemStatusUI = (window as unknown as { updateAllSystemStatusUI?: () => void }).updateAllSystemStatusUI;
-        if (updateAllSystemStatusUI) updateAllSystemStatusUI();
-    });
+            const updateAllSystemStatusUI = (
+                window as unknown as { updateAllSystemStatusUI?: () => void }
+            ).updateAllSystemStatusUI;
+            if (updateAllSystemStatusUI) updateAllSystemStatusUI();
+        });
+    if (!alreadyWired)
+        window.addEventListener('themePreferenceChange', () => {
+            const updateAllSystemStatusUI = (
+                window as unknown as { updateAllSystemStatusUI?: () => void }
+            ).updateAllSystemStatusUI;
+            if (updateAllSystemStatusUI) updateAllSystemStatusUI();
+        });
 
     // Export legacy globals for compatibility
-    (window as unknown as { updateProgramLabelByTopModal: typeof updateProgramLabelByTopModal }).updateProgramLabelByTopModal = updateProgramLabelByTopModal;
-    (window as unknown as { openProgramInfoFromMenu: typeof openProgramInfoFromMenu }).openProgramInfoFromMenu = openProgramInfoFromMenu;
+    (
+        window as unknown as { updateProgramLabelByTopModal: typeof updateProgramLabelByTopModal }
+    ).updateProgramLabelByTopModal = updateProgramLabelByTopModal;
+    (
+        window as unknown as { openProgramInfoFromMenu: typeof openProgramInfoFromMenu }
+    ).openProgramInfoFromMenu = openProgramInfoFromMenu;
 })();

@@ -272,7 +272,7 @@ export const en = {
             infoLabel: 'About Finder',
             about: {
                 name: 'Finder',
-                tagline: 'The innovative desktop file manager.',
+                tagline: 'The innovative Marvintosh desktop',
                 version: 'Version 2.0',
                 copyright: '© Marvin Temmen. All rights reserved.',
             },

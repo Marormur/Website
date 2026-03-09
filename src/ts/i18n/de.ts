@@ -307,7 +307,7 @@ export const de = {
             infoLabel: 'Über Sucher',
             about: {
                 name: 'Sucher',
-                tagline: 'Der innovative Desktop-Dateimanager.',
+                tagline: 'Der innovative Marvintosh-Schreibtisch',
                 version: 'Version 2.0',
                 copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
             },
