@@ -8,11 +8,11 @@
  *
  * @example
  * ```typescript
- * // Open a registered window
- * window.WindowManager.open('finder-window');
+ * // Open a registered window (window IDs match those in window-configs.ts, e.g. 'settings-modal')
+ * window.WindowManager.open('settings-modal');
  *
- * // Bring a window to the foreground
- * window.WindowManager.bringToFront('terminal-window');
+ * // Bring an already-visible window to the foreground
+ * window.WindowManager.bringToFront('about-modal');
  *
  * // Query all persistent windows
  * const ids = window.WindowManager.getPersistentWindowIds();

@@ -969,7 +969,7 @@ class VirtualFileSystemManager {
      * Read the text content of a file.
      *
      * @param path - Path to an existing file.
-     * @returns File content string, or `null` if the file does not exist.
+     * @returns File content string, or `null` if the file does not exist or has empty content.
      *
      * @example
      * ```typescript
@@ -1305,7 +1305,7 @@ class VirtualFileSystemManager {
     /**
      * Reset the filesystem to its default structure, clearing all user data.
      *
-     * @warning This is destructive and cannot be undone.
+     * @remarks **Warning:** This is destructive and cannot be undone.
      */
     reset(): void {
         this.root = this.createDefaultStructure();

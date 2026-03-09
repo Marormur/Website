@@ -535,7 +535,8 @@ logger.debug('SESSION', 'SessionManager loaded');
     /**
      * Return aggregate statistics for the current session.
      *
-     * @returns Object with `hasSession`, `instanceCount`, `types`, `timestamp`, `sizeBytes`, and `quotaExceeded`.
+     * @returns Object with `hasSession`, `instanceCount`, `types`, `timestamp`, and `sizeBytes`.
+     *   When `hasSession` is `true`, the object also includes `quotaExceeded` (boolean).
      */
     function getStats() {
         const session = readSession();

@@ -21,10 +21,10 @@ virtual file system, multi-instance windows, and an event-driven action bus.
 
 ```typescript
 // Via ActionBus (preferred – declarative)
-// In HTML: <button data-action="openWindow" data-id="finder-window">Open Finder</button>
+// In HTML: <button data-action="openWindow" data-window-id="settings-modal">Open Settings</button>
 
 // Programmatically
-window.WindowManager.bringToFront('finder-window');
+window.WindowManager.open('settings-modal');
 ```
 
 #### Using VirtualFS
@@ -54,7 +54,7 @@ VirtualFS.addEventListener(event => {
 
 ```typescript
 // Via global API (available after app-init)
-const label = API.i18n.translate('menu.file', { fallback: 'File' });
+const label = API.i18n.translate('menu.file', {}, { fallback: 'File' });
 
 // Or via window.appI18n
 const greeting = window.appI18n.translate('greeting', { name: 'Marvin' });
