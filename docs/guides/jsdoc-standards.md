@@ -103,11 +103,12 @@ export class MyClass {
 
 | Area | Target |
 |------|--------|
-| Core Services | 100% |
-| Window System | 100% |
-| UI Components | 90% |
-| Apps | 80% |
-| Utils | 70% |
+| Core Services (`src/ts/services/`, `src/ts/core/`) | 100% |
+| Window System (`src/ts/windows/`) | 100% |
+| UI Components (`src/ts/ui/`) | 90% |
+| Apps (`src/ts/apps/`) | 80% |
+| Framework (`src/ts/framework/`) | 70% |
+| Utils (`src/ts/utils/`) | 70% |
 
 ## Generating Docs
 

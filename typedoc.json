@@ -1,5 +1,7 @@
 {
-    "entryPoints": ["src/ts"],
+    "entryPoints": [
+        "src/ts"
+    ],
     "entryPointStrategy": "expand",
     "tsconfig": "tsconfig.tsbuild.json",
     "out": "docs/api",
@@ -15,7 +17,14 @@
     "excludeInternal": true,
     "readme": "docs/api-intro.md",
     "categorizeByGroup": true,
-    "categoryOrder": ["Core", "Services", "Windows", "UI", "Apps", "*"],
+    "categoryOrder": [
+        "Core",
+        "Services",
+        "Windows",
+        "UI",
+        "Apps",
+        "*"
+    ],
     "navigation": {
         "includeCategories": true,
         "includeGroups": true

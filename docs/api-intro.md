@@ -86,7 +86,8 @@ src/ts/
 ├── windows/     Window management (WindowManager, BaseWindow, InstanceManager)
 ├── ui/          Desktop UI (ActionBus, Dock, Menu, Dialog, ContextMenu)
 ├── apps/        Built-in applications (Finder, Terminal, TextEditor, Photos)
-└── framework/   Reusable UI framework components
+├── framework/   Reusable UI framework components (components, layout, controls, data views)
+└── utils/       Shared utilities (auto-save helpers, etc.)
 ```
 
 ## Contributing
