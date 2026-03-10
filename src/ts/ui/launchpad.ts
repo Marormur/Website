@@ -64,6 +64,8 @@ logger.debug('UI', 'Launchpad (TS) loaded');
         }
         const windowIds: string[] = WM.getAllWindowIds();
         allApps = [];
+        const seenProgramKeys = new Set<string>();
+
         windowIds.forEach(id => {
             const cfg = WM.getConfig(id);
             const info = WM.getProgramInfo(id) as
@@ -71,6 +73,28 @@ logger.debug('UI', 'Launchpad (TS) loaded');
                 | undefined;
             if (cfg && cfg.type === 'transient') return; // skip transient
             if (id === 'launchpad-modal') return; // skip self
+
+            // Skip system modals that shouldn't appear in Launchpad
+            if (id === 'projects-modal') return; // GitHub Projekte - system modal
+            if (id === 'about-modal') return; // About - system modal
+            if (id === 'program-info-modal') return; // Program info - system modal
+
+            // Deduplicate multi-window app types (finder, terminal, text-editor)
+            // Only show one entry per app type, not one per instance
+            const programKey = cfg?.programKey || '';
+            const isMultiWindowType = [
+                'programs.finder',
+                'programs.terminal',
+                'programs.text',
+            ].includes(programKey);
+
+            if (isMultiWindowType && seenProgramKeys.has(programKey)) {
+                return; // skip duplicate instance of same app type
+            }
+            if (isMultiWindowType) {
+                seenProgramKeys.add(programKey);
+            }
+
             if (info) {
                 allApps.push({
                     id,
