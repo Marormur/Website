@@ -15,32 +15,34 @@ Dieses Dokument identifiziert Verbesserungspunkte für das MacUI Framework, dami
 **Problem:** Keine wiederverwendbaren Input-Komponenten vorhanden.
 
 **Benötigte Komponenten:**
+
 - **`Input`**: Textfelder mit Validation Support
-  - Unterstützung für Typen: text, password, email, number, search
-  - Built-in Validierung (required, pattern, min/max)
-  - Error-State und Fehlermeldungen
-  - Prefix/Suffix Icons (z.B. Suchicon)
-  - macOS-Style: Rounded corners, Focus-Ring
+    - Unterstützung für Typen: text, password, email, number, search
+    - Built-in Validierung (required, pattern, min/max)
+    - Error-State und Fehlermeldungen
+    - Prefix/Suffix Icons (z.B. Suchicon)
+    - macOS-Style: Rounded corners, Focus-Ring
 
 - **`Select`**: Dropdown-Menüs (aktuell nur natives `<select>` in Finder)
-  - Custom Styling für macOS-Look
-  - Keyboard-Navigation
-  - Suchfunktion bei langen Listen
-  - Gruppierte Options
+    - Custom Styling für macOS-Look
+    - Keyboard-Navigation
+    - Suchfunktion bei langen Listen
+    - Gruppierte Options
 
 - **`Button`**: Standardisierte Buttons
-  - Varianten: primary, secondary, danger, ghost
-  - Größen: small, medium, large
-  - Loading-State mit Spinner
-  - Icon + Text Kombinationen
-  - macOS-Style Segmented Controls (wie in Finder-Toolbar)
+    - Varianten: primary, secondary, danger, ghost
+    - Größen: small, medium, large
+    - Loading-State mit Spinner
+    - Icon + Text Kombinationen
+    - macOS-Style Segmented Controls (wie in Finder-Toolbar)
 
 - **`Checkbox` & `Radio`**: Custom Styled Controls
-  - macOS-native Styling
-  - Indeterminate-State für Checkboxen
-  - Gruppierung für Radio-Buttons
+    - macOS-native Styling
+    - Indeterminate-State für Checkboxen
+    - Gruppierung für Radio-Buttons
 
 **Use Cases:**
+
 - Terminal: Settings/Preferences Dialog
 - TextEditor: Find/Replace Dialog, Settings
 - Photos: Metadata-Editor, Upload-Dialog
@@ -53,24 +55,26 @@ Dieses Dokument identifiziert Verbesserungspunkte für das MacUI Framework, dami
 **Problem:** Dialoge sind aktuell über globales `window.Dialog` System, nicht Framework-integriert.
 
 **Benötigte Komponenten:**
+
 - **`Modal`**: Overlay mit Content
-  - Backdrop (mit click-outside-to-close)
-  - Animationen (fade in/out)
-  - Focus-Trap (Keyboard-Navigation innerhalb Modal)
-  - ESC-Key zum Schließen
-  - Stacking (mehrere Modals übereinander)
+    - Backdrop (mit click-outside-to-close)
+    - Animationen (fade in/out)
+    - Focus-Trap (Keyboard-Navigation innerhalb Modal)
+    - ESC-Key zum Schließen
+    - Stacking (mehrere Modals übereinander)
 
 - **`Dialog`**: Vorgefertigte Modal-Varianten
-  - Alert Dialog (OK Button)
-  - Confirm Dialog (OK/Cancel)
-  - Prompt Dialog (Input + OK/Cancel)
-  - Custom Content Dialog
+    - Alert Dialog (OK Button)
+    - Confirm Dialog (OK/Cancel)
+    - Prompt Dialog (Input + OK/Cancel)
+    - Custom Content Dialog
 
 - **`Sheet`**: macOS-Style Sheets (von oben einfahrend)
-  - Für Preferences, Settings
-  - Smooth Animation
+    - Für Preferences, Settings
+    - Smooth Animation
 
 **Use Cases:**
+
 - Finder: "Datei erstellen" Dialog, Confirm Delete
 - Terminal: Clear History Confirm
 - TextEditor: Unsaved Changes Dialog, Find/Replace
@@ -83,23 +87,25 @@ Dieses Dokument identifiziert Verbesserungspunkte für das MacUI Framework, dami
 **Problem:** Context-Menüs existieren global (`window.ContextMenu`), aber nicht als Framework-Komponente.
 
 **Benötigte Komponenten:**
+
 - **`ContextMenu`**: Wiederverwendbares Kontext-Menü
-  - Trigger: right-click, programmatisch
-  - Positionierung: auto-adjust bei Viewport-Grenzen
-  - Submenu-Support
-  - Icons, Shortcuts, Separators
-  - Keyboard-Navigation
+    - Trigger: right-click, programmatisch
+    - Positionierung: auto-adjust bei Viewport-Grenzen
+    - Submenu-Support
+    - Icons, Shortcuts, Separators
+    - Keyboard-Navigation
 
 - **`Dropdown`**: Click-basiertes Menü
-  - Ähnlich zu ContextMenu, aber für Button-Trigger
-  - Alignment: left, right, center
+    - Ähnlich zu ContextMenu, aber für Button-Trigger
+    - Alignment: left, right, center
 
 - **`Tooltip`**: Hover-Informationen
-  - Auto-Positionierung
-  - Delay-Control
-  - Rich Content Support (nicht nur Text)
+    - Auto-Positionierung
+    - Delay-Control
+    - Rich Content Support (nicht nur Text)
 
 **Use Cases:**
+
 - Alle Apps: File/Edit/View Menüs
 - Finder: Right-Click auf Items
 - Terminal: Command History Dropdown
@@ -112,29 +118,31 @@ Dieses Dokument identifiziert Verbesserungspunkte für das MacUI Framework, dami
 **Problem:** Keine standardisierten Feedback-Komponenten.
 
 **Benötigte Komponenten:**
+
 - **`Toast`/`Notification`**: Temporäre Benachrichtigungen
-  - Varianten: success, error, warning, info
-  - Auto-Dismiss mit Countdown
-  - Action-Buttons (z.B. "Undo")
-  - Position: top-right, bottom-right, etc.
-  - Stacking mehrerer Toasts
+    - Varianten: success, error, warning, info
+    - Auto-Dismiss mit Countdown
+    - Action-Buttons (z.B. "Undo")
+    - Position: top-right, bottom-right, etc.
+    - Stacking mehrerer Toasts
 
 - **`ProgressBar`**: Fortschrittsanzeige
-  - Determinate (0-100%)
-  - Indeterminate (Loading Spinner)
-  - Circular vs. Linear
-  - Label/Percentage Text
+    - Determinate (0-100%)
+    - Indeterminate (Loading Spinner)
+    - Circular vs. Linear
+    - Label/Percentage Text
 
 - **`Badge`**: Status-Indikatoren
-  - Zahlen (z.B. Notification Count)
-  - Dots (z.B. Online/Offline Status)
-  - Farben: primary, success, warning, danger
+    - Zahlen (z.B. Notification Count)
+    - Dots (z.B. Online/Offline Status)
+    - Farben: primary, success, warning, danger
 
 - **`EmptyState`**: Leere Zustände
-  - Icon + Text + Optional Action Button
-  - Z.B. "Keine Dateien gefunden", "Keine Suchergebnisse"
+    - Icon + Text + Optional Action Button
+    - Z.B. "Keine Dateien gefunden", "Keine Suchergebnisse"
 
 **Use Cases:**
+
 - Finder: Upload Progress, "Repo cloned" Toast
 - Terminal: Command Execution Spinner
 - TextEditor: Save Success Toast, Character Count Badge
@@ -147,26 +155,28 @@ Dieses Dokument identifiziert Verbesserungspunkte für das MacUI Framework, dami
 **Problem:** Nur einfache List/Grid Views vorhanden.
 
 **Benötigte Komponenten:**
+
 - **`Tree`**: Hierarchische Datenstruktur
-  - Expand/Collapse
-  - Lazy Loading
-  - Checkbox-Support für Multi-Selection
-  - Drag & Drop Reordering
+    - Expand/Collapse
+    - Lazy Loading
+    - Checkbox-Support für Multi-Selection
+    - Drag & Drop Reordering
 
 - **`Table`**: Erweiterte Tabelle (über ListView hinaus)
-  - Column Resizing
-  - Column Reordering (Drag & Drop)
-  - Fixed Headers beim Scrollen
-  - Row Selection (Single/Multi)
-  - Expandable Rows (Details)
-  - Pagination
+    - Column Resizing
+    - Column Reordering (Drag & Drop)
+    - Fixed Headers beim Scrollen
+    - Row Selection (Single/Multi)
+    - Expandable Rows (Details)
+    - Pagination
 
 - **`VirtualList`**: Performance für große Datensätze
-  - Window-based Rendering (nur sichtbare Items)
-  - Smooth Scrolling
-  - Dynamic Item Heights
+    - Window-based Rendering (nur sichtbare Items)
+    - Smooth Scrolling
+    - Dynamic Item Heights
 
 **Use Cases:**
+
 - Finder: Tree View für Folder-Hierarchie
 - Terminal: Command History Table mit Timestamps
 - TextEditor: File Explorer Tree, Symbol Outline
@@ -181,12 +191,14 @@ Dieses Dokument identifiziert Verbesserungspunkte für das MacUI Framework, dami
 **Aktuell:** Nur `onMount()`, `onUpdate()`, `onDestroy()`
 
 **Fehlende Hooks:**
+
 - **`onBeforeMount()`**: Vor DOM-Insertion (z.B. async Data Loading)
 - **`onBeforeUpdate(prevProps, prevState)`**: Vor Re-Render (shouldComponentUpdate)
 - **`onAfterUpdate(prevProps, prevState)`**: Nach DOM-Patch (z.B. Scroll-Position wiederherstellen)
 - **`onError(error)`**: Error Boundary für Component-Tree
 
 **Begründung:**
+
 - Performance: `onBeforeUpdate` kann unnötige Re-Renders verhindern
 - Debugging: `onAfterUpdate` für DOM-Messungen/Logging
 - Robustheit: Error Boundaries verhindern App-Crash
@@ -198,26 +210,28 @@ Dieses Dokument identifiziert Verbesserungspunkte für das MacUI Framework, dami
 **Aktuell:** Einfacher `Store<T>` mit `setState()` und `subscribe()`
 
 **Verbesserungen:**
+
 - **Selektoren**: Zugriff auf Teil-States
-  ```typescript
-  const username = store.select(state => state.user.name);
-  ```
+    ```typescript
+    const username = store.select(state => state.user.name);
+    ```
 - **Middleware**: Logging, DevTools Integration
 - **Computed Values**: Abgeleitete States (wie Vue.js)
 - **Persistent Store**: Auto-Sync mit localStorage
 - **Store Composition**: Mehrere Stores kombinieren
 
 **Beispiel Use Case:**
+
 ```typescript
 const appStore = new Store({
-  theme: 'dark',
-  language: 'de',
-  user: { name: 'Marvin', repos: [] }
+    theme: 'dark',
+    language: 'de',
+    user: { name: 'Marvin', repos: [] },
 });
 
 // Component subscribes nur zu theme, nicht zu allem
-const unsubscribe = appStore.subscribeToKey('theme', (theme) => {
-  component.update({ theme });
+const unsubscribe = appStore.subscribeToKey('theme', theme => {
+    component.update({ theme });
 });
 ```
 
@@ -228,13 +242,14 @@ const unsubscribe = appStore.subscribeToKey('theme', (theme) => {
 **Aktuell:** Keine Runtime-Validierung, nur TypeScript Types
 
 **Vorschlag:** PropTypes-ähnliches System
+
 ```typescript
 class Button extends BaseComponent<ButtonProps> {
-  static propTypes = {
-    label: PropTypes.string.required,
-    variant: PropTypes.oneOf(['primary', 'secondary']),
-    onClick: PropTypes.func,
-  };
+    static propTypes = {
+        label: PropTypes.string.required,
+        variant: PropTypes.oneOf(['primary', 'secondary']),
+        onClick: PropTypes.func,
+    };
 }
 ```
 
@@ -249,6 +264,7 @@ class Button extends BaseComponent<ButtonProps> {
 **Problem:** Keyboard-Shortcuts sind aktuell App-spezifisch verstreut.
 
 **Benötigte Features:**
+
 - **`useShortcut(key, callback)`**: Hook für Components
 - **Shortcut Scoping**: Global vs. Window vs. Component
 - **Conflict Detection**: Warnung bei Duplikaten
@@ -256,17 +272,18 @@ class Button extends BaseComponent<ButtonProps> {
 - **Platform Aware**: Cmd (macOS) vs. Ctrl (Windows)
 
 **Beispiel:**
+
 ```typescript
 class FinderUI extends BaseComponent {
-  constructor(props) {
-    super(props);
-    this.registerShortcuts({
-      'Cmd+N': this.newTab,
-      'Cmd+W': this.closeTab,
-      'Cmd+[': this.goBack,
-      'Cmd+]': this.goForward,
-    });
-  }
+    constructor(props) {
+        super(props);
+        this.registerShortcuts({
+            'Cmd+N': this.newTab,
+            'Cmd+W': this.closeTab,
+            'Cmd+[': this.goBack,
+            'Cmd+]': this.goForward,
+        });
+    }
 }
 ```
 
@@ -277,6 +294,7 @@ class FinderUI extends BaseComponent {
 **Problem:** Finder hat Tab-DnD, aber nicht generalisiert.
 
 **Benötigte Features:**
+
 - **`useDraggable(element, data)`**: Macht Element draggable
 - **`useDropZone(element, onDrop)`**: Macht Element zur Drop-Zone
 - **Visual Feedback**: Drag Preview, Drop Indicators
@@ -284,6 +302,7 @@ class FinderUI extends BaseComponent {
 - **Multi-Item Drag**: Mehrere Elemente gleichzeitig
 
 **Use Cases:**
+
 - Finder: File Drag & Drop, Tab-Bewegung zwischen Fenstern
 - Terminal: Session Tabs DnD
 - TextEditor: File-Tabs Reordering
@@ -296,6 +315,7 @@ class FinderUI extends BaseComponent {
 **Aktuell:** Nur SplitView hat Resize-Logic
 
 **Generalisierung:**
+
 - **`ResizeHandle`**: Generic Resize für beliebige Elemente
 - **`DragHandle`**: Window Dragging (für Modal Positioning)
 - **Constraints**: Min/Max Sizes, Aspect Ratio
@@ -309,11 +329,12 @@ class FinderUI extends BaseComponent {
 **Aktuell:** Tailwind Dark Mode mit `dark:` Prefix
 
 **Verbesserungen:**
+
 - **CSS Variables**: Dynamische Farben
-  ```css
-  --color-primary: theme('colors.blue.500');
-  --color-surface: theme('colors.gray.50');
-  ```
+    ```css
+    --color-primary: theme('colors.blue.500');
+    --color-surface: theme('colors.gray.50');
+    ```
 - **Theme Provider**: Component-Tree mit Theme-Context
 - **Custom Themes**: Nicht nur dark/light, auch custom colors
 - **Runtime Theme Switch**: Ohne Page Reload
@@ -325,6 +346,7 @@ class FinderUI extends BaseComponent {
 **Aktuell:** Desktop-First, keine Mobile-Optimierung
 
 **Verbesserungen:**
+
 - **Breakpoint System**: sm, md, lg, xl
 - **Mobile Components**: Drawer statt Sidebar, Bottom Sheets
 - **Touch Gestures**: Swipe, Pinch-to-Zoom
@@ -337,6 +359,7 @@ class FinderUI extends BaseComponent {
 **Aktuell:** Nur CSS Transitions
 
 **Verbesserungen:**
+
 - **Animation Hooks**: `useAnimation('fade-in')`
 - **Präfab Animationen**: fade, slide, scale, bounce
 - **Motion Preferences**: `prefers-reduced-motion` Support
@@ -362,6 +385,7 @@ class FinderUI extends BaseComponent {
 ### 5.2 DevTools Integration (Priorität: Niedrig)
 
 **Features:**
+
 - Component Tree Inspector
 - Props/State Viewer
 - Performance Profiler (Re-Render Count)
@@ -374,6 +398,7 @@ class FinderUI extends BaseComponent {
 ### 5.3 Code Snippets & Templates (Priorität: Niedrig)
 
 **VS Code Integration:**
+
 - Snippets für neue Components
 - Templates für Standard-Patterns
 - Auto-Import für Framework-Components
@@ -387,18 +412,20 @@ class FinderUI extends BaseComponent {
 **Aktuell:** Nur E2E Tests, keine Unit Tests für Komponenten
 
 **Benötigte Tests:**
+
 - **Unit Tests**: Props, State, Render-Output
 - **Interaction Tests**: Click, Input, Keyboard
 - **Visual Regression Tests**: Screenshot-Vergleich
 
 **Vorschlag:** Playwright Component Testing
+
 ```typescript
 test('Button renders correctly', async ({ mount }) => {
-  const component = await mount(Button, { 
-    props: { label: 'Click me' } 
-  });
-  await expect(component).toContainText('Click me');
-  await component.click();
+    const component = await mount(Button, {
+        props: { label: 'Click me' },
+    });
+    await expect(component).toContainText('Click me');
+    await component.click();
 });
 ```
 
@@ -409,6 +436,7 @@ test('Button renders correctly', async ({ mount }) => {
 **Aktuell:** Teilweise ARIA-Attribute, aber nicht konsequent
 
 **Verbesserungen:**
+
 - **Keyboard Navigation**: Alle interaktiven Elemente
 - **Screen Reader Support**: ARIA Labels, Roles, Live Regions
 - **Focus Management**: Logical Focus Order, Focus Trap in Modals
@@ -416,6 +444,7 @@ test('Button renders correctly', async ({ mount }) => {
 - **Skip Links**: "Skip to main content"
 
 **Tools:**
+
 - Axe-Core Integration für automatische Tests
 - a11y Linter für Code
 
@@ -424,6 +453,7 @@ test('Button renders correctly', async ({ mount }) => {
 ### 6.3 Performance Monitoring (Priorität: Mittel)
 
 **Features:**
+
 - **Render Time Tracking**: Wie lange braucht ein Component?
 - **Re-Render Detection**: Unnötige Re-Renders markieren
 - **VDOM Diff Stats**: Anzahl Patches pro Update
@@ -440,26 +470,29 @@ test('Button renders correctly', async ({ mount }) => {
 **Aktuell:** Nur `MACUI_COMPONENTS.md` mit Basics
 
 **Verbesserungen:**
+
 - **Detaillierte API-Referenz**: Alle Props mit Types & Defaults
 - **Usage Examples**: Code-Snippets für häufige Szenarien
 - **Do's and Don'ts**: Best Practices
 - **Props Table**: Markdown-Tabellen mit allen Props
 
 **Beispiel:**
+
 ```markdown
 ## Button
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| label | string | required | Button text |
-| variant | 'primary' \| 'secondary' | 'primary' | Visual style |
-| onClick | () => void | - | Click handler |
+| Prop    | Type                     | Default   | Description   |
+| ------- | ------------------------ | --------- | ------------- |
+| label   | string                   | required  | Button text   |
+| variant | 'primary' \| 'secondary' | 'primary' | Visual style  |
+| onClick | () => void               | -         | Click handler |
 
 ### Examples
 
 #### Primary Button
+
 \`\`\`typescript
 const btn = new Button({ label: 'Save', variant: 'primary' });
 \`\`\`
@@ -472,6 +505,7 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 **Zielgruppe:** Entwickler, die bestehende Apps migrieren
 
 **Inhalt:**
+
 - **Vor/Nach Vergleich**: Alter Code vs. Framework Code
 - **Schritt-für-Schritt Anleitung**: Pro App-Typ
 - **Fallstricke**: Häufige Fehler beim Migrieren
@@ -482,6 +516,7 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 ### 7.3 Architecture Guide (Priorität: Niedrig)
 
 **Inhalt:**
+
 - **Design Decisions**: Warum VDOM? Warum keine React/Vue?
 - **Performance Considerations**: Wann Framework, wann nicht?
 - **Extensibility**: Wie neue Komponenten erstellen?
@@ -492,6 +527,7 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 ## 8. Konkrete Prioritäten & Roadmap
 
 ### Phase 1: Essentials (2-3 Wochen)
+
 **Ziel:** Framework produktionsreif für Terminal & TextEditor
 
 1. **Form Controls**: Input, Button, Select ✅
@@ -501,6 +537,7 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 5. **API Documentation**: Vollständige Props-Dokumentation ✅
 
 ### Phase 2: Enhanced UX (2-3 Wochen)
+
 **Ziel:** Bessere Interaktionen & Feedback
 
 1. **Context Menu**: Framework-Komponente ✅
@@ -510,6 +547,7 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 5. **Accessibility**: ARIA, Keyboard Nav ✅
 
 ### Phase 3: Advanced Features (3-4 Wochen)
+
 **Ziel:** Power-User Features & DX
 
 1. **Tree Component**: Für Finder/TextEditor ✅
@@ -519,6 +557,7 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 5. **Visual Regression Tests**: Screenshot-Vergleich ✅
 
 ### Phase 4: Polish & Optimization (2 Wochen)
+
 **Ziel:** Production-Ready & Stabil
 
 1. **Performance Profiling**: Bottleneck-Analyse ✅
@@ -531,18 +570,21 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 ## 9. Metriken für Erfolg
 
 ### Code-Qualität
+
 - **Type Coverage**: Min. 85% (aktuell ~79%)
 - **Test Coverage**: Min. 80% für Framework
 - **Bundle Size**: < 50KB (gzipped) für Core Framework
 - **Zero Runtime Errors**: In Production
 
 ### Developer Experience
+
 - **Time to New Component**: < 30min (aktuell ~2h)
 - **Lines of Code Reduction**: -40% für neue Apps
 - **Onboarding Time**: Neue Entwickler < 1 Tag
 - **Documentation**: Alle Komponenten dokumentiert
 
 ### Performance
+
 - **Render Time**: < 16ms (60fps)
 - **VDOM Diff**: < 10ms für 100 Nodes
 - **Re-Render Overhead**: < 5% vs. Native DOM
@@ -553,6 +595,7 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 ## 10. Offene Fragen & Diskussionspunkte
 
 ### 10.1 Framework Scope
+
 **Frage:** Soll das Framework auch außerhalb dieses Projekts nutzbar sein?
 
 - **Pro:** Kann als eigenständige Bibliothek veröffentlicht werden
@@ -561,6 +604,7 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 **Empfehlung:** Zunächst intern, später optional als Open-Source
 
 ### 10.2 TypeScript vs. JavaScript
+
 **Frage:** Sollen Komponenten auch in JS nutzbar sein?
 
 - **Pro:** Niedrigere Einstiegshürde
@@ -569,6 +613,7 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 **Empfehlung:** TypeScript First, aber gute JSDoc für JS-Nutzer
 
 ### 10.3 CSS-in-JS vs. Tailwind
+
 **Frage:** Sollten Komponenten eigenes CSS mitbringen?
 
 - **Pro:** Keine Tailwind-Abhängigkeit, portabler
@@ -577,6 +622,7 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 **Empfehlung:** Weiter Tailwind, aber CSS Variables für Theming
 
 ### 10.4 Backward Compatibility
+
 **Frage:** Wie gehen wir mit Breaking Changes um?
 
 - **Pro Semver:** Klare Versionierung, Upgrade-Pfade
@@ -591,6 +637,7 @@ const btn = new Button({ label: 'Save', variant: 'primary' });
 Das MacUI Framework hat ein solides Fundament (VDOM, BaseComponent, Layout/Navigation), aber es fehlen noch essenzielle Komponenten für produktiven Einsatz in allen Apps:
 
 **Kritische Lücken:**
+
 1. Form Controls (Input, Button, Select)
 2. Modal/Dialog System Integration
 3. Lifecycle Hooks (onBeforeUpdate, Error Boundaries)
@@ -598,6 +645,7 @@ Das MacUI Framework hat ein solides Fundament (VDOM, BaseComponent, Layout/Navig
 5. Component Testing Infrastructure
 
 **Quick Wins (< 1 Tag Implementierung):**
+
 - Button Component mit Varianten
 - Toast/Notification System
 - Error Boundaries
@@ -605,6 +653,7 @@ Das MacUI Framework hat ein solides Fundament (VDOM, BaseComponent, Layout/Navig
 - Badge Component
 
 **Long-Term Investments:**
+
 - Virtual List (Performance)
 - Tree Component (Komplexität)
 - DevTools Integration

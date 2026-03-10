@@ -9,6 +9,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 ### Tag 1: Form Controls
 
 #### Button Component
+
 - [ ] Datei erstellen: `src/ts/framework/controls/button.ts`
 - [ ] Interface `ButtonProps` definieren (variant, size, icon, loading, disabled)
 - [ ] `Button` Klasse implementieren (extends BaseComponent)
@@ -26,6 +27,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Export in `src/ts/framework/index.ts`
 
 #### Input Component
+
 - [ ] Datei erstellen: `src/ts/framework/controls/input.ts`
 - [ ] Interface `InputProps` definieren
 - [ ] Support für Types: text, password, email, number, search
@@ -41,6 +43,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Export in Framework Index
 
 #### Select Component
+
 - [ ] Datei erstellen: `src/ts/framework/controls/select.ts`
 - [ ] Interface `SelectProps` definieren
 - [ ] Custom Styling (nicht natives `<select>`)
@@ -58,6 +61,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 ### Tag 2: Feedback Systems
 
 #### Toast/Notification System
+
 - [ ] Datei erstellen: `src/ts/framework/feedback/toast.ts`
 - [ ] Interface `ToastProps` definieren
 - [ ] `Toast` Component implementieren
@@ -82,6 +86,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Global in API verfügbar machen: `window.API.toast`
 
 #### EmptyState Component
+
 - [ ] Datei erstellen: `src/ts/framework/feedback/empty-state.ts`
 - [ ] Interface `EmptyStateProps` definieren
 - [ ] Icon, Title, Description, Action
@@ -90,6 +95,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Export in Framework Index
 
 #### Badge Component
+
 - [ ] Datei erstellen: `src/ts/framework/feedback/badge.ts`
 - [ ] Interface `BadgeProps` definieren
 - [ ] Varianten: primary, success, warning, danger
@@ -105,6 +111,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 ### Tag 3: Robustness & Documentation
 
 #### Error Boundaries
+
 - [ ] Datei erstellen: `src/ts/framework/core/error-boundary.ts`
 - [ ] Interface `ErrorBoundaryProps` definieren
 - [ ] `ErrorBoundary` Component implementieren
@@ -117,6 +124,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Export in Framework Index
 
 #### Lifecycle Hooks Erweiterung
+
 - [ ] `onBeforeUpdate(prevProps, prevState)` in BaseComponent
 - [ ] `onAfterUpdate(prevProps, prevState)` in BaseComponent
 - [ ] `onError(error)` Hook
@@ -124,6 +132,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Tests für Lifecycle-Reihenfolge
 
 #### Component API Dokumentation
+
 - [ ] Button: Props-Tabelle, Usage Examples, Do's/Don'ts
 - [ ] Input: Props-Tabelle, Validation Examples
 - [ ] Select: Props-Tabelle, Keyboard-Nav Doku
@@ -142,6 +151,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 ### Woche 1
 
 #### Context Menu Integration
+
 - [ ] Datei: `src/ts/framework/interaction/context-menu.ts`
 - [ ] Interface `ContextMenuProps`
 - [ ] Trigger: right-click, programmatisch
@@ -152,6 +162,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Tests
 
 #### Keyboard Shortcuts Framework
+
 - [ ] Datei: `src/ts/framework/interaction/keyboard-shortcuts.ts`
 - [ ] `registerShortcut(key, callback, scope)` API
 - [ ] Shortcut Scoping: global, window, component
@@ -161,6 +172,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Tests
 
 #### Drag & Drop Generalisierung
+
 - [ ] Datei: `src/ts/framework/interaction/drag-drop.ts`
 - [ ] `useDraggable(element, data)` API
 - [ ] `useDropZone(element, onDrop)` API
@@ -170,6 +182,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Tests
 
 #### Tooltip Component
+
 - [ ] Datei: `src/ts/framework/interaction/tooltip.ts`
 - [ ] Interface `TooltipProps`
 - [ ] Hover-Trigger mit Delay
@@ -186,6 +199,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 ### Woche 2-3
 
 #### Tree Component
+
 - [ ] Datei: `src/ts/framework/data/tree.ts`
 - [ ] Interface `TreeProps`, `TreeNode`
 - [ ] Expand/Collapse Nodes
@@ -195,6 +209,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Tests
 
 #### Virtual List
+
 - [ ] Datei: `src/ts/framework/data/virtual-list.ts`
 - [ ] Window-based Rendering
 - [ ] Only visible items in DOM
@@ -203,6 +218,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Performance Tests (1000+ items)
 
 #### Table Component
+
 - [ ] Datei: `src/ts/framework/data/table.ts`
 - [ ] Erweiterte ListView
 - [ ] Column Resizing
@@ -214,6 +230,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Tests
 
 #### State Management Verbesserungen
+
 - [ ] `Store.select(selector)` für Teil-States
 - [ ] Middleware Support
 - [ ] Computed Values
@@ -230,6 +247,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 ### Woche 4
 
 #### Performance Profiling
+
 - [ ] Render Time Tracking für alle Components
 - [ ] Re-Render Detection (unnötige Re-Renders)
 - [ ] VDOM Diff Stats
@@ -237,6 +255,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Integration mit PerfMonitor
 
 #### Bundle Size Optimization
+
 - [ ] Tree-Shaking konfigurieren
 - [ ] Code-Splitting für große Components
 - [ ] Lazy Loading für selten genutzte Components
@@ -244,6 +263,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Target: < 50KB gzipped für Core
 
 #### Migration Guides
+
 - [ ] Finder → Framework (bereits erledigt)
 - [ ] Terminal → Framework (Schritt-für-Schritt)
 - [ ] TextEditor → Framework (Schritt-für-Schritt)
@@ -252,12 +272,14 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Fallstricke & Lösungen
 
 #### Theme System
+
 - [ ] CSS Variables für Farben
 - [ ] Theme Provider Component
 - [ ] Custom Themes Support
 - [ ] Runtime Theme Switch ohne Reload
 
 #### Accessibility Audit
+
 - [ ] Alle Components: Keyboard-Navigation
 - [ ] ARIA Labels, Roles, Live Regions
 - [ ] Focus Management
@@ -273,18 +295,21 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 ## 📋 Testing & Quality Assurance
 
 ### Component Tests
+
 - [ ] Unit Tests Setup (Playwright Component Testing)
 - [ ] Template für Component Tests
 - [ ] Tests für alle existierenden Components
 - [ ] Coverage Target: 80%+
 
 ### Visual Regression Tests
+
 - [ ] Screenshot-Vergleich Setup
 - [ ] Baseline Screenshots erstellen
 - [ ] Tests für alle Component-Varianten
 - [ ] CI Integration
 
 ### Performance Tests
+
 - [ ] Render-Time Benchmarks
 - [ ] VDOM Diff Benchmarks
 - [ ] Memory Leak Tests
@@ -295,6 +320,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 ## 📋 Documentation
 
 ### API Reference
+
 - [ ] Core: BaseComponent, Store, ErrorBoundary
 - [ ] Layout: AppShell, SplitView
 - [ ] Navigation: Sidebar, Toolbar, Tabs, Breadcrumbs
@@ -304,6 +330,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Interaction: ContextMenu, Dropdown, Tooltip, DragDrop, Shortcuts
 
 ### Guides
+
 - [ ] Getting Started
 - [ ] Creating Custom Components
 - [ ] State Management Best Practices
@@ -312,6 +339,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Testing Components
 
 ### Examples
+
 - [ ] Simple Form Example
 - [ ] Data Table with Sorting
 - [ ] Tree Navigation
@@ -324,6 +352,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 ## 📋 Integration & Rollout
 
 ### Finder (Bereits Migriert)
+
 - [x] AppShell
 - [x] SplitView
 - [x] Sidebar
@@ -337,6 +366,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] ErrorBoundary (um FinderUI)
 
 ### Terminal
+
 - [ ] AppShell
 - [ ] Toolbar (Commands)
 - [ ] Input (Command Line)
@@ -347,6 +377,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Badge (History Count)
 
 ### TextEditor
+
 - [ ] AppShell
 - [ ] SplitView (Editor + Preview)
 - [ ] Tabs (Multi-Document)
@@ -358,6 +389,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Tree (File Explorer)
 
 ### Photos
+
 - [ ] AppShell
 - [ ] GridView (Image Gallery)
 - [ ] Modal (Image Details)
@@ -370,12 +402,14 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 ## 📋 Metriken & KPIs
 
 ### Code Quality
+
 - [ ] Type Coverage: 85%+ (aktuell 79%)
 - [ ] Test Coverage: 80%+ für Framework
 - [ ] Zero ESLint Errors
 - [ ] Zero TypeScript Errors
 
 ### Bundle Size
+
 - [ ] Core: < 20 KB gzipped
 - [ ] Layout: < 10 KB gzipped
 - [ ] Navigation: < 15 KB gzipped
@@ -385,12 +419,14 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Total: < 100 KB gzipped
 
 ### Performance
+
 - [ ] Initial Render: < 60ms
 - [ ] Re-Render: < 15ms (100 nodes)
 - [ ] VDOM Diff: < 10ms
 - [ ] Component Mount: < 5ms
 
 ### Developer Experience
+
 - [ ] Time to New Component: < 30min
 - [ ] Lines of Code Reduction: -40%
 - [ ] Documentation: 100% complete
@@ -401,6 +437,7 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 ## 📋 Release Checklist
 
 ### v1.0.0 (Nach Phase 1)
+
 - [ ] Alle Phase 1 Tasks abgeschlossen
 - [ ] Terminal erfolgreich migriert
 - [ ] Dokumentation vollständig
@@ -410,12 +447,14 @@ Dieses Dokument dient als praktische Checkliste für die Implementierung des Mac
 - [ ] Git Tag erstellt
 
 ### v1.1.0 (Nach Phase 2)
+
 - [ ] Alle Phase 2 Tasks abgeschlossen
 - [ ] TextEditor teilweise migriert
 - [ ] Neue Komponenten dokumentiert
 - [ ] Changelog aktualisiert
 
 ### v2.0.0 (Nach Phase 4)
+
 - [ ] Alle Phasen abgeschlossen
 - [ ] Alle Apps migriert
 - [ ] Production-Ready

@@ -26,20 +26,23 @@ export interface ButtonProps extends ComponentConfig {
 
 export class Button extends BaseComponent<ButtonProps> {
     render(): VNode {
-        const { 
-            label, 
-            variant = 'primary', 
+        const {
+            label,
+            variant = 'primary',
             size = 'medium',
             disabled = false,
             loading = false,
-            onClick 
+            onClick,
         } = this.props;
 
-        const baseClasses = 'macui-button inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2';
-        
+        const baseClasses =
+            'macui-button inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2';
+
         const variantClasses = {
-            primary: 'bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500',
-            secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 focus:ring-gray-500',
+            primary:
+                'bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500',
+            secondary:
+                'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 focus:ring-gray-500',
             danger: 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500',
             ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
         };
@@ -50,9 +53,10 @@ export class Button extends BaseComponent<ButtonProps> {
             large: 'px-6 py-3 text-base',
         };
 
-        const disabledClasses = disabled || loading 
-            ? 'opacity-50 cursor-not-allowed' 
-            : 'cursor-pointer';
+        const disabledClasses =
+            disabled || loading
+                ? 'opacity-50 cursor-not-allowed'
+                : 'cursor-pointer';
 
         return h(
             'button',
@@ -62,9 +66,13 @@ export class Button extends BaseComponent<ButtonProps> {
                 onclick: !disabled && !loading ? onClick : undefined,
             },
             loading ? h('span', { className: 'animate-spin' }, '⟳') : '',
-            this.props.icon && this.props.iconPosition !== 'right' ? h('span', {}, this.props.icon) : '',
+            this.props.icon && this.props.iconPosition !== 'right'
+                ? h('span', {}, this.props.icon)
+                : '',
             h('span', {}, label),
-            this.props.icon && this.props.iconPosition === 'right' ? h('span', {}, this.props.icon) : ''
+            this.props.icon && this.props.iconPosition === 'right'
+                ? h('span', {}, this.props.icon)
+                : ''
         );
     }
 }
@@ -78,13 +86,13 @@ const saveButton = new Button({
     label: 'Speichern',
     variant: 'primary',
     icon: '💾',
-    onClick: () => this.save()
+    onClick: () => this.save(),
 });
 
 const cancelButton = new Button({
     label: 'Abbrechen',
     variant: 'secondary',
-    onClick: () => this.cancel()
+    onClick: () => this.cancel(),
 });
 ```
 
@@ -104,11 +112,13 @@ test('Button renders with label', async ({ page }) => {
 
 test('Button handles click events', async ({ page }) => {
     let clicked = false;
-    await page.exposeFunction('handleClick', () => { clicked = true; });
+    await page.exposeFunction('handleClick', () => {
+        clicked = true;
+    });
     await page.evaluate(() => {
-        const btn = new Button({ 
-            label: 'Click', 
-            onClick: () => window.handleClick() 
+        const btn = new Button({
+            label: 'Click',
+            onClick: () => window.handleClick(),
         });
         btn.mount(document.getElementById('root'));
     });
@@ -122,7 +132,8 @@ test('Button handles click events', async ({ page }) => {
 ## 2. Toast/Notification System (Priorität: 🔥 Kritisch)
 
 **Aufwand:** 3-4 Stunden  
-**Dateien:** 
+**Dateien:**
+
 - `src/ts/framework/feedback/toast.ts`
 - `src/ts/framework/feedback/toast-manager.ts`
 
@@ -147,7 +158,8 @@ export class ToastManager {
 
     constructor() {
         this.container = document.createElement('div');
-        this.container.className = 'macui-toast-container fixed top-4 right-4 z-[9999] flex flex-col gap-2';
+        this.container.className =
+            'macui-toast-container fixed top-4 right-4 z-[9999] flex flex-col gap-2';
         document.body.appendChild(this.container);
     }
 
@@ -156,7 +168,7 @@ export class ToastManager {
             ...options,
             onDismiss: () => this.remove(toast),
         });
-        
+
         this.toasts.add(toast);
         const element = toast.mount();
         this.container.appendChild(element);
@@ -272,8 +284,8 @@ toast.show({
     message: 'Datei gelöscht',
     action: {
         label: 'Rückgängig',
-        onClick: () => this.undoDelete()
-    }
+        onClick: () => this.undoDelete(),
+    },
 });
 ```
 
@@ -325,12 +337,27 @@ export class EmptyState extends BaseComponent<EmptyStateProps> {
         return h(
             'div',
             {
-                className: 'macui-empty-state flex flex-col items-center justify-center p-8 text-center min-h-[300px]',
+                className:
+                    'macui-empty-state flex flex-col items-center justify-center p-8 text-center min-h-[300px]',
             },
             h('div', { className: 'text-6xl mb-4' }, icon),
-            h('h3', { className: 'text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2' }, title),
+            h(
+                'h3',
+                {
+                    className:
+                        'text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2',
+                },
+                title
+            ),
             description
-                ? h('p', { className: 'text-sm text-gray-500 dark:text-gray-400 mb-4 max-w-md' }, description)
+                ? h(
+                      'p',
+                      {
+                          className:
+                              'text-sm text-gray-500 dark:text-gray-400 mb-4 max-w-md',
+                      },
+                      description
+                  )
                 : '',
             action
                 ? new Button({
@@ -352,11 +379,12 @@ if (items.length === 0) {
     return new EmptyState({
         icon: '📂',
         title: 'Keine Dateien gefunden',
-        description: 'Dieses Repository ist leer oder die Suche ergab keine Treffer.',
+        description:
+            'Dieses Repository ist leer oder die Suche ergab keine Treffer.',
         action: {
             label: 'Filter zurücksetzen',
-            onClick: () => this.resetFilters()
-        }
+            onClick: () => this.resetFilters(),
+        },
     }).render();
 }
 ```
@@ -380,7 +408,12 @@ export interface BadgeProps extends ComponentConfig {
 
 export class Badge extends BaseComponent<BadgeProps> {
     render(): VNode {
-        const { content, variant = 'primary', size = 'medium', dot = false } = this.props;
+        const {
+            content,
+            variant = 'primary',
+            size = 'medium',
+            dot = false,
+        } = this.props;
 
         const colors = {
             primary: 'bg-blue-500',
@@ -416,23 +449,31 @@ export class Badge extends BaseComponent<BadgeProps> {
 ```typescript
 // In Sidebar Items
 new Sidebar({
-    groups: [{
-        label: 'Files',
-        items: [
-            {
-                id: 'inbox',
-                label: 'Inbox',
-                icon: '📥',
-                badge: new Badge({ content: 5, variant: 'danger' }).render()
-            },
-            {
-                id: 'starred',
-                label: 'Starred',
-                icon: '⭐',
-                badge: new Badge({ dot: true, variant: 'success' }).render()
-            }
-        ]
-    }]
+    groups: [
+        {
+            label: 'Files',
+            items: [
+                {
+                    id: 'inbox',
+                    label: 'Inbox',
+                    icon: '📥',
+                    badge: new Badge({
+                        content: 5,
+                        variant: 'danger',
+                    }).render(),
+                },
+                {
+                    id: 'starred',
+                    label: 'Starred',
+                    icon: '⭐',
+                    badge: new Badge({
+                        dot: true,
+                        variant: 'success',
+                    }).render(),
+                },
+            ],
+        },
+    ],
 });
 ```
 
@@ -490,10 +531,17 @@ export class Input extends BaseComponent<InputProps, { value: string }> {
                 {
                     className: `macui-input-container flex items-center gap-2 px-3 py-2 border ${borderColor} rounded-lg bg-white dark:bg-gray-800 transition-all focus-within:ring-2`,
                 },
-                prefix ? h('div', { className: 'macui-input-prefix text-gray-500' }, prefix) : '',
+                prefix
+                    ? h(
+                          'div',
+                          { className: 'macui-input-prefix text-gray-500' },
+                          prefix
+                      )
+                    : '',
                 h('input', {
                     type,
-                    className: 'flex-1 bg-transparent outline-none text-gray-900 dark:text-gray-100',
+                    className:
+                        'flex-1 bg-transparent outline-none text-gray-900 dark:text-gray-100',
                     placeholder,
                     value: this.state.value,
                     disabled,
@@ -501,12 +549,32 @@ export class Input extends BaseComponent<InputProps, { value: string }> {
                     onchange: (e: Event) => this.handleChange(e),
                     onkeydown: (e: KeyboardEvent) => this.handleKeyDown(e),
                 }),
-                suffix ? h('div', { className: 'macui-input-suffix text-gray-500' }, suffix) : ''
+                suffix
+                    ? h(
+                          'div',
+                          { className: 'macui-input-suffix text-gray-500' },
+                          suffix
+                      )
+                    : ''
             ),
             error
-                ? h('p', { className: 'macui-input-error text-xs text-red-500 mt-1' }, error)
+                ? h(
+                      'p',
+                      {
+                          className:
+                              'macui-input-error text-xs text-red-500 mt-1',
+                      },
+                      error
+                  )
                 : helperText
-                  ? h('p', { className: 'macui-input-helper text-xs text-gray-500 mt-1' }, helperText)
+                  ? h(
+                        'p',
+                        {
+                            className:
+                                'macui-input-helper text-xs text-gray-500 mt-1',
+                        },
+                        helperText
+                    )
                   : ''
         );
     }
@@ -538,7 +606,7 @@ const searchInput = new Input({
     type: 'search',
     placeholder: 'Suchen...',
     prefix: '🔍',
-    onInput: (value) => this.handleSearch(value)
+    onInput: value => this.handleSearch(value),
 });
 
 // Password Input mit Validation
@@ -547,7 +615,7 @@ const passwordInput = new Input({
     placeholder: 'Passwort eingeben',
     error: this.state.passwordError,
     helperText: 'Mindestens 8 Zeichen',
-    onChange: (value) => this.validatePassword(value)
+    onChange: value => this.validatePassword(value),
 });
 ```
 
@@ -567,7 +635,10 @@ interface ErrorBoundaryProps extends ComponentConfig {
     children: VNode;
 }
 
-export class ErrorBoundary extends BaseComponent<ErrorBoundaryProps, { hasError: boolean; error: Error | null }> {
+export class ErrorBoundary extends BaseComponent<
+    ErrorBoundaryProps,
+    { hasError: boolean; error: Error | null }
+> {
     constructor(props: ErrorBoundaryProps) {
         super(props);
         this.state = { hasError: false, error: null };
@@ -588,14 +659,27 @@ export class ErrorBoundary extends BaseComponent<ErrorBoundaryProps, { hasError:
         return h(
             'div',
             {
-                className: 'macui-error-boundary p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg',
+                className:
+                    'macui-error-boundary p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg',
             },
-            h('h3', { className: 'text-red-800 dark:text-red-200 font-semibold mb-2' }, '⚠️ Fehler'),
-            h('p', { className: 'text-red-700 dark:text-red-300 text-sm mb-2' }, error.message),
+            h(
+                'h3',
+                {
+                    className:
+                        'text-red-800 dark:text-red-200 font-semibold mb-2',
+                },
+                '⚠️ Fehler'
+            ),
+            h(
+                'p',
+                { className: 'text-red-700 dark:text-red-300 text-sm mb-2' },
+                error.message
+            ),
             h(
                 'button',
                 {
-                    className: 'text-sm underline text-red-600 dark:text-red-400',
+                    className:
+                        'text-sm underline text-red-600 dark:text-red-400',
                     onclick: () => this.reset(),
                 },
                 'Erneut versuchen'
@@ -619,10 +703,12 @@ export class ErrorBoundary extends BaseComponent<ErrorBoundaryProps, { hasError:
     private handleError(error: Error): void {
         this.setState({ hasError: true, error });
         this.props.onError?.(error, error.stack || '');
-        
+
         // Log to global error handler
         if (window.ErrorHandler) {
-            window.ErrorHandler.handleError(error, { context: 'ErrorBoundary' });
+            window.ErrorHandler.handleError(error, {
+                context: 'ErrorBoundary',
+            });
         }
     }
 }
@@ -633,11 +719,13 @@ export class ErrorBoundary extends BaseComponent<ErrorBoundaryProps, { hasError:
 ```typescript
 // Wrap kritische Komponenten
 const app = new ErrorBoundary({
-    onError: (error) => {
+    onError: error => {
         console.error('Component Error:', error);
         API.toast?.error('Ein Fehler ist aufgetreten');
     },
-    children: new FinderUI({ /* props */ }).render()
+    children: new FinderUI({
+        /* props */
+    }).render(),
 });
 ```
 
@@ -689,11 +777,11 @@ declare global {
 test('MacUI Framework is available', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction(() => window.__APP_READY);
-    
+
     const hasFramework = await page.evaluate(() => {
         return typeof window.MacUI !== 'undefined';
     });
-    
+
     expect(hasFramework).toBe(true);
 });
 
@@ -701,7 +789,7 @@ test('All core components are exported', async ({ page }) => {
     const components = await page.evaluate(() => {
         return Object.keys(window.MacUI);
     });
-    
+
     expect(components).toContain('Button');
     expect(components).toContain('Input');
     expect(components).toContain('Toast');
@@ -715,16 +803,19 @@ test('All core components are exported', async ({ page }) => {
 ## 8. Rollout-Strategie
 
 ### Phase 1: Finder Integration (Tag 1)
+
 1. Button Component in Toolbar verwenden
 2. EmptyState für leere Repos
 3. Toast für GitHub API Errors
 
 ### Phase 2: Terminal Integration (Tag 2)
+
 1. Input für Command-Zeile
 2. Error Boundary um Session-Komponenten
 3. Badge für Command History Count
 
 ### Phase 3: TextEditor Integration (Tag 3)
+
 1. Button für Save/Load Actions
 2. Toast für Save Success/Errors
 3. EmptyState für "No File Open"
@@ -755,6 +846,6 @@ Nach Implementierung dieser Quick Wins:
 ✅ **Konsistente UX** über alle Apps  
 ✅ **Bessere Fehlerbehandlung** durch Error Boundaries  
 ✅ **Schnelleres Development** durch wiederverwendbare Komponenten  
-✅ **Bessere Testbarkeit** durch isolierte Komponenten  
+✅ **Bessere Testbarkeit** durch isolierte Komponenten
 
 **Geschätzter ROI:** 3-4 Tage Implementierung spart 10+ Tage bei zukünftigen Features.

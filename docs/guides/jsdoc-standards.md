@@ -15,7 +15,7 @@ Every exported function, class, method, and property should have:
 
 ## Template
 
-```typescript
+````typescript
 /**
  * Short description of what this does.
  *
@@ -35,11 +35,11 @@ Every exported function, class, method, and property should have:
  * ```
  */
 function myFunction(paramName: string, options?: { foo: boolean }): string { ... }
-```
+````
 
 ## Class Documentation
 
-```typescript
+````typescript
 /**
  * Short class description.
  *
@@ -67,7 +67,7 @@ export class MyClass {
      */
     doSomething(input: string): string { ... }
 }
-```
+````
 
 ## Module-Level Documentation
 
@@ -82,16 +82,16 @@ export class MyClass {
 
 ## Tagging Guidelines
 
-| Tag | When to Use |
-|-----|-------------|
-| `@param name - desc` | Always for each parameter |
-| `@returns desc` | Always unless return type is `void` |
-| `@throws {Type} desc` | When the function can throw |
-| `@example` | Always for public APIs |
-| `@deprecated desc` | When removing an API in a future version |
-| `@internal` | For implementation details that TypeDoc should exclude |
-| `@see` | To link related APIs |
-| `@since version` | When the API was added (optional) |
+| Tag                   | When to Use                                            |
+| --------------------- | ------------------------------------------------------ |
+| `@param name - desc`  | Always for each parameter                              |
+| `@returns desc`       | Always unless return type is `void`                    |
+| `@throws {Type} desc` | When the function can throw                            |
+| `@example`            | Always for public APIs                                 |
+| `@deprecated desc`    | When removing an API in a future version               |
+| `@internal`           | For implementation details that TypeDoc should exclude |
+| `@see`                | To link related APIs                                   |
+| `@since version`      | When the API was added (optional)                      |
 
 ## What NOT to Document
 
@@ -101,14 +101,14 @@ export class MyClass {
 
 ## Coverage Goals
 
-| Area | Target |
-|------|--------|
-| Core Services (`src/ts/services/`, `src/ts/core/`) | 100% |
-| Window System (`src/ts/windows/`) | 100% |
-| UI Components (`src/ts/ui/`) | 90% |
-| Apps (`src/ts/apps/`) | 80% |
-| Framework (`src/ts/framework/`) | 70% |
-| Utils (`src/ts/utils/`) | 70% |
+| Area                                               | Target |
+| -------------------------------------------------- | ------ |
+| Core Services (`src/ts/services/`, `src/ts/core/`) | 100%   |
+| Window System (`src/ts/windows/`)                  | 100%   |
+| UI Components (`src/ts/ui/`)                       | 90%    |
+| Apps (`src/ts/apps/`)                              | 80%    |
+| Framework (`src/ts/framework/`)                    | 70%    |
+| Utils (`src/ts/utils/`)                            | 70%    |
 
 ## Generating Docs
 

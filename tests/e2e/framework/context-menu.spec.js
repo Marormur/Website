@@ -24,10 +24,10 @@ test.describe('MacUI Framework - Context Menu', () => {
             const menu = new ContextMenu({
                 items: [
                     { id: 'copy', label: 'Copy', icon: '📋', onClick: () => {} },
-                    { id: 'paste', label: 'Paste', icon: '📄', onClick: () => {} }
+                    { id: 'paste', label: 'Paste', icon: '📄', onClick: () => {} },
                 ],
                 position: { x: 100, y: 100 },
-                onClose: () => {}
+                onClose: () => {},
             });
             menu.mount(container);
         });

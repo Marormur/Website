@@ -23,7 +23,7 @@ test.describe('MacUI Framework - Drag & Drop', () => {
 
             dragDropManager.makeDraggable({
                 element,
-                data: { type: 'test', data: 'test-data' }
+                data: { type: 'test', data: 'test-data' },
             });
 
             return element.draggable === true;

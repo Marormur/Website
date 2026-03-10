@@ -17,9 +17,9 @@ test.describe('MacUI Framework - State Manager', () => {
     test('StateManager can get and set state', async ({ page }) => {
         const state = await page.evaluate(() => {
             const { StateManager } = window.MacUI;
-            
+
             const manager = new StateManager({
-                initialState: { count: 0, user: null }
+                initialState: { count: 0, user: null },
             });
 
             manager.setState({ count: 5 });
@@ -32,9 +32,9 @@ test.describe('MacUI Framework - State Manager', () => {
     test('StateManager selectors work', async ({ page }) => {
         const result = await page.evaluate(() => {
             const { StateManager } = window.MacUI;
-            
+
             const manager = new StateManager({
-                initialState: { count: 10 }
+                initialState: { count: 10 },
             });
 
             const selector = manager.createSelector(state => state.count * 2);

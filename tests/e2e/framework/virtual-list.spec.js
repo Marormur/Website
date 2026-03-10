@@ -28,7 +28,7 @@ test.describe('MacUI Framework - Virtual List', () => {
                 items,
                 itemHeight: 40,
                 height: 400,
-                renderItem: (item) => h('div', {}, item.name)
+                renderItem: item => h('div', {}, item.name),
             });
             list.mount(container);
         });

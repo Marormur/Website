@@ -17,13 +17,13 @@ test.describe('MacUI Framework - Keyboard Shortcuts', () => {
     test('Can register and get shortcuts', async ({ page }) => {
         const shortcut = await page.evaluate(() => {
             const { keyboardShortcuts } = window.MacUI;
-            
+
             keyboardShortcuts.register({
                 id: 'test-save',
                 key: 'Meta+S',
                 scope: 'global',
                 description: 'Save file',
-                callback: () => {}
+                callback: () => {},
             });
 
             return keyboardShortcuts.get('test-save');

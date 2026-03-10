@@ -24,12 +24,12 @@ test.describe('MacUI Framework - Table Component', () => {
             const table = new Table({
                 columns: [
                     { key: 'name', label: 'Name', sortable: true },
-                    { key: 'email', label: 'Email' }
+                    { key: 'email', label: 'Email' },
                 ],
                 data: [
                     { name: 'John', email: 'john@example.com' },
-                    { name: 'Jane', email: 'jane@example.com' }
-                ]
+                    { name: 'Jane', email: 'jane@example.com' },
+                ],
             });
             table.mount(container);
         });

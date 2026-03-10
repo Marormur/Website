@@ -23,15 +23,13 @@ test.describe('MacUI Framework - Tree Component', () => {
 
             const tree = new Tree({
                 nodes: [
-                    { 
-                        id: 'folder1', 
-                        label: 'Folder 1', 
+                    {
+                        id: 'folder1',
+                        label: 'Folder 1',
                         icon: '📁',
-                        children: [
-                            { id: 'file1', label: 'File 1', icon: '📄' }
-                        ]
-                    }
-                ]
+                        children: [{ id: 'file1', label: 'File 1', icon: '📄' }],
+                    },
+                ],
             });
             tree.mount(container);
         });

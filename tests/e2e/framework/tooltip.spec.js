@@ -25,7 +25,7 @@ test.describe('MacUI Framework - Tooltip Component', () => {
                 content: 'This is a tooltip',
                 placement: 'top',
                 delay: 0,
-                children: new Button({ label: 'Hover me' }).render()
+                children: new Button({ label: 'Hover me' }).render(),
             });
             tooltip.mount(container);
         });

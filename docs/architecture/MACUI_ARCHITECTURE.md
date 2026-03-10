@@ -74,44 +74,45 @@
 
 ## Komponentenmatrix
 
-| Component       | Status | Finder | Terminal | TextEditor | Photos | Priority |
-|-----------------|--------|--------|----------|------------|--------|----------|
-| **Core**        |        |        |          |            |        |          |
+| Component       | Status  | Finder | Terminal | TextEditor | Photos | Priority |
+| --------------- | ------- | ------ | -------- | ---------- | ------ | -------- |
+| **Core**        |         |        |          |            |        |          |
 | BaseComponent   | ✅ Done | ✅     | ✅       | ✅         | ✅     | Critical |
 | Store           | ✅ Done | ✅     | ⚪       | ⚪         | ⚪     | Medium   |
 | ErrorBoundary   | 🚧 TODO | 📅     | 📅       | 📅         | 📅     | Critical |
-| **Layout**      |        |        |          |            |        |          |
+| **Layout**      |         |        |          |            |        |          |
 | AppShell        | ✅ Done | ✅     | 📅       | 📅         | 📅     | High     |
 | SplitView       | ✅ Done | ✅     | ⚪       | 📅         | ⚪     | High     |
-| **Navigation**  |        |        |          |            |        |          |
+| **Navigation**  |         |        |          |            |        |          |
 | Sidebar         | ✅ Done | ✅     | ⚪       | 📅         | ⚪     | High     |
 | Toolbar         | ✅ Done | ✅     | 📅       | 📅         | ⚪     | High     |
 | Tabs            | ✅ Done | ✅     | 📅       | 📅         | ⚪     | High     |
 | Breadcrumbs     | ✅ Done | ✅     | ⚪       | 📅         | ⚪     | Medium   |
-| **Data**        |        |        |          |            |        |          |
+| **Data**        |         |        |          |            |        |          |
 | ListView        | ✅ Done | ✅     | ⚪       | 📅         | ⚪     | High     |
 | GridView        | ✅ Done | ✅     | ⚪       | ⚪         | 📅     | Medium   |
 | DataView        | ✅ Done | ✅     | ⚪       | ⚪         | ⚪     | Medium   |
 | Tree            | 🚧 TODO | 📅     | ⚪       | 📅         | ⚪     | Low      |
 | VirtualList     | 🚧 TODO | 📅     | ⚪       | ⚪         | 📅     | Low      |
-| **Controls**    |        |        |          |            |        |          |
+| **Controls**    |         |        |          |            |        |          |
 | Button          | 🚧 TODO | 📅     | 📅       | 📅         | 📅     | Critical |
 | Input           | 🚧 TODO | 📅     | 📅       | 📅         | 📅     | Critical |
 | Select          | 🚧 TODO | 📅     | 📅       | 📅         | ⚪     | High     |
 | Checkbox        | 🚧 TODO | ⚪     | 📅       | 📅         | ⚪     | Medium   |
 | Radio           | 🚧 TODO | ⚪     | 📅       | 📅         | ⚪     | Low      |
-| **Feedback**    |        |        |          |            |        |          |
+| **Feedback**    |         |        |          |            |        |          |
 | Toast           | 🚧 TODO | 📅     | 📅       | 📅         | 📅     | Critical |
 | Badge           | 🚧 TODO | 📅     | 📅       | 📅         | ⚪     | Medium   |
 | EmptyState      | 🚧 TODO | 📅     | 📅       | 📅         | 📅     | High     |
 | ProgressBar     | 🚧 TODO | 📅     | ⚪       | 📅         | 📅     | Medium   |
 | Modal           | 🚧 TODO | 📅     | 📅       | 📅         | 📅     | High     |
-| **Interaction** |        |        |          |            |        |          |
+| **Interaction** |         |        |          |            |        |          |
 | ContextMenu     | 🚧 TODO | 📅     | 📅       | 📅         | 📅     | High     |
 | Dropdown        | 🚧 TODO | 📅     | 📅       | 📅         | ⚪     | Medium   |
 | Tooltip         | 🚧 TODO | 📅     | 📅       | 📅         | 📅     | Medium   |
 
 **Legend:**
+
 - ✅ Done & In Use
 - 🚧 TODO (Planned)
 - 📅 Will Use (App will adopt when available)
@@ -222,23 +223,23 @@ src/ts/framework/
 
 ## Bundle-Größen (Geschätzt)
 
-| Module          | Current | After Phase 1 | After Phase 4 | Target |
-|-----------------|---------|---------------|---------------|--------|
-| Core            | 8 KB    | 12 KB         | 15 KB         | < 20 KB|
-| Layout          | 6 KB    | 6 KB          | 8 KB          | < 10 KB|
-| Navigation      | 10 KB   | 10 KB         | 12 KB         | < 15 KB|
-| Data            | 8 KB    | 8 KB          | 15 KB         | < 20 KB|
-| Controls        | 0 KB    | 10 KB         | 15 KB         | < 20 KB|
-| Feedback        | 0 KB    | 5 KB          | 8 KB          | < 10 KB|
-| Interaction     | 0 KB    | 0 KB          | 10 KB         | < 15 KB|
-| **Total**       | **32 KB**| **51 KB**    | **83 KB**     | **< 100 KB** |
+| Module      | Current   | After Phase 1 | After Phase 4 | Target       |
+| ----------- | --------- | ------------- | ------------- | ------------ |
+| Core        | 8 KB      | 12 KB         | 15 KB         | < 20 KB      |
+| Layout      | 6 KB      | 6 KB          | 8 KB          | < 10 KB      |
+| Navigation  | 10 KB     | 10 KB         | 12 KB         | < 15 KB      |
+| Data        | 8 KB      | 8 KB          | 15 KB         | < 20 KB      |
+| Controls    | 0 KB      | 10 KB         | 15 KB         | < 20 KB      |
+| Feedback    | 0 KB      | 5 KB          | 8 KB          | < 10 KB      |
+| Interaction | 0 KB      | 0 KB          | 10 KB         | < 15 KB      |
+| **Total**   | **32 KB** | **51 KB**     | **83 KB**     | **< 100 KB** |
 
-*Alle Angaben gzipped*
+_Alle Angaben gzipped_
 
 ## Performance-Benchmarks (Ziele)
 
 | Metrik                | Current | Target Phase 1 | Target Phase 4 |
-|-----------------------|---------|----------------|----------------|
+| --------------------- | ------- | -------------- | -------------- |
 | Initial Render        | ~50ms   | ~60ms          | ~50ms          |
 | Re-Render (100 nodes) | ~15ms   | ~15ms          | ~10ms          |
 | VDOM Diff             | ~8ms    | ~8ms           | ~5ms           |
@@ -247,15 +248,15 @@ src/ts/framework/
 
 ## Type Coverage
 
-| Module       | Current | Phase 1 Target | Phase 4 Target |
-|--------------|---------|----------------|----------------|
-| Core         | 100%    | 100%           | 100%           |
-| Layout       | 100%    | 100%           | 100%           |
-| Navigation   | 100%    | 100%           | 100%           |
-| Data         | 100%    | 100%           | 100%           |
-| Controls     | N/A     | 100%           | 100%           |
-| Feedback     | N/A     | 100%           | 100%           |
-| **Overall**  | **79%** | **85%**        | **90%+**       |
+| Module      | Current | Phase 1 Target | Phase 4 Target |
+| ----------- | ------- | -------------- | -------------- |
+| Core        | 100%    | 100%           | 100%           |
+| Layout      | 100%    | 100%           | 100%           |
+| Navigation  | 100%    | 100%           | 100%           |
+| Data        | 100%    | 100%           | 100%           |
+| Controls    | N/A     | 100%           | 100%           |
+| Feedback    | N/A     | 100%           | 100%           |
+| **Overall** | **79%** | **85%**        | **90%+**       |
 
 ## Migration Progress
 
