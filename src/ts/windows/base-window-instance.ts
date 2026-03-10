@@ -212,7 +212,8 @@ export class BaseWindowInstance {
 
 // Attach to window for legacy compatibility
 if (typeof window !== 'undefined') {
-    window.BaseWindowInstance = BaseWindowInstance;
+    (window as unknown as { BaseWindowInstance: typeof BaseWindowInstance }).BaseWindowInstance =
+        BaseWindowInstance;
 }
 
 export default BaseWindowInstance;

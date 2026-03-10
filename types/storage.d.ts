@@ -9,7 +9,7 @@ declare interface StorageSystemAPI {
   saveWindowPositions(): void;
   restoreWindowPositions(): void;
   resetWindowLayout(): void;
-  getDialogWindowElement(id: string): HTMLElement | null;
+  getDialogWindowElement(idOrElement: string | HTMLElement | null): HTMLElement | null;
 }
 
 declare const StorageSystem: StorageSystemAPI;

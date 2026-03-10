@@ -392,7 +392,7 @@ export class Dialog {
                 if (shouldSave) {
                     if (moved) {
                         this.applySnapAfterDrag(target, this.lastDragPointerX);
-                    } else if (initialSnapSide) {
+                    } else if (initialSnapSide === 'left' || initialSnapSide === 'right') {
                         this.snapTo(initialSnapSide, { silent: true });
                     }
                     window.saveWindowPositions?.();
@@ -569,7 +569,7 @@ export class Dialog {
         };
 
         target.style.overflow = 'visible';
-        const handles = [
+        const handles: ResizeHandle[] = [
             {
                 name: 'top',
                 cursor: 'n-resize',
@@ -695,5 +695,5 @@ export class Dialog {
     }
 }
 // Note: Type declaration is in types/index.d.ts
-window.Dialog = Dialog;
+(window as unknown as { Dialog: typeof Dialog }).Dialog = Dialog;
 export default Dialog;

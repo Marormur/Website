@@ -131,7 +131,7 @@ export class StateManager<S> {
     createSelector<R>(selector: Selector<S, R>): () => R {
         return () => {
             if (this.computedCache.has(selector)) {
-                return this.computedCache.get(selector);
+                return this.computedCache.get(selector) as R;
             }
 
             const result = selector(this.state);

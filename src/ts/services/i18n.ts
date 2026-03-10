@@ -41,7 +41,11 @@ interface TranslationDict {
 }
 
 export interface AppI18n {
-    translate: (key: string, params?: TranslationParams, options?: TranslateOptions) => string;
+    translate: (
+        key: string,
+        paramsOrFallback?: TranslationParams | string,
+        options?: TranslateOptions
+    ) => string;
     applyTranslations: (root?: Document | Element) => void;
     setLanguagePreference: (pref: LanguagePreference) => LanguageCode;
     getLanguagePreference: () => LanguagePreference;
@@ -198,17 +202,21 @@ function resolveKey(lang: LanguageCode, key: string): unknown {
  */
 export function translate(
     key: string,
-    params: TranslationParams = {},
+    paramsOrFallback: TranslationParams | string = {},
     options: TranslateOptions = {}
 ): string {
     if (!key) return '';
+    const params =
+        typeof paramsOrFallback === 'string' ? {} : (paramsOrFallback as TranslationParams);
+    const effectiveOptions =
+        typeof paramsOrFallback === 'string' ? { ...options, fallback: paramsOrFallback } : options;
     const lang = options.language || activeLanguage;
     let value = resolveKey(lang, key);
     if (value === undefined && lang !== FALLBACK_LANGUAGE) {
         value = resolveKey(FALLBACK_LANGUAGE, key);
     }
     if (value === undefined) {
-        return options.fallback !== undefined ? options.fallback : key;
+        return effectiveOptions.fallback !== undefined ? effectiveOptions.fallback : key;
     }
     if (typeof value === 'string') {
         return formatTemplate(value, params);

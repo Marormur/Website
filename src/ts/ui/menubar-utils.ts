@@ -17,7 +17,7 @@
         document.querySelectorAll('.menu-dropdown').forEach(dropdown => {
             if (!dropdown.classList.contains('hidden')) {
                 if (domUtils && typeof domUtils.hide === 'function') {
-                    domUtils.hide(dropdown);
+                    domUtils.hide(dropdown as HTMLElement);
                 } else {
                     dropdown.classList.add('hidden');
                 }

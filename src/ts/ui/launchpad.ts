@@ -66,7 +66,9 @@ logger.debug('UI', 'Launchpad (TS) loaded');
         allApps = [];
         windowIds.forEach(id => {
             const cfg = WM.getConfig(id);
-            const info = WM.getProgramInfo(id);
+            const info = WM.getProgramInfo(id) as
+                | { programLabel?: string; icon?: string }
+                | undefined;
             if (cfg && cfg.type === 'transient') return; // skip transient
             if (id === 'launchpad-modal') return; // skip self
             if (info) {

@@ -180,7 +180,7 @@ export function getWindowActions(): ActionMap {
          * Traffic-Light Button: Close Window
          * Closes the window containing the clicked element
          */
-        'window-close': (_params: Params, element?: HTMLElement) => {
+        'window-close': (_params: Params, element: HTMLElement | null) => {
             if (!element) {
                 logger.warn('UI', '[ActionBus] window-close: no element provided');
                 return;
@@ -222,7 +222,7 @@ export function getWindowActions(): ActionMap {
          * Traffic-Light Button: Minimize Window
          * Minimizes the window containing the clicked element
          */
-        'window-minimize': (_params: Params, element?: HTMLElement) => {
+        'window-minimize': (_params: Params, element: HTMLElement | null) => {
             if (!element) {
                 logger.warn('UI', '[ActionBus] window-minimize: no element provided');
                 return;
@@ -258,7 +258,7 @@ export function getWindowActions(): ActionMap {
          * Traffic-Light Button: Maximize/Zoom Window
          * Toggles fullscreen for the window containing the clicked element
          */
-        'window-maximize': (_params: Params, element?: HTMLElement) => {
+        'window-maximize': (_params: Params, element: HTMLElement | null) => {
             if (!element) {
                 logger.warn('UI', '[ActionBus] window-maximize: no element provided');
                 return;

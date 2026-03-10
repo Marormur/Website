@@ -382,7 +382,7 @@ export class FinderView extends BaseTab {
         // Ensure the tab title reflects the current folder/view
         // We call super.setTitle to avoid the recursion of this.setTitle -> refresh -> _renderAll
         const t = (key: string, fb: string) =>
-            window.appI18n ? window.appI18n.translate(key, {}, { fallback: fb }) : fb;
+            window.appI18n?.translate?.(key, {}, { fallback: fb }) ?? fb;
 
         let label = '';
         const atRoot = this.currentPath.length === 0;
@@ -1165,6 +1165,7 @@ export class FinderView extends BaseTab {
                 const API = this.getAPI();
                 const username = this.getGithubUsername();
                 const repo = this.currentPath[0];
+                if (!repo) return;
                 const subPath = this.currentPath.slice(1).concat(name).join('/');
                 const maybe = this.lastGithubItemsMap.get(name);
 
@@ -2043,6 +2044,7 @@ export class FinderView extends BaseTab {
             } else {
                 // Repo contents
                 const repo = this.currentPath[0];
+                if (!repo) return;
                 const subPath = this.currentPath.slice(1).join('/');
                 const cacheKey = `${repo}/${subPath}`;
 

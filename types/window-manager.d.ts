@@ -5,7 +5,7 @@ declare interface WindowConfig {
   type: 'persistent' | 'transient';
   programKey?: string;
   icon?: string;
-  closeButtonId?: string;
+  closeButtonId?: string | null;
   metadata?: Record<string, unknown>;
 }
 
@@ -22,6 +22,7 @@ declare interface WindowManagerAPI {
   getAllWindowIds(): string[];
   getPersistentWindowIds(): string[];
   getDialogInstance(id: string): unknown;
+  setDialogInstance?(id: string, instance: unknown): void;
   syncZIndexWithDOM(): void;
 }
 

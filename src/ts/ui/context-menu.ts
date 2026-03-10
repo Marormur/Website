@@ -311,7 +311,7 @@ if (guardedWindow[guardKey]) {
             id: 'open-finder',
             label: i18n.translate('context.openFinder') || 'Finder öffnen',
             action: () => {
-                window.FinderWindow?.focusOrCreate();
+                window.FinderWindow?.focusOrCreate?.();
             },
         });
         items.push({

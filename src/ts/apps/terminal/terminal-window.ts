@@ -166,9 +166,7 @@ export class TerminalWindow extends BaseWindow {
         window.createSession();
 
         // Register window BEFORE showing it, so updateDockIndicators() can find it
-        if (window.WindowRegistry) {
-            window.WindowRegistry.registerWindow?.(window);
-        }
+        globalThis.window.WindowRegistry?.registerWindow?.(window);
 
         // Show window
         window.show();

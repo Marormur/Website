@@ -1,11 +1,15 @@
 // Ambient types for i18n system
 
 declare interface AppI18nAPI {
-  translate(key: string, params?: Record<string, unknown>, options?: { fallback?: string }): string;
+  translate(
+    key: string,
+    paramsOrFallback?: Record<string, unknown> | string,
+    options?: { fallback?: string }
+  ): string;
   setLanguagePreference(lang: 'system' | 'de' | 'en'): void;
   getLanguagePreference(): 'system' | 'de' | 'en';
   getActiveLanguage(): 'de' | 'en';
-  applyTranslations(): void;
+  applyTranslations(root?: Document | Element | null): void;
 }
 
 declare const appI18n: AppI18nAPI;

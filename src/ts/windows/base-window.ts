@@ -471,7 +471,7 @@ export class BaseWindow {
         };
 
         // Resize handles (8 directions)
-        const handles = [
+        const handles: ResizeHandle[] = [
             {
                 name: 'top',
                 cursor: 'n-resize',
@@ -598,7 +598,7 @@ export class BaseWindow {
 
         // WindowRegistry will handle cleanup
         if (W.WindowRegistry) {
-            W.WindowRegistry.removeWindow(this.id);
+            W.WindowRegistry.removeWindow?.(this.id);
         }
 
         // Update dock indicators after window is closed
@@ -873,7 +873,7 @@ export class BaseWindow {
 
         // Trigger multi-window session save (debounced)
         if (W.MultiWindowSessionManager) {
-            W.MultiWindowSessionManager.saveSession();
+            W.MultiWindowSessionManager.saveSession?.();
         }
 
         // Legacy session manager (for backwards compatibility)

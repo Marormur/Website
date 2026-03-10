@@ -129,9 +129,7 @@ export class TextEditorWindow extends BaseWindow {
         window.show();
 
         // Register with WindowRegistry
-        if (globalThis.WindowRegistry) {
-            globalThis.WindowRegistry.registerWindow?.(window);
-        }
+        globalThis.window.WindowRegistry?.registerWindow?.(window);
 
         return window;
     }

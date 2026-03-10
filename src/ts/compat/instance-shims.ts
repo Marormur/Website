@@ -27,9 +27,10 @@ export type ShimOptions = {
 };
 
 export function installShim(opts: ShimOptions, win: Window & typeof globalThis): void {
-    if (typeof win[opts.legacyName] !== 'undefined') return; // already exists
+    const globalBag = win as unknown as Window & Record<string, unknown>;
+    if (typeof globalBag[opts.legacyName] !== 'undefined') return; // already exists
     try {
-        win[opts.legacyName] = {
+        globalBag[opts.legacyName] = {
             createInstance: opts.createInstance,
             getInstanceCount: opts.getInstanceCount,
             getAllInstances: opts.getAllInstances,

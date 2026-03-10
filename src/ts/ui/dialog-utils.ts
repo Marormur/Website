@@ -21,6 +21,8 @@ declare global {
         dialogs?: {
             [key: string]: {
                 modal?: HTMLElement;
+                open?: () => void;
+                close?: () => void;
                 bringToFront?: () => void;
             };
         };

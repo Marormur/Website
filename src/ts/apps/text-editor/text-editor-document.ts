@@ -401,7 +401,7 @@ export class TextEditorDocument extends BaseTab {
         });
 
         if (state['filename']) doc.filename = state['filename'] as string;
-        if (state['wrapMode']) doc.wrapMode = state['wrapMode'] as string;
+        if (state['wrapMode']) doc.wrapMode = state['wrapMode'] as WrapMode;
         if (state['isDirty'] !== undefined) doc.isDirty = state['isDirty'] as boolean;
 
         return doc;

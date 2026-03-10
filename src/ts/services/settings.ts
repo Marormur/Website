@@ -389,7 +389,8 @@ logger.debug('APP', 'Settings Module loaded');
     };
 
     // Export to global scope
-    (window as Window & { SettingsSystem: SettingsSystemType }).SettingsSystem = SettingsSystem;
+    (window as unknown as Window & { SettingsSystem: SettingsSystemType }).SettingsSystem =
+        SettingsSystem;
 
     // Auto-init if container exists on load
     if (document.readyState === 'loading') {

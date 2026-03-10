@@ -40,8 +40,11 @@ export class PhotosWindow extends BaseWindow {
         if (WindowChrome && win) {
             const status = WindowChrome.createStatusBar({
                 leftContent:
-                    window.appI18n?.translate?.('photos.status.countPlaceholder', '– Fotos') ||
-                    '– Fotos',
+                    window.appI18n?.translate?.(
+                        'photos.status.countPlaceholder',
+                        {},
+                        { fallback: '– Fotos' }
+                    ) || '– Fotos',
                 rightContent: '',
             });
             win.appendChild(status);

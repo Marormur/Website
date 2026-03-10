@@ -53,10 +53,10 @@ interface DOMUtilsShape {
 interface ActionBusShape {
     register(
         actionName: string,
-        handler: (params: Record<string, string>, el: HTMLElement | null) => void
+        handler: (params: Record<string, string>, el?: HTMLElement | null) => void
     ): void;
     registerAll(
-        actions: Record<string, (params: Record<string, string>, el: HTMLElement | null) => void>
+        actions: Record<string, (params: Record<string, string>, el?: HTMLElement | null) => void>
     ): void;
     execute(
         actionName: string,
@@ -97,7 +97,7 @@ interface WindowManagerShape {
 /** Shape of the application menu / menu rendering system. */
 interface MenuSystemShape {
     renderApplicationMenu(activeModalId?: string | null): void;
-    handleMenuActionActivation?: (actionId: string) => void;
+    handleMenuActionActivation?: (event: Event) => void;
     menuDefinitions?: Record<string, unknown>;
     getCurrentMenuModalId(): string | null;
 }
@@ -156,14 +156,24 @@ declare global {
             init?: () => void;
             update?: () => void;
             updateDockIndicators?: () => void;
+            initDockMagnification?: () => void;
+            initDockDragDrop?: () => void;
+            getDockReservedBottom?: () => number;
+            getCurrentDockOrder?: () => string[];
+            loadDockOrder?: () => string[] | null;
+            saveDockOrder?: (order: string[]) => void;
+            applyDockOrder?: (order: string[]) => void;
         };
         LaunchpadSystem?: {
             container?: HTMLElement | null;
             init?: (container: HTMLElement) => void;
             refresh?: () => void;
+            clearSearch?: () => void;
         };
         /** Icon rendering system. */
         IconSystem?: {
+            SYSTEM_ICONS?: Record<string, string>;
+            ensureSvgNamespace?: (svg: string) => string;
             getMenuIconSvg?: (icon: string) => string;
             renderIconIntoElement?: (el: HTMLElement, svg: string, icon: string) => void;
         };
@@ -202,7 +212,12 @@ declare global {
 
         // ── Window & Dialog helpers ───────────────────────────────────────
         WindowManager?: WindowManagerShape;
-        WindowChrome?: unknown;
+        WindowChrome?: {
+            createStatusBar?: (config: {
+                leftContent?: string;
+                rightContent?: string;
+            }) => HTMLElement;
+        };
         /** Legacy Dialog constructor exposed on window. */
         Dialog?: new (id: string) => {
             open?: () => void;
@@ -210,6 +225,7 @@ declare global {
             minimize?: () => void;
             toggleMaximize?: () => void;
             bringToFront?: () => void;
+            modal?: HTMLElement;
         };
         /** Singleton WindowRegistry instance. */
         WindowRegistry?: {
@@ -260,7 +276,7 @@ declare global {
         FinderView?: new (config?: {
             id?: string;
             title?: string;
-            source?: string;
+            source?: 'computer' | 'github' | 'recent' | 'starred';
             icon?: string;
         }) => {
             id: string;
@@ -279,6 +295,22 @@ declare global {
             window?: {
                 close?: (id: string) => void;
             };
+        };
+        GitHubAPI?: {
+            getHeaders?: () => Record<string, string>;
+            readCache?: (kind: string, repo?: string, subPath?: string) => unknown;
+            writeCache?: (kind: string, repo: string, subPath: string, data: unknown) => void;
+            fetchJSON?: (url: string) => Promise<unknown>;
+            fetchUserRepos?: (username: string, opts?: Record<string, unknown>) => Promise<unknown>;
+            fetchRepoContents?: (
+                username: string,
+                repo: string,
+                subPath?: string,
+                opts?: Record<string, unknown>
+            ) => Promise<unknown>;
+            prefetchUserRepos?: (username: string) => void;
+            getCacheState?: (kind: string, repo?: string, subPath?: string) => unknown;
+            isCacheStale?: (kind: string, repo?: string, subPath?: string) => boolean;
         };
         /** Open the program info modal from the menu. */
         openProgramInfoFromMenu?: (infoModalId: string | null) => void;
@@ -344,9 +376,9 @@ declare global {
 
         // ── Snap helpers ──────────────────────────────────────────────────
         computeSnapMetrics?: (
-            side: string
-        ) => { x: number; y: number; width: number; height: number } | null | undefined;
-        showSnapPreview?: (side: string) => void;
+            side: 'left' | 'right'
+        ) => { left: number; top: number; width: number; height: number } | null | undefined;
+        showSnapPreview?: (side: 'left' | 'right') => void;
         hideSnapPreview?: () => void;
 
         // ── Photos / Image viewer helpers ─────────────────────────────────
@@ -360,8 +392,12 @@ declare global {
             register?: (shortcut: string, handler: () => void) => void;
         };
         appI18n?: {
-            translate?: (key: string, fallback?: string) => string;
-            applyTranslations?: (root: HTMLElement) => void;
+            translate?: (
+                key: string,
+                paramsOrFallback?: Record<string, unknown> | string,
+                options?: { fallback?: string }
+            ) => string;
+            applyTranslations?: (root?: HTMLElement | null) => void;
         };
 
         // ── ActionBus ────────────────────────────────────────────────────
@@ -380,7 +416,7 @@ declare global {
 
         // ── StorageSystem ─────────────────────────────────────────────────
         StorageSystem?: {
-            getDialogWindowElement?: (id: string) => HTMLElement | null;
+            getDialogWindowElement?: (idOrElement: string | HTMLElement) => HTMLElement | null;
         };
 
         // ── VDOM System ───────────────────────────────────────────────────
