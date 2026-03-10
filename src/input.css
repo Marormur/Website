@@ -1,5 +1,11 @@
 /* stylelint-disable at-rule-no-unknown */
 @import 'tailwindcss';
+
+/* WHY: Tailwind v4 defaults dark: variants to @media (prefers-color-scheme: dark).
+   We use class-based dark mode (html.dark) for user-controlled theme switching via
+   the settings panel. This variant makes all dark: utilities respond to the .dark
+   class on <html> instead of the system media query. */
+@custom-variant dark (&:where(.dark, .dark *));
 /* stylelint-enable at-rule-no-unknown */
 
 /* Custom styles to preserve existing design */

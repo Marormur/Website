@@ -47,21 +47,12 @@ export class Tabs extends BaseComponent<TabsProps> {
         } = this.props;
 
         const isMacos = variant === 'macos';
-        const isDarkTheme =
-            typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
-
         const containerClass = isMacos
             ? `macui-tabs flex w-full items-center gap-1 px-1.5 py-0.5 rounded-full border border-gray-300 dark:border-gray-600 ${className || ''}`
             : `macui-tabs-pills flex items-center gap-1 p-1 bg-gray-200/50 dark:bg-gray-800/50 rounded-lg ${className || ''}`;
         const containerProps: Record<string, unknown> = { className: containerClass };
         if (id) {
             containerProps.id = id;
-        }
-        if (isMacos && isDarkTheme) {
-            containerProps.style = {
-                backgroundColor: 'rgba(30, 41, 59, 0.78)',
-                borderColor: 'rgba(71, 85, 105, 0.75)',
-            };
         }
 
         return h(
@@ -72,14 +63,10 @@ export class Tabs extends BaseComponent<TabsProps> {
                       h(
                           'div',
                           { className: 'wt-tab-strip flex flex-1 min-w-0 items-end gap-1 mr-2' },
-                          ...tabs.map(tab =>
-                              this.renderTab(tab, tab.id === activeTabId, variant, isDarkTheme)
-                          )
+                          ...tabs.map(tab => this.renderTab(tab, tab.id === activeTabId, variant))
                       ),
                   ]
-                : tabs.map(tab =>
-                      this.renderTab(tab, tab.id === activeTabId, variant, isDarkTheme)
-                  )),
+                : tabs.map(tab => this.renderTab(tab, tab.id === activeTabId, variant))),
             showAddButton
                 ? h(
                       'button',
@@ -100,12 +87,7 @@ export class Tabs extends BaseComponent<TabsProps> {
         );
     }
 
-    private renderTab(
-        tab: TabItem,
-        isActive: boolean,
-        variant: 'macos' | 'pills',
-        isDarkTheme: boolean
-    ): VNode {
+    private renderTab(tab: TabItem, isActive: boolean, variant: 'macos' | 'pills'): VNode {
         const { onTabChange, onTabClose } = this.props;
         const isMacos = variant === 'macos';
 
@@ -128,21 +110,6 @@ export class Tabs extends BaseComponent<TabsProps> {
             'div',
             {
                 className: tabClass,
-                ...(isMacos && isDarkTheme
-                    ? {
-                          style: isActive
-                              ? {
-                                    backgroundColor: 'rgba(71, 85, 105, 0.62)',
-                                    color: 'rgb(243, 244, 246)',
-                                    borderColor: 'rgba(100, 116, 139, 0.9)',
-                                }
-                              : {
-                                    backgroundColor: 'rgba(15, 23, 42, 0.28)',
-                                    color: 'rgb(203, 213, 225)',
-                                    borderColor: 'transparent',
-                                },
-                      }
-                    : {}),
                 onclick: () => onTabChange(tab.id),
                 draggable: true,
                 'data-tab-id': tab.id,
