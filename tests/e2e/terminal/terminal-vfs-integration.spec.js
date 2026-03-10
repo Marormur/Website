@@ -204,14 +204,29 @@ test.describe('Terminal VirtualFS Integration', () => {
 
         await executeCommand(page, 'cd Documents');
 
-        // Trigger session save
+        // Trigger session save with immediate: true to bypass the 2-second debounce.
+        // Without this, the debounce timer never fires before page.reload() and
+        // nothing is persisted to localStorage.
         await page.evaluate(() => {
-            window.MultiWindowSessionManager?.saveSession();
+            window.MultiWindowSessionManager?.saveSession({ immediate: true });
         });
 
         // Reload page
         await page.reload();
         await waitForAppReady(page);
+
+        // Session restore runs asynchronously (~150 ms after APP_READY via setTimeout).
+        // Wait until the terminal window is registered AND has an active session
+        // with a valid vfsCwd before reading the value.
+        // 8 s gives ample margin for slow CI runners where restore can lag by
+        // several hundred ms after the load event.
+        await page.waitForFunction(
+            () => {
+                const win = window.__WindowRegistry?.getWindowsByType?.('terminal')?.[0];
+                return win?.activeSession?.vfsCwd != null;
+            },
+            { timeout: 8000 }
+        );
 
         // Check terminal is restored (may not have the exact cwd due to session restore complexity)
         const terminalRestored = await page.evaluate(() => {
