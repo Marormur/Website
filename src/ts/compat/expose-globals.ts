@@ -92,6 +92,9 @@ import '../services/system';
 // Initialize MacUI Framework - must load AFTER core modules (api, storage, etc.)
 import '../core/framework-init';
 
+// Welcome dialog – shown once on first visit (before app-init so it appears early)
+import '../ui/welcome-dialog';
+
 // Set bundle-ready flag BEFORE importing app-init to prevent duplicate initialization
 // This allows app-init.ts to skip its own auto-attach to DOMContentLoaded
 type WindowWithBundle = Window & { __BUNDLE_READY__?: boolean; initApp?: () => void } & Record<
