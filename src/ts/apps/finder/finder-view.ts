@@ -31,6 +31,17 @@ const ROOT_FOLDER_NAME = 'Computer';
 
 type ViewMode = 'list' | 'grid';
 
+/** VFS event listener type, derived from the VirtualFS API for type safety. */
+type VFSListener = Parameters<typeof VirtualFS.addEventListener>[0];
+
+/**
+ * Return the parent directory path of a normalized VFS path.
+ * E.g. `'home/marvin/file.txt'` → `'home/marvin'`, `'home'` → `''`.
+ */
+function getVFSParentDir(normalizedPath: string): string {
+    return normalizedPath.split('/').slice(0, -1).join('/');
+}
+
 type FinderSortKey =
     | 'none'
     | 'name'
@@ -152,6 +163,8 @@ export class FinderView extends BaseTab {
     private _scrollPositions: Map<string, number> = new Map();
     // Cleanup function for keyboard shortcuts
     private _keyboardCleanup: (() => void) | null = null;
+    // VirtualFS change listener for live-sync; stored for proper teardown
+    private _vfsListener: VFSListener | null = null;
 
     constructor(config?: Partial<TabConfig> & { source?: FinderSource }) {
         super({
@@ -324,6 +337,9 @@ export class FinderView extends BaseTab {
             }
         }
 
+        // Register VirtualFS listener for live-sync on first show (no-op if already registered)
+        this._setupVFSListener();
+
         this._renderAll();
     }
 
@@ -376,6 +392,47 @@ export class FinderView extends BaseTab {
         this._keyboardCleanup = () => {
             container.removeEventListener('keydown', handleKeyDown, true);
         };
+    }
+
+    /**
+     * Register a VirtualFS change listener for live-sync of the current directory.
+     *
+     * PURPOSE: Automatically re-render when a file/folder in the currently displayed
+     *          directory is created, deleted, renamed, or updated.
+     * WHY: Only the parent-directory of the changed path is compared to currentPath,
+     *      so changes in deeper subdirectories or unrelated paths cause no extra renders.
+     * INVARIANT: At most one listener is registered per FinderView instance (guarded by _vfsListener).
+     * DEPENDENCY: Must be called after the view is shown; teardown via _teardownVFSListener().
+     */
+    private _setupVFSListener(): void {
+        if (this._vfsListener) return; // already registered
+
+        this._vfsListener = event => {
+            // Only react to local VirtualFS changes (not GitHub / recent / starred sources)
+            if (this.source !== 'computer') return;
+
+            // Determine which paths are affected (rename has both oldPath and path)
+            const affectedPaths = [event.path];
+            if (event.oldPath) affectedPaths.push(event.oldPath);
+
+            const currentDir = this.currentPath.join('/');
+            const isRelevant = affectedPaths.some(p => getVFSParentDir(p) === currentDir);
+            if (!isRelevant) return;
+
+            logger.debug('FINDER', '[FinderView] VFS live-sync:', event.type, event.path);
+            this._renderAll();
+        };
+
+        VirtualFS.addEventListener(this._vfsListener);
+    }
+
+    /**
+     * Unregister the VirtualFS change listener and free the reference.
+     */
+    private _teardownVFSListener(): void {
+        if (!this._vfsListener) return;
+        VirtualFS.removeEventListener(this._vfsListener);
+        this._vfsListener = null;
     }
 
     private _renderAll(): void {
@@ -1753,6 +1810,8 @@ export class FinderView extends BaseTab {
             this._keyboardCleanup();
             this._keyboardCleanup = null;
         }
+        // Remove VirtualFS listener to avoid memory leaks when the tab is destroyed
+        this._teardownVFSListener();
 
         return {
             ...super.serialize(),
