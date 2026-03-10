@@ -332,7 +332,28 @@ import logger from '../core/logger.js';
     // ===== Layout Reset =====
 
     function resetWindowLayout(): void {
+        // Close all open windows first before resetting state
+        const registry = w['WindowRegistry'] as Record<string, unknown> | undefined;
+        if (
+            registry &&
+            typeof (registry as Record<string, unknown>)['closeAllWindows'] === 'function'
+        ) {
+            try {
+                ((registry as Record<string, unknown>)['closeAllWindows'] as () => void)();
+            } catch (err) {
+                logger.warn('STORAGE', 'closeAllWindows failed during reset:', err);
+            }
+        }
+
+        // Also close legacy modals by adding 'hidden' class to ensure all windows close
         const modalIds = getModalIds();
+        modalIds.forEach(id => {
+            const modal = document.getElementById(id) as HTMLElement | null;
+            if (modal && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+                logger.debug('STORAGE', `Closed modal: ${id}`);
+            }
+        });
 
         modalIds.forEach(id => {
             const modal = document.getElementById(id) as HTMLElement | null;
@@ -372,7 +393,12 @@ import logger from '../core/logger.js';
                 const enforce = (dialog as Record<string, unknown>)['enforceMenuBarBoundary'] as
                     | (() => void)
                     | undefined;
-                if (typeof enforce === 'function') enforce();
+                if (typeof enforce !== 'function') return;
+                try {
+                    enforce();
+                } catch (err) {
+                    logger.warn('STORAGE', 'enforceMenuBarBoundary failed during reset:', err);
+                }
             });
         }
 
@@ -383,6 +409,12 @@ import logger from '../core/logger.js';
             | (() => void)
             | undefined;
         if (typeof updateProgramLabelByTopModal === 'function') updateProgramLabelByTopModal();
+
+        // Re-show welcome dialog after a full reset to restore first-run UX.
+        const resetWelcomeDialogAndShow = w['resetWelcomeDialogAndShow'] as
+            | (() => void)
+            | undefined;
+        if (typeof resetWelcomeDialogAndShow === 'function') resetWelcomeDialogAndShow();
     }
 
     // ===== Public API (global) =====

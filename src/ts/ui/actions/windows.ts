@@ -121,11 +121,28 @@ export function getWindowActions(): ActionMap {
         },
 
         resetWindowLayout: () => {
-            const g = getGlobal<{ hideMenuDropdowns?: () => void; resetWindowLayout?: () => void }>(
-                ''
-            );
+            const g = getGlobal<{
+                hideMenuDropdowns?: () => void;
+                resetWindowLayout?: () => void;
+                StorageSystem?: { resetWindowLayout?: () => void };
+                API?: { storage?: { resetWindowLayout?: () => void } };
+                resetWelcomeDialogAndShow?: () => void;
+            }>('');
             g?.hideMenuDropdowns?.();
-            g?.resetWindowLayout?.();
+
+            const resetFn =
+                g?.resetWindowLayout ||
+                g?.StorageSystem?.resetWindowLayout ||
+                g?.API?.storage?.resetWindowLayout;
+
+            if (typeof resetFn === 'function') {
+                resetFn();
+            } else {
+                logger.warn('UI', 'resetWindowLayout: no reset function available');
+            }
+
+            // Ensure reset action is visible to users: show welcome dialog again.
+            g?.resetWelcomeDialogAndShow?.();
         },
 
         openProgramInfo: () => {
