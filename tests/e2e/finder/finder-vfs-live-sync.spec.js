@@ -49,9 +49,11 @@ test.describe('Finder VirtualFS live-sync', () => {
         const vfsPath = `/home/marvin/${filename}`;
 
         // Create file via VirtualFS – simulates what the Terminal does
-        await page.evaluate(path => {
-            window.VirtualFS?.createFile(path, 'live-sync test');
+        const created = await page.evaluate(path => {
+            if (!window.VirtualFS) throw new Error('VirtualFS not available on window');
+            return window.VirtualFS.createFile(path, 'live-sync test');
         }, vfsPath);
+        expect(created).toBe(true);
 
         // Finder must show the new file without manual navigation
         await expect(
@@ -60,8 +62,12 @@ test.describe('Finder VirtualFS live-sync', () => {
                 .filter({ hasText: filename })
         ).toBeVisible({ timeout: 3000 });
 
-        // Cleanup
-        await page.evaluate(path => window.VirtualFS?.delete(path), vfsPath);
+        // Cleanup – validate success to catch stale artifacts
+        const deleted = await page.evaluate(path => {
+            if (!window.VirtualFS) throw new Error('VirtualFS not available on window');
+            return window.VirtualFS.delete(path);
+        }, vfsPath);
+        expect(deleted).toBe(true);
     });
 
     test('edge: deleted file disappears from Finder automatically', async ({ page }) => {
@@ -72,9 +78,11 @@ test.describe('Finder VirtualFS live-sync', () => {
         const vfsPath = `/home/marvin/${filename}`;
 
         // Pre-create the file so we can delete it
-        await page.evaluate(path => {
-            window.VirtualFS?.createFile(path, 'to be deleted');
+        const created = await page.evaluate(path => {
+            if (!window.VirtualFS) throw new Error('VirtualFS not available on window');
+            return window.VirtualFS.createFile(path, 'to be deleted');
         }, vfsPath);
+        expect(created).toBe(true);
 
         // Wait for the item to appear in the Finder
         await expect(
@@ -83,8 +91,12 @@ test.describe('Finder VirtualFS live-sync', () => {
                 .filter({ hasText: filename })
         ).toBeVisible({ timeout: 3000 });
 
-        // Now delete via VirtualFS
-        await page.evaluate(path => window.VirtualFS?.delete(path), vfsPath);
+        // Now delete via VirtualFS – validate the operation succeeded
+        const deleted = await page.evaluate(path => {
+            if (!window.VirtualFS) throw new Error('VirtualFS not available on window');
+            return window.VirtualFS.delete(path);
+        }, vfsPath);
+        expect(deleted).toBe(true);
 
         // Finder must no longer show the item
         await expect(

@@ -1810,8 +1810,6 @@ export class FinderView extends BaseTab {
             this._keyboardCleanup();
             this._keyboardCleanup = null;
         }
-        // Remove VirtualFS listener to avoid memory leaks when the tab is destroyed
-        this._teardownVFSListener();
 
         return {
             ...super.serialize(),
@@ -1826,6 +1824,22 @@ export class FinderView extends BaseTab {
             scrollPositions: Array.from(this._scrollPositions.entries()),
             savedScrollPosition: this._savedScrollPosition,
         } as TabState;
+    }
+
+    /**
+     * Override destroy to remove the VirtualFS live-sync listener before the tab is freed.
+     *
+     * PURPOSE: Ensure the VFS listener is unregistered exactly once, when the tab is actually
+     *          being destroyed — not during routine session autosaves.
+     * WHY: serialize() is called on every autosave while the tab is still open and active;
+     *      tearing down the listener there would silently break live-sync after the first save.
+     *      destroy() is the correct lifecycle hook for irreversible resource cleanup.
+     * INVARIANT: Must call super.destroy() so BaseTab removes the DOM element and
+     *            clears parentWindow.
+     */
+    destroy(): void {
+        this._teardownVFSListener();
+        super.destroy();
     }
 
     static deserialize(state: TabState & Record<string, unknown>): FinderView {
