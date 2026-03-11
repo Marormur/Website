@@ -10,13 +10,20 @@
  */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
-    background: url('../../img/wallpaper.png') no-repeat center center fixed !important;
+    background: var(--desktop-wallpaper-image) no-repeat center center fixed !important;
     background-size: cover !important;
     margin: 0;
     padding: 0;
 }
 
+body.window-dragging,
+body.window-dragging * {
+    -webkit-user-select: none !important;
+    user-select: none !important;
+}
+
 :root {
+    --desktop-wallpaper-image: url('../../img/wallpaper.png');
     --window-shadow: 0 22px 45px rgba(15, 23, 42, 0.18);
     --window-shadow-hover: 0 28px 58px rgba(15, 23, 42, 0.25);
     --window-border: rgba(15, 23, 42, 0.12);
@@ -34,6 +41,838 @@ body {
     --dark-shadow: 0 26px 80px rgba(0, 0, 0, 0.45);
     /* Increased desktop icon mask size for better visual weight */
     --desktop-icon-size: 88px;
+}
+
+/* ==========================================================================
+   Settings App Refresh (macOS inspired)
+   ========================================================================== */
+
+.settings-window-shell {
+    --settings-window-radius: 1.25rem;
+    --settings-sidebar-inset: 0.5rem;
+    width: min(980px, calc(100vw - 40px)) !important;
+    max-width: calc(100vw - 40px) !important;
+    min-height: 520px;
+    position: relative;
+    border-radius: var(--settings-window-radius);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: linear-gradient(
+        180deg,
+        rgba(248, 250, 252, 0.97) 0%,
+        rgba(240, 244, 249, 0.93) 100%
+    );
+    box-shadow:
+        0 28px 52px rgba(15, 23, 42, 0.2),
+        0 1px 0 rgba(255, 255, 255, 0.7) inset;
+    overflow: hidden;
+}
+
+#settings-container {
+    height: 100%;
+    border-radius: var(--settings-window-radius);
+    overflow: hidden;
+}
+
+.draggable-header {
+    cursor: move;
+}
+
+.draggable-header button,
+.draggable-header [role='button'],
+.draggable-header a {
+    cursor: auto;
+}
+
+.settings-window-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.settings-window-control {
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    border: none;
+    padding: 0;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25) inset;
+}
+
+.settings-window-control--close {
+    background: #ef4444;
+    cursor: pointer;
+}
+
+.settings-window-control--close:hover {
+    background: #dc2626;
+}
+
+.settings-window-control--minimize {
+    background: #f59e0b;
+}
+
+.settings-window-control--maximize {
+    background: #22c55e;
+}
+
+.settings-app {
+    --settings-sidebar-width: 252px;
+    position: relative;
+    height: 100%;
+    border-radius: var(--settings-window-radius);
+    overflow: hidden;
+    background: linear-gradient(
+        180deg,
+        rgba(248, 250, 252, 0.8) 0%,
+        rgba(237, 242, 247, 0.68) 100%
+    );
+    color: #0f172a;
+}
+
+.settings-sidebar-shell {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--settings-sidebar-width);
+    z-index: 2;
+    padding-top: var(--settings-sidebar-inset);
+    padding-right: 0;
+    padding-bottom: var(--settings-sidebar-inset);
+    padding-left: var(--settings-sidebar-inset);
+    overflow: hidden;
+}
+
+.settings-sidebar-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: calc(var(--settings-window-radius) - var(--settings-sidebar-inset));
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    /* Simulate frosted glass: heavy tint keeps it nearly opaque like real macOS. */
+    background: linear-gradient(rgba(248, 250, 252, 0.94), rgba(248, 250, 252, 0.99));
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.78) inset,
+        -1px 0 0 rgba(148, 163, 184, 0.16) inset,
+        0 10px 22px rgba(15, 23, 42, 0.08);
+    backdrop-filter: saturate(130%) blur(80px);
+    -webkit-backdrop-filter: saturate(130%) blur(80px);
+    overflow: hidden;
+}
+
+.settings-sidebar-top {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    border-bottom: none;
+    background: transparent;
+}
+
+.settings-sidebar {
+    flex: 1;
+    min-height: 0;
+    padding: 14px 12px 12px;
+    overflow: auto;
+}
+
+.settings-search-wrap {
+    position: relative;
+    margin-bottom: 14px;
+}
+
+.settings-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(30, 41, 59, 0.72);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.settings-search-input {
+    width: 100%;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 12px;
+    height: 32px;
+    padding: 0 12px 0 34px;
+    font-size: 14px;
+    color: #0f172a;
+    background: rgba(15, 23, 42, 0.05);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) inset;
+}
+
+.settings-search-input::placeholder {
+    color: rgba(30, 41, 59, 0.58);
+}
+
+.settings-account {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 10px;
+    padding: 8px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.settings-account:hover {
+    background: rgba(15, 23, 42, 0.06);
+}
+
+.settings-account-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 1px solid rgba(15, 23, 42, 0.2);
+}
+
+.settings-device-avatar {
+    width: clamp(72px, 11vw, 96px);
+    height: clamp(72px, 11vw, 96px);
+    border-width: 1.5px;
+}
+
+.settings-account-copy {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-account-name {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.settings-account-subline {
+    font-size: 12px;
+    color: rgba(51, 65, 85, 0.75);
+}
+
+.settings-nav-group-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(51, 65, 85, 0.5);
+    margin: 10px 8px 8px;
+}
+
+.settings-nav-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: rgba(15, 23, 42, 0.88);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 3px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.settings-nav-item:hover {
+    background: rgba(15, 23, 42, 0.08);
+}
+
+.settings-nav-item--active {
+    background: linear-gradient(180deg, #0b63db, #0a56c6);
+    color: #f8fbff;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.2) inset,
+        0 7px 14px rgba(5, 42, 108, 0.28);
+}
+
+.settings-nav-icon {
+    width: 18px;
+    text-align: center;
+    opacity: 0.88;
+}
+
+.settings-nav-title {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.settings-subcategory-list {
+    padding: 6px;
+}
+
+.settings-subcategory-item {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.settings-subcategory-item:hover {
+    background: rgba(15, 23, 42, 0.08);
+}
+
+.settings-subcategory-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.08);
+    font-size: 13px;
+}
+
+.settings-subcategory-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.settings-subcategory-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(15, 23, 42, 0.9);
+}
+
+.settings-subcategory-description {
+    font-size: 12px;
+    color: rgba(51, 65, 85, 0.72);
+}
+
+.settings-subcategory-chevron {
+    font-size: 19px;
+    line-height: 1;
+    color: rgba(51, 65, 85, 0.6);
+}
+
+.settings-main-shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: calc(var(--settings-window-radius) - var(--settings-sidebar-inset));
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(241, 245, 249, 0.95));
+}
+
+.settings-content-topbar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px 0 calc(var(--settings-sidebar-width) + 18px);
+    border-bottom: none;
+    background: transparent;
+}
+
+.settings-content-nav {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    padding: 1px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(15, 23, 42, 0.04);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+    overflow: hidden;
+    position: relative;
+}
+
+.settings-content-nav::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-0.5px);
+    background: rgba(148, 163, 184, 0.65);
+    pointer-events: none;
+}
+
+.settings-content-nav-btn {
+    width: 30px;
+    height: 28px;
+    border: 0;
+    background: transparent;
+    color: rgba(51, 65, 85, 0.9);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background-color 0.14s ease,
+        color 0.14s ease;
+}
+
+.settings-content-nav-btn:hover:not(:disabled) {
+    background: rgba(15, 23, 42, 0.08);
+}
+
+.settings-content-nav-btn:disabled {
+    color: rgba(148, 163, 184, 0.9);
+    cursor: not-allowed;
+}
+
+.settings-content-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: rgba(15, 23, 42, 0.9);
+}
+
+.settings-main {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    background: transparent;
+    padding: 26px 26px 26px calc(var(--settings-sidebar-width) + 26px);
+}
+
+.settings-section {
+    max-width: 740px;
+}
+
+.settings-overview-panel {
+    margin-bottom: 22px;
+    border-radius: 24px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.04), rgba(15, 23, 42, 0.06));
+    padding: 26px 28px;
+    text-align: center;
+}
+
+.settings-overview-icon {
+    width: 86px;
+    height: 86px;
+    object-fit: contain;
+    margin: 0 auto 12px;
+    filter: drop-shadow(0 10px 20px rgba(15, 23, 42, 0.2));
+}
+
+.settings-overview-title {
+    margin: 0;
+    font-size: 38px;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.settings-overview-description {
+    margin: 8px auto 0;
+    max-width: 620px;
+    font-size: 14px;
+    line-height: 1.35;
+    color: rgba(51, 65, 85, 0.8);
+    font-weight: 500;
+}
+
+.settings-section-header {
+    margin-bottom: 18px;
+}
+
+.settings-section-title {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.settings-section-description {
+    margin-top: 7px;
+    margin-bottom: 0;
+    color: rgba(51, 65, 85, 0.78);
+    font-size: 14px;
+}
+
+.settings-device-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0 20px;
+    text-align: center;
+}
+
+.settings-device-emoji {
+    font-size: 64px;
+    line-height: 1;
+}
+
+.settings-device-name {
+    margin: 8px 0 2px;
+    font-size: 44px;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+}
+
+.settings-device-subtitle {
+    margin: 0;
+    color: rgba(51, 65, 85, 0.72);
+    font-size: 14px;
+}
+
+.settings-info-card,
+.settings-option-card {
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.78);
+    overflow: hidden;
+}
+
+.settings-info-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.settings-info-row:last-child {
+    border-bottom: none;
+}
+
+.settings-info-key {
+    color: rgba(51, 65, 85, 0.88);
+    font-weight: 500;
+}
+
+.settings-info-value {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.settings-option-card {
+    padding: 12px;
+}
+
+.settings-option-legend {
+    color: rgba(30, 41, 59, 0.88);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 0 8px;
+}
+
+.settings-radio-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.settings-radio-row:hover {
+    background: rgba(15, 23, 42, 0.06);
+}
+
+.settings-radio-input {
+    margin-top: 2px;
+    accent-color: #4ea2ff;
+}
+
+.settings-radio-copy {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-radio-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.settings-radio-description {
+    font-size: 13px;
+    color: rgba(51, 65, 85, 0.78);
+}
+
+html.dark .settings-app {
+    background: linear-gradient(180deg, #111418 0%, #141820 100%);
+    color: #f4f6fb;
+}
+
+html.dark .settings-window-shell {
+    border-color: rgba(116, 125, 146, 0.32);
+    background: linear-gradient(180deg, rgba(31, 34, 42, 0.98) 0%, rgba(23, 26, 33, 0.96) 100%);
+    box-shadow:
+        0 32px 72px rgba(3, 7, 18, 0.48),
+        0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+html.dark .settings-sidebar-top,
+html.dark .settings-content-topbar {
+    border-bottom-color: transparent;
+    background: transparent;
+}
+
+html.dark .settings-window-shell .settings-sidebar-top,
+html.dark .settings-window-shell .settings-content-topbar {
+    border-bottom: 0 !important;
+    background: transparent !important;
+}
+
+html.dark .settings-content-nav {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+html.dark .settings-content-nav-btn {
+    color: rgba(226, 232, 240, 0.92);
+}
+
+html.dark .settings-content-nav-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+html.dark .settings-content-nav-btn:disabled {
+    color: rgba(148, 163, 184, 0.68);
+}
+
+html.dark .settings-content-title {
+    color: rgba(243, 244, 246, 0.95);
+}
+
+html.dark .settings-sidebar-panel {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(rgba(24, 28, 35, 0.99), rgba(24, 28, 35, 0.99));
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        -1px 0 0 rgba(255, 255, 255, 0.09) inset,
+        0 12px 24px rgba(2, 6, 23, 0.44);
+    backdrop-filter: saturate(130%) blur(80px);
+    -webkit-backdrop-filter: saturate(130%) blur(80px);
+}
+
+html.dark .settings-sidebar {
+    background: transparent;
+}
+
+html.dark .settings-search-icon {
+    color: rgba(225, 231, 242, 0.78);
+}
+
+html.dark .settings-search-input {
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+html.dark .settings-search-input::placeholder {
+    color: rgba(226, 232, 240, 0.6);
+}
+
+html.dark .settings-account:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+html.dark .settings-account-avatar {
+    border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+html.dark .settings-account-subline {
+    color: rgba(226, 232, 240, 0.68);
+}
+
+html.dark .settings-nav-group-label {
+    color: rgba(226, 232, 240, 0.42);
+}
+
+html.dark .settings-nav-item {
+    color: rgba(244, 247, 255, 0.9);
+}
+
+html.dark .settings-nav-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .settings-subcategory-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .settings-subcategory-icon {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+html.dark .settings-subcategory-title {
+    color: rgba(244, 247, 255, 0.96);
+}
+
+html.dark .settings-subcategory-description,
+html.dark .settings-subcategory-chevron {
+    color: rgba(226, 232, 240, 0.68);
+}
+
+html.dark .settings-main {
+    background: transparent;
+}
+
+html.dark .settings-main-shell {
+    background: linear-gradient(180deg, rgba(31, 34, 42, 0.98) 0%, rgba(24, 27, 34, 0.97) 100%);
+}
+
+html.dark .settings-section-title {
+    color: #f8fbff;
+}
+
+html.dark .settings-overview-panel {
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.06));
+}
+
+html.dark .settings-overview-title {
+    color: #f8fbff;
+}
+
+html.dark .settings-overview-description {
+    color: rgba(229, 236, 246, 0.72);
+}
+
+html.dark .settings-section-description {
+    color: rgba(236, 243, 255, 0.72);
+}
+
+html.dark .settings-device-subtitle {
+    color: rgba(224, 231, 244, 0.66);
+}
+
+html.dark .settings-info-card,
+html.dark .settings-option-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .settings-info-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+html.dark .settings-info-key {
+    color: rgba(228, 235, 247, 0.78);
+}
+
+html.dark .settings-info-value {
+    color: #f8fbff;
+}
+
+html.dark .settings-option-legend {
+    color: rgba(236, 243, 255, 0.84);
+}
+
+html.dark .settings-radio-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .settings-radio-title {
+    color: #f8fbff;
+}
+
+html.dark .settings-radio-description {
+    color: rgba(224, 231, 244, 0.68);
+}
+
+@media (max-width: 900px) {
+    .settings-app {
+        --settings-sidebar-width: 240px;
+    }
+
+    .settings-device-name {
+        font-size: 36px;
+    }
+
+    .settings-overview-title {
+        font-size: 34px;
+    }
+
+    .settings-overview-description {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 820px) {
+    .settings-app {
+        --settings-sidebar-width: 210px;
+    }
+}
+
+@media (max-width: 720px) {
+    .settings-app {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .settings-sidebar-shell {
+        position: relative;
+        top: auto;
+        left: auto;
+        bottom: auto;
+        width: auto;
+        z-index: auto;
+        padding: 8px 8px 6px;
+    }
+
+    .settings-sidebar-panel {
+        max-height: 230px;
+    }
+
+    .settings-main-shell {
+        min-height: 0;
+    }
+
+    .settings-content-topbar {
+        padding-left: 16px;
+    }
+
+    .settings-main {
+        padding: 18px;
+    }
+
+    .settings-device-name {
+        font-size: 34px;
+    }
+
+    .settings-overview-panel {
+        padding: 22px 18px;
+        border-radius: 18px;
+    }
+
+    .settings-overview-icon {
+        width: 72px;
+        height: 72px;
+    }
+
+    .settings-overview-title {
+        font-size: 30px;
+    }
+
+    .settings-overview-description {
+        font-size: 13px;
+    }
 }
 
 /* Launchpad modal: Allow clicks to pass through the wrapper and centering overlay
@@ -131,7 +970,7 @@ html.dark .modal .autopointer {
     color: var(--dark-text);
 }
 
-html.dark .modal .draggable-header {
+html.dark .modal .draggable-header:not(.settings-sidebar-top):not(.settings-content-topbar) {
     background: linear-gradient(180deg, var(--dark-surface-4), var(--dark-surface-5)) !important;
     border-bottom: 1px solid var(--dark-border);
 }
@@ -977,7 +1816,7 @@ html.dark .dock-indicator {
 /* Toolbar */
 .finder-toolbar-btn {
     padding: 0.375rem;
-    border-radius: 0.375rem;
+    border-radius: 0.55rem;
     color: #6b7280;
     transition:
         background-color 0.15s ease,
@@ -997,13 +1836,91 @@ html.dark .dock-indicator {
 .finder-toolbar-pill-control {
     border-radius: 9999px;
     padding: 1px;
-    border: 1px solid rgb(209 213 219);
-    background: rgb(255 255 255);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.04);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.34) inset;
 }
 
 .dark .finder-toolbar-pill-control {
-    border-color: rgba(255, 255, 255, 0.1);
-    background: rgba(57, 61, 70, 0.74);
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+.finder-content-nav {
+    display: inline-flex;
+    align-items: center;
+    width: 64px;
+    height: 32px;
+    border-radius: 9999px;
+    padding: 1px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(15, 23, 42, 0.04);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+    overflow: hidden;
+    position: relative;
+}
+
+.finder-content-nav::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-0.5px);
+    background: rgba(148, 163, 184, 0.65);
+    pointer-events: none;
+}
+
+.finder-content-nav-btn {
+    width: 30px;
+    height: 28px;
+    border: 0;
+    background: transparent;
+    color: rgba(51, 65, 85, 0.9);
+    font-size: 18px;
+    font-family:
+        'SF Pro Text',
+        -apple-system,
+        system-ui,
+        sans-serif;
+    font-weight: 400;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background-color 0.14s ease,
+        color 0.14s ease;
+}
+
+.finder-content-nav-btn:hover:not(:disabled) {
+    background: rgba(15, 23, 42, 0.08);
+}
+
+.finder-content-nav-btn:disabled {
+    color: rgba(148, 163, 184, 0.9);
+    cursor: not-allowed;
+}
+
+html.dark .finder-content-nav {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+html.dark .finder-content-nav-btn {
+    color: rgba(226, 232, 240, 0.92);
+}
+
+html.dark .finder-content-nav-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+html.dark .finder-content-nav-btn:disabled {
+    color: rgba(148, 163, 184, 0.68);
 }
 
 .finder-sort-trigger {
@@ -1173,23 +2090,29 @@ html.dark .dock-indicator {
         --finder-sidebar-radius,
         calc(var(--finder-window-radius, 1.125rem) - var(--finder-sidebar-inset, 0.5rem))
     );
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    background: linear-gradient(
-        180deg,
-        rgba(250, 250, 252, 0.94) 0%,
-        rgba(244, 246, 249, 0.9) 100%
-    );
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: linear-gradient(rgba(248, 250, 252, 0.94), rgba(248, 250, 252, 0.99));
     box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.7) inset,
-        0 8px 20px rgba(15, 23, 42, 0.08);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+        0 1px 0 rgba(255, 255, 255, 0.78) inset,
+        -1px 0 0 rgba(148, 163, 184, 0.16) inset,
+        0 10px 22px rgba(15, 23, 42, 0.08);
+    backdrop-filter: saturate(130%) blur(80px);
+    -webkit-backdrop-filter: saturate(130%) blur(80px);
 }
 
 /* Finder corner geometry: keep inner sidebar at a constant offset from
    the outer window arc by deriving radius from window radius minus inset. */
 .finder-window-shell {
     border-radius: var(--finder-window-radius, 1.125rem);
+    border: 1px solid rgba(148, 163, 184, 0.24) !important;
+    background: linear-gradient(
+        180deg,
+        rgba(248, 250, 252, 0.992) 0%,
+        rgba(240, 244, 249, 0.984) 100%
+    ) !important;
+    box-shadow:
+        0 28px 52px rgba(15, 23, 42, 0.2),
+        0 1px 0 rgba(255, 255, 255, 0.7) inset !important;
 }
 
 .finder-window-shell .finder-sidebar-panel-shell {
@@ -1200,16 +2123,111 @@ html.dark .dock-indicator {
 }
 
 .dark .finder-sidebar-panel {
-    border-color: rgba(100, 116, 139, 0.35);
-    background: linear-gradient(180deg, rgba(38, 41, 48, 0.94) 0%, rgba(28, 31, 36, 0.92) 100%);
+    border-color: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(rgba(24, 28, 35, 0.99), rgba(24, 28, 35, 0.99));
     box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.04) inset,
-        0 10px 22px rgba(2, 6, 23, 0.45);
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        -1px 0 0 rgba(255, 255, 255, 0.09) inset,
+        0 12px 24px rgba(2, 6, 23, 0.44);
+    backdrop-filter: saturate(130%) blur(80px);
+    -webkit-backdrop-filter: saturate(130%) blur(80px);
+}
+
+.dark .finder-window-shell {
+    border-color: rgba(116, 125, 146, 0.32) !important;
+    background: linear-gradient(
+        180deg,
+        rgba(31, 34, 42, 0.98) 0%,
+        rgba(23, 26, 33, 0.96) 100%
+    ) !important;
+    box-shadow:
+        0 32px 72px rgba(3, 7, 18, 0.48),
+        0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+.finder-vdom-root {
+    background: transparent !important;
+}
+
+.finder-vdom-root [data-main-toolbar-wrap] {
+    padding-top: 2px;
+}
+
+.finder-vdom-root .finder-toolbar {
+    background: transparent !important;
+}
+
+.finder-vdom-root .finder-tabs-container {
+    background: transparent !important;
+}
+
+.finder-vdom-root .finder-tabs-container .h-px {
+    display: none;
+}
+
+.finder-vdom-root .finder-tabs-container .window-tabs {
+    background: transparent;
+    gap: 0;
+    padding-top: 0;
+}
+
+html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-tab {
+    background: rgba(148, 163, 184, 0.14) !important;
+    color: #475569 !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-tab.shadow-sm {
+    background: rgba(255, 255, 255, 0.97) !important;
+    color: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.62) !important;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.85) inset,
+        0 1px 3px rgba(15, 23, 42, 0.12) !important;
+}
+
+html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: rgba(148, 163, 184, 0.52) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset !important;
+}
+
+.finder-vdom-root .finder-tabs-container .wt-tab:hover,
+.finder-vdom-root .finder-tabs-container .wt-add:hover {
+    background: rgba(148, 163, 184, 0.14) !important;
+}
+
+.dark .finder-vdom-root .finder-tabs-container .wt-tab:hover,
+.dark .finder-vdom-root .finder-tabs-container .wt-add:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.finder-vdom-root [data-main-toolbar-wrap],
+.finder-vdom-root [data-main-content-wrap] {
+    background: linear-gradient(
+        180deg,
+        rgba(248, 250, 252, 0.965) 0%,
+        rgba(241, 245, 249, 0.955) 100%
+    ) !important;
+}
+
+.dark .finder-vdom-root [data-main-toolbar-wrap],
+.dark .finder-vdom-root [data-main-content-wrap] {
+    background: transparent !important;
 }
 
 .finder-sidebar-panel .finder-sidebar-core {
     background: transparent !important;
     border-right: 0 !important;
+}
+
+.finder-sidebar-panel > .finder-window-drag-zone,
+.finder-sidebar-panel > .flex-1,
+.finder-sidebar-panel > .flex-1 > .finder-sidebar-core {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
 }
 
 .finder-sidebar-group-header {

@@ -1288,7 +1288,7 @@
                     </div>
                 </div>
                 <!-- Einstellungen Modal -->
-                <div id="settings-modal" class="fixed inset-0 hidden modal">
+                <div id="settings-modal" class="fixed inset-0 hidden modal" data-resize-axis="y">
                     <div class="absolute inset-0 flex items-center justify-center">
                         <!--
                     Die Einstellungen werden in einem adaptiven Dialog angezeigt. Statt IFrames wird das
@@ -1297,33 +1297,8 @@
                     werden.
                 -->
                         <div
-                            class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col w-[80vw] h-[70vh] max-h-[90vh]"
+                            class="settings-window-shell autopointer flex flex-col h-[70vh] max-h-[90vh]"
                         >
-                            <!-- Header -->
-                            <div
-                                class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header"
-                            >
-                                <div class="flex space-x-2">
-                                    <button
-                                        title="Schließen"
-                                        data-i18n-title="common.close"
-                                        id="close-settings-modal"
-                                        data-action="closeWindow"
-                                        data-window-id="settings-modal"
-                                        class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300"
-                                    >
-                                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                                    </button>
-                                    <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                                </div>
-                                <h2
-                                    class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
-                                    data-i18n="modals.settings.title"
-                                >
-                                    Systemeinstellungen
-                                </h2>
-                            </div>
                             <!-- Content -->
                             <!-- Settings rendered inline via SettingsSystem module -->
                             <div id="settings-container" class="flex-1 overflow-hidden"></div>

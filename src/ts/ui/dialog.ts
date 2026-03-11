@@ -316,13 +316,15 @@ export class Dialog {
     }
 
     makeDraggable() {
-        const header = this.modal.querySelector('.draggable-header') as HTMLElement | null;
         const target = this.windowEl || this.modal;
-        if (!header || !target) return;
-        header.style.cursor = 'move';
+        if (!target) return;
         let offsetX = 0,
             offsetY = 0;
-        header.addEventListener('mousedown', (e: MouseEvent) => {
+        const handleMouseDown = (e: MouseEvent) => {
+            const dragHeader = (e.target as Element).closest?.(
+                '.draggable-header'
+            ) as HTMLElement | null;
+            if (!dragHeader || !this.modal.contains(dragHeader)) return;
             this.refocus();
             if (
                 (e.target as Element).closest &&
@@ -367,6 +369,7 @@ export class Dialog {
             offsetX = pointerX - adjustedRect.left;
             offsetY = pointerY - adjustedRect.top;
             this.lastDragPointerX = pointerX;
+            document.body.classList.add('window-dragging');
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
             overlay.style.top = '0';
@@ -382,6 +385,7 @@ export class Dialog {
             const cleanup = (shouldSave = true) => {
                 if (!isDragging) return;
                 isDragging = false;
+                document.body.classList.remove('window-dragging');
                 overlay.remove();
                 overlay.removeEventListener('mousemove', mouseMoveHandler);
                 overlay.removeEventListener('mouseup', mouseUpHandler);
@@ -421,11 +425,13 @@ export class Dialog {
             window.addEventListener('mouseup', mouseUpHandler);
             window.addEventListener('blur', blurHandler);
             e.preventDefault();
-        });
+        };
+        this.modal.addEventListener('mousedown', handleMouseDown);
     }
 
     makeResizable() {
         if (this.modal.dataset.noResize === 'true') return;
+        const resizeAxis = this.modal.dataset.resizeAxis || 'both';
         const target = this.windowEl || this.modal;
         if (!target) return;
         const existingHandles = target.querySelectorAll('.resizer');
@@ -619,7 +625,19 @@ export class Dialog {
                 style: { bottom: '-6px', right: '-6px', width: '14px', height: '14px' },
             },
         ];
-        handles.forEach(createHandle);
+
+        const filteredHandles =
+            resizeAxis === 'y'
+                ? handles.filter(handle =>
+                      handle.directions.every(dir => dir === 'n' || dir === 's')
+                  )
+                : resizeAxis === 'x'
+                  ? handles.filter(handle =>
+                        handle.directions.every(dir => dir === 'e' || dir === 'w')
+                    )
+                  : handles;
+
+        filteredHandles.forEach(createHandle);
     }
 
     enforceMenuBarBoundary() {

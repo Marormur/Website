@@ -530,15 +530,38 @@ export const de = {
     },
     settingsPage: {
         title: 'Einstellungen',
+        search: {
+            placeholder: 'Suchen',
+            ariaLabel: 'Einstellungen durchsuchen',
+        },
+        sidebar: {
+            ariaLabel: 'Einstellungsnavigation',
+        },
+        account: {
+            subline: 'Apple Account',
+        },
+        navGroup: {
+            personalization: 'Personalisierung',
+        },
         nav: {
-            general: '👤 Allgemein',
-            display: '🖥️ Darstellung',
-            language: '🌐 Sprache',
+            general: 'Allgemein',
+            display: 'Darstellung',
+            language: 'Sprache',
         },
         general: {
             title: 'Allgemein',
+            description:
+                'Verwalte die allgemeinen Konfigurationen und Einstellungen für den Mac wie Softwareupdates, Gerätesprache, AirDrop und mehr.',
+            subcategoriesAriaLabel: 'Unterkategorien in Allgemein',
+            infoTitle: 'Info',
+            infoDescription: 'Zeigt Geräte- und Profilinformationen an.',
             name: 'Marvin Temmen',
             birth: 'März 1999',
+            roleLabel: 'Rolle',
+            focusLabel: 'Schwerpunkt',
+            focusValue: 'C# im Beruf, privat etwas Web-Entwicklung und C++ Game Dev',
+            approachLabel: 'Arbeitsweise',
+            approachValue: 'Pragmatisch, sauber strukturiert, mit Fokus auf gute Nutzererfahrung',
             locationLabel: 'Wohnort',
             locationValue: 'Deutschland',
             jobLabel: 'Beruf',

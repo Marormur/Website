@@ -685,13 +685,12 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         const sidebarContent = h(
             'aside',
             {
-                className:
-                    'flex flex-col h-full bg-gray-50/80 dark:bg-gray-900/95 border-r border-gray-200/60 dark:border-gray-700/50 overflow-y-auto finder-sidebar-core',
+                className: 'flex flex-col h-full overflow-y-auto finder-sidebar-core',
                 style: { width: '100%' },
             },
             h(
                 'div',
-                { className: 'py-3 px-2' },
+                { className: 'pt-1 pb-3 px-2' },
                 ...sidebarGroups.map(group => renderSidebarGroup(group))
             )
         );
@@ -702,52 +701,31 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                 h(
                     'div',
                     {
-                        className:
-                            'relative flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-1 py-0.5 border border-gray-300 dark:border-gray-600 overflow-hidden',
-                        style: { width: '78px', height: '30px' },
+                        className: 'finder-content-nav finder-no-drag',
                     },
                     h(
                         'button',
                         {
-                            className: `w-9 h-7 flex items-center justify-center ${canGoBack ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-200/80 dark:hover:bg-gray-700' : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'} rounded-full font-semibold`,
+                            className: 'finder-content-nav-btn',
                             onclick: canGoBack ? () => onNavigateBack() : undefined,
+                            disabled: !canGoBack,
+                            'aria-label': 'Zurück',
                             title: 'Zurück',
                             'data-action': 'navigate-back',
-                            style: {
-                                fontSize: '18px',
-                                lineHeight: '1',
-                                fontFamily: 'SF Pro Text, -apple-system, sans-serif',
-                                paddingBottom: '1px',
-                            },
                         },
-                        '<'
+                        '‹'
                     ),
-                    h('div', {
-                        className: 'pointer-events-none absolute',
-                        style: {
-                            left: '50%',
-                            top: '6px',
-                            bottom: '6px',
-                            width: '1px',
-                            transform: 'translateX(-0.5px)',
-                            backgroundColor: 'rgb(156 163 175 / 0.9)',
-                        },
-                    }),
                     h(
                         'button',
                         {
-                            className: `w-9 h-7 flex items-center justify-center ${canGoForward ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-200/80 dark:hover:bg-gray-700' : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'} rounded-full font-semibold`,
+                            className: 'finder-content-nav-btn',
                             onclick: canGoForward ? () => onNavigateForward() : undefined,
+                            disabled: !canGoForward,
+                            'aria-label': 'Vorwärts',
                             title: 'Vorwärts',
                             'data-action': 'navigate-forward',
-                            style: {
-                                fontSize: '18px',
-                                lineHeight: '1',
-                                fontFamily: 'SF Pro Text, -apple-system, sans-serif',
-                                paddingBottom: '1px',
-                            },
                         },
-                        '>'
+                        '›'
                     )
                 ),
             ],
@@ -896,7 +874,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                             'span',
                             {
                                 className:
-                                    'text-[13px] leading-none font-semibold text-gray-700 dark:text-gray-100',
+                                    'text-[16px] leading-none font-bold text-gray-700 dark:text-gray-100',
                                 'aria-hidden': 'true',
                             },
                             '⌕'
@@ -922,7 +900,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
             onTabAdd,
             showAddButton: true,
             variant: 'macos',
-            className: 'bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm',
+            className: 'bg-transparent backdrop-blur-sm',
         });
 
         // macOS 26 Style: Sidebar über volle Höhe mit Traffic Lights
@@ -949,7 +927,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                         'div',
                         {
                             className:
-                                'finder-window-drag-zone flex items-center gap-2 px-3 py-2.5',
+                                'finder-window-drag-zone cursor-move flex items-center gap-2 px-3 py-2.5',
                             style: { height: '44px' },
                         },
                         h('div', {
@@ -993,7 +971,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
             // This ensures that E2E tests only find one set of tabs per window
             this.props.isActive
                 ? h('div', {
-                      className: 'finder-tabs-container pt-2 pl-2 pr-2',
+                      className: 'finder-tabs-container pt-0 pl-2 pr-2',
                       id: `${windowId}-tabs`,
                       'data-tabs-manual': '1',
                   })
@@ -1005,7 +983,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         const toolbarWithMargin = h(
             'div',
             {
-                className: 'finder-window-drag-zone',
+                className: 'finder-window-drag-zone cursor-move',
                 style: { marginLeft: `${sidebarWidth}px` },
                 'data-main-toolbar-wrap': '1',
             },

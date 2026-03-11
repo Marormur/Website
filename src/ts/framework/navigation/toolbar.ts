@@ -13,7 +13,7 @@ export class Toolbar extends BaseComponent<ToolbarProps> {
         return h(
             'div',
             {
-                className: `finder-toolbar px-4 border-b border-gray-200/60 dark:border-gray-700/50 flex items-center gap-2 ${this.props.className || ''}`,
+                className: `finder-toolbar px-4 flex items-center gap-2 ${this.props.className || ''}`,
                 style: { height: '44px', backgroundColor: 'transparent' },
             },
             // Left section

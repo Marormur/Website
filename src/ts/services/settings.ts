@@ -11,17 +11,24 @@ logger.debug('APP', 'Settings Module loaded');
 
     // ===== Types =====
 
-    type SectionName = 'general' | 'display' | 'language';
+    type SectionName = 'general' | 'general-info' | 'display' | 'language';
 
     interface SettingsSystemType {
         currentSection: SectionName;
+        sectionHistory: SectionName[];
+        historyIndex: number;
         container: HTMLElement | null;
         init(containerOrId: HTMLElement | string): void;
         render(): void;
         attachListeners(): void;
         syncThemePreference(): void;
         syncLanguagePreference(): void;
-        showSection(section: SectionName): void;
+        showSection(section: SectionName, options?: { pushHistory?: boolean }): void;
+        getSectionTitle(section: SectionName): { key: string; fallback: string };
+        translateLabel(key: string, fallback: string): string;
+        resolveSidebarPage(section: SectionName): 'general' | 'display' | 'language';
+        navigateHistory(direction: 'back' | 'forward'): void;
+        updateNavigationChrome(): void;
         destroy(): void;
     }
 
@@ -29,6 +36,8 @@ logger.debug('APP', 'Settings Module loaded');
 
     const SettingsSystem: SettingsSystemType = {
         currentSection: 'general',
+        sectionHistory: ['general'],
+        historyIndex: 0,
         container: null,
 
         /**
@@ -46,11 +55,14 @@ logger.debug('APP', 'Settings Module loaded');
             }
 
             this.container = container;
+            this.currentSection = 'general';
+            this.sectionHistory = ['general'];
+            this.historyIndex = 0;
             this.render();
             this.attachListeners();
             this.syncThemePreference();
             this.syncLanguagePreference();
-            this.showSection('general');
+            this.showSection('general', { pushHistory: false });
         },
 
         /**
@@ -60,139 +72,178 @@ logger.debug('APP', 'Settings Module loaded');
             if (!this.container) return;
 
             this.container.innerHTML = `
-                <div class="flex dialog-content settings-panel rounded-b-xl overflow-hidden h-full">
-                    <!-- Linke Seitenleiste -->
-                    <div class="w-48 bg-gray-100 dark:bg-gray-700 p-4 space-y-1 overflow-auto">
-                        <button type="button" class="w-full text-left cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
-                            data-action="settings:showSection"
-                            data-section="general"
-                            data-settings-page="general"
-                            data-i18n="settingsPage.nav.general">
-                            👤 Allgemein
-                        </button>
-                        <button type="button" class="w-full text-left cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
-                            data-action="settings:showSection"
-                            data-section="display"
-                            data-settings-page="display"
-                            data-i18n="settingsPage.nav.display">
-                            🖥️ Darstellung
-                        </button>
-                        <button type="button" class="w-full text-left cursor-pointer px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded no-select"
-                            data-action="settings:showSection"
-                            data-section="language"
-                            data-settings-page="language"
-                            data-i18n="settingsPage.nav.language">
-                            🌐 Sprache
-                        </button>
-                    </div>
-                    <!-- Rechte Hauptansicht -->
-                    <div class="flex-1 p-6 overflow-auto text-gray-800 dark:text-gray-200">
-                        <!-- Sektion: Allgemein -->
-                        <div id="settings-general" class="">
-                            <div class="flex flex-col items-start text-gray-700 dark:text-gray-200 mt-8 w-full space-y-4">
-                                <img src="./img/profil.jpg" alt="Bild" class="w-24 h-24 object-contain mb-2">
-                                <h2 class="text-xl font-semibold" data-i18n="settingsPage.general.name">Marvin Temmen</h2>
-                                <p class="text-sm" data-i18n="settingsPage.general.birth">März 1999</p>
-                                <div class="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 w-full grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-8">
-                                    <div class="text-gray-600 dark:text-gray-300" data-i18n="settingsPage.general.locationLabel">Wohnort</div>
-                                    <div class="text-gray-800 dark:text-gray-100" data-i18n="settingsPage.general.locationValue">Deutschland</div>
-                                    <div class="text-gray-600 dark:text-gray-300" data-i18n="settingsPage.general.jobLabel">Beruf</div>
-                                    <div class="text-gray-800 dark:text-gray-100" data-i18n="settingsPage.general.jobValue">Softwareentwickler</div>
+                <div class="settings-app">
+                    <aside class="settings-sidebar-shell" aria-label="Settings Navigation" data-i18n-aria-label="settingsPage.sidebar.ariaLabel">
+                        <div class="settings-sidebar-panel">
+                            <div class="settings-sidebar-top draggable-header">
+                                <div class="settings-window-controls">
+                                    <button
+                                        title="Schließen"
+                                        data-i18n-title="common.close"
+                                        id="close-settings-modal"
+                                        data-action="closeWindow"
+                                        data-window-id="settings-modal"
+                                        class="settings-window-control settings-window-control--close finder-no-drag"
+                                    ></button>
+                                    <button
+                                        type="button"
+                                        class="settings-window-control settings-window-control--minimize bg-yellow-500 rounded-full"
+                                        aria-label="Minimieren"
+                                        title="Minimieren"
+                                    ></button>
+                                    <button
+                                        type="button"
+                                        class="settings-window-control settings-window-control--maximize bg-green-500 rounded-full"
+                                        aria-label="Maximieren"
+                                        title="Maximieren"
+                                    ></button>
                                 </div>
                             </div>
-                        </div>
-                        <!-- Sektion: Darstellung -->
-                        <div id="settings-display" class="hidden">
-                            <div class="flex flex-col gap-6 mt-4 w-full">
-                                <div>
-                                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100"
-                                        data-i18n="settingsPage.display.title">Darstellung</h2>
-                                    <p class="text-sm text-gray-600 dark:text-gray-300 mt-1"
-                                        data-i18n="settingsPage.display.description">
-                                        Passe das visuelle Erscheinungsbild der Oberfläche an.
-                                    </p>
+                            <div class="settings-sidebar">
+                                <div class="settings-search-wrap">
+                                    <span class="settings-search-icon" aria-hidden="true">⌕</span>
+                                    <input class="settings-search-input" type="search" placeholder="Suchen" aria-label="Suchen" data-i18n-placeholder="settingsPage.search.placeholder" data-i18n-aria-label="settingsPage.search.ariaLabel" />
                                 </div>
-                                <fieldset class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
-                                    <legend class="text-sm font-medium text-gray-700 dark:text-gray-200 px-1"
-                                        data-i18n="settingsPage.display.legend">Darkmode</legend>
-                                    <label class="flex items-center gap-3 cursor-pointer select-none">
-                                        <input type="radio" name="theme-mode" value="system" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
-                                        <div>
-                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
-                                                data-i18n="settingsPage.display.options.system.label">System</span>
-                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
-                                                data-i18n="settingsPage.display.options.system.description">Folgt den aktuellen Systemeinstellungen.</span>
-                                        </div>
-                                    </label>
-                                    <label class="flex items-center gap-3 cursor-pointer select-none">
-                                        <input type="radio" name="theme-mode" value="light" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
-                                        <div>
-                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
-                                                data-i18n="settingsPage.display.options.light.label">Hell</span>
-                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
-                                                data-i18n="settingsPage.display.options.light.description">Bleibt immer im hellen Erscheinungsbild.</span>
-                                        </div>
-                                    </label>
-                                    <label class="flex items-center gap-3 cursor-pointer select-none">
-                                        <input type="radio" name="theme-mode" value="dark" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
-                                        <div>
-                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
-                                                data-i18n="settingsPage.display.options.dark.label">Dunkel</span>
-                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
-                                                data-i18n="settingsPage.display.options.dark.description">Bleibt immer im dunklen Erscheinungsbild.</span>
-                                        </div>
-                                    </label>
-                                </fieldset>
+
+                                <button type="button" class="settings-account" data-action="settings:showSection" data-section="general" data-settings-page="general">
+                                    <img src="./img/profil.jpg" alt="Profilbild" class="settings-account-avatar" />
+                                    <span class="settings-account-copy">
+                                        <span class="settings-account-name" data-i18n="settingsPage.general.name">Marvin Temmen</span>
+                                        <span class="settings-account-subline" data-i18n="settingsPage.account.subline">Apple Account</span>
+                                    </span>
+                                </button>
+
+                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="general" data-settings-page="general">
+                                    <span class="settings-nav-icon" aria-hidden="true">⚙️</span>
+                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.general">Allgemein</span>
+                                </button>
+                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="display" data-settings-page="display">
+                                    <span class="settings-nav-icon" aria-hidden="true">🖥️</span>
+                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.display">Darstellung</span>
+                                </button>
+                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="language" data-settings-page="language">
+                                    <span class="settings-nav-icon" aria-hidden="true">🌐</span>
+                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.language">Sprache</span>
+                                </button>
                             </div>
                         </div>
-                        <!-- Sektion: Sprache -->
-                        <div id="settings-language" class="hidden">
-                            <div class="flex flex-col gap-6 mt-4 w-full">
-                                <div>
-                                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100"
-                                        data-i18n="settingsPage.language.title">Sprache</h2>
-                                    <p class="text-sm text-gray-600 dark:text-gray-300 mt-1"
-                                        data-i18n="settingsPage.language.description">
-                                        Wähle, in welcher Sprache die Oberfläche angezeigt wird.
-                                    </p>
-                                </div>
-                                <fieldset class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
-                                    <legend class="text-sm font-medium text-gray-700 dark:text-gray-200 px-1"
-                                        data-i18n="settingsPage.language.legend">Bevorzugte Sprache</legend>
-                                    <label class="flex items-center gap-3 cursor-pointer select-none">
-                                        <input type="radio" name="language-preference" value="system"
-                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500">
-                                        <div>
-                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
-                                                data-i18n="settingsPage.language.options.system.label">System</span>
-                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
-                                                data-i18n="settingsPage.language.options.system.description">Verwendet automatisch die Sprache deines Systems.</span>
-                                        </div>
-                                    </label>
-                                    <label class="flex items-center gap-3 cursor-pointer select-none">
-                                        <input type="radio" name="language-preference" value="de"
-                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500">
-                                        <div>
-                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
-                                                data-i18n="settingsPage.language.options.de.label">Deutsch</span>
-                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
-                                                data-i18n="settingsPage.language.options.de.description">Zeigt Inhalte immer auf Deutsch.</span>
-                                        </div>
-                                    </label>
-                                    <label class="flex items-center gap-3 cursor-pointer select-none">
-                                        <input type="radio" name="language-preference" value="en"
-                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500">
-                                        <div>
-                                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-100"
-                                                data-i18n="settingsPage.language.options.en.label">Englisch</span>
-                                            <span class="block text-xs text-gray-600 dark:text-gray-300"
-                                                data-i18n="settingsPage.language.options.en.description">Zeigt Inhalte immer auf Englisch.</span>
-                                        </div>
-                                    </label>
-                                </fieldset>
+                    </aside>
+
+                    <main class="settings-main-shell">
+                        <div class="settings-content-topbar draggable-header">
+                            <div class="settings-content-nav" role="group" aria-label="Navigation">
+                                <button type="button" class="settings-content-nav-btn" data-settings-nav="back" data-dialog-action="navigate-back" aria-label="Zurück" title="Zurück">‹</button>
+                                <button type="button" class="settings-content-nav-btn" data-settings-nav="forward" data-dialog-action="navigate-forward" aria-label="Vorwärts" title="Vorwärts">›</button>
                             </div>
+                            <h2 class="settings-content-title" data-settings-current-title data-i18n="settingsPage.general.title">Allgemein</h2>
                         </div>
-                    </div>
+
+                        <div class="settings-main">
+                        <section id="settings-general" class="settings-section">
+                            <div class="settings-overview-panel" role="region" aria-labelledby="settings-general-overview-title">
+                                <img src="./img/settings.png" alt="Settings App Icon" class="settings-overview-icon" />
+                                <h2 id="settings-general-overview-title" class="settings-overview-title" data-i18n="settingsPage.general.title">Allgemein</h2>
+                                <p class="settings-overview-description" data-i18n="settingsPage.general.description">
+                                    Verwalte die allgemeinen Konfigurationen und Einstellungen.
+                                </p>
+                            </div>
+
+                            <div class="settings-option-card settings-subcategory-list" role="list" aria-label="Allgemeine Unterkategorien" data-i18n-aria-label="settingsPage.general.subcategoriesAriaLabel">
+                                <button type="button" class="settings-subcategory-item" role="listitem" data-action="settings:showSection" data-section="general-info">
+                                    <span class="settings-subcategory-icon" aria-hidden="true">💻</span>
+                                    <span class="settings-subcategory-copy">
+                                        <span class="settings-subcategory-title" data-i18n="settingsPage.general.infoTitle">Info</span>
+                                        <span class="settings-subcategory-description" data-i18n="settingsPage.general.infoDescription">Zeigt Geräte- und Profilinformationen an.</span>
+                                    </span>
+                                    <span class="settings-subcategory-chevron" aria-hidden="true">›</span>
+                                </button>
+                            </div>
+                        </section>
+
+                        <section id="settings-general-info" class="settings-section hidden">
+                            <div class="settings-device-hero">
+                                <img src="./img/profil.jpg" alt="Profilbild" class="settings-account-avatar settings-device-avatar" />
+                                <h3 class="settings-device-name" data-i18n="settingsPage.general.name">Marvin Temmen</h3>
+                                <p class="settings-device-subtitle" data-i18n="settingsPage.general.jobValue">Softwareentwickler</p>
+                            </div>
+
+                            <div class="settings-info-card">
+                                <div class="settings-info-row">
+                                    <span class="settings-info-key" data-i18n="settingsPage.general.roleLabel">Rolle</span>
+                                    <span class="settings-info-value" data-i18n="settingsPage.general.jobValue">Softwareentwickler</span>
+                                </div>
+                                <div class="settings-info-row">
+                                    <span class="settings-info-key" data-i18n="settingsPage.general.focusLabel">Schwerpunkt</span>
+                                    <span class="settings-info-value" data-i18n="settingsPage.general.focusValue">C# im Beruf, privat etwas Web-Entwicklung und C++ Game Dev</span>
+                                </div>
+                                <div class="settings-info-row">
+                                    <span class="settings-info-key" data-i18n="settingsPage.general.locationLabel">Wohnort</span>
+                                    <span class="settings-info-value" data-i18n="settingsPage.general.locationValue">Deutschland</span>
+                                </div>
+                                <div class="settings-info-row">
+                                    <span class="settings-info-key" data-i18n="settingsPage.general.jobLabel">Beruf</span>
+                                    <span class="settings-info-value" data-i18n="settingsPage.general.jobValue">Softwareentwickler</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="settings-display" class="settings-section hidden">
+
+                            <fieldset class="settings-option-card">
+                                <legend class="settings-option-legend" data-i18n="settingsPage.display.legend">Darkmode</legend>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="theme-mode" value="system" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.display.options.system.label">System</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.display.options.system.description">Folgt den aktuellen Systemeinstellungen.</span>
+                                    </span>
+                                </label>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="theme-mode" value="light" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.display.options.light.label">Hell</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.display.options.light.description">Bleibt immer im hellen Erscheinungsbild.</span>
+                                    </span>
+                                </label>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="theme-mode" value="dark" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.display.options.dark.label">Dunkel</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.display.options.dark.description">Bleibt immer im dunklen Erscheinungsbild.</span>
+                                    </span>
+                                </label>
+                            </fieldset>
+                        </section>
+
+                        <section id="settings-language" class="settings-section hidden">
+
+                            <fieldset class="settings-option-card">
+                                <legend class="settings-option-legend" data-i18n="settingsPage.language.legend">Bevorzugte Sprache</legend>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="language-preference" value="system" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.language.options.system.label">System</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.language.options.system.description">Verwendet automatisch die Sprache deines Systems.</span>
+                                    </span>
+                                </label>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="language-preference" value="de" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.language.options.de.label">Deutsch</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.language.options.de.description">Zeigt Inhalte immer auf Deutsch.</span>
+                                    </span>
+                                </label>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="language-preference" value="en" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.language.options.en.label">Englisch</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.language.options.en.description">Zeigt Inhalte immer auf Englisch.</span>
+                                    </span>
+                                </label>
+                            </fieldset>
+                        </section>
+                        </div>
+                    </main>
                 </div>
             `;
 
@@ -210,6 +261,28 @@ logger.debug('APP', 'Settings Module loaded');
          */
         attachListeners(): void {
             if (!this.container) return;
+
+            const sectionButtons = this.container.querySelectorAll<HTMLButtonElement>(
+                '[data-action="settings:showSection"][data-section]'
+            );
+            sectionButtons.forEach(button => {
+                button.addEventListener('click', event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const targetSection = button.getAttribute('data-section') as SectionName | null;
+                    if (!targetSection) return;
+                    this.showSection(targetSection);
+                });
+            });
+
+            const backBtn = this.container.querySelector<HTMLButtonElement>(
+                '[data-settings-nav="back"]'
+            );
+            const forwardBtn = this.container.querySelector<HTMLButtonElement>(
+                '[data-settings-nav="forward"]'
+            );
+            backBtn?.addEventListener('click', () => this.navigateHistory('back'));
+            forwardBtn?.addEventListener('click', () => this.navigateHistory('forward'));
 
             // Theme preference change listeners
             const themeRadios = this.container.querySelectorAll<HTMLInputElement>(
@@ -326,18 +399,31 @@ logger.debug('APP', 'Settings Module loaded');
             languageRadios.forEach(radio => {
                 radio.checked = radio.value === preference;
             });
+
+            this.updateNavigationChrome();
         },
 
         /**
          * Show specific settings section
          */
-        showSection(section: SectionName): void {
+        showSection(section: SectionName, options?: { pushHistory?: boolean }): void {
             if (!this.container) return;
+
+            const shouldPush = options?.pushHistory !== false;
+
+            if (shouldPush) {
+                const historyCurrent = this.sectionHistory[this.historyIndex];
+                if (historyCurrent !== section) {
+                    this.sectionHistory = this.sectionHistory.slice(0, this.historyIndex + 1);
+                    this.sectionHistory.push(section);
+                    this.historyIndex = this.sectionHistory.length - 1;
+                }
+            }
 
             this.currentSection = section;
 
             // Hide all sections
-            const sections: SectionName[] = ['general', 'display', 'language'];
+            const sections: SectionName[] = ['general', 'general-info', 'display', 'language'];
             sections.forEach(name => {
                 const el = this.container?.querySelector(`#settings-${name}`);
                 if (el) {
@@ -352,29 +438,115 @@ logger.debug('APP', 'Settings Module loaded');
             }
 
             // Update nav highlighting
-            const navItems = this.container.querySelectorAll(
-                '[data-action="settings:showSection"]'
+            const activeSidebarPage = this.resolveSidebarPage(section);
+            const navItems = this.container.querySelectorAll<HTMLElement>(
+                '.settings-nav-item[data-action="settings:showSection"][data-settings-page]'
             );
             navItems.forEach(item => {
-                const itemSection = item.getAttribute('data-section');
-                if (itemSection === section) {
-                    item.classList.add(
-                        'bg-white',
-                        'dark:bg-gray-600',
-                        'text-gray-900',
-                        'dark:text-gray-100',
-                        'font-medium'
-                    );
+                const itemPage = item.getAttribute('data-settings-page');
+                if (itemPage === activeSidebarPage) {
+                    item.classList.add('settings-nav-item--active');
                 } else {
-                    item.classList.remove(
-                        'bg-white',
-                        'dark:bg-gray-600',
-                        'text-gray-900',
-                        'dark:text-gray-100',
-                        'font-medium'
-                    );
+                    item.classList.remove('settings-nav-item--active');
                 }
             });
+
+            this.updateNavigationChrome();
+        },
+
+        getSectionTitle(section: SectionName): { key: string; fallback: string } {
+            switch (section) {
+                case 'general-info':
+                    return { key: 'settingsPage.general.infoTitle', fallback: 'Info' };
+                case 'display':
+                    return { key: 'settingsPage.nav.display', fallback: 'Darstellung' };
+                case 'language':
+                    return { key: 'settingsPage.nav.language', fallback: 'Sprache' };
+                case 'general':
+                default:
+                    return { key: 'settingsPage.general.title', fallback: 'Allgemein' };
+            }
+        },
+
+        translateLabel(key: string, fallback: string): string {
+            const API = (
+                window as Window & {
+                    API?: { i18n?: { translate(key: string, fallback?: string): string } };
+                }
+            ).API;
+            if (API?.i18n?.translate) {
+                return API.i18n.translate(key, fallback);
+            }
+
+            const appI18n = (
+                window as Window & {
+                    appI18n?: { translate(key: string, fallback?: string): string };
+                }
+            ).appI18n;
+            if (appI18n?.translate) {
+                return appI18n.translate(key, fallback);
+            }
+
+            return fallback;
+        },
+
+        resolveSidebarPage(section: SectionName): 'general' | 'display' | 'language' {
+            switch (section) {
+                case 'display':
+                    return 'display';
+                case 'language':
+                    return 'language';
+                case 'general':
+                case 'general-info':
+                    return 'general';
+            }
+        },
+
+        navigateHistory(direction: 'back' | 'forward'): void {
+            if (direction === 'back') {
+                if (this.historyIndex <= 0) return;
+                this.historyIndex -= 1;
+            } else {
+                if (this.historyIndex >= this.sectionHistory.length - 1) return;
+                this.historyIndex += 1;
+            }
+
+            const targetSection = this.sectionHistory[this.historyIndex];
+            this.showSection(targetSection, { pushHistory: false });
+        },
+
+        updateNavigationChrome(): void {
+            if (!this.container) return;
+
+            const backBtn = this.container.querySelector<HTMLButtonElement>(
+                '[data-settings-nav="back"]'
+            );
+            const forwardBtn = this.container.querySelector<HTMLButtonElement>(
+                '[data-settings-nav="forward"]'
+            );
+
+            const canGoBack = this.historyIndex > 0;
+            const canGoForward = this.historyIndex < this.sectionHistory.length - 1;
+
+            if (backBtn) {
+                backBtn.disabled = !canGoBack;
+                backBtn.setAttribute('aria-disabled', String(!canGoBack));
+            }
+
+            if (forwardBtn) {
+                forwardBtn.disabled = !canGoForward;
+                forwardBtn.setAttribute('aria-disabled', String(!canGoForward));
+            }
+
+            const titleTarget = this.container.querySelector<HTMLElement>(
+                '[data-settings-current-title]'
+            );
+
+            if (titleTarget) {
+                const { key, fallback } = this.getSectionTitle(this.currentSection);
+                titleTarget.setAttribute('data-i18n', key);
+                titleTarget.textContent = this.translateLabel(key, fallback);
+            }
         },
 
         /**

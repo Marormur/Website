@@ -18,6 +18,7 @@ export class FinderWindow extends BaseWindow {
         isDragging: false,
         offsetX: 0,
         offsetY: 0,
+        lastPointerX: null as number | null,
     };
 
     constructor(config?: Partial<WindowConfig>) {
@@ -77,6 +78,7 @@ export class FinderWindow extends BaseWindow {
             this.finderDragState.isDragging = true;
             this.finderDragState.offsetX = e.clientX - rect.left;
             this.finderDragState.offsetY = e.clientY - rect.top;
+            this.finderDragState.lastPointerX = e.clientX;
             this.bringToFront();
             e.preventDefault();
         });
@@ -85,19 +87,81 @@ export class FinderWindow extends BaseWindow {
             if (!this.finderDragState.isDragging || !this.element) return;
 
             const newX = e.clientX - this.finderDragState.offsetX;
-            const newY = e.clientY - this.finderDragState.offsetY;
+            const minTop = window.getMenuBarBottom?.() || 0;
+            const newY = Math.max(minTop, e.clientY - this.finderDragState.offsetY);
             this.position.x = newX;
             this.position.y = newY;
             this.element.style.left = `${newX}px`;
             this.element.style.top = `${newY}px`;
+
+            this.finderDragState.lastPointerX = e.clientX;
+            const candidate = this.getSnapCandidate(
+                this.element,
+                this.finderDragState.lastPointerX
+            );
+            if (candidate) window.showSnapPreview?.(candidate);
+            else window.hideSnapPreview?.();
         });
 
         document.addEventListener('mouseup', () => {
             if (!this.finderDragState.isDragging) return;
             this.finderDragState.isDragging = false;
+            const target = this.element;
+            if (target) {
+                const candidate = this.getSnapCandidate(target, this.finderDragState.lastPointerX);
+                if (candidate) this.snapTo(candidate);
+                window.hideSnapPreview?.();
+            }
+            this.finderDragState.lastPointerX = null;
             // Persist final position through BaseWindow's existing state mechanism.
             (this as unknown as { _saveState?: () => void })._saveState?.();
         });
+    }
+
+    private getSnapCandidate(
+        target: HTMLElement | null,
+        pointerX: number | null
+    ): 'left' | 'right' | null {
+        if (!target) return null;
+        const viewportWidth = Math.max(window.innerWidth || 0, 0);
+        if (viewportWidth <= 0) return null;
+
+        const threshold = Math.max(3, Math.min(14, viewportWidth * 0.0035));
+        const rect = target.getBoundingClientRect();
+
+        const pointerDistLeft =
+            typeof pointerX === 'number' ? Math.max(0, pointerX) : Math.abs(rect.left);
+        if (Math.abs(rect.left) <= threshold || pointerDistLeft <= threshold) return 'left';
+
+        const distRight = viewportWidth - rect.right;
+        const pointerDistRight =
+            typeof pointerX === 'number'
+                ? Math.max(0, viewportWidth - pointerX)
+                : Math.abs(distRight);
+        if (Math.abs(distRight) <= threshold || pointerDistRight <= threshold) return 'right';
+
+        return null;
+    }
+
+    private snapTo(side: 'left' | 'right'): void {
+        const target = this.element;
+        if (!target) return;
+
+        const metrics = window.computeSnapMetrics?.(side);
+        if (!metrics) return;
+
+        target.style.position = 'fixed';
+        target.style.left = `${metrics.left}px`;
+        target.style.top = `${metrics.top}px`;
+        target.style.width = `${metrics.width}px`;
+        target.style.height = `${metrics.height}px`;
+        target.dataset.snapped = side;
+
+        this.position.x = metrics.left;
+        this.position.y = metrics.top;
+        this.position.width = metrics.width;
+        this.position.height = metrics.height;
+        this.bringToFront();
     }
 
     show(): void {
