@@ -543,9 +543,17 @@ export const en = {
             personalization: 'Personalization',
         },
         nav: {
+            wifi: 'Wi-Fi',
             general: 'General',
             display: 'Appearance',
             language: 'Language',
+        },
+        wifi: {
+            title: 'Wi-Fi',
+            description:
+                'Manage Wi-Fi, active connections, and preferred networks in a macOS-like layout.',
+            ariaLabel: 'Wi-Fi settings',
+            connectedGroup: 'Current network',
         },
         general: {
             title: 'General',

@@ -53,6 +53,14 @@ logger.debug('APP', '✅ SystemUI loaded');
         syncAudio?: boolean;
     }
 
+    interface WifiNetworkPreset {
+        id: string;
+        labelKey: string;
+        labelFallback: string;
+        statusKey: string;
+        statusFallback: string;
+    }
+
     interface SystemUI {
         initSystemStatusControls(): void;
         updateAllSystemStatusUI(): void;
@@ -62,6 +70,8 @@ logger.debug('APP', '✅ SystemUI loaded');
         setConnectedNetwork(network: string, options?: DeviceOptions): void;
         setBluetoothDevice(deviceName: string, options?: DeviceOptions): void;
         setAudioDevice(deviceKey: string, options?: DeviceOptions): void;
+        renderWifiNetworks(): void;
+        getPreferredWifiNetworks(): WifiNetworkPreset[];
         getSystemStatus(): SystemStatus;
     }
 
@@ -128,6 +138,30 @@ logger.debug('APP', '✅ SystemUI loaded');
         sun: '☀️',
         moon: '🌙',
     };
+
+    const preferredWifiNetworks: WifiNetworkPreset[] = [
+        {
+            id: 'HomeLAN',
+            labelKey: 'menubar.networks.home',
+            labelFallback: 'HomeLAN',
+            statusKey: 'menubar.state.connected',
+            statusFallback: 'Verbunden',
+        },
+        {
+            id: 'Office',
+            labelKey: 'menubar.networks.office',
+            labelFallback: 'Office',
+            statusKey: 'menubar.state.automatic',
+            statusFallback: 'Automatisch',
+        },
+        {
+            id: 'Hotspot',
+            labelKey: 'menubar.networks.hotspot',
+            labelFallback: 'Marvin iPhone',
+            statusKey: 'menubar.state.hotspot',
+            statusFallback: 'Persönlicher Hotspot',
+        },
+    ];
 
     // Helper to hide all menu dropdowns
     const hideMenuDropdowns =
@@ -257,19 +291,70 @@ logger.debug('APP', '✅ SystemUI loaded');
     }
 
     function updateSystemToggleState(toggleKey: string, active: boolean): void {
-        const toggle = document.querySelector(`[data-system-toggle="${toggleKey}"]`);
-        if (toggle) {
+        document.querySelectorAll(`[data-system-toggle="${toggleKey}"]`).forEach(toggle => {
             toggle.classList.toggle('is-active', !!active);
             toggle.setAttribute('aria-pressed', active ? 'true' : 'false');
-        }
+        });
     }
 
     function updateSystemMenuCheckbox(actionKey: string, checked: boolean): void {
-        const checkbox = document.querySelector(`[data-system-action="${actionKey}"]`);
-        if (checkbox) {
+        document.querySelectorAll(`[data-system-action="${actionKey}"]`).forEach(checkbox => {
             checkbox.setAttribute('aria-pressed', checked ? 'true' : 'false');
             checkbox.classList.toggle('is-active', !!checked);
+        });
+    }
+
+    function updateSystemSwitchState(toggleKey: string, active: boolean): void {
+        document.querySelectorAll(`[data-state-switch="${toggleKey}"]`).forEach(toggle => {
+            toggle.classList.toggle('is-active', !!active);
+            toggle.setAttribute('aria-hidden', 'true');
+        });
+    }
+
+    function getPreferredWifiNetworks(): WifiNetworkPreset[] {
+        return preferredWifiNetworks.map(network => ({ ...network }));
+    }
+
+    function renderWifiNetworks(): void {
+        document
+            .querySelectorAll<HTMLElement>('[data-network-list="wifi-preferred"]')
+            .forEach(container => {
+                const isSettingsContext =
+                    container.getAttribute('data-network-context') === 'settings';
+                const itemClasses = isSettingsContext
+                    ? 'menu-item system-menu-item settings-wifi-network-item'
+                    : 'menu-item system-menu-item';
+
+                container.innerHTML = preferredWifiNetworks
+                    .map(
+                        network => `
+                            <button
+                                type="button"
+                                class="${itemClasses}"
+                                data-network="${network.id}"
+                                data-action="system:setNetwork"
+                                aria-pressed="false"
+                            >
+                                <span class="menu-item-label" data-i18n="${network.labelKey}">${network.labelFallback}</span>
+                                <span
+                                    class="system-network-indicator"
+                                    data-i18n="${network.statusKey}"
+                                    data-default-i18n="${network.statusKey}"
+                                    data-default="${network.statusFallback}"
+                                >${network.statusFallback}</span>
+                            </button>
+                        `
+                    )
+                    .join('');
+            });
+    }
+
+    function resolveNetworkIndicatorDefault(indicator: Element): string {
+        const i18nKey = indicator.getAttribute('data-default-i18n');
+        if (i18nKey) {
+            return appI18n.translate(i18nKey);
         }
+        return indicator.getAttribute('data-default') || '';
     }
 
     function updateSystemSliderValue(type: string, value: number): void {
@@ -294,9 +379,15 @@ logger.debug('APP', '✅ SystemUI loaded');
             'wifi',
             appI18n.translate(systemStatus.wifi ? 'menubar.state.on' : 'menubar.state.off')
         );
+        updateSystemStateText('network', systemStatus.network);
+        updateSystemStateText(
+            'wifi-connection-status',
+            appI18n.translate(systemStatus.wifi ? 'menubar.state.connected' : 'menubar.state.off')
+        );
+        updateSystemSwitchState('wifi', systemStatus.wifi);
         updateSystemToggleState('wifi', systemStatus.wifi);
         updateSystemMenuCheckbox('toggle-wifi', systemStatus.wifi);
-        document.querySelectorAll('#wifi-menu [data-network]').forEach(btn => {
+        document.querySelectorAll('[data-network]').forEach(btn => {
             const disabled = !systemStatus.wifi;
             if (disabled) {
                 btn.setAttribute('aria-disabled', 'true');
@@ -404,7 +495,12 @@ logger.debug('APP', '✅ SystemUI loaded');
             systemStatus.network = network;
         }
         const activeNetwork = systemStatus.network;
-        document.querySelectorAll('#wifi-menu [data-network]').forEach(btn => {
+        updateSystemStateText('network', activeNetwork);
+        updateSystemStateText(
+            'wifi-connection-status',
+            appI18n.translate(systemStatus.wifi ? 'menubar.state.connected' : 'menubar.state.off')
+        );
+        document.querySelectorAll('[data-network]').forEach(btn => {
             const indicator = btn.querySelector('.system-network-indicator');
             if (indicator && !indicator.getAttribute('data-default')) {
                 indicator.setAttribute('data-default', indicator.textContent || '');
@@ -417,11 +513,11 @@ logger.debug('APP', '✅ SystemUI loaded');
             btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
             if (indicator) {
                 if (!systemStatus.wifi) {
-                    indicator.textContent = indicator.getAttribute('data-default') || '';
+                    indicator.textContent = resolveNetworkIndicatorDefault(indicator);
                 } else if (isActive) {
                     indicator.textContent = appI18n.translate('menubar.state.connected');
                 } else {
-                    indicator.textContent = indicator.getAttribute('data-default') || '';
+                    indicator.textContent = resolveNetworkIndicatorDefault(indicator);
                 }
             }
         });
@@ -533,6 +629,16 @@ logger.debug('APP', '✅ SystemUI loaded');
                     ).dialogs;
                     if (dialogs?.['settings-modal']) {
                         dialogs['settings-modal'].open();
+                        if (actionKey === 'open-network') {
+                            requestAnimationFrame(() => {
+                                const settingsSystem = (
+                                    window as Window & {
+                                        SettingsSystem?: { showSection(section: string): void };
+                                    }
+                                ).SettingsSystem;
+                                settingsSystem?.showSection?.('wifi');
+                            });
+                        }
                     } else {
                         logger.info('APP', `Aktion "${actionKey}" würde Einstellungen öffnen.`);
                     }
@@ -580,6 +686,8 @@ logger.debug('APP', '✅ SystemUI loaded');
 
     function initSystemStatusControls(): void {
         restoreSystemStatus();
+
+        renderWifiNetworks();
 
         document.querySelectorAll('.system-network-indicator').forEach(indicator => {
             indicator.setAttribute('data-default', indicator.textContent || '');
@@ -650,6 +758,8 @@ logger.debug('APP', '✅ SystemUI loaded');
         setConnectedNetwork,
         setBluetoothDevice,
         setAudioDevice,
+        renderWifiNetworks,
+        getPreferredWifiNetworks,
         getSystemStatus: () => Object.assign({}, systemStatus),
     };
 

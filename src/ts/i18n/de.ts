@@ -544,9 +544,17 @@ export const de = {
             personalization: 'Personalisierung',
         },
         nav: {
+            wifi: 'WLAN',
             general: 'Allgemein',
             display: 'Darstellung',
             language: 'Sprache',
+        },
+        wifi: {
+            title: 'WLAN',
+            description:
+                'Verwalte WLAN, aktive Verbindungen und bevorzugte Netzwerke wie unter macOS.',
+            ariaLabel: 'WLAN Einstellungen',
+            connectedGroup: 'Aktuelles Netzwerk',
         },
         general: {
             title: 'Allgemein',

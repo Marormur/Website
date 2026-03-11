@@ -23,7 +23,7 @@ export function getSettingsActions(): ActionMap {
             };
 
             if (win.SettingsSystem && typeof win.SettingsSystem.showSection === 'function') {
-                win.SettingsSystem.showSection(section as 'general' | 'display' | 'language');
+                win.SettingsSystem.showSection(section);
             } else {
                 logger.warn(
                     'UI',

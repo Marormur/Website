@@ -611,6 +611,151 @@ body.window-dragging * {
     color: rgba(51, 65, 85, 0.78);
 }
 
+.settings-wifi-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.settings-wifi-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.settings-wifi-group-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(30, 41, 59, 0.86);
+}
+
+.settings-wifi-card {
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.settings-wifi-master-button {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.settings-wifi-master-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(14, 116, 255, 0.14);
+    font-size: 15px;
+}
+
+.settings-wifi-master-copy {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.settings-wifi-master-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.settings-wifi-master-description {
+    font-size: 12px;
+    line-height: 1.35;
+    color: rgba(51, 65, 85, 0.78);
+}
+
+.settings-wifi-switch {
+    width: 40px;
+    height: 22px;
+    border-radius: 999px;
+    background: rgba(100, 116, 139, 0.45);
+    position: relative;
+    flex: 0 0 auto;
+    transition: background-color 0.2s ease;
+}
+
+.settings-wifi-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.settings-wifi-switch.is-active {
+    background: #0a84ff;
+}
+
+.settings-wifi-switch.is-active::after {
+    transform: translateX(18px);
+}
+
+.settings-wifi-connected-row {
+    padding: 11px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.settings-wifi-connected-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.settings-wifi-connected-status {
+    font-size: 12px;
+    color: #15803d;
+    font-weight: 600;
+}
+
+.settings-wifi-network-card {
+    padding: 4px;
+}
+
+.settings-wifi-network-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.settings-wifi-network-item {
+    border-radius: 9px;
+    padding: 9px 10px;
+    min-height: 38px;
+}
+
+.settings-wifi-network-item .menu-item-label {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.settings-wifi-network-item .system-network-indicator {
+    font-size: 11px;
+}
+
 html.dark .settings-app {
     background: linear-gradient(180deg, #111418 0%, #141820 100%);
     color: #f4f6fb;
@@ -794,6 +939,32 @@ html.dark .settings-radio-title {
 
 html.dark .settings-radio-description {
     color: rgba(224, 231, 244, 0.68);
+}
+
+html.dark .settings-wifi-group-title {
+    color: rgba(226, 232, 240, 0.82);
+}
+
+html.dark .settings-wifi-card {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .settings-wifi-master-title,
+html.dark .settings-wifi-connected-name {
+    color: rgba(248, 251, 255, 0.97);
+}
+
+html.dark .settings-wifi-master-description {
+    color: rgba(224, 231, 244, 0.7);
+}
+
+html.dark .settings-wifi-master-icon {
+    background: rgba(14, 116, 255, 0.2);
+}
+
+html.dark .settings-wifi-connected-status {
+    color: #4ade80;
 }
 
 @media (max-width: 900px) {

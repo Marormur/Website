@@ -11,7 +11,7 @@ logger.debug('APP', 'Settings Module loaded');
 
     // ===== Types =====
 
-    type SectionName = 'general' | 'general-info' | 'display' | 'language';
+    type SectionName = 'wifi' | 'general' | 'general-info' | 'display' | 'language';
 
     interface SettingsSystemType {
         currentSection: SectionName;
@@ -26,7 +26,8 @@ logger.debug('APP', 'Settings Module loaded');
         showSection(section: SectionName, options?: { pushHistory?: boolean }): void;
         getSectionTitle(section: SectionName): { key: string; fallback: string };
         translateLabel(key: string, fallback: string): string;
-        resolveSidebarPage(section: SectionName): 'general' | 'display' | 'language';
+        resolveSidebarPage(section: SectionName): 'wifi' | 'general' | 'display' | 'language';
+        syncWifiNetworkList(): void;
         navigateHistory(direction: 'back' | 'forward'): void;
         updateNavigationChrome(): void;
         destroy(): void;
@@ -62,6 +63,7 @@ logger.debug('APP', 'Settings Module loaded');
             this.attachListeners();
             this.syncThemePreference();
             this.syncLanguagePreference();
+            this.syncWifiNetworkList();
             this.showSection('general', { pushHistory: false });
         },
 
@@ -113,6 +115,11 @@ logger.debug('APP', 'Settings Module loaded');
                                     </span>
                                 </button>
 
+                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="wifi" data-settings-page="wifi">
+                                    <span class="settings-nav-icon" aria-hidden="true">📶</span>
+                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.wifi">WLAN</span>
+                                </button>
+
                                 <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="general" data-settings-page="general">
                                     <span class="settings-nav-icon" aria-hidden="true">⚙️</span>
                                     <span class="settings-nav-title" data-i18n="settingsPage.nav.general">Allgemein</span>
@@ -139,6 +146,42 @@ logger.debug('APP', 'Settings Module loaded');
                         </div>
 
                         <div class="settings-main">
+                        <section id="settings-wifi" class="settings-section hidden">
+                            <div class="settings-wifi-page" role="group" aria-label="WLAN Einstellungen" data-i18n-aria-label="settingsPage.wifi.ariaLabel">
+                                <div class="settings-wifi-card settings-wifi-master-card">
+                                    <button
+                                        type="button"
+                                        class="settings-wifi-master-button"
+                                        data-system-toggle="wifi"
+                                        data-action="system:toggle"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="settings-wifi-master-icon" aria-hidden="true">📶</span>
+                                        <span class="settings-wifi-master-copy">
+                                            <span class="settings-wifi-master-title" data-i18n="settingsPage.wifi.title">WLAN</span>
+                                            <span class="settings-wifi-master-description" data-i18n="settingsPage.wifi.description">Verwalte WLAN, aktive Verbindungen und bevorzugte Netzwerke wie unter macOS.</span>
+                                        </span>
+                                        <span class="settings-wifi-switch" data-state-switch="wifi"></span>
+                                    </button>
+                                </div>
+
+                                <div class="settings-wifi-group">
+                                    <p class="settings-wifi-group-title" data-i18n="settingsPage.wifi.connectedGroup">Aktuelles Netzwerk</p>
+                                    <div class="settings-wifi-card settings-wifi-connected-row">
+                                        <span class="settings-wifi-connected-name" data-state="network">HomeLAN</span>
+                                        <span class="settings-wifi-connected-status" data-state="wifi-connection-status">Verbunden</span>
+                                    </div>
+                                </div>
+
+                                <div class="settings-wifi-group">
+                                    <p class="settings-wifi-group-title" data-i18n="menubar.wifi.preferredNetworks">Bevorzugte Netzwerke</p>
+                                    <div class="settings-wifi-card settings-wifi-network-card">
+                                        <div class="settings-wifi-network-list" data-network-list="wifi-preferred" data-network-context="settings"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
                         <section id="settings-general" class="settings-section">
                             <div class="settings-overview-panel" role="region" aria-labelledby="settings-general-overview-title">
                                 <img src="./img/settings.png" alt="Settings App Icon" class="settings-overview-icon" />
@@ -403,6 +446,18 @@ logger.debug('APP', 'Settings Module loaded');
             this.updateNavigationChrome();
         },
 
+        syncWifiNetworkList(): void {
+            const systemUI = (
+                window as Window & {
+                    SystemUI?: { renderWifiNetworks(): void; updateAllSystemStatusUI(): void };
+                }
+            ).SystemUI;
+            if (systemUI?.renderWifiNetworks) {
+                systemUI.renderWifiNetworks();
+                systemUI.updateAllSystemStatusUI?.();
+            }
+        },
+
         /**
          * Show specific settings section
          */
@@ -423,7 +478,13 @@ logger.debug('APP', 'Settings Module loaded');
             this.currentSection = section;
 
             // Hide all sections
-            const sections: SectionName[] = ['general', 'general-info', 'display', 'language'];
+            const sections: SectionName[] = [
+                'wifi',
+                'general',
+                'general-info',
+                'display',
+                'language',
+            ];
             sections.forEach(name => {
                 const el = this.container?.querySelector(`#settings-${name}`);
                 if (el) {
@@ -435,6 +496,10 @@ logger.debug('APP', 'Settings Module loaded');
             const target = this.container.querySelector(`#settings-${section}`);
             if (target) {
                 target.classList.remove('hidden');
+            }
+
+            if (section === 'wifi') {
+                this.syncWifiNetworkList();
             }
 
             // Update nav highlighting
@@ -456,6 +521,8 @@ logger.debug('APP', 'Settings Module loaded');
 
         getSectionTitle(section: SectionName): { key: string; fallback: string } {
             switch (section) {
+                case 'wifi':
+                    return { key: 'settingsPage.wifi.title', fallback: 'WLAN' };
                 case 'general-info':
                     return { key: 'settingsPage.general.infoTitle', fallback: 'Info' };
                 case 'display':
@@ -490,8 +557,10 @@ logger.debug('APP', 'Settings Module loaded');
             return fallback;
         },
 
-        resolveSidebarPage(section: SectionName): 'general' | 'display' | 'language' {
+        resolveSidebarPage(section: SectionName): 'wifi' | 'general' | 'display' | 'language' {
             switch (section) {
+                case 'wifi':
+                    return 'wifi';
                 case 'display':
                     return 'display';
                 case 'language':
