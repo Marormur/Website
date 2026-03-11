@@ -10,6 +10,7 @@ import { getFinderActions } from './actions/finder.js';
 import { getPreviewActions } from './actions/preview.js';
 import { getSessionActions } from './actions/session.js';
 import { getSettingsActions } from './actions/settings.js';
+import { getSystemActions } from './actions/system.js';
 import { getWindowActions } from './actions/windows.js';
 import logger from '../core/logger.js';
 
@@ -59,6 +60,7 @@ logger.debug('UI', 'ActionBus loaded');
                 ...getFinderActions(),
                 ...getSessionActions(),
                 ...getSettingsActions(),
+                ...getSystemActions(),
             });
 
             // Click-Events
@@ -131,6 +133,7 @@ logger.debug('UI', 'ActionBus loaded');
         ...getFinderActions(),
         ...getSessionActions(),
         ...getSettingsActions(),
+        ...getSystemActions(),
     });
 
     (window as unknown as { ActionBus: typeof ActionBus }).ActionBus = ActionBus;

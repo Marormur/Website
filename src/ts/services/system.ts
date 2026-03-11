@@ -71,13 +71,23 @@ logger.debug('APP', '✅ SystemUI loaded');
         getActiveLanguage: () => 'en',
     };
 
-    const IconSystem = window.IconSystem || {};
-    const SYSTEM_ICONS = IconSystem.SYSTEM_ICONS || {};
-    const ensureSvgNamespace = IconSystem.ensureSvgNamespace || ((svg: string) => svg);
-    const renderIconIntoElement = IconSystem.renderIconIntoElement || (() => {});
+    function getIconSystem(): IconSystemType {
+        return window.IconSystem || {};
+    }
 
     const ThemeSystem = window.ThemeSystem || {};
     const setThemePreference = ThemeSystem.setThemePreference || (() => {});
+
+    const SYSTEM_ICON_FALLBACK: Record<string, string> = {
+        wifi: '📶',
+        bluetooth: '🔵',
+        focus: '🌙',
+        appearance: '🌓',
+        volume: '🔊',
+        battery: '🔋',
+        sun: '☀️',
+        moon: '🌙',
+    };
 
     // Helper to hide all menu dropdowns
     const hideMenuDropdowns =
@@ -118,10 +128,19 @@ logger.debug('APP', '✅ SystemUI loaded');
     // ===== UI Helper Functions =====
 
     function applySystemIcon(iconToken: string, iconKey: string): void {
-        const svg = SYSTEM_ICONS[iconKey];
+        const iconSystem = getIconSystem();
+        const svg = iconSystem.SYSTEM_ICONS?.[iconKey] || '';
+        const ensureSvgNamespace = iconSystem.ensureSvgNamespace || ((value: string) => value);
+        const renderIconIntoElement = iconSystem.renderIconIntoElement;
         const markup = svg ? ensureSvgNamespace(svg) : '';
         document.querySelectorAll(`[data-icon="${iconToken}"]`).forEach(el => {
-            renderIconIntoElement(el as HTMLElement, markup, iconToken);
+            if (typeof renderIconIntoElement === 'function') {
+                renderIconIntoElement(el as HTMLElement, markup, iconToken);
+                return;
+            }
+
+            // Keep system controls functional even when IconSystem is not available.
+            (el as HTMLElement).textContent = SYSTEM_ICON_FALLBACK[iconToken] || '';
         });
     }
 
