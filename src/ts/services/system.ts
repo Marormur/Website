@@ -1,4 +1,5 @@
 import logger from '../core/logger.js';
+import { getJSON, setJSON } from './storage-utils.js';
 /**
  * system.ts
  * System Status UI Module
@@ -64,6 +65,21 @@ logger.debug('APP', '✅ SystemUI loaded');
         getSystemStatus(): SystemStatus;
     }
 
+    type PersistedSystemStatus = Partial<
+        Pick<
+            SystemStatus,
+            | 'wifi'
+            | 'bluetooth'
+            | 'focus'
+            | 'darkMode'
+            | 'brightness'
+            | 'volume'
+            | 'audioDevice'
+            | 'network'
+            | 'connectedBluetoothDevice'
+        >
+    >;
+
     // ===== Module Dependencies =====
     const appI18n: I18nSystem = window.appI18n || {
         translate: key => key,
@@ -78,6 +94,11 @@ logger.debug('APP', '✅ SystemUI loaded');
     const ThemeSystem = window.ThemeSystem || {};
     const setThemePreference = ThemeSystem.setThemePreference || (() => {});
 
+    const APP_CONSTANTS =
+        (window as unknown as { APP_CONSTANTS?: Record<string, unknown> }).APP_CONSTANTS || {};
+    const SYSTEM_STATUS_STORAGE_KEY =
+        (APP_CONSTANTS.SYSTEM_STATUS_STORAGE_KEY as string) || 'systemStatus';
+
     const SYSTEM_ICON_FALLBACK: Record<string, string> = {
         wifi: '📶',
         bluetooth: '🔵',
@@ -85,6 +106,25 @@ logger.debug('APP', '✅ SystemUI loaded');
         appearance: '🌓',
         volume: '🔊',
         battery: '🔋',
+        sun: '☀️',
+        moon: '🌙',
+    };
+
+    const SYSTEM_ICON_FALLBACK_BY_KEY: Record<string, string> = {
+        wifiOn: '📶',
+        wifiOff: '📵',
+        bluetoothOn: '🔵',
+        bluetoothOff: '⚪',
+        brightnessLow: '🌙',
+        brightnessMedium: '🌤️',
+        brightnessHigh: '☀️',
+        appearanceLight: '🌗',
+        appearanceDark: '🌓',
+        volumeMute: '🔇',
+        volumeLow: '🔈',
+        volumeMedium: '🔉',
+        volumeHigh: '🔊',
+        batteryFull: '🔋',
         sun: '☀️',
         moon: '🌙',
     };
@@ -125,6 +165,68 @@ logger.debug('APP', '✅ SystemUI loaded');
         connectedBluetoothDevice: 'AirPods',
     };
 
+    function clampPercent(value: number, fallback: number): number {
+        if (!Number.isFinite(value)) return fallback;
+        return Math.max(0, Math.min(100, Math.round(value)));
+    }
+
+    function persistSystemStatus(): void {
+        const payload: PersistedSystemStatus = {
+            wifi: systemStatus.wifi,
+            bluetooth: systemStatus.bluetooth,
+            focus: systemStatus.focus,
+            darkMode: systemStatus.darkMode,
+            brightness: systemStatus.brightness,
+            volume: systemStatus.volume,
+            audioDevice: systemStatus.audioDevice,
+            network: systemStatus.network,
+            connectedBluetoothDevice: systemStatus.connectedBluetoothDevice,
+        };
+        setJSON(SYSTEM_STATUS_STORAGE_KEY, payload);
+    }
+
+    function restoreSystemStatus(): void {
+        const saved = getJSON<PersistedSystemStatus>(SYSTEM_STATUS_STORAGE_KEY, {});
+
+        if (typeof saved.wifi === 'boolean') {
+            systemStatus.wifi = saved.wifi;
+        }
+        if (typeof saved.bluetooth === 'boolean') {
+            systemStatus.bluetooth = saved.bluetooth;
+        }
+        if (typeof saved.focus === 'boolean') {
+            systemStatus.focus = saved.focus;
+        }
+        if (typeof saved.brightness === 'number') {
+            systemStatus.brightness = clampPercent(saved.brightness, systemStatus.brightness);
+        }
+        if (typeof saved.volume === 'number') {
+            systemStatus.volume = clampPercent(saved.volume, systemStatus.volume);
+        }
+        if (typeof saved.audioDevice === 'string' && saved.audioDevice.trim()) {
+            systemStatus.audioDevice = saved.audioDevice;
+        }
+        if (typeof saved.network === 'string' && saved.network.trim()) {
+            systemStatus.network = saved.network;
+        }
+        if (
+            typeof saved.connectedBluetoothDevice === 'string' &&
+            saved.connectedBluetoothDevice.trim()
+        ) {
+            systemStatus.connectedBluetoothDevice = saved.connectedBluetoothDevice;
+        }
+
+        if (typeof saved.darkMode === 'boolean') {
+            if (typeof setThemePreference === 'function') {
+                setThemePreference(saved.darkMode ? 'dark' : 'light');
+            } else {
+                document.documentElement.classList.toggle('dark', saved.darkMode);
+            }
+        }
+
+        systemStatus.darkMode = document.documentElement.classList.contains('dark');
+    }
+
     // ===== UI Helper Functions =====
 
     function applySystemIcon(iconToken: string, iconKey: string): void {
@@ -140,7 +242,8 @@ logger.debug('APP', '✅ SystemUI loaded');
             }
 
             // Keep system controls functional even when IconSystem is not available.
-            (el as HTMLElement).textContent = SYSTEM_ICON_FALLBACK[iconToken] || '';
+            (el as HTMLElement).textContent =
+                SYSTEM_ICON_FALLBACK_BY_KEY[iconKey] || SYSTEM_ICON_FALLBACK[iconToken] || '';
         });
     }
 
@@ -270,6 +373,13 @@ logger.debug('APP', '✅ SystemUI loaded');
     function updateBrightnessUI(): void {
         const value = Math.max(0, Math.min(100, Number(systemStatus.brightness) || 0));
         systemStatus.brightness = value;
+        let iconKey = 'brightnessLow';
+        if (value > 66) {
+            iconKey = 'brightnessHigh';
+        } else if (value > 33) {
+            iconKey = 'brightnessMedium';
+        }
+        applySystemIcon('sun', iconKey);
         updateSystemSliderValue('brightness', value);
     }
 
@@ -318,6 +428,7 @@ logger.debug('APP', '✅ SystemUI loaded');
         if (!options.silent) {
             hideMenuDropdowns();
         }
+        persistSystemStatus();
     }
 
     function setBluetoothDevice(deviceName: string, options: DeviceOptions = {}): void {
@@ -352,6 +463,7 @@ logger.debug('APP', '✅ SystemUI loaded');
         if (!options.silent) {
             hideMenuDropdowns();
         }
+        persistSystemStatus();
     }
 
     function setAudioDevice(deviceKey: string, options: DeviceOptions = {}): void {
@@ -365,6 +477,7 @@ logger.debug('APP', '✅ SystemUI loaded');
         if (!options.silent) {
             hideMenuDropdowns();
         }
+        persistSystemStatus();
     }
 
     // ===== Toggle and Action Handlers =====
@@ -374,14 +487,17 @@ logger.debug('APP', '✅ SystemUI loaded');
             case 'wifi':
                 systemStatus.wifi = !systemStatus.wifi;
                 updateWifiUI();
+                persistSystemStatus();
                 break;
             case 'bluetooth':
                 systemStatus.bluetooth = !systemStatus.bluetooth;
                 updateBluetoothUI();
+                persistSystemStatus();
                 break;
             case 'focus':
                 systemStatus.focus = !systemStatus.focus;
                 updateFocusUI();
+                persistSystemStatus();
                 break;
             case 'dark-mode': {
                 const next = !document.documentElement.classList.contains('dark');
@@ -392,6 +508,7 @@ logger.debug('APP', '✅ SystemUI loaded');
                     document.documentElement.classList.toggle('dark', next);
                 }
                 updateDarkModeUI();
+                persistSystemStatus();
                 break;
             }
             default:
@@ -441,6 +558,7 @@ logger.debug('APP', '✅ SystemUI loaded');
             systemStatus.brightness = value;
             updateBrightnessUI();
         }
+        persistSystemStatus();
     }
 
     // ===== Main Update Function =====
@@ -461,6 +579,8 @@ logger.debug('APP', '✅ SystemUI loaded');
     // ===== Initialization =====
 
     function initSystemStatusControls(): void {
+        restoreSystemStatus();
+
         document.querySelectorAll('.system-network-indicator').forEach(indicator => {
             indicator.setAttribute('data-default', indicator.textContent || '');
         });

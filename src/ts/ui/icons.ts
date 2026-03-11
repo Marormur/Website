@@ -20,6 +20,12 @@ const SYSTEM_ICONS = {
         '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16" fill="currentColor" opacity="0.4"/></svg>',
     appearanceDark:
         '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 20a8 8 0 0 0 0-16" fill="currentColor" opacity="0.75"/></svg>',
+    brightnessLow:
+        '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 0 1 11.21 3a7 7 0 1 0 9.79 9.79Z" fill="currentColor"/></svg>',
+    brightnessMedium:
+        '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4a1 1 0 0 1-1-1V2h2v1a1 1 0 0 1-1 1Zm0 18a1 1 0 0 1-1-1v-1h2v1a1 1 0 0 1-1 1Zm8-9a1 1 0 0 1-1-1h1a1 1 0 0 1 1 1Zm-16 0a1 1 0 0 1-1-1h1a1 1 0 0 1-1 1Zm12.66 6.66-1.41-1.41 1.06-1.06 1.41 1.41ZM6.69 6.7 5.28 5.28 6.34 4.22 7.75 5.63ZM18.37 4.22l1.06 1.06-1.41 1.41-1.06-1.06ZM5.63 18.37l-1.41 1.41-1.06-1.06 1.41-1.41ZM12 7a5 5 0 1 1-5 5 5 5 0 0 1 5-5Z" fill="currentColor" opacity="0.65"/></svg>',
+    brightnessHigh:
+        '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4a1 1 0 0 1-1-1V2h2v1a1 1 0 0 1-1 1Zm0 18a1 1 0 0 1-1-1v-1h2v1a1 1 0 0 1-1 1Zm8-9a1 1 0 0 1-1-1h1a1 1 0 0 1 1 1Zm-16 0a1 1 0 0 1-1-1h1a1 1 0 0 1-1 1Zm12.66 6.66-1.41-1.41 1.06-1.06 1.41 1.41ZM6.69 6.7 5.28 5.28 6.34 4.22 7.75 5.63ZM18.37 4.22l1.06 1.06-1.41 1.41-1.06-1.06ZM5.63 18.37l-1.41 1.41-1.06-1.06 1.41-1.41ZM12 7a5 5 0 1 1-5 5 5 5 0 0 1 5-5Z" fill="currentColor"/></svg>',
     sun: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4a1 1 0 0 1-1-1V2h2v1a1 1 0 0 1-1 1Zm0 18a1 1 0 0 1-1-1v-1h2v1a1 1 0 0 1-1 1Zm8-9a1 1 0 0 1-1-1h1a1 1 0 0 1 1 1Zm-16 0a1 1 0 0 1-1-1h1a1 1 0 0 1-1 1Zm12.66 6.66-1.41-1.41 1.06-1.06 1.41 1.41ZM6.69 6.7 5.28 5.28 6.34 4.22 7.75 5.63ZM18.37 4.22l1.06 1.06-1.41 1.41-1.06-1.06ZM5.63 18.37l-1.41 1.41-1.06-1.06 1.41-1.41ZM12 7a5 5 0 1 1-5 5 5 5 0 0 1 5-5Z" fill="currentColor"/></svg>',
     volumeMute:
         '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6h4l5 5V4l-5 5H5z" fill="currentColor"/><path d="m16 9 5 5m0-5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
