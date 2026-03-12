@@ -512,6 +512,7 @@ logger.debug('APP', 'Settings Module loaded');
             }
 
             const targetSection = this.sectionHistory[this.historyIndex];
+            if (targetSection === undefined) return;
             this.showSection(targetSection, { pushHistory: false });
         },
 
