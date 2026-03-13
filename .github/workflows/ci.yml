@@ -60,6 +60,7 @@ jobs:
         needs: quality
         permissions:
             contents: read
+            id-token: write
         steps:
             - uses: actions/checkout@v4
 
@@ -73,14 +74,24 @@ jobs:
               run: npm ci
 
             - name: Run Coverage Check
-              run: npm run test:coverage
+              run: npm run test:coverage -- --reporter=default --reporter=junit --outputFile=test-report.junit.xml
               continue-on-error: false
+
+            - name: Upload test results to Codecov
+              if: ${{ !cancelled() }}
+              uses: codecov/codecov-action@v5
+              with:
+                  use_oidc: true
+                  files: ./test-report.junit.xml
+                  flags: unittests
+                  report_type: test_results
+                  fail_ci_if_error: false
 
             - name: Upload coverage to Codecov
               if: always()
-              uses: codecov/codecov-action@v4.5.0
+              uses: codecov/codecov-action@v5
               with:
-                  token: ${{ secrets.CODECOV_TOKEN }}
+                  use_oidc: true
                   files: ./coverage/lcov.info
                   flags: unittests
                   fail_ci_if_error: false
