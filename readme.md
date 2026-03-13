@@ -1,7 +1,7 @@
 # 🎨 Marvin's Vibe Coding Paradise
 
-[![CI](https://github.com/Marormur/Website/actions/workflows/ci.yml/badge.svg)](https://github.com/Marormur/Website/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/Marormur/Website/branch/main/graph/badge.svg)](https://codecov.io/gh/Marormur/Website)
+[![Deploy](https://github.com/Marormur/Website/actions/workflows/deploy.yml/badge.svg)](https://github.com/Marormur/Website/actions/workflows/deploy.yml)
+[![Test Coverage](https://codecov.io/gh/Marormur/Website/graph/badge.svg?branch=main)](https://codecov.io/gh/Marormur/Website)
 
 Mein persönliches digitales Playground: Ein macOS-inspiriertes Desktop-Universum im Browser mit Fenstern, Modals, Menüleiste, Dark Mode, Deutsch/Englisch-Umschaltung und integriertem GitHub-Explorer. Texteditor, Terminal, Fotogalerie und Launchpad – alles in einer Web-App, weil warum nicht?
 
@@ -19,18 +19,14 @@ Mein persönliches digitales Playground: Ein macOS-inspiriertes Desktop-Universu
 ## Im Projekt 🗂️
 
 ```
-/ts/              # TypeScript Source (die Quelle aller Wahrheit!)
-│   ├── core/     # Initialisierung, APIs, Fehlerbehandlung, Logger, VDOM
-│   ├── services/ # i18n, Theming, Storage, Session Manager, VirtualFS
-│   ├── ui/       # Action Bus, Dialoge, Menüs, Desktop, Keyboard-Shortcuts
-│   ├── windows/  # Fenster, Tabs, Instance Manager, Chrome-Styling
-│   └── apps/     # Die Apps: Finder, Terminal, TextEditor, Photos
-├── src/css/      # Noch mehr CSS-Magie (Tailwind + Custom)
-├── js/           # Build Output (nicht editieren! Das macht tsc für dich)
-├── tests/e2e/    # ~190 Playwright Tests (damit alles nicht kaputt geht)
-├── dist/         # Tailwind Output (auch nicht editieren)
-├── docs/vdom/    # VDOM Dokumentation (API, Migration, Best Practices)
-└── index.html    # Einstiegspunkt (lädt das Bundle)
+src/ts/           # TypeScript Source (die Quelle aller Wahrheit)
+src/css/          # CSS-Quellen (Tailwind + Custom)
+js/               # Build Output aus TypeScript (nicht direkt editieren)
+dist/             # Build Output fuer CSS (nicht direkt editieren)
+docs/             # Architektur, Guides, Migrationen, Reports
+demos/            # Demo- und Verifikationsseiten
+tests/e2e/        # End-to-End Tests
+index.html        # Einstiegspunkt (laedt das Bundle)
 ```
 
 ## So geht's los 🎬

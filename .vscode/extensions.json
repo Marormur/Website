@@ -22,9 +22,6 @@
     // Markdown
     "yzhang.markdown-all-in-one",
 
-    // Live Server (alternative to node server)
-    "ritwickdey.liveserver",
-
     // Path Autocomplete
     "christian-kohler.path-intellisense",
 

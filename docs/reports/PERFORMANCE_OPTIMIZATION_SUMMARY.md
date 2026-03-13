@@ -150,7 +150,7 @@ Run with: `npm run test:e2e:quick -- tests/e2e/windows/window-performance.spec.j
 
 ### Manual Verification
 
-Created verification page (`performance-test.html`):
+Created verification page (`../../demos/performance/performance-test.html`):
 
 - Checks all optimizations are compiled
 - Visual confirmation of implementation
@@ -168,7 +168,7 @@ Created verification page (`performance-test.html`):
 
 1. `src/ts/windows/z-index-manager.ts` - Core optimizations (~70 lines added/modified)
 2. `tests/e2e/windows/window-performance.spec.js` - Test suite (236 lines, new file)
-3. `performance-test.html` - Verification page (154 lines, new file)
+3. `../../demos/performance/performance-test.html` - Verification page (154 lines, new file)
 
 ## Migration & Compatibility
 
@@ -198,7 +198,7 @@ Created verification page (`performance-test.html`):
     ```
 
 3. **Manual Testing**
-    - Open `performance-test.html` in browser
+    - Open `../../demos/performance/performance-test.html` in browser
     - Click "Run Verification" - should show all 4 optimizations ✅
     - Test with multiple windows in actual app
 

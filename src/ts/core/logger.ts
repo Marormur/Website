@@ -94,7 +94,6 @@ export class Logger {
         const timestamp = new Date().toLocaleTimeString();
 
         if (this.format === 'detailed') {
-            // eslint-disable-next-line no-console
             console.log(
                 `%c[${timestamp}] [${level}] [${category}]`,
                 `color: ${color}; font-weight: bold`,
@@ -102,7 +101,6 @@ export class Logger {
                 ...args
             );
         } else {
-            // eslint-disable-next-line no-console
             console.log(`%c[${category}]`, `color: ${color}`, message, ...args);
         }
     }
@@ -129,22 +127,19 @@ export class Logger {
 
     group(category: string, title?: string) {
         if (!this.isCategoryEnabled(category)) return;
-        // eslint-disable-next-line no-console
+
         console.group(title ?? category);
     }
 
     groupEnd() {
-        // eslint-disable-next-line no-console
         console.groupEnd();
     }
 
     time(label: string) {
-        // eslint-disable-next-line no-console
         console.time(label);
     }
 
     timeEnd(label: string) {
-        // eslint-disable-next-line no-console
         console.timeEnd(label);
     }
 }

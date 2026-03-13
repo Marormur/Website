@@ -102,7 +102,7 @@ server.listen(PORT, HOST, () => {
                 path.join(__dirname, 'index.html'),
                 path.join(__dirname, '*.html'), // root-level html
                 path.join(__dirname, 'js/**/*.js'),
-                path.join(__dirname, 'style.css'),
+                path.join(__dirname, 'src/css/style.css'),
                 // CSS: only built files → reload after successful Tailwind build
                 path.join(__dirname, 'dist/**/*.css'),
             ];

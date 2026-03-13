@@ -180,7 +180,6 @@
         "panel": "shared"
       }
     },
-
     {
       "label": "Validate: All",
       "type": "shell",
@@ -256,7 +255,6 @@
         "clear": true
       }
     },
-
     {
       "label": "Bundle: Build",
       "type": "shell",
@@ -470,6 +468,14 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "type": "npm",
+      "script": "lint:fix",
+      "problemMatcher": ["$tsc-watch"],
+      "label": "npm: lint:fix",
+      "detail": "eslint --fix \"src/ts/**/*.ts\"",
+      "isBackground": true
     }
   ]
 }
