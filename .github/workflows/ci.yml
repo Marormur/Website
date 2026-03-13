@@ -104,7 +104,6 @@ jobs:
                   path: coverage/
                   retention-days: 7
 
-
     test-chromium:
         name: E2E Tests (Chromium)
         runs-on: ubuntu-latest

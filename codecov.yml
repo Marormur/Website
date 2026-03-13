@@ -1,24 +1,24 @@
 codecov:
-  require_ci_to_pass: true
+    require_ci_to_pass: true
 
 coverage:
-  precision: 2
-  round: down
-  range: "50...90"
+    precision: 2
+    round: down
+    range: '50...90'
 
 comment:
-  layout: "reach,diff,flags,files"
-  behavior: default
-  require_changes: false
+    layout: 'reach,diff,flags,files'
+    behavior: default
+    require_changes: false
 
 flags:
-  unittests:
-    paths:
-      - src/ts/
-    carryforward: false
+    unittests:
+        paths:
+            - src/ts/
+        carryforward: false
 
 ignore:
-  - "js/**"
-  - "dist/**"
-  - "tests/**"
-  - "docs/**"
+    - 'js/**'
+    - 'dist/**'
+    - 'tests/**'
+    - 'docs/**'
