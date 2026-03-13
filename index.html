@@ -1216,76 +1216,54 @@
             <!-- Über mich Modal -->
             <div id="about-modal" class="fixed inset-0 hidden modal" data-no-resize="true">
                 <div class="absolute inset-0 flex items-center justify-center">
-                    <div
-                        class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer w-[320px] h-110"
-                    >
-                        <div
-                            class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header"
-                        >
-                            <div class="flex space-x-2">
+                    <div class="about-window autopointer">
+                        <header class="about-window-header draggable-header">
+                            <div class="about-window-controls" aria-hidden="true">
                                 <button
                                     title="Schließen"
                                     data-i18n-title="common.close"
                                     id="close-about-modal"
                                     data-action="closeWindow"
                                     data-window-id="about-modal"
-                                    class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300"
-                                >
-                                    <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                                </button>
-                                <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                    class="about-window-control about-window-control--close"
+                                ></button>
+                                <span class="about-window-control about-window-control--minimize"></span>
+                                <span class="about-window-control about-window-control--maximize"></span>
                             </div>
-                            <h2
-                                class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
-                                data-i18n="modals.about.title"
-                            >
-                                Über Marvin
-                            </h2>
-                        </div>
-                        <div
-                            class="flex flex-col items-center text-gray-700 dark:text-gray-200 mt-8"
-                        >
-                            <img
-                                src="./img/profil.jpg"
-                                alt="Bild"
-                                class="w-24 h-24 object-contain mb-4"
-                            />
-                            <h2 class="text-xl font-semibold">Marvin Temmen</h2>
-                            <p class="text-sm" data-i18n="modals.about.birth">März 1999</p>
-                            <div class="mt-4 space-y-1 text-sm">
-                                <p>
-                                    <strong data-i18n="modals.about.locationLabel">Wohnort</strong>:
+                        </header>
+
+                        <div class="about-window-content">
+                            <div class="about-hero-image-wrap" aria-hidden="true">
+                                <img src="./img/profil.jpg" alt="Bild" class="about-hero-image" />
+                            </div>
+
+                            <h3 class="about-person-name">Marvin Temmen</h3>
+                            <p class="about-person-meta" data-i18n="modals.about.birth">März 1999</p>
+
+                            <div class="about-facts" role="list">
+                                <p class="about-fact-row" role="listitem">
+                                    <strong data-i18n="modals.about.locationLabel">Wohnort</strong>
                                     <span data-i18n="modals.about.locationValue">Deutschland</span>
                                 </p>
-                                <p>
-                                    <strong data-i18n="modals.about.jobLabel">Beruf</strong>:
-                                    <span data-i18n="modals.about.jobValue"
-                                        >Softwareentwickler</span
-                                    >
-                                </p>
-                                <p>
-                                    <strong data-i18n="modals.about.employerLabel"
-                                        >Arbeitgeber</strong
-                                    >:
-                                    <span data-i18n="modals.about.employerValue">WinWorker</span>
+                                <p class="about-fact-row" role="listitem">
+                                    <strong data-i18n="modals.about.jobLabel">Beruf</strong>
+                                    <span data-i18n="modals.about.jobValue">Softwareentwickler</span>
                                 </p>
                             </div>
+
                             <button
-                                class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                                class="about-more-button"
                                 data-action="openWindow"
                                 data-window-id="settings-modal"
                             >
                                 <span data-i18n="modals.about.moreButton">Mehr Infos …</span>
                             </button>
-                            <div
-                                class="mt-6 text-xs text-center text-gray-500 dark:text-gray-400 border-t border-gray-300 dark:border-gray-700 pt-2"
-                            >
+
+                            <p class="about-copyright">
                                 <span data-i18n="modals.about.copyright"
                                     >© 2025 Marvin T. — Alle Rechte vorbehalten.</span
                                 >
-                            </div>
-                        </div>
+                            </p>
                     </div>
                 </div>
                 <!-- Einstellungen Modal -->

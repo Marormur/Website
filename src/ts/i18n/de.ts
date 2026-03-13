@@ -146,8 +146,6 @@ export const de = {
             locationValue: 'Deutschland',
             jobLabel: 'Beruf',
             jobValue: 'Softwareentwickler',
-            employerLabel: 'Arbeitgeber',
-            employerValue: 'WinWorker',
             moreButton: 'Mehr Infos …',
             copyright: '© 2025 Marvin T. — Alle Rechte vorbehalten.',
         },
