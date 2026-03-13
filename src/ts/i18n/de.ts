@@ -605,15 +605,12 @@ export const de = {
             options: {
                 system: {
                     label: '🖥️ System',
-                    description: 'Folgt den aktuellen Systemeinstellungen.',
                 },
                 light: {
                     label: '☀️ Hell',
-                    description: 'Bleibt immer im hellen Erscheinungsbild.',
                 },
                 dark: {
                     label: '🌙 Dunkel',
-                    description: 'Bleibt immer im dunklen Erscheinungsbild.',
                 },
             },
         },
@@ -624,19 +621,15 @@ export const de = {
             options: {
                 system: {
                     label: '🖥️ System',
-                    description: 'Verwendet automatisch die Sprache deines Systems.',
                 },
                 de: {
                     label: '🇩🇪 Deutsch',
-                    description: 'Zeigt Inhalte immer auf Deutsch.',
                 },
                 en: {
                     label: '🇬🇧 Englisch',
-                    description: 'Zeigt Inhalte immer auf Englisch (UK).',
                 },
                 enUs: {
                     label: '🇺🇸 Englisch (vereinfacht)',
-                    description: 'Zeigt Inhalte immer auf Englisch (vereinfacht).',
                 },
             },
         },

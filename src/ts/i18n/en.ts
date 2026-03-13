@@ -604,15 +604,12 @@ export const en = {
             options: {
                 system: {
                     label: '🖥️ System',
-                    description: 'Follows the current system setting.',
                 },
                 light: {
                     label: '☀️ Light',
-                    description: 'Always stays in light appearance.',
                 },
                 dark: {
                     label: '🌙 Dark',
-                    description: 'Always stays in dark appearance.',
                 },
             },
         },
@@ -623,19 +620,15 @@ export const en = {
             options: {
                 system: {
                     label: '🖥️ System',
-                    description: 'Automatically uses your system language.',
                 },
                 de: {
                     label: '🇩🇪 German',
-                    description: 'Always display content in German.',
                 },
                 en: {
                     label: '🇬🇧 English',
-                    description: 'Always display content in UK English.',
                 },
                 enUs: {
                     label: '🇺🇸 English (Simplified)',
-                    description: 'Always display content in simplified English.',
                 },
             },
         },
