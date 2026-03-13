@@ -14,7 +14,26 @@
             (() => {
                 const w = window;
                 w.__APP_READY = false;
-                const hasCore = () => !!(w.ActionBus && w.WindowRegistry && w.DockSystem);
+                const hasCore = () => {
+                    const base = !!(
+                        w.ActionBus &&
+                        w.WindowRegistry &&
+                        w.DockSystem &&
+                        w.WindowManager
+                    );
+                    const multiWindow = !!(
+                        w.TerminalInstanceManager &&
+                        w.TextEditorInstanceManager &&
+                        w.FinderInstanceManager
+                    );
+                    const windowComponents = !!(
+                        w.WindowComponentFactory &&
+                        typeof w.WindowComponentFactory.createTitlebar === 'function' &&
+                        typeof w.WindowComponentFactory.createToolbar === 'function' &&
+                        typeof w.WindowComponentFactory.createStatusBar === 'function'
+                    );
+                    return base && multiWindow && windowComponents;
+                };
                 const markReady = label => {
                     if (!w.__APP_READY) {
                         console.info(`[AppReady Monitor] ready via ${label}`);
@@ -36,8 +55,18 @@
                 };
                 poll();
 
-                // Safety timeout: if core never appears, unblock tests after 12s
-                setTimeout(() => markReady('timeout-12s'), 12000);
+                // Safety timeout: never force a false-positive readiness state.
+                // If core globals are still missing, keep __APP_READY=false so tests fail fast
+                // with a real initialization error instead of cascading undefined-access errors.
+                setTimeout(() => {
+                    if (hasCore()) {
+                        markReady('timeout-12s-core-confirmed');
+                    } else {
+                        console.warn(
+                            '[AppReady Monitor] timeout reached but core globals are incomplete; keeping __APP_READY=false'
+                        );
+                    }
+                }, 12000);
             })();
         </script>
 
@@ -1114,12 +1143,29 @@
                                                     }
                                                 };
 
-                                                const hasCore = () =>
-                                                    !!(
+                                                const hasCore = () => {
+                                                    const base = !!(
                                                         w.ActionBus &&
                                                         w.WindowRegistry &&
-                                                        w.DockSystem
+                                                        w.DockSystem &&
+                                                        w.WindowManager
                                                     );
+                                                    const multiWindow = !!(
+                                                        w.TerminalInstanceManager &&
+                                                        w.TextEditorInstanceManager &&
+                                                        w.FinderInstanceManager
+                                                    );
+                                                    const windowComponents = !!(
+                                                        w.WindowComponentFactory &&
+                                                        typeof w.WindowComponentFactory
+                                                            .createTitlebar === 'function' &&
+                                                        typeof w.WindowComponentFactory
+                                                            .createToolbar === 'function' &&
+                                                        typeof w.WindowComponentFactory
+                                                            .createStatusBar === 'function'
+                                                    );
+                                                    return base && multiWindow && windowComponents;
+                                                };
                                                 const markReadyFallback = label => {
                                                     try {
                                                         if (!w.__APP_READY && hasCore()) {
