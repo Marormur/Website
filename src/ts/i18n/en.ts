@@ -631,7 +631,11 @@ export const en = {
                 },
                 en: {
                     label: '🇬🇧 English',
-                    description: 'Always display content in English.',
+                    description: 'Always display content in UK English.',
+                },
+                enUs: {
+                    label: '🇺🇸 English (Simplified)',
+                    description: 'Always display content in simplified English.',
                 },
             },
         },

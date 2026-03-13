@@ -39,8 +39,8 @@ interface APIObject {
     };
     i18n: {
         translate(key: string, fallback?: string): string;
-        setLanguagePreference(lang: 'system' | 'de' | 'en'): void;
-        getLanguagePreference(): 'system' | 'de' | 'en';
+        setLanguagePreference(lang: 'system' | 'de' | 'en' | 'en-us'): void;
+        getLanguagePreference(): 'system' | 'de' | 'en' | 'en-us';
         getActiveLanguage(): 'de' | 'en';
         applyTranslations(): void;
     };

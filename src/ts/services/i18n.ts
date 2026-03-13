@@ -23,7 +23,7 @@ import logger from '../core/logger.js';
 // ========================================
 
 export type LanguageCode = 'de' | 'en';
-export type LanguagePreference = 'system' | LanguageCode;
+export type LanguagePreference = 'system' | LanguageCode | 'en-us';
 
 export interface TranslationParams {
     [key: string]: string | number;
@@ -67,7 +67,11 @@ declare global {
 
 const LANGUAGE_PREFERENCE_KEY = 'languagePreference';
 const SUPPORTED_LANGUAGES: readonly LanguageCode[] = ['de', 'en'] as const;
-const LANGUAGE_OPTIONS: readonly LanguagePreference[] = ['system', ...SUPPORTED_LANGUAGES] as const;
+const LANGUAGE_OPTIONS: readonly LanguagePreference[] = [
+    'system',
+    ...SUPPORTED_LANGUAGES,
+    'en-us',
+] as const;
 const FALLBACK_LANGUAGE: LanguageCode = 'en';
 
 // ========================================
@@ -95,7 +99,10 @@ function normalizeLanguage(input: unknown): LanguageCode | null {
 
 function parsePreference(value: unknown): LanguagePreference {
     if (value === null || value === undefined) return 'system';
-    const normalized = String(value).trim();
+    const normalized = String(value).trim().toLowerCase().replace('_', '-');
+    if (normalized === 'en-gb') {
+        return 'en';
+    }
     return (LANGUAGE_OPTIONS as readonly string[]).includes(normalized)
         ? (normalized as LanguagePreference)
         : 'system';
@@ -139,6 +146,9 @@ let languagePreference: LanguagePreference = parsePreference(
 function resolveActiveLanguage(pref: LanguagePreference): LanguageCode {
     if (pref === 'system') {
         return detectSystemLanguage();
+    }
+    if (pref === 'en-us') {
+        return 'en';
     }
     return (SUPPORTED_LANGUAGES as readonly string[]).includes(pref)
         ? (pref as LanguageCode)
@@ -319,7 +329,7 @@ function refreshActiveLanguage(emitEvent = true): void {
  * Persists the preference in `localStorage` and triggers a `languagePreferenceChange`
  * DOM event so other modules can react.
  *
- * @param pref - `'system'` to follow the browser locale, or a specific `LanguageCode`.
+ * @param pref - `'system'` to follow the browser locale, or a specific language preference.
  * @returns The `LanguageCode` that became active after the change.
  *
  * @example
@@ -347,7 +357,7 @@ export function setLanguagePreference(pref: LanguagePreference): LanguageCode {
 }
 
 /**
- * Return the stored language preference (`'system'`, `'de'`, or `'en'`).
+ * Return the stored language preference (`'system'`, `'de'`, `'en'`, or `'en-us'`).
  *
  * @returns Current `LanguagePreference` setting.
  */

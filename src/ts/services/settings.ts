@@ -468,7 +468,14 @@ logger.debug('APP', 'Settings Module loaded');
                                     <input type="radio" name="language-preference" value="en" class="settings-radio-input" />
                                     <span class="settings-radio-copy">
                                         <span class="settings-radio-title" data-i18n="settingsPage.language.options.en.label">🇬🇧 Englisch</span>
-                                        <span class="settings-radio-description" data-i18n="settingsPage.language.options.en.description">Zeigt Inhalte immer auf Englisch.</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.language.options.en.description">Zeigt Inhalte immer auf Englisch (UK).</span>
+                                    </span>
+                                </label>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="language-preference" value="en-us" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.language.options.enUs.label">🇺🇸 Englisch (vereinfacht)</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.language.options.enUs.description">Zeigt Inhalte immer auf Englisch (US, vereinfacht).</span>
                                     </span>
                                 </label>
                             </fieldset>
