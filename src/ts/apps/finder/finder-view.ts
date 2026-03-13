@@ -239,6 +239,28 @@ export class FinderView extends BaseTab {
         return container;
     }
 
+    /**
+     * PURPOSE: GitHub results are path-bound. Navigation must invalidate the currently
+     * rendered GitHub items, otherwise the UI can keep showing the previous folder contents.
+     */
+    private _invalidateGithubViewState(): void {
+        this._renderedItems = [];
+        this.lastGithubItemsMap.clear();
+        this.githubError = false;
+        this.githubErrorMessage = '';
+        this.githubLoading = false;
+        this.githubLoadingInProgress = false;
+        this._hideRefreshIndicator();
+    }
+
+    private _arePathsEqual(left: string[], right: string[]): boolean {
+        return left.length === right.length && left.every((part, index) => part === right[index]);
+    }
+
+    private _isCurrentGithubLocation(pathSnapshot: string[]): boolean {
+        return this.source === 'github' && this._arePathsEqual(this.currentPath, pathSnapshot);
+    }
+
     private handleSidebarAction(action: string): void {
         if (action === 'home') {
             this.source = 'computer';
@@ -249,8 +271,7 @@ export class FinderView extends BaseTab {
             this.goRoot();
         } else if (action === 'github') {
             this.source = 'github';
-            // Clear rendered items when switching sources to force reload
-            this._renderedItems = [];
+            this._invalidateGithubViewState();
             const API = this.getAPI();
             if (API && typeof API.prefetchUserRepos === 'function') {
                 const username = this.getGithubUsername();
@@ -572,6 +593,9 @@ export class FinderView extends BaseTab {
             this.historyIndex--;
             const state = this.history[this.historyIndex];
             if (state) {
+                if (state.source === 'github' || this.source === 'github') {
+                    this._invalidateGithubViewState();
+                }
                 this.source = state.source;
                 this.currentPath = [...state.path];
                 this._persistState();
@@ -585,6 +609,9 @@ export class FinderView extends BaseTab {
             this.historyIndex++;
             const state = this.history[this.historyIndex];
             if (state) {
+                if (state.source === 'github' || this.source === 'github') {
+                    this._invalidateGithubViewState();
+                }
                 this.source = state.source;
                 this.currentPath = [...state.path];
                 this._persistState();
@@ -1515,8 +1542,7 @@ export class FinderView extends BaseTab {
             this.currentPath = [...this.currentPath, cleanName];
             this._addToHistory();
             this._persistState();
-            // Clear rendered items to force reload of new GitHub content
-            this._renderedItems = [];
+            this._invalidateGithubViewState();
             this._renderAll();
             return;
         }
@@ -1538,6 +1564,9 @@ export class FinderView extends BaseTab {
         this.currentPath = this.currentPath.slice(0, -1);
         this._addToHistory();
         this._persistState();
+        if (this.source === 'github') {
+            this._invalidateGithubViewState();
+        }
         this._renderAll();
     }
 
@@ -1545,8 +1574,9 @@ export class FinderView extends BaseTab {
         this.currentPath = [];
         this._addToHistory();
         this._persistState();
-        // Clear rendered items when navigating to root to force reload
-        this._renderedItems = [];
+        if (this.source === 'github') {
+            this._invalidateGithubViewState();
+        }
         this._renderAll();
     }
 
@@ -1554,8 +1584,9 @@ export class FinderView extends BaseTab {
         this.currentPath = parts;
         this._addToHistory();
         this._persistState();
-        // Clear rendered items when navigating to a new path to force reload
-        this._renderedItems = [];
+        if (this.source === 'github') {
+            this._invalidateGithubViewState();
+        }
         this._renderAll();
     }
 
@@ -1668,14 +1699,7 @@ export class FinderView extends BaseTab {
         // Build full path from current location
         const pathParts = this.source === 'computer' ? this.currentPath : [];
         const fullPath = pathParts.length > 0 ? pathParts.join('/') + '/' + name : name;
-
-        // Determine icon based on file extension
-        const ext = name.split('.').pop()?.toLowerCase() || '';
-        let icon = '📄';
-        if (['md', 'txt'].includes(ext)) icon = '📝';
-        else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) icon = '🖼️';
-        else if (['pdf'].includes(ext)) icon = '�';
-        else if (['zip', 'tar', 'gz'].includes(ext)) icon = '�';
+        const icon = this.getFileIconByName(name);
 
         const recentFile: RecentFile = {
             name,
@@ -1702,6 +1726,19 @@ export class FinderView extends BaseTab {
         // Update local instance reference
         this.recentFiles = limited;
         this._persistState();
+    }
+
+    /**
+     * Map file names to Finder icons based on extension.
+     */
+    private getFileIconByName(name: string): string {
+        const ext = (name.split('.').pop() || '').toLowerCase();
+        if (['md', 'txt'].includes(ext)) return '📝';
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff'].includes(ext))
+            return '🖼️';
+        if (ext === 'pdf') return '📕';
+        if (['zip', 'tar', 'gz', '7z', 'rar'].includes(ext)) return '🗜️';
+        return '📄';
     }
 
     getRecentItems(): FileItem[] {
@@ -1933,7 +1970,7 @@ export class FinderView extends BaseTab {
         return contents.map(it => ({
             name: it.name,
             type: (it.type === 'dir' ? 'folder' : 'file') as 'folder' | 'file',
-            icon: it.type === 'dir' ? '📁' : '📄',
+            icon: it.type === 'dir' ? '📁' : this.getFileIconByName(it.name),
             size: it.size ?? 0,
             modified: undefined,
         }));
@@ -2053,6 +2090,7 @@ export class FinderView extends BaseTab {
 
         const API = this.getAPI();
         const username = this.getGithubUsername();
+        const requestedPath = [...this.currentPath];
 
         if (!API) {
             this.githubError = true;
@@ -2081,6 +2119,9 @@ export class FinderView extends BaseTab {
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
                     const repos = cached || apiCached;
+                    if (!this._isCurrentGithubLocation(requestedPath)) {
+                        return;
+                    }
                     this._updateRepoItems(repos as GitHubRepo[]);
 
                     // If data is stale, show refresh indicator and fetch in background
@@ -2090,10 +2131,16 @@ export class FinderView extends BaseTab {
                             .then((freshRepos: unknown) => {
                                 (API as any).writeCache?.('repos', '', '', freshRepos);
                                 this._writeGithubCache(cacheKey, freshRepos);
+                                if (!this._isCurrentGithubLocation(requestedPath)) {
+                                    return;
+                                }
                                 this._updateRepoItems(freshRepos as GitHubRepo[]);
                                 this._hideRefreshIndicator();
                             })
                             .catch((err: unknown) => {
+                                if (!this._isCurrentGithubLocation(requestedPath)) {
+                                    return;
+                                }
                                 logger.warn(
                                     'FINDER',
                                     '[FinderView] Background refresh failed:',
@@ -2111,6 +2158,9 @@ export class FinderView extends BaseTab {
                     const repos = API.fetchUserRepos ? await API.fetchUserRepos(username) : [];
                     (API as any).writeCache?.('repos', '', '', repos);
                     this._writeGithubCache(cacheKey, repos);
+                    if (!this._isCurrentGithubLocation(requestedPath)) {
+                        return;
+                    }
                     this.githubLoading = false;
                     this._updateRepoItems(repos as GitHubRepo[]);
                 }
@@ -2136,6 +2186,9 @@ export class FinderView extends BaseTab {
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
                     const contents = cached || apiCached;
+                    if (!this._isCurrentGithubLocation(requestedPath)) {
+                        return;
+                    }
                     this._updateContentItems(contents as GitHubContentItem[]);
 
                     // If data is stale, show refresh indicator and fetch in background
@@ -2145,10 +2198,16 @@ export class FinderView extends BaseTab {
                             .then((freshContents: unknown) => {
                                 (API as any).writeCache?.('contents', repo, subPath, freshContents);
                                 this._writeGithubCache(cacheKey, freshContents);
+                                if (!this._isCurrentGithubLocation(requestedPath)) {
+                                    return;
+                                }
                                 this._updateContentItems(freshContents as GitHubContentItem[]);
                                 this._hideRefreshIndicator();
                             })
                             .catch((err: unknown) => {
+                                if (!this._isCurrentGithubLocation(requestedPath)) {
+                                    return;
+                                }
                                 logger.warn(
                                     'FINDER',
                                     '[FinderView] Background refresh failed:',
@@ -2168,11 +2227,17 @@ export class FinderView extends BaseTab {
                         : [];
                     (API as any).writeCache?.('contents', repo, subPath, contents);
                     this._writeGithubCache(cacheKey, contents);
+                    if (!this._isCurrentGithubLocation(requestedPath)) {
+                        return;
+                    }
                     this.githubLoading = false;
                     this._updateContentItems(contents as GitHubContentItem[]);
                 }
             }
         } catch (e: unknown) {
+            if (!this._isCurrentGithubLocation(requestedPath)) {
+                return;
+            }
             this.githubLoading = false;
             this.githubError = true;
             this.githubErrorMessage = (e as Error)?.message || 'Unbekannter Fehler';

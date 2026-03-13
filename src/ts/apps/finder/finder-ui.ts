@@ -612,7 +612,15 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         }
 
         const currentFolderName =
-            currentPath.length > 0 ? currentPath[currentPath.length - 1]! : 'Computer';
+            currentPath.length > 0
+                ? currentPath[currentPath.length - 1]!
+                : source === 'github'
+                  ? 'GitHub'
+                  : source === 'recent'
+                    ? 'Zuletzt verwendet'
+                    : source === 'starred'
+                      ? 'Markiert'
+                      : 'Computer';
         const isSearchExpanded = this.state.isSearchExpanded || searchTerm.length > 0;
 
         // Render Sidebar Groups inline to ensure state updates work correctly

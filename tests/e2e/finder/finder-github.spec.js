@@ -2,6 +2,19 @@
 const { test, expect } = require('@playwright/test');
 const { waitForAppReady, openFinderWindow, mockGithubRepoImageFlow } = require('../utils');
 
+async function dismissWelcomeDialog(page) {
+    const overlay = page.locator('#welcome-dialog-overlay');
+    if (!(await overlay.isVisible().catch(() => false))) {
+        return;
+    }
+
+    const continueButton = page.locator('#welcome-dialog-continue');
+    if (await continueButton.isVisible().catch(() => false)) {
+        await continueButton.click();
+        await overlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined);
+    }
+}
+
 async function openFinderGithub(page) {
     // Ensure Finder window is opened and visible, then open the GitHub sidebar
     await openFinderWindow(page);
@@ -17,6 +30,7 @@ test.describe('Finder GitHub integration', () => {
         page.on('console', msg => console.log('[PAGE]', msg.type(), msg.text()));
         page.on('pageerror', err => console.log('[PAGE][ERROR]', err.message));
         await waitForAppReady(page);
+        await dismissWelcomeDialog(page);
     });
 
     test('Clicking GitHub in Finder does not open Projects window', async ({ page }) => {
@@ -86,5 +100,39 @@ test.describe('Finder GitHub integration', () => {
         );
         const src = await page.getAttribute(previewImgSelector, 'src');
         expect(src).toMatch(/(blob:|wallpaper\.png)/);
+    });
+
+    test('Back and forward switch GitHub folder contents reliably', async ({ page, baseURL }) => {
+        await mockGithubRepoImageFlow(page, baseURL);
+
+        const finder = await openFinderWindow(page);
+        const githubBtn = finder.locator('[data-sidebar-id="github"]');
+        await githubBtn.waitFor({ state: 'visible', timeout: 5000 });
+        await githubBtn.click();
+
+        const websiteRow = finder.locator('tr:has-text("Website")').first();
+        await expect(websiteRow).toBeVisible({ timeout: 20000 });
+        await websiteRow.dblclick();
+
+        const imgRow = finder.locator('tr:has-text("img")').first();
+        await expect(imgRow).toBeVisible({ timeout: 20000 });
+        await imgRow.dblclick();
+
+        const wallpaperRow = finder.locator('tr:has-text("wallpaper.png")').first();
+        await expect(wallpaperRow).toBeVisible({ timeout: 20000 });
+
+        const backButton = finder.locator('[data-action="navigate-back"]').first();
+        const forwardButton = finder.locator('[data-action="navigate-forward"]').first();
+
+        await backButton.click();
+        await expect(imgRow).toBeVisible({ timeout: 20000 });
+        await expect(finder.locator('tr:has-text("README.md")').first()).toBeVisible({
+            timeout: 20000,
+        });
+        await expect(wallpaperRow).toHaveCount(0);
+
+        await forwardButton.click();
+        await expect(wallpaperRow).toBeVisible({ timeout: 20000 });
+        await expect(finder.locator('tr:has-text("README.md")').first()).toHaveCount(0);
     });
 });
