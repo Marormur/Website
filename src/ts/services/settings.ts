@@ -11,7 +11,7 @@ logger.debug('APP', 'Settings Module loaded');
 
     // ===== Types =====
 
-    type SectionName = 'wifi' | 'general' | 'general-info' | 'display' | 'language';
+    type SectionName = 'wifi' | 'bluetooth' | 'general' | 'general-info' | 'display' | 'language';
 
     interface SettingsSystemType {
         currentSection: SectionName;
@@ -26,8 +26,11 @@ logger.debug('APP', 'Settings Module loaded');
         showSection(section: SectionName, options?: { pushHistory?: boolean }): void;
         getSectionTitle(section: SectionName): { key: string; fallback: string };
         translateLabel(key: string, fallback: string): string;
-        resolveSidebarPage(section: SectionName): 'wifi' | 'general' | 'display' | 'language';
+        resolveSidebarPage(
+            section: SectionName
+        ): 'wifi' | 'bluetooth' | 'general' | 'display' | 'language';
         syncWifiNetworkList(): void;
+        syncBluetoothDeviceList(): void;
         navigateHistory(direction: 'back' | 'forward'): void;
         updateNavigationChrome(): void;
         destroy(): void;
@@ -64,6 +67,7 @@ logger.debug('APP', 'Settings Module loaded');
             this.syncThemePreference();
             this.syncLanguagePreference();
             this.syncWifiNetworkList();
+            this.syncBluetoothDeviceList();
             this.showSection('general', { pushHistory: false });
         },
 
@@ -120,6 +124,11 @@ logger.debug('APP', 'Settings Module loaded');
                                     <span class="settings-nav-title" data-i18n="settingsPage.nav.wifi">WLAN</span>
                                 </button>
 
+                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="bluetooth" data-settings-page="bluetooth">
+                                    <span class="settings-nav-icon" aria-hidden="true">🔵</span>
+                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.bluetooth">Bluetooth</span>
+                                </button>
+
                                 <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="general" data-settings-page="general">
                                     <span class="settings-nav-icon" aria-hidden="true">⚙️</span>
                                     <span class="settings-nav-title" data-i18n="settingsPage.nav.general">Allgemein</span>
@@ -166,17 +175,196 @@ logger.debug('APP', 'Settings Module loaded');
                                 </div>
 
                                 <div class="settings-wifi-group">
-                                    <p class="settings-wifi-group-title" data-i18n="settingsPage.wifi.connectedGroup">Aktuelles Netzwerk</p>
-                                    <div class="settings-wifi-card settings-wifi-connected-row">
-                                        <span class="settings-wifi-connected-name" data-state="network">HomeLAN</span>
-                                        <span class="settings-wifi-connected-status" data-state="wifi-connection-status">Verbunden</span>
+                                    <p class="settings-wifi-group-title" data-i18n="settingsPage.wifi.currentGroup">Aktives Netzwerk</p>
+                                    <div class="settings-wifi-card settings-wifi-network-card settings-wifi-network-card--spacious">
+                                        <button type="button" class="menu-item system-menu-item settings-wifi-network-item settings-wifi-network-item--active" data-network="HomeLAN" data-action="system:setNetwork" aria-pressed="false">
+                                            <span class="settings-wifi-network-main">
+                                                <span class="settings-wifi-network-title-row">
+                                                    <span class="menu-item-label settings-wifi-network-title" data-state="network">HomeLAN</span>
+                                                    <span class="settings-wifi-network-check" aria-hidden="true">✓</span>
+                                                </span>
+                                                <span class="settings-wifi-network-subline" data-state="wifi-connection-status">Verbunden</span>
+                                            </span>
+                                            <span class="settings-wifi-network-trailing">
+                                                <span class="settings-wifi-network-lock" aria-hidden="true">🔒</span>
+                                                <span class="settings-wifi-network-signal" aria-hidden="true">📶</span>
+                                                <span class="settings-wifi-network-details" data-i18n="settingsPage.wifi.detailsAction">Details ...</span>
+                                            </span>
+                                        </button>
                                     </div>
                                 </div>
 
                                 <div class="settings-wifi-group">
-                                    <p class="settings-wifi-group-title" data-i18n="menubar.wifi.preferredNetworks">Bevorzugte Netzwerke</p>
+                                    <p class="settings-wifi-group-title" data-i18n="settingsPage.wifi.personalHotspots">Persönliche Hotspots</p>
+                                    <div class="settings-wifi-card settings-wifi-network-card settings-wifi-network-card--spacious">
+                                        <button type="button" class="menu-item system-menu-item settings-wifi-network-item settings-wifi-network-item--single" data-network="Hotspot" data-action="system:setNetwork" aria-pressed="false">
+                                            <span class="settings-wifi-network-main">
+                                                <span class="menu-item-label settings-wifi-network-title" data-i18n="menubar.networks.hotspot">Marvin iPhone</span>
+                                            </span>
+                                            <span class="settings-wifi-network-trailing">
+                                                <span class="settings-wifi-network-lock" aria-hidden="true">🔒</span>
+                                                <span class="settings-wifi-network-link" aria-hidden="true">🔗</span>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="settings-wifi-group">
+                                    <p class="settings-wifi-group-title" data-i18n="settingsPage.wifi.knownGroup">Bekanntes Netzwerk</p>
+                                    <div class="settings-wifi-card settings-wifi-network-card settings-wifi-network-card--spacious">
+                                        <button type="button" class="menu-item system-menu-item settings-wifi-network-item" data-network="Office" data-action="system:setNetwork" aria-pressed="false">
+                                            <span class="settings-wifi-network-main">
+                                                <span class="settings-wifi-network-title-row">
+                                                    <span class="menu-item-label settings-wifi-network-title" data-i18n="menubar.networks.office">Office</span>
+                                                </span>
+                                            </span>
+                                            <span class="settings-wifi-network-trailing">
+                                                <span class="settings-wifi-network-lock" aria-hidden="true">🔒</span>
+                                                <span class="settings-wifi-network-signal" aria-hidden="true">📶</span>
+                                                <span class="settings-wifi-network-more" aria-hidden="true">•••</span>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="settings-wifi-group">
+                                    <p class="settings-wifi-group-title" data-i18n="settingsPage.wifi.otherGroup">Andere Netzwerke</p>
+                                    <div class="settings-wifi-card settings-wifi-network-card settings-wifi-network-card--stacked">
+                                        <button type="button" class="menu-item system-menu-item settings-wifi-network-item" data-network="GuestMesh" data-action="system:setNetwork" aria-pressed="false">
+                                            <span class="settings-wifi-network-main">
+                                                <span class="menu-item-label settings-wifi-network-title" data-i18n="settingsPage.wifi.networks.guestMesh">GuestMesh</span>
+                                            </span>
+                                            <span class="settings-wifi-network-trailing">
+                                                <span class="settings-wifi-network-lock" aria-hidden="true">🔒</span>
+                                                <span class="settings-wifi-network-signal" aria-hidden="true">📶</span>
+                                                <span class="settings-wifi-network-more" aria-hidden="true">•••</span>
+                                            </span>
+                                        </button>
+                                        <button type="button" class="menu-item system-menu-item settings-wifi-network-item" data-network="CafeFree" data-action="system:setNetwork" aria-pressed="false">
+                                            <span class="settings-wifi-network-main">
+                                                <span class="menu-item-label settings-wifi-network-title" data-i18n="settingsPage.wifi.networks.cafeFree">CafeFree</span>
+                                            </span>
+                                            <span class="settings-wifi-network-trailing">
+                                                <span class="settings-wifi-network-lock" aria-hidden="true">🔒</span>
+                                                <span class="settings-wifi-network-signal" aria-hidden="true">📶</span>
+                                                <span class="settings-wifi-network-more" aria-hidden="true">•••</span>
+                                            </span>
+                                        </button>
+                                        <button type="button" class="menu-item system-menu-item settings-wifi-network-item" data-network="StudioNet" data-action="system:setNetwork" aria-pressed="false">
+                                            <span class="settings-wifi-network-main">
+                                                <span class="menu-item-label settings-wifi-network-title" data-i18n="settingsPage.wifi.networks.studioNet">StudioNet</span>
+                                            </span>
+                                            <span class="settings-wifi-network-trailing">
+                                                <span class="settings-wifi-network-lock" aria-hidden="true">🔒</span>
+                                                <span class="settings-wifi-network-signal" aria-hidden="true">📶</span>
+                                                <span class="settings-wifi-network-more" aria-hidden="true">•••</span>
+                                            </span>
+                                        </button>
+                                        <button type="button" class="menu-item system-menu-item settings-wifi-network-item" data-network="DevHub" data-action="system:setNetwork" aria-pressed="false">
+                                            <span class="settings-wifi-network-main">
+                                                <span class="menu-item-label settings-wifi-network-title" data-i18n="settingsPage.wifi.networks.devHub">DevHub</span>
+                                            </span>
+                                            <span class="settings-wifi-network-trailing">
+                                                <span class="settings-wifi-network-lock" aria-hidden="true">🔒</span>
+                                                <span class="settings-wifi-network-signal" aria-hidden="true">📶</span>
+                                                <span class="settings-wifi-network-more" aria-hidden="true">•••</span>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="settings-bluetooth" class="settings-section hidden">
+                            <div class="settings-wifi-page" role="group" aria-label="Bluetooth Einstellungen" data-i18n-aria-label="settingsPage.bluetooth.ariaLabel">
+                                <div class="settings-wifi-card settings-wifi-master-card">
+                                    <button
+                                        type="button"
+                                        class="settings-wifi-master-button"
+                                        data-system-toggle="bluetooth"
+                                        data-action="system:toggle"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="settings-wifi-master-icon" aria-hidden="true">🔵</span>
+                                        <span class="settings-wifi-master-copy">
+                                            <span class="settings-wifi-master-title" data-i18n="settingsPage.bluetooth.title">Bluetooth</span>
+                                            <span class="settings-wifi-master-description" data-i18n="settingsPage.bluetooth.description">Verbinde Zubehör wie Kopfhörer, Tastaturen oder Lautsprecher.</span>
+                                        </span>
+                                        <span class="settings-wifi-switch" data-state-switch="bluetooth"></span>
+                                    </button>
+                                </div>
+
+                                <div class="settings-wifi-card settings-bluetooth-details-card">
+                                    <p class="settings-bluetooth-details-text" data-i18n="settingsPage.bluetooth.details">Dieser Mac wird als „Marvin's MacBook Pro“ angezeigt, während die Bluetooth-Einstellungen geöffnet sind.</p>
+                                </div>
+
+                                <div class="settings-wifi-group">
+                                    <p class="settings-wifi-group-title" data-i18n="settingsPage.bluetooth.devicesGroup">Meine Geräte</p>
                                     <div class="settings-wifi-card settings-wifi-network-card">
-                                        <div class="settings-wifi-network-list" data-network-list="wifi-preferred" data-network-context="settings"></div>
+                                        <div class="settings-wifi-network-list" data-network-context="settings-bluetooth">
+                                            <button
+                                                type="button"
+                                                class="menu-item system-menu-item settings-wifi-network-item settings-bluetooth-device-row"
+                                                data-device="AirPods"
+                                                aria-pressed="false"
+                                            >
+                                                <span class="settings-bluetooth-device-icon" aria-hidden="true">🎧</span>
+                                                <span class="settings-bluetooth-device-copy">
+                                                    <span class="menu-item-label settings-bluetooth-device-title" data-i18n="menubar.bluetooth.airpods">Marvins AirPods Pro</span>
+                                                    <span class="settings-bluetooth-device-meta">
+                                                        <span
+                                                            class="system-network-indicator"
+                                                            data-i18n="menubar.state.connected"
+                                                            data-default-i18n="menubar.state.ready"
+                                                            data-default="Bereit"
+                                                        >Verbunden</span>
+                                                        <span class="settings-bluetooth-device-battery">67 %</span>
+                                                    </span>
+                                                </span>
+                                                <span class="settings-bluetooth-device-info" aria-hidden="true">i</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="menu-item system-menu-item settings-wifi-network-item settings-bluetooth-device-row"
+                                                data-device="Keyboard"
+                                                aria-pressed="false"
+                                            >
+                                                <span class="settings-bluetooth-device-icon" aria-hidden="true">⌨️</span>
+                                                <span class="settings-bluetooth-device-copy">
+                                                    <span class="menu-item-label settings-bluetooth-device-title" data-i18n="menubar.bluetooth.keyboard">Magic Keyboard</span>
+                                                    <span class="settings-bluetooth-device-meta">
+                                                        <span
+                                                            class="system-network-indicator"
+                                                            data-i18n="menubar.state.ready"
+                                                            data-default-i18n="menubar.state.ready"
+                                                            data-default="Bereit"
+                                                        >Bereit</span>
+                                                        <span class="settings-bluetooth-device-battery">97 %</span>
+                                                    </span>
+                                                </span>
+                                                <span class="settings-bluetooth-device-info" aria-hidden="true">i</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="menu-item system-menu-item settings-wifi-network-item settings-bluetooth-device-row"
+                                                data-device="Speaker"
+                                                aria-pressed="false"
+                                            >
+                                                <span class="settings-bluetooth-device-icon" aria-hidden="true">🔊</span>
+                                                <span class="settings-bluetooth-device-copy">
+                                                    <span class="menu-item-label settings-bluetooth-device-title" data-i18n="menubar.bluetooth.speaker">HomeSpeaker</span>
+                                                    <span class="settings-bluetooth-device-meta">
+                                                        <span
+                                                            class="system-network-indicator"
+                                                            data-i18n="menubar.state.notConnected"
+                                                            data-default-i18n="menubar.state.notConnected"
+                                                            data-default="Nicht verbunden"
+                                                        >Nicht verbunden</span>
+                                                    </span>
+                                                </span>
+                                                <span class="settings-bluetooth-device-info" aria-hidden="true">i</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -458,6 +646,15 @@ logger.debug('APP', 'Settings Module loaded');
             }
         },
 
+        syncBluetoothDeviceList(): void {
+            const systemUI = (
+                window as Window & {
+                    SystemUI?: { updateAllSystemStatusUI(): void };
+                }
+            ).SystemUI;
+            systemUI?.updateAllSystemStatusUI?.();
+        },
+
         /**
          * Show specific settings section
          */
@@ -480,6 +677,7 @@ logger.debug('APP', 'Settings Module loaded');
             // Hide all sections
             const sections: SectionName[] = [
                 'wifi',
+                'bluetooth',
                 'general',
                 'general-info',
                 'display',
@@ -500,6 +698,8 @@ logger.debug('APP', 'Settings Module loaded');
 
             if (section === 'wifi') {
                 this.syncWifiNetworkList();
+            } else if (section === 'bluetooth') {
+                this.syncBluetoothDeviceList();
             }
 
             // Update nav highlighting
@@ -523,6 +723,8 @@ logger.debug('APP', 'Settings Module loaded');
             switch (section) {
                 case 'wifi':
                     return { key: 'settingsPage.wifi.title', fallback: 'WLAN' };
+                case 'bluetooth':
+                    return { key: 'settingsPage.bluetooth.title', fallback: 'Bluetooth' };
                 case 'general-info':
                     return { key: 'settingsPage.general.infoTitle', fallback: 'Info' };
                 case 'display':
@@ -557,10 +759,14 @@ logger.debug('APP', 'Settings Module loaded');
             return fallback;
         },
 
-        resolveSidebarPage(section: SectionName): 'wifi' | 'general' | 'display' | 'language' {
+        resolveSidebarPage(
+            section: SectionName
+        ): 'wifi' | 'bluetooth' | 'general' | 'display' | 'language' {
             switch (section) {
                 case 'wifi':
                     return 'wifi';
+                case 'bluetooth':
+                    return 'bluetooth';
                 case 'display':
                     return 'display';
                 case 'language':

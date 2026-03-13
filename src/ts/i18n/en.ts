@@ -544,6 +544,7 @@ export const en = {
         },
         nav: {
             wifi: 'Wi-Fi',
+            bluetooth: 'Bluetooth',
             general: 'General',
             display: 'Appearance',
             language: 'Language',
@@ -554,6 +555,25 @@ export const en = {
                 'Manage Wi-Fi, active connections, and preferred networks in a macOS-like layout.',
             ariaLabel: 'Wi-Fi settings',
             connectedGroup: 'Current network',
+            currentGroup: 'Current network',
+            personalHotspots: 'Personal Hotspots',
+            knownGroup: 'Known network',
+            otherGroup: 'Other networks',
+            detailsAction: 'Details ...',
+            networks: {
+                guestMesh: 'GuestMesh',
+                cafeFree: 'CafeFree',
+                studioNet: 'StudioNet',
+                devHub: 'DevHub',
+            },
+        },
+        bluetooth: {
+            title: 'Bluetooth',
+            description: 'Connect accessories like headphones, keyboards, or speakers.',
+            ariaLabel: 'Bluetooth settings',
+            devicesGroup: 'My devices',
+            details:
+                'This Mac is discoverable as "Marvin\'s MacBook Pro" while Bluetooth settings are open.',
         },
         general: {
             title: 'General',

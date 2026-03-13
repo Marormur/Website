@@ -144,8 +144,10 @@ logger.debug('APP', '✅ SystemUI loaded');
             id: 'HomeLAN',
             labelKey: 'menubar.networks.home',
             labelFallback: 'HomeLAN',
-            statusKey: 'menubar.state.connected',
-            statusFallback: 'Verbunden',
+            // Use 'automatic' as default status — 'Verbunden' is only shown
+            // when this network is actually active (set by setConnectedNetwork).
+            statusKey: 'menubar.state.automatic',
+            statusFallback: 'Automatisch',
         },
         {
             id: 'Office',
@@ -338,7 +340,6 @@ logger.debug('APP', '✅ SystemUI loaded');
                                 <span class="menu-item-label" data-i18n="${network.labelKey}">${network.labelFallback}</span>
                                 <span
                                     class="system-network-indicator"
-                                    data-i18n="${network.statusKey}"
                                     data-default-i18n="${network.statusKey}"
                                     data-default="${network.statusFallback}"
                                 >${network.statusFallback}</span>
@@ -405,9 +406,10 @@ logger.debug('APP', '✅ SystemUI loaded');
             'bluetooth',
             appI18n.translate(systemStatus.bluetooth ? 'menubar.state.on' : 'menubar.state.off')
         );
+        updateSystemSwitchState('bluetooth', systemStatus.bluetooth);
         updateSystemToggleState('bluetooth', systemStatus.bluetooth);
         updateSystemMenuCheckbox('toggle-bluetooth', systemStatus.bluetooth);
-        const devices = document.querySelectorAll('#bluetooth-menu [data-device]');
+        const devices = document.querySelectorAll('[data-device]');
         devices.forEach(btn => {
             const indicator = btn.querySelector('.system-network-indicator');
             if (indicator && !indicator.getAttribute('data-default')) {
@@ -536,7 +538,7 @@ logger.debug('APP', '✅ SystemUI loaded');
             }
         }
         const activeDevice = systemStatus.connectedBluetoothDevice;
-        document.querySelectorAll('#bluetooth-menu [data-device]').forEach(btn => {
+        document.querySelectorAll('[data-device]').forEach(btn => {
             const indicator = btn.querySelector('.system-network-indicator');
             if (indicator && !indicator.getAttribute('data-default')) {
                 indicator.setAttribute('data-default', indicator.textContent || '');
@@ -629,14 +631,16 @@ logger.debug('APP', '✅ SystemUI loaded');
                     ).dialogs;
                     if (dialogs?.['settings-modal']) {
                         dialogs['settings-modal'].open();
-                        if (actionKey === 'open-network') {
+                        if (actionKey === 'open-network' || actionKey === 'open-bluetooth') {
                             requestAnimationFrame(() => {
                                 const settingsSystem = (
                                     window as Window & {
                                         SettingsSystem?: { showSection(section: string): void };
                                     }
                                 ).SettingsSystem;
-                                settingsSystem?.showSection?.('wifi');
+                                settingsSystem?.showSection?.(
+                                    actionKey === 'open-network' ? 'wifi' : 'bluetooth'
+                                );
                             });
                         }
                     } else {

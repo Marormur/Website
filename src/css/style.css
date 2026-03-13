@@ -735,6 +735,14 @@ body.window-dragging * {
     padding: 4px;
 }
 
+.settings-wifi-network-card--spacious {
+    padding: 8px;
+}
+
+.settings-wifi-network-card--stacked {
+    padding: 2px 8px;
+}
+
 .settings-wifi-network-list {
     display: flex;
     flex-direction: column;
@@ -743,8 +751,103 @@ body.window-dragging * {
 
 .settings-wifi-network-item {
     border-radius: 9px;
-    padding: 9px 10px;
+    padding: 10px 12px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.settings-wifi-network-item--single {
     min-height: 38px;
+}
+
+.settings-wifi-network-item--active {
+    min-height: 44px;
+}
+
+.settings-wifi-network-main {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.settings-wifi-network-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-wifi-network-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.settings-wifi-network-check {
+    font-size: 12px;
+    color: #15803d;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.settings-wifi-network-item.is-active .settings-wifi-network-check {
+    opacity: 1;
+}
+
+.settings-wifi-network-subline {
+    font-size: 12px;
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.settings-wifi-network-trailing {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(71, 85, 105, 0.9);
+    font-size: 12px;
+}
+
+.settings-wifi-network-lock,
+.settings-wifi-network-signal,
+.settings-wifi-network-link,
+.settings-wifi-network-more {
+    opacity: 0.9;
+}
+
+.settings-wifi-network-details {
+    border: 1px solid rgba(15, 23, 42, 0.16);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(30, 41, 59, 0.9);
+    background: rgba(255, 255, 255, 0.86);
+}
+
+.settings-wifi-network-card--stacked .settings-wifi-network-item {
+    border-radius: 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.settings-wifi-network-card--stacked .settings-wifi-network-item:first-child {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.settings-wifi-network-card--stacked .settings-wifi-network-item:last-child {
+    border-bottom: 0;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.settings-wifi-network-item[aria-disabled='true'] {
+    opacity: 0.6;
 }
 
 .settings-wifi-network-item .menu-item-label {
@@ -754,6 +857,83 @@ body.window-dragging * {
 
 .settings-wifi-network-item .system-network-indicator {
     font-size: 11px;
+}
+
+.settings-bluetooth-details-card {
+    padding: 10px 14px;
+}
+
+.settings-bluetooth-details-text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    color: rgba(51, 65, 85, 0.82);
+}
+
+.settings-bluetooth-device-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+}
+
+.settings-bluetooth-device-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.06);
+    font-size: 14px;
+    flex: 0 0 auto;
+}
+
+.settings-bluetooth-device-copy {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.settings-bluetooth-device-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.settings-bluetooth-device-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 16px;
+    font-size: 12px;
+    color: rgba(51, 65, 85, 0.82);
+}
+
+.settings-bluetooth-device-battery {
+    color: rgba(51, 65, 85, 0.78);
+}
+
+.settings-bluetooth-device-info {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid rgba(100, 116, 139, 0.4);
+    color: rgba(51, 65, 85, 0.85);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.settings-bluetooth-device-row[aria-disabled='true'] {
+    opacity: 0.62;
 }
 
 html.dark .settings-app {
@@ -959,8 +1139,52 @@ html.dark .settings-wifi-master-description {
     color: rgba(224, 231, 244, 0.7);
 }
 
+html.dark .settings-wifi-network-title {
+    color: rgba(248, 251, 255, 0.97);
+}
+
+html.dark .settings-wifi-network-subline {
+    color: #4ade80;
+}
+
+html.dark .settings-wifi-network-trailing {
+    color: rgba(226, 232, 240, 0.82);
+}
+
+html.dark .settings-wifi-network-details {
+    border-color: rgba(148, 163, 184, 0.32);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(241, 245, 249, 0.92);
+}
+
+html.dark .settings-wifi-network-card--stacked .settings-wifi-network-item {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .settings-bluetooth-details-text {
+    color: rgba(224, 231, 244, 0.72);
+}
+
 html.dark .settings-wifi-master-icon {
     background: rgba(14, 116, 255, 0.2);
+}
+
+html.dark .settings-bluetooth-device-icon {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .settings-bluetooth-device-title {
+    color: rgba(248, 251, 255, 0.97);
+}
+
+html.dark .settings-bluetooth-device-meta,
+html.dark .settings-bluetooth-device-battery {
+    color: rgba(224, 231, 244, 0.72);
+}
+
+html.dark .settings-bluetooth-device-info {
+    border-color: rgba(148, 163, 184, 0.45);
+    color: rgba(226, 232, 240, 0.9);
 }
 
 html.dark .settings-wifi-connected-status {

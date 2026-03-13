@@ -545,6 +545,7 @@ export const de = {
         },
         nav: {
             wifi: 'WLAN',
+            bluetooth: 'Bluetooth',
             general: 'Allgemein',
             display: 'Darstellung',
             language: 'Sprache',
@@ -555,6 +556,25 @@ export const de = {
                 'Verwalte WLAN, aktive Verbindungen und bevorzugte Netzwerke wie unter macOS.',
             ariaLabel: 'WLAN Einstellungen',
             connectedGroup: 'Aktuelles Netzwerk',
+            currentGroup: 'Aktives Netzwerk',
+            personalHotspots: 'Persönliche Hotspots',
+            knownGroup: 'Bekanntes Netzwerk',
+            otherGroup: 'Andere Netzwerke',
+            detailsAction: 'Details ...',
+            networks: {
+                guestMesh: 'GuestMesh',
+                cafeFree: 'CafeFree',
+                studioNet: 'StudioNet',
+                devHub: 'DevHub',
+            },
+        },
+        bluetooth: {
+            title: 'Bluetooth',
+            description: 'Verbinde Zubehör wie Kopfhörer, Tastaturen oder Lautsprecher.',
+            ariaLabel: 'Bluetooth Einstellungen',
+            devicesGroup: 'Meine Geräte',
+            details:
+                "Dieser Mac wird als „Marvin's MacBook Pro“ angezeigt, während die Bluetooth-Einstellungen geöffnet sind.",
         },
         general: {
             title: 'Allgemein',
