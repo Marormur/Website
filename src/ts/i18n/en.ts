@@ -603,15 +603,15 @@ export const en = {
             legend: 'Dark mode',
             options: {
                 system: {
-                    label: 'System',
+                    label: '🖥️ System',
                     description: 'Follows the current system setting.',
                 },
                 light: {
-                    label: 'Light',
+                    label: '☀️ Light',
                     description: 'Always stays in light appearance.',
                 },
                 dark: {
-                    label: 'Dark',
+                    label: '🌙 Dark',
                     description: 'Always stays in dark appearance.',
                 },
             },
@@ -622,15 +622,15 @@ export const en = {
             legend: 'Preferred language',
             options: {
                 system: {
-                    label: 'System',
+                    label: '🖥️ System',
                     description: 'Automatically uses your system language.',
                 },
                 de: {
-                    label: 'German',
+                    label: '🇩🇪 German',
                     description: 'Always display content in German.',
                 },
                 en: {
-                    label: 'English',
+                    label: '🇬🇧 English',
                     description: 'Always display content in English.',
                 },
             },

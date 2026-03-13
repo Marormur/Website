@@ -604,15 +604,15 @@ export const de = {
             legend: 'Darkmode',
             options: {
                 system: {
-                    label: 'System',
+                    label: '🖥️ System',
                     description: 'Folgt den aktuellen Systemeinstellungen.',
                 },
                 light: {
-                    label: 'Hell',
+                    label: '☀️ Hell',
                     description: 'Bleibt immer im hellen Erscheinungsbild.',
                 },
                 dark: {
-                    label: 'Dunkel',
+                    label: '🌙 Dunkel',
                     description: 'Bleibt immer im dunklen Erscheinungsbild.',
                 },
             },
@@ -623,15 +623,15 @@ export const de = {
             legend: 'Bevorzugte Sprache',
             options: {
                 system: {
-                    label: 'System',
+                    label: '🖥️ System',
                     description: 'Verwendet automatisch die Sprache deines Systems.',
                 },
                 de: {
-                    label: 'Deutsch',
+                    label: '🇩🇪 Deutsch',
                     description: 'Zeigt Inhalte immer auf Deutsch.',
                 },
                 en: {
-                    label: 'Englisch',
+                    label: '🇬🇧 Englisch',
                     description: 'Zeigt Inhalte immer auf Englisch.',
                 },
             },

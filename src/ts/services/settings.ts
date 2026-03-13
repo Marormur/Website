@@ -425,21 +425,21 @@ logger.debug('APP', 'Settings Module loaded');
                                 <label class="settings-radio-row">
                                     <input type="radio" name="theme-mode" value="system" class="settings-radio-input" />
                                     <span class="settings-radio-copy">
-                                        <span class="settings-radio-title" data-i18n="settingsPage.display.options.system.label">System</span>
+                                        <span class="settings-radio-title" data-i18n="settingsPage.display.options.system.label">🖥️ System</span>
                                         <span class="settings-radio-description" data-i18n="settingsPage.display.options.system.description">Folgt den aktuellen Systemeinstellungen.</span>
                                     </span>
                                 </label>
                                 <label class="settings-radio-row">
                                     <input type="radio" name="theme-mode" value="light" class="settings-radio-input" />
                                     <span class="settings-radio-copy">
-                                        <span class="settings-radio-title" data-i18n="settingsPage.display.options.light.label">Hell</span>
+                                        <span class="settings-radio-title" data-i18n="settingsPage.display.options.light.label">☀️ Hell</span>
                                         <span class="settings-radio-description" data-i18n="settingsPage.display.options.light.description">Bleibt immer im hellen Erscheinungsbild.</span>
                                     </span>
                                 </label>
                                 <label class="settings-radio-row">
                                     <input type="radio" name="theme-mode" value="dark" class="settings-radio-input" />
                                     <span class="settings-radio-copy">
-                                        <span class="settings-radio-title" data-i18n="settingsPage.display.options.dark.label">Dunkel</span>
+                                        <span class="settings-radio-title" data-i18n="settingsPage.display.options.dark.label">🌙 Dunkel</span>
                                         <span class="settings-radio-description" data-i18n="settingsPage.display.options.dark.description">Bleibt immer im dunklen Erscheinungsbild.</span>
                                     </span>
                                 </label>
@@ -453,21 +453,21 @@ logger.debug('APP', 'Settings Module loaded');
                                 <label class="settings-radio-row">
                                     <input type="radio" name="language-preference" value="system" class="settings-radio-input" />
                                     <span class="settings-radio-copy">
-                                        <span class="settings-radio-title" data-i18n="settingsPage.language.options.system.label">System</span>
+                                        <span class="settings-radio-title" data-i18n="settingsPage.language.options.system.label">🖥️ System</span>
                                         <span class="settings-radio-description" data-i18n="settingsPage.language.options.system.description">Verwendet automatisch die Sprache deines Systems.</span>
                                     </span>
                                 </label>
                                 <label class="settings-radio-row">
                                     <input type="radio" name="language-preference" value="de" class="settings-radio-input" />
                                     <span class="settings-radio-copy">
-                                        <span class="settings-radio-title" data-i18n="settingsPage.language.options.de.label">Deutsch</span>
+                                        <span class="settings-radio-title" data-i18n="settingsPage.language.options.de.label">🇩🇪 Deutsch</span>
                                         <span class="settings-radio-description" data-i18n="settingsPage.language.options.de.description">Zeigt Inhalte immer auf Deutsch.</span>
                                     </span>
                                 </label>
                                 <label class="settings-radio-row">
                                     <input type="radio" name="language-preference" value="en" class="settings-radio-input" />
                                     <span class="settings-radio-copy">
-                                        <span class="settings-radio-title" data-i18n="settingsPage.language.options.en.label">Englisch</span>
+                                        <span class="settings-radio-title" data-i18n="settingsPage.language.options.en.label">🇬🇧 Englisch</span>
                                         <span class="settings-radio-description" data-i18n="settingsPage.language.options.en.description">Zeigt Inhalte immer auf Englisch.</span>
                                     </span>
                                 </label>
