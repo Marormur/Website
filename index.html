@@ -1199,12 +1199,12 @@
                                                 id="preview-container"
                                                 class="fixed inset-0 pointer-events-none z-2500"
                                             ></div>
-
-                                            class="flex-1 overflow-auto min-h-0" >
-                                            <ul
-                                                id="repo-files"
-                                                class="divide-y divide-gray-200 dark:divide-gray-700 m-0 p-0 list-none max-h-full"
-                                            ></ul>
+                                            <div class="flex-1 overflow-auto min-h-0">
+                                                <ul
+                                                    id="repo-files"
+                                                    class="divide-y divide-gray-200 dark:divide-gray-700 m-0 p-0 list-none max-h-full"
+                                                ></ul>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1213,120 +1213,132 @@
                     </div>
                 </div>
             </div>
-            <!-- Über mich Modal -->
-            <div id="about-modal" class="fixed inset-0 hidden modal" data-no-resize="true">
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <div class="about-window autopointer">
-                        <header class="about-window-header draggable-header">
-                            <div class="about-window-controls" aria-hidden="true">
-                                <button
-                                    title="Schließen"
-                                    data-i18n-title="common.close"
-                                    id="close-about-modal"
-                                    data-action="closeWindow"
-                                    data-window-id="about-modal"
-                                    class="about-window-control about-window-control--close"
-                                ></button>
-                                <span class="about-window-control about-window-control--minimize"></span>
-                                <span class="about-window-control about-window-control--maximize"></span>
-                            </div>
-                        </header>
-
-                        <div class="about-window-content">
-                            <div class="about-hero-image-wrap" aria-hidden="true">
-                                <img src="./img/profil.jpg" alt="Bild" class="about-hero-image" />
-                            </div>
-
-                            <h3 class="about-person-name">Marvin Temmen</h3>
-                            <p class="about-person-meta" data-i18n="modals.about.birth">März 1999</p>
-
-                            <div class="about-facts" role="list">
-                                <p class="about-fact-row" role="listitem">
-                                    <strong data-i18n="modals.about.locationLabel">Wohnort</strong>
-                                    <span data-i18n="modals.about.locationValue">Deutschland</span>
-                                </p>
-                                <p class="about-fact-row" role="listitem">
-                                    <strong data-i18n="modals.about.jobLabel">Beruf</strong>
-                                    <span data-i18n="modals.about.jobValue">Softwareentwickler</span>
-                                </p>
-                            </div>
-
+        </div>
+        <!-- Über mich Modal -->
+        <div id="about-modal" class="fixed inset-0 hidden modal" data-no-resize="true">
+            <div class="absolute inset-0 flex items-center justify-center">
+                <div class="about-window autopointer">
+                    <header class="about-window-header draggable-header">
+                        <div class="about-window-controls" aria-hidden="true">
                             <button
-                                class="about-more-button"
-                                data-action="openWindow"
-                                data-window-id="settings-modal"
-                            >
-                                <span data-i18n="modals.about.moreButton">Mehr Infos …</span>
-                            </button>
+                                title="Schließen"
+                                data-i18n-title="common.close"
+                                id="close-about-modal"
+                                data-action="closeWindow"
+                                data-window-id="about-modal"
+                                class="about-window-control about-window-control--close"
+                            ></button>
+                            <span
+                                class="about-window-control about-window-control--minimize"
+                            ></span>
+                            <span
+                                class="about-window-control about-window-control--maximize"
+                            ></span>
+                        </div>
+                    </header>
 
-                            <p class="about-copyright">
-                                <span data-i18n="modals.about.copyright"
-                                    >© 2025 Marvin T. — Alle Rechte vorbehalten.</span
-                                >
+                    <div class="about-window-content">
+                        <div class="about-hero-image-wrap" aria-hidden="true">
+                            <img src="./img/profil.jpg" alt="Bild" class="about-hero-image" />
+                        </div>
+
+                        <h3 class="about-person-name">Marvin Temmen</h3>
+                        <p class="about-person-meta" data-i18n="modals.about.birth">März 1999</p>
+
+                        <div class="about-facts" role="list">
+                            <p class="about-fact-row" role="listitem">
+                                <strong data-i18n="modals.about.locationLabel">Wohnort</strong>
+                                <span data-i18n="modals.about.locationValue">Deutschland</span>
                             </p>
+                            <p class="about-fact-row" role="listitem">
+                                <strong data-i18n="modals.about.jobLabel">Beruf</strong>
+                                <span data-i18n="modals.about.jobValue">Softwareentwickler</span>
+                            </p>
+                        </div>
+
+                        <button
+                            class="about-more-button"
+                            data-action="openWindow"
+                            data-window-id="settings-modal"
+                        >
+                            <span data-i18n="modals.about.moreButton">Mehr Infos …</span>
+                        </button>
+
+                        <p class="about-copyright">
+                            <span data-i18n="modals.about.copyright"
+                                >© 2025 Marvin T. — Alle Rechte vorbehalten.</span
+                            >
+                        </p>
                     </div>
                 </div>
-                <!-- Einstellungen Modal -->
-                <div id="settings-modal" class="fixed inset-0 hidden modal" data-resize-axis="y">
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <!--
+            </div>
+        </div>
+        <!-- Einstellungen Modal -->
+        <div id="settings-modal" class="fixed inset-0 hidden modal" data-resize-axis="y">
+            <div class="absolute inset-0 flex items-center justify-center">
+                <!--
                     Die Einstellungen werden in einem adaptiven Dialog angezeigt. Statt IFrames wird das
                     UI inline über das SettingsSystem in den Container gerendert. Der flexible Container
                     passt sich dem Viewport an; über das Resize‑Handle kann die Fenstergröße angepasst
                     werden.
                 -->
-                        <div
-                            class="settings-window-shell autopointer flex flex-col h-[70vh] max-h-[90vh]"
-                        >
-                            <!-- Content -->
-                            <!-- Settings rendered inline via SettingsSystem module -->
-                            <div id="settings-container" class="flex-1 overflow-hidden"></div>
-                        </div>
-                    </div>
+                <div class="settings-window-shell autopointer flex flex-col h-[70vh] max-h-[90vh]">
+                    <!-- Content -->
+                    <!-- Settings rendered inline via SettingsSystem module -->
+                    <div id="settings-container" class="flex-1 overflow-hidden"></div>
                 </div>
-                <!-- Texteditor Modal -->
-                <div id="text-modal" class="fixed inset-0 hidden modal">
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <!--
+            </div>
+        </div>
+        <!-- Texteditor Modal -->
+        <div id="text-modal" class="fixed inset-0 hidden modal">
+            <div class="absolute inset-0 flex items-center justify-center">
+                <!--
                     Der Texteditordialog verwendet ebenfalls einen flexiblen Container und rendert den
                     Editor inline über das TextEditorSystem (kein IFrame). Prozentuale Breite/Höhe lassen
                     das Fenster je nach Bildschirmgröße wachsen oder schrumpfen.
                 -->
-                        <div
-                            class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col w-[70vw] h-[60vh] max-h-[85vh]"
-                        >
-                            <!-- Header -->
-                            <div
-                                class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header"
+                <div
+                    class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg autopointer flex flex-col w-[70vw] h-[60vh] max-h-[85vh]"
+                >
+                    <!-- Header -->
+                    <div
+                        class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header"
+                    >
+                        <div class="flex space-x-2 traffic-light-controls">
+                            <button
+                                title="Schließen"
+                                data-i18n-title="common.close"
+                                id="close-text-modal"
+                                data-action="closeWindow"
+                                data-window-id="text-modal"
+                                class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300"
                             >
-                                <div class="flex space-x-2">
-                                    <button
-                                        title="Schließen"
-                                        data-i18n-title="common.close"
-                                        id="close-text-modal"
-                                        data-action="closeWindow"
-                                        data-window-id="text-modal"
-                                        class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300"
-                                    >
-                                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                                    </button>
-                                    <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                                </div>
-                                <h2
-                                    class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
-                                    data-i18n="modals.text.title"
-                                >
-                                    Texteditor
-                                </h2>
-                            </div>
-                            <!-- Tab container for multiple editor instances -->
-                            <div id="text-editor-tabs-container"></div>
-                            <!-- Content -->
-                            <!-- Text editor rendered inline via TextEditorSystem module -->
-                            <div id="text-editor-container" class="flex-1 overflow-hidden"></div>
+                                <div
+                                    class="w-3 h-3 rounded-full traffic-light-control traffic-light-control--close"
+                                    data-symbol="×"
+                                ></div>
+                            </button>
+                            <div
+                                class="w-3 h-3 rounded-full traffic-light-control traffic-light-control--minimize"
+                                data-symbol="−"
+                            ></div>
+                            <div
+                                class="w-3 h-3 rounded-full traffic-light-control traffic-light-control--maximize"
+                                data-symbol="+"
+                            ></div>
                         </div>
+                        <h2
+                            class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
+                            data-i18n="modals.text.title"
+                        >
+                            Texteditor
+                        </h2>
                     </div>
+                    <!-- Tab container for multiple editor instances -->
+                    <div id="text-editor-tabs-container"></div>
+                    <!-- Content -->
+                    <!-- Text editor rendered inline via TextEditorSystem module -->
+                    <div id="text-editor-container" class="flex-1 overflow-hidden"></div>
                 </div>
             </div>
         </div>
@@ -1410,7 +1422,7 @@
                     <div
                         class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header"
                     >
-                        <div class="flex space-x-2">
+                        <div class="flex space-x-2 traffic-light-controls">
                             <button
                                 title="Schließen"
                                 data-i18n-title="common.close"
@@ -1419,10 +1431,19 @@
                                 data-window-id="terminal-modal"
                                 class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300"
                             >
-                                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                                <div
+                                    class="w-3 h-3 rounded-full traffic-light-control traffic-light-control--close"
+                                    data-symbol="×"
+                                ></div>
                             </button>
-                            <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <div
+                                class="w-3 h-3 rounded-full traffic-light-control traffic-light-control--minimize"
+                                data-symbol="−"
+                            ></div>
+                            <div
+                                class="w-3 h-3 rounded-full traffic-light-control traffic-light-control--maximize"
+                                data-symbol="+"
+                            ></div>
                         </div>
                         <h2
                             class="ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select"
@@ -1446,7 +1467,7 @@
                 <div
                     class="flex items-center px-5 py-3 bg-gray-200/80 dark:bg-gray-800/80 backdrop-blur rounded-t-3xl draggable-header"
                 >
-                    <div class="flex space-x-2">
+                    <div class="flex space-x-2 traffic-light-controls">
                         <button
                             title="Schließen"
                             data-i18n-title="common.close"
@@ -1455,10 +1476,19 @@
                             data-window-id="image-modal"
                             class="ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300"
                         >
-                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <div
+                                class="w-3 h-3 rounded-full traffic-light-control traffic-light-control--close"
+                                data-symbol="×"
+                            ></div>
                         </button>
-                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <div
+                            class="w-3 h-3 rounded-full traffic-light-control traffic-light-control--minimize"
+                            data-symbol="−"
+                        ></div>
+                        <div
+                            class="w-3 h-3 rounded-full traffic-light-control traffic-light-control--maximize"
+                            data-symbol="+"
+                        ></div>
                     </div>
                     <h2
                         class="ml-4 font-semibold text-lg text-gray-800 dark:text-gray-100 tracking-wide no-select"

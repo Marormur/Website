@@ -932,21 +932,24 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                         },
                         h('div', {
                             className:
-                                'finder-no-drag w-3 h-3 bg-red-500 rounded-full cursor-pointer hover:bg-red-600 transition-colors',
+                                'finder-no-drag traffic-light-control traffic-light-control--close',
                             title: 'Schließen',
                             'data-action': 'window-close',
+                            'data-symbol': '×',
                         }),
                         h('div', {
                             className:
-                                'finder-no-drag w-3 h-3 bg-yellow-500 rounded-full cursor-pointer hover:bg-yellow-600 transition-colors',
+                                'finder-no-drag traffic-light-control traffic-light-control--minimize',
                             title: 'Minimieren',
                             'data-action': 'window-minimize',
+                            'data-symbol': '−',
                         }),
                         h('div', {
                             className:
-                                'finder-no-drag w-3 h-3 bg-green-500 rounded-full cursor-pointer hover:bg-green-600 transition-colors',
+                                'finder-no-drag traffic-light-control traffic-light-control--maximize',
                             title: 'Zoomen',
                             'data-action': 'window-maximize',
+                            'data-symbol': '+',
                         })
                     ),
                     // Sidebar Content
