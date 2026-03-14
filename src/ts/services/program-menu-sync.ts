@@ -1,3 +1,5 @@
+import { WINDOW_ICONS } from '../windows/window-icons.js';
+
 (function () {
     'use strict';
 
@@ -32,7 +34,7 @@
                         programLabel: t('programs.finder.label', 'Finder'),
                         infoLabel: t('programs.finder.infoLabel', 'Über Finder'),
                         fallbackInfoModalId: 'program-info-modal',
-                        icon: './img/sucher.png',
+                        icon: WINDOW_ICONS.finder,
                         about: {
                             name: 'Finder',
                             tagline: t(
@@ -48,7 +50,7 @@
                         programLabel: t('programs.terminal.label', 'Terminal'),
                         infoLabel: t('programs.terminal.infoLabel', 'Über Terminal'),
                         fallbackInfoModalId: 'program-info-modal',
-                        icon: './img/terminal.png',
+                        icon: WINDOW_ICONS.terminal,
                         about: {
                             name: 'Terminal',
                             tagline: t(
@@ -64,7 +66,7 @@
                         programLabel: t('programs.text.label', 'TextEdit'),
                         infoLabel: t('programs.text.infoLabel', 'Über TextEdit'),
                         fallbackInfoModalId: 'program-info-modal',
-                        icon: './img/notepad.png',
+                        icon: WINDOW_ICONS.textEditor,
                         about: {
                             name: 'TextEdit',
                             tagline: t('programs.text.about.tagline', 'Einfacher Texteditor'),
@@ -97,7 +99,7 @@
             programLabel: t('programs.default.label'),
             infoLabel: t('programs.default.infoLabel'),
             fallbackInfoModalId: 'program-info-modal',
-            icon: './img/sucher.png',
+            icon: WINDOW_ICONS.default,
             about: {},
         };
     }

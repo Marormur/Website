@@ -1,4 +1,5 @@
 import BaseWindowInstance, { BaseWindowConfig } from './base-window-instance';
+import { WINDOW_ICONS } from './window-icons.js';
 
 // Access global WindowChrome helper (no module export)
 type WindowWithChrome = {
@@ -58,7 +59,7 @@ export class PreviewWindowInstance extends BaseWindowInstance {
         this.container.innerHTML = '';
         const titlebar = WindowChrome.createTitlebar({
             title: this.title,
-            icon: './img/preview.png',
+            icon: WINDOW_ICONS.photos,
             showClose: true,
             showMinimize: true,
             showMaximize: false,

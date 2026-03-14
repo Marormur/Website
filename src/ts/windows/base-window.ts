@@ -6,6 +6,7 @@
 import type { BaseTab } from '../windows/base-tab.js';
 import { getZIndexManager } from './z-index-manager.js';
 import logger from '../core/logger.js';
+import { WINDOW_ICONS } from './window-icons.js';
 
 export interface WindowPosition {
     x: number;
@@ -930,11 +931,14 @@ export class BaseWindow {
 
         // Map window types to programKey/icon used by the menubar
         const map: Record<string, { programKey: string; icon: string }> = {
-            finder: { programKey: 'programs.finder', icon: './img/sucher.png' },
-            'text-editor': { programKey: 'programs.text', icon: './img/notepad.png' },
-            terminal: { programKey: 'programs.terminal', icon: './img/terminal.png' },
+            finder: { programKey: 'programs.finder', icon: WINDOW_ICONS.finder },
+            'text-editor': { programKey: 'programs.text', icon: WINDOW_ICONS.textEditor },
+            terminal: { programKey: 'programs.terminal', icon: WINDOW_ICONS.terminal },
         };
-        const meta = map[this.type] || { programKey: 'programs.default', icon: './img/sucher.png' };
+        const meta = map[this.type] || {
+            programKey: 'programs.default',
+            icon: WINDOW_ICONS.default,
+        };
 
         try {
             WM.register({

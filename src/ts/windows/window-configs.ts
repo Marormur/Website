@@ -1,4 +1,5 @@
 import logger from '../core/logger.js';
+import { WINDOW_ICONS } from './window-icons.js';
 /*
  * src/ts/window-configs.ts
  * Single source of truth for all window/modal definitions.
@@ -29,7 +30,7 @@ export const windowConfigurations: WindowConfiguration[] = [
         id: 'launchpad-modal',
         type: 'persistent',
         programKey: 'programs.launchpad',
-        icon: './img/launchpad.png',
+        icon: WINDOW_ICONS.launchpad,
         closeButtonId: 'close-launchpad-modal',
         metadata: {
             // Launchpad darf seinen initHandler auch während der Session-Restore-Phase ausführen,
@@ -51,21 +52,21 @@ export const windowConfigurations: WindowConfiguration[] = [
         id: 'projects-modal',
         type: 'persistent',
         programKey: 'programs.projects',
-        icon: './img/sucher.png',
+        icon: WINDOW_ICONS.finder,
         closeButtonId: 'close-projects-modal',
     },
     {
         id: 'about-modal',
         type: 'persistent',
         programKey: 'programs.about',
-        icon: './img/profil.jpg',
+        icon: WINDOW_ICONS.profile,
         closeButtonId: 'close-about-modal',
     },
     {
         id: 'settings-modal',
         type: 'persistent',
         programKey: 'programs.settings',
-        icon: './img/settings.png',
+        icon: WINDOW_ICONS.settings,
         closeButtonId: 'close-settings-modal',
         metadata: {
             initHandler: function () {
@@ -80,7 +81,7 @@ export const windowConfigurations: WindowConfiguration[] = [
         id: 'text-modal',
         type: 'persistent',
         programKey: 'programs.text',
-        icon: './img/notepad.png',
+        icon: WINDOW_ICONS.textEditor,
         closeButtonId: 'close-text-modal',
         metadata: {
             initHandler: function () {
@@ -110,7 +111,7 @@ export const windowConfigurations: WindowConfiguration[] = [
         // Legacy key for Photos app; handled by PhotosWindow (no static modal in index.html).
         type: 'transient',
         programKey: 'programs.photos',
-        icon: './img/photos-app-icon.svg',
+        icon: WINDOW_ICONS.photos,
         metadata: {
             initHandler: function () {
                 // Route to PhotosWindow if a caller still opens via legacy key.
@@ -122,14 +123,14 @@ export const windowConfigurations: WindowConfiguration[] = [
         id: 'program-info-modal',
         type: 'transient',
         programKey: 'programs.default',
-        icon: './img/sucher.png',
+        icon: WINDOW_ICONS.default,
         closeButtonId: 'close-program-info-modal',
     },
     {
         id: 'terminal-modal',
         type: 'persistent',
         programKey: 'programs.terminal',
-        icon: './img/terminal.png',
+        icon: WINDOW_ICONS.terminal,
         closeButtonId: 'close-terminal-modal',
         metadata: {
             initHandler: function () {

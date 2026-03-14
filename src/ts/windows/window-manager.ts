@@ -21,6 +21,7 @@
 
 import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
 import logger from '../core/logger.js';
+import { WINDOW_ICONS } from './window-icons.js';
 
 (() => {
     'use strict';
@@ -64,7 +65,7 @@ import logger from '../core/logger.js';
             this.id = options.id;
             this.type = options.type || 'persistent';
             this.programKey = options.programKey || 'programs.default';
-            this.icon = options.icon || './img/sucher.png';
+            this.icon = options.icon || WINDOW_ICONS.default;
             this.closeButtonId = options.closeButtonId ?? null;
             this.dialogInstance = null;
             this.metadata = options.metadata || {};
@@ -443,7 +444,7 @@ import logger from '../core/logger.js';
                 programLabel: translate(`${programKey}.label`),
                 infoLabel: translate(`${programKey}.infoLabel`),
                 fallbackInfoModalId: 'program-info-modal',
-                icon: './img/sucher.png',
+                icon: WINDOW_ICONS.default,
                 about: {
                     name: translate(`${programKey}.about.name`),
                     tagline: translate(`${programKey}.about.tagline`),

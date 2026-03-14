@@ -1,4 +1,5 @@
 import logger from '../../core/logger.js';
+import { WINDOW_ICONS } from '../../windows/window-icons.js';
 /*
  * Fotos-App – inspiriert von der macOS Fotos Anwendung.
  * L├ñdt Bilder aus der Picsum API, gruppiert sie in verschiedene Ansichten
@@ -221,7 +222,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
         const { frame, titlebar, content, statusbar } = WindowChrome.createWindowFrame({
             title: t('photos.title', 'Fotos'),
-            icon: './img/fotos.png',
+            icon: WINDOW_ICONS.photos,
             showClose: true,
             showMinimize: false,
             showMaximize: false,
