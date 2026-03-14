@@ -10,6 +10,7 @@ import WindowRegistry from '../windows/window-registry.js';
 import { TerminalWindow } from '../apps/terminal/terminal-window.js';
 import { TextEditorWindow } from '../apps/text-editor/text-editor-window.js';
 import { FinderWindow } from '../apps/finder/finder-window.js';
+import { PhotosWindow } from '../apps/photos/photos-window.js';
 import { TerminalSession } from '../apps/terminal/terminal-session.js';
 import { TextEditorDocument } from '../apps/text-editor/text-editor-document.js';
 import { FinderView } from '../apps/finder/finder-view.js';
@@ -31,7 +32,7 @@ export interface MultiWindowSession {
 
 export interface WindowSessionData {
     id: string;
-    type: string; // 'terminal', 'text-editor', 'finder'
+    type: string; // 'terminal', 'text-editor', 'finder', 'photos'
     position: {
         x: number;
         y: number;
@@ -535,6 +536,9 @@ class MultiWindowSessionManager {
 
             case 'finder':
                 return new FinderWindow(config);
+
+            case 'photos':
+                return new PhotosWindow(config);
 
             default:
                 return null;

@@ -69,6 +69,25 @@ export function getWindowActions(): ActionMap {
                 );
             }
 
+            // SPECIAL: PhotosWindow (legacy key: image-modal)
+            if (windowId === 'image-modal') {
+                const photos = getGlobal<{ focusOrCreate?: () => void }>('PhotosWindow');
+                if (photos?.focusOrCreate) {
+                    safeExecute('[ActionBus] openWindow photos', () => {
+                        photos.focusOrCreate!();
+                    });
+                    // Early return: Multi-window handled, skip legacy WindowManager
+                    const g = getGlobal<{ updateProgramLabelByTopModal?: () => void }>('');
+                    g?.updateProgramLabelByTopModal?.();
+                    return;
+                }
+                logger.warn(
+                    'UI',
+                    '[ActionBus] PhotosWindow not available; skipping legacy photos fallback'
+                );
+                return;
+            }
+
             // SPECIAL: Multi-Window Terminal
             if (windowId === 'terminal-modal') {
                 const terminal = getGlobal<{ focusOrCreate?: () => void }>('TerminalWindow');
@@ -281,9 +300,13 @@ export function getWindowActions(): ActionMap {
                 return;
             }
 
-            const modal = element.closest('.modal') as HTMLElement | null;
+            // Support both legacy modal windows and BaseWindow shells.
+            const modal = element.closest('.modal, .multi-window') as HTMLElement | null;
             if (!modal) {
-                logger.warn('UI', '[ActionBus] window-maximize: no .modal ancestor found');
+                logger.warn(
+                    'UI',
+                    '[ActionBus] window-maximize: no .modal/.multi-window ancestor found'
+                );
                 return;
             }
 
@@ -291,9 +314,16 @@ export function getWindowActions(): ActionMap {
 
             // Try WindowRegistry first
             const registry = getGlobal<{
-                getWindow?: (id: string) => { toggleFullscreen?: () => void } | null;
+                getWindow?: (id: string) => {
+                    toggleMaximize?: () => void;
+                    toggleFullscreen?: () => void;
+                } | null;
             }>('WindowRegistry');
             const win = registry?.getWindow?.(windowId);
+            if (win?.toggleMaximize) {
+                win.toggleMaximize();
+                return;
+            }
             if (win?.toggleFullscreen) {
                 win.toggleFullscreen();
                 return;

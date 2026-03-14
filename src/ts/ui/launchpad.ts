@@ -71,7 +71,8 @@ logger.debug('UI', 'Launchpad (TS) loaded');
             const info = WM.getProgramInfo(id) as
                 | { programLabel?: string; icon?: string }
                 | undefined;
-            if (cfg && cfg.type === 'transient') return; // skip transient
+            // Keep transient windows out of Launchpad, but expose Photos there by design.
+            if (cfg && cfg.type === 'transient' && id !== 'image-modal') return;
             if (id === 'launchpad-modal') return; // skip self
 
             // Skip system modals that shouldn't appear in Launchpad
@@ -177,6 +178,22 @@ logger.debug('UI', 'Launchpad (TS) loaded');
             window.dialogs['launchpad-modal'].close?.();
         } else if (launchpadModal) {
             launchpadModal.classList.add('hidden');
+        }
+
+        // image-modal now maps to the new PhotosWindow implementation.
+        // Do not fall back to the legacy static image-modal dialog.
+        if (windowId === 'image-modal') {
+            const photos = (window as unknown as { PhotosWindow?: { focusOrCreate?: () => void } })
+                .PhotosWindow;
+            if (photos?.focusOrCreate) {
+                photos.focusOrCreate();
+                return;
+            }
+            logger.warn(
+                'UI',
+                'LaunchpadSystem: PhotosWindow unavailable, skipping legacy image-modal fallback'
+            );
+            return;
         }
 
         const WM = window.WindowManager;

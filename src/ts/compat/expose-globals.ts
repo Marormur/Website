@@ -62,6 +62,7 @@ import '../apps/text-editor/text-editor-instance'; // Text editor instance manag
 // Import both side-effect and named to ensure symbols are retained and exposed
 import { FinderView as __FinderView__ } from '../apps/finder/finder-view'; // Finder view tab
 import { FinderWindow as __FinderWindow__ } from '../apps/finder/finder-window'; // Finder window
+import { PhotosWindow as __PhotosWindow__ } from '../apps/photos/photos-window'; // Photos window (BaseWindow subclass)
 
 // Multi-window system (Phase 6: Session Management)
 import '../services/multi-window-session'; // Multi-window session persistence
@@ -119,6 +120,7 @@ try {
     if (!w.FinderView) w.FinderView = __FinderView__;
     if (!w.FinderWindow) w.FinderWindow = __FinderWindow__;
     if (!w.TerminalWindow) w.TerminalWindow = __TerminalWindow__;
+    if (!w.PhotosWindow) w.PhotosWindow = __PhotosWindow__;
 } catch {
     /* ignore */
 }
@@ -128,6 +130,7 @@ try {
         FinderView: !!w.FinderView,
         FinderWindow: !!w.FinderWindow,
         TerminalWindow: !!w.TerminalWindow,
+        PhotosWindow: !!w.PhotosWindow,
         WindowRegistry: !!w.WindowRegistry,
         ActionBus: !!w.ActionBus,
     });

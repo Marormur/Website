@@ -88,10 +88,10 @@ if (guardedWindow[guardKey]) {
             (target as Element).closest &&
             (target as Element).closest('#dock .dock-item')
         );
-        const inImageModal = !!(
+        const inPhotosWindow = !!(
             target &&
             (target as Element).closest &&
-            (target as Element).closest('#image-modal')
+            (target as Element).closest('.photos-window-shell')
         );
         const inFinderModal = !!(
             target &&
@@ -112,11 +112,11 @@ if (guardedWindow[guardKey]) {
             }
         }
 
-        if (inImageModal && typeof window.getImageViewerState === 'function') {
+        if (inPhotosWindow && typeof window.getImageViewerState === 'function') {
             const st = window.getImageViewerState() as any;
             if (st && st.hasImage) {
                 items.push({
-                    id: 'image-open-tab',
+                    id: 'photos-open-tab',
                     label:
                         i18n.translate('context.image.openInTab') ||
                         i18n.translate('menu.image.openInTab') ||

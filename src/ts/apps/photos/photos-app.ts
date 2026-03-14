@@ -232,9 +232,9 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                 {
                     label: '',
                     icon: `<div class="relative flex-1 sm:flex-initial min-w-[200px]">
-                        <input id="photos-search" type="search" placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}" 
+                        <input id="photos-search" type="search" placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}"
                             class="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                        <button id="photos-search-clear" type="button" class="absolute inset-y-0 right-2 flex items-center text-xl text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 invisible pointer-events-none" 
+                        <button id="photos-search-clear" type="button" class="absolute inset-y-0 right-2 flex items-center text-xl text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 invisible pointer-events-none"
                             title="${t('photos.search.clear', 'Suche löschen')}">×</button>
                     </div>`,
                 },
@@ -257,89 +257,147 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         elements.titlebar = titlebar;
         elements.statusbar = statusbar;
 
-        // Build content and append (extracted into helper for reuse with BaseWindow)
-        const { container: contentContainer, detailOverlay: detailOverlayEl } =
-            createPhotosContent();
+        // Build content and append (detailOverlay is embedded inside container)
+        const { container: contentContainer } = createPhotosContent();
         content.appendChild(contentContainer);
-        content.appendChild(detailOverlayEl);
 
         return frame;
     }
 
     // Build the shared content (sidebar, main area, detail overlay).
-    // This is extracted so it can be used both by the legacy modal flow and
-    // by the BaseWindow-based `PhotosWindow` implementation.
+    // Uses the same inset-sidebar-panel design language as Finder and System Settings:
+    // – Floating frosted-glass sidebar with traffic lights (photos-sidebar-shell + photos-sidebar-panel)
+    // – Content topbar with segment switcher + search (photos-content-topbar)
+    // – Detail overlay embedded directly inside the container (z-30 absolute inset-0)
+    // NOTE: detailOverlay is still returned for callers that need a reference, but it
+    //       is already appended to container – do NOT appendChild it again separately.
     function createPhotosContent(): { container: HTMLElement; detailOverlay: HTMLElement } {
-        // Build sidebar
-        const sidebar = document.createElement('aside');
-        sidebar.className =
-            'hidden md:flex flex-col w-56 border-r border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/60';
-        sidebar.innerHTML = `
-            <div class="px-5 pt-6 pb-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">${t('photos.sidebar.library', 'Bibliothek')}</p>
-                <nav class="mt-4 space-y-1" id="photos-sidebar">
-                    <button type="button" data-photos-filter="all" class="photos-sidebar-button">
-                        <span>${t('photos.sidebar.items.all', 'Alle Fotos')}</span>
-                        <span id="photos-count-all" class="photos-sidebar-count">–</span>
-                    </button>
-                    <button type="button" data-photos-filter="favorites" class="photos-sidebar-button">
-                        <span>${t('photos.sidebar.items.favorites', 'Favoriten')}</span>
-                        <span id="photos-count-favorites" class="photos-sidebar-count">0</span>
-                    </button>
-                </nav>
-                <p class="text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mt-6">${t('photos.sidebar.filters', 'Filter')}</p>
-                <nav class="mt-4 space-y-1">
-                    <button type="button" data-photos-filter="landscape" class="photos-sidebar-button">
-                        <span>${t('photos.sidebar.items.landscape', 'Querformat')}</span>
-                        <span id="photos-count-landscape" class="photos-sidebar-count">–</span>
-                    </button>
-                    <button type="button" data-photos-filter="portrait" class="photos-sidebar-button">
-                        <span>${t('photos.sidebar.items.portrait', 'Hochformat')}</span>
-                        <span id="photos-count-portrait" class="photos-sidebar-count">–</span>
-                    </button>
-                    <button type="button" data-photos-filter="square" class="photos-sidebar-button">
-                        <span>${t('photos.sidebar.items.square', 'Quadratisch')}</span>
-                        <span id="photos-count-square" class="photos-sidebar-count">–</span>
-                    </button>
-                </nav>
-            </div>
-            <div class="px-5 pb-6 mt-auto">
-                <button id="photos-refresh" type="button" class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 transition hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-400 dark:hover:text-blue-300">
-                    <span aria-hidden="true">↻</span>
-                    <span>${t('photos.sidebar.refresh', 'Neu laden')}</span>
-                </button>
-                <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-3 leading-relaxed">${t('photos.sidebar.sourceNote', 'Quelle: Lorem Picsum – zufällige kuratierte Fotokollektionen.')}</p>
+        // ── Sidebar: inset frosted-glass panel (same as Finder sidebar) ─────────────
+        const sidebarShell = document.createElement('div');
+        sidebarShell.className = 'photos-sidebar-shell';
+        sidebarShell.innerHTML = `
+            <div class="photos-sidebar-panel">
+                <!-- Traffic Lights (Drag-Zone) -->
+                <div class="finder-window-drag-zone flex items-center gap-2 px-3" style="height:44px;flex-shrink:0;cursor:move;">
+                    <div class="finder-no-drag traffic-light-control traffic-light-control--close"
+                        data-action="window-close" data-symbol="×" title="${t('common.close', 'Schließen')}" role="button" tabindex="0"></div>
+                    <div class="finder-no-drag traffic-light-control traffic-light-control--minimize"
+                        data-action="window-minimize" data-symbol="−" title="${t('menu.window.minimize', 'Minimize')}" role="button" tabindex="0"></div>
+                    <div class="finder-no-drag traffic-light-control traffic-light-control--maximize"
+                        data-action="window-maximize" data-symbol="+" title="${t('menu.window.zoom', 'Zoom')}" role="button" tabindex="0"></div>
+                </div>
+                <!-- Sidebar body: list fills available height, controls stay bottom-aligned -->
+                <div class="flex-1 min-h-0 flex flex-col px-3 pb-3" style="padding-top:6px;">
+                    <div class="flex-1 min-h-0 overflow-y-auto pr-1">
+                        <p class="photos-sidebar-section-label" data-i18n="photos.sidebar.library">${t('photos.sidebar.library', 'Bibliothek')}</p>
+                        <nav id="photos-sidebar" class="space-y-0.5">
+                            <button type="button" data-photos-filter="all" class="photos-sidebar-button">
+                                <span data-i18n="photos.sidebar.items.all">${t('photos.sidebar.items.all', 'Alle Fotos')}</span>
+                                <span id="photos-count-all" class="photos-sidebar-count">–</span>
+                            </button>
+                            <button type="button" data-photos-filter="favorites" class="photos-sidebar-button">
+                                <span data-i18n="photos.sidebar.items.favorites">${t('photos.sidebar.items.favorites', 'Favoriten')}</span>
+                                <span id="photos-count-favorites" class="photos-sidebar-count">0</span>
+                            </button>
+                        </nav>
+                        <p class="photos-sidebar-section-label" data-i18n="photos.sidebar.filters">${t('photos.sidebar.filters', 'Filter')}</p>
+                        <nav class="space-y-0.5">
+                            <button type="button" data-photos-filter="landscape" class="photos-sidebar-button">
+                                <span data-i18n="photos.sidebar.items.landscape">${t('photos.sidebar.items.landscape', 'Querformat')}</span>
+                                <span id="photos-count-landscape" class="photos-sidebar-count">–</span>
+                            </button>
+                            <button type="button" data-photos-filter="portrait" class="photos-sidebar-button">
+                                <span data-i18n="photos.sidebar.items.portrait">${t('photos.sidebar.items.portrait', 'Hochformat')}</span>
+                                <span id="photos-count-portrait" class="photos-sidebar-count">–</span>
+                            </button>
+                            <button type="button" data-photos-filter="square" class="photos-sidebar-button">
+                                <span data-i18n="photos.sidebar.items.square">${t('photos.sidebar.items.square', 'Quadratisch')}</span>
+                                <span id="photos-count-square" class="photos-sidebar-count">–</span>
+                            </button>
+                        </nav>
+                    </div>
+                    <div class="photos-sidebar-footer mt-3 pt-3">
+                        <button id="photos-refresh" type="button"
+                            class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-2xl bg-white/60 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 transition hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-400 dark:hover:text-blue-300">
+                            <span aria-hidden="true">↻</span>
+                            <span data-i18n="photos.sidebar.refresh">${t('photos.sidebar.refresh', 'Neu laden')}</span>
+                        </button>
+                        <p class="photos-sidebar-credit" data-i18n="photos.sidebar.sourceNote">
+                            ${t('photos.sidebar.sourceNote', 'Quelle: Lorem Picsum – zufällige kuratierte Fotokollektionen.')}
+                        </p>
+                    </div>
+                </div>
             </div>
         `;
 
-        // Build main area
+        // ── Main area: topbar (drag + segments + search) + content + statusbar ──────
         const mainArea = document.createElement('div');
-        mainArea.className = 'flex-1 flex flex-col min-h-0 relative';
+        mainArea.className = 'flex flex-col h-full overflow-hidden';
+        mainArea.style.marginLeft = 'var(--photos-sidebar-width, 224px)';
         mainArea.innerHTML = `
-            <div class="flex-1 relative min-h-0">
+            <!-- Content topbar (drag zone) -->
+            <div class="photos-content-topbar finder-window-drag-zone">
+                <!-- Segment-Switcher (Mitte) -->
+                <div class="flex-1 flex justify-center finder-no-drag">
+                    <div class="flex bg-gray-100/80 dark:bg-gray-800/80 rounded-full p-1 text-sm font-medium text-gray-600 dark:text-gray-300 shadow-inner"
+                         role="group" aria-label="${t('menu.sections.view', 'View')}">
+                        <button type="button" data-photos-segment="moments"
+                            class="photos-segment-button" data-i18n="photos.segments.moments">${t('photos.segments.moments', 'Momente')}</button>
+                        <button type="button" data-photos-segment="collections"
+                            class="photos-segment-button" data-i18n="photos.segments.collections">${t('photos.segments.collections', 'Sammlungen')}</button>
+                        <button type="button" data-photos-segment="years"
+                            class="photos-segment-button" data-i18n="photos.segments.years">${t('photos.segments.years', 'Jahre')}</button>
+                    </div>
+                </div>
+                <!-- Suche (rechts) -->
+                <div class="finder-no-drag relative flex-none flex items-center">
+                    <div class="relative">
+                        <input id="photos-search" type="search"
+                            placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}"
+                            class="h-7 w-40 rounded-full border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 pl-8 pr-6 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                        <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true">⌕</span>
+                        <button id="photos-search-clear" type="button"
+                            class="absolute inset-y-0 right-1.5 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 invisible pointer-events-none"
+                            title="${t('photos.search.clear', 'Clear search')}" aria-label="${t('photos.search.clear', 'Clear search')}">×</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Galerie-Inhaltsbereich -->
+            <div class="flex-1 relative min-h-0 overflow-hidden">
                 <div id="photos-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 hidden">
                     <div class="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300">
                         <span class="h-10 w-10 border-4 border-gray-300 dark:border-gray-700 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin"></span>
-                        <span class="text-sm font-medium">${t('photos.status.loading', 'Lade Fotos…')}</span>
+                        <span class="text-sm font-medium" data-i18n="photos.status.loading">${t('photos.status.loading', 'Lade Fotos…')}</span>
                     </div>
                 </div>
                 <div id="photos-error" class="absolute inset-x-0 top-6 mx-auto max-w-lg bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-200 rounded-2xl shadow px-5 py-4 hidden">
-                    <p class="font-semibold mb-1">${t('photos.errors.heading', 'Fehler beim Laden')}</p>
-                    <p class="text-sm">${t('photos.errors.description', 'Bitte überprüfe deine Verbindung und versuche es erneut.')}</p>
-                    <button id="photos-error-retry" type="button" class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-100 underline decoration-dotted">${t('photos.buttons.retry', 'Erneut versuchen')}</button>
+                    <p class="font-semibold mb-1" data-i18n="photos.errors.heading">${t('photos.errors.heading', 'Fehler beim Laden')}</p>
+                    <p class="text-sm" data-i18n="photos.errors.description">${t('photos.errors.description', 'Bitte überprüfe deine Verbindung und versuche es erneut.')}</p>
+                    <button id="photos-error-retry" type="button"
+                        class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-100 underline decoration-dotted"
+                        data-i18n="photos.buttons.retry">${t('photos.buttons.retry', 'Erneut versuchen')}</button>
                 </div>
                 <div id="photos-gallery" class="absolute inset-0 overflow-y-auto px-5 sm:px-6 py-6 space-y-8"></div>
                 <div id="photos-empty" class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 hidden px-6">
                     <div>
-                        <p class="text-lg font-semibold">${t('photos.empty.title', 'Keine Fotos gefunden')}</p>
-                        <p class="text-sm mt-1">${t('photos.empty.description', 'Passe Suche oder Filter an, um weitere Ergebnisse zu sehen.')}</p>
+                        <p class="text-lg font-semibold" data-i18n="photos.empty.title">${t('photos.empty.title', 'Keine Fotos gefunden')}</p>
+                        <p class="text-sm mt-1" data-i18n="photos.empty.description">${t('photos.empty.description', 'Passe Suche oder Filter an, um weitere Ergebnisse zu sehen.')}</p>
                     </div>
                 </div>
-                <div id="image-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 hidden pointer-events-none">${t('photos.placeholder', 'Wähle ein Foto aus, um Details zu sehen.')}</div>
+                <div id="image-placeholder"
+                    class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 hidden pointer-events-none"
+                    data-i18n="photos.placeholder">${t('photos.placeholder', 'Wähle ein Foto aus, um Details zu sehen.')}</div>
+            </div>
+
+            <!-- Statusbar -->
+            <div class="window-statusbar flex items-center justify-between px-3 bg-transparent border-t border-gray-200/50 dark:border-white/5 text-xs text-gray-500 dark:text-gray-400" style="height:22px;flex-shrink:0;">
+                <span class="statusbar-left">${t('photos.status.countPlaceholder', '– Fotos')}</span>
+                <span class="statusbar-right"></span>
             </div>
         `;
 
-        // Detail overlay
+        // ── Detail overlay (eingebettet, z-30 über allem) ────────────────────────────
         const detailOverlay = document.createElement('div');
         detailOverlay.id = 'photo-detail-overlay';
         detailOverlay.className =
@@ -381,11 +439,15 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             </div>
         `;
 
-        // Combine layout
+        // Container: relativ positioniert, nimmt volle Fensterfläche ein
+        // Die Sidebar ist absolut positioniert (photos-sidebar-shell), der
+        // mainArea erhält margin-left in Sidebar-Breite.
         const container = document.createElement('div');
-        container.className = 'flex h-full';
-        container.appendChild(sidebar);
+        container.className = 'relative h-full w-full overflow-hidden';
+        container.appendChild(sidebarShell);
         container.appendChild(mainArea);
+        // Detail-Overlay eingebettet (NICHT nochmal extern appenden!)
+        container.appendChild(detailOverlay);
 
         return { container, detailOverlay };
     }

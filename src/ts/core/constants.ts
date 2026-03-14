@@ -53,7 +53,8 @@ export const MODAL_IDS = [
     'program-info-modal',
 ];
 
-export const TRANSIENT_MODAL_IDS = new Set<string>(['program-info-modal']);
+// image-modal is transient: Photos now uses PhotosWindow (BaseWindow) and must not be restored via legacy WindowManager
+export const TRANSIENT_MODAL_IDS = new Set<string>(['program-info-modal', 'image-modal']);
 
 export const BASE_Z_INDEX = 1000;
 export const MENUBAR_Z_INDEX = 10000;

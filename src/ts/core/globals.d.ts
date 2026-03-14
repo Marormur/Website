@@ -151,6 +151,7 @@ declare global {
         /** PhotosWindow class for creating photos viewer windows */
         PhotosWindow?: {
             create?: (config?: { title?: string }) => unknown;
+            focusOrCreate?: (config?: { title?: string }) => unknown;
         };
         DockSystem?: {
             init?: () => void;

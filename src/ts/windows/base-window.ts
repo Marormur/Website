@@ -207,7 +207,9 @@ export class BaseWindow {
 
         // Close button (red dot)
         const closeBtn = document.createElement('button');
-        closeBtn.className = 'ml-auto text-2xl leading-none text-gray-700 dark:text-gray-300';
+        closeBtn.type = 'button';
+        closeBtn.className =
+            'flex items-center justify-center p-0 m-0 bg-transparent border-0 leading-none text-gray-700 dark:text-gray-300';
         closeBtn.title = 'Schließen';
         closeBtn.setAttribute('data-i18n-title', 'common.close');
         closeBtn.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div>';
@@ -622,19 +624,31 @@ export class BaseWindow {
     }
 
     /**
-     * Maximieren/Restore. Setzt inline‑Styles auf das innere Window‑Element.
+     * Maximieren/Restore. Skaliert das eigentliche Fenster-Root und nutzt die
+     * zuletzt bekannte Fensterposition als Restore-Zustand.
      */
     toggleMaximize(): void {
         this.isMaximized = !this.isMaximized;
 
         if (!this.element) return;
-        const windowEl = this.element.querySelector('div') as HTMLElement;
-        if (!windowEl) return;
+        const windowEl = this.element;
 
         if (this.isMaximized) {
-            windowEl.style.width = '95vw';
-            windowEl.style.height = '95vh';
+            const minTop = Math.round(window.getMenuBarBottom?.() || 0);
+            const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+            const maxHeight = Math.max(360, (window.innerHeight || 0) - minTop - dockReserve);
+
+            windowEl.style.maxWidth = 'none';
+            windowEl.style.maxHeight = 'none';
+            windowEl.style.left = '0px';
+            windowEl.style.top = `${minTop}px`;
+            windowEl.style.width = `${window.innerWidth || this.position.width}px`;
+            windowEl.style.height = `${maxHeight}px`;
         } else {
+            windowEl.style.maxWidth = '';
+            windowEl.style.maxHeight = '';
+            windowEl.style.left = `${this.position.x}px`;
+            windowEl.style.top = `${this.position.y}px`;
             windowEl.style.width = `${this.position.width}px`;
             windowEl.style.height = `${this.position.height}px`;
         }

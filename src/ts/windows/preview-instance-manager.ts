@@ -58,11 +58,44 @@ export class PreviewInstanceManager {
     /** Open a list of images in the Preview (ensures modal and instance) */
     static openImages(images: string[], startIndex = 0, path?: string): void {
         if (!Array.isArray(images) || images.length === 0) return;
-        // Open preview modal first (if WindowManager / Dialog API is available)
+        const idx = Math.max(0, Math.min(startIndex, images.length - 1));
+
+        // Preferred path: route image previews into the new Photos window.
+        // This removes dependence on the legacy image-modal markup.
+        try {
+            const W = window as unknown as Window & {
+                PhotosWindow?: { focusOrCreate?: () => void };
+                PhotosApp?: {
+                    showExternalImage?: (payload: { src: string; name?: string }) => void;
+                };
+            };
+            const selected = images[idx];
+            if (
+                selected &&
+                W.PhotosWindow?.focusOrCreate &&
+                typeof W.PhotosApp?.showExternalImage === 'function'
+            ) {
+                W.PhotosWindow.focusOrCreate();
+                W.PhotosApp.showExternalImage({ src: selected, name: path });
+                return;
+            }
+        } catch (e) {
+            logger.warn(
+                'WINDOW',
+                '[PreviewInstanceManager] Photos handoff failed, using legacy fallback',
+                e
+            );
+        }
+
+        // Open preview modal first (if WindowManager / Dialog API is available).
+        // The modal id changed from preview-modal to image-modal; detect dynamically.
         try {
             const W = window as unknown as Window & { API?: any; WindowManager?: any };
-            if (W.API?.window?.open) W.API.window.open('preview-modal');
-            else W.WindowManager?.open?.('preview-modal');
+            const modalId = document.getElementById('image-modal')
+                ? 'image-modal'
+                : 'preview-modal';
+            if (W.API?.window?.open) W.API.window.open(modalId);
+            else W.WindowManager?.open?.(modalId);
         } catch {}
 
         // Ensure the preview container is visible so headless tests can detect the image
@@ -83,7 +116,6 @@ export class PreviewInstanceManager {
 
         const instance = this.getOrCreateSingleton();
         if (!instance) return;
-        const idx = Math.max(0, Math.min(startIndex, images.length - 1));
         instance.updateState({ images, currentIndex: idx, path: path || undefined });
         instance.render();
         // Ensure visible

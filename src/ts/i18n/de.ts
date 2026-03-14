@@ -64,6 +64,7 @@ export const de = {
         projects: 'GitHub Projekte',
         text: 'Texteditor',
         image: 'Bildbetrachter',
+        photos: 'Fotos',
         settings: 'Systemeinstellungen',
         launchpad: 'Apps',
         terminal: 'Terminal',

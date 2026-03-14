@@ -315,7 +315,7 @@ function buildTextEditorMenuDefinition(context: MenuContext) {
     ];
 }
 
-function buildImageViewerMenuDefinition(context: MenuContext) {
+function buildPhotosMenuDefinition(context: MenuContext) {
     const state = (
         window['getImageViewerState'] ? window['getImageViewerState']() : { hasImage: false }
     ) as { hasImage?: boolean; src?: string; title?: string };
@@ -325,7 +325,7 @@ function buildImageViewerMenuDefinition(context: MenuContext) {
             label: () => translate('menu.sections.file'),
             items: [
                 {
-                    id: 'image-open-tab',
+                    id: 'photos-open-tab',
                     label: () => translate('menu.image.openInTab'),
                     disabled: !state?.hasImage,
                     icon: 'imageOpen',
@@ -334,7 +334,7 @@ function buildImageViewerMenuDefinition(context: MenuContext) {
                     },
                 },
                 {
-                    id: 'image-download',
+                    id: 'photos-download',
                     label: () => translate('menu.image.saveImage'),
                     disabled: !state?.hasImage,
                     icon: 'download',
@@ -344,7 +344,7 @@ function buildImageViewerMenuDefinition(context: MenuContext) {
                 },
                 { type: 'separator' },
                 {
-                    id: 'image-close',
+                    id: 'photos-close',
                     label: () => translate('menu.image.close'),
                     shortcut: '⌘W',
                     disabled: () => !(context && context.dialog),
@@ -936,7 +936,8 @@ const menuDefinitions: Record<string, MenuSectionBuilder> = {
     'projects-modal': buildFinderMenuDefinition,
     'settings-modal': buildSettingsMenuDefinition,
     'text-modal': buildTextEditorMenuDefinition,
-    'image-modal': buildImageViewerMenuDefinition,
+    // Legacy modal key kept for compatibility, now backed by PhotosWindow.
+    'image-modal': buildPhotosMenuDefinition,
     'about-modal': buildAboutMenuDefinition,
     'program-info-modal': buildProgramInfoMenuDefinition,
     'terminal-modal': buildTerminalMenuDefinition,

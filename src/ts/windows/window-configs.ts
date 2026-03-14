@@ -107,13 +107,14 @@ export const windowConfigurations: WindowConfiguration[] = [
     },
     {
         id: 'image-modal',
-        type: 'persistent',
+        // Legacy key for Photos app; handled by PhotosWindow (no static modal in index.html).
+        type: 'transient',
         programKey: 'programs.photos',
         icon: './img/photos-app-icon.svg',
-        closeButtonId: 'close-image-modal',
         metadata: {
             initHandler: function () {
-                if (window.PhotosApp?.init) window.PhotosApp.init();
+                // Route to PhotosWindow if a caller still opens via legacy key.
+                window.PhotosWindow?.focusOrCreate?.();
             },
         },
     },

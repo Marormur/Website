@@ -49,10 +49,10 @@ export class Dialog {
         }
 
         const minimizeEl = this.modal.querySelector(
-            '.draggable-header .bg-yellow-500.rounded-full'
+            '.draggable-header .traffic-light-control--minimize, .draggable-header .bg-yellow-500.rounded-full'
         ) as HTMLElement | null;
         const maximizeEl = this.modal.querySelector(
-            '.draggable-header .bg-green-500.rounded-full'
+            '.draggable-header .traffic-light-control--maximize, .draggable-header .bg-green-500.rounded-full'
         ) as HTMLElement | null;
         if (minimizeEl) {
             minimizeEl.style.cursor = 'pointer';
@@ -169,6 +169,8 @@ export class Dialog {
             if (ds.prevWidth !== undefined) target.style.width = ds.prevWidth;
             if (ds.prevHeight !== undefined) target.style.height = ds.prevHeight;
             if (ds.prevPosition !== undefined) target.style.position = ds.prevPosition;
+            target.style.maxWidth = '';
+            target.style.maxHeight = '';
             delete ds.maximized;
             delete ds.prevLeft;
             delete ds.prevTop;
@@ -186,6 +188,8 @@ export class Dialog {
         this.modal.dataset.prevHeight = target.style.height || computed.height || '';
         this.modal.dataset.prevPosition = target.style.position || computed.position || '';
         const minTop = Math.round(window.getMenuBarBottom?.() || 0);
+        target.style.maxWidth = 'none';
+        target.style.maxHeight = 'none';
         target.style.position = 'fixed';
         target.style.left = '0px';
         target.style.top = `${minTop}px`;
