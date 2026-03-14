@@ -95,7 +95,7 @@
     "esbuild-bundle-analyzer": "^0.0.1",
     "eslint": "^10.0.0",
     "husky": "^9.1.7",
-    "jsdom": "^26.0.0",
+    "jsdom": "^28.1.0",
     "knip": "^5.75.1",
     "lint-staged": "^16.2.7",
     "postcss": "^8.5.8",
