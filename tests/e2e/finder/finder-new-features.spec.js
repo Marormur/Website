@@ -4,13 +4,19 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { waitForAppReady, mockGitHubIfNeeded, openFinderWindow } from '../utils.js';
+import {
+    waitForAppReady,
+    mockGitHubIfNeeded,
+    openFinderWindow,
+    dismissWelcomeDialogIfPresent,
+} from '../utils.js';
 
 test.describe('FinderView New Features', () => {
     test.beforeEach(async ({ page }) => {
         await mockGitHubIfNeeded(page);
         await page.goto('/');
         await waitForAppReady(page);
+        await dismissWelcomeDialogIfPresent(page);
     });
 
     test('i18n: Sidebar labels are translatable', async ({ page }) => {
@@ -94,45 +100,46 @@ test.describe('FinderView New Features', () => {
         const finderWindow = await openFinderWindow(page);
 
         // Find sort button
-        const sortBtn = finderWindow.locator('[data-action="toggle-sort"]');
+        const sortBtn = finderWindow.locator('[data-finder-sort-trigger="1"]');
         await expect(sortBtn).toBeVisible();
 
-        // Sort menu should be hidden initially
-        const sortMenu = finderWindow.locator('.finder-sort-menu');
-        await expect(sortMenu).toHaveClass(/hidden/);
+        // Sort menu overlay should not exist initially
+        const sortMenu = page.locator('.finder-sort-menu-overlay[aria-label="Sortierung"]');
+        await expect(sortMenu).toHaveCount(0);
 
         // Click to show menu
         await sortBtn.click();
-        await expect(sortMenu).not.toHaveClass(/hidden/);
+        await expect(sortMenu).toBeVisible();
 
-        // Click again to hide
+        // Click again to close and remove overlay from DOM
         await sortBtn.click();
-        await expect(sortMenu).toHaveClass(/hidden/);
+        await expect(sortMenu).toHaveCount(0);
     });
 
     test('Sort UI: Change sort order', async ({ page }) => {
         const finderWindow = await openFinderWindow(page);
 
-        // Open sort menu
-        const sortBtn = finderWindow.locator('[data-action="toggle-sort"]');
+        // Open sort menu and choose a different sort mode
+        const sortBtn = finderWindow.locator('[data-finder-sort-trigger="1"]');
         await sortBtn.click();
 
-        const sortMenu = finderWindow.locator('.finder-sort-menu');
+        const sortMenu = page.locator('.finder-sort-menu-overlay[aria-label="Sortierung"]');
+        await expect(sortMenu).toBeVisible();
 
-        // Click "Nach Datum" (or "Sort by Date")
-        const sortByDate = sortMenu.locator('[data-sort="date"]');
+        // New sort menu uses menuitemradio options, not data-sort/data-order attributes.
+        const sortByDate = page.getByRole('menuitemradio', { name: /Änderungsdatum|Date/i });
         await sortByDate.click();
 
-        // Menu should close
-        await expect(sortMenu).toHaveClass(/hidden/);
+        // Overlay should be removed after selection
+        await expect(sortMenu).toHaveCount(0);
 
-        // Re-open and change order
+        // Re-open and choose another sort option
         await sortBtn.click();
-        const sortDesc = sortMenu.locator('[data-order="desc"]');
-        await sortDesc.click();
+        const sortBySize = page.getByRole('menuitemradio', { name: /Größe|Size/i });
+        await sortBySize.click();
 
         // Menu should close again
-        await expect(sortMenu).toHaveClass(/hidden/);
+        await expect(sortMenu).toHaveCount(0);
     });
 
     test('Recent Files: Shows recent view when clicked', async ({ page }) => {
@@ -176,58 +183,41 @@ test.describe('FinderView New Features', () => {
             .first()
             .waitFor({ state: 'visible', timeout: 10000 });
 
-        // Check breadcrumbs exist
-        const breadcrumbs = finderWindow.locator('.finder-breadcrumbs-active');
-        await expect(breadcrumbs).toBeVisible();
+        // Finder toolbar now shows current folder label in the center.
+        const centerLabel = finderWindow.locator('[data-main-toolbar-wrap] .truncate').first();
+        await expect(centerLabel).toBeVisible();
+        const initialLabel = ((await centerLabel.textContent()) || '').trim();
 
-        // Navigate to Documents folder (if it exists)
-        const documentsFolder = finderWindow
-            .locator('.finder-list-item, .finder-grid-item')
-            .filter({ hasText: 'Documents' })
+        // Navigate into the first visible folder to verify breadcrumb updates.
+        const firstFolder = finderWindow
+            .locator('.finder-list-item[data-item-type="folder"]')
             .first();
-        if ((await documentsFolder.count()) > 0) {
-            await documentsFolder.dblclick();
-            // Wait for breadcrumbs to update
-            await page.waitForFunction(
-                () => {
-                    const bc = document.querySelector('.finder-breadcrumbs-active');
-                    return bc && bc.textContent && bc.textContent.includes('Documents');
-                },
-                { timeout: 5000 }
-            );
+        if ((await firstFolder.count()) > 0) {
+            const folderName = await firstFolder.getAttribute('data-item-name');
+            await firstFolder.dblclick();
 
-            // Breadcrumbs should now show Documents
-            const breadcrumbText = await breadcrumbs.textContent();
-            expect(breadcrumbText).toContain('Documents');
+            if (folderName) {
+                await expect(centerLabel).toContainText(folderName);
+            }
+        } else {
+            // If there are no folders in the current fixture, label must still stay visible.
+            await expect(centerLabel).toContainText(initialLabel);
         }
     });
 
     test('View Modes: Switch between list and grid', async ({ page }) => {
         const finderWindow = await openFinderWindow(page);
 
-        // Find view mode buttons
-        const listBtn = finderWindow.locator('[data-action="view-list"]');
-        const gridBtn = finderWindow.locator('[data-action="view-grid"]');
-
-        await expect(listBtn).toBeVisible();
-        await expect(gridBtn).toBeVisible();
+        const viewBtn = finderWindow.locator('[data-finder-view-trigger="1"]');
+        await expect(viewBtn).toBeVisible();
 
         // Switch to grid view
-        await gridBtn.click();
+        await viewBtn.click();
+        await page.getByRole('menuitemradio', { name: /Als grosse Symbole|Large Icons/i }).click();
 
-        // Wait for grid container to appear OR list items (fallback if no content)
-        await Promise.race([
-            finderWindow
-                .locator('.finder-grid-container')
-                .waitFor({ state: 'visible', timeout: 5000 })
-                .catch(() => {}),
-            finderWindow
-                .locator('.finder-list-item')
-                .first()
-                .waitFor({ state: 'hidden', timeout: 5000 })
-                .catch(() => {}),
-            page.waitForTimeout(1000),
-        ]);
+        await finderWindow
+            .locator('.finder-grid-container')
+            .waitFor({ state: 'visible', timeout: 5000 });
 
         // Should show grid items
         const gridItems = await finderWindow.locator('.finder-grid-item').count();
@@ -238,7 +228,8 @@ test.describe('FinderView New Features', () => {
         }
 
         // Switch back to list view
-        await listBtn.click();
+        await viewBtn.click();
+        await page.getByRole('menuitemradio', { name: /Als Liste|List/i }).click();
 
         // Wait for list table to appear
         await finderWindow
@@ -253,8 +244,9 @@ test.describe('FinderView New Features', () => {
         const finderWindow = await openFinderWindow(page);
 
         // Change to grid view
-        const gridBtn = finderWindow.locator('[data-action="view-grid"]');
-        await gridBtn.click();
+        const viewBtn = finderWindow.locator('[data-finder-view-trigger="1"]');
+        await viewBtn.click();
+        await page.getByRole('menuitemradio', { name: /Als grosse Symbole|Large Icons/i }).click();
 
         // Wait for grid container to appear
         await finderWindow
@@ -262,16 +254,18 @@ test.describe('FinderView New Features', () => {
             .waitFor({ state: 'visible', timeout: 5000 });
 
         // Change sort
-        const sortBtn = finderWindow.locator('[data-action="toggle-sort"]');
+        const sortBtn = finderWindow.locator('[data-finder-sort-trigger="1"]');
         await sortBtn.click();
-        const sortBySize = finderWindow.locator('[data-sort="size"]');
+        const sortBySize = page.getByRole('menuitemradio', { name: /Größe|Size/i });
         await sortBySize.click();
 
-        // Wait for sort menu to close
-        await finderWindow.locator('.finder-sort-menu').waitFor({ state: 'hidden', timeout: 3000 });
+        // Wait for sort menu overlay to close
+        await expect(
+            page.locator('.finder-sort-menu-overlay[aria-label="Sortierung"]')
+        ).toHaveCount(0);
 
         // Close Finder window
-        const closeBtn = finderWindow.locator('button[title="Close"]').first();
+        const closeBtn = finderWindow.locator('[data-action="window-close"]').first();
         await closeBtn.click({ timeout: 5000 });
 
         // Wait for window to actually close
@@ -280,9 +274,10 @@ test.describe('FinderView New Features', () => {
         // Reopen
         const finderWindow2 = await openFinderWindow(page);
 
-        // State should be preserved (grid view and size sort)
-        // This is hard to test without inspecting internal state,
-        // but we can at least verify the window opens
+        // State should be preserved at least for chosen sort mode.
         await expect(finderWindow2).toBeVisible();
+
+        const reopenedSortBtn = finderWindow2.locator('[data-finder-sort-trigger="1"]');
+        await expect(reopenedSortBtn).toHaveAttribute('title', /Größe|Size/i);
     });
 });

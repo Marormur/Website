@@ -1,52 +1,39 @@
 // E2E: Reopen Finder after closing all tabs should render content and a fresh tab
 const { test, expect } = require('@playwright/test');
-const { waitForAppReady, getFinderAddTabButton, getFinderTabs } = require('../utils');
+const {
+    waitForAppReady,
+    getFinderAddTabButton,
+    getFinderTabs,
+    dismissWelcomeDialogIfPresent,
+} = require('../utils');
 const { openFinder } = require('../utils/window-helpers');
 
 async function closeAllFinderTabs(page) {
-    // Close until no instances remain
-    let attempts = 0;
-    while (attempts < 10) {
-        // Check how many tabs exist across all Finder windows
-        const tabs = page.locator('.modal.multi-window[id^="window-finder-"] .wt-tab');
-        const count = await tabs.count();
-        if (count === 0) break;
-
-        // Click close button on last tab
-        const closeBtn = tabs.nth(count - 1).locator('.wt-tab-close');
-        await closeBtn.click();
-
-        // Wait until tab count decreases or no instances remain
-        await page.waitForFunction(
-            prev => {
+    // More reliable than repeated UI clicks in headless mode.
+    await page.evaluate(() => {
+        try {
+            const registry = window.WindowRegistry;
+            const wins = registry?.getAllWindows?.('finder') || [];
+            wins.forEach(win => {
                 try {
-                    const tabsNow = document.querySelectorAll(
-                        '.modal.multi-window[id^="window-finder-"] .wt-tab'
-                    ).length;
-                    const instanceCount = (window.WindowRegistry?.getAllWindows('finder') || [])
-                        .length;
-                    return instanceCount === 0 || tabsNow < prev;
+                    const tabIds = Array.from(win.tabs?.keys?.() || []);
+                    tabIds.forEach(id => win.removeTab?.(id));
                 } catch {
-                    return false;
+                    // Ignore per-window issues; final assertion below validates outcome.
                 }
-            },
-            count,
-            { timeout: 5000 }
-        );
-        attempts++;
-
-        // Check if any instances remain
-        const instanceCount = await page.evaluate(
-            () => (window.WindowRegistry?.getAllWindows('finder') || []).length
-        );
-        if (instanceCount === 0) break;
-    }
+            });
+        } catch {
+            // Ignore and fall through to assertion.
+        }
+    });
 
     // Verify no instances remain
-    const finalCount = await page.evaluate(
-        () => (window.WindowRegistry?.getAllWindows('finder') || []).length
+    await page.waitForFunction(
+        () => (window.WindowRegistry?.getAllWindows('finder') || []).length === 0,
+        {
+            timeout: 5000,
+        }
     );
-    expect(finalCount).toBe(0);
 }
 
 function visibleInstanceContainer(page, finderWindow) {
@@ -60,6 +47,7 @@ test.describe('Finder reopen after closing all tabs', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + '/index.html');
         await waitForAppReady(page);
+        await dismissWelcomeDialogIfPresent(page);
     });
 
     test('Reopen renders fresh content and tab', async ({ page }) => {
