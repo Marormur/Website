@@ -104,6 +104,9 @@ interface GitHubContentItem {
 }
 
 interface FinderViewContentState {
+    viewMode?: ViewMode;
+    sortBy?: FinderSortKey;
+    sortOrder?: 'asc' | 'desc';
     sidebarWidth?: number;
     columnWidths?: { name: number; size: number; modified: number };
     favorites?: string[];
@@ -176,9 +179,10 @@ export class FinderView extends BaseTab {
 
         this.source = config?.source || 'computer';
         this.currentPath = [];
-        this.viewMode = 'list';
-        this.sortBy = 'name';
-        this.sortOrder = 'asc';
+        const persistedPrefs = FinderView.loadFinderPreferences();
+        this.viewMode = persistedPrefs.viewMode;
+        this.sortBy = persistedPrefs.sortBy;
+        this.sortOrder = persistedPrefs.sortOrder;
         this.selectedItems = new Set();
         this._renderedItems = [];
 
@@ -189,6 +193,17 @@ export class FinderView extends BaseTab {
             size: 112, // w-28
             modified: 160, // w-40
         };
+
+        // Tab-specific state (session restore) should override global Finder preferences.
+        if (contentState?.viewMode === 'list' || contentState?.viewMode === 'grid') {
+            this.viewMode = contentState.viewMode;
+        }
+        if (contentState?.sortBy) {
+            this.sortBy = LEGACY_SORT_KEY_MAP[contentState.sortBy] || this.sortBy;
+        }
+        if (contentState?.sortOrder === 'asc' || contentState?.sortOrder === 'desc') {
+            this.sortOrder = contentState.sortOrder;
+        }
 
         this.githubRepos = [];
         this.lastGithubItemsMap = new Map();
@@ -1592,20 +1607,20 @@ export class FinderView extends BaseTab {
 
     setViewMode(mode: ViewMode): void {
         this.viewMode = mode;
-        this.updateContentState({ viewMode: this.viewMode });
+        this._persistState();
         this._renderAll();
     }
 
     setSortBy(sortBy: FinderSortKey): void {
         this.sortBy = sortBy;
         this._persistState();
-        this.renderContent();
+        this._renderAll();
     }
 
     setSortOrder(order: 'asc' | 'desc'): void {
         this.sortOrder = order;
         this._persistState();
-        this.renderContent();
+        this._renderAll();
     }
 
     // --- Favorites System ---
@@ -1636,8 +1651,55 @@ export class FinderView extends BaseTab {
 
     // --- Recent Files System (Global Shared) ---
     private static RECENT_FILES_KEY = 'finder-recent-files';
+    private static FINDER_PREFS_KEY = 'finder-view-preferences';
     private static MAX_RECENT_FILES = 20;
     private static MAX_HISTORY_SIZE = 50; // Maximum history entries to prevent unbounded memory usage
+
+    private static loadFinderPreferences(): {
+        viewMode: ViewMode;
+        sortBy: FinderSortKey;
+        sortOrder: 'asc' | 'desc';
+    } {
+        const defaults = {
+            viewMode: 'list' as ViewMode,
+            sortBy: 'name' as FinderSortKey,
+            sortOrder: 'asc' as const,
+        };
+
+        try {
+            const raw = localStorage.getItem(FinderView.FINDER_PREFS_KEY);
+            if (!raw) return defaults;
+            const parsed = JSON.parse(raw) as {
+                viewMode?: unknown;
+                sortBy?: unknown;
+                sortOrder?: unknown;
+            };
+
+            const viewMode = parsed.viewMode === 'grid' ? 'grid' : 'list';
+            const sortBy =
+                typeof parsed.sortBy === 'string'
+                    ? LEGACY_SORT_KEY_MAP[parsed.sortBy] || defaults.sortBy
+                    : defaults.sortBy;
+            const sortOrder = parsed.sortOrder === 'desc' ? 'desc' : 'asc';
+
+            return { viewMode, sortBy, sortOrder };
+        } catch (e) {
+            logger.warn('FINDER', '[FinderView] Failed to load finder preferences:', e);
+            return defaults;
+        }
+    }
+
+    private static saveFinderPreferences(prefs: {
+        viewMode: ViewMode;
+        sortBy: FinderSortKey;
+        sortOrder: 'asc' | 'desc';
+    }): void {
+        try {
+            localStorage.setItem(FinderView.FINDER_PREFS_KEY, JSON.stringify(prefs));
+        } catch (e) {
+            logger.warn('FINDER', '[FinderView] Failed to save finder preferences:', e);
+        }
+    }
 
     /**
      * Load recent files from global storage
@@ -1767,6 +1829,12 @@ export class FinderView extends BaseTab {
 
     // --- State Persistence ---
     private _persistState(): void {
+        FinderView.saveFinderPreferences({
+            viewMode: this.viewMode,
+            sortBy: this.sortBy,
+            sortOrder: this.sortOrder,
+        });
+
         // Update content state without triggering recursion
         this.contentState = {
             currentPath: this.currentPath,

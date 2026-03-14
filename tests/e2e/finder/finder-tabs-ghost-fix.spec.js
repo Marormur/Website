@@ -14,7 +14,7 @@ async function waitForFinderTabCount(page, finderWindow, expected, timeout = 200
     if (!windowId) throw new Error('Finder window id not found');
 
     await page.waitForFunction(
-        (wId, count) => {
+        ({ wId, count }) => {
             try {
                 const finderWindows = window.WindowRegistry?.getAllWindows?.('finder') || [];
                 const win = finderWindows.find(
@@ -34,8 +34,7 @@ async function waitForFinderTabCount(page, finderWindow, expected, timeout = 200
                 return false;
             }
         },
-        windowId,
-        expected,
+        { wId: windowId, count: expected },
         { timeout }
     );
 }

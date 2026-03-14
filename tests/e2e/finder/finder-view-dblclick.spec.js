@@ -11,14 +11,15 @@ const {
     gotoHome,
     waitForAppReady,
     openFinderWindow,
-    ensureFinderViewMode,
     waitForFinderContent,
+    dismissWelcomeDialogIfPresent,
 } = require('../utils');
 test.describe('FinderView Double-Click Navigation @basic', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         // Use shared navigation helper so loader flags (USE_BUNDLE etc.) are applied deterministically
         await gotoHome(page, baseURL);
         await waitForAppReady(page);
+        await dismissWelcomeDialogIfPresent(page);
     });
 
     test('should navigate into folder on double-click in list view', async ({ page }) => {
@@ -26,12 +27,14 @@ test.describe('FinderView Double-Click Navigation @basic', () => {
 
         // Ensure list view is active within the Finder window
         const win = await openFinderWindow(page);
-        await ensureFinderViewMode(win, 'list');
+        const viewTrigger = win.locator('[data-finder-view-trigger="1"]').first();
+        await viewTrigger.click();
+        await page.getByRole('menuitemradio', { name: /Als Liste|List/i }).click();
         await waitForFinderContent(win, 'list');
 
-        // Verify we are at Computer root (breadcrumb should show "Computer")
-        const breadcrumb = win.locator('.finder-breadcrumbs-active');
-        await expect(breadcrumb).toContainText('Computer');
+        // Verify current location label starts at root.
+        const locationLabel = win.locator('[data-main-toolbar-wrap] .truncate').first();
+        await expect(locationLabel).toContainText(/Computer/i);
 
         // Look for the first folder item in list view with data-item-type="folder"
         const firstFolder = win.locator('.finder-list-item[data-item-type="folder"]').first();
@@ -43,12 +46,9 @@ test.describe('FinderView Double-Click Navigation @basic', () => {
 
         // Double-click the folder
         await firstFolder.dblclick();
-        // Wait until breadcrumb includes the folder name
-        await expect(breadcrumb).toContainText(folderName);
-
-        // Verify breadcrumb now contains the folder name
-        await expect(breadcrumb).toContainText(folderName);
-        console.log('[Test] Breadcrumb updated to include:', folderName);
+        // Wait until location label includes the folder name
+        await expect(locationLabel).toContainText(folderName);
+        console.log('[Test] Location label updated to include:', folderName);
 
         // Verify content area updated (should have new items or be empty)
         const content = win.locator('.finder-content');
@@ -60,25 +60,23 @@ test.describe('FinderView Double-Click Navigation @basic', () => {
 
         // Switch to grid view
         const win = await openFinderWindow(page);
-        await ensureFinderViewMode(win, 'grid');
+        const viewTrigger = win.locator('[data-finder-view-trigger="1"]').first();
+        await viewTrigger.click();
+        await page.getByRole('menuitemradio', { name: /Als grosse Symbole|Large Icons/i }).click();
         const firstGridItem = await waitForFinderContent(win, 'grid');
 
-        // Verify we are at Computer root
-        const breadcrumb = win.locator('.finder-breadcrumbs-active');
-        await expect(breadcrumb).toContainText('Computer');
+        const locationLabel = win.locator('[data-main-toolbar-wrap] .truncate').first();
+        await expect(locationLabel).toContainText(/Computer/i);
 
         const itemIndex = await firstGridItem.getAttribute('data-item-index');
         console.log('[Test] First grid item index:', itemIndex);
 
         // Double-click the item
         await firstGridItem.dblclick();
-        // Wait until breadcrumb is no longer just "Computer" (root)
-        await expect(breadcrumb).not.toHaveText(/^\s*Computer\s*$/);
-
-        // The breadcrumb should now show a subfolder (depends on structure)
-        // For now just verify it changed (not just "Computer")
-        const updatedBreadcrumb = await breadcrumb.textContent();
-        console.log('[Test] Breadcrumb after dblclick:', updatedBreadcrumb);
+        // Wait until location label is no longer just "Computer" (root)
+        await expect(locationLabel).not.toHaveText(/^\s*Computer\s*$/);
+        const updatedLabel = await locationLabel.textContent();
+        console.log('[Test] Location label after dblclick:', updatedLabel);
 
         // At minimum, verify content is still visible
         const content = win.locator('.finder-content');
@@ -90,7 +88,9 @@ test.describe('FinderView Double-Click Navigation @basic', () => {
 
         // Ensure list view
         const win = await openFinderWindow(page);
-        await ensureFinderViewMode(win, 'list');
+        const viewTrigger = win.locator('[data-finder-view-trigger="1"]').first();
+        await viewTrigger.click();
+        await page.getByRole('menuitemradio', { name: /Als Liste|List/i }).click();
         await waitForFinderContent(win, 'list');
 
         const firstFolder = win.locator('.finder-list-item[data-item-type="folder"]').first();
@@ -110,9 +110,9 @@ test.describe('FinderView Double-Click Navigation @basic', () => {
         // If we can still reference it and dblclick, that proves stability
         await firstFolder.dblclick();
         // Breadcrumb should now contain the folder name
-        const breadcrumb = win.locator('.finder-breadcrumbs-active');
-        await expect(breadcrumb).toContainText(folderName);
-        await expect(breadcrumb).toContainText(folderName);
+        const locationLabel = win.locator('[data-main-toolbar-wrap] .truncate').first();
+        await expect(locationLabel).toContainText(folderName);
+        await expect(locationLabel).toContainText(folderName);
         console.log('[Test] Successfully double-clicked after single-click selection');
     });
 });

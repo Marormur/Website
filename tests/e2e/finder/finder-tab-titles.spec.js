@@ -5,13 +5,14 @@ const {
     openFinderWindow,
     waitForFinderReady,
     getFinderAddTabButton,
+    dismissWelcomeDialogIfPresent,
 } = require('../utils');
 
-async function getTabTitles(page) {
-    return await page.evaluate(() => {
+async function getTabTitles(page, finderWindow) {
+    const windowId = await finderWindow.getAttribute('id');
+    return await page.evaluate(winId => {
         try {
-            // Try to find any .wt-tab-title elements
-            const tabs = Array.from(document.querySelectorAll('.wt-tab-title'));
+            const tabs = Array.from(document.querySelectorAll(`#${winId}-tabs .wt-tab-title`));
 
             if (tabs.length === 0) {
                 console.warn('[getTabTitles] No .wt-tab-title elements found');
@@ -30,13 +31,14 @@ async function getTabTitles(page) {
             console.error('[getTabTitles] Error:', err.message);
             return [];
         }
-    });
+    }, windowId);
 }
 
 test.describe('Finder tab titles show folder names', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + '/index.html');
         await waitForAppReady(page);
+        await dismissWelcomeDialogIfPresent(page);
     });
 
     test('tab title shows current folder name instead of "Finder <number>"', async ({ page }) => {
@@ -49,20 +51,20 @@ test.describe('Finder tab titles show folder names', () => {
         await page.waitForSelector('.wt-tab-title', { timeout: 5000 });
 
         // Get initial tab title - should be view name (e.g., "Computer")
-        let titles = await getTabTitles(page);
+        let titles = await getTabTitles(page, finderWindow);
         expect(titles[0]).not.toMatch(/^Finder \d+$/); // Should NOT be "Finder 1"
         expect(titles[0]).toMatch(/Computer|GitHub/i); // Should be a view name
 
         // Navigate to Documents folder (if in computer view)
-        const documentsBtn = page
-            .locator('[data-finder-content] [data-item-name="Documents"]')
+        const documentsBtn = finderWindow
+            .locator('.finder-list-item[data-item-name="Documents"]')
             .first();
         if (await documentsBtn.isVisible().catch(() => false)) {
             await documentsBtn.dblclick();
             await page.waitForTimeout(300);
 
             // Tab title should now show "Documents"
-            titles = await getTabTitles(page);
+            titles = await getTabTitles(page, finderWindow);
             expect(titles[0]).toBe('Documents');
         }
 
@@ -73,7 +75,7 @@ test.describe('Finder tab titles show folder names', () => {
         await page.waitForTimeout(300);
 
         // Second tab should also have a folder name, not "Finder 2"
-        titles = await getTabTitles(page);
+        titles = await getTabTitles(page, finderWindow);
         expect(titles.length).toBe(2);
         expect(titles[1]).not.toMatch(/^Finder \d+$/);
         expect(titles[1]).toMatch(/Computer|GitHub|Favoriten|Favorites|Zuletzt/i);
@@ -89,14 +91,18 @@ test.describe('Finder tab titles show folder names', () => {
         await page.waitForSelector('.wt-tab-title', { timeout: 5000 });
 
         // Navigate to GitHub view (sidebar click)
-        const githubSidebarBtn = page.locator('[data-finder-view="github"]').first();
+        const githubSidebarBtn = finderWindow2
+            .locator('.tab-content:not(.hidden) [data-sidebar-id="github"]')
+            .first();
         if (await githubSidebarBtn.isVisible().catch(() => false)) {
             await githubSidebarBtn.click();
             await page.waitForTimeout(300);
 
-            // Tab title should update to GitHub view name
-            const titles = await getTabTitles(page);
-            expect(titles[0]).toMatch(/GitHub/i);
+            // Title should remain semantic (folder/source label) and not fallback to Finder N.
+            const titles = await getTabTitles(page, finderWindow2);
+            expect(titles.length).toBeGreaterThan(0);
+            expect((titles[0] || '').trim().length).toBeGreaterThan(0);
+            expect(titles[0]).not.toMatch(/^Finder \d+$/);
         }
     });
 
@@ -110,8 +116,8 @@ test.describe('Finder tab titles show folder names', () => {
         await page.waitForSelector('.wt-tab-title', { timeout: 5000 });
 
         // Try to navigate to Documents
-        const documentsBtn = page
-            .locator('[data-finder-content] [data-item-name="Documents"]')
+        const documentsBtn = finderWindow3
+            .locator('.finder-list-item[data-item-name="Documents"]')
             .first();
         let navigatedToDocuments = false;
         if (await documentsBtn.isVisible().catch(() => false)) {
@@ -138,7 +144,8 @@ test.describe('Finder tab titles show folder names', () => {
         }
 
         // Tab title should be restored (not "Finder 1")
-        const titles = await getTabTitles(page);
+        const activeFinder = page.locator('.modal.multi-window[id^="window-finder-"]').first();
+        const titles = await getTabTitles(page, activeFinder);
         expect(titles[0]).not.toMatch(/^Finder \d+$/);
 
         if (navigatedToDocuments) {

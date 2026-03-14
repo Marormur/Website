@@ -7,17 +7,16 @@ const {
     getFinderAddTabButton,
     getFinderTabs,
     waitForFinderReady,
+    dismissWelcomeDialogIfPresent,
 } = require('../utils');
 
 async function countVisibleInstanceContainers(page, finderWindow) {
     const windowId = await finderWindow.getAttribute('id');
     return await page.evaluate(winId => {
         try {
-            // In new architecture, each tab is a div with .finder-content inside
-            // Count divs that have .finder-content and are not hidden
-            const tabContainer = document.querySelector(`#${winId}-container`);
+            const tabContainer = document.querySelector(`#${winId}-content`);
             if (!tabContainer) return 0;
-            const viewElements = Array.from(tabContainer.children);
+            const viewElements = Array.from(tabContainer.querySelectorAll('.tab-content'));
             return viewElements.filter(el => {
                 const notHidden = !el.classList.contains('hidden');
                 const hasContent = el.querySelector('.finder-content');
@@ -33,12 +32,10 @@ async function getVisibleAndParentWidths(page, finderWindow) {
     const windowId = await finderWindow.getAttribute('id');
     return await page.evaluate(winId => {
         try {
-            // Get the container element
-            const container = document.querySelector(`#${winId}-container`);
+            const container = document.querySelector(`#${winId}-content`);
             if (!container) return { parent: 0, visible: 0 };
 
-            // Find the first visible tab (div with .finder-content that's not hidden)
-            const visibleTab = Array.from(container.children).find(el => {
+            const visibleTab = Array.from(container.querySelectorAll('.tab-content')).find(el => {
                 const notHidden = !el.classList.contains('hidden');
                 const hasContent = el.querySelector('.finder-content');
                 return notHidden && hasContent;
@@ -61,6 +58,7 @@ test.describe('Finder visibility and full-width layout', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + '/index.html');
         await waitForAppReady(page);
+        await dismissWelcomeDialogIfPresent(page);
     });
 
     test('only one instance is visible when multiple tabs exist', async ({ page }) => {
@@ -80,10 +78,9 @@ test.describe('Finder visibility and full-width layout', () => {
         // Verify there are two containers and only one visible
         const total = await page.evaluate(
             winId => {
-                const container = document.querySelector(`#${winId}-container`);
+                const container = document.querySelector(`#${winId}-content`);
                 if (!container) return 0;
-                // Count all tabs (children with .finder-content)
-                return Array.from(container.children).filter(el =>
+                return Array.from(container.querySelectorAll('.tab-content')).filter(el =>
                     el.querySelector('.finder-content')
                 ).length;
             },

@@ -543,14 +543,17 @@ async function waitForFinderContent(finderWindow, mode = 'list', timeout = 12000
  * @param {number} timeout - Max wait time in ms
  */
 async function ensureFinderViewMode(finderWindow, mode = 'list', timeout = 12000) {
-    const buttonSelector =
-        mode === 'grid'
-            ? '.finder-toolbar button[data-action="view-grid"]'
-            : '.finder-toolbar button[data-action="view-list"]';
+    // New Finder UI exposes a single view trigger that opens a menu.
+    const viewTrigger = finderWindow.locator('[data-finder-view-trigger="1"]').first();
+    await viewTrigger.waitFor({ state: 'visible', timeout: Math.min(timeout, 6000) });
+    await viewTrigger.click();
 
-    const toggleBtn = finderWindow.locator(buttonSelector);
-    await toggleBtn.waitFor({ state: 'visible', timeout: Math.min(timeout, 6000) });
-    await toggleBtn.click();
+    const viewOption =
+        mode === 'grid'
+            ? finderWindow.getByRole('menuitemradio', { name: /Als grosse Symbole|Large Icons/i })
+            : finderWindow.getByRole('menuitemradio', { name: /Als Liste|List/i });
+    await viewOption.waitFor({ state: 'visible', timeout: Math.min(timeout, 6000) });
+    await viewOption.click();
 
     await waitForFinderContent(finderWindow, mode, timeout);
 }

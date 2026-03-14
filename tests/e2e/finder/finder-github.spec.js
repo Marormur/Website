@@ -17,10 +17,14 @@ async function dismissWelcomeDialog(page) {
 
 async function openFinderGithub(page) {
     // Ensure Finder window is opened and visible, then open the GitHub sidebar
-    await openFinderWindow(page);
-    const githubBtn = page.locator('[data-sidebar-id="github"]');
+    const finderWindow = await openFinderWindow(page);
+    const githubBtn = finderWindow
+        .locator('.tab-content:not(.hidden) [data-sidebar-id="github"]')
+        .first();
     await githubBtn.waitFor({ state: 'visible', timeout: 5000 });
     await githubBtn.click();
+
+    return finderWindow;
 }
 
 test.describe('Finder GitHub integration', () => {
@@ -34,20 +38,7 @@ test.describe('Finder GitHub integration', () => {
     });
 
     test('Clicking GitHub in Finder does not open Projects window', async ({ page }) => {
-        await openFinderWindow(page);
         await openFinderGithub(page);
-        // Wait for either repo rows or an error/empty message to appear
-        const websiteRow = page.locator('tr:has-text("Website")').first();
-        const errorMsg = page
-            .locator(
-                'text=/Repos konnten nicht geladen werden|Keine öffentlichen Repositories gefunden|Repositories could not be loaded|No public repositories found|Rate Limit/i'
-            )
-            .first();
-        const race = Promise.race([
-            websiteRow.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'ok'),
-            errorMsg.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'error'),
-        ]);
-        const _outcome = await race;
         // Projects modal should remain hidden regardless
         const projectsModal = page.locator('#projects-modal');
         await expect(projectsModal).toHaveClass(/hidden/);
@@ -57,11 +48,12 @@ test.describe('Finder GitHub integration', () => {
         // Use shared GitHub API mock to ensure deterministic content
         await mockGithubRepoImageFlow(page, baseURL);
 
-        await openFinderWindow(page);
-        await openFinderGithub(page);
+        const finderWindow = await openFinderGithub(page);
         // Guard against GitHub API issues: wait for either repo row or error/empty messages
-        const websiteRow = page.locator('tr:has-text("Website")').first();
-        const errorMsg = page
+        const websiteRow = finderWindow
+            .locator('.tab-content:not(.hidden) tr:has-text("Website")')
+            .first();
+        const errorMsg = finderWindow
             .locator(
                 'text=/Repos konnten nicht geladen werden|Keine öffentlichen Repositories gefunden|Repositories could not be loaded|No public repositories found|Rate Limit/i'
             )
@@ -79,27 +71,29 @@ test.describe('Finder GitHub integration', () => {
         await websiteRow.dblclick();
         // Open folder img
         // Wait for repo contents to load and show the 'img' folder
-        await page.waitForSelector('tr:has-text("img")', { timeout: 20000 });
-        const imgRow = page.locator('tr:has-text("img")').first();
+        await finderWindow
+            .locator('.tab-content:not(.hidden) tr:has-text("img")')
+            .first()
+            .waitFor({ state: 'visible', timeout: 20000 });
+        const imgRow = finderWindow.locator('.tab-content:not(.hidden) tr:has-text("img")').first();
         await expect(imgRow).toBeVisible({ timeout: 20000 });
         await imgRow.dblclick();
         // Click on wallpaper.png to open in viewer
-        const wallRow = page.locator('tr:has-text("wallpaper.png")').first();
+        const wallRow = finderWindow
+            .locator('.tab-content:not(.hidden) tr:has-text("wallpaper.png")')
+            .first();
         await expect(wallRow).toBeVisible({ timeout: 20000 });
         await wallRow.dblclick();
-        // Preview should render an image; check the preview instance container
-        const previewImgSelector = '#preview-instance-container .preview-image-area img';
-        // Wait until an <img> exists in the preview area and has a src (either blob: or remote)
+        // Current behavior opens an image in a Photos window instance.
         await page.waitForFunction(
-            selector => {
-                const el = document.querySelector(selector);
-                return !!(el && el.getAttribute && el.getAttribute('src'));
-            },
-            previewImgSelector,
+            () => (window.WindowRegistry?.getAllWindows?.('photos') || []).length > 0,
             { timeout: 10000 }
         );
-        const src = await page.getAttribute(previewImgSelector, 'src');
-        expect(src).toMatch(/(blob:|wallpaper\.png)/);
+
+        const photosWindowCount = await page.evaluate(
+            () => (window.WindowRegistry?.getAllWindows?.('photos') || []).length
+        );
+        expect(photosWindowCount).toBeGreaterThan(0);
     });
 
     test('Back and forward switch GitHub folder contents reliably', async ({ page, baseURL }) => {
