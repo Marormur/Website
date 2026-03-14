@@ -21,10 +21,10 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -95,7 +95,7 @@ jobs:
             # We upload everything, but with explicit exclusions for unnecessary files
             # (Ignore-patterns in .gitignore are respected, but we list files explicitly)
             - name: Upload Pages artifact
-              uses: actions/upload-pages-artifact@v3
+              uses: actions/upload-pages-artifact@v4
               with:
                   path: .pages-dist
                   retention-days: 1
