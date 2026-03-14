@@ -2,13 +2,23 @@
 // HTML audit that strips <script> and <style> contents before counting <div> tags
 const fs = require('fs');
 const path = require('path');
+const parse5 = require('parse5');
 
 const file = path.resolve(__dirname, '..', 'index.html');
 let src = fs.readFileSync(file, 'utf8');
 
-// Remove script and style contents to avoid counting HTML-like strings inside JS
-src = src.replace(/<script[\s\S]*?<\/script>/gi, '<script></script>');
-src = src.replace(/<style[\s\S]*?<\/style>/gi, '<style></style>');
+// Remove script/style text via AST traversal to avoid regex-based tag filtering.
+const parsed = parse5.parse(src);
+const stripScriptAndStyleChildren = node => {
+    if (!node || !node.childNodes) return;
+    if (node.tagName === 'script' || node.tagName === 'style') {
+        node.childNodes = [];
+        return;
+    }
+    node.childNodes.forEach(stripScriptAndStyleChildren);
+};
+stripScriptAndStyleChildren(parsed);
+src = parse5.serialize(parsed);
 
 const lines = src.split(/\r?\n/);
 

@@ -16,8 +16,17 @@ fs.writeFileSync(outFile, repaired, 'utf8');
 console.log('Wrote repaired file to', outFile);
 
 // Run a simple audit on the repaired content (strip scripts/styles)
-let clean = repaired.replace(/<script[\s\S]*?<\/script>/gi, '<script></script>');
-clean = clean.replace(/<style[\s\S]*?<\/style>/gi, '<style></style>');
+const parsedForAudit = parse5.parse(repaired);
+const stripScriptAndStyleChildren = node => {
+    if (!node || !node.childNodes) return;
+    if (node.tagName === 'script' || node.tagName === 'style') {
+        node.childNodes = [];
+        return;
+    }
+    node.childNodes.forEach(stripScriptAndStyleChildren);
+};
+stripScriptAndStyleChildren(parsedForAudit);
+const clean = parse5.serialize(parsedForAudit);
 const lines = clean.split(/\r?\n/);
 let balance = 0;
 const issues = [];

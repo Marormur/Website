@@ -251,6 +251,40 @@ function parseParams(element: Element): TranslationParams | undefined {
     }
 }
 
+const ALLOWED_I18N_INLINE_TAGS = new Set(['br', 'strong', 'b', 'em', 'i', 'u', 'small', 'code']);
+
+function buildSafeInlineFragment(html: string): DocumentFragment {
+    const parser = new DOMParser();
+    const parsed = parser.parseFromString(html, 'text/html');
+    const fragment = document.createDocumentFragment();
+
+    const appendSafeNode = (node: Node, target: Node): void => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            target.appendChild(document.createTextNode(node.textContent || ''));
+            return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+            return;
+        }
+
+        const elementNode = node as Element;
+        const tagName = elementNode.tagName.toLowerCase();
+        if (!ALLOWED_I18N_INLINE_TAGS.has(tagName)) {
+            if (elementNode.textContent) {
+                target.appendChild(document.createTextNode(elementNode.textContent));
+            }
+            return;
+        }
+
+        const safeElement = document.createElement(tagName);
+        target.appendChild(safeElement);
+        Array.from(elementNode.childNodes).forEach(child => appendSafeNode(child, safeElement));
+    };
+
+    Array.from(parsed.body.childNodes).forEach(node => appendSafeNode(node, fragment));
+    return fragment;
+}
+
 function translateElement(element: Element): void {
     if (!(element instanceof Element)) {
         return;
@@ -262,7 +296,8 @@ function translateElement(element: Element): void {
     }
     const htmlKey = element.getAttribute('data-i18n-html');
     if (htmlKey) {
-        element.innerHTML = translate(htmlKey, params);
+        const html = translate(htmlKey, params);
+        element.replaceChildren(buildSafeInlineFragment(html));
     }
     Array.from(element.attributes).forEach(attr => {
         if (!attr.name.startsWith('data-i18n-')) return;

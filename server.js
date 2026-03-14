@@ -29,16 +29,22 @@ const MIME_TYPES = {
     '.txt': 'text/plain; charset=utf-8',
 };
 
+const ROOT_DIR = path.resolve(__dirname);
+
 // Keep a list of connected SSE clients for live reload
 const sseClients = new Set();
 
 const server = http.createServer((req, res) => {
-    let filePath = '.' + req.url;
-    // Remove query params for file lookup
-    filePath = filePath.split('?')[0];
+    let requestPath = '/';
+    try {
+        const parsedUrl = new URL(req.url || '/', `http://${HOST}:${PORT}`);
+        requestPath = decodeURIComponent(parsedUrl.pathname || '/');
+    } catch (_) {
+        requestPath = '/';
+    }
 
     // SSE endpoint for live reload
-    if (filePath === './livereload') {
+    if (requestPath === '/livereload') {
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
@@ -52,23 +58,34 @@ const server = http.createServer((req, res) => {
         return; // keep connection open
     }
 
-    if (filePath === './') {
-        filePath = './index.html';
+    if (requestPath === '/') {
+        requestPath = '/index.html';
+    }
+
+    // Normalize and confine the requested file to the project root.
+    const normalizedPath = path.normalize(requestPath).replace(/^(\.{2}(\/|\\|$))+/, '');
+    const filePath = path.resolve(ROOT_DIR, `.${normalizedPath}`);
+    const rootWithSep = `${ROOT_DIR}${path.sep}`;
+    if (filePath !== ROOT_DIR && !filePath.startsWith(rootWithSep)) {
+        res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end('<h1>403 Forbidden</h1>', 'utf-8');
+        return;
     }
 
     const extname = String(path.extname(filePath)).toLowerCase();
     const contentType = MIME_TYPES[extname] || 'application/octet-stream';
+    const servedPath = path.relative(ROOT_DIR, filePath) || 'index.html';
 
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} -> ${filePath}`);
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} -> ${servedPath}`);
 
     fs.readFile(filePath, (error, content) => {
         if (error) {
             if (error.code === 'ENOENT') {
-                console.error(`[404] File not found: ${filePath}`);
+                console.error(`[404] File not found: ${servedPath}`);
                 res.writeHead(404, { 'Content-Type': 'text/html' });
                 res.end('<h1>404 Not Found</h1>', 'utf-8');
             } else {
-                console.error(`[500] Server error: ${error.code} for ${filePath}`);
+                console.error(`[500] Server error: ${error.code} for ${servedPath}`);
                 res.writeHead(500);
                 res.end('Server Error: ' + error.code, 'utf-8');
             }
@@ -80,7 +97,7 @@ const server = http.createServer((req, res) => {
                 Expires: '0',
             });
             res.end(content, 'utf-8');
-            console.log(`[200] Served ${filePath} (${contentType})`);
+            console.log(`[200] Served ${servedPath} (${contentType})`);
         }
     });
 });
