@@ -1,13 +1,16 @@
 const { test, expect } = require('@playwright/test');
-const { gotoHome, openAppleMenu, openSettingsViaAppleMenu, languageRadio } = require('../utils');
+const {
+    gotoHome,
+    dismissWelcomeDialogIfPresent,
+    openSettingsViaAppleMenu,
+    languageRadio,
+} = require('../utils');
 
 // Force a known browser locale so 'system' is deterministic in this test
 test.use({ locale: 'en-US' });
 
 function languageHeadingLocator(page) {
-    // This heading text changes with language:
-    // de: "Sprache"; en: "Language"
-    return page.locator('#settings-language h2[data-i18n="settingsPage.language.title"]');
+    return page.getByRole('heading', { level: 2, name: /Language|Sprache/ });
 }
 
 // This test verifies that selecting 'system' uses the browser locale and that switching
@@ -19,6 +22,7 @@ function languageHeadingLocator(page) {
 
 test('Language settings: switch to German, back to System (en-US)', async ({ page, baseURL }) => {
     await gotoHome(page, baseURL);
+    await dismissWelcomeDialogIfPresent(page);
     // Use shared helper to open settings via Apple menu
     await openSettingsViaAppleMenu(page, 'System settings');
 

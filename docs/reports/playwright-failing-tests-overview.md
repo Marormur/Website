@@ -5,16 +5,18 @@ Quelle: npm run test:e2e (Headless, Chromium)
 
 Ziel: Kompakte Arbeitsliste fuer die schrittweise Re-Evaluierung (Codefehler vs. Test-Anpassungsbedarf).
 
+## Bereits behoben in diesem Branch
+
+- [x] tests/e2e/finder-sidebar-collapse.spec.js - kompletter Block an aktuelle Sidebar-Collapse-Implementierung und gemeinsames Setup angepasst
+- [x] tests/e2e/photos/photos-app.spec.js - Legacy-Modal-Annahmen auf aktuelles PhotosWindow-Verhalten umgestellt
+- [x] tests/e2e/ui/i18n-apple-menu-labels.spec.js - Welcome-Dialog-Interferenz beseitigt
+- [x] tests/e2e/ui/i18n-settings-system-toggle.spec.js - Heading-Locator + Welcome-Dialog an aktuelle Settings-UI angepasst
+- [x] tests/e2e/ui/menubar.spec.js - gemeinsames Setup und aktives Fenster am aktuellen Multi-Window-State ausgerichtet
+- [x] tests/e2e/windows/window-menu-multi-instance.spec.js - Window-Menue auf das vereinheitlichte Menu-System angepasst
+
 ## Fehlgeschlagene Tests (58)
 
 - [ ] tests/e2e/apps/finder-vdom-tabs.spec.js:16:9 › Finder VDOM Tabs › should render VDOM tabs inside the content area - Error: expect(locator).toBeVisible() failed
-- [ ] tests/e2e/finder-sidebar-collapse.spec.js:136:5 › Finder Sidebar - Collapsible Groups › should persist collapse state during tab navigation - TimeoutError: page.waitForSelector: Timeout 25000ms exceeded.
-- [ ] tests/e2e/finder-sidebar-collapse.spec.js:167:5 › Finder Sidebar - Collapsible Groups › should show and hide toggle on focus within group header - TimeoutError: page.waitForSelector: Timeout 25000ms exceeded.
-- [ ] tests/e2e/finder-sidebar-collapse.spec.js:18:5 › Finder Sidebar - Collapsible Groups › should show toggle arrow on hover over group header - TimeoutError: page.waitForSelector: Timeout 25000ms exceeded.
-- [ ] tests/e2e/finder-sidebar-collapse.spec.js:188:5 › Finder Sidebar - Collapsible Groups › should have correct accessibility attributes - TimeoutError: page.waitForSelector: Timeout 25000ms exceeded.
-- [ ] tests/e2e/finder-sidebar-collapse.spec.js:38:5 › Finder Sidebar - Collapsible Groups › should collapse group when clicking toggle button - TimeoutError: page.waitForSelector: Timeout 25000ms exceeded.
-- [ ] tests/e2e/finder-sidebar-collapse.spec.js:61:5 › Finder Sidebar - Collapsible Groups › should expand group when clicking toggle button again - TimeoutError: page.waitForSelector: Timeout 25000ms exceeded.
-- [ ] tests/e2e/finder-sidebar-collapse.spec.js:88:5 › Finder Sidebar - Collapsible Groups › should handle multiple groups independently - TimeoutError: page.waitForSelector: Timeout 25000ms exceeded.
 - [ ] tests/e2e/finder/finder-github-performance.spec.js:190:5 › Finder GitHub API Performance › Deduplicates concurrent requests - Error: expect(received).toBeLessThanOrEqual(expected)
 - [ ] tests/e2e/finder/finder-github.spec.js:36:5 › Finder GitHub integration › Clicking GitHub in Finder does not open Projects window - TimeoutError: locator.waitFor: Timeout 20000ms exceeded.
 - [ ] tests/e2e/finder/finder-github.spec.js:56:5 › Finder GitHub integration › Open Website/img/wallpaper.png in image viewer - TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
@@ -47,24 +49,10 @@ Ziel: Kompakte Arbeitsliste fuer die schrittweise Re-Evaluierung (Codefehler vs.
 - [ ] tests/e2e/performance/vdom-performance.spec.js:241:5 › VDOM Performance - FinderView @basic › FinderView: Selection preservation during updates - Error: expect(received).toBe(expected) // Object.is equality
 - [ ] tests/e2e/performance/vdom-performance.spec.js:395:5 › VDOM Performance - TextEditor › TextEditor: Toolbar updates < 20ms - TimeoutError: locator.click: Timeout 25000ms exceeded.
 - [ ] tests/e2e/performance/vdom-performance.spec.js:419:5 › VDOM Performance - TextEditor › TextEditor: Editor focus preservation - TimeoutError: locator.click: Timeout 25000ms exceeded.
-- [ ] tests/e2e/photos/photos-app.spec.js:25:5 › Photos App › Photos App modal structure exists - Error: expect(locator).toHaveCount(expected) failed
-- [ ] tests/e2e/photos/photos-app.spec.js:31:5 › Photos App › Photos App can be opened from Launchpad - Error: expect(locator).toHaveClass(expected) failed
 - [ ] tests/e2e/session/session-restore-full.spec.js:332:5 › Session Restore - Full Integration @basic › should handle missing modal elements gracefully - Error: expect(received).toBe(expected) // Object.is equality
 - [ ] tests/e2e/session/session-restore-performance.spec.js:296:9 › Session Restore Performance › should batch restore instances by type in parallel - Error: expect(received).toBe(expected) // Object.is equality
 - [ ] tests/e2e/terminal/terminal-session-persistence.spec.js:253:5 › Terminal Session Persistence › window positions persist - Error: expect(received).not.toBeNull()
 - [ ] tests/e2e/text-editor/text-editor-tabs.spec.js:104:5 › Text Editor Multi-Instance Tabs › Can reorder Text Editor tabs via drag and drop - Error: expect(locator).toHaveCount(expected) failed
-- [ ] tests/e2e/ui/i18n-apple-menu-labels.spec.js:20:1 › Apple menu labels update when toggling language - TimeoutError: locator.check: Timeout 25000ms exceeded.
-- [ ] tests/e2e/ui/i18n-settings-system-toggle.spec.js:20:1 › Language settings: switch to German, back to System (en-US) - Error: expect(locator).toHaveText(expected) failed
-- [ ] tests/e2e/ui/menubar.spec.js:21:5 › Menubar switches with active window (de-DE) › Finder menus appear when Finder is active - Error: expect(locator).toBeVisible() failed
-- [ ] tests/e2e/ui/menubar.spec.js:42:5 › Menubar switches with active window (de-DE) › Switch to Texteditor and back to Finder updates menubar - Error: expect(locator).toBeVisible() failed
-- [ ] tests/e2e/windows/window-menu-multi-instance.spec.js:104:5 › Window Menu Multi-Instance Integration › Can switch Finder instances via Window menu - Error: expect(locator).toBeVisible() failed
-- [ ] tests/e2e/windows/window-menu-multi-instance.spec.js:145:5 › Window Menu Multi-Instance Integration › Window menu shows "Close All" action with multiple instances - Error: expect(locator).toBeVisible() failed
-- [ ] tests/e2e/windows/window-menu-multi-instance.spec.js:160:5 › Window Menu Multi-Instance Integration › Close All action closes all Finder instances - Error: expect(locator).toBeVisible() failed
-- [ ] tests/e2e/windows/window-menu-multi-instance.spec.js:192:5 › Window Menu Multi-Instance Integration › New Finder action creates new instance - Error: expect(locator).toBeVisible() failed
-- [ ] tests/e2e/windows/window-menu-multi-instance.spec.js:211:5 › Window Menu Multi-Instance Integration › Menu updates when instances are created/destroyed - Error: expect(locator).toBeVisible() failed
-- [ ] tests/e2e/windows/window-menu-multi-instance.spec.js:46:5 › Window Menu Multi-Instance Integration › @basic Window menu shows Finder instances and actions - Error: expect(locator).toBeVisible() failed
-- [ ] tests/e2e/windows/window-menu-multi-instance.spec.js:66:5 › Window Menu Multi-Instance Integration › Window menu lists multiple Finder instances - Error: expect(locator).toBeVisible() failed
-- [ ] tests/e2e/windows/window-menu-multi-instance.spec.js:89:5 › Window Menu Multi-Instance Integration › Window menu shows checkmark on active instance - Error: expect(locator).toBeVisible() failed
 
 ## Flaky Tests (9)
 

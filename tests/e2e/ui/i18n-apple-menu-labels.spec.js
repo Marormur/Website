@@ -3,6 +3,7 @@ const {
     gotoHome,
     openAppleMenu,
     closeAppleMenuIfOpen,
+    dismissWelcomeDialogIfPresent,
     openSettingsViaAppleMenu,
     languageRadio,
     expectAppleMenuSettingsLabel,
@@ -19,6 +20,7 @@ test.use({ locale: 'en-US' });
 
 test('Apple menu labels update when toggling language', async ({ page, baseURL }) => {
     await gotoHome(page, baseURL);
+    await dismissWelcomeDialogIfPresent(page);
 
     // Initially with system=en-US
     await expectAppleMenuSettingsLabel(page, 'System settings');

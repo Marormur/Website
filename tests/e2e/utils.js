@@ -65,6 +65,15 @@ async function waitForAppReady(page, timeout = 20000) {
     );
 }
 
+async function dismissWelcomeDialogIfPresent(page) {
+    const continueButton = page.getByRole('button', { name: /Fortfahren|Continue/i }).first();
+    if ((await continueButton.count()) === 0) return;
+    if (!(await continueButton.isVisible().catch(() => false))) return;
+
+    await continueButton.click({ force: true });
+    await page.locator('#welcome-dialog-overlay').waitFor({ state: 'hidden', timeout: 5000 });
+}
+
 // Apple menu helpers
 async function openAppleMenu(page) {
     const trigger = page.locator('#apple-menu-trigger');
@@ -550,6 +559,7 @@ module.exports = {
     // Navigation / Settings / Apple menu
     gotoHome,
     waitForAppReady,
+    dismissWelcomeDialogIfPresent,
     waitForFinderReady,
     openFinderWindow,
     openAppleMenu,

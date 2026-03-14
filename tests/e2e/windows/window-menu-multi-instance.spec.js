@@ -2,7 +2,7 @@
 
 // Note: waitForTimeout used intentionally for menu animations and DOM updates
 const { test, expect } = require('@playwright/test');
-const { gotoHome, waitForAppReady } = require('../utils');
+const { gotoHome, waitForAppReady, dismissWelcomeDialogIfPresent } = require('../utils');
 const {
     getFinderWindowCount,
     openFinderViaDock,
@@ -24,17 +24,20 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         });
         await gotoHome(page, baseURL);
         await waitForAppReady(page);
+        await dismissWelcomeDialogIfPresent(page);
     });
 
-    async function clickNewFinderInMenu(page) {
+    async function createAdditionalFinderWindow(page) {
         const before = await getFinderWindowCount(page);
-        await openWindowMenu(page);
-        const newFinderItem = page
-            .locator('#menu-dropdown-window .menu-item', { hasText: /Neuer Finder|New Finder/i })
-            .first();
-        await expect(newFinderItem).toBeVisible();
-        await newFinderItem.click();
-        await closeWindowMenu(page);
+
+        await page.evaluate(() => {
+            const FinderWindow = window.FinderWindow;
+            if (FinderWindow?.create) {
+                FinderWindow.create();
+                return;
+            }
+            FinderWindow?.focusOrCreate?.();
+        });
 
         await page.waitForFunction(
             b => (window.WindowRegistry?.getAllWindows?.('finder') || []).length >= b + 1,
@@ -48,11 +51,11 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
         await openWindowMenu(page);
 
-        // Verify "New Finder" action is visible
-        const newFinderItem = page
-            .locator('#menu-dropdown-window .menu-item', { hasText: /Neuer Finder|New Finder/i })
-            .first();
-        await expect(newFinderItem).toBeVisible();
+        // In Finder context, "New Finder" lives in the File menu, not in Window.
+        const newFinderItem = page.locator('#menu-dropdown-window .menu-item', {
+            hasText: /Neuer Finder|New Finder/i,
+        });
+        await expect(newFinderItem).toHaveCount(0);
 
         // Verify at least one Finder instance is listed
         const finderItems = page.locator('#menu-dropdown-window .menu-item', {
@@ -66,8 +69,8 @@ test.describe('Window Menu Multi-Instance Integration', () => {
     test('Window menu lists multiple Finder instances', async ({ page }) => {
         await openFinderViaDock(page);
 
-        // Create a second Finder window via Window menu
-        await clickNewFinderInMenu(page);
+        // Create a second Finder window via the current multi-window API.
+        await createAdditionalFinderWindow(page);
 
         // Verify two instances exist via WindowRegistry
         const instanceCount = await getFinderWindowCount(page);
@@ -88,7 +91,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
     test('Window menu shows checkmark on active instance', async ({ page }) => {
         await openFinderViaDock(page);
-        await clickNewFinderInMenu(page);
+        await createAdditionalFinderWindow(page);
 
         await openWindowMenu(page);
 
@@ -103,7 +106,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
     test('Can switch Finder instances via Window menu', async ({ page }) => {
         await openFinderViaDock(page);
-        await clickNewFinderInMenu(page);
+        await createAdditionalFinderWindow(page);
 
         const initialActiveId = await page.evaluate(
             () => window.WindowRegistry?.getActiveWindow?.()?.id || null
@@ -144,7 +147,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
     test('Window menu shows "Close All" action with multiple instances', async ({ page }) => {
         await openFinderViaDock(page);
-        await clickNewFinderInMenu(page);
+        await createAdditionalFinderWindow(page);
 
         await openWindowMenu(page);
 
@@ -159,7 +162,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
     test('Close All action closes all Finder instances', async ({ page }) => {
         await openFinderViaDock(page);
-        await clickNewFinderInMenu(page);
+        await createAdditionalFinderWindow(page);
 
         let count = await getFinderWindowCount(page);
         expect(count).toBeGreaterThanOrEqual(2);
@@ -189,29 +192,23 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         expect(count).toBe(0);
     });
 
-    test('New Finder action creates new instance', async ({ page }) => {
+    test('Window menu omits "New Finder" while Finder is active', async ({ page }) => {
         await openFinderViaDock(page);
 
-        // Verify one instance initially
-        let count = await getFinderWindowCount(page);
-        expect(count).toBe(1);
+        await openWindowMenu(page);
 
-        await clickNewFinderInMenu(page);
+        const newFinderItem = page.locator('#menu-dropdown-window .menu-item', {
+            hasText: /Neuer Finder|New Finder/i,
+        });
+        await expect(newFinderItem).toHaveCount(0);
 
-        // Verify two instances now exist
-        count = await getFinderWindowCount(page);
-        expect(count).toBeGreaterThanOrEqual(2);
-
-        // Verify at least two Finder windows exist in the DOM
-        const windows = page.locator('.modal.multi-window[id^="window-finder-"]');
-        const winCount = await windows.count();
-        expect(winCount).toBeGreaterThanOrEqual(2);
+        await closeWindowMenu(page);
     });
 
     test('Menu updates when instances are created/destroyed', async ({ page }) => {
         await openFinderViaDock(page);
 
-        // Open Window menu - should show only "New Finder", no instance list
+        // Open Window menu with one instance
         await openWindowMenu(page);
 
         // Should not have "Close All" yet (only one instance)
@@ -223,7 +220,7 @@ test.describe('Window Menu Multi-Instance Integration', () => {
         await closeWindowMenu(page);
 
         // Create second window
-        await clickNewFinderInMenu(page);
+        await createAdditionalFinderWindow(page);
 
         // Open Window menu again - should now show instance list and Close All
         await openWindowMenu(page);
