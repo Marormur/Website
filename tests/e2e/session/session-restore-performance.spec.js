@@ -4,7 +4,69 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { waitForAppReady } from '../utils.js';
+import { waitForAppReady, waitForSessionSaved } from '../utils.js';
+
+async function enablePerfMonitor(page) {
+    await page.evaluate(() => {
+        if (window.PerfMonitor && !window.PerfMonitor.enabled) {
+            window.PerfMonitor.enable();
+        }
+    });
+}
+
+async function getCounts(page) {
+    return page.evaluate(() => {
+        const terminalMgr = window.TerminalInstanceManager;
+        const editorMgr = window.TextEditorInstanceManager;
+        const terminals = terminalMgr?.getInstanceCount() || 0;
+        const editors = editorMgr?.getInstanceCount() || 0;
+        return { terminals, editors, total: terminals + editors };
+    });
+}
+
+async function waitForCountsAtLeast(page, expected, timeout = 8000) {
+    await page.waitForFunction(
+        ({ terminals, editors, total }) => {
+            try {
+                const terminalMgr = window.TerminalInstanceManager;
+                const editorMgr = window.TextEditorInstanceManager;
+                const t = terminalMgr?.getInstanceCount() || 0;
+                const e = editorMgr?.getInstanceCount() || 0;
+                const sum = t + e;
+                return t >= terminals && e >= editors && sum >= total;
+            } catch {
+                return false;
+            }
+        },
+        expected,
+        { timeout }
+    );
+}
+
+async function saveSession(page) {
+    await page.evaluate(() => {
+        if (window.SessionManager?.saveAll) {
+            window.SessionManager.saveAll({ immediate: true });
+            return;
+        }
+        if (window.MultiWindowSessionManager?.saveSession) {
+            window.MultiWindowSessionManager.saveSession({ immediate: true });
+        }
+    });
+
+    await waitForSessionSaved(page);
+
+    await page.waitForFunction(
+        () => {
+            return !!(
+                localStorage.getItem('windowInstancesSession') ||
+                localStorage.getItem('multi-window-session') ||
+                localStorage.getItem('window-session')
+            );
+        },
+        { timeout: 3000 }
+    );
+}
 
 test.describe('Session Restore Performance', () => {
     test.beforeEach(async ({ page }) => {
@@ -13,17 +75,13 @@ test.describe('Session Restore Performance', () => {
     });
 
     test('should restore 20 instances in < 500ms', async ({ page }) => {
-        // Ensure PerfMonitor is enabled for performance measurements
-        await page.evaluate(() => {
-            if (window.PerfMonitor && !window.PerfMonitor.enabled) {
-                window.PerfMonitor.enable();
-            }
-        });
+        await enablePerfMonitor(page);
 
         // Create 20 mixed instances (Terminal + TextEditor)
         const instanceCount = 20;
         const terminalCount = 12;
         const textEditorCount = 8;
+        const beforeCounts = await getCounts(page);
 
         // Create Terminal instances
         await page.evaluate(count => {
@@ -49,8 +107,11 @@ test.describe('Session Restore Performance', () => {
             }
         }, textEditorCount);
 
-        // Wait for all instances to be created
-        await page.waitForTimeout(500);
+        await waitForCountsAtLeast(page, {
+            terminals: beforeCounts.terminals + terminalCount,
+            editors: beforeCounts.editors + textEditorCount,
+            total: beforeCounts.total + instanceCount,
+        });
 
         // Verify instances were created
         const instanceCountBefore = await page.evaluate(() => {
@@ -65,15 +126,10 @@ test.describe('Session Restore Performance', () => {
         });
 
         console.log('Instances before save:', instanceCountBefore);
-        expect(instanceCountBefore.total).toBe(instanceCount);
+        expect(instanceCountBefore.total - beforeCounts.total).toBe(instanceCount);
 
         // Save session immediately
-        await page.evaluate(() => {
-            window.SessionManager.saveAll({ immediate: true });
-        });
-
-        // Wait for save to persist
-        await page.waitForTimeout(500);
+        await saveSession(page);
 
         // Verify session was saved
         const sessionInfo = await page.evaluate(() => {
@@ -87,8 +143,11 @@ test.describe('Session Restore Performance', () => {
         await page.reload();
         await waitForAppReady(page);
 
-        // Wait for session restore (legacy SessionManager has 100ms delay in app-init)
-        await page.waitForTimeout(500);
+        await waitForCountsAtLeast(page, {
+            terminals: beforeCounts.terminals + terminalCount,
+            editors: beforeCounts.editors + textEditorCount,
+            total: beforeCounts.total + instanceCount,
+        });
 
         // Measure restore performance
         const metrics = await page.evaluate(() => {
@@ -130,7 +189,7 @@ test.describe('Session Restore Performance', () => {
         console.log('Metrics after restore:', metrics);
 
         // Verify all instances were restored
-        expect(metrics.instanceCount).toBe(instanceCount);
+        expect(metrics.instanceCount - beforeCounts.total).toBe(instanceCount);
 
         // Performance assertion: < 500ms for 20 instances (Issue #125)
         expect(metrics.duration).not.toBeNull();
@@ -138,17 +197,13 @@ test.describe('Session Restore Performance', () => {
     });
 
     test('should handle 30 instances without timeout', async ({ page }) => {
-        // Ensure PerfMonitor is enabled
-        await page.evaluate(() => {
-            if (window.PerfMonitor && !window.PerfMonitor.enabled) {
-                window.PerfMonitor.enable();
-            }
-        });
+        await enablePerfMonitor(page);
 
         // Stress test with 30 instances
         const instanceCount = 30;
         const terminalCount = 15;
         const textEditorCount = 15;
+        const beforeCounts = await getCounts(page);
 
         // Create instances
         await page.evaluate(count => {
@@ -167,15 +222,23 @@ test.describe('Session Restore Performance', () => {
             }
         }, textEditorCount);
 
-        await page.waitForTimeout(500);
+        await waitForCountsAtLeast(page, {
+            terminals: beforeCounts.terminals + terminalCount,
+            editors: beforeCounts.editors + textEditorCount,
+            total: beforeCounts.total + instanceCount,
+        });
 
         // Save and reload
-        await page.evaluate(() => {
-            window.SessionManager.saveAll({ immediate: true });
-        });
+        await saveSession(page);
 
         await page.reload();
         await waitForAppReady(page);
+
+        await waitForCountsAtLeast(page, {
+            terminals: beforeCounts.terminals + terminalCount,
+            editors: beforeCounts.editors + textEditorCount,
+            total: beforeCounts.total + instanceCount,
+        });
 
         // Verify restore completed successfully (no timeout)
         const metrics = await page.evaluate(() => {
@@ -195,21 +258,17 @@ test.describe('Session Restore Performance', () => {
             `Stress test: Restored ${metrics.instanceCount} instances in ${metrics.duration?.toFixed(2)}ms`
         );
 
-        expect(metrics.instanceCount).toBe(instanceCount);
+        expect(metrics.instanceCount - beforeCounts.total).toBe(instanceCount);
         expect(metrics.duration).toBeDefined();
     });
 
     // TODO(#130): Reaktiviert, beobachten; falls flaky, erneut untersuchen
     test('should restore z-index order correctly with many instances', async ({ page }) => {
-        // Ensure PerfMonitor is enabled
-        await page.evaluate(() => {
-            if (window.PerfMonitor && !window.PerfMonitor.enabled) {
-                window.PerfMonitor.enable();
-            }
-        });
+        await enablePerfMonitor(page);
 
         // Create 10 instances and focus them in specific order
         const instanceCount = 10;
+        const beforeCounts = await getCounts(page);
 
         await page.evaluate(count => {
             const manager = window.TerminalInstanceManager;
@@ -223,7 +282,11 @@ test.describe('Session Restore Performance', () => {
             }
         }, instanceCount);
 
-        await page.waitForTimeout(300);
+        await waitForCountsAtLeast(page, {
+            terminals: beforeCounts.terminals + instanceCount,
+            editors: beforeCounts.editors,
+            total: beforeCounts.total + instanceCount,
+        });
 
         // Get window stack before reload
         const stackBefore = await page.evaluate(() => {
@@ -234,9 +297,7 @@ test.describe('Session Restore Performance', () => {
         expect(stackBefore.length).toBeGreaterThan(0);
 
         // Save and reload
-        await page.evaluate(() => {
-            window.SessionManager.saveAll({ immediate: true });
-        });
+        await saveSession(page);
 
         await page.reload();
         await waitForAppReady(page);
@@ -252,12 +313,9 @@ test.describe('Session Restore Performance', () => {
     });
 
     test('should restore active instance selection with many instances', async ({ page }) => {
-        // Ensure PerfMonitor is enabled
-        await page.evaluate(() => {
-            if (window.PerfMonitor && !window.PerfMonitor.enabled) {
-                window.PerfMonitor.enable();
-            }
-        });
+        await enablePerfMonitor(page);
+
+        const beforeCounts = await getCounts(page);
 
         // Create 15 Terminal instances
         await page.evaluate(() => {
@@ -268,7 +326,11 @@ test.describe('Session Restore Performance', () => {
             }
         });
 
-        await page.waitForTimeout(300);
+        await waitForCountsAtLeast(page, {
+            terminals: beforeCounts.terminals + 15,
+            editors: beforeCounts.editors,
+            total: beforeCounts.total + 15,
+        });
 
         // Get active instance before reload
         const activeIdBefore = await page.evaluate(() => {
@@ -278,12 +340,16 @@ test.describe('Session Restore Performance', () => {
         expect(activeIdBefore).not.toBeNull();
 
         // Save and reload
-        await page.evaluate(() => {
-            window.SessionManager.saveAll({ immediate: true });
-        });
+        await saveSession(page);
 
         await page.reload();
         await waitForAppReady(page);
+
+        await waitForCountsAtLeast(page, {
+            terminals: beforeCounts.terminals + 15,
+            editors: beforeCounts.editors,
+            total: beforeCounts.total + 15,
+        });
 
         // Verify active instance is restored
         const activeIdAfter = await page.evaluate(() => {
@@ -294,16 +360,12 @@ test.describe('Session Restore Performance', () => {
     });
 
     test('should batch restore instances by type in parallel', async ({ page }) => {
-        // Ensure PerfMonitor is enabled
-        await page.evaluate(() => {
-            if (window.PerfMonitor && !window.PerfMonitor.enabled) {
-                window.PerfMonitor.enable();
-            }
-        });
+        await enablePerfMonitor(page);
 
         // Create mixed instance types
         const terminalCount = 10;
         const editorCount = 10;
+        const beforeCounts = await getCounts(page);
 
         await page.evaluate(count => {
             const manager = window.TerminalInstanceManager;
@@ -321,15 +383,23 @@ test.describe('Session Restore Performance', () => {
             }
         }, editorCount);
 
-        await page.waitForTimeout(500);
+        await waitForCountsAtLeast(page, {
+            terminals: beforeCounts.terminals + terminalCount,
+            editors: beforeCounts.editors + editorCount,
+            total: beforeCounts.total + terminalCount + editorCount,
+        });
 
         // Save and reload
-        await page.evaluate(() => {
-            window.SessionManager.saveAll({ immediate: true });
-        });
+        await saveSession(page);
 
         await page.reload();
         await waitForAppReady(page);
+
+        await waitForCountsAtLeast(page, {
+            terminals: beforeCounts.terminals + terminalCount,
+            editors: beforeCounts.editors + editorCount,
+            total: beforeCounts.total + terminalCount + editorCount,
+        });
 
         // Verify both types were restored correctly
         const counts = await page.evaluate(() => {
@@ -339,8 +409,8 @@ test.describe('Session Restore Performance', () => {
             };
         });
 
-        expect(counts.terminals).toBe(terminalCount);
-        expect(counts.editors).toBe(editorCount);
+        expect(counts.terminals - beforeCounts.terminals).toBe(terminalCount);
+        expect(counts.editors - beforeCounts.editors).toBe(editorCount);
 
         // Verify performance metrics exist
         const hasPerfMetric = await page.evaluate(() => {
