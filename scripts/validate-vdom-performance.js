@@ -174,11 +174,9 @@ function checkDocumentation() {
     header('Phase 4: Documentation');
 
     const docs = [
-        'docs/vdom/VDOM_API_REFERENCE.md',
-        'docs/vdom/VDOM_MIGRATION_GUIDE.md',
-        'docs/vdom/VDOM_BEST_PRACTICES.md',
-        'docs/vdom/VDOM_TROUBLESHOOTING.md',
-        'docs/vdom/IMPLEMENTATION_SUMMARY.md',
+        'docs/PERFORMANCE_MONITORING.md',
+        'docs/guides/DEVELOPER_TOOLS.md',
+        'docs/guides/MULTI_INSTANCE.md',
     ];
 
     const results = docs.map(doc => {
@@ -194,8 +192,8 @@ function checkDocumentation() {
     console.log('');
     log(
         allExist
-            ? `${checkmark()} Documentation: COMPLETE`
-            : `${crossmark()} Documentation: INCOMPLETE`,
+            ? `${checkmark()} Documentation: MINIMAL SET PRESENT`
+            : `${crossmark()} Documentation: MINIMAL SET INCOMPLETE`,
         allExist ? 'green' : 'red'
     );
 

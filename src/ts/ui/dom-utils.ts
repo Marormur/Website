@@ -2,6 +2,8 @@ import logger from '../core/logger.js';
 /**
  * DOM Utility Functions
  * Centralized helpers for common DOM manipulations
+ * INVARIANT: Prefer visibility/class toggles over container replacement so UI state
+ * (focus, scroll position, listeners on retained nodes) stays intact.
  *
  * @module dom-utils
  */

@@ -202,6 +202,8 @@ function diffChildren(oldChildren: (VNode | string)[], newChildren: (VNode | str
     const creates: Patch[] = [];
     const removals: Patch[] = [];
 
+    // INVARIANT: Stable explicit keys are required for deterministic list reconciliation.
+    // Keyless dynamic lists fall back to positional matching and may lose local DOM state.
     // Build key maps for efficient reconciliation
     const oldKeyMap = buildKeyMap(oldChildren);
     const newKeyMap = buildKeyMap(newChildren);
@@ -374,6 +376,8 @@ export function patch(rootElement: HTMLElement, patches: Patch[]): HTMLElement {
         return rootElement;
     }
 
+    // Apply mutations against the existing root node so callers keep container identity.
+    // This is critical for preserving scroll/focus state in large views.
     // Apply patches in order
     for (const patchOp of patches) {
         applyPatch(rootElement, patchOp);

@@ -2090,6 +2090,8 @@ export class FinderView extends BaseTab {
 
         const API = this.getAPI();
         const username = this.getGithubUsername();
+        // Capture location at request start; all async completion paths must validate
+        // against this snapshot to avoid rendering stale responses after navigation.
         const requestedPath = [...this.currentPath];
 
         if (!API) {

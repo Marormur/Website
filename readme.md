@@ -38,8 +38,12 @@ npm install
 # 2. CSS bauen (einmalig oder mit watch)
 npm run build:css
 
-# 3. Dev-Server & TypeScript-Watch in einer Command
+# 3. Dev-Server starten
 npm run dev
+
+# 4. Optional parallel mitlaufen lassen
+npm run watch:css
+npm run typecheck:watch
 ```
 
 Das war's! Browser öffnen → http://127.0.0.1:5173 → Vibe genießen.
@@ -56,9 +60,9 @@ npm run build:ts           # Kompilieren zu js/
 
 ## Anpassen & Spielen 🎮
 
-- **GitHub-Account wechseln?** → In `app.js` nach `loadGithubRepos` suchen, `Marormur` austauschen
+- **GitHub-Account wechseln?** → In `src/ts/apps/finder/finder-view.ts` den Fallback in `getGithubUsername()` anpassen (oder zur Laufzeit `window.GITHUB_USERNAME` setzen)
 - **Bilder & Branding?** → Alles in `img/` ist austauschbar (Profilbild, Icons, Wallpaper)
-- **Texte übersetzen/ändern?** → `i18n.js` ist dein Freund (Deutsch & Englisch)
+- **Texte übersetzen/ändern?** → Übersetzungen liegen in `src/ts/i18n/de.ts` und `src/ts/i18n/en.ts`
 - **Styling anpassen?** → Tailwind kompiliert das, Custom CSS in `src/css/` macht den Rest
 - **Dark Mode Verhalten?** → `localStorage` speichert deine Einstellung (Theme, Fenstergrößen, alles)
 
@@ -72,7 +76,7 @@ Die CSS wird in der CI gebaut – keine Sorge um Dateien committen.
 
 ```bash
 # Alle zusammen
-npm run dev                  # dev-server + watch everything
+npm run dev                  # dev-server starten
 
 # Einzeln
 npm run build:css           # CSS bauen
@@ -92,12 +96,10 @@ Das Projekt nutzt ein leichtgewichtiges Virtual DOM System für effiziente, stat
 - ⚡ Patch Application: < 20ms für 100 Nodes
 - 💾 Memory Overhead: < 100KB
 
-**Dokumentation:**
+**Hinweis zur Doku-Strategie:**
 
-- 📖 [API Reference](docs/vdom/VDOM_API_REFERENCE.md) - Vollständige API-Dokumentation
-- 🔄 [Migration Guide](docs/vdom/VDOM_MIGRATION_GUIDE.md) - Von innerHTML zu VDOM migrieren
-- ✨ [Best Practices](docs/vdom/VDOM_BEST_PRACTICES.md) - Performance-Tipps & Patterns
-- 🔧 [Troubleshooting](docs/vdom/VDOM_TROUBLESHOOTING.md) - Häufige Probleme & Lösungen
+- Relevante technische Details werden primär als Kommentare/JSDoc direkt im Code gepflegt
+- Für VDOM-Implementierungsdetails siehe `src/ts/core/vdom.ts`
 
 **Quick Example:**
 

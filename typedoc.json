@@ -13,7 +13,7 @@
   "excludePrivate": true,
   "excludeProtected": false,
   "excludeInternal": true,
-  "readme": "docs/api-intro.md",
+  "readme": "readme.md",
   "categorizeByGroup": true,
   "categoryOrder": ["Core", "Services", "Windows", "UI", "Apps", "*"],
   "navigation": {

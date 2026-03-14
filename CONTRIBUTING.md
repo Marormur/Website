@@ -1,6 +1,6 @@
 # 🤝 Contributing to Marvin's Portfolio Website
 
-> NOTE: TypeScript migration is complete. Prefer the TypeScript sources in `src/ts/` when adding or editing code. The `js/` directory contains emitted JavaScript output and legacy artifacts — edit `js/` only when fixing generated output or maintaining historical documentation. Markdown-Dokumente wurden weitgehend entfernt; bitte aussagekräftige Kommentare direkt im Code hinterlassen.
+> NOTE: TypeScript migration is complete. Prefer the TypeScript sources in `src/ts/` when adding or editing code. The `js/` directory contains emitted JavaScript output and legacy artifacts — edit `js/` only when fixing generated output or maintaining historical documentation. Architektur- und Guide-Dokumente liegen in `docs/`; maßgebliche Details zu komplexer Logik sollen weiterhin direkt im Code kommentiert werden.
 
 Thank you for your interest in contributing! This document provides guidelines for contributing to the project.
 
@@ -16,7 +16,7 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v18 or higher)
 - npm or yarn
 - Git
 
@@ -80,7 +80,7 @@ Thank you for your interest in contributing! This document provides guidelines f
 
     ```bash
     # Quick smoke on Chromium (GitHub API mocked)
-    $env:MOCK_GITHUB='1'; npm run test:e2e:quick
+    MOCK_GITHUB=1 npm run test:e2e:quick
     # Full suite on Chromium
     npm run test:e2e:chromium
     ```

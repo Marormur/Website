@@ -1,6 +1,12 @@
 import { VNode, diff, patch, createElement } from '../../core/vdom.js';
 import { ComponentConfig } from './types.js';
 
+/**
+ * Base lifecycle contract for framework components.
+ * INVARIANT: `mount()` performs the first render exactly once, `update()` only patches
+ * the existing root element, and `unmount()` always calls `onDestroy()` before removal.
+ * This preserves DOM identity (focus/scroll/event state) across normal state updates.
+ */
 export abstract class BaseComponent<P extends ComponentConfig = any, S = any> {
     protected props: P;
     protected state: S;
@@ -39,6 +45,7 @@ export abstract class BaseComponent<P extends ComponentConfig = any, S = any> {
         const newVTree = this.render();
         const patches = diff(this.vTree, newVTree);
 
+        // Patch in place to avoid remount-style DOM replacement during routine updates.
         patch(this.element, patches);
 
         this.vTree = newVTree;

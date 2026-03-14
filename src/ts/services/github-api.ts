@@ -9,6 +9,8 @@ import logger from '../core/logger.js';
     // Cache strategy: Stale-while-revalidate
     const CACHE_STALE_AGE = 5 * 60 * 1000; // 5 minutes - data is considered stale
     const CACHE_MAX_AGE = 30 * 60 * 1000; // 30 minutes - absolute max age
+    // INVARIANT: stale cache entries may still be served immediately by consumers while
+    // a background refresh runs. Only entries older than CACHE_MAX_AGE are treated as missing.
 
     function getCacheTtl(): number {
         const dflt = CACHE_MAX_AGE;
@@ -119,6 +121,7 @@ import logger from '../core/logger.js';
     }
 
     // Request deduplication: Track pending requests to avoid duplicates
+    // INVARIANT: same resource key => same in-flight Promise, preventing request storms.
     const pendingRequests = new Map<string, Promise<unknown>>();
 
     /**

@@ -5,4 +5,3 @@ test-results/
 playwright-report/
 .playwright-mcp/
 package-lock.json
-CHANGELOG.md
