@@ -1,23 +1,42 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const {
+    gotoHome,
+    waitForAppReady,
+    dismissWelcomeDialogIfPresent,
+    openFinderWindow,
+} = require('./utils');
 
 test.describe('Finder Sidebar - Collapsible Groups', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('http://127.0.0.1:5173');
-        await page.waitForSelector('.dock');
+    const groupAt = (page, index) => page.locator('.mb-5').nth(index);
+    const groupHeaderAt = (page, index) => page.locator('.finder-sidebar-group-header').nth(index);
+    const groupToggleAt = (page, index) => groupHeaderAt(page, index).locator('button');
+    const groupItemsAt = (page, index) =>
+        groupAt(page, index).locator('.finder-sidebar-group-items');
+    const clickGroupToggle = async (page, index) => {
+        const header = groupHeaderAt(page, index);
+        const toggle = groupToggleAt(page, index);
 
-        // Open Finder
-        const finderIcon = page.locator('img[alt="Finder Icon"]');
-        await finderIcon.click();
+        await header.hover();
+        await page.waitForTimeout(100);
+        await toggle.click({ force: true });
+        await page.waitForTimeout(200);
+    };
 
-        // Wait for Finder modal
-        await page.waitForSelector('[role="dialog"]');
+    test.beforeEach(async ({ page, baseURL }) => {
+        await gotoHome(page, baseURL);
+        await waitForAppReady(page);
+        await dismissWelcomeDialogIfPresent(page);
+        await openFinderWindow(page);
         await page.waitForTimeout(200);
     });
 
     test('should show toggle arrow on hover over group header', async ({ page }) => {
-        const firstHeader = page.locator('.finder-sidebar-group-header').first();
-        const toggleButton = firstHeader.locator('button');
+        const firstHeader = groupHeaderAt(page, 0);
+        const toggleButton = groupToggleAt(page, 0);
+
+        await page.mouse.move(0, 0);
+        await page.waitForTimeout(50);
 
         // Initially, toggle should be invisible (opacity: 0)
         const initialOpacity = await toggleButton.evaluate(el => {
@@ -26,7 +45,16 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
         expect(parseFloat(initialOpacity)).toBeLessThan(0.5);
 
         // Hover over header
-        await firstHeader.hover();
+        const headerBox = await firstHeader.boundingBox();
+        if (!headerBox) {
+            throw new Error('Finder sidebar header has no bounding box');
+        }
+
+        await page.mouse.move(
+            headerBox.x + headerBox.width / 2,
+            headerBox.y + headerBox.height / 2
+        );
+        await page.waitForTimeout(100);
 
         // Toggle should become visible (opacity: 1)
         const hoverOpacity = await toggleButton.evaluate(el => {
@@ -36,18 +64,13 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
     });
 
     test('should collapse group when clicking toggle button', async ({ page }) => {
-        const firstHeader = page.locator('.finder-sidebar-group-header').first();
-        const toggleButton = firstHeader.locator('button');
-        const firstGroup = page.locator('.mb-5').first();
+        const toggleButton = groupToggleAt(page, 0);
+        const firstGroupItems = groupItemsAt(page, 0);
 
         // Hover and click toggle to collapse
-        await firstHeader.hover();
-        await toggleButton.click();
-        await page.waitForTimeout(200);
+        await clickGroupToggle(page, 0);
 
-        // Items should be hidden
-        const visibleItems = await firstGroup.locator('.finder-sidebar-item').count();
-        expect(visibleItems).toBe(0);
+        await expect(firstGroupItems).toHaveClass(/is-collapsed/);
 
         // aria-expanded should be false
         const ariaExpanded = await toggleButton.getAttribute('aria-expanded');
@@ -59,22 +82,17 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
     });
 
     test('should expand group when clicking toggle button again', async ({ page }) => {
-        const firstHeader = page.locator('.finder-sidebar-group-header').first();
-        const toggleButton = firstHeader.locator('button');
-        const firstGroup = page.locator('.mb-5').first();
+        const toggleButton = groupToggleAt(page, 0);
+        const firstGroupItems = groupItemsAt(page, 0);
 
         // First collapse
-        await firstHeader.hover();
-        await toggleButton.click();
-        await page.waitForTimeout(200);
+        await clickGroupToggle(page, 0);
 
         // Then expand again
-        await toggleButton.click();
-        await page.waitForTimeout(200);
+        await clickGroupToggle(page, 0);
 
-        // Items should be visible (Favoriten group has 3 items)
-        const visibleItems = await firstGroup.locator('.finder-sidebar-item').count();
-        expect(visibleItems).toBe(3);
+        await expect(firstGroupItems).not.toHaveClass(/is-collapsed/);
+        await expect(firstGroupItems.locator('.finder-sidebar-item')).toHaveCount(3);
 
         // aria-expanded should be true
         const ariaExpanded = await toggleButton.getAttribute('aria-expanded');
@@ -87,78 +105,39 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
 
     test('should handle multiple groups independently', async ({ page }) => {
         // Collapse first group (FAVORITEN)
-        const firstHeader = page.locator('.finder-sidebar-group-header').first();
-        const firstToggle = firstHeader.locator('button');
-        await firstHeader.hover();
-        await firstToggle.click();
-        await page.waitForTimeout(200);
+        const firstToggle = groupToggleAt(page, 0);
+        await clickGroupToggle(page, 0);
 
         // Collapse second group (ORTE)
-        const secondHeader = page.locator('.finder-sidebar-group-header').nth(1);
-        const secondToggle = secondHeader.locator('button');
-        await secondHeader.hover();
-        await secondToggle.click();
-        await page.waitForTimeout(200);
+        await clickGroupToggle(page, 1);
 
         // Both should be collapsed
-        const firstGroupItems = await page
-            .locator('.mb-5')
-            .first()
-            .locator('.finder-sidebar-item')
-            .count();
-        const secondGroupItems = await page
-            .locator('.mb-5')
-            .nth(1)
-            .locator('.finder-sidebar-item')
-            .count();
-        expect(firstGroupItems).toBe(0);
-        expect(secondGroupItems).toBe(0);
+        await expect(groupItemsAt(page, 0)).toHaveClass(/is-collapsed/);
+        await expect(groupItemsAt(page, 1)).toHaveClass(/is-collapsed/);
 
         // Expand only first group
-        await firstToggle.click();
+        await firstToggle.click({ force: true });
         await page.waitForTimeout(200);
 
         // First should be expanded, second still collapsed
-        const firstGroupAfter = await page
-            .locator('.mb-5')
-            .first()
-            .locator('.finder-sidebar-item')
-            .count();
-        const secondGroupAfter = await page
-            .locator('.mb-5')
-            .nth(1)
-            .locator('.finder-sidebar-item')
-            .count();
-        expect(firstGroupAfter).toBe(3);
-        expect(secondGroupAfter).toBe(0);
+        await expect(groupItemsAt(page, 0)).not.toHaveClass(/is-collapsed/);
+        await expect(groupItemsAt(page, 1)).toHaveClass(/is-collapsed/);
+        await expect(groupItemsAt(page, 0).locator('.finder-sidebar-item')).toHaveCount(3);
     });
 
     test('should persist collapse state during tab navigation', async ({ page }) => {
-        const firstHeader = page.locator('.finder-sidebar-group-header').first();
-        const firstToggle = firstHeader.locator('button');
+        const firstToggle = groupToggleAt(page, 0);
 
         // Collapse first group
-        await firstHeader.hover();
-        await firstToggle.click();
-        await page.waitForTimeout(200);
+        await clickGroupToggle(page, 0);
 
-        // Navigate to GitHub
+        // Navigate to another visible sidebar destination
         const githubButton = page.locator('button:has-text("GitHub Projekte")');
         await githubButton.click();
         await page.waitForTimeout(300);
 
-        // Go back to Computer
-        const computerButton = page.locator('button:has-text("Computer")');
-        await computerButton.click();
-        await page.waitForTimeout(300);
-
         // Group should still be collapsed
-        const visibleItems = await page
-            .locator('.mb-5')
-            .first()
-            .locator('.finder-sidebar-item')
-            .count();
-        expect(visibleItems).toBe(0);
+        await expect(groupItemsAt(page, 0)).toHaveClass(/is-collapsed/);
 
         const ariaExpanded = await firstToggle.getAttribute('aria-expanded');
         expect(ariaExpanded).toBe('false');

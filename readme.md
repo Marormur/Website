@@ -68,7 +68,7 @@ npm run build:ts           # Kompilieren zu js/
 
 ## Deploy & Live 🌐
 
-Die Website deployed automatisch auf GitHub Pages beim Push nach `main`. Läuft unter: https://marormur.github.io/Website/
+Die Website deployed automatisch auf GitHub Pages beim Push nach `main`. Läuft unter: https://marvintemmen.de/
 
 Die CSS wird in der CI gebaut – keine Sorge um Dateien committen.
 

@@ -232,7 +232,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             toolbar: [
                 {
                     label: '',
-                    icon: `<div class="relative flex-1 sm:flex-initial min-w-[200px]">
+                    icon: `<div class="relative flex-1 sm:flex-initial" style="min-width:200px;">
                         <input id="photos-search" type="search" placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}"
                             class="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
                         <button id="photos-search-clear" type="button" class="absolute inset-y-0 right-2 flex items-center text-xl text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 invisible pointer-events-none"
@@ -366,7 +366,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
             <!-- Galerie-Inhaltsbereich -->
             <div class="flex-1 relative min-h-0 overflow-hidden">
-                <div id="photos-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 hidden">
+                <div id="photos-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 opacity-0 pointer-events-none">
                     <div class="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300">
                         <span class="h-10 w-10 border-4 border-gray-300 dark:border-gray-700 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin"></span>
                         <span class="text-sm font-medium" data-i18n="photos.status.loading">${t('photos.status.loading', 'Lade Fotos…')}</span>
@@ -380,14 +380,14 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                         data-i18n="photos.buttons.retry">${t('photos.buttons.retry', 'Erneut versuchen')}</button>
                 </div>
                 <div id="photos-gallery" class="absolute inset-0 overflow-y-auto px-5 sm:px-6 py-6 space-y-8"></div>
-                <div id="photos-empty" class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 hidden px-6">
+                <div id="photos-empty" class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 opacity-0 pointer-events-none px-6">
                     <div>
                         <p class="text-lg font-semibold" data-i18n="photos.empty.title">${t('photos.empty.title', 'Keine Fotos gefunden')}</p>
                         <p class="text-sm mt-1" data-i18n="photos.empty.description">${t('photos.empty.description', 'Passe Suche oder Filter an, um weitere Ergebnisse zu sehen.')}</p>
                     </div>
                 </div>
                 <div id="image-placeholder"
-                    class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 hidden pointer-events-none"
+                    class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 opacity-0 pointer-events-none"
                     data-i18n="photos.placeholder">${t('photos.placeholder', 'Wähle ein Foto aus, um Details zu sehen.')}</div>
             </div>
 
@@ -423,12 +423,12 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                     <button id="photo-detail-prev" type="button" class="hidden sm:flex items-center justify-center w-14 bg-transparent text-3xl text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition" title="${t('photos.detail.prev', 'Vorheriges Foto')}">‹</button>
                     <div class="flex-1 relative bg-gray-50 dark:bg-gray-950 flex items-center justify-center overflow-hidden">
                         <img id="image-viewer" class="max-w-full max-h-full object-contain" alt="${t('photos.detail.imageAlt', 'Ausgewähltes Foto')}" />
-                        <div id="photo-detail-loader" class="absolute inset-0 flex items-center justify-center bg-gray-900/40 text-white text-sm font-medium hidden">${t('photos.detail.loader', 'Foto wird geladen…')}</div>
+                        <div id="photo-detail-loader" class="absolute inset-0 flex items-center justify-center bg-gray-900/40 text-white text-sm font-medium opacity-0 pointer-events-none">${t('photos.detail.loader', 'Foto wird geladen…')}</div>
                     </div>
                     <button id="photo-detail-next" type="button" class="hidden sm:flex items-center justify-center w-14 bg-transparent text-3xl text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition" title="${t('photos.detail.next', 'Nächstes Foto')}">›</button>
                 </div>
                 <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-800 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <div class="flex-1 min-w-[200px]">
+                    <div class="flex-1" style="min-width:200px;">
                         <p id="image-info" class="font-medium text-gray-700 dark:text-gray-200"></p>
                         <p id="photo-detail-dimensions" class="text-xs text-gray-500 dark:text-gray-400 mt-1"></p>
                     </div>
@@ -1007,7 +1007,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
     function updateEmptyState(): void {
         const shouldShow = state.filteredPhotos.length === 0;
-        elements.empty?.classList.toggle('hidden', !shouldShow);
+        elements.empty?.classList.toggle('opacity-0', !shouldShow);
+        elements.empty?.classList.toggle('pointer-events-none', !shouldShow);
     }
 
     function updatePhotoCount(): void {
@@ -1087,7 +1088,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
     function setLoading(isLoading: boolean): void {
         state.isLoading = isLoading;
-        elements.loading?.classList.toggle('hidden', !isLoading);
+        elements.loading?.classList.toggle('opacity-0', !isLoading);
+        elements.loading?.classList.toggle('pointer-events-none', !isLoading);
     }
 
     function setError(hasError: boolean): void {
@@ -1327,7 +1329,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
     }
 
     function setDetailLoading(isLoading: boolean): void {
-        elements.loader?.classList.toggle('hidden', !isLoading);
+        elements.loader?.classList.toggle('opacity-0', !isLoading);
+        elements.loader?.classList.toggle('pointer-events-none', !isLoading);
     }
 
     function handleKeyNavigation(event: KeyboardEvent): void {

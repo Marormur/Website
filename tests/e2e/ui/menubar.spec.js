@@ -1,21 +1,23 @@
 // End-to-end tests for menubar switching logic between Finder and Texteditor
 const { test, expect } = require('@playwright/test');
 const {
+    gotoHome,
     waitForAppReady,
+    dismissWelcomeDialogIfPresent,
     openFinderWindow,
     waitForFinderReady,
     clickDockIcon,
     expectMenuButton,
     expectMenuItem,
-    bringModalToFront,
 } = require('../utils');
 
 test.describe('Menubar switches with active window (de-DE)', () => {
     test.use({ locale: 'de-DE' });
 
     test.beforeEach(async ({ page, baseURL }) => {
-        await page.goto(baseURL + '/index.html');
+        await gotoHome(page, baseURL);
         await waitForAppReady(page);
+        await dismissWelcomeDialogIfPresent(page);
     });
 
     test('Finder menus appear when Finder is active', async ({ page }) => {
@@ -59,8 +61,10 @@ test.describe('Menubar switches with active window (de-DE)', () => {
         const finderWindow = await openFinderWindow(page);
         await waitForFinderReady(page);
 
-        // Ensure Finder is actually the top-most by clicking its title bar
-        await bringModalToFront(page, 'finder-modal');
+        await page.waitForFunction(
+            () => window.WindowRegistry?.getActiveWindow?.()?.type === 'finder',
+            { timeout: 10000 }
+        );
 
         // Program label switches to Finder (de-DE: "Sucher")
         await expect(page.getByRole('button', { name: /Finder|Sucher/i })).toBeVisible();
