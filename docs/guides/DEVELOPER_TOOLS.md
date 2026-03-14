@@ -25,28 +25,28 @@ npm run knip:report      # Erstelle einen JSON-Report
 
 ---
 
-### 2. **Lighthouse CI** – Performance Audits
+### 2. **Performance Audit** – Playwright + PerfMonitor
 
-Automatische Performance-Audits deiner Website mit detaillierten Metriken.
+Automatische Performance-Checks deiner Website mit bestehenden Browser- und App-Metriken, ohne separate Lighthouse-Toolchain.
 
 **Metriken:**
 
 - First Contentful Paint (FCP) < 3000ms
 - Largest Contentful Paint (LCP) < 4000ms
 - Cumulative Layout Shift (CLS) < 0.1
-- Interactive Time < 5000ms
+- App-Ready Zeit < 5000ms
 
 **Nutzung:**
 
 ```bash
 npm run lighthouse        # Single audit gegen 127.0.0.1:5173 (Dev-Server muss laufen)
 npm run lighthouse:ci     # Wiederholte Audits mit Threshold-Checks
-npm run lighthouse:upload # Ergebnisse in Lighthouse Server hochladen
+npm run lighthouse:upload # JSON-Report unter coverage/performance erzeugen
 ```
 
 **VS Code Task:** `Performance: Lighthouse audit`
 
-**Konfiguration:** `lighthouserc.json`
+**Implementierung:** `scripts/performance-audit.js`
 
 **Voraussetzung:** Dev-Server muss laufen
 
@@ -299,11 +299,11 @@ npm run turbo:validate --cache-repo=.turbo  # Super schnell!
 - Listet zu ignorierende Dependencies (Build-Tools, DevDeps)
 - Schließt Output-Verzeichnisse aus
 
-### `lighthouserc.json`
+### `scripts/performance-audit.js`
 
-- Lighthouse CI Konfiguration
-- Performance-Thresholds
-- Anzahl der Audit-Durchläufe (default: 3)
+- Playwright-basierter Performance-Runner
+- Nutzt `window.PerfMonitor` und Browser Performance APIs
+- Schreibt Reports nach `coverage/performance/`
 
 ### `scripts/analyze-bundle.mjs`
 
@@ -352,7 +352,7 @@ npm run turbo:validate --cache-repo=.turbo  # Super schnell!
 - Prüfe `knip.config.ts` auf korrekte Entry Points
 - Stelle sicher, dass `src/ts/` mit `.ts` endet (nicht `.js`)
 
-**Lighthouse schlägt fehl:**
+**Performance-Audit schlägt fehl:**
 
 - Dev-Server muss auf `127.0.0.1:5173` laufen
 - Verwende `npm run dev` um Server zu starten
@@ -371,7 +371,7 @@ npm run turbo:validate --cache-repo=.turbo  # Super schnell!
 Diese Tools helfen bei:
 
 - **Code Quality:** knip findet tote Dependencies
-- **Performance:** Lighthouse warnt vor Regressions
+- **Performance:** Der Audit-Runner warnt vor Regressions
 - **Bundle-Health:** Analyzer verhindert Bloat
 
 Regelmäßige Nutzung = Schnellere App + leaner Codebase! 🎯
