@@ -65,6 +65,7 @@ jobs:
                   cp -a index.html projekte.html .pages-dist/
                   cp -a img .pages-dist/
                   cp -a dist .pages-dist/
+                  mkdir -p .pages-dist/src
                   cp -a src/css .pages-dist/src/
                   mkdir -p .pages-dist/js
                   cp -a js/app.bundle.js .pages-dist/js/
@@ -82,6 +83,13 @@ jobs:
                     cp -a CNAME .pages-dist/
                   fi
                   touch .pages-dist/.nojekyll
+
+            - name: Validate Pages artifact structure
+              run: |
+                  test -f .pages-dist/index.html
+                  test -f .pages-dist/dist/output.css
+                  test -f .pages-dist/src/css/style.css
+                  test -f .pages-dist/js/app.bundle.js
 
             # Upload all files needed for Pages to serve
             # We upload everything, but with explicit exclusions for unnecessary files
