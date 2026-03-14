@@ -601,6 +601,16 @@ export const de = {
             title: 'Darstellungsoptionen',
             description: 'Passe an, wie der Desktop mit hellem und dunklem Design umgeht.',
             legend: 'Darkmode',
+            scale: {
+                legend: 'Skalierung',
+                title: 'UI-Skalierung',
+                description:
+                    'Passe die Größe der Oberfläche für kleinere oder größere Viewports an.',
+                ariaLabel: 'Darstellung skalieren',
+                recommendationLabel: 'Empfohlen für diesen Viewport:',
+                applyRecommendation: 'Empfehlung übernehmen',
+                applied: 'Empfehlung aktiv',
+            },
             options: {
                 system: {
                     label: '🖥️ System',

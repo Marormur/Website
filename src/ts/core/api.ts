@@ -72,6 +72,13 @@ logger.debug('APP', 'API loaded');
             'initTheme',
         ] as const),
 
+        display: createModuleProxy('ThemeSystem', [
+            'setDisplayScalePreference',
+            'getDisplayScalePreference',
+            'getRecommendedDisplayScale',
+            'applyDisplayScale',
+        ] as const),
+
         icon: createModuleProxy('IconSystem', [
             'ensureSvgNamespace',
             'getMenuIconSvg',
@@ -284,6 +291,9 @@ logger.debug('APP', 'API loaded');
     // Theme
     w.setThemePreference = createLegacyWrapper('theme.setThemePreference');
     w.getThemePreference = createLegacyWrapper('theme.getThemePreference');
+    w.setDisplayScalePreference = createLegacyWrapper('display.setDisplayScalePreference');
+    w.getDisplayScalePreference = createLegacyWrapper('display.getDisplayScalePreference');
+    w.getRecommendedDisplayScale = createLegacyWrapper('display.getRecommendedDisplayScale');
 
     // Icon
     w.ensureSvgNamespace = createLegacyWrapper('icon.ensureSvgNamespace');

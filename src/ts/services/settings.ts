@@ -32,6 +32,7 @@ logger.debug('APP', 'Settings Module loaded');
         attachListeners(): void;
         syncThemePreference(): void;
         syncLanguagePreference(): void;
+        syncDisplayScalePreference(): void;
         showSection(section: SectionName, options?: { pushHistory?: boolean }): void;
         getSectionTitle(section: SectionName): { key: string; fallback: string };
         translateLabel(key: string, fallback: string): string;
@@ -77,6 +78,7 @@ logger.debug('APP', 'Settings Module loaded');
             this.attachListeners();
             this.syncThemePreference();
             this.syncLanguagePreference();
+            this.syncDisplayScalePreference();
             this.syncWifiNetworkList();
             this.syncBluetoothDeviceList();
             this.syncGeneralInfoDetails();
@@ -484,6 +486,42 @@ logger.debug('APP', 'Settings Module loaded');
                                     </span>
                                 </label>
                             </fieldset>
+
+                            <fieldset class="settings-option-card settings-scale-card">
+                                <legend class="settings-option-legend" data-i18n="settingsPage.display.scale.legend">Skalierung</legend>
+                                <div class="settings-scale-row">
+                                    <span class="settings-scale-copy">
+                                        <span class="settings-scale-title" data-i18n="settingsPage.display.scale.title">UI-Skalierung</span>
+                                        <span class="settings-scale-description" data-i18n="settingsPage.display.scale.description">Passe die Größe der Oberfläche für kleinere oder größere Viewports an.</span>
+                                    </span>
+                                    <output class="settings-scale-value" data-settings-display-scale-value>100%</output>
+                                </div>
+                                <input
+                                    type="range"
+                                    class="settings-scale-range"
+                                    data-settings-display-scale-range
+                                    min="70"
+                                    max="130"
+                                    step="5"
+                                    value="100"
+                                    aria-label="Darstellung skalieren"
+                                    data-i18n-aria-label="settingsPage.display.scale.ariaLabel"
+                                />
+                                <div class="settings-scale-indicators" aria-hidden="true">
+                                    <span>70%</span>
+                                    <span>85%</span>
+                                    <span>100%</span>
+                                    <span>115%</span>
+                                    <span>130%</span>
+                                </div>
+                                <div class="settings-scale-recommendation">
+                                    <p class="settings-scale-recommendation-text">
+                                        <span data-i18n="settingsPage.display.scale.recommendationLabel">Empfohlen für diesen Viewport:</span>
+                                        <strong data-settings-display-scale-recommendation-value>100%</strong>
+                                    </p>
+                                    <button type="button" class="settings-scale-recommendation-btn" data-settings-display-scale-apply data-i18n="settingsPage.display.scale.applyRecommendation">Empfehlung übernehmen</button>
+                                </div>
+                            </fieldset>
                         </section>
 
                         <section id="settings-language" class="settings-section hidden">
@@ -619,6 +657,121 @@ logger.debug('APP', 'Settings Module loaded');
                     }
                 });
             });
+
+            const displayScaleRange = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-display-scale-range]'
+            );
+            const displayScaleValue = this.container.querySelector<HTMLOutputElement>(
+                '[data-settings-display-scale-value]'
+            );
+            const displayScaleRecommendationValue = this.container.querySelector<HTMLElement>(
+                '[data-settings-display-scale-recommendation-value]'
+            );
+            const displayScaleRecommendation = this.container.querySelector<HTMLElement>(
+                '.settings-scale-recommendation'
+            );
+            const displayScaleApplyRecommendation = this.container.querySelector<HTMLButtonElement>(
+                '[data-settings-display-scale-apply]'
+            );
+
+            const getRecommendedScalePercent = (): number => {
+                const API = (
+                    window as Window & {
+                        API?: {
+                            display?: {
+                                getRecommendedDisplayScale?: () => number;
+                            };
+                        };
+                    }
+                ).API;
+                const ThemeSystem = (
+                    window as Window & {
+                        ThemeSystem?: {
+                            getRecommendedDisplayScale?: () => number;
+                        };
+                    }
+                ).ThemeSystem;
+
+                const recommendedScale = API?.display?.getRecommendedDisplayScale
+                    ? API.display.getRecommendedDisplayScale()
+                    : ThemeSystem?.getRecommendedDisplayScale
+                      ? ThemeSystem.getRecommendedDisplayScale()
+                      : 1;
+
+                return Math.max(70, Math.min(130, Math.round(recommendedScale * 100)));
+            };
+
+            const updateRecommendationState = (currentPercent: number) => {
+                const recommendedPercent = getRecommendedScalePercent();
+                const isRecommendationActive = currentPercent === recommendedPercent;
+
+                if (displayScaleRecommendationValue) {
+                    displayScaleRecommendationValue.textContent = `${recommendedPercent}%`;
+                }
+
+                if (displayScaleRecommendation) {
+                    displayScaleRecommendation.classList.toggle('hidden', isRecommendationActive);
+                }
+
+                if (displayScaleApplyRecommendation) {
+                    displayScaleApplyRecommendation.disabled = false;
+                    displayScaleApplyRecommendation.textContent = this.translateLabel(
+                        'settingsPage.display.scale.applyRecommendation',
+                        'Empfehlung übernehmen'
+                    );
+                }
+            };
+
+            const updateDisplayScaleValue = (percentValue: number) => {
+                if (displayScaleValue) {
+                    displayScaleValue.value = `${percentValue}%`;
+                    displayScaleValue.textContent = `${percentValue}%`;
+                }
+
+                updateRecommendationState(percentValue);
+            };
+
+            displayScaleRange?.addEventListener('input', () => {
+                const percentValue = Number.parseInt(displayScaleRange.value, 10);
+                if (!Number.isFinite(percentValue)) return;
+                updateDisplayScaleValue(percentValue);
+            });
+
+            displayScaleRange?.addEventListener('change', () => {
+                const percentValue = Number.parseInt(displayScaleRange.value, 10);
+                if (!Number.isFinite(percentValue)) return;
+                const scaleValue = percentValue / 100;
+
+                const API = (
+                    window as Window & {
+                        API?: {
+                            display?: { setDisplayScalePreference(scale: number): void };
+                        };
+                    }
+                ).API;
+                if (API?.display?.setDisplayScalePreference) {
+                    API.display.setDisplayScalePreference(scaleValue);
+                } else {
+                    const ThemeSystem = (
+                        window as Window & {
+                            ThemeSystem?: {
+                                setDisplayScalePreference(scale: number): void;
+                            };
+                        }
+                    ).ThemeSystem;
+                    ThemeSystem?.setDisplayScalePreference?.(scaleValue);
+                }
+
+                updateDisplayScaleValue(percentValue);
+            });
+
+            displayScaleApplyRecommendation?.addEventListener('click', () => {
+                if (!displayScaleRange) return;
+                const recommendedPercent = getRecommendedScalePercent();
+                displayScaleRange.value = String(recommendedPercent);
+                displayScaleRange.dispatchEvent(new Event('input', { bubbles: true }));
+                displayScaleRange.dispatchEvent(new Event('change', { bubbles: true }));
+            });
         },
 
         /**
@@ -674,7 +827,81 @@ logger.debug('APP', 'Settings Module loaded');
                 radio.checked = radio.value === preference;
             });
 
+            this.syncDisplayScalePreference();
             this.updateNavigationChrome();
+        },
+
+        syncDisplayScalePreference(): void {
+            if (!this.container) return;
+
+            let scalePreference = 1;
+            const API = (
+                window as Window & {
+                    API?: { display?: { getDisplayScalePreference(): number } };
+                }
+            ).API;
+            const ThemeSystem = (
+                window as Window & {
+                    ThemeSystem?: { getDisplayScalePreference(): number };
+                }
+            ).ThemeSystem;
+
+            if (API?.display?.getDisplayScalePreference) {
+                scalePreference = API.display.getDisplayScalePreference();
+            } else if (ThemeSystem?.getDisplayScalePreference) {
+                scalePreference = ThemeSystem.getDisplayScalePreference();
+            }
+
+            const scalePercent = Math.max(70, Math.min(130, Math.round(scalePreference * 100)));
+            const displayScaleRange = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-display-scale-range]'
+            );
+            const displayScaleValue = this.container.querySelector<HTMLOutputElement>(
+                '[data-settings-display-scale-value]'
+            );
+            const displayScaleRecommendationValue = this.container.querySelector<HTMLElement>(
+                '[data-settings-display-scale-recommendation-value]'
+            );
+            const displayScaleRecommendation = this.container.querySelector<HTMLElement>(
+                '.settings-scale-recommendation'
+            );
+            const displayScaleApplyRecommendation = this.container.querySelector<HTMLButtonElement>(
+                '[data-settings-display-scale-apply]'
+            );
+            const recommendedScalePercent = (() => {
+                const apiRecommended = API?.display?.getRecommendedDisplayScale;
+                const themeRecommended = ThemeSystem?.getRecommendedDisplayScale;
+                const recommendedScale = apiRecommended
+                    ? apiRecommended()
+                    : themeRecommended
+                      ? themeRecommended()
+                      : 1;
+                return Math.max(70, Math.min(130, Math.round(recommendedScale * 100)));
+            })();
+
+            if (displayScaleRange) {
+                displayScaleRange.value = String(scalePercent);
+            }
+            if (displayScaleValue) {
+                displayScaleValue.value = `${scalePercent}%`;
+                displayScaleValue.textContent = `${scalePercent}%`;
+            }
+            if (displayScaleRecommendationValue) {
+                displayScaleRecommendationValue.textContent = `${recommendedScalePercent}%`;
+            }
+            if (displayScaleRecommendation) {
+                displayScaleRecommendation.classList.toggle(
+                    'hidden',
+                    scalePercent === recommendedScalePercent
+                );
+            }
+            if (displayScaleApplyRecommendation) {
+                displayScaleApplyRecommendation.disabled = false;
+                displayScaleApplyRecommendation.textContent = this.translateLabel(
+                    'settingsPage.display.scale.applyRecommendation',
+                    'Empfehlung übernehmen'
+                );
+            }
         },
 
         syncWifiNetworkList(): void {

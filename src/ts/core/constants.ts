@@ -7,6 +7,7 @@
 
 export interface AppConstants {
     THEME_PREFERENCE_KEY: string;
+    DISPLAY_SCALE_PREFERENCE_KEY: string;
     VALID_THEME_PREFERENCES: string[];
     FINDER_STATE_STORAGE_KEY: string;
     OPEN_WINDOWS_KEY: string;
@@ -37,6 +38,7 @@ export interface AppConstants {
 }
 
 export const THEME_PREFERENCE_KEY = 'themePreference';
+export const DISPLAY_SCALE_PREFERENCE_KEY = 'displayScalePreference';
 export const VALID_THEME_PREFERENCES = ['system', 'light', 'dark'];
 
 export const FINDER_STATE_STORAGE_KEY = 'finderState';
@@ -86,6 +88,7 @@ export const SNAP_SIDES = ['left', 'right'];
 
 export const APP_CONSTANTS: AppConstants = {
     THEME_PREFERENCE_KEY,
+    DISPLAY_SCALE_PREFERENCE_KEY,
     VALID_THEME_PREFERENCES,
     FINDER_STATE_STORAGE_KEY,
     OPEN_WINDOWS_KEY,

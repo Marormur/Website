@@ -37,6 +37,12 @@ interface APIObject {
         applyTheme(): void;
         initTheme(): void;
     };
+    display: {
+        setDisplayScalePreference(scale: number): void;
+        getDisplayScalePreference(): number;
+        getRecommendedDisplayScale(): number;
+        applyDisplayScale(scale: number): void;
+    };
     i18n: {
         translate(key: string, fallback?: string): string;
         setLanguagePreference(lang: 'system' | 'de' | 'en' | 'en-us'): void;

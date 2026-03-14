@@ -600,6 +600,15 @@ export const en = {
             title: 'Appearance options',
             description: 'Adjust how the desktop handles light and dark mode.',
             legend: 'Dark mode',
+            scale: {
+                legend: 'Scaling',
+                title: 'UI scaling',
+                description: 'Adjust interface size for smaller or larger viewports.',
+                ariaLabel: 'Scale display',
+                recommendationLabel: 'Recommended for this viewport:',
+                applyRecommendation: 'Apply recommendation',
+                applied: 'Recommendation active',
+            },
             options: {
                 system: {
                     label: '🖥️ System',
