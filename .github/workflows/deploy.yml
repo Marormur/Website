@@ -58,13 +58,38 @@ jobs:
                   echo "📦 Bundle sizes:"
                   du -sh js/app.bundle.js js/app.bundle.js.gz js/app.bundle.js.br 2>/dev/null || du -sh js/app.bundle.js js/app.bundle.js.gz
 
+            - name: Prepare Pages artifact
+              run: |
+                  rm -rf .pages-dist
+                  mkdir -p .pages-dist
+                  cp -a index.html projekte.html .pages-dist/
+                  cp -a img .pages-dist/
+                  cp -a dist .pages-dist/
+                  cp -a src/css .pages-dist/src/
+                  mkdir -p .pages-dist/js
+                  cp -a js/app.bundle.js .pages-dist/js/
+                  if [ -f js/app.bundle.js.gz ]; then
+                    cp -a js/app.bundle.js.gz .pages-dist/js/
+                  fi
+                  if [ -f js/app.bundle.js.br ]; then
+                    cp -a js/app.bundle.js.br .pages-dist/js/
+                  fi
+                  if [ -d docs/api ]; then
+                    mkdir -p .pages-dist/docs
+                    cp -a docs/api .pages-dist/docs/
+                  fi
+                  if [ -f CNAME ]; then
+                    cp -a CNAME .pages-dist/
+                  fi
+                  touch .pages-dist/.nojekyll
+
             # Upload all files needed for Pages to serve
             # We upload everything, but with explicit exclusions for unnecessary files
             # (Ignore-patterns in .gitignore are respected, but we list files explicitly)
             - name: Upload Pages artifact
               uses: actions/upload-pages-artifact@v3
               with:
-                  path: ${{ github.workspace }}
+                  path: .pages-dist
                   retention-days: 1
 
     deploy:

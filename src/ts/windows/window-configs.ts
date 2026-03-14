@@ -13,7 +13,7 @@ export interface WindowConfiguration {
     type: WindowType;
     programKey: string; // i18n key root for program label
     icon: string;
-    closeButtonId: string;
+    closeButtonId: string | null;
     // Use a broad shape to align with WindowManager expectations
     metadata?: Record<string, unknown>;
 }
@@ -112,6 +112,7 @@ export const windowConfigurations: WindowConfiguration[] = [
         type: 'transient',
         programKey: 'programs.photos',
         icon: WINDOW_ICONS.photos,
+        closeButtonId: null,
         metadata: {
             initHandler: function () {
                 // Route to PhotosWindow if a caller still opens via legacy key.
