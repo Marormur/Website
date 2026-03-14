@@ -42,6 +42,7 @@
 
 - Diese Datei minimal halten; bei größeren Architekturänderungen anpassen
 - README (`readme.md`) gelegentlich aktualisieren; Hauptwissen in Code-Kommentaren halten.
+- Commit-Messages: sehr kurz und aussagekräftig, ohne unnötige Details (z. B. `finder navigation fixes`).
 
 ## Code-Dokumentationsrichtlinien (TS/Web)
 
