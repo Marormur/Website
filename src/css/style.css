@@ -638,9 +638,46 @@ html.dark .traffic-light-control::after {
     font-weight: 500;
 }
 
+.settings-info-key--with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-info-key-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(14, 116, 255, 0.14);
+    font-size: 12px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
 .settings-info-value {
     color: #0f172a;
     font-weight: 600;
+}
+
+.settings-info-group-title {
+    margin: 18px 0 8px;
+    font-size: 20px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: #0f172a;
+}
+
+.settings-info-card--system {
+    margin-bottom: 4px;
+}
+
+.settings-info-value--multiline {
+    max-width: 450px;
+    text-align: right;
+    word-break: break-word;
 }
 
 .settings-option-card {
@@ -1178,7 +1215,15 @@ html.dark .settings-info-key {
     color: rgba(228, 235, 247, 0.78);
 }
 
+html.dark .settings-info-key-icon {
+    background: rgba(148, 163, 184, 0.24);
+}
+
 html.dark .settings-info-value {
+    color: #f8fbff;
+}
+
+html.dark .settings-info-group-title {
     color: #f8fbff;
 }
 
@@ -1331,6 +1376,16 @@ html.dark .settings-wifi-connected-status {
     .settings-overview-panel {
         padding: 22px 18px;
         border-radius: 18px;
+    }
+
+    .settings-info-row--stack-sm {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .settings-info-value--multiline {
+        max-width: none;
+        text-align: left;
     }
 
     .settings-overview-icon {

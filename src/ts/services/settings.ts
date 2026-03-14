@@ -13,6 +13,15 @@ logger.debug('APP', 'Settings Module loaded');
 
     type SectionName = 'wifi' | 'bluetooth' | 'general' | 'general-info' | 'display' | 'language';
 
+    type GitHubCommitResponse = Array<{
+        sha?: string;
+        commit?: {
+            author?: {
+                date?: string;
+            };
+        };
+    }>;
+
     interface SettingsSystemType {
         currentSection: SectionName;
         sectionHistory: SectionName[];
@@ -31,6 +40,8 @@ logger.debug('APP', 'Settings Module loaded');
         ): 'wifi' | 'bluetooth' | 'general' | 'display' | 'language';
         syncWifiNetworkList(): void;
         syncBluetoothDeviceList(): void;
+        syncGeneralInfoDetails(): void;
+        fetchLatestGithubCommit(): Promise<void>;
         navigateHistory(direction: 'back' | 'forward'): void;
         updateNavigationChrome(): void;
         destroy(): void;
@@ -68,6 +79,8 @@ logger.debug('APP', 'Settings Module loaded');
             this.syncLanguagePreference();
             this.syncWifiNetworkList();
             this.syncBluetoothDeviceList();
+            this.syncGeneralInfoDetails();
+            void this.fetchLatestGithubCommit();
             this.showSection('general', { pushHistory: false });
         },
 
@@ -399,14 +412,10 @@ logger.debug('APP', 'Settings Module loaded');
                             <div class="settings-device-hero">
                                 <img src="./img/profil.jpg" alt="Profilbild" class="settings-account-avatar settings-device-avatar" />
                                 <h3 class="settings-device-name" data-i18n="settingsPage.general.name">Marvin Temmen</h3>
-                                <p class="settings-device-subtitle" data-i18n="settingsPage.general.jobValue">Softwareentwickler</p>
+                                <p class="settings-device-subtitle">März 1999</p>
                             </div>
 
                             <div class="settings-info-card">
-                                <div class="settings-info-row">
-                                    <span class="settings-info-key" data-i18n="settingsPage.general.roleLabel">Rolle</span>
-                                    <span class="settings-info-value" data-i18n="settingsPage.general.jobValue">Softwareentwickler</span>
-                                </div>
                                 <div class="settings-info-row">
                                     <span class="settings-info-key" data-i18n="settingsPage.general.focusLabel">Schwerpunkt</span>
                                     <span class="settings-info-value" data-i18n="settingsPage.general.focusValue">C# im Beruf, privat etwas Web-Entwicklung und C++ Game Dev</span>
@@ -418,6 +427,36 @@ logger.debug('APP', 'Settings Module loaded');
                                 <div class="settings-info-row">
                                     <span class="settings-info-key" data-i18n="settingsPage.general.jobLabel">Beruf</span>
                                     <span class="settings-info-value" data-i18n="settingsPage.general.jobValue">Softwareentwickler</span>
+                                </div>
+                            </div>
+
+                            <h4 class="settings-info-group-title">Website Version</h4>
+                            <div class="settings-info-card settings-info-card--system" data-github-owner="Marormur" data-github-repo="Website">
+                                <div class="settings-info-row">
+                                    <span class="settings-info-key settings-info-key--with-icon">
+                                        <span class="settings-info-key-icon" aria-hidden="true">🧾</span>
+                                        <span>Commit-ID</span>
+                                    </span>
+                                    <span class="settings-info-value" data-settings-info-field="github-commit-id">Wird geladen ...</span>
+                                </div>
+                                <div class="settings-info-row">
+                                    <span class="settings-info-key">Letzter GitHub-Commit</span>
+                                    <span class="settings-info-value" data-settings-info-field="github-commit-day">Wird geladen ...</span>
+                                </div>
+                            </div>
+
+                            <h4 class="settings-info-group-title">Bildschirm</h4>
+                            <div class="settings-info-card settings-info-card--system">
+                                <div class="settings-info-row settings-info-row--stack-sm">
+                                    <span class="settings-info-key settings-info-key--with-icon">
+                                        <span class="settings-info-key-icon" aria-hidden="true">🌐</span>
+                                        <span>Browser-Agent</span>
+                                    </span>
+                                    <span class="settings-info-value settings-info-value--multiline" data-settings-info-field="browser-user-agent">Wird geladen ...</span>
+                                </div>
+                                <div class="settings-info-row">
+                                    <span class="settings-info-key">Viewport-Auflösung</span>
+                                    <span class="settings-info-value" data-settings-info-field="browser-viewport">Wird geladen ...</span>
                                 </div>
                             </div>
                         </section>
@@ -659,6 +698,98 @@ logger.debug('APP', 'Settings Module loaded');
             systemUI?.updateAllSystemStatusUI?.();
         },
 
+        syncGeneralInfoDetails(): void {
+            if (!this.container) return;
+
+            const browserAgentTarget = this.container.querySelector<HTMLElement>(
+                '[data-settings-info-field="browser-user-agent"]'
+            );
+            const viewportTarget = this.container.querySelector<HTMLElement>(
+                '[data-settings-info-field="browser-viewport"]'
+            );
+
+            if (browserAgentTarget) {
+                browserAgentTarget.textContent = navigator.userAgent || 'Nicht verfügbar';
+            }
+
+            if (viewportTarget) {
+                viewportTarget.textContent = `${window.innerWidth} x ${window.innerHeight}`;
+            }
+        },
+
+        async fetchLatestGithubCommit(): Promise<void> {
+            if (!this.container) return;
+
+            const commitDayTarget = this.container.querySelector<HTMLElement>(
+                '[data-settings-info-field="github-commit-day"]'
+            );
+            const commitIdTarget = this.container.querySelector<HTMLElement>(
+                '[data-settings-info-field="github-commit-id"]'
+            );
+            const githubCard = this.container.querySelector<HTMLElement>(
+                '[data-github-owner][data-github-repo]'
+            );
+
+            const owner = githubCard?.getAttribute('data-github-owner') || '';
+            const repo = githubCard?.getAttribute('data-github-repo') || '';
+            if (!owner || !repo) {
+                if (commitDayTarget) commitDayTarget.textContent = 'Nicht konfiguriert';
+                if (commitIdTarget) commitIdTarget.textContent = 'Nicht konfiguriert';
+                return;
+            }
+
+            const commitUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/commits?per_page=1`;
+            const githubApi = (
+                window as Window & {
+                    GitHubAPI?: {
+                        fetchJSON?: <T = unknown>(url: string) => Promise<T>;
+                    };
+                }
+            ).GitHubAPI;
+
+            try {
+                let commitResponse: GitHubCommitResponse;
+                if (githubApi?.fetchJSON) {
+                    commitResponse = await githubApi.fetchJSON<GitHubCommitResponse>(commitUrl);
+                } else {
+                    const response = await fetch(commitUrl, {
+                        headers: { Accept: 'application/vnd.github.v3+json' },
+                    });
+                    if (!response.ok) {
+                        throw new Error(`GitHub API error: ${response.status}`);
+                    }
+                    commitResponse = (await response.json()) as GitHubCommitResponse;
+                }
+
+                const latestCommit = commitResponse[0];
+                const commitSha = latestCommit?.sha || '';
+                const commitDateRaw = latestCommit?.commit?.author?.date || '';
+
+                const commitDate = commitDateRaw ? new Date(commitDateRaw) : null;
+                const commitDateLabel =
+                    commitDate && !Number.isNaN(commitDate.getTime())
+                        ? commitDate.toLocaleDateString('de-DE', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                          })
+                        : 'Nicht verfügbar';
+
+                if (commitDayTarget) {
+                    commitDayTarget.textContent = commitDateLabel;
+                }
+                if (commitIdTarget) {
+                    commitIdTarget.textContent = commitSha
+                        ? commitSha.slice(0, 8)
+                        : 'Nicht verfügbar';
+                }
+            } catch (error) {
+                logger.warn('APP', '[Settings] Konnte letzten GitHub-Commit nicht laden:', error);
+                if (commitDayTarget) commitDayTarget.textContent = 'Nicht verfügbar';
+                if (commitIdTarget) commitIdTarget.textContent = 'Nicht verfügbar';
+            }
+        },
+
         /**
          * Show specific settings section
          */
@@ -704,6 +835,9 @@ logger.debug('APP', 'Settings Module loaded');
                 this.syncWifiNetworkList();
             } else if (section === 'bluetooth') {
                 this.syncBluetoothDeviceList();
+            } else if (section === 'general-info') {
+                this.syncGeneralInfoDetails();
+                void this.fetchLatestGithubCommit();
             }
 
             // Update nav highlighting
