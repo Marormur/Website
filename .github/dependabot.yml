@@ -1,57 +1,57 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "daily"
-      time: "05:00"
-      timezone: "Europe/Berlin"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "security"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-    groups:
-      npm-patch-and-minor:
-        applies-to: version-updates
-        dependency-type: "production"
-        update-types:
-          - "minor"
-          - "patch"
-        patterns:
-          - "*"
-      npm-dev-patch-and-minor:
-        applies-to: version-updates
-        dependency-type: "development"
-        update-types:
-          - "minor"
-          - "patch"
-        patterns:
-          - "*"
-      npm-major:
-        applies-to: version-updates
-        update-types:
-          - "major"
-        patterns:
-          - "*"
+    - package-ecosystem: 'npm'
+      directory: '/'
+      schedule:
+          interval: 'daily'
+          time: '05:00'
+          timezone: 'Europe/Berlin'
+      open-pull-requests-limit: 10
+      labels:
+          - 'dependencies'
+          - 'security'
+      commit-message:
+          prefix: 'chore'
+          include: 'scope'
+      groups:
+          npm-patch-and-minor:
+              applies-to: version-updates
+              dependency-type: 'production'
+              update-types:
+                  - 'minor'
+                  - 'patch'
+              patterns:
+                  - '*'
+          npm-dev-patch-and-minor:
+              applies-to: version-updates
+              dependency-type: 'development'
+              update-types:
+                  - 'minor'
+                  - 'patch'
+              patterns:
+                  - '*'
+          npm-major:
+              applies-to: version-updates
+              update-types:
+                  - 'major'
+              patterns:
+                  - '*'
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "05:30"
-      timezone: "Europe/Berlin"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "security"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-    groups:
-      github-actions:
-        patterns:
-          - "*"
+    - package-ecosystem: 'github-actions'
+      directory: '/'
+      schedule:
+          interval: 'weekly'
+          day: 'monday'
+          time: '05:30'
+          timezone: 'Europe/Berlin'
+      open-pull-requests-limit: 5
+      labels:
+          - 'dependencies'
+          - 'security'
+      commit-message:
+          prefix: 'chore'
+          include: 'scope'
+      groups:
+          github-actions:
+              patterns:
+                  - '*'
