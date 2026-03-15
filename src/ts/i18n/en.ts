@@ -505,6 +505,7 @@ export const en = {
         window: {
             minimize: 'Minimize',
             zoom: 'Zoom',
+            center: 'Center',
             bringToFront: 'Bring all to front',
             close: 'Close window',
             closeAll: 'Close All',

@@ -12,8 +12,28 @@ let menuActionIdCounter = 0;
 
 type MenuContext = {
     modalId?: string;
-    dialog?: { close?: () => void; minimize?: () => void; toggleMaximize?: () => void } | null;
+    dialog?: {
+        close?: () => void;
+        minimize?: () => void;
+        toggleMaximize?: () => void;
+        center?: () => void;
+    } | null;
 } | null;
+
+type WindowMenuController = {
+    close?: () => void;
+    minimize?: () => void;
+    toggleMaximize?: () => void;
+    center?: () => void;
+    type?: string;
+} | null;
+
+const MULTI_WINDOW_MODAL_TYPE_MAP: Record<string, string> = {
+    'projects-modal': 'finder',
+    'terminal-modal': 'terminal',
+    'text-modal': 'text-editor',
+    'image-modal': 'photos',
+};
 
 export function registerMenuAction(handler: MenuHandler) {
     if (typeof handler !== 'function') return null;
@@ -606,8 +626,11 @@ function createWindowMenuSection(context: MenuContext) {
 }
 
 function getWindowMenuItems(context: MenuContext) {
-    const dialog = context?.dialog;
-    const hasDialog = Boolean(dialog && typeof dialog.close === 'function');
+    const windowController = resolveWindowMenuController(context);
+    const canClose = typeof windowController?.close === 'function';
+    const canMinimize = typeof windowController?.minimize === 'function';
+    const canZoom = typeof windowController?.toggleMaximize === 'function';
+    const canCenter = typeof windowController?.center === 'function';
 
     // Check if we're in Finder context
     const isFinder =
@@ -619,20 +642,29 @@ function getWindowMenuItems(context: MenuContext) {
             id: 'window-minimize',
             label: () => translate('menu.window.minimize'),
             shortcut: '⌘M',
-            disabled: !hasDialog,
+            disabled: !canMinimize,
             icon: 'windowMinimize',
             action: () => {
-                if (dialog && typeof dialog.minimize === 'function') dialog.minimize();
+                windowController?.minimize?.();
             },
         },
         {
             id: 'window-zoom',
             label: () => translate('menu.window.zoom'),
             shortcut: '⌃⌘F',
-            disabled: !hasDialog,
+            disabled: !canZoom,
             icon: 'windowZoom',
             action: () => {
-                if (dialog && typeof dialog.toggleMaximize === 'function') dialog.toggleMaximize();
+                windowController?.toggleMaximize?.();
+            },
+        },
+        {
+            id: 'window-center',
+            label: () => translate('menu.window.center'),
+            disabled: !canCenter,
+            icon: 'window',
+            action: () => {
+                windowController?.center?.();
             },
         },
     ];
@@ -663,14 +695,43 @@ function getWindowMenuItems(context: MenuContext) {
                 id: 'window-close',
                 label: () => translate('menu.window.close'),
                 shortcut: '⌘W',
-                disabled: !hasDialog,
+                disabled: !canClose,
                 icon: 'close',
-                action: () => closeContextWindow(context),
+                action: () => windowController?.close?.(),
             }
         );
     }
 
     return items;
+}
+
+function resolveWindowMenuController(context: MenuContext): WindowMenuController {
+    const modalId = context?.modalId;
+    const activeWindow = window.WindowRegistry?.getActiveWindow?.() as WindowMenuController;
+
+    if (context?.dialog) {
+        return context.dialog;
+    }
+
+    if (activeWindow) {
+        const expectedType = modalId ? MULTI_WINDOW_MODAL_TYPE_MAP[modalId] : undefined;
+        if (!modalId || modalId.startsWith('window-') || expectedType === activeWindow.type) {
+            return activeWindow;
+        }
+    }
+
+    if (modalId) {
+        const dialog = (window.dialogs?.[modalId] ?? null) as WindowMenuController;
+        if (dialog) {
+            return dialog;
+        }
+    }
+
+    if (activeWindow) {
+        return activeWindow;
+    }
+
+    return null;
 }
 
 function getMultiInstanceMenuItems(context: MenuContext) {

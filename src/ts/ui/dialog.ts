@@ -157,6 +157,39 @@ export class Dialog {
         window.updateProgramLabelByTopModal?.();
     }
 
+    center() {
+        const target = this.windowEl || this.modal;
+        if (!target) return;
+
+        this.unsnap({ silent: true });
+        if (this.modal.dataset?.maximized === 'true') {
+            this.toggleMaximize();
+        }
+
+        const rect = target.getBoundingClientRect();
+        const width = Math.round(rect.width || target.offsetWidth || 0);
+        const height = Math.round(rect.height || target.offsetHeight || 0);
+        const minTop = Math.round(window.getMenuBarBottom?.() || 0);
+        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        const viewportWidth = Math.max(window.innerWidth || 0, width);
+        const availableHeight = Math.max(
+            height,
+            (window.innerHeight || height) - minTop - dockReserve
+        );
+
+        target.style.position = 'fixed';
+        target.style.maxWidth = '';
+        target.style.maxHeight = '';
+        target.style.right = '';
+        target.style.bottom = '';
+        target.style.left = `${Math.max(0, Math.round((viewportWidth - width) / 2))}px`;
+        target.style.top = `${minTop + Math.max(0, Math.round((availableHeight - height) / 2))}px`;
+
+        window.clampWindowToMenuBar?.(target);
+        this.bringToFront();
+        window.saveWindowPositions?.();
+    }
+
     toggleMaximize() {
         const target = this.windowEl || this.modal;
         if (!target) return;

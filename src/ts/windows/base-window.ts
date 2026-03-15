@@ -625,6 +625,41 @@ export class BaseWindow {
     }
 
     /**
+     * Zentriert das Fenster innerhalb des verfügbaren Viewports zwischen Menüleiste und Dock.
+     */
+    center(): void {
+        if (!this.element) return;
+
+        if (this.isMaximized) {
+            this.isMaximized = false;
+            this.element.style.maxWidth = '';
+            this.element.style.maxHeight = '';
+            this.element.style.width = `${this.position.width}px`;
+            this.element.style.height = `${this.position.height}px`;
+        }
+
+        const viewportWidth = Math.max(window.innerWidth || 0, this.position.width);
+        const minTop = Math.round(window.getMenuBarBottom?.() || 0);
+        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        const availableHeight = Math.max(
+            this.position.height,
+            (window.innerHeight || this.position.height) - minTop - dockReserve
+        );
+
+        this.position.x = Math.max(0, Math.round((viewportWidth - this.position.width) / 2));
+        this.position.y =
+            minTop + Math.max(0, Math.round((availableHeight - this.position.height) / 2));
+
+        this.element.style.left = `${this.position.x}px`;
+        this.element.style.top = `${this.position.y}px`;
+        this.element.style.width = `${this.position.width}px`;
+        this.element.style.height = `${this.position.height}px`;
+
+        this.bringToFront();
+        this._saveState();
+    }
+
+    /**
      * Maximieren/Restore. Skaliert das eigentliche Fenster-Root und nutzt die
      * zuletzt bekannte Fensterposition als Restore-Zustand.
      */

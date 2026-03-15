@@ -225,6 +225,7 @@ declare global {
             close?: () => void;
             minimize?: () => void;
             toggleMaximize?: () => void;
+            center?: () => void;
             bringToFront?: () => void;
             modal?: HTMLElement;
         };
@@ -458,6 +459,7 @@ declare global {
                 close?: () => void;
                 minimize?: () => void;
                 toggleMaximize?: () => void;
+                center?: () => void;
                 bringToFront?: () => void;
             }
         >;
