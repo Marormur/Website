@@ -12,7 +12,7 @@ export interface FinderUIProps {
     isActive: boolean;
     source: string;
     currentPath: string[];
-    viewMode: 'list' | 'grid';
+    viewMode: 'list' | 'grid' | 'gallery';
     sidebarWidth: number;
     searchTerm: string;
     canGoBack: boolean;
@@ -33,7 +33,7 @@ export interface FinderUIProps {
     onNavigateForward: () => void;
     onNavigateUp: () => void;
     onGoRoot: () => void;
-    onSetViewMode: (mode: 'list' | 'grid') => void;
+    onSetViewMode: (mode: 'list' | 'grid' | 'gallery') => void;
     onSetSort: (by: FinderSortKey) => void;
     onSearch: (term: string) => void;
     onSidebarAction: (action: string) => void;
@@ -112,8 +112,6 @@ const FINDER_VIEW_MENU_OPTIONS: FinderViewMenuOption[] = [
         key: 'gallery',
         label: 'Als Galerie',
         icon: '▦',
-        disabled: true,
-        subtitle: 'Platzhalter',
     },
 ];
 
@@ -175,7 +173,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
     }
 
     private normalizeViewMenuKey(mode: string): FinderViewMenuKey {
-        return mode === 'grid' ? 'grid' : 'list';
+        return mode === 'grid' ? 'grid' : mode === 'gallery' ? 'gallery' : 'list';
     }
 
     private toggleViewMenu(): void {
@@ -199,7 +197,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
     }
 
     private handleViewSelect(viewKey: FinderViewMenuKey): void {
-        if (viewKey !== 'list' && viewKey !== 'grid') return;
+        if (viewKey !== 'list' && viewKey !== 'grid' && viewKey !== 'gallery') return;
         this.props.onSetViewMode(viewKey);
         this.closeViewMenu();
     }

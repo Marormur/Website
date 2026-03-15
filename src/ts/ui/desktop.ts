@@ -26,12 +26,12 @@ export const DESKTOP_SHORTCUTS: DesktopShortcut[] = [
         labelKey: 'desktop.projects',
         fallbackLabel: 'Projekte',
         onOpen: () => {
+            // Öffne Finder und navigiere direkt zu GitHub Projekte
             if (window.FinderWindow?.focusOrCreate) {
                 window.FinderWindow.focusOrCreate();
             }
-            // Navigiere zum Projects-Ordner
             if (window.FinderSystem?.navigateTo) {
-                window.FinderSystem.navigateTo('projects');
+                window.FinderSystem.navigateTo([], 'github');
             }
         },
     },

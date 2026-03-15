@@ -29,7 +29,7 @@ import logger from '../../core/logger.js';
 
 const ROOT_FOLDER_NAME = 'Computer';
 
-type ViewMode = 'list' | 'grid';
+type ViewMode = 'list' | 'grid' | 'gallery';
 
 /** VFS event listener type, derived from the VirtualFS API for type safety. */
 type VFSListener = Parameters<typeof VirtualFS.addEventListener>[0];
@@ -89,6 +89,17 @@ interface RecentFile {
  */
 interface GitHubRepo {
     name: string;
+    description?: string | null;
+    language?: string | null;
+    stargazers_count?: number;
+    forks_count?: number;
+    watchers_count?: number;
+    open_issues_count?: number;
+    updated_at?: string;
+    homepage?: string | null;
+    html_url?: string;
+    private?: boolean;
+    default_branch?: string;
     [key: string]: unknown;
 }
 
@@ -100,7 +111,18 @@ interface GitHubContentItem {
     type: string;
     size?: number;
     git_url?: string;
+    path?: string;
+    download_url?: string | null;
+    html_url?: string;
+    encoding?: string;
+    content?: string;
     [key: string]: unknown;
+}
+
+interface GalleryReadmePreview {
+    title: string;
+    excerpt: string;
+    sourcePath?: string;
 }
 
 interface FinderViewContentState {
@@ -156,6 +178,8 @@ export class FinderView extends BaseTab {
     githubErrorMessage = '';
     githubLoading = false;
     lastGithubItemsMap: Map<string, any>;
+    private githubReadmePreviewCache: Map<string, GalleryReadmePreview | null> = new Map();
+    private githubReadmePreviewLoading: Set<string> = new Set();
     private githubLoadingInProgress = false; // Prevent recursive calls
 
     private ui!: FinderUI;
@@ -195,8 +219,16 @@ export class FinderView extends BaseTab {
         };
 
         // Tab-specific state (session restore) should override global Finder preferences.
-        if (contentState?.viewMode === 'list' || contentState?.viewMode === 'grid') {
+        if (
+            contentState?.viewMode === 'list' ||
+            contentState?.viewMode === 'grid' ||
+            contentState?.viewMode === 'gallery'
+        ) {
             this.viewMode = contentState.viewMode;
+        }
+        // Default github source to gallery view when no saved state
+        if (this.source === 'github' && !contentState?.viewMode) {
+            this.viewMode = 'gallery';
         }
         if (contentState?.sortBy) {
             this.sortBy = LEGACY_SORT_KEY_MAP[contentState.sortBy] || this.sortBy;
@@ -286,6 +318,7 @@ export class FinderView extends BaseTab {
             this.goRoot();
         } else if (action === 'github') {
             this.source = 'github';
+            this.viewMode = 'gallery'; // Switch to gallery view for GitHub source
             this._invalidateGithubViewState();
             const API = this.getAPI();
             if (API && typeof API.prefetchUserRepos === 'function') {
@@ -743,7 +776,11 @@ export class FinderView extends BaseTab {
         const sorted = this.source === 'recent' ? filtered : this.sortItems(filtered);
         this._renderedItems = sorted;
 
-        return this.viewMode === 'list' ? this.renderListView(sorted) : this.renderGridView(sorted);
+        return this.viewMode === 'list'
+            ? this.renderListView(sorted)
+            : this.viewMode === 'gallery'
+              ? this.renderGalleryView(sorted)
+              : this.renderGridView(sorted);
     }
 
     renderLoadingSkeleton(): VNode {
@@ -1024,6 +1061,337 @@ export class FinderView extends BaseTab {
                 );
             })
         );
+    }
+
+    /**
+     * PURPOSE: Renders the gallery view — large preview of selected item + horizontal strip of all items.
+     * WHY: Mirrors macOS Finder gallery view; default for GitHub source.
+     * INVARIANT: Always renders every item in the strip; preview shows first or selected item.
+     */
+    renderGalleryView(items: FileItem[]): VNode {
+        const focusedItem = this.getFocusedGalleryItem(items);
+
+        const previewNode: VNode = focusedItem
+            ? h(
+                  'div',
+                  { className: 'finder-gallery-preview' },
+                  h('div', { className: 'finder-gallery-preview-icon' }, focusedItem.icon || '📄'),
+                  h('div', { className: 'finder-gallery-preview-name' }, focusedItem.name),
+                  h(
+                      'div',
+                      { className: 'finder-gallery-preview-meta' },
+                      focusedItem.type === 'folder' ? 'Ordner' : this.formatSize(focusedItem.size)
+                  )
+              )
+            : h(
+                  'div',
+                  { className: 'finder-gallery-preview finder-gallery-preview--empty' },
+                  h('div', { className: 'finder-gallery-preview-icon' }, '🗂️'),
+                  h('div', { className: 'finder-gallery-preview-name' }, 'Keine Elemente')
+              );
+
+        const infoPanelNode = this.renderGalleryInfoPanel(focusedItem);
+
+        const stripItems = items.map(item => {
+            const isFocused = item.name === focusedItem?.name;
+            return h(
+                'button',
+                {
+                    key: item.name,
+                    className: `finder-gallery-strip-item${isFocused ? ' is-active' : ''}`,
+                    'data-item-name': item.name,
+                    'data-item-type': item.type,
+                    'aria-pressed': String(isFocused),
+                    onclick: (e: MouseEvent) => {
+                        e.stopPropagation();
+                        this._selectItem(item.name);
+                        this._renderAll(); // Gallery needs full re-render to update preview
+                    },
+                    ondblclick: (e: MouseEvent) => {
+                        e.stopPropagation();
+                        void this.openItem(item.name, item.type);
+                    },
+                },
+                h('span', { className: 'finder-gallery-strip-icon' }, item.icon || ''),
+                h('span', { className: 'finder-gallery-strip-name' }, item.name)
+            );
+        });
+
+        return h(
+            'div',
+            { className: 'finder-gallery-container', 'data-finder-content': 'gallery' },
+            h('div', { className: 'finder-gallery-main' }, previewNode, infoPanelNode),
+            h(
+                'div',
+                { className: 'finder-gallery-strip' },
+                h('div', { className: 'finder-gallery-strip-inner' }, ...stripItems)
+            )
+        );
+    }
+
+    private getFocusedGalleryItem(items: FileItem[]): FileItem | null {
+        const focusedName =
+            this.selectedItems.size > 0
+                ? Array.from(this.selectedItems)[0]!
+                : (items[0]?.name ?? null);
+        return focusedName
+            ? (items.find(item => item.name === focusedName) ?? items[0] ?? null)
+            : (items[0] ?? null);
+    }
+
+    private renderGalleryInfoPanel(focusedItem: FileItem | null): VNode {
+        if (!focusedItem) {
+            return h(
+                'aside',
+                { className: 'finder-gallery-info-panel' },
+                h('div', { className: 'finder-gallery-info-empty' }, 'Keine Auswahl')
+            );
+        }
+
+        const infoRows = this.getGalleryInfoRows(focusedItem);
+        const repo = this.getGitHubRepoForItem(focusedItem);
+        const readmePreview = repo ? this.getGithubReadmePreview(repo) : null;
+
+        return h(
+            'aside',
+            { className: 'finder-gallery-info-panel' },
+            h(
+                'div',
+                { className: 'finder-gallery-info-header' },
+                h('div', { className: 'finder-gallery-info-icon' }, focusedItem.icon || '📄'),
+                h(
+                    'div',
+                    { className: 'finder-gallery-info-title-wrap' },
+                    h('div', { className: 'finder-gallery-info-title' }, focusedItem.name),
+                    h(
+                        'div',
+                        { className: 'finder-gallery-info-subtitle' },
+                        repo?.description || (focusedItem.type === 'folder' ? 'Ordner' : 'Datei')
+                    )
+                )
+            ),
+            h(
+                'section',
+                { className: 'finder-gallery-info-section' },
+                h('h3', { className: 'finder-gallery-info-section-title' }, 'Informationen'),
+                h(
+                    'dl',
+                    { className: 'finder-gallery-info-list' },
+                    ...infoRows.flatMap(row => [
+                        h('dt', { className: 'finder-gallery-info-label' }, row.label),
+                        h('dd', { className: 'finder-gallery-info-value' }, row.value),
+                    ])
+                )
+            ),
+            ...(repo
+                ? [
+                      h(
+                          'section',
+                          { className: 'finder-gallery-info-section' },
+                          h('h3', { className: 'finder-gallery-info-section-title' }, 'README'),
+                          h(
+                              'div',
+                              { className: 'finder-gallery-readme-card' },
+                              h(
+                                  'div',
+                                  { className: 'finder-gallery-readme-title' },
+                                  readmePreview?.title || 'README'
+                              ),
+                              h(
+                                  'p',
+                                  { className: 'finder-gallery-readme-excerpt' },
+                                  this.githubReadmePreviewLoading.has(repo.name)
+                                      ? 'README wird geladen...'
+                                      : readmePreview?.excerpt || 'Keine README-Vorschau verfugbar.'
+                              )
+                          )
+                      ),
+                  ]
+                : [])
+        );
+    }
+
+    private getGalleryInfoRows(item: FileItem): Array<{
+        label: string;
+        value: string;
+    }> {
+        const repo = this.getGitHubRepoForItem(item);
+        if (repo) {
+            return [
+                { label: 'Typ', value: 'GitHub-Projekt' },
+                { label: 'Sprache', value: repo.language || 'Unbekannt' },
+                { label: 'Sterne', value: String(repo.stargazers_count ?? 0) },
+                { label: 'Forks', value: String(repo.forks_count ?? 0) },
+                { label: 'Issues', value: String(repo.open_issues_count ?? 0) },
+                {
+                    label: 'Aktualisiert',
+                    value: repo.updated_at ? this.formatDate(repo.updated_at) : 'Unbekannt',
+                },
+                {
+                    label: 'Sichtbarkeit',
+                    value: repo.private ? 'Privat' : 'Offentlich',
+                },
+                { label: 'Branch', value: repo.default_branch || 'main' },
+            ];
+        }
+
+        const githubItem = this.source === 'github' ? this.lastGithubItemsMap.get(item.name) : null;
+        const pathValue =
+            item.path ||
+            (this.currentPath.length > 0 ? [...this.currentPath, item.name].join('/') : item.name);
+
+        return [
+            { label: 'Typ', value: item.type === 'folder' ? 'Ordner' : 'Datei' },
+            { label: 'Name', value: item.name },
+            { label: 'Pfad', value: pathValue || '-' },
+            {
+                label: 'Grosse',
+                value: item.type === 'folder' ? '-' : this.formatSize(item.size),
+            },
+            {
+                label: 'Geandert',
+                value: item.modified ? this.formatDate(item.modified) : 'Unbekannt',
+            },
+            {
+                label: 'Quelle',
+                value:
+                    this.source === 'github'
+                        ? 'GitHub'
+                        : this.source === 'recent'
+                          ? 'Zuletzt verwendet'
+                          : this.source === 'starred'
+                            ? 'Favoriten'
+                            : 'Computer',
+            },
+            {
+                label: 'Download',
+                value: githubItem?.download_url ? 'Verfugbar' : 'Nicht verfugbar',
+            },
+        ];
+    }
+
+    private getGitHubRepoForItem(item: FileItem): GitHubRepo | null {
+        if (this.source !== 'github' || this.currentPath.length !== 0 || item.type !== 'folder') {
+            return null;
+        }
+        const cachedRepo = this.lastGithubItemsMap.get(item.name);
+        if (cachedRepo && typeof cachedRepo === 'object' && 'stargazers_count' in cachedRepo) {
+            return cachedRepo as GitHubRepo;
+        }
+        return this.githubRepos.find(repo => repo.name === item.name) ?? null;
+    }
+
+    private getGithubReadmePreview(repo: GitHubRepo): GalleryReadmePreview | null {
+        const cached = this.githubReadmePreviewCache.get(repo.name);
+        if (cached !== undefined) {
+            return cached;
+        }
+        this.ensureGithubReadmePreview(repo.name);
+        return null;
+    }
+
+    private ensureGithubReadmePreview(repoName: string): void {
+        if (
+            this.githubReadmePreviewCache.has(repoName) ||
+            this.githubReadmePreviewLoading.has(repoName)
+        ) {
+            return;
+        }
+
+        const API = this.getAPI();
+        const username = this.getGithubUsername();
+        const fetchRepoContents = API?.fetchRepoContents;
+        if (!fetchRepoContents) {
+            this.githubReadmePreviewCache.set(repoName, null);
+            return;
+        }
+
+        this.githubReadmePreviewLoading.add(repoName);
+        void fetchRepoContents(username, repoName)
+            .then(async result => {
+                const items = Array.isArray(result) ? (result as GitHubContentItem[]) : [];
+                const readmeItem = items.find(item => /^readme(\.[^.]+)?$/i.test(item.name));
+                if (!readmeItem) {
+                    this.githubReadmePreviewCache.set(repoName, null);
+                    return;
+                }
+
+                let text: string | null = null;
+                if (typeof readmeItem.download_url === 'string' && readmeItem.download_url) {
+                    try {
+                        const response = await fetch(readmeItem.download_url);
+                        text = response.ok ? await response.text() : null;
+                    } catch {
+                        text = null;
+                    }
+                }
+
+                if (!text && readmeItem.path) {
+                    try {
+                        const payload = (await fetchRepoContents(
+                            username,
+                            repoName,
+                            readmeItem.path
+                        )) as GitHubContentItem;
+                        text = this.decodeGitHubTextFile(payload);
+                    } catch {
+                        text = null;
+                    }
+                }
+
+                this.githubReadmePreviewCache.set(
+                    repoName,
+                    text ? this.createReadmePreview(readmeItem.name, text) : null
+                );
+            })
+            .catch(() => {
+                this.githubReadmePreviewCache.set(repoName, null);
+            })
+            .finally(() => {
+                this.githubReadmePreviewLoading.delete(repoName);
+                this._renderAll();
+            });
+    }
+
+    private decodeGitHubTextFile(payload: GitHubContentItem | null | undefined): string | null {
+        if (!payload || typeof payload !== 'object') {
+            return null;
+        }
+        if (typeof payload.content === 'string' && payload.encoding === 'base64') {
+            try {
+                return atob(payload.content.replace(/\n/g, ''));
+            } catch {
+                return null;
+            }
+        }
+        return typeof payload.content === 'string' ? payload.content : null;
+    }
+
+    private createReadmePreview(fileName: string, markdown: string): GalleryReadmePreview {
+        const plainText = this.stripMarkdown(markdown)
+            .split(/\n+/)
+            .map(line => line.trim())
+            .filter(Boolean);
+        const titleLine = plainText[0] || fileName;
+        const excerpt = plainText.slice(1).join(' ').slice(0, 420).trim();
+        return {
+            title: titleLine,
+            excerpt: excerpt || 'README vorhanden, aber ohne zusammenfassenden Text.',
+            sourcePath: fileName,
+        };
+    }
+
+    private stripMarkdown(value: string): string {
+        return value
+            .replace(/```[\s\S]*?```/g, ' ')
+            .replace(/`([^`]+)`/g, '$1')
+            .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+            .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+            .replace(/^#{1,6}\s+/gm, '')
+            .replace(/^>\s?/gm, '')
+            .replace(/[*_~]/g, '')
+            .replace(/\r/g, '')
+            .trim();
     }
 
     formatSize(size?: number): string {
@@ -1675,7 +2043,12 @@ export class FinderView extends BaseTab {
                 sortOrder?: unknown;
             };
 
-            const viewMode = parsed.viewMode === 'grid' ? 'grid' : 'list';
+            const viewMode =
+                parsed.viewMode === 'grid'
+                    ? 'grid'
+                    : parsed.viewMode === 'gallery'
+                      ? 'gallery'
+                      : 'list';
             const sortBy =
                 typeof parsed.sortBy === 'string'
                     ? LEGACY_SORT_KEY_MAP[parsed.sortBy] || defaults.sortBy
@@ -1982,7 +2355,9 @@ export class FinderView extends BaseTab {
             : [];
         const viewModeFromState = state['viewMode'];
         view.viewMode =
-            viewModeFromState === 'list' || viewModeFromState === 'grid'
+            viewModeFromState === 'list' ||
+            viewModeFromState === 'grid' ||
+            viewModeFromState === 'gallery'
                 ? viewModeFromState
                 : 'list';
         const restoredSortBy =
@@ -2052,7 +2427,7 @@ export class FinderView extends BaseTab {
         this.githubRepos = Array.isArray(repos) ? repos : [];
         const items = this._transformRepoItems(this.githubRepos);
         this.lastGithubItemsMap.clear();
-        items.forEach(it => this.lastGithubItemsMap.set(it.name, it));
+        this.githubRepos.forEach(repo => this.lastGithubItemsMap.set(repo.name, repo));
         this._renderedItems = items;
         // Trigger a focused re-render instead of full _renderAll() to prevent recursion
         if (this.ui) {

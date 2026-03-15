@@ -342,3 +342,93 @@ export class FinderWindow extends BaseWindow {
 }
 
 window.FinderWindow = FinderWindow;
+
+/**
+ * FinderSystem shim – re-exposes the legacy FinderSystemAPI global that
+ * context-menu.ts, desktop.ts and other callers rely on after finder.ts
+ * was deprecated. All operations delegate to the active FinderWindow tab.
+ *
+ * PURPOSE: Preserve backward-compatible global API without reintroducing
+ *          the monolithic finder.ts.
+ * DEPENDENCY: Must run after window.FinderWindow is set. Callers guard with
+ *             `window.FinderSystem &&` so it's safe to initialise lazily here.
+ */
+function _getActiveFV(): Record<string, unknown> | null {
+    if (!window.WindowRegistry) return null;
+    const wins = (window.WindowRegistry.getWindowsByType?.('finder') ?? []) as FinderWindow[];
+    if (wins.length === 0) return null;
+    // Pick the window with the highest z-index (most recently focused)
+    const win = wins.reduce((a, b) => (a.zIndex >= b.zIndex ? a : b));
+    const tab = win.activeTabId ? win.tabs.get(win.activeTabId) : null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return tab ? (tab as any) : null;
+}
+
+window.FinderSystem = {
+    init(): void {},
+    openFinder(): void {
+        FinderWindow.focusOrCreate();
+    },
+    closeFinder(): void {
+        if (!window.WindowRegistry) return;
+        (window.WindowRegistry.getWindowsByType?.('finder') ?? []).forEach((w: unknown) =>
+            (w as { close?: () => void }).close?.()
+        );
+    },
+    /** Navigate to a path/view. Pass view='github' to open GitHub Projekte in gallery mode. */
+    navigateTo(path: string[] | string, view?: CurrentView | null): void {
+        const fv = _getActiveFV();
+        if (!fv) return;
+        if (view === 'github') {
+            fv['source'] = 'github';
+            (fv['setViewMode'] as ((m: string) => void) | undefined)?.('gallery');
+            (fv['goRoot'] as () => void)?.();
+            return;
+        }
+        fv['source'] = 'computer';
+        const parts = Array.isArray(path)
+            ? (path as string[])
+            : path
+              ? String(path).split('/').filter(Boolean)
+              : [];
+        (fv['navigateToPath'] as (p: string[]) => void)?.(parts);
+    },
+    navigateUp(): void {
+        (_getActiveFV()?.['navigateUp'] as (() => void) | undefined)?.();
+    },
+    navigateToFolder(folderName: string): void {
+        (_getActiveFV()?.['navigateToFolder'] as ((n: string) => void) | undefined)?.(folderName);
+    },
+    openItem(name: string, type: string): void {
+        void (
+            _getActiveFV()?.['openItem'] as ((n: string, t: string) => Promise<void>) | undefined
+        )?.(name, type);
+    },
+    setSortBy(field: 'name' | 'date' | 'size' | 'type'): void {
+        const keyMap: Record<string, string> = {
+            name: 'name',
+            date: 'dateModified',
+            size: 'size',
+            type: 'type',
+        };
+        (_getActiveFV()?.['setSortBy'] as ((k: string) => void) | undefined)?.(
+            keyMap[field] ?? 'name'
+        );
+    },
+    setViewMode(mode: 'list' | 'grid' | 'columns' | 'gallery'): void {
+        const normalized = mode === 'columns' ? 'list' : mode;
+        (_getActiveFV()?.['setViewMode'] as ((m: string) => void) | undefined)?.(normalized);
+    },
+    toggleFavorite(path: string): void {
+        (_getActiveFV()?.['toggleFavorite'] as ((p: string) => void) | undefined)?.(path);
+    },
+    getState() {
+        const fv = _getActiveFV();
+        if (!fv) return null;
+        return {
+            currentPath: fv['currentPath'] as string[],
+            currentView: fv['source'] as CurrentView,
+            viewMode: fv['viewMode'] as 'list' | 'grid',
+        };
+    },
+};

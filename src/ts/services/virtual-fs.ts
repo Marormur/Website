@@ -457,8 +457,8 @@ class VirtualFileSystemManager {
                                         type: 'file',
                                         icon: '📝',
                                         content:
-                                            '# Welcome to your home directory\n\nThis is your personal space in the virtual file system.\n\n## Structure\n- Documents: Store your text files and documents\n- Downloads: Temporary download location\n- Pictures: Image files\n- Projects: Your code projects\n',
-                                        size: 248,
+                                            '# Welcome to your home directory\n\nThis is your personal space in the virtual file system.\n\n## Structure\n- Documents: Store your text files and documents\n- Downloads: Temporary download location\n- Pictures: Image files\n',
+                                        size: 200,
                                         created: now,
                                         modified: now,
                                     },
@@ -497,13 +497,6 @@ class VirtualFileSystemManager {
                                     Pictures: {
                                         type: 'folder',
                                         icon: '🖼️',
-                                        created: now,
-                                        modified: now,
-                                        children: {},
-                                    },
-                                    Projects: {
-                                        type: 'folder',
-                                        icon: '💼',
                                         created: now,
                                         modified: now,
                                         children: {},

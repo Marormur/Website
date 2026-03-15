@@ -3466,6 +3466,325 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
     padding: 2rem;
 }
 /* ============================================================================
+ * Gallery View
+ * ============================================================================ */
+
+.finder-gallery-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.finder-gallery-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(220px, 32%, 320px);
+    flex: 1;
+    min-height: 0;
+}
+
+.finder-gallery-preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    min-height: 0;
+    border-right: 1px solid #e5e7eb;
+}
+
+.finder-gallery-preview--empty {
+    opacity: 0.4;
+}
+
+.dark .finder-gallery-preview {
+    border-right-color: #374151;
+}
+
+.finder-gallery-preview-icon {
+    font-size: 5rem;
+    line-height: 1;
+    margin-bottom: 1rem;
+    user-select: none;
+}
+
+.finder-gallery-preview-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    text-align: center;
+    max-width: 20rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dark .finder-gallery-preview-name {
+    color: #f9fafb;
+}
+
+.finder-gallery-preview-meta {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.375rem;
+}
+
+.dark .finder-gallery-preview-meta {
+    color: #9ca3af;
+}
+
+.finder-gallery-info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 0;
+    padding: 1.25rem 1rem 1rem;
+    overflow-y: auto;
+    background: rgba(249, 250, 251, 0.55);
+}
+
+.dark .finder-gallery-info-panel {
+    background: rgba(17, 24, 39, 0.45);
+}
+
+.finder-gallery-info-empty {
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.dark .finder-gallery-info-empty {
+    color: #9ca3af;
+}
+
+.finder-gallery-info-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+}
+
+.finder-gallery-info-icon {
+    font-size: 2.25rem;
+    line-height: 1;
+    user-select: none;
+}
+
+.finder-gallery-info-title-wrap {
+    min-width: 0;
+}
+
+.finder-gallery-info-title {
+    color: #111827;
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dark .finder-gallery-info-title {
+    color: #f9fafb;
+}
+
+.finder-gallery-info-subtitle {
+    margin-top: 0.25rem;
+    color: #6b7280;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.dark .finder-gallery-info-subtitle {
+    color: #9ca3af;
+}
+
+.finder-gallery-info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.finder-gallery-info-section-title {
+    margin: 0;
+    color: #111827;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.dark .finder-gallery-info-section-title {
+    color: #f3f4f6;
+}
+
+.finder-gallery-info-list {
+    display: grid;
+    grid-template-columns: minmax(0, 92px) minmax(0, 1fr);
+    gap: 0.45rem 0.75rem;
+    margin: 0;
+}
+
+.finder-gallery-info-label {
+    color: #6b7280;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.dark .finder-gallery-info-label {
+    color: #9ca3af;
+}
+
+.finder-gallery-info-value {
+    margin: 0;
+    color: #111827;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.dark .finder-gallery-info-value {
+    color: #e5e7eb;
+}
+
+.finder-gallery-readme-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.875rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.dark .finder-gallery-readme-card {
+    border-color: #374151;
+    background: rgba(31, 41, 55, 0.78);
+}
+
+.finder-gallery-readme-title {
+    color: #111827;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.dark .finder-gallery-readme-title {
+    color: #f9fafb;
+}
+
+.finder-gallery-readme-excerpt {
+    margin: 0;
+    color: #374151;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 9;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.dark .finder-gallery-readme-excerpt {
+    color: #d1d5db;
+}
+
+.finder-gallery-strip {
+    flex-shrink: 0;
+    border-top: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    height: 96px;
+}
+
+.dark .finder-gallery-strip {
+    border-top-color: #374151;
+    background-color: #1f2937;
+}
+
+.finder-gallery-strip-inner {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 100%;
+    padding: 6px 8px;
+    scrollbar-width: thin;
+}
+
+.finder-gallery-strip-inner::-webkit-scrollbar {
+    height: 4px;
+}
+
+.finder-gallery-strip-inner::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.15);
+    border-radius: 2px;
+}
+
+.finder-gallery-strip-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 3px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    min-width: 64px;
+    max-width: 80px;
+    border: 1px solid transparent;
+    background: none;
+    transition: background-color 0.1s ease;
+}
+
+.finder-gallery-strip-item:hover:not(.is-active) {
+    background-color: #f3f4f6;
+}
+
+.dark .finder-gallery-strip-item:hover:not(.is-active) {
+    background-color: rgba(55, 65, 81, 0.5);
+}
+
+.finder-gallery-strip-item.is-active {
+    background-color: #dbeafe;
+    border-color: #93c5fd;
+}
+
+.dark .finder-gallery-strip-item.is-active {
+    background-color: rgba(30, 58, 138, 0.5);
+    border-color: #1d4ed8;
+}
+
+.finder-gallery-strip-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+    user-select: none;
+}
+
+.finder-gallery-strip-name {
+    font-size: 0.6875rem;
+    color: #374151;
+    text-align: center;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dark .finder-gallery-strip-name {
+    color: #d1d5db;
+}
+
+@media (max-width: 520px) {
+    .finder-gallery-main {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .finder-gallery-preview {
+        border-right: 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .dark .finder-gallery-preview {
+        border-bottom-color: #374151;
+    }
+}
+
+/* ============================================================================
  * Launchpad Styles
  * ============================================================================ */
 
