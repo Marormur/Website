@@ -25,6 +25,17 @@ import logger from '../core/logger.js';
     const FINDER_STATE_KEY = (APP_CONSTANTS.FINDER_STATE_STORAGE_KEY as string) || 'finderState';
     const OPEN_MODALS_KEY = 'openModals';
     const MODAL_POSITIONS_KEY = 'modalPositions';
+    const MULTI_WINDOW_SESSION_KEY = 'multi-window-session';
+
+    // Legacy modal IDs that conflict with the multi-window restore pipeline.
+    // If a multi-window session exists, these IDs must not be restored from openModals.
+    const MULTI_WINDOW_CONFLICT_MODAL_IDS = new Set<string>([
+        'finder-modal',
+        'terminal-modal',
+        'text-modal',
+        'settings-modal',
+        'image-modal',
+    ]);
 
     const getModalIds = (): string[] => {
         const ac = (w.APP_CONSTANTS as Record<string, unknown> | undefined) || undefined;
@@ -103,6 +114,18 @@ import logger from '../core/logger.js';
 
     function restoreOpenModals(): void {
         const transientModalIds = getTransientModalIds();
+        let hasMultiWindowSession = false;
+
+        // Detect whether the modern multi-window restore should be the single source of truth.
+        try {
+            const rawMultiSession = getString(MULTI_WINDOW_SESSION_KEY);
+            if (rawMultiSession) {
+                const parsed = JSON.parse(rawMultiSession) as { windows?: unknown[] };
+                hasMultiWindowSession = Array.isArray(parsed.windows) && parsed.windows.length > 0;
+            }
+        } catch {
+            hasMultiWindowSession = false;
+        }
 
         // Collect targets from modern key (OPEN_MODALS_KEY) and legacy 'window-session'
         const toRestore = new Set<string>();
@@ -136,9 +159,18 @@ import logger from '../core/logger.js';
             logger.warn('STORAGE', 'Legacy window-session konnte nicht gelesen werden:', err);
         }
 
+        const removedConflictingIds: string[] = [];
+
         toRestore.forEach(id => {
             // Skip transient modals
             if (transientModalIds.has(id)) return;
+
+            // Multi-window restore owns app window restoration.
+            // Prevent stale legacy modal entries from reopening windows unexpectedly.
+            if (hasMultiWindowSession && MULTI_WINDOW_CONFLICT_MODAL_IDS.has(id)) {
+                removedConflictingIds.push(id);
+                return;
+            }
 
             // Validate modal exists in DOM
             const el = document.getElementById(id);
@@ -243,6 +275,23 @@ import logger from '../core/logger.js';
                 }
             }
         });
+
+        // Persist cleanup so stale legacy entries stop reappearing on each reload.
+        if (removedConflictingIds.length > 0) {
+            try {
+                const current = getJSON<string[]>(OPEN_MODALS_KEY, []);
+                if (Array.isArray(current)) {
+                    const cleaned = current.filter(id => !removedConflictingIds.includes(id));
+                    setJSON(OPEN_MODALS_KEY, cleaned);
+                }
+                logger.info(
+                    'STORAGE',
+                    `[StorageSystem] Ignored legacy openModals entries (multi-window active): ${removedConflictingIds.join(', ')}`
+                );
+            } catch (err) {
+                logger.warn('STORAGE', 'Failed to clean conflicting openModals entries:', err);
+            }
+        }
 
         // Update dock indicators and program label (if available)
         const updateDockIndicators = w['updateDockIndicators'] as (() => void) | undefined;

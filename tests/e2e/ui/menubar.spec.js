@@ -9,6 +9,7 @@ const {
     clickDockIcon,
     expectMenuButton,
     expectMenuItem,
+    openSettingsViaAppleMenu,
 } = require('../utils');
 
 test.describe('Menubar switches with active window (de-DE)', () => {
@@ -73,5 +74,23 @@ test.describe('Menubar switches with active window (de-DE)', () => {
         await expectMenuButton(page, 'Ablage');
         await expectMenuButton(page, 'Fenster');
         await expectMenuButton(page, 'Hilfe');
+    });
+
+    test('Switch from Terminal to Settings updates menubar context correctly', async ({ page }) => {
+        await clickDockIcon(page, 'terminal-modal');
+
+        const terminalButton = page.locator('#program-label').filter({ hasText: /Terminal/i });
+        await expect(terminalButton).toBeVisible({ timeout: 10000 });
+        await expectMenuButton(page, 'Bearbeiten');
+
+        await openSettingsViaAppleMenu(page, 'Systemeinstellungen');
+
+        const settingsButton = page
+            .locator('#program-label')
+            .filter({ hasText: /Systemeinstellungen|Settings/i });
+        await expect(settingsButton).toBeVisible({ timeout: 10000 });
+
+        // Settings menu should be active, not the Terminal menu.
+        await expectMenuButton(page, 'Darstellung');
     });
 });

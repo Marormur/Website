@@ -76,6 +76,75 @@ test.describe('Storage Modal Restore @basic', () => {
         expect(errors).toHaveLength(0);
     });
 
+    test('should ignore conflicting legacy openModals when multi-window session exists', async ({
+        page,
+    }) => {
+        const result = await page.evaluate(() => {
+            localStorage.setItem('openModals', JSON.stringify(['settings-modal']));
+
+            localStorage.setItem(
+                'multi-window-session',
+                JSON.stringify({
+                    version: '1.0.0',
+                    timestamp: Date.now(),
+                    windows: [
+                        {
+                            id: 'window-terminal-restore-test',
+                            type: 'terminal',
+                            position: { x: 120, y: 120, width: 800, height: 600 },
+                            zIndex: 1000,
+                            isMinimized: false,
+                            isMaximized: false,
+                            activeTabId: 'tab-terminal-restore-test',
+                            tabs: [
+                                {
+                                    id: 'tab-terminal-restore-test',
+                                    type: 'terminal-session',
+                                    title: 'Terminal 1',
+                                    contentState: {},
+                                    created: Date.now(),
+                                    modified: Date.now(),
+                                    currentPath: '/home/marvin',
+                                    commandHistory: [],
+                                    vfsCwd: '/home/marvin',
+                                },
+                            ],
+                            metadata: {},
+                        },
+                    ],
+                    metadata: { theme: 'auto', language: 'de' },
+                })
+            );
+
+            const el = document.getElementById('settings-modal');
+            if (el) {
+                el.classList.add('hidden');
+            }
+
+            window.StorageSystem?.restoreOpenModals?.();
+
+            const savedOpenModals = JSON.parse(localStorage.getItem('openModals') || '[]');
+
+            if (!el) {
+                return {
+                    exists: false,
+                    hidden: true,
+                    savedOpenModals,
+                };
+            }
+
+            return {
+                exists: true,
+                hidden: el.classList.contains('hidden') || getComputedStyle(el).display === 'none',
+                savedOpenModals,
+            };
+        });
+
+        expect(result.exists).toBe(true);
+        expect(result.hidden).toBe(true);
+        expect(result.savedOpenModals).not.toContain('settings-modal');
+    });
+
     test('should restore valid modals without errors', async ({ page }) => {
         // Open a valid modal
         await page.goto('http://127.0.0.1:5173/index.html');

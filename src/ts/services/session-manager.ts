@@ -51,11 +51,23 @@ logger.debug('SESSION', 'SessionManager loaded');
         immediate?: boolean; // Skip debounce and save immediately
     };
 
+    type RestoreOptions = {
+        includeModernAppTypes?: boolean;
+    };
+
     // ===== Constants =====
     const SESSION_STORAGE_KEY = 'windowInstancesSession';
     const SESSION_VERSION = '1.0';
     const DEFAULT_DEBOUNCE_MS = 750; // Conservative default
     const MAX_STORAGE_SIZE = 5 * 1024 * 1024; // 5MB conservative limit (most browsers allow 5-10MB)
+    // Transitional compatibility list: these app types are restored by MultiWindowSessionManager.
+    // SessionManager keeps only a filtered fallback role until legacy restore is retired.
+    const MODERN_MULTI_WINDOW_INSTANCE_TYPES = new Set([
+        'terminal',
+        'text-editor',
+        'finder',
+        'photos',
+    ]);
 
     // ===== Module Variables =====
     let saveTimer: number | null = null;
@@ -364,7 +376,7 @@ logger.debug('SESSION', 'SessionManager loaded');
      *
      * @returns `true` if a valid session was found and restored, `false` otherwise.
      */
-    function restoreSession(): boolean {
+    function restoreSession(options: RestoreOptions = {}): boolean {
         const perf = (
             window as {
                 PerfMonitor?: {
@@ -408,6 +420,16 @@ logger.debug('SESSION', 'SessionManager loaded');
         // Process all types synchronously but prepare for parallel optimization
         // The actual parallelization happens within deserializeAll implementations
         Object.entries(session.instances).forEach(([type, instances]) => {
+            const includeModernAppTypes = options.includeModernAppTypes === true;
+            if (!includeModernAppTypes && MODERN_MULTI_WINDOW_INSTANCE_TYPES.has(type)) {
+                // TODO(legacy-restore-migration): Remove this branch once legacy restore path is fully removed.
+                logger.debug(
+                    'SESSION',
+                    `SessionManager: Skipping modern app type "${type}" during legacy restore`
+                );
+                return;
+            }
+
             const manager = managers.get(type);
             if (!manager) {
                 logger.warn('SESSION', `SessionManager: No manager found for type "${type}"`);

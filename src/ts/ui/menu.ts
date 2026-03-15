@@ -951,9 +951,24 @@ export function renderApplicationMenu(activeModalId?: string | null) {
     // Detect active window type from WindowRegistry to switch menu dynamically
     const registry = window.WindowRegistry;
     const activeType = registry?.getActiveWindow?.()?.type;
-    // If a Terminal window is focused but no explicit terminal-modal passed, force terminal modal key
-    if (activeType === 'terminal' && activeModalId !== 'terminal-modal') {
-        activeModalId = 'terminal-modal';
+    const hasExplicitModalId = typeof activeModalId === 'string' && activeModalId.length > 0;
+    const isMultiWindowModalId =
+        hasExplicitModalId &&
+        typeof activeModalId === 'string' &&
+        activeModalId.startsWith('window-');
+
+    // Map multi-window modal IDs (or missing modal IDs) to legacy menu keys.
+    // IMPORTANT: Do not override explicit legacy modal contexts like settings/about.
+    if ((!hasExplicitModalId || isMultiWindowModalId) && activeType) {
+        if (activeType === 'terminal') {
+            activeModalId = 'terminal-modal';
+        } else if (activeType === 'finder') {
+            activeModalId = 'projects-modal';
+        } else if (activeType === 'text-editor') {
+            activeModalId = 'text-modal';
+        } else if (activeType === 'photos') {
+            activeModalId = 'image-modal';
+        }
     }
     const modalKey = activeModalId && menuDefinitions[activeModalId] ? activeModalId : 'default';
     const builder = menuDefinitions[modalKey] || menuDefinitions.default;

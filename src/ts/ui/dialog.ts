@@ -310,6 +310,12 @@ export class Dialog {
         // and reassigns z-indexes to prevent reaching the maximum
         const zIndexManager = getZIndexManager();
         zIndexManager.bringToFront(this.modal.id, this.modal, this.windowEl);
+
+        // Legacy modals (settings/about/etc.) are not represented as BaseWindow instances.
+        // Clear active multi-window selection so menu/focus logic follows the actual top modal.
+        if (this.modalId && !this.modalId.startsWith('window-')) {
+            window.WindowRegistry?.setActiveWindow?.(null);
+        }
     }
 
     refocus() {

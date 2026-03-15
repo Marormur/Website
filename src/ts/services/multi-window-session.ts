@@ -332,6 +332,8 @@ class MultiWindowSessionManager {
                     '[MultiWindowSessionManager] Found session data, parsing...'
                 );
                 const session = JSON.parse(sessionData) as MultiWindowSession;
+                const hasRestorableWindows =
+                    Array.isArray(session.windows) && session.windows.length > 0;
                 logger.debug('SESSION', '[MultiWindowSessionManager] Session parsed:', {
                     windows: session.windows.length,
                     windowTypes: session.windows.map(w => w.type),
@@ -343,7 +345,7 @@ class MultiWindowSessionManager {
                     'SESSION',
                     '[MultiWindowSessionManager] Session restored successfully'
                 );
-                return true;
+                return hasRestorableWindows;
             }
 
             // Try to load legacy v1 session (multiWindowSession_v1)
@@ -358,13 +360,15 @@ class MultiWindowSessionManager {
                 const rawSession = JSON.parse(legacyV1Data);
                 // Normalize legacy format to current format
                 const session = this.normalizeLegacyV1Session(rawSession) as MultiWindowSession;
+                const hasRestorableWindows =
+                    Array.isArray(session.windows) && session.windows.length > 0;
                 // Apply path migration
                 this.migrateSessionPaths(session);
                 await this.restoreMultiWindowSession(session);
                 // Clear legacy key and save in new format
                 localStorage.removeItem(MultiWindowSessionManager.LEGACY_STORAGE_KEY_V1);
                 this.saveSessionImmediate();
-                return true;
+                return hasRestorableWindows;
             }
 
             // Try to migrate legacy session
@@ -429,6 +433,8 @@ class MultiWindowSessionManager {
             await this.restoreWindow(windowData);
         }
 
+        this.finalizeRestoredWindowFocus();
+
         // Restore metadata (theme, language, etc.)
         if (session.metadata) {
             this.restoreMetadata(session.metadata);
@@ -439,6 +445,31 @@ class MultiWindowSessionManager {
         // If we filtered out windows, save the cleaned session
         // Update dock indicators after session restore
         window.updateDockIndicators?.();
+        window.updateProgramLabelByTopModal?.();
+    }
+
+    /**
+     * Ensure WindowRegistry active window points to the highest visible, non-minimized window
+     * after restore. This prevents stale focus state when some restored windows are minimized.
+     */
+    private finalizeRestoredWindowFocus(): void {
+        const windows = WindowRegistry.getAllWindows();
+        if (!windows.length) {
+            WindowRegistry.setActiveWindow(null);
+            return;
+        }
+
+        const candidates = windows.filter(win => {
+            if (win.isMinimized) return false;
+            if (!win.element) return false;
+            return !win.element.classList.contains('hidden');
+        });
+
+        const top = (candidates.length ? candidates : windows).reduce((best, current) => {
+            return current.zIndex > best.zIndex ? current : best;
+        });
+
+        WindowRegistry.setActiveWindow(top?.id || null);
     }
 
     /**
@@ -483,31 +514,28 @@ class MultiWindowSessionManager {
                 (window as any)._renderTabs();
             }
 
-            // Apply window state after DOM is ready
-            setTimeout(() => {
-                if (window.element) {
-                    window.element.style.zIndex = String(data.zIndex);
-                    // CRITICAL: Also update the instance variable to match DOM
-                    // Without this, getTopWindow() fallback will return wrong window
-                    window.zIndex = data.zIndex;
+            if (window.element) {
+                window.element.style.zIndex = String(data.zIndex);
+                // CRITICAL: Also update the instance variable to match DOM
+                // Without this, getTopWindow() fallback will return wrong window
+                window.zIndex = data.zIndex;
 
-                    // Restore position
-                    if (data.position && !data.isMaximized) {
-                        window.element.style.left = `${data.position.x}px`;
-                        window.element.style.top = `${data.position.y}px`;
-                        window.element.style.width = `${data.position.width}px`;
-                        window.element.style.height = `${data.position.height}px`;
-                        // Update internal position tracking
-                        window.position = { ...data.position };
-                    }
-
-                    if (data.isMinimized) {
-                        window.minimize();
-                    } else if (data.isMaximized && !window.isMaximized) {
-                        window.toggleMaximize();
-                    }
+                // Restore position
+                if (data.position && !data.isMaximized) {
+                    window.element.style.left = `${data.position.x}px`;
+                    window.element.style.top = `${data.position.y}px`;
+                    window.element.style.width = `${data.position.width}px`;
+                    window.element.style.height = `${data.position.height}px`;
+                    // Update internal position tracking
+                    window.position = { ...data.position };
                 }
-            }, 0);
+
+                if (data.isMinimized) {
+                    window.minimize();
+                } else if (data.isMaximized && !window.isMaximized) {
+                    window.toggleMaximize();
+                }
+            }
 
             return window;
         } catch (error) {

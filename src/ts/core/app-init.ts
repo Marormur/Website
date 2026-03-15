@@ -11,13 +11,9 @@
 // Export to make this a proper module for global augmentation
 export {};
 
-import {
-    clearSessionKey,
-    validateLegacySession,
-    validateMultiWindowSession,
-} from '../services/session-guard';
 import { installShim } from '../compat/instance-shims';
 import { cleanupObsoleteStorage } from '../services/storage-migration';
+import { runSessionRestoreOrchestration } from '../services/restore-orchestrator';
 import logger from './logger.js';
 
 /**
@@ -74,7 +70,7 @@ interface GlobalModules {
     };
     SessionManager?: {
         init?: () => void;
-        restoreSession?: () => boolean;
+        restoreSession?: (options?: { includeModernAppTypes?: boolean }) => boolean;
     };
     MultiWindowSessionManager?: {
         init?: () => void;
@@ -298,78 +294,25 @@ function initApp(): void {
     });
     (window as any).__sessionRestorePromise = sessionRestorePromise;
 
-    if (win.MultiWindowSessionManager) {
-        try {
-            const multiCheck = validateMultiWindowSession();
-            const legacyCheck = validateLegacySession();
-
-            if (legacyCheck.shouldClear) {
-                logger.warn('APP', '[APP-INIT] Clearing ONLY legacy session (corrupted)');
-                clearSessionKey('windowInstancesSession');
-            }
-
-            if (multiCheck.shouldClear) {
-                logger.warn('APP', '[APP-INIT] Clearing multi-window session (corrupted)');
-                clearSessionKey('multi-window-session');
-            }
-
-            win.MultiWindowSessionManager.init?.();
-            logger.debug('APP', '[APP-INIT] MultiWindowSessionManager initialized');
-
-            // Attempt to restore multi-window session
-            setTimeout(async () => {
-                try {
-                    if (win.MultiWindowSessionManager?.restoreSession) {
-                        const restored = await win.MultiWindowSessionManager.restoreSession();
-                        if (restored) {
-                            logger.debug('APP', '[APP-INIT] Multi-window session restored');
-                        }
-                    }
-                } catch (err) {
-                    logger.warn('APP', '[APP-INIT] Multi-window session restore failed:', err);
-                } finally {
-                    // Mark session restore as complete
-                    sessionRestoreComplete();
+    void runSessionRestoreOrchestration(window as unknown as Window & Record<string, unknown>)
+        .catch(err => {
+            logger.warn('APP', '[APP-INIT] Session restore orchestration failed:', err);
+            (
+                window as unknown as { __MULTI_WINDOW_SESSION_ACTIVE?: boolean }
+            ).__MULTI_WINDOW_SESSION_ACTIVE = false;
+            (
+                window as unknown as {
+                    __SESSION_RESTORE_IN_PROGRESS?: boolean;
+                    __SESSION_RESTORE_DONE?: boolean;
                 }
-            }, 150); // Delay to ensure all managers are ready
-        } catch (err) {
-            logger.warn('APP', '[APP-INIT] MultiWindowSessionManager initialization failed:', err);
-            // Mark session restore as complete even on error
+            ).__SESSION_RESTORE_IN_PROGRESS = false;
+            (window as unknown as { __SESSION_RESTORE_DONE?: boolean }).__SESSION_RESTORE_DONE =
+                true;
+        })
+        .finally(() => {
+            // Mark session restore as complete in all outcomes
             sessionRestoreComplete();
-        }
-    } else {
-        // No MultiWindowSessionManager, mark as complete immediately
-        sessionRestoreComplete();
-    }
-
-    // Initialize legacy SessionManager for auto-save and restore session if available
-    if (win.SessionManager) {
-        try {
-            win.SessionManager.init?.();
-            // Attempt to restore session after all managers are initialized
-            // This happens after Terminal/TextEditor managers are ready
-            setTimeout(() => {
-                try {
-                    if (win.SessionManager?.restoreSession) {
-                        win.SessionManager.restoreSession();
-                    }
-                } finally {
-                    // Mark restore finished so initHandlers can run normally again
-                    (
-                        window as unknown as {
-                            __SESSION_RESTORE_IN_PROGRESS?: boolean;
-                            __SESSION_RESTORE_DONE?: boolean;
-                        }
-                    ).__SESSION_RESTORE_IN_PROGRESS = false;
-                    (
-                        window as unknown as { __SESSION_RESTORE_DONE?: boolean }
-                    ).__SESSION_RESTORE_DONE = true;
-                }
-            }, 100); // Small delay to ensure all managers are ready
-        } catch (err) {
-            logger.warn('APP', 'SessionManager initialization failed:', err);
-        }
-    }
+        });
 
     // Defensive: ensure the dock is visible. Some environments or timing races
     // can leave the dock with hidden/display styles that make it "invisible"
