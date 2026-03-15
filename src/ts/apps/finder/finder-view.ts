@@ -134,6 +134,17 @@ interface FinderViewContentState {
     favorites?: string[];
 }
 
+interface FinderPreferences {
+    viewMode: ViewMode;
+    sortBy: FinderSortKey;
+    sortOrder: 'asc' | 'desc';
+}
+
+interface FinderPreferencesStore {
+    version: 2;
+    byLocation: Record<string, FinderPreferences>;
+}
+
 type FinderSource = 'computer' | 'github' | 'recent' | 'starred';
 
 export class FinderView extends BaseTab {
@@ -203,7 +214,7 @@ export class FinderView extends BaseTab {
 
         this.source = config?.source || 'computer';
         this.currentPath = [];
-        const persistedPrefs = FinderView.loadFinderPreferences();
+        const persistedPrefs = FinderView.loadFinderPreferences(this.source, this.currentPath);
         this.viewMode = persistedPrefs.viewMode;
         this.sortBy = persistedPrefs.sortBy;
         this.sortOrder = persistedPrefs.sortOrder;
@@ -225,10 +236,6 @@ export class FinderView extends BaseTab {
             contentState?.viewMode === 'gallery'
         ) {
             this.viewMode = contentState.viewMode;
-        }
-        // Default github source to gallery view when no saved state
-        if (this.source === 'github' && !contentState?.viewMode) {
-            this.viewMode = 'gallery';
         }
         if (contentState?.sortBy) {
             this.sortBy = LEGACY_SORT_KEY_MAP[contentState.sortBy] || this.sortBy;
@@ -308,17 +315,24 @@ export class FinderView extends BaseTab {
         return this.source === 'github' && this._arePathsEqual(this.currentPath, pathSnapshot);
     }
 
+    private _applyLocationPreferences(): void {
+        const prefs = FinderView.loadFinderPreferences(this.source, this.currentPath);
+        this.viewMode = prefs.viewMode;
+        this.sortBy = prefs.sortBy;
+        this.sortOrder = prefs.sortOrder;
+    }
+
     private handleSidebarAction(action: string): void {
         if (action === 'home') {
             this.source = 'computer';
             this.currentPath = ['home', 'marvin'];
             this._addToHistory();
+            this._applyLocationPreferences();
         } else if (action === 'computer') {
             this.source = 'computer';
             this.goRoot();
         } else if (action === 'github') {
             this.source = 'github';
-            this.viewMode = 'gallery'; // Switch to gallery view for GitHub source
             this._invalidateGithubViewState();
             const API = this.getAPI();
             if (API && typeof API.prefetchUserRepos === 'function') {
@@ -646,6 +660,7 @@ export class FinderView extends BaseTab {
                 }
                 this.source = state.source;
                 this.currentPath = [...state.path];
+                this._applyLocationPreferences();
                 this._persistState();
                 this._renderAll();
             }
@@ -662,6 +677,7 @@ export class FinderView extends BaseTab {
                 }
                 this.source = state.source;
                 this.currentPath = [...state.path];
+                this._applyLocationPreferences();
                 this._persistState();
                 this._renderAll();
             }
@@ -1905,6 +1921,7 @@ export class FinderView extends BaseTab {
         // Switch to computer view and navigate to the folder
         this.source = 'computer';
         this.currentPath = folderParts;
+        this._applyLocationPreferences();
         this._persistState();
         this._renderAll();
 
@@ -1924,6 +1941,7 @@ export class FinderView extends BaseTab {
         if (this.source === 'github') {
             this.currentPath = [...this.currentPath, cleanName];
             this._addToHistory();
+            this._applyLocationPreferences();
             this._persistState();
             this._invalidateGithubViewState();
             this._renderAll();
@@ -1937,6 +1955,7 @@ export class FinderView extends BaseTab {
         if (folder) {
             this.currentPath = [...this.currentPath, cleanName];
             this._addToHistory();
+            this._applyLocationPreferences();
             this._persistState();
             this._renderAll();
         }
@@ -1946,6 +1965,7 @@ export class FinderView extends BaseTab {
         if (this.currentPath.length === 0) return;
         this.currentPath = this.currentPath.slice(0, -1);
         this._addToHistory();
+        this._applyLocationPreferences();
         this._persistState();
         if (this.source === 'github') {
             this._invalidateGithubViewState();
@@ -1956,6 +1976,7 @@ export class FinderView extends BaseTab {
     goRoot(): void {
         this.currentPath = [];
         this._addToHistory();
+        this._applyLocationPreferences();
         this._persistState();
         if (this.source === 'github') {
             this._invalidateGithubViewState();
@@ -1966,6 +1987,7 @@ export class FinderView extends BaseTab {
     navigateToPath(parts: string[]): void {
         this.currentPath = parts;
         this._addToHistory();
+        this._applyLocationPreferences();
         this._persistState();
         if (this.source === 'github') {
             this._invalidateGithubViewState();
@@ -2023,52 +2045,133 @@ export class FinderView extends BaseTab {
     private static MAX_RECENT_FILES = 20;
     private static MAX_HISTORY_SIZE = 50; // Maximum history entries to prevent unbounded memory usage
 
-    private static loadFinderPreferences(): {
-        viewMode: ViewMode;
-        sortBy: FinderSortKey;
-        sortOrder: 'asc' | 'desc';
-    } {
-        const defaults = {
-            viewMode: 'list' as ViewMode,
-            sortBy: 'name' as FinderSortKey,
-            sortOrder: 'asc' as const,
-        };
+    private static locationKey(source: FinderSource, path: string[]): string {
+        return `${source}:${path.join('/')}`;
+    }
 
+    private static getDefaultPreferences(source: FinderSource): FinderPreferences {
+        return {
+            viewMode: source === 'github' ? 'gallery' : 'list',
+            sortBy: 'name',
+            sortOrder: 'asc',
+        };
+    }
+
+    private static normalizeFinderPreferences(
+        raw: { viewMode?: unknown; sortBy?: unknown; sortOrder?: unknown } | null | undefined,
+        defaults: FinderPreferences
+    ): FinderPreferences {
+        if (!raw) return defaults;
+
+        const viewMode =
+            raw.viewMode === 'grid'
+                ? 'grid'
+                : raw.viewMode === 'gallery'
+                  ? 'gallery'
+                  : raw.viewMode === 'list'
+                    ? 'list'
+                    : defaults.viewMode;
+        const sortBy =
+            typeof raw.sortBy === 'string'
+                ? LEGACY_SORT_KEY_MAP[raw.sortBy] || defaults.sortBy
+                : defaults.sortBy;
+        const sortOrder =
+            raw.sortOrder === 'desc'
+                ? 'desc'
+                : raw.sortOrder === 'asc'
+                  ? 'asc'
+                  : defaults.sortOrder;
+
+        return { viewMode, sortBy, sortOrder };
+    }
+
+    private static loadFinderPreferencesStore(): FinderPreferencesStore | null {
         try {
             const raw = localStorage.getItem(FinderView.FINDER_PREFS_KEY);
-            if (!raw) return defaults;
-            const parsed = JSON.parse(raw) as {
-                viewMode?: unknown;
-                sortBy?: unknown;
-                sortOrder?: unknown;
+            if (!raw) return null;
+
+            const parsed = JSON.parse(raw) as
+                | {
+                      version?: unknown;
+                      byLocation?: unknown;
+                  }
+                | {
+                      viewMode?: unknown;
+                      sortBy?: unknown;
+                      sortOrder?: unknown;
+                  };
+
+            if (
+                typeof parsed === 'object' &&
+                parsed !== null &&
+                'version' in parsed &&
+                parsed.version === 2 &&
+                'byLocation' in parsed &&
+                parsed.byLocation &&
+                typeof parsed.byLocation === 'object'
+            ) {
+                const byLocationRaw = parsed.byLocation as Record<string, unknown>;
+                const byLocation: Record<string, FinderPreferences> = {};
+                for (const [key, value] of Object.entries(byLocationRaw)) {
+                    if (!value || typeof value !== 'object') continue;
+                    byLocation[key] = FinderView.normalizeFinderPreferences(
+                        value as { viewMode?: unknown; sortBy?: unknown; sortOrder?: unknown },
+                        FinderView.getDefaultPreferences('computer')
+                    );
+                }
+                return {
+                    version: 2,
+                    byLocation,
+                };
+            }
+
+            // Legacy format migration support:
+            // { viewMode, sortBy, sortOrder } -> treat as default computer root.
+            const legacyPrefs = FinderView.normalizeFinderPreferences(
+                parsed as { viewMode?: unknown; sortBy?: unknown; sortOrder?: unknown },
+                FinderView.getDefaultPreferences('computer')
+            );
+
+            return {
+                version: 2,
+                byLocation: {
+                    [FinderView.locationKey('computer', [])]: legacyPrefs,
+                },
             };
-
-            const viewMode =
-                parsed.viewMode === 'grid'
-                    ? 'grid'
-                    : parsed.viewMode === 'gallery'
-                      ? 'gallery'
-                      : 'list';
-            const sortBy =
-                typeof parsed.sortBy === 'string'
-                    ? LEGACY_SORT_KEY_MAP[parsed.sortBy] || defaults.sortBy
-                    : defaults.sortBy;
-            const sortOrder = parsed.sortOrder === 'desc' ? 'desc' : 'asc';
-
-            return { viewMode, sortBy, sortOrder };
         } catch (e) {
             logger.warn('FINDER', '[FinderView] Failed to load finder preferences:', e);
-            return defaults;
+            return null;
         }
     }
 
-    private static saveFinderPreferences(prefs: {
-        viewMode: ViewMode;
-        sortBy: FinderSortKey;
-        sortOrder: 'asc' | 'desc';
-    }): void {
+    private static loadFinderPreferences(source: FinderSource, path: string[]): FinderPreferences {
+        const defaults = FinderView.getDefaultPreferences(source);
+        const locationKey = FinderView.locationKey(source, path);
+        const store = FinderView.loadFinderPreferencesStore();
+        if (!store) return defaults;
+
+        const rawPrefs = store.byLocation[locationKey];
+        if (!rawPrefs) return defaults;
+
+        return FinderView.normalizeFinderPreferences(rawPrefs, defaults);
+    }
+
+    private static saveFinderPreferences(
+        source: FinderSource,
+        path: string[],
+        prefs: FinderPreferences
+    ): void {
+        const locationKey = FinderView.locationKey(source, path);
+        const defaults = FinderView.getDefaultPreferences(source);
+        const store = FinderView.loadFinderPreferencesStore() ?? {
+            version: 2 as const,
+            byLocation: {},
+        };
+
+        store.byLocation[locationKey] = FinderView.normalizeFinderPreferences(prefs, defaults);
+
         try {
-            localStorage.setItem(FinderView.FINDER_PREFS_KEY, JSON.stringify(prefs));
+            localStorage.setItem(FinderView.FINDER_PREFS_KEY, JSON.stringify(store));
         } catch (e) {
             logger.warn('FINDER', '[FinderView] Failed to save finder preferences:', e);
         }
@@ -2202,7 +2305,7 @@ export class FinderView extends BaseTab {
 
     // --- State Persistence ---
     private _persistState(): void {
-        FinderView.saveFinderPreferences({
+        FinderView.saveFinderPreferences(this.source, this.currentPath, {
             viewMode: this.viewMode,
             sortBy: this.sortBy,
             sortOrder: this.sortOrder,
