@@ -204,30 +204,33 @@ export class BaseWindow {
 
         // Window controls (macOS style: close, minimize, maximize as dots)
         const controls = document.createElement('div');
-        controls.className = 'flex space-x-2';
+        controls.className = 'traffic-light-controls';
 
         // Close button (red dot)
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
-        closeBtn.className =
-            'flex items-center justify-center p-0 m-0 bg-transparent border-0 leading-none text-gray-700 dark:text-gray-300';
+        closeBtn.className = 'traffic-light-control traffic-light-control--close';
         closeBtn.title = 'Schließen';
         closeBtn.setAttribute('data-i18n-title', 'common.close');
-        closeBtn.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div>';
+        closeBtn.setAttribute('data-symbol', '×');
         closeBtn.addEventListener('click', () => this.close());
 
-        // Minimize button (yellow dot) - clickable div with title
-        const minBtn = document.createElement('div');
-        minBtn.className = 'w-3 h-3 bg-yellow-500 rounded-full cursor-pointer';
+        // Minimize button (yellow dot)
+        const minBtn = document.createElement('button');
+        minBtn.type = 'button';
+        minBtn.className = 'traffic-light-control traffic-light-control--minimize';
         minBtn.title = 'Minimieren';
         minBtn.setAttribute('data-i18n-title', 'menuItems.window.minimize');
+        minBtn.setAttribute('data-symbol', '−');
         minBtn.addEventListener('click', () => this.minimize());
 
-        // Maximize button (green dot) - clickable div with title
-        const maxBtn = document.createElement('div');
-        maxBtn.className = 'w-3 h-3 bg-green-500 rounded-full cursor-pointer';
+        // Maximize button (green dot)
+        const maxBtn = document.createElement('button');
+        maxBtn.type = 'button';
+        maxBtn.className = 'traffic-light-control traffic-light-control--maximize';
         maxBtn.title = 'Zoomen';
         maxBtn.setAttribute('data-i18n-title', 'menuItems.window.zoom');
+        maxBtn.setAttribute('data-symbol', '+');
         maxBtn.addEventListener('click', () => this.toggleMaximize());
 
         controls.appendChild(closeBtn);

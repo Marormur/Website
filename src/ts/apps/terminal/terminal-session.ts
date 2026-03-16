@@ -27,10 +27,72 @@ export class TerminalSession extends BaseTab {
     commandHistory: string[];
     historyIndex: number;
     vfsCwd: string;
+    lastExecutedCommand: string;
 
     // VDOM State - tracks virtual tree for efficient updates
     private _vTree: VNode | null = null;
     private _outputLines: VNode[] = [];
+
+    private _getScrollElement(): HTMLElement | null {
+        return this.element?.querySelector('[data-terminal-scroll]') ?? null;
+    }
+
+    private _getCurrentFolderLabel(): string {
+        const parts = this.vfsCwd.split('/').filter(Boolean);
+        return parts[parts.length - 1] || '/';
+    }
+
+    private _getCommandLabel(): string {
+        const raw = (this.lastExecutedCommand || '').trim() || 'zsh';
+        const normalized = raw.replace(/\s+/g, ' ');
+        return normalized.length > 28 ? `${normalized.slice(0, 27)}…` : normalized;
+    }
+
+    private _updateTabTitle(lastCommand?: string): void {
+        if (typeof lastCommand === 'string' && lastCommand.trim()) {
+            this.lastExecutedCommand = lastCommand.trim();
+        }
+
+        const nextTitle = `${this._getCurrentFolderLabel()} - ${this._getCommandLabel()}`;
+        if (this.title !== nextTitle) {
+            this.setTitle(nextTitle);
+        }
+    }
+
+    private _getInputShell(): HTMLElement | null {
+        return this.element?.querySelector('[data-terminal-input-shell]') ?? null;
+    }
+
+    private _syncInputMetrics(): void {
+        if (!this.inputElement) return;
+
+        const shell = this._getInputShell();
+        const charWidth = Math.max(this.inputElement.value.length + 0.8, 1.2);
+        if (shell) {
+            shell.style.width = `${charWidth}ch`;
+        }
+    }
+
+    private _focusInputAtEnd(): void {
+        if (!this.inputElement) return;
+
+        this.inputElement.focus();
+        const valueLength = this.inputElement.value.length;
+        this.inputElement.setSelectionRange(valueLength, valueLength);
+        this._syncInputMetrics();
+    }
+
+    private _attachSurfaceFocusHandler(): void {
+        this.element?.addEventListener('click', event => {
+            const target = event.target as HTMLElement | null;
+            if (target?.closest('[data-terminal-input]')) return;
+
+            const selection = window.getSelection();
+            if (selection && String(selection).length > 0) return;
+
+            this._focusInputAtEnd();
+        });
+    }
 
     constructor(config?: Partial<TabConfig>) {
         super({
@@ -44,6 +106,7 @@ export class TerminalSession extends BaseTab {
         this.commandHistory = [];
         this.historyIndex = -1;
         this.vfsCwd = '/home/marvin';
+        this.lastExecutedCommand = 'zsh';
 
         // Ensure VirtualFS has default structure for tests/dev if storage is empty or corrupted
         try {
@@ -73,6 +136,8 @@ export class TerminalSession extends BaseTab {
 
         // Attach event listeners once (they persist across VDOM updates)
         this._attachEventListeners();
+        this._attachSurfaceFocusHandler();
+        this._updateTabTitle();
 
         this.showWelcomeMessage();
 
@@ -85,6 +150,14 @@ export class TerminalSession extends BaseTab {
         // Attach event listener once - it will persist across VDOM updates
         // since the input element is keyed and won't be recreated
         this.inputElement.addEventListener('keydown', this._handleKeyDown.bind(this));
+        this.inputElement.addEventListener('input', () => this._syncInputMetrics());
+        this.inputElement.addEventListener('focus', () => {
+            this._getInputShell()?.classList.add('is-focused');
+            this._syncInputMetrics();
+        });
+        this.inputElement.addEventListener('blur', () => {
+            this._getInputShell()?.classList.remove('is-focused');
+        });
     }
 
     /**
@@ -99,7 +172,7 @@ export class TerminalSession extends BaseTab {
                 // Note: commandHistory is now updated in executeCommand()
             }
             this.inputElement!.value = '';
-            this.inputElement!.focus();
+            this._focusInputAtEnd();
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
             if (this.historyIndex > 0) {
@@ -107,6 +180,7 @@ export class TerminalSession extends BaseTab {
                 const historyEntry = this.commandHistory[this.historyIndex];
                 if (historyEntry !== undefined) {
                     this.inputElement!.value = historyEntry;
+                    this._syncInputMetrics();
                 }
             }
         } else if (e.key === 'ArrowDown') {
@@ -116,10 +190,12 @@ export class TerminalSession extends BaseTab {
                 const historyEntry = this.commandHistory[this.historyIndex];
                 if (historyEntry !== undefined) {
                     this.inputElement!.value = historyEntry;
+                    this._syncInputMetrics();
                 }
             } else {
                 this.historyIndex = this.commandHistory.length;
                 this.inputElement!.value = '';
+                this._syncInputMetrics();
             }
         } else if (e.key === 'Tab') {
             // Keep focus and prevent browser focus traversal.
@@ -149,35 +225,51 @@ export class TerminalSession extends BaseTab {
             {
                 class: 'terminal-wrapper h-full flex flex-col bg-gray-900 text-green-400 font-mono text-sm',
             },
-            // Output area (append-only via _outputLines array)
             h(
                 'div',
                 {
-                    class: 'terminal-output flex-1 overflow-y-auto p-4 space-y-1',
-                    'data-terminal-output': 'true',
-                },
-                ...this._outputLines
-            ),
-            // Input line (persistent - never re-created)
-            h(
-                'div',
-                {
-                    class: 'terminal-input-line flex items-center px-4 py-2 border-t border-gray-700',
+                    class: 'terminal-scroll-area flex-1 overflow-y-auto',
+                    'data-terminal-scroll': 'true',
                 },
                 h(
-                    'span',
-                    { class: 'terminal-prompt text-blue-400' },
-                    `guest@marvin:${this.vfsCwd}$`
+                    'div',
+                    {
+                        class: 'terminal-output space-y-1',
+                        'data-terminal-output': 'true',
+                    },
+                    ...this._outputLines
                 ),
-                h('input', {
-                    type: 'text',
-                    class: 'flex-1 ml-2 bg-transparent outline-none text-green-400 terminal-input',
-                    'data-terminal-input': 'true',
-                    autocomplete: 'off',
-                    spellcheck: false,
-                    'aria-label': 'Terminal input',
-                    key: 'terminal-input', // Ensure input element is never recreated
-                })
+                h(
+                    'div',
+                    {
+                        class: 'terminal-prompt-row',
+                    },
+                    h(
+                        'span',
+                        { class: 'terminal-prompt text-blue-400' },
+                        `guest@marvin:${this.vfsCwd}$`
+                    ),
+                    h(
+                        'div',
+                        {
+                            class: 'terminal-input-shell',
+                            'data-terminal-input-shell': 'true',
+                        },
+                        h('input', {
+                            type: 'text',
+                            class: 'terminal-input bg-transparent outline-none text-green-400',
+                            'data-terminal-input': 'true',
+                            autocomplete: 'off',
+                            spellcheck: false,
+                            'aria-label': 'Terminal input',
+                            key: 'terminal-input',
+                        }),
+                        h('span', {
+                            class: 'terminal-caret',
+                            'aria-hidden': 'true',
+                        })
+                    )
+                )
             )
         );
 
@@ -207,6 +299,11 @@ export class TerminalSession extends BaseTab {
         if (!this.outputElement || !this.inputElement) {
             this.outputElement = this.element.querySelector('[data-terminal-output]');
             this.inputElement = this.element.querySelector('[data-terminal-input]');
+        }
+
+        this._syncInputMetrics();
+        if (document.activeElement === this.inputElement) {
+            this._getInputShell()?.classList.add('is-focused');
         }
     }
 
@@ -263,13 +360,17 @@ export class TerminalSession extends BaseTab {
             } catch {}
             if (matches.length === 1) {
                 const match = matches[0];
-                if (match !== undefined) this.inputElement.value = match + ' ';
+                if (match !== undefined) {
+                    this.inputElement.value = match + ' ';
+                    this._syncInputMetrics();
+                }
                 return;
             }
 
             // If already complete command, add a trailing space.
             if (availableCommands.includes(cmd)) {
                 this.inputElement.value = cmd + ' ';
+                this._syncInputMetrics();
             }
             return;
         }
@@ -278,6 +379,7 @@ export class TerminalSession extends BaseTab {
         // If user just typed a full command and pressed Tab, add a space.
         if (tokens.length === 1 && endsWithSpace && availableCommands.includes(cmd)) {
             this.inputElement.value = cmd + ' ';
+            this._syncInputMetrics();
             return;
         }
 
@@ -385,6 +487,7 @@ export class TerminalSession extends BaseTab {
             }
 
             this.inputElement.value = `${cmd} ${dirPrefix}${completed}`;
+            this._syncInputMetrics();
             return;
         }
 
@@ -392,6 +495,7 @@ export class TerminalSession extends BaseTab {
         const common = this.findCommonPrefix(names);
         if (common.length > basePrefix.length) {
             this.inputElement.value = `${cmd} ${dirPrefix}${common}`;
+            this._syncInputMetrics();
         } else {
             // If nothing to extend, show the list in output for UX feedback (like typical shells).
             try {
@@ -446,6 +550,7 @@ export class TerminalSession extends BaseTab {
         this.commandHistory.push(command);
         this.historyIndex = this.commandHistory.length;
         this.updateContentState({ commandHistory: this.commandHistory });
+        this._updateTabTitle(command);
     }
 
     addOutput(text: string, type: 'command' | 'output' | 'error' | 'info' = 'output'): void {
@@ -479,10 +584,11 @@ export class TerminalSession extends BaseTab {
             lineElement.textContent = text;
             this.outputElement.appendChild(lineElement);
 
-            // Auto-scroll to bottom after DOM update
+            // Auto-scroll to bottom after DOM update so the live prompt stays as the last line.
             requestAnimationFrame(() => {
-                if (this.outputElement) {
-                    this.outputElement.scrollTop = this.outputElement.scrollHeight;
+                const scrollElement = this._getScrollElement();
+                if (scrollElement) {
+                    scrollElement.scrollTop = scrollElement.scrollHeight;
                 }
             });
         } else {
@@ -490,10 +596,12 @@ export class TerminalSession extends BaseTab {
             this._renderTerminal();
 
             // Auto-scroll after full render
-            if (this.outputElement) {
+            const scrollElement = this._getScrollElement();
+            if (scrollElement) {
                 requestAnimationFrame(() => {
-                    if (this.outputElement) {
-                        this.outputElement.scrollTop = this.outputElement.scrollHeight;
+                    const liveScrollElement = this._getScrollElement();
+                    if (liveScrollElement) {
+                        liveScrollElement.scrollTop = liveScrollElement.scrollHeight;
                     }
                 });
             }
@@ -572,6 +680,7 @@ export class TerminalSession extends BaseTab {
         this.vfsCwd = target;
         this.updatePrompt();
         this.updateContentState({ currentPath: this.vfsCwd });
+        this._updateTabTitle();
     }
 
     catFile(filename?: string): void {
@@ -724,6 +833,7 @@ export class TerminalSession extends BaseTab {
             currentPath: this.vfsCwd,
             commandHistory: this.commandHistory,
             vfsCwd: this.vfsCwd,
+            lastExecutedCommand: this.lastExecutedCommand,
         } as TabState;
     }
 
@@ -744,6 +854,17 @@ export class TerminalSession extends BaseTab {
             session.commandHistory = state['commandHistory'] as string[];
             session.historyIndex = session.commandHistory.length;
         }
+
+        if (typeof state['lastExecutedCommand'] === 'string') {
+            session.lastExecutedCommand = state['lastExecutedCommand'] as string;
+        } else if (session.commandHistory.length > 0) {
+            const lastCommand = session.commandHistory[session.commandHistory.length - 1];
+            if (typeof lastCommand === 'string' && lastCommand.trim()) {
+                session.lastExecutedCommand = lastCommand;
+            }
+        }
+
+        session._updateTabTitle();
 
         return session;
     }

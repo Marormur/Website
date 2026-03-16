@@ -37,6 +37,29 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
         currentPath = '~';
         fileSystem: Record<string, FSNode>;
 
+        private getScrollElement(): HTMLElement | null {
+            return this.container?.querySelector('[data-terminal-scroll]') ?? null;
+        }
+
+        private getInputShell(): HTMLElement | null {
+            return this.container?.querySelector('[data-terminal-input-shell]') ?? null;
+        }
+
+        private syncInputMetrics(): void {
+            if (!this.inputElement) return;
+            const shell = this.getInputShell();
+            const charWidth = Math.max(this.inputElement.value.length + 0.8, 1.2);
+            if (shell) shell.style.width = `${charWidth}ch`;
+        }
+
+        private focusInputAtEnd(): void {
+            if (!this.inputElement) return;
+            this.inputElement.focus();
+            const valueLength = this.inputElement.value.length;
+            this.inputElement.setSelectionRange(valueLength, valueLength);
+            this.syncInputMetrics();
+        }
+
         constructor(config: Record<string, unknown>) {
             super({
                 ...config,
@@ -82,18 +105,22 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
 
             const html = `
                 <div class="terminal-wrapper h-full flex flex-col bg-gray-900 text-green-400 font-mono text-sm">
-                    <div class="terminal-output flex-1 overflow-y-auto p-4 space-y-1" data-terminal-output>
-                    </div>
-                    <div class="terminal-input-line flex items-center px-4 py-2 border-t border-gray-700">
-                        <span class="terminal-prompt text-blue-400">guest@marvin:${this.currentPath}$</span>
-                        <input
-                            type="text"
-                            class="flex-1 ml-2 bg-transparent outline-none text-green-400 terminal-input"
-                            autocomplete="off"
-                            spellcheck="false"
-                            aria-label="Terminal input"
-                            data-terminal-input
-                        />
+                    <div class="terminal-scroll-area flex-1 overflow-y-auto" data-terminal-scroll>
+                        <div class="terminal-output space-y-1" data-terminal-output></div>
+                        <div class="terminal-prompt-row">
+                            <span class="terminal-prompt text-blue-400">guest@marvin:${this.currentPath}$</span>
+                            <div class="terminal-input-shell" data-terminal-input-shell>
+                                <input
+                                    type="text"
+                                    class="bg-transparent outline-none text-green-400 terminal-input"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                    aria-label="Terminal input"
+                                    data-terminal-input
+                                />
+                                <span class="terminal-caret" aria-hidden="true"></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -107,13 +134,24 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
             } catch {
                 /* noop */
             }
+            this.syncInputMetrics();
             if (this.inputElement && typeof this.inputElement.focus === 'function') {
-                this.inputElement.focus();
+                this.focusInputAtEnd();
             }
         }
 
         protected attachEventListeners(): void {
             if (!this.inputElement) return;
+
+            this.container?.addEventListener('click', event => {
+                const target = event.target as HTMLElement | null;
+                if (target?.closest('[data-terminal-input]')) return;
+
+                const selection = window.getSelection();
+                if (selection && String(selection).length > 0) return;
+
+                this.focusInputAtEnd();
+            });
 
             this.inputElement.addEventListener('keydown', (e: KeyboardEvent) => {
                 if (e.key === 'Enter') {
@@ -126,7 +164,7 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
                         this.updateState({ commandHistory: this.commandHistory });
                     }
                     this.inputElement!.value = '';
-                    this.inputElement!.focus();
+                    this.focusInputAtEnd();
                 } else if (e.key === 'Tab') {
                     e.preventDefault();
                     this.handleTabCompletion();
@@ -138,6 +176,7 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
                         const historyEntry = this.commandHistory[this.historyIndex];
                         if (historyEntry !== undefined) {
                             this.inputElement!.value = historyEntry;
+                            this.syncInputMetrics();
                         }
                     }
                 } else if (e.key === 'ArrowDown') {
@@ -148,12 +187,23 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
                         const historyEntry = this.commandHistory[this.historyIndex];
                         if (historyEntry !== undefined) {
                             this.inputElement!.value = historyEntry;
+                            this.syncInputMetrics();
                         }
                     } else {
                         this.historyIndex = this.commandHistory.length;
                         this.inputElement!.value = '';
+                        this.syncInputMetrics();
                     }
                 }
+            });
+
+            this.inputElement.addEventListener('input', () => this.syncInputMetrics());
+            this.inputElement.addEventListener('focus', () => {
+                this.getInputShell()?.classList.add('is-focused');
+                this.syncInputMetrics();
+            });
+            this.inputElement.addEventListener('blur', () => {
+                this.getInputShell()?.classList.remove('is-focused');
             });
         }
 
@@ -192,6 +242,7 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
                     const match = matches[0];
                     if (match !== undefined) {
                         this.inputElement.value = match + ' ';
+                        this.syncInputMetrics();
                     }
                 } else if (matches.length > 1) {
                     this.addOutput(`guest@marvin:${this.currentPath}$ ${input}`, 'command');
@@ -199,6 +250,7 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
                     const commonPrefix = this.findCommonPrefix(matches);
                     if (commonPrefix.length > partialCmd.length) {
                         this.inputElement.value = commonPrefix;
+                        this.syncInputMetrics();
                     }
                 }
             } else {
@@ -254,6 +306,7 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
                 const match = matches[0];
                 if (match !== undefined) {
                     this.inputElement!.value = `${cmd} ${match}`;
+                    this.syncInputMetrics();
                 }
             } else if (matches.length > 1) {
                 this.addOutput(
@@ -271,6 +324,7 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
                 const commonPrefix = this.findCommonPrefix(matches);
                 if (commonPrefix.length > partial.length) {
                     this.inputElement!.value = `${cmd} ${commonPrefix}`;
+                    this.syncInputMetrics();
                 }
             }
         }
@@ -318,7 +372,10 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
             line.className += ` ${colorMap[type] || 'text-green-400'}`;
             line.textContent = text;
             this.outputElement.appendChild(line);
-            this.outputElement.scrollTop = this.outputElement.scrollHeight;
+            const scrollElement = this.getScrollElement();
+            if (scrollElement) {
+                scrollElement.scrollTop = scrollElement.scrollHeight;
+            }
         }
 
         clearOutput(): void {

@@ -33,6 +33,9 @@ logger.debug('TERMINAL', 'Terminal System loaded');
         showWelcomeMessage(): void;
         addOutput(text: string, className?: string): void;
         addPromptLine(command: string): void;
+        getInputShell(): HTMLElement | null;
+        syncInputMetrics(): void;
+        focusInputAtEnd(): void;
         executeCommand(commandLine: string): void;
         updatePrompt(): void;
         cmdHelp(): void;
@@ -99,8 +102,27 @@ logger.debug('TERMINAL', 'Terminal System loaded');
             this.showWelcomeMessage();
             // Focus input immediately so users can start typing right away
             if (this.inputElement?.focus) {
-                this.inputElement.focus();
+                this.focusInputAtEnd();
             }
+        },
+
+        getInputShell(): HTMLElement | null {
+            return this.container?.querySelector('[data-terminal-input-shell]') ?? null;
+        },
+
+        syncInputMetrics(): void {
+            if (!this.inputElement) return;
+            const shell = this.getInputShell();
+            const charWidth = Math.max(this.inputElement.value.length + 0.8, 1.2);
+            if (shell) shell.style.width = `${charWidth}ch`;
+        },
+
+        focusInputAtEnd(): void {
+            if (!this.inputElement) return;
+            this.inputElement.focus();
+            const valueLength = this.inputElement.value.length;
+            this.inputElement.setSelectionRange(valueLength, valueLength);
+            this.syncInputMetrics();
         },
 
         render(): void {
@@ -108,18 +130,22 @@ logger.debug('TERMINAL', 'Terminal System loaded');
 
             const html = `
                 <div class="terminal-wrapper h-full flex flex-col bg-gray-900 text-green-400 font-mono text-sm">
-                    <div id="terminal-output" class="terminal-output flex-1 overflow-y-auto p-4 space-y-1">
-                    </div>
-                    <div class="terminal-input-line flex items-center px-4 py-2 border-t border-gray-700">
-                        <span class="terminal-prompt text-blue-400">guest@marvin:${this.currentPath}$</span>
-                        <input
-                            type="text"
-                            id="terminal-input"
-                            class="terminal-input flex-1 ml-2 bg-transparent outline-none text-green-400"
-                            autocomplete="off"
-                            spellcheck="false"
-                            aria-label="Terminal input"
-                        />
+                    <div class="terminal-scroll-area flex-1 overflow-y-auto" data-terminal-scroll>
+                        <div id="terminal-output" class="terminal-output space-y-1"></div>
+                        <div class="terminal-prompt-row">
+                            <span class="terminal-prompt text-blue-400">guest@marvin:${this.currentPath}$</span>
+                            <div class="terminal-input-shell" data-terminal-input-shell>
+                                <input
+                                    type="text"
+                                    id="terminal-input"
+                                    class="terminal-input bg-transparent outline-none text-green-400"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                    aria-label="Terminal input"
+                                />
+                                <span class="terminal-caret" aria-hidden="true"></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -142,10 +168,22 @@ logger.debug('TERMINAL', 'Terminal System loaded');
             } catch {
                 /* noop */
             }
+
+            this.syncInputMetrics();
         },
 
         attachEventListeners(): void {
             if (!this.inputElement) return;
+
+            this.container?.addEventListener('click', event => {
+                const target = event.target as HTMLElement | null;
+                if (target?.closest('#terminal-input')) return;
+
+                const selection = window.getSelection();
+                if (selection && String(selection).length > 0) return;
+
+                this.focusInputAtEnd();
+            });
 
             this.inputElement.addEventListener('keydown', (e: KeyboardEvent) => {
                 if (e.key === 'Enter') {
@@ -158,21 +196,24 @@ logger.debug('TERMINAL', 'Terminal System loaded');
                     }
                     if (this.inputElement) this.inputElement.value = '';
                     // Keep focus after executing a command
-                    this.inputElement?.focus();
+                    this.focusInputAtEnd();
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     if (this.historyIndex > 0 && this.inputElement) {
                         this.historyIndex--;
                         this.inputElement.value = this.commandHistory[this.historyIndex] || '';
+                        this.syncInputMetrics();
                     }
                 } else if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     if (this.historyIndex < this.commandHistory.length - 1 && this.inputElement) {
                         this.historyIndex++;
                         this.inputElement.value = this.commandHistory[this.historyIndex] || '';
+                        this.syncInputMetrics();
                     } else {
                         this.historyIndex = this.commandHistory.length;
                         if (this.inputElement) this.inputElement.value = '';
+                        this.syncInputMetrics();
                     }
                 } else if (e.key === 'Tab') {
                     e.preventDefault();
@@ -180,9 +221,13 @@ logger.debug('TERMINAL', 'Terminal System loaded');
                 }
             });
 
-            // Focus input when clicking anywhere in the terminal
-            this.container?.addEventListener('click', () => {
-                this.inputElement?.focus();
+            this.inputElement.addEventListener('input', () => this.syncInputMetrics());
+            this.inputElement.addEventListener('focus', () => {
+                this.getInputShell()?.classList.add('is-focused');
+                this.syncInputMetrics();
+            });
+            this.inputElement.addEventListener('blur', () => {
+                this.getInputShell()?.classList.remove('is-focused');
             });
         },
 
@@ -204,7 +249,10 @@ logger.debug('TERMINAL', 'Terminal System loaded');
             this.outputElement.appendChild(line);
 
             // Auto-scroll to bottom
-            this.outputElement.scrollTop = this.outputElement.scrollHeight;
+            const scrollElement = this.container?.querySelector('[data-terminal-scroll]');
+            if (scrollElement instanceof HTMLElement) {
+                scrollElement.scrollTop = scrollElement.scrollHeight;
+            }
         },
 
         addPromptLine(command: string): void {
