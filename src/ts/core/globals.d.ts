@@ -1,3 +1,5 @@
+import type { AppI18n } from '../services/i18n.js';
+
 /**
  * Global type declarations for the macOS-style portfolio website.
  *
@@ -128,6 +130,7 @@ declare global {
             init?: (containerOrId: HTMLElement | string) => void;
             showSection?: (section: 'general' | 'display' | 'language') => void;
         };
+        appI18n?: AppI18n;
         TerminalSystem?: {
             container?: HTMLElement | null;
             init?: (container: HTMLElement) => void;

@@ -166,13 +166,6 @@ interface TextEditorSystemLike {
 
 declare global {
     interface Window {
-        appI18n?: {
-            translate?: (
-                key: string,
-                params?: Record<string, unknown>,
-                options?: { fallback?: string }
-            ) => string;
-        };
         WindowRegistry?: WindowRegistryLike;
         TextEditorWindow?: TextEditorWindowFactory;
         TextEditorSystem?: TextEditorSystemLike;

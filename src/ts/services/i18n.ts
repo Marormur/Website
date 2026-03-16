@@ -55,12 +55,6 @@ export interface AppI18n {
     languageOptions: readonly LanguagePreference[];
 }
 
-declare global {
-    interface Window {
-        appI18n: AppI18nAPI;
-    }
-}
-
 // ========================================
 // Constants
 // ========================================
@@ -253,35 +247,79 @@ function parseParams(element: Element): TranslationParams | undefined {
 
 const ALLOWED_I18N_INLINE_TAGS = new Set(['br', 'strong', 'b', 'em', 'i', 'u', 'small', 'code']);
 
+const I18N_INLINE_TAG_PATTERN = /<\/?\s*(strong|b|em|i|u|small|code|br)\s*\/?>/gi;
+
+const HTML_ENTITY_MAP: Record<string, string> = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'",
+    nbsp: '\u00a0',
+};
+
+function decodeHtmlEntities(text: string): string {
+    return text.replace(/&(?:#x([\da-f]+)|#(\d+)|([a-z]+));/gi, (match, hex, decimal, named) => {
+        if (hex) {
+            const codePoint = Number.parseInt(hex, 16);
+            return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+        }
+        if (decimal) {
+            const codePoint = Number.parseInt(decimal, 10);
+            return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+        }
+        const normalizedName = String(named).toLowerCase();
+        return HTML_ENTITY_MAP[normalizedName] ?? match;
+    });
+}
+
 function buildSafeInlineFragment(html: string): DocumentFragment {
-    const parser = new DOMParser();
-    const parsed = parser.parseFromString(html, 'text/html');
     const fragment = document.createDocumentFragment();
+    const openElements: Array<{ tagName: string; node: Element }> = [];
+    let cursor = 0;
 
-    const appendSafeNode = (node: Node, target: Node): void => {
-        if (node.nodeType === Node.TEXT_NODE) {
-            target.appendChild(document.createTextNode(node.textContent || ''));
+    const appendText = (text: string): void => {
+        if (!text) {
             return;
         }
-        if (node.nodeType !== Node.ELEMENT_NODE) {
-            return;
+        const parent = openElements[openElements.length - 1]?.node ?? fragment;
+        parent.appendChild(document.createTextNode(decodeHtmlEntities(text)));
+    };
+
+    for (const match of html.matchAll(I18N_INLINE_TAG_PATTERN)) {
+        const matchedText = match[0];
+        const tagName = match[1]?.toLowerCase();
+        const start = match.index ?? 0;
+        appendText(html.slice(cursor, start));
+        cursor = start + matchedText.length;
+
+        if (!tagName || !ALLOWED_I18N_INLINE_TAGS.has(tagName)) {
+            appendText(matchedText);
+            continue;
         }
 
-        const elementNode = node as Element;
-        const tagName = elementNode.tagName.toLowerCase();
-        if (!ALLOWED_I18N_INLINE_TAGS.has(tagName)) {
-            if (elementNode.textContent) {
-                target.appendChild(document.createTextNode(elementNode.textContent));
+        if (matchedText.startsWith('</')) {
+            const current = openElements[openElements.length - 1];
+            if (current?.tagName === tagName) {
+                openElements.pop();
+            } else {
+                appendText(matchedText);
             }
-            return;
+            continue;
+        }
+
+        const parent = openElements[openElements.length - 1]?.node ?? fragment;
+        if (tagName === 'br') {
+            parent.appendChild(document.createElement('br'));
+            continue;
         }
 
         const safeElement = document.createElement(tagName);
-        target.appendChild(safeElement);
-        Array.from(elementNode.childNodes).forEach(child => appendSafeNode(child, safeElement));
-    };
+        parent.appendChild(safeElement);
+        openElements.push({ tagName, node: safeElement });
+    }
 
-    Array.from(parsed.body.childNodes).forEach(node => appendSafeNode(node, fragment));
+    appendText(html.slice(cursor));
     return fragment;
 }
 
@@ -311,7 +349,7 @@ function translateElement(element: Element): void {
 /**
  * Apply translations to all `[data-i18n]` elements within `root`.
  *
- * Also handles `[data-i18n-html]` (innerHTML) and arbitrary `[data-i18n-<attr>]` attribute translations.
+ * Also handles `[data-i18n-html]` (restricted inline markup) and arbitrary `[data-i18n-<attr>]` attribute translations.
  * Called automatically on language change; can also be called manually on dynamically inserted DOM.
  *
  * @param root - Root element or document to start from. Defaults to `document`.
