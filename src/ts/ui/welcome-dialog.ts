@@ -76,9 +76,9 @@ function clampWindowPosition(left: number, top: number, width: number, height: n
 }
 
 function centerWindow(width: number, height: number) {
-    const viewport = getViewportBounds();
     const left = Math.round((window.innerWidth - width) / 2);
-    const top = Math.round(viewport.minTop + Math.max(16, (viewport.maxHeight - height) * 0.2));
+    // Center against the real viewport and then enforce menu bar / edge boundaries.
+    const top = Math.round((window.innerHeight - height) / 2);
     return clampWindowPosition(left, top, width, height);
 }
 
@@ -316,8 +316,8 @@ function buildOverlay(): HTMLElement {
                 color: rgba(15,23,42,0.78);
             }
 
-            #${WINDOW_ID}:hover .welcome-traffic-light::after,
-            #${WINDOW_ID}:focus-within .welcome-traffic-light::after {
+            .welcome-traffic-lights:hover .welcome-traffic-light::after,
+            .welcome-traffic-lights:focus-within .welcome-traffic-light::after {
                 opacity: 1;
             }
 
