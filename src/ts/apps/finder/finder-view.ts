@@ -311,6 +311,16 @@ export class FinderView extends BaseTab {
         return left.length === right.length && left.every((part, index) => part === right[index]);
     }
 
+    /**
+     * Normalize path segments so UI state cannot contain empty or non-string parts.
+     */
+    private _normalizePathParts(parts: unknown[]): string[] {
+        return parts
+            .filter((part): part is string => typeof part === 'string')
+            .map(part => part.trim())
+            .filter(part => part.length > 0);
+    }
+
     private _isCurrentGithubLocation(pathSnapshot: string[]): boolean {
         return this.source === 'github' && this._arePathsEqual(this.currentPath, pathSnapshot);
     }
@@ -527,15 +537,17 @@ export class FinderView extends BaseTab {
         let label = '';
         const atRoot = this.currentPath.length === 0;
         switch (this.source) {
-            case 'computer':
+            case 'computer': {
+                const leaf = this.currentPath[this.currentPath.length - 1]?.trim();
                 label = atRoot
                     ? t('finder.sidebar.computer', 'Computer')
-                    : this.currentPath[this.currentPath.length - 1]!;
+                    : leaf || t('finder.sidebar.computer', 'Computer');
                 break;
+            }
             case 'github':
                 label = atRoot
                     ? 'GitHub'
-                    : this.currentPath[this.currentPath.length - 1] || 'GitHub';
+                    : this.currentPath[this.currentPath.length - 1]?.trim() || 'GitHub';
                 break;
             case 'recent':
                 label = t('finder.sidebar.recent', 'Zuletzt verwendet');
@@ -1932,6 +1944,7 @@ export class FinderView extends BaseTab {
     navigateToFolder(name: string): void {
         // Defensive: Prevent duplicate navigation to the same folder
         const cleanName = name.trim();
+        if (!cleanName) return;
         const lastPathElement = this.currentPath[this.currentPath.length - 1];
         if (lastPathElement === cleanName) {
             // Already in this folder, skip navigation
@@ -1984,8 +1997,22 @@ export class FinderView extends BaseTab {
         this._renderAll();
     }
 
+    /**
+     * Public helper for legacy callers (Desktop shortcut/FinderSystem) that
+     * need a deterministic transition into the GitHub root view.
+     */
+    openGithubProjects(): void {
+        this.source = 'github';
+        this.currentPath = [];
+        this._addToHistory();
+        this._applyLocationPreferences();
+        this._persistState();
+        this._invalidateGithubViewState();
+        this._renderAll();
+    }
+
     navigateToPath(parts: string[]): void {
-        this.currentPath = parts;
+        this.currentPath = this._normalizePathParts(parts);
         this._addToHistory();
         this._applyLocationPreferences();
         this._persistState();
@@ -2454,7 +2481,7 @@ export class FinderView extends BaseTab {
             },
         });
         view.currentPath = Array.isArray(state['currentPath'])
-            ? (state['currentPath'] as string[])
+            ? view._normalizePathParts(state['currentPath'])
             : [];
         const viewModeFromState = state['viewMode'];
         view.viewMode =

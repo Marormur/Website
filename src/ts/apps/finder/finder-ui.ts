@@ -609,16 +609,17 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
             activeSidebarId = atHome ? 'home' : 'computer';
         }
 
+        const leafLabel =
+            currentPath.length > 0 ? String(currentPath[currentPath.length - 1] || '').trim() : '';
         const currentFolderName =
-            currentPath.length > 0
-                ? currentPath[currentPath.length - 1]!
-                : source === 'github'
-                  ? 'GitHub'
-                  : source === 'recent'
-                    ? 'Zuletzt verwendet'
-                    : source === 'starred'
-                      ? 'Markiert'
-                      : 'Computer';
+            leafLabel ||
+            (source === 'github'
+                ? 'GitHub'
+                : source === 'recent'
+                  ? 'Zuletzt verwendet'
+                  : source === 'starred'
+                    ? 'Markiert'
+                    : 'Computer');
         const isSearchExpanded = this.state.isSearchExpanded || searchTerm.length > 0;
 
         // Render Sidebar Groups inline to ensure state updates work correctly

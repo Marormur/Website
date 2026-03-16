@@ -31,7 +31,14 @@ export const DESKTOP_SHORTCUTS: DesktopShortcut[] = [
                 window.FinderWindow.focusOrCreate();
             }
             if (window.FinderSystem?.navigateTo) {
-                window.FinderSystem.navigateTo([], 'github');
+                const finderState = window.FinderSystem.getState?.();
+                const alreadyInGithub = finderState?.currentView === 'github';
+
+                // Preserve the currently open GitHub folder when the user is
+                // already inside GitHub projects and only wants to refocus Finder.
+                if (!alreadyInGithub) {
+                    window.FinderSystem.navigateTo([], 'github');
+                }
             }
         },
     },

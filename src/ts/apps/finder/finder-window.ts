@@ -359,9 +359,30 @@ function _getActiveFV(): Record<string, unknown> | null {
     if (wins.length === 0) return null;
     // Pick the window with the highest z-index (most recently focused)
     const win = wins.reduce((a, b) => (a.zIndex >= b.zIndex ? a : b));
-    const tab = win.activeTabId ? win.tabs.get(win.activeTabId) : null;
+    const activeTab = win.activeTabId ? win.tabs.get(win.activeTabId) : null;
+    const firstTab = win.tabs.values().next().value as BaseTab | undefined;
+    const tab = activeTab ?? firstTab ?? null;
+    if (!win.activeTabId && tab?.id) {
+        win.setActiveTab(tab.id);
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return tab ? (tab as any) : null;
+}
+
+function _ensureActiveFV(): Record<string, unknown> | null {
+    const existing = _getActiveFV();
+    if (existing) return existing;
+
+    const win = FinderWindow.focusOrCreate();
+    if (!win.activeTabId && win.tabs.size === 0) {
+        win.createView('Computer');
+    }
+    if (!win.activeTabId) {
+        const firstId = win.tabs.keys().next().value as string | undefined;
+        if (firstId) win.setActiveTab(firstId);
+    }
+
+    return _getActiveFV();
 }
 
 window.FinderSystem = {
@@ -377,12 +398,20 @@ window.FinderSystem = {
     },
     /** Navigate to a path/view. Pass view='github' to open GitHub Projekte in gallery mode. */
     navigateTo(path: string[] | string, view?: CurrentView | null): void {
-        const fv = _getActiveFV();
+        const fv = _ensureActiveFV();
         if (!fv) return;
         if (view === 'github') {
-            fv['source'] = 'github';
-            (fv['setViewMode'] as ((m: string) => void) | undefined)?.('gallery');
-            (fv['goRoot'] as () => void)?.();
+            const openGithubProjects = fv['openGithubProjects'] as
+                | ((this: Record<string, unknown>) => void)
+                | undefined;
+            if (typeof openGithubProjects === 'function') {
+                openGithubProjects.call(fv);
+            } else {
+                // Legacy fallback for older FinderView implementations.
+                fv['source'] = 'github';
+                (fv['setViewMode'] as ((m: string) => void) | undefined)?.('gallery');
+                (fv['goRoot'] as () => void)?.();
+            }
             return;
         }
         fv['source'] = 'computer';

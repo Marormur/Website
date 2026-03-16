@@ -28,7 +28,7 @@
     {
       "label": "TypeScript: Watch",
       "type": "shell",
-      "command": "npm run typecheck:watch",
+      "command": "npm run build:ts:watch",
       "problemMatcher": "$tsc-watch",
       "isBackground": true,
       "runOptions": {
