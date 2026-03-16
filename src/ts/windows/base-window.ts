@@ -82,6 +82,7 @@ export class BaseWindow {
     tabs: Map<string, BaseTab>;
     activeTabId: string | null;
     metadata: Record<string, unknown>;
+    private restoreBeforeMaximize: WindowPosition | null;
     private dragState: {
         isDragging: boolean;
         startX: number;
@@ -104,6 +105,7 @@ export class BaseWindow {
         this.tabs = new Map();
         this.activeTabId = null;
         this.metadata = config.metadata || {};
+        this.restoreBeforeMaximize = null;
         this.dragState = {
             isDragging: false,
             startX: 0,
@@ -676,6 +678,18 @@ export class BaseWindow {
         const windowEl = this.element;
 
         if (this.isMaximized) {
+            const rect = windowEl.getBoundingClientRect();
+            const currentLeft = parseFloat(windowEl.style.left);
+            const currentTop = parseFloat(windowEl.style.top);
+            const resolvedLeft = Number.isFinite(currentLeft) ? currentLeft : rect.left;
+            const resolvedTop = Number.isFinite(currentTop) ? currentTop : rect.top;
+            this.restoreBeforeMaximize = {
+                x: Math.round(resolvedLeft),
+                y: Math.round(resolvedTop),
+                width: Math.round(rect.width || this.position.width),
+                height: Math.round(rect.height || this.position.height),
+            };
+
             const minTop = Math.round(window.getMenuBarBottom?.() || 0);
             const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
             const maxHeight = Math.max(360, getLogicalViewportHeight() - minTop - dockReserve);
@@ -687,12 +701,16 @@ export class BaseWindow {
             windowEl.style.width = `${getLogicalViewportWidth() || this.position.width}px`;
             windowEl.style.height = `${maxHeight}px`;
         } else {
+            const restore = this.restoreBeforeMaximize || this.position;
             windowEl.style.maxWidth = '';
             windowEl.style.maxHeight = '';
-            windowEl.style.left = `${this.position.x}px`;
-            windowEl.style.top = `${this.position.y}px`;
-            windowEl.style.width = `${this.position.width}px`;
-            windowEl.style.height = `${this.position.height}px`;
+            windowEl.style.left = `${restore.x}px`;
+            windowEl.style.top = `${restore.y}px`;
+            windowEl.style.width = `${restore.width}px`;
+            windowEl.style.height = `${restore.height}px`;
+
+            this.position = { ...restore };
+            this.restoreBeforeMaximize = null;
         }
 
         this._saveState();

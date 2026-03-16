@@ -6,6 +6,7 @@
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
 import logger from '../../core/logger.js';
+import { getLogicalViewportWidth } from '../../utils/viewport.js';
 
 export class FinderWindow extends BaseWindow {
     /** WindowTabs controller for the tab bar – created lazily in _doRenderTabs. */
@@ -74,6 +75,19 @@ export class FinderWindow extends BaseWindow {
             const inFinderDragZone = target?.closest('.finder-window-drag-zone');
             if (!inFinderDragZone || isInteractiveTarget(target)) return;
 
+            if (windowEl.dataset.snapped === 'left' || windowEl.dataset.snapped === 'right') {
+                const pointerX = e.clientX;
+                const pointerY = e.clientY;
+                const initialRect = windowEl.getBoundingClientRect();
+                const preservedOffsetX = pointerX - initialRect.left;
+                const preservedOffsetY = pointerY - initialRect.top;
+                this.unsnap();
+                const minTopAfterUnsnap = window.getMenuBarBottom?.() || 0;
+                windowEl.style.position = 'fixed';
+                windowEl.style.left = `${pointerX - preservedOffsetX}px`;
+                windowEl.style.top = `${Math.max(minTopAfterUnsnap, pointerY - preservedOffsetY)}px`;
+            }
+
             const rect = windowEl.getBoundingClientRect();
             this.finderDragState.isDragging = true;
             this.finderDragState.offsetX = e.clientX - rect.left;
@@ -123,7 +137,7 @@ export class FinderWindow extends BaseWindow {
         pointerX: number | null
     ): 'left' | 'right' | null {
         if (!target) return null;
-        const viewportWidth = Math.max(window.innerWidth || 0, 0);
+        const viewportWidth = Math.max(getLogicalViewportWidth(), 0);
         if (viewportWidth <= 0) return null;
 
         const threshold = Math.max(3, Math.min(14, viewportWidth * 0.0035));
@@ -147,6 +161,16 @@ export class FinderWindow extends BaseWindow {
         const target = this.element;
         if (!target) return;
 
+        this.isMaximized = false;
+
+        if (!target.dataset.snapped) {
+            const rect = target.getBoundingClientRect();
+            target.dataset.prevSnapLeft = `${Math.round(rect.left)}`;
+            target.dataset.prevSnapTop = `${Math.round(rect.top)}`;
+            target.dataset.prevSnapWidth = `${Math.round(rect.width)}`;
+            target.dataset.prevSnapHeight = `${Math.round(rect.height)}`;
+        }
+
         const metrics = window.computeSnapMetrics?.(side);
         if (!metrics) return;
 
@@ -162,6 +186,42 @@ export class FinderWindow extends BaseWindow {
         this.position.width = metrics.width;
         this.position.height = metrics.height;
         this.bringToFront();
+    }
+
+    private unsnap(): void {
+        const target = this.element;
+        if (!target) return;
+        if (!(target.dataset.snapped === 'left' || target.dataset.snapped === 'right')) return;
+
+        const restoreLeft = Number.parseFloat(target.dataset.prevSnapLeft || '');
+        const restoreTop = Number.parseFloat(target.dataset.prevSnapTop || '');
+        const restoreWidth = Number.parseFloat(target.dataset.prevSnapWidth || '');
+        const restoreHeight = Number.parseFloat(target.dataset.prevSnapHeight || '');
+
+        const hasRestore =
+            Number.isFinite(restoreLeft) &&
+            Number.isFinite(restoreTop) &&
+            Number.isFinite(restoreWidth) &&
+            Number.isFinite(restoreHeight);
+
+        if (hasRestore) {
+            target.style.position = 'fixed';
+            target.style.left = `${Math.round(restoreLeft)}px`;
+            target.style.top = `${Math.round(restoreTop)}px`;
+            target.style.width = `${Math.round(restoreWidth)}px`;
+            target.style.height = `${Math.round(restoreHeight)}px`;
+
+            this.position.x = Math.round(restoreLeft);
+            this.position.y = Math.round(restoreTop);
+            this.position.width = Math.round(restoreWidth);
+            this.position.height = Math.round(restoreHeight);
+        }
+
+        delete target.dataset.snapped;
+        delete target.dataset.prevSnapLeft;
+        delete target.dataset.prevSnapTop;
+        delete target.dataset.prevSnapWidth;
+        delete target.dataset.prevSnapHeight;
     }
 
     show(): void {
