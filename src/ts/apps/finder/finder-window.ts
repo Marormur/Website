@@ -6,7 +6,6 @@
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
 import logger from '../../core/logger.js';
-import { getLogicalViewportWidth } from '../../utils/viewport.js';
 
 export class FinderWindow extends BaseWindow {
     /** WindowTabs controller for the tab bar – created lazily in _doRenderTabs. */
@@ -137,7 +136,9 @@ export class FinderWindow extends BaseWindow {
         pointerX: number | null
     ): 'left' | 'right' | null {
         if (!target) return null;
-        const viewportWidth = Math.max(getLogicalViewportWidth(), 0);
+        // Snap-Detection läuft im gerenderten Koordinatenraum (clientX + getBoundingClientRect).
+        // Deshalb hier bewusst window.innerWidth statt logischer Viewport-Breite verwenden.
+        const viewportWidth = Math.max(window.innerWidth || 0, 0);
         if (viewportWidth <= 0) return null;
 
         const threshold = Math.max(3, Math.min(14, viewportWidth * 0.0035));
