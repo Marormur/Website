@@ -27,6 +27,36 @@ async function openFinderGithub(page) {
     return finderWindow;
 }
 
+function githubItem(finderWindow, name) {
+    return finderWindow.locator(`[data-item-name="${name}"]`).first();
+}
+
+async function openGithubItem(finderWindow, name) {
+    const item = githubItem(finderWindow, name);
+    await expect(item).toBeVisible({ timeout: 20000 });
+    await item.dblclick();
+    return item;
+}
+
+async function openGithubItemAndWait(page, finderWindow, name, nextItemName) {
+    const nextItem = githubItem(finderWindow, nextItemName);
+
+    await openGithubItem(finderWindow, name);
+
+    try {
+        await expect(nextItem).toBeVisible({ timeout: 2500 });
+        return;
+    } catch {
+        // Fallback: if pointer interactions are intercepted (e.g. by dock),
+        // trigger open via keyboard after selecting the item.
+        const item = githubItem(finderWindow, name);
+        await item.click({ force: true });
+        await page.keyboard.press('Enter');
+    }
+
+    await expect(nextItem).toBeVisible({ timeout: 20000 });
+}
+
 test.describe('Finder GitHub integration', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + '/index.html');
@@ -50,9 +80,7 @@ test.describe('Finder GitHub integration', () => {
 
         const finderWindow = await openFinderGithub(page);
         // Guard against GitHub API issues: wait for either repo row or error/empty messages
-        const websiteRow = finderWindow
-            .locator('.tab-content:not(.hidden) tr:has-text("Website")')
-            .first();
+        const websiteRow = githubItem(finderWindow, 'Website');
         const errorMsg = finderWindow
             .locator(
                 'text=/Repos konnten nicht geladen werden|Keine öffentlichen Repositories gefunden|Repositories could not be loaded|No public repositories found|Rate Limit/i'
@@ -68,22 +96,17 @@ test.describe('Finder GitHub integration', () => {
         }
         // Double click repo "Website"
         await expect(websiteRow).toBeVisible({ timeout: 20000 });
-        await websiteRow.dblclick();
+        await openGithubItemAndWait(page, finderWindow, 'Website', 'img');
         // Open folder img
         // Wait for repo contents to load and show the 'img' folder
-        await finderWindow
-            .locator('.tab-content:not(.hidden) tr:has-text("img")')
-            .first()
-            .waitFor({ state: 'visible', timeout: 20000 });
-        const imgRow = finderWindow.locator('.tab-content:not(.hidden) tr:has-text("img")').first();
+        const imgRow = githubItem(finderWindow, 'img');
+        await imgRow.waitFor({ state: 'visible', timeout: 20000 });
         await expect(imgRow).toBeVisible({ timeout: 20000 });
-        await imgRow.dblclick();
+        await openGithubItemAndWait(page, finderWindow, 'img', 'wallpaper.png');
         // Click on wallpaper.png to open in viewer
-        const wallRow = finderWindow
-            .locator('.tab-content:not(.hidden) tr:has-text("wallpaper.png")')
-            .first();
+        const wallRow = githubItem(finderWindow, 'wallpaper.png');
         await expect(wallRow).toBeVisible({ timeout: 20000 });
-        await wallRow.dblclick();
+        await openGithubItem(finderWindow, 'wallpaper.png');
         // Current behavior opens an image in a Photos window instance.
         await page.waitForFunction(
             () => (window.WindowRegistry?.getAllWindows?.('photos') || []).length > 0,
@@ -104,15 +127,15 @@ test.describe('Finder GitHub integration', () => {
         await githubBtn.waitFor({ state: 'visible', timeout: 5000 });
         await githubBtn.click();
 
-        const websiteRow = finder.locator('tr:has-text("Website")').first();
+        const websiteRow = githubItem(finder, 'Website');
         await expect(websiteRow).toBeVisible({ timeout: 20000 });
-        await websiteRow.dblclick();
+        await openGithubItemAndWait(page, finder, 'Website', 'img');
 
-        const imgRow = finder.locator('tr:has-text("img")').first();
+        const imgRow = githubItem(finder, 'img');
         await expect(imgRow).toBeVisible({ timeout: 20000 });
-        await imgRow.dblclick();
+        await openGithubItemAndWait(page, finder, 'img', 'wallpaper.png');
 
-        const wallpaperRow = finder.locator('tr:has-text("wallpaper.png")').first();
+        const wallpaperRow = githubItem(finder, 'wallpaper.png');
         await expect(wallpaperRow).toBeVisible({ timeout: 20000 });
 
         const backButton = finder.locator('[data-action="navigate-back"]').first();
@@ -120,13 +143,11 @@ test.describe('Finder GitHub integration', () => {
 
         await backButton.click();
         await expect(imgRow).toBeVisible({ timeout: 20000 });
-        await expect(finder.locator('tr:has-text("README.md")').first()).toBeVisible({
-            timeout: 20000,
-        });
+        await expect(githubItem(finder, 'README.md')).toBeVisible({ timeout: 20000 });
         await expect(wallpaperRow).toHaveCount(0);
 
         await forwardButton.click();
         await expect(wallpaperRow).toBeVisible({ timeout: 20000 });
-        await expect(finder.locator('tr:has-text("README.md")').first()).toHaveCount(0);
+        await expect(githubItem(finder, 'README.md')).toHaveCount(0);
     });
 });
