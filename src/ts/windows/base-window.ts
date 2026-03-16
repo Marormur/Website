@@ -89,6 +89,7 @@ export class BaseWindow {
         startY: number;
         offsetX: number;
         offsetY: number;
+        lastPointerX: number | null;
     };
 
     constructor(config: WindowConfig) {
@@ -112,6 +113,7 @@ export class BaseWindow {
             startY: 0,
             offsetX: 0,
             offsetY: 0,
+            lastPointerX: null,
         };
 
         // Add initial tabs if provided
@@ -267,9 +269,27 @@ export class BaseWindow {
         this.titlebarElement.addEventListener('mousedown', (e: MouseEvent) => {
             if ((e.target as HTMLElement).tagName === 'BUTTON') return; // Ignore control buttons
 
+            if (
+                this.element &&
+                (this.element.dataset.snapped === 'left' ||
+                    this.element.dataset.snapped === 'right')
+            ) {
+                const pointerX = e.clientX;
+                const pointerY = e.clientY;
+                const initialRect = this.element.getBoundingClientRect();
+                const preservedOffsetX = pointerX - initialRect.left;
+                const preservedOffsetY = pointerY - initialRect.top;
+                this._unsnap();
+                const minTopAfterUnsnap = window.getMenuBarBottom?.() || 0;
+                this.element.style.position = 'fixed';
+                this.element.style.left = `${pointerX - preservedOffsetX}px`;
+                this.element.style.top = `${Math.max(minTopAfterUnsnap, pointerY - preservedOffsetY)}px`;
+            }
+
             this.dragState.isDragging = true;
             this.dragState.startX = e.clientX;
             this.dragState.startY = e.clientY;
+            this.dragState.lastPointerX = e.clientX;
 
             const rect = this.element?.getBoundingClientRect();
             if (rect) {
@@ -284,20 +304,128 @@ export class BaseWindow {
             if (!this.dragState.isDragging || !this.element) return;
 
             const newX = e.clientX - this.dragState.offsetX;
-            const newY = e.clientY - this.dragState.offsetY;
+            const minTop = window.getMenuBarBottom?.() || 0;
+            const newY = Math.max(minTop, e.clientY - this.dragState.offsetY);
 
             this.position.x = newX;
             this.position.y = newY;
+            this.dragState.lastPointerX = e.clientX;
 
             this._updatePosition();
+
+            const candidate = this._getSnapCandidate(this.element, this.dragState.lastPointerX);
+            if (candidate) window.showSnapPreview?.(candidate);
+            else window.hideSnapPreview?.();
         });
 
         document.addEventListener('mouseup', () => {
             if (this.dragState.isDragging) {
                 this.dragState.isDragging = false;
+                const target = this.element;
+                if (target) {
+                    const candidate = this._getSnapCandidate(target, this.dragState.lastPointerX);
+                    if (candidate) this._snapTo(candidate);
+                    window.hideSnapPreview?.();
+                }
+                this.dragState.lastPointerX = null;
                 this._saveState();
             }
         });
+    }
+
+    private _getSnapCandidate(
+        target: HTMLElement | null,
+        pointerX: number | null
+    ): 'left' | 'right' | null {
+        if (!target) return null;
+
+        // Snap detection uses rendered coordinates (clientX + getBoundingClientRect)
+        // and therefore intentionally relies on window.innerWidth.
+        const viewportWidth = Math.max(window.innerWidth || 0, 0);
+        if (viewportWidth <= 0) return null;
+
+        const threshold = Math.max(3, Math.min(14, viewportWidth * 0.0035));
+        const rect = target.getBoundingClientRect();
+
+        const pointerDistLeft =
+            typeof pointerX === 'number' ? Math.max(0, pointerX) : Math.abs(rect.left);
+        if (Math.abs(rect.left) <= threshold || pointerDistLeft <= threshold) return 'left';
+
+        const distRight = viewportWidth - rect.right;
+        const pointerDistRight =
+            typeof pointerX === 'number'
+                ? Math.max(0, viewportWidth - pointerX)
+                : Math.abs(distRight);
+        if (Math.abs(distRight) <= threshold || pointerDistRight <= threshold) return 'right';
+
+        return null;
+    }
+
+    private _snapTo(side: 'left' | 'right'): void {
+        const target = this.element;
+        if (!target) return;
+
+        this.isMaximized = false;
+
+        if (!target.dataset.snapped) {
+            const rect = target.getBoundingClientRect();
+            target.dataset.prevSnapLeft = `${Math.round(rect.left)}`;
+            target.dataset.prevSnapTop = `${Math.round(rect.top)}`;
+            target.dataset.prevSnapWidth = `${Math.round(rect.width)}`;
+            target.dataset.prevSnapHeight = `${Math.round(rect.height)}`;
+        }
+
+        const metrics = window.computeSnapMetrics?.(side);
+        if (!metrics) return;
+
+        target.style.position = 'fixed';
+        target.style.left = `${metrics.left}px`;
+        target.style.top = `${metrics.top}px`;
+        target.style.width = `${metrics.width}px`;
+        target.style.height = `${metrics.height}px`;
+        target.dataset.snapped = side;
+
+        this.position.x = metrics.left;
+        this.position.y = metrics.top;
+        this.position.width = metrics.width;
+        this.position.height = metrics.height;
+        this.bringToFront();
+    }
+
+    private _unsnap(): void {
+        const target = this.element;
+        if (!target) return;
+        if (!(target.dataset.snapped === 'left' || target.dataset.snapped === 'right')) return;
+
+        const restoreLeft = Number.parseFloat(target.dataset.prevSnapLeft || '');
+        const restoreTop = Number.parseFloat(target.dataset.prevSnapTop || '');
+        const restoreWidth = Number.parseFloat(target.dataset.prevSnapWidth || '');
+        const restoreHeight = Number.parseFloat(target.dataset.prevSnapHeight || '');
+
+        const hasRestore =
+            Number.isFinite(restoreLeft) &&
+            Number.isFinite(restoreTop) &&
+            Number.isFinite(restoreWidth) &&
+            Number.isFinite(restoreHeight);
+
+        if (hasRestore) {
+            target.style.position = 'fixed';
+            target.style.left = `${Math.round(restoreLeft)}px`;
+            target.style.top = `${Math.round(restoreTop)}px`;
+            target.style.width = `${Math.round(restoreWidth)}px`;
+            target.style.height = `${Math.round(restoreHeight)}px`;
+
+            this.position.x = Math.round(restoreLeft);
+            this.position.y = Math.round(restoreTop);
+            this.position.width = Math.round(restoreWidth);
+            this.position.height = Math.round(restoreHeight);
+        }
+
+        delete target.dataset.snapped;
+        delete target.dataset.prevSnapLeft;
+        delete target.dataset.prevSnapTop;
+        delete target.dataset.prevSnapWidth;
+        delete target.dataset.prevSnapHeight;
     }
 
     /**
