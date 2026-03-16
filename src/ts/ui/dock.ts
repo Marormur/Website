@@ -42,6 +42,57 @@ export function initDockMagnification(): void {
     let rafId: number | null = null;
     let pointerX: number | null = null;
 
+    const getDisplayScale = (): number => {
+        const fromInline = Number.parseFloat(document.documentElement.style.zoom || '');
+        if (Number.isFinite(fromInline) && fromInline > 0) return fromInline;
+
+        const computedZoom = Number.parseFloat(
+            getComputedStyle(document.documentElement).zoom || ''
+        );
+        if (Number.isFinite(computedZoom) && computedZoom > 0) return computedZoom;
+
+        return 1;
+    };
+
+    const projectPointerXFromTarget = (e: MouseEvent): number | null => {
+        const eventTarget = e.target as HTMLElement | null;
+        const referenceTarget = eventTarget?.closest(
+            '.dock-icon, .dock-tooltip, .dock-item, .dock-tray, #dock'
+        ) as HTMLElement | null;
+        if (!referenceTarget) return null;
+
+        const localWidth = referenceTarget.clientWidth || referenceTarget.offsetWidth || 0;
+        if (localWidth <= 0 || !Number.isFinite(e.offsetX)) return null;
+
+        const rect = referenceTarget.getBoundingClientRect();
+        return rect.left + (e.offsetX / localWidth) * rect.width;
+    };
+
+    const resolvePointerX = (e: MouseEvent): number => {
+        const projectedX = projectPointerXFromTarget(e);
+        if (projectedX !== null) return projectedX;
+
+        const rawX = e.clientX;
+        const scale = getDisplayScale();
+        if (Math.abs(scale - 1) < 0.001) return rawX;
+
+        const scaledX = rawX * scale;
+        const target = e.target as Element | null;
+        const iconTarget = target?.closest('.dock-icon') as HTMLElement | null;
+        if (!iconTarget) return scaledX;
+
+        const rect = iconTarget.getBoundingClientRect();
+        const distanceToRect = (x: number) => {
+            if (x < rect.left) return rect.left - x;
+            if (x > rect.right) return x - rect.right;
+            return 0;
+        };
+
+        // In some embedded Chromium surfaces with CSS zoom, clientX can be unscaled
+        // while getBoundingClientRect() is already scaled.
+        return distanceToRect(scaledX) < distanceToRect(rawX) ? scaledX : rawX;
+    };
+
     const maxScale = 1.6;
     const minScale = 1.0;
     const radius = 120;
@@ -87,7 +138,7 @@ export function initDockMagnification(): void {
     };
 
     const onMove = (e: MouseEvent) => {
-        pointerX = e.clientX;
+        pointerX = resolvePointerX(e);
         if (!rafId) rafId = requestAnimationFrame(apply) as unknown as number;
     };
     const onLeave = () => {
