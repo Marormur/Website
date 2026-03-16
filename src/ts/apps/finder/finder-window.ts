@@ -96,6 +96,16 @@ export class FinderWindow extends BaseWindow {
             e.preventDefault();
         });
 
+        windowEl.addEventListener('dblclick', (e: MouseEvent) => {
+            const target = e.target as HTMLElement | null;
+            const inFinderDragZone = target?.closest('.finder-window-drag-zone');
+            if (!inFinderDragZone || isInteractiveTarget(target)) return;
+
+            this.bringToFront();
+            this.toggleMaximize();
+            e.preventDefault();
+        });
+
         document.addEventListener('mousemove', (e: MouseEvent) => {
             if (!this.finderDragState.isDragging || !this.element) return;
 

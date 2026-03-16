@@ -467,7 +467,20 @@ export class Dialog {
             window.addEventListener('blur', blurHandler);
             e.preventDefault();
         };
+        const handleDoubleClick = (e: MouseEvent) => {
+            const dragHeader = (e.target as Element).closest?.(
+                '.draggable-header'
+            ) as HTMLElement | null;
+            if (!dragHeader || !this.modal.contains(dragHeader)) return;
+            if ((e.target as Element).closest?.('button, a, input, select, textarea')) return;
+            if ((e.target as Element).closest?.('[data-dialog-action]')) return;
+
+            this.refocus();
+            this.toggleMaximize();
+            e.preventDefault();
+        };
         this.modal.addEventListener('mousedown', handleMouseDown);
+        this.modal.addEventListener('dblclick', handleDoubleClick);
     }
 
     makeResizable() {

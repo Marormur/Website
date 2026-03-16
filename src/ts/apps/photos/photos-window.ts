@@ -93,6 +93,15 @@ export class PhotosWindow extends BaseWindow {
             e.preventDefault();
         });
 
+        windowEl.addEventListener('dblclick', (e: MouseEvent) => {
+            const target = e.target as HTMLElement | null;
+            if (!target?.closest('.finder-window-drag-zone') || isInteractiveTarget(target)) return;
+
+            this.bringToFront();
+            this.toggleMaximize();
+            e.preventDefault();
+        });
+
         document.addEventListener('mousemove', (e: MouseEvent) => {
             if (!this.photosDragState.isDragging || !this.element) return;
             const newX = e.clientX - this.photosDragState.offsetX;

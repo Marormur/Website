@@ -88,6 +88,35 @@ async function getSnapMetrics(page, side) {
     return await page.evaluate(side => window.computeSnapMetrics?.(side) || null, side);
 }
 
+async function getRegistryWindowMaximized(page, type) {
+    return await page.evaluate(type => {
+        const windows = window.WindowRegistry?.getWindowsByType?.(type) || [];
+        const target = windows[windows.length - 1] || null;
+        return target?.isMaximized ?? null;
+    }, type);
+}
+
+async function getDialogState(page, modalId) {
+    return await page.evaluate(modalId => {
+        const modal = document.getElementById(modalId);
+        if (!modal) return null;
+
+        const target =
+            window.StorageSystem?.getDialogWindowElement?.(modal) ||
+            modal.querySelector('.autopointer') ||
+            modal;
+        const rect = target.getBoundingClientRect();
+
+        return {
+            maximized: modal.dataset.maximized === 'true',
+            left: Math.round(rect.left),
+            top: Math.round(rect.top),
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+        };
+    }, modalId);
+}
+
 async function beginSyntheticDrag(page, type, targetClientX) {
     return await page.evaluate(
         ({ type, targetClientX }) => {
@@ -286,5 +315,83 @@ test.describe('Window Snapping', () => {
             expect(rightSnap.width).toBe(expectedRight.width);
             expect(rightSnap.height).toBe(expectedRight.height);
         }
+    });
+
+    test('double click on window headers toggles zoom for redesigned windows and settings', async ({
+        page,
+    }) => {
+        await createWindow(
+            page,
+            'finder',
+            { x: 280, y: 180, width: 820, height: 520 },
+            'Zoom Finder'
+        );
+
+        const finderBefore = await getWindowState(page, 'finder');
+        expect(finderBefore).not.toBeNull();
+        expect(await getRegistryWindowMaximized(page, 'finder')).toBe(false);
+
+        await page
+            .locator(`${windowSelector('finder')} .finder-window-drag-zone`)
+            .first()
+            .dispatchEvent('dblclick');
+
+        await expect
+            .poll(async () => await getRegistryWindowMaximized(page, 'finder'), {
+                timeout: 3000,
+            })
+            .toBe(true);
+
+        const finderZoomed = await getWindowState(page, 'finder');
+        expect(finderZoomed.width).toBeGreaterThan(finderBefore.width + 100);
+        expect(finderZoomed.left).toBe(0);
+
+        await page
+            .locator(`${windowSelector('finder')} .finder-window-drag-zone`)
+            .first()
+            .dispatchEvent('dblclick');
+
+        await expect
+            .poll(async () => await getRegistryWindowMaximized(page, 'finder'), {
+                timeout: 3000,
+            })
+            .toBe(false);
+
+        const finderRestored = await getWindowState(page, 'finder');
+        expect(finderRestored.width).toBe(finderBefore.width);
+        expect(finderRestored.height).toBe(finderBefore.height);
+
+        await page.evaluate(() => {
+            window.API?.window?.open?.('settings-modal');
+        });
+        await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 5000 });
+
+        const settingsBefore = await getDialogState(page, 'settings-modal');
+        expect(settingsBefore).not.toBeNull();
+        expect(settingsBefore.maximized).toBe(false);
+
+        await page.locator('#settings-modal .draggable-header').first().dispatchEvent('dblclick');
+
+        await expect
+            .poll(async () => (await getDialogState(page, 'settings-modal'))?.maximized ?? null, {
+                timeout: 3000,
+            })
+            .toBe(true);
+
+        const settingsZoomed = await getDialogState(page, 'settings-modal');
+        expect(settingsZoomed.height).toBeGreaterThan(settingsBefore.height);
+        expect(settingsZoomed.top).toBeLessThanOrEqual(settingsBefore.top);
+
+        await page.locator('#settings-modal .draggable-header').first().dispatchEvent('dblclick');
+
+        await expect
+            .poll(async () => (await getDialogState(page, 'settings-modal'))?.maximized ?? null, {
+                timeout: 3000,
+            })
+            .toBe(false);
+
+        const settingsRestored = await getDialogState(page, 'settings-modal');
+        expect(settingsRestored.width).toBe(settingsBefore.width);
+        expect(settingsRestored.height).toBe(settingsBefore.height);
     });
 });

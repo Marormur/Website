@@ -300,6 +300,17 @@ export class BaseWindow {
             e.preventDefault();
         });
 
+        this.titlebarElement.addEventListener('dblclick', (e: MouseEvent) => {
+            const target = e.target as HTMLElement | null;
+            if (target?.closest('button, a, input, select, textarea, [role="button"]')) {
+                return;
+            }
+
+            this.bringToFront();
+            this.toggleMaximize();
+            e.preventDefault();
+        });
+
         document.addEventListener('mousemove', (e: MouseEvent) => {
             if (!this.dragState.isDragging || !this.element) return;
 
