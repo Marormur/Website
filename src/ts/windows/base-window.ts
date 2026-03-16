@@ -7,6 +7,7 @@ import type { BaseTab } from '../windows/base-tab.js';
 import { getZIndexManager } from './z-index-manager.js';
 import logger from '../core/logger.js';
 import { WINDOW_ICONS } from './window-icons.js';
+import { getLogicalViewportWidth, getLogicalViewportHeight } from '../utils/viewport.js';
 
 export interface WindowPosition {
     x: number;
@@ -125,8 +126,8 @@ export class BaseWindow {
         // Center window with slight offset for multiple windows
         const offset = Math.random() * 100 - 50;
         return {
-            x: window.innerWidth / 2 - 400 + offset,
-            y: window.innerHeight / 2 - 300 + offset,
+            x: getLogicalViewportWidth() / 2 - 400 + offset,
+            y: getLogicalViewportHeight() / 2 - 300 + offset,
             width: 800,
             height: 600,
         };
@@ -228,8 +229,8 @@ export class BaseWindow {
         const maxBtn = document.createElement('button');
         maxBtn.type = 'button';
         maxBtn.className = 'traffic-light-control traffic-light-control--maximize';
-        maxBtn.title = 'Zoomen';
-        maxBtn.setAttribute('data-i18n-title', 'menuItems.window.zoom');
+        maxBtn.title = 'Füllen';
+        maxBtn.setAttribute('data-i18n-title', 'menu.window.zoom');
         maxBtn.setAttribute('data-symbol', '+');
         maxBtn.addEventListener('click', () => this.toggleMaximize());
 
@@ -641,12 +642,14 @@ export class BaseWindow {
             this.element.style.height = `${this.position.height}px`;
         }
 
-        const viewportWidth = Math.max(window.innerWidth || 0, this.position.width);
+        // getLogicalViewportWidth() normalisiert CSS zoom — window.innerWidth allein wäre
+        // bei zoom != 1 die physische Breite, nicht die logische DOM-Breite.
+        const viewportWidth = Math.max(getLogicalViewportWidth(), this.position.width);
         const minTop = Math.round(window.getMenuBarBottom?.() || 0);
         const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
         const availableHeight = Math.max(
             this.position.height,
-            (window.innerHeight || this.position.height) - minTop - dockReserve
+            getLogicalViewportHeight() - minTop - dockReserve
         );
 
         this.position.x = Math.max(0, Math.round((viewportWidth - this.position.width) / 2));
@@ -675,13 +678,13 @@ export class BaseWindow {
         if (this.isMaximized) {
             const minTop = Math.round(window.getMenuBarBottom?.() || 0);
             const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
-            const maxHeight = Math.max(360, (window.innerHeight || 0) - minTop - dockReserve);
+            const maxHeight = Math.max(360, getLogicalViewportHeight() - minTop - dockReserve);
 
             windowEl.style.maxWidth = 'none';
             windowEl.style.maxHeight = 'none';
             windowEl.style.left = '0px';
             windowEl.style.top = `${minTop}px`;
-            windowEl.style.width = `${window.innerWidth || this.position.width}px`;
+            windowEl.style.width = `${getLogicalViewportWidth() || this.position.width}px`;
             windowEl.style.height = `${maxHeight}px`;
         } else {
             windowEl.style.maxWidth = '';

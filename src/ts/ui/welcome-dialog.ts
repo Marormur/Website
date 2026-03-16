@@ -14,6 +14,7 @@
  */
 
 import logger from '../core/logger.js';
+import { getLogicalViewportWidth, getLogicalViewportHeight } from '../utils/viewport.js';
 
 const WELCOME_SHOWN_KEY = 'portfolio_welcome_shown';
 
@@ -57,15 +58,21 @@ function getViewportBounds() {
     return {
         minLeft: left,
         minTop: top,
-        maxWidth: Math.max(320, window.innerWidth - HORIZONTAL_EDGE_PADDING * 2),
-        maxHeight: Math.max(260, window.innerHeight - top - VERTICAL_EDGE_PADDING),
+        maxWidth: Math.max(320, getLogicalViewportWidth() - HORIZONTAL_EDGE_PADDING * 2),
+        maxHeight: Math.max(260, getLogicalViewportHeight() - top - VERTICAL_EDGE_PADDING),
     };
 }
 
 function clampWindowPosition(left: number, top: number, width: number, height: number) {
     const viewport = getViewportBounds();
-    const maxLeft = Math.max(viewport.minLeft, window.innerWidth - width - HORIZONTAL_EDGE_PADDING);
-    const maxTop = Math.max(viewport.minTop, window.innerHeight - height - VERTICAL_EDGE_PADDING);
+    const maxLeft = Math.max(
+        viewport.minLeft,
+        getLogicalViewportWidth() - width - HORIZONTAL_EDGE_PADDING
+    );
+    const maxTop = Math.max(
+        viewport.minTop,
+        getLogicalViewportHeight() - height - VERTICAL_EDGE_PADDING
+    );
     return {
         left: Math.min(Math.max(viewport.minLeft, left), maxLeft),
         top: Math.min(Math.max(viewport.minTop, top), maxTop),
@@ -73,9 +80,9 @@ function clampWindowPosition(left: number, top: number, width: number, height: n
 }
 
 function centerWindow(width: number, height: number) {
-    const left = Math.round((window.innerWidth - width) / 2);
+    const left = Math.round((getLogicalViewportWidth() - width) / 2);
     // Center against the real viewport and then enforce menu bar / edge boundaries.
-    const top = Math.round((window.innerHeight - height) / 2);
+    const top = Math.round((getLogicalViewportHeight() - height) / 2);
     return clampWindowPosition(left, top, width, height);
 }
 
@@ -425,8 +432,8 @@ function buildOverlay(): HTMLElement {
                     ></button>
                     <button
                         id="${ZOOM_ID}"
-                        title="Fenster zoomen"
-                        aria-label="Fenster zoomen"
+                        title="Fenster füllen"
+                        aria-label="Fenster füllen"
                         data-i18n-title="welcomeDialog.controls.zoomTitle"
                         data-i18n-aria-label="welcomeDialog.controls.zoomAria"
                         class="welcome-traffic-light"
@@ -599,7 +606,7 @@ function toggleZoom(win: HTMLElement) {
     storeRestoreBounds(win);
     const viewport = getViewportBounds();
     applyWindowBounds(win, {
-        left: EDGE_PADDING,
+        left: HORIZONTAL_EDGE_PADDING,
         top: viewport.minTop,
         width: viewport.maxWidth,
         height: viewport.maxHeight,
@@ -705,7 +712,7 @@ function attachWindowControls(overlay: HTMLElement) {
             if (win.dataset.zoomed === 'true') {
                 const viewport = getViewportBounds();
                 applyWindowBounds(win, {
-                    left: EDGE_PADDING,
+                    left: HORIZONTAL_EDGE_PADDING,
                     top: viewport.minTop,
                     width: viewport.maxWidth,
                     height: viewport.maxHeight,

@@ -31,9 +31,7 @@
             target.style.position = 'fixed';
         }
         const currentTop = parseFloat(target.style.top);
-        const numericTop = Number.isNaN(currentTop)
-            ? parseFloat(computed.top)
-            : currentTop;
+        const numericTop = Number.isNaN(currentTop) ? parseFloat(computed.top) : currentTop;
         if (!Number.isNaN(numericTop) && numericTop < minTop) {
             target.style.top = `${minTop}px`;
         } else if (Number.isNaN(numericTop)) {
@@ -57,8 +55,10 @@
     ): { left: number; top: number; width: number; height: number } | null {
         if (side !== 'left' && side !== 'right') return null;
         const minTop = Math.round(getMenuBarBottom());
-        const viewportWidth = Math.max(window.innerWidth || 0, 0);
-        const viewportHeight = Math.max(window.innerHeight || 0, 0);
+        // CSS-zoom auf <html> skaliert window.innerWidth nicht — Division liefert logischen DOM-Raum.
+        const _htmlZoom = parseFloat(document.documentElement.style.zoom || '1') || 1;
+        const viewportWidth = Math.max(Math.round(window.innerWidth / _htmlZoom), 0);
+        const viewportHeight = Math.max(Math.round(window.innerHeight / _htmlZoom), 0);
         if (viewportWidth <= 0 || viewportHeight <= 0) return null;
         const minWidth = Math.min(320, viewportWidth);
         const halfWidth = Math.round(viewportWidth / 2);
@@ -67,9 +67,11 @@
         const top = minTop;
 
         // Fetch dock reserved bottom height
-        const getDockReservedBottom =
-            (window as unknown as { getDockReservedBottom?: () => number }).getDockReservedBottom;
-        const dockReserve = typeof getDockReservedBottom === 'function' ? getDockReservedBottom() : 0;
+        const getDockReservedBottom = (
+            window as unknown as { getDockReservedBottom?: () => number }
+        ).getDockReservedBottom;
+        const dockReserve =
+            typeof getDockReservedBottom === 'function' ? getDockReservedBottom() : 0;
 
         const height = Math.max(0, viewportHeight - top - dockReserve);
         return { left, top, width, height };

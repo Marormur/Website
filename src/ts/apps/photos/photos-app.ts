@@ -285,7 +285,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                     <div class="finder-no-drag traffic-light-control traffic-light-control--minimize"
                         data-action="window-minimize" data-symbol="−" title="${t('menu.window.minimize', 'Minimize')}" role="button" tabindex="0"></div>
                     <div class="finder-no-drag traffic-light-control traffic-light-control--maximize"
-                        data-action="window-maximize" data-symbol="+" title="${t('menu.window.zoom', 'Zoom')}" role="button" tabindex="0"></div>
+                        data-action="window-maximize" data-symbol="+" title="${t('menu.window.zoom', 'Fill')}" role="button" tabindex="0"></div>
                 </div>
                 <!-- Sidebar body: list fills available height, controls stay bottom-aligned -->
                 <div class="flex-1 min-h-0 flex flex-col px-3 pb-3" style="padding-top:6px;">

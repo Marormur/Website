@@ -954,7 +954,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                         h('div', {
                             className:
                                 'finder-no-drag traffic-light-control traffic-light-control--maximize',
-                            title: 'Zoomen',
+                            title: 'Füllen',
                             'data-action': 'window-maximize',
                             'data-symbol': '+',
                         })

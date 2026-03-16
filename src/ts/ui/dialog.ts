@@ -5,6 +5,7 @@
 
 import { getZIndexManager } from '../windows/z-index-manager.js';
 import logger from '../core/logger.js';
+import { getLogicalViewportWidth, getLogicalViewportHeight } from '../utils/viewport.js';
 
 export class Dialog {
     modal: HTMLElement;
@@ -171,11 +172,8 @@ export class Dialog {
         const height = Math.round(rect.height || target.offsetHeight || 0);
         const minTop = Math.round(window.getMenuBarBottom?.() || 0);
         const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
-        const viewportWidth = Math.max(window.innerWidth || 0, width);
-        const availableHeight = Math.max(
-            height,
-            (window.innerHeight || height) - minTop - dockReserve
-        );
+        const viewportWidth = Math.max(getLogicalViewportWidth(), width);
+        const availableHeight = Math.max(height, getLogicalViewportHeight() - minTop - dockReserve);
 
         target.style.position = 'fixed';
         target.style.maxWidth = '';
@@ -226,11 +224,11 @@ export class Dialog {
         target.style.position = 'fixed';
         target.style.left = '0px';
         target.style.top = `${minTop}px`;
-        target.style.width = '100vw';
-        target.style.height = `calc(100vh - ${minTop}px)`;
+        target.style.width = `${getLogicalViewportWidth()}px`;
+        target.style.height = `${getLogicalViewportHeight() - minTop}px`;
         try {
             const __dockReserve = window.getDockReservedBottom?.() || 0;
-            const __maxHeight = Math.max(0, (window.innerHeight || 0) - minTop - __dockReserve);
+            const __maxHeight = Math.max(0, getLogicalViewportHeight() - minTop - __dockReserve);
             target.style.height = `${__maxHeight}px`;
         } catch {}
         this.modal.dataset.maximized = 'true';
@@ -322,7 +320,7 @@ export class Dialog {
 
     getSnapCandidate(target: HTMLElement | null, pointerX: number | null) {
         if (!target) return null;
-        const viewportWidth = Math.max(window.innerWidth || 0, 0);
+        const viewportWidth = Math.max(getLogicalViewportWidth(), 0);
         if (viewportWidth <= 0) return null;
         const threshold = Math.max(3, Math.min(14, viewportWidth * 0.0035));
         const rect = target.getBoundingClientRect();
