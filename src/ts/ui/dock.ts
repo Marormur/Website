@@ -5,6 +5,38 @@
 
 import { getJSON, setJSON } from '../services/storage-utils.js';
 import { getLogicalViewportHeight } from '../utils/viewport.js';
+import { renderProgramIcon, WINDOW_ICONS } from '../windows/window-icons.js';
+
+const DOCK_WINDOW_ICONS: Record<string, string> = {
+    'launchpad-modal': 'launchpad',
+    'text-modal': 'textEditor',
+    'terminal-modal': 'terminal',
+    'settings-modal': 'settings',
+};
+
+function renderDockProgramIcons(): void {
+    const dock = document.getElementById('dock');
+    if (!dock) return;
+
+    dock.querySelectorAll<HTMLElement>('.dock-item').forEach(item => {
+        const currentIcon = item.querySelector<HTMLElement>('.dock-icon');
+        if (!currentIcon) return;
+
+        const iconValue = item.dataset.windowId
+            ? DOCK_WINDOW_ICONS[item.dataset.windowId] || 'default'
+            : 'finder';
+
+        if (currentIcon.tagName !== 'SPAN') {
+            const replacement = document.createElement('span');
+            replacement.className = 'dock-icon';
+            renderProgramIcon(replacement, iconValue);
+            currentIcon.replaceWith(replacement);
+            return;
+        }
+
+        renderProgramIcon(currentIcon, iconValue);
+    });
+}
 
 // getDockReservedBottom
 export function getDockReservedBottom(): number {
@@ -24,6 +56,8 @@ export function getDockReservedBottom(): number {
 
 // Dock magnification
 export function initDockMagnification(): void {
+    renderDockProgramIcons();
+
     const dock = document.getElementById('dock');
     if (!dock) return;
 
@@ -450,6 +484,10 @@ if (typeof window !== 'undefined') {
     if (typeof window.updateDockIndicators !== 'function') {
         window.updateDockIndicators = updateDockIndicators;
     }
+
+    window.addEventListener('iconThemeChange', () => {
+        renderDockProgramIcons();
+    });
 }
 
 export default {};

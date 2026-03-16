@@ -181,6 +181,12 @@ declare global {
             getMenuIconSvg?: (icon: string) => string;
             renderIconIntoElement?: (el: HTMLElement, svg: string, icon: string) => void;
         };
+        IconThemeSystem?: {
+            getProgramIconTheme?: () => 'emoji' | 'custom';
+            setProgramIconTheme?: (theme: 'emoji' | 'custom') => void;
+            getProgramIcon?: (iconKey: string) => string;
+            refreshProgramIcons?: (root?: ParentNode) => void;
+        };
         /** Theme toggle helpers (legacy). */
         SystemUI?: {
             handleSystemToggle?: (mode: string) => void;

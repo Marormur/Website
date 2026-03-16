@@ -1,4 +1,4 @@
-import { WINDOW_ICONS } from '../windows/window-icons.js';
+import { renderProgramIcon, resolveProgramIcon, WINDOW_ICONS } from '../windows/window-icons.js';
 
 (function () {
     'use strict';
@@ -34,7 +34,7 @@ import { WINDOW_ICONS } from '../windows/window-icons.js';
                         programLabel: t('programs.finder.label', 'Finder'),
                         infoLabel: t('programs.finder.infoLabel', 'Über Finder'),
                         fallbackInfoModalId: 'program-info-modal',
-                        icon: WINDOW_ICONS.finder,
+                        icon: resolveProgramIcon(WINDOW_ICONS.finder),
                         about: {
                             name: 'Finder',
                             tagline: t(
@@ -50,7 +50,7 @@ import { WINDOW_ICONS } from '../windows/window-icons.js';
                         programLabel: t('programs.terminal.label', 'Terminal'),
                         infoLabel: t('programs.terminal.infoLabel', 'Über Terminal'),
                         fallbackInfoModalId: 'program-info-modal',
-                        icon: WINDOW_ICONS.terminal,
+                        icon: resolveProgramIcon(WINDOW_ICONS.terminal),
                         about: {
                             name: 'Terminal',
                             tagline: t(
@@ -66,7 +66,7 @@ import { WINDOW_ICONS } from '../windows/window-icons.js';
                         programLabel: t('programs.text.label', 'TextEdit'),
                         infoLabel: t('programs.text.infoLabel', 'Über TextEdit'),
                         fallbackInfoModalId: 'program-info-modal',
-                        icon: WINDOW_ICONS.textEditor,
+                        icon: resolveProgramIcon(WINDOW_ICONS.textEditor),
                         about: {
                             name: 'TextEdit',
                             tagline: t('programs.text.about.tagline', 'Einfacher Texteditor'),
@@ -99,7 +99,7 @@ import { WINDOW_ICONS } from '../windows/window-icons.js';
             programLabel: t('programs.default.label'),
             infoLabel: t('programs.default.infoLabel'),
             fallbackInfoModalId: 'program-info-modal',
-            icon: WINDOW_ICONS.default,
+            icon: resolveProgramIcon(WINDOW_ICONS.default),
             about: {},
         };
     }
@@ -148,13 +148,13 @@ import { WINDOW_ICONS } from '../windows/window-icons.js';
             info.modalId || '';
         const fallbackInfo = resolveProgramInfo(null);
         const about = info.about || fallbackInfo.about || {};
-        const iconEl = modal.querySelector('#program-info-icon') as HTMLImageElement | null;
+        const iconEl = modal.querySelector('#program-info-icon') as HTMLElement | null;
         if (iconEl) {
             if (info.icon) {
-                iconEl.src = info.icon;
-                iconEl.alt = about.name || info.programLabel || 'Programm';
+                renderProgramIcon(iconEl, info.icon);
                 iconEl.classList.remove('hidden');
             } else {
+                iconEl.replaceChildren();
                 iconEl.classList.add('hidden');
             }
         }
@@ -336,6 +336,14 @@ import { WINDOW_ICONS } from '../windows/window-icons.js';
                 window as unknown as { updateAllSystemStatusUI?: () => void }
             ).updateAllSystemStatusUI;
             if (updateAllSystemStatusUI) updateAllSystemStatusUI();
+        });
+    if (!alreadyWired)
+        window.addEventListener('iconThemeChange', () => {
+            const info = updateProgramLabelByTopModal();
+            const programInfoModal = document.getElementById('program-info-modal');
+            if (programInfoModal && !programInfoModal.classList.contains('hidden')) {
+                renderProgramInfo(resolveProgramInfo(info?.modalId || null));
+            }
         });
 
     // Export legacy globals for compatibility

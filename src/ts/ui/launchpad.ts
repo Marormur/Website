@@ -5,6 +5,7 @@
 
 import logger from '../core/logger.js';
 import { translate } from '../services/i18n';
+import { renderProgramIcon, resolveProgramIcon } from '../windows/window-icons.js';
 
 logger.debug('UI', 'Launchpad (TS) loaded');
 
@@ -100,7 +101,7 @@ logger.debug('UI', 'Launchpad (TS) loaded');
                 allApps.push({
                     id,
                     name: info.programLabel || translate('programs.default.label') || 'App',
-                    icon: info.icon || './img/sucher.png',
+                    icon: resolveProgramIcon(info.icon) || './img/sucher.png',
                     programKey: cfg ? cfg.programKey : null,
                 });
             }
@@ -137,29 +138,7 @@ logger.debug('UI', 'Launchpad (TS) loaded');
 
             const iconWrap = document.createElement('div');
             iconWrap.className = 'launchpad-app-icon';
-            const icon = app.icon;
-            const isImg = typeof icon === 'string' && /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(icon);
-            if (
-                isImg ||
-                (typeof icon === 'string' && (icon.startsWith('./') || icon.startsWith('http')))
-            ) {
-                const img = document.createElement('img');
-                img.src = icon;
-                img.alt = app.name;
-                img.draggable = false;
-                iconWrap.appendChild(img);
-            } else if (typeof icon === 'string' && icon.trim().length) {
-                const emoji = document.createElement('div');
-                emoji.className = 'launchpad-app-emoji';
-                emoji.textContent = icon;
-                iconWrap.appendChild(emoji);
-            } else {
-                const fallback = document.createElement('img');
-                fallback.src = './img/sucher.png';
-                fallback.alt = app.name;
-                fallback.draggable = false;
-                iconWrap.appendChild(fallback);
-            }
+            renderProgramIcon(iconWrap, app.icon);
 
             const label = document.createElement('span');
             label.className = 'launchpad-app-label';
@@ -230,6 +209,10 @@ logger.debug('UI', 'Launchpad (TS) loaded');
     }
 
     window.addEventListener('languagePreferenceChange', () => {
+        if (container) loadApps();
+    });
+
+    window.addEventListener('iconThemeChange', () => {
         if (container) loadApps();
     });
 

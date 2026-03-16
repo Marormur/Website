@@ -635,6 +635,19 @@ export const de = {
             title: 'Darstellungsoptionen',
             description: 'Passe an, wie der Desktop mit hellem und dunklem Design umgeht.',
             legend: 'Darkmode',
+            iconTheme: {
+                legend: 'Programm-Icons',
+                options: {
+                    emoji: {
+                        label: '🙂 Emojis',
+                        description: 'Verwendet skalierbare Emoji-Symbole als Standard.',
+                    },
+                    custom: {
+                        label: '🖼️ Eigene Icons',
+                        description: 'Nutze deine bisherigen Bilddateien für Programme.',
+                    },
+                },
+            },
             scale: {
                 legend: 'Skalierung',
                 title: 'UI-Skalierung',

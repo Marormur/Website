@@ -634,6 +634,19 @@ export const en = {
             title: 'Appearance options',
             description: 'Adjust how the desktop handles light and dark mode.',
             legend: 'Dark mode',
+            iconTheme: {
+                legend: 'App icons',
+                options: {
+                    emoji: {
+                        label: '🙂 Emojis',
+                        description: 'Use scalable emoji symbols as the default app icons.',
+                    },
+                    custom: {
+                        label: '🖼️ Custom icons',
+                        description: 'Use your previous image files for app icons.',
+                    },
+                },
+            },
             scale: {
                 legend: 'Scaling',
                 title: 'UI scaling',

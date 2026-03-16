@@ -21,7 +21,7 @@
 
 import { BASE_Z_INDEX, getZIndexManager } from './z-index-manager.js';
 import logger from '../core/logger.js';
-import { WINDOW_ICONS } from './window-icons.js';
+import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
 
 (() => {
     'use strict';
@@ -88,7 +88,7 @@ import { WINDOW_ICONS } from './window-icons.js';
                 infoLabel: translate(`${this.programKey}.infoLabel`),
                 fallbackInfoModalId:
                     (this.metadata.fallbackInfoModalId as string) || 'program-info-modal',
-                icon: this.icon,
+                icon: resolveProgramIcon(this.icon),
                 about: {},
             };
             aboutFields.forEach(field => {
@@ -444,7 +444,7 @@ import { WINDOW_ICONS } from './window-icons.js';
                 programLabel: translate(`${programKey}.label`),
                 infoLabel: translate(`${programKey}.infoLabel`),
                 fallbackInfoModalId: 'program-info-modal',
-                icon: WINDOW_ICONS.default,
+                icon: resolveProgramIcon(WINDOW_ICONS.default),
                 about: {
                     name: translate(`${programKey}.about.name`),
                     tagline: translate(`${programKey}.about.tagline`),

@@ -2317,6 +2317,55 @@ html.dark .desktop-icon-graphic {
     border-radius: inherit;
 }
 
+.program-icon-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.program-icon-emoji {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.window-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.window-icon .program-icon-emoji {
+    font-size: 16px;
+}
+
+#program-info-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+#program-info-icon .program-icon-image {
+    object-fit: cover;
+    border-radius: inherit;
+}
+
+#program-info-icon .program-icon-emoji {
+    font-size: 4.5rem;
+}
+
 /* Rubberband selection visuals */
 .desktop-rubberband {
     mix-blend-mode: normal;
@@ -3252,16 +3301,33 @@ html.dark #dock .dock-tray {
 #dock .dock-icon {
     width: 64px;
     height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition:
         transform 0.18s ease,
         filter 0.18s ease;
     will-change: transform;
 }
 
+#dock .dock-icon .program-icon-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#dock .dock-icon .program-icon-emoji {
+    font-size: 56px;
+}
+
 @media (min-width: 768px) {
     #dock .dock-icon {
         width: 72px;
         height: 72px;
+    }
+
+    #dock .dock-icon .program-icon-emoji {
+        font-size: 64px;
     }
 }
 
@@ -4450,8 +4516,16 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
     object-fit: cover;
 }
 
-.launchpad-app-emoji {
-    font-size: 4rem;
+.launchpad-app-icon .program-icon-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.launchpad-app-icon .program-icon-emoji {
+    width: 100%;
+    height: 100%;
+    font-size: clamp(2.6rem, 4vw, 3.3rem);
     line-height: 1;
 }
 

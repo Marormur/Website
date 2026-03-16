@@ -31,6 +31,7 @@ logger.debug('APP', 'Settings Module loaded');
         render(): void;
         attachListeners(): void;
         syncThemePreference(): void;
+        syncIconThemePreference(): void;
         syncLanguagePreference(): void;
         syncDisplayScalePreference(): void;
         showSection(section: SectionName, options?: { pushHistory?: boolean }): void;
@@ -77,6 +78,7 @@ logger.debug('APP', 'Settings Module loaded');
             this.render();
             this.attachListeners();
             this.syncThemePreference();
+            this.syncIconThemePreference();
             this.syncLanguagePreference();
             this.syncDisplayScalePreference();
             this.syncWifiNetworkList();
@@ -522,6 +524,24 @@ logger.debug('APP', 'Settings Module loaded');
                                     <button type="button" class="settings-scale-recommendation-btn" data-settings-display-scale-apply data-i18n="settingsPage.display.scale.applyRecommendation">Empfehlung übernehmen</button>
                                 </div>
                             </fieldset>
+
+                            <fieldset class="settings-option-card">
+                                <legend class="settings-option-legend" data-i18n="settingsPage.display.iconTheme.legend">Programm-Icons</legend>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="icon-theme" value="emoji" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.display.iconTheme.options.emoji.label">🙂 Emojis</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.display.iconTheme.options.emoji.description">Verwendet skalierbare Emoji-Symbole als Standard.</span>
+                                    </span>
+                                </label>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="icon-theme" value="custom" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.display.iconTheme.options.custom.label">🖼️ Eigene Icons</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.display.iconTheme.options.custom.description">Nutze deine bisherigen Bilddateien für Programme.</span>
+                                    </span>
+                                </label>
+                            </fieldset>
                         </section>
 
                         <section id="settings-language" class="settings-section hidden">
@@ -624,6 +644,39 @@ logger.debug('APP', 'Settings Module loaded');
                             ThemeSystem.setThemePreference(theme);
                         }
                     }
+                });
+            });
+
+            const iconThemeRadios = this.container.querySelectorAll<HTMLInputElement>(
+                'input[name="icon-theme"]'
+            );
+            iconThemeRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (!radio.checked) return;
+
+                    const iconTheme = radio.value;
+                    const API = (
+                        window as Window & {
+                            API?: {
+                                iconTheme?: {
+                                    setProgramIconTheme(theme: 'emoji' | 'custom'): void;
+                                };
+                            };
+                        }
+                    ).API;
+                    if (API?.iconTheme?.setProgramIconTheme) {
+                        API.iconTheme.setProgramIconTheme(iconTheme as 'emoji' | 'custom');
+                        return;
+                    }
+
+                    const IconThemeSystem = (
+                        window as Window & {
+                            IconThemeSystem?: {
+                                setProgramIconTheme(theme: 'emoji' | 'custom'): void;
+                            };
+                        }
+                    ).IconThemeSystem;
+                    IconThemeSystem?.setProgramIconTheme?.(iconTheme as 'emoji' | 'custom');
                 });
             });
 
@@ -797,6 +850,35 @@ logger.debug('APP', 'Settings Module loaded');
                 'input[name="theme-mode"]'
             );
             themeRadios.forEach(radio => {
+                radio.checked = radio.value === preference;
+            });
+        },
+
+        syncIconThemePreference(): void {
+            if (!this.container) return;
+
+            let preference: 'emoji' | 'custom' = 'emoji';
+            const API = (
+                window as Window & {
+                    API?: { iconTheme?: { getProgramIconTheme(): 'emoji' | 'custom' } };
+                }
+            ).API;
+            const IconThemeSystem = (
+                window as Window & {
+                    IconThemeSystem?: { getProgramIconTheme(): 'emoji' | 'custom' };
+                }
+            ).IconThemeSystem;
+
+            if (API?.iconTheme?.getProgramIconTheme) {
+                preference = API.iconTheme.getProgramIconTheme();
+            } else if (IconThemeSystem?.getProgramIconTheme) {
+                preference = IconThemeSystem.getProgramIconTheme();
+            }
+
+            const iconThemeRadios = this.container.querySelectorAll<HTMLInputElement>(
+                'input[name="icon-theme"]'
+            );
+            iconThemeRadios.forEach(radio => {
                 radio.checked = radio.value === preference;
             });
         },
@@ -1219,6 +1301,19 @@ logger.debug('APP', 'Settings Module loaded');
             SettingsSystem.init(container);
         }
     }
+
+    window.addEventListener('themePreferenceChange', () => {
+        SettingsSystem.syncThemePreference();
+    });
+    window.addEventListener('iconThemeChange', () => {
+        SettingsSystem.syncIconThemePreference();
+    });
+    window.addEventListener('languagePreferenceChange', () => {
+        SettingsSystem.syncLanguagePreference();
+    });
+    window.addEventListener('displayScalePreferenceChange', () => {
+        SettingsSystem.syncDisplayScalePreference();
+    });
 })();
 
 export {};

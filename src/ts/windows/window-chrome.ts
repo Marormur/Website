@@ -1,4 +1,5 @@
 import logger from '../core/logger.js';
+import { renderProgramIcon } from './window-icons.js';
 logger.debug('WINDOW', 'WindowChrome loaded');
 
 (function () {
@@ -111,22 +112,7 @@ logger.debug('WINDOW', 'WindowChrome loaded');
             if (config.icon) {
                 const iconEl = document.createElement('span');
                 iconEl.className = 'window-icon';
-
-                if (
-                    config.icon.startsWith('http') ||
-                    config.icon.startsWith('./') ||
-                    config.icon.startsWith('/')
-                ) {
-                    const img = document.createElement('img');
-                    img.src = config.icon;
-                    img.alt = '';
-                    img.style.cssText = 'width: 16px; height: 16px; object-fit: contain;';
-                    iconEl.appendChild(img);
-                } else {
-                    iconEl.textContent = config.icon;
-                    iconEl.style.fontSize = '16px';
-                }
-
+                renderProgramIcon(iconEl, config.icon);
                 leftSide.appendChild(iconEl);
             }
 

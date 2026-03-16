@@ -85,6 +85,13 @@ logger.debug('APP', 'API loaded');
             'renderIconIntoElement',
         ] as const),
 
+        iconTheme: createModuleProxy('IconThemeSystem', [
+            'getProgramIconTheme',
+            'setProgramIconTheme',
+            'getProgramIcon',
+            'refreshProgramIcons',
+        ] as const),
+
         dock: createModuleProxy('DockSystem', [
             'getDockReservedBottom',
             'initDockMagnification',
