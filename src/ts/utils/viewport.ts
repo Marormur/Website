@@ -21,12 +21,19 @@ export function getHtmlZoom(): number {
     return parseFloat(document.documentElement.style.zoom || '1') || 1;
 }
 
+/**
+ * Konvertiert gerenderte px (z. B. aus getBoundingClientRect) in logische CSS-px.
+ */
+export function toLogicalPx(px: number): number {
+    return px / getHtmlZoom();
+}
+
 /** Logische Viewport-Breite in CSS-px (CSS-zoom-normalisiert). */
 export function getLogicalViewportWidth(): number {
-    return Math.round(window.innerWidth / getHtmlZoom());
+    return Math.round(toLogicalPx(window.innerWidth));
 }
 
 /** Logische Viewport-Höhe in CSS-px (CSS-zoom-normalisiert). */
 export function getLogicalViewportHeight(): number {
-    return Math.round(window.innerHeight / getHtmlZoom());
+    return Math.round(toLogicalPx(window.innerHeight));
 }

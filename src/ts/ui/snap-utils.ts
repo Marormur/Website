@@ -1,6 +1,14 @@
 (function () {
     'use strict';
 
+    function getHtmlZoom(): number {
+        return parseFloat(document.documentElement.style.zoom || '1') || 1;
+    }
+
+    function toLogicalPx(px: number): number {
+        return px / getHtmlZoom();
+    }
+
     // ============================================================================
     // Snap & Window Utilities
     // ============================================================================
@@ -15,7 +23,7 @@
             return 0;
         }
         const rect = header.getBoundingClientRect();
-        return rect.bottom;
+        return Math.round(toLogicalPx(rect.bottom));
     }
 
     /**
@@ -36,9 +44,9 @@
             target.style.top = `${minTop}px`;
         } else if (Number.isNaN(numericTop)) {
             const rect = target.getBoundingClientRect();
-            if (rect.top < minTop) {
+            if (toLogicalPx(rect.top) < minTop) {
                 if (!target.style.left) {
-                    target.style.left = `${rect.left}px`;
+                    target.style.left = `${Math.round(toLogicalPx(rect.left))}px`;
                 }
                 target.style.top = `${minTop}px`;
             }
@@ -55,10 +63,8 @@
     ): { left: number; top: number; width: number; height: number } | null {
         if (side !== 'left' && side !== 'right') return null;
         const minTop = Math.round(getMenuBarBottom());
-        // CSS-zoom auf <html> skaliert window.innerWidth nicht — Division liefert logischen DOM-Raum.
-        const _htmlZoom = parseFloat(document.documentElement.style.zoom || '1') || 1;
-        const viewportWidth = Math.max(Math.round(window.innerWidth / _htmlZoom), 0);
-        const viewportHeight = Math.max(Math.round(window.innerHeight / _htmlZoom), 0);
+        const viewportWidth = Math.max(Math.round(toLogicalPx(window.innerWidth)), 0);
+        const viewportHeight = Math.max(Math.round(toLogicalPx(window.innerHeight)), 0);
         if (viewportWidth <= 0 || viewportHeight <= 0) return null;
         const minWidth = Math.min(320, viewportWidth);
         const halfWidth = Math.round(viewportWidth / 2);
@@ -70,8 +76,9 @@
         const getDockReservedBottom = (
             window as unknown as { getDockReservedBottom?: () => number }
         ).getDockReservedBottom;
-        const dockReserve =
-            typeof getDockReservedBottom === 'function' ? getDockReservedBottom() : 0;
+        const dockReserve = Math.round(
+            typeof getDockReservedBottom === 'function' ? getDockReservedBottom() : 0
+        );
 
         const height = Math.max(0, viewportHeight - top - dockReserve);
         return { left, top, width, height };

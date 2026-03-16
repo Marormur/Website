@@ -4,6 +4,7 @@
  */
 
 import { getJSON, setJSON } from '../services/storage-utils.js';
+import { getLogicalViewportHeight } from '../utils/viewport.js';
 
 // getDockReservedBottom
 export function getDockReservedBottom(): number {
@@ -11,9 +12,11 @@ export function getDockReservedBottom(): number {
         const dock = document.getElementById('dock');
         if (!dock || dock.classList.contains('hidden')) return 0;
         const rect = dock.getBoundingClientRect();
-        const vh = Math.max(window.innerHeight || 0, 0);
-        if (vh <= 0) return 0;
-        return Math.round(Math.max(0, vh - rect.top));
+        const logicalVh = Math.max(getLogicalViewportHeight(), 0);
+        if (logicalVh <= 0) return 0;
+        // rect.top liegt im selben Koordinatenraum wie Fenster-Styles (left/top/height).
+        // Für Fill/Snap muss daher gegen die logische Viewport-Höhe gerechnet werden.
+        return Math.round(Math.max(0, logicalVh - rect.top));
     } catch {
         return 0;
     }
