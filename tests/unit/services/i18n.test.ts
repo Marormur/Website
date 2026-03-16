@@ -169,3 +169,66 @@ describe('translate – language override option', () => {
     });
 });
 
+// ─── window event listeners ──────────────────────────────────────────────────
+// The module registers two window listeners at load time (inside
+// `if (typeof window !== 'undefined')`). We can exercise them by dispatching
+// real DOM events, since jsdom provides a fully functional window object.
+
+describe('i18n – languagechange window event', () => {
+    it('calls refreshActiveLanguage when preference is "system"', () => {
+        setLanguagePreference('system');
+        // Should not throw and must still return a valid language code
+        expect(() => window.dispatchEvent(new Event('languagechange'))).not.toThrow();
+        expect(['de', 'en']).toContain(getActiveLanguage());
+    });
+
+    it('does nothing (no throw) when preference is not "system"', () => {
+        setLanguagePreference('en');
+        expect(() => window.dispatchEvent(new Event('languagechange'))).not.toThrow();
+        // Active language remains en – the handler's if-guard prevents the call
+        expect(getActiveLanguage()).toBe('en');
+    });
+});
+
+describe('i18n – storage window event', () => {
+    it('updates active language when the language preference key changes', () => {
+        setLanguagePreference('en');
+        expect(getActiveLanguage()).toBe('en');
+
+        window.dispatchEvent(
+            new StorageEvent('storage', {
+                key: 'languagePreference',
+                newValue: 'de',
+            })
+        );
+
+        expect(getActiveLanguage()).toBe('de');
+    });
+
+    it('ignores storage events for unrelated keys', () => {
+        setLanguagePreference('en');
+
+        window.dispatchEvent(
+            new StorageEvent('storage', {
+                key: 'unrelated-key',
+                newValue: 'de',
+            })
+        );
+
+        // Active language must not have changed
+        expect(getActiveLanguage()).toBe('en');
+    });
+
+    it('handles a null newValue gracefully (falls back to system)', () => {
+        setLanguagePreference('en');
+
+        expect(() =>
+            window.dispatchEvent(
+                new StorageEvent('storage', {
+                    key: 'languagePreference',
+                    newValue: null,
+                })
+            )
+        ).not.toThrow();
+    });
+});

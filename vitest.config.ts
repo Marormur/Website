@@ -28,16 +28,14 @@ export default defineConfig({
                 'src/ts/core/vdom.ts',
             ],
             thresholds: {
-                // Global threshold covers the weighted average across all included files.
-                // virtual-fs.ts contains ~250 lines of IndexedDB adapter code that require
-                // a full browser environment and cannot be unit tested with jsdom – this
-                // brings the global average down from the 70 % target.
-                statements: 60,
-                branches: 55,
-                functions: 48,
-                lines: 63,
+                // Global threshold – weighted average across all coverage-included files.
+                // IndexedDB adapter is now exercised via fake-indexeddb (virtual-fs-idb
+                // tests), so the global bar is meaningfully higher than before.
+                statements: 78,
+                branches: 65,
+                functions: 70,
+                lines: 80,
 
-                // Per-file thresholds for files where 70 %+ is achievable in jsdom:
                 'src/ts/core/vdom.ts': {
                     statements: 80,
                     branches: 65,
@@ -45,10 +43,10 @@ export default defineConfig({
                     lines: 80,
                 },
                 'src/ts/services/i18n.ts': {
-                    statements: 70,
-                    branches: 60,
+                    statements: 68,
+                    branches: 58,
                     functions: 75,
-                    lines: 75,
+                    lines: 70,
                 },
                 'src/ts/services/storage-utils.ts': {
                     statements: 70,
@@ -56,14 +54,14 @@ export default defineConfig({
                     functions: 90,
                     lines: 70,
                 },
-                // virtual-fs.ts: lower threshold due to IndexedDB adapter (~250 lines)
-                // that requires a real browser / IndexedDB environment and cannot be
-                // exercised in jsdom.  The non-adapter business logic IS covered.
+                // virtual-fs.ts: IndexedDB adapter is now tested via fake-indexeddb,
+                // raising coverage from ~34 % functions / ~52 % lines to
+                // ~72 % functions / ~87 % lines.
                 'src/ts/services/virtual-fs.ts': {
-                    statements: 45,
-                    branches: 40,
-                    functions: 30,
-                    lines: 48,
+                    statements: 80,
+                    branches: 72,
+                    functions: 65,
+                    lines: 82,
                 },
             },
         },

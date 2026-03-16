@@ -358,3 +358,123 @@ describe('VirtualFS – export / import', () => {
         expect(VirtualFS.import(null)).toBe(false);
     });
 });
+
+// ─── get ─────────────────────────────────────────────────────────────────────
+
+describe('VirtualFS – get', () => {
+    it('returns a folder FSItem for a path that points to a folder', () => {
+        const item = VirtualFS.get('home/marvin');
+        expect(item).not.toBeNull();
+        expect(item?.type).toBe('folder');
+    });
+
+    it('returns a file FSItem for a path that points to a file', () => {
+        const item = VirtualFS.get('home/marvin/welcome.txt');
+        expect(item?.type).toBe('file');
+    });
+
+    it('returns null for a path that does not exist', () => {
+        expect(VirtualFS.get('no/such/path')).toBeNull();
+    });
+});
+
+// ─── getFolder ───────────────────────────────────────────────────────────────
+
+describe('VirtualFS – getFolder', () => {
+    it('returns a FolderItem with a children map', () => {
+        const folder = VirtualFS.getFolder('home/marvin');
+        expect(folder?.type).toBe('folder');
+        expect(folder?.children).toBeDefined();
+    });
+
+    it('returns null when the path points to a file', () => {
+        expect(VirtualFS.getFolder('home/marvin/welcome.txt')).toBeNull();
+    });
+
+    it('returns null for a non-existent path', () => {
+        expect(VirtualFS.getFolder('no/such/folder')).toBeNull();
+    });
+});
+
+// ─── getFile ─────────────────────────────────────────────────────────────────
+
+describe('VirtualFS – getFile', () => {
+    it('returns a FileItem with content and size for an existing file', () => {
+        const file = VirtualFS.getFile('home/marvin/welcome.txt');
+        expect(file?.type).toBe('file');
+        expect(typeof file?.content).toBe('string');
+        expect(typeof file?.size).toBe('number');
+    });
+
+    it('returns null when the path points to a folder', () => {
+        expect(VirtualFS.getFile('home/marvin')).toBeNull();
+    });
+
+    it('returns null for a non-existent path', () => {
+        expect(VirtualFS.getFile('no/such/file.txt')).toBeNull();
+    });
+});
+
+// ─── readFile edge cases ──────────────────────────────────────────────────────
+
+describe('VirtualFS – readFile (edge cases)', () => {
+    it('returns null for a file with empty string content (falsy content guard)', () => {
+        // readFile uses `file?.content || null`, so empty string returns null
+        VirtualFS.createFile('tmp/empty.txt', '');
+        expect(VirtualFS.readFile('tmp/empty.txt')).toBeNull();
+    });
+});
+
+// ─── createFile / createFolder – root level and custom icons ─────────────────
+
+describe('VirtualFS – single-segment paths (root level)', () => {
+    it('createFile at root level (no parent directory segment)', () => {
+        expect(VirtualFS.createFile('rootfile.txt', 'top-level content')).toBe(true);
+        expect(VirtualFS.exists('rootfile.txt')).toBe(true);
+        expect(VirtualFS.readFile('rootfile.txt')).toBe('top-level content');
+    });
+
+    it('createFolder at root level', () => {
+        expect(VirtualFS.createFolder('rootdir')).toBe(true);
+        expect(VirtualFS.exists('rootdir')).toBe(true);
+    });
+
+    it('createFile respects a custom icon', () => {
+        VirtualFS.createFile('tmp/custom-icon.txt', 'x', '🚀');
+        expect(VirtualFS.getFile('tmp/custom-icon.txt')?.icon).toBe('🚀');
+    });
+
+    it('createFolder respects a custom icon', () => {
+        VirtualFS.createFolder('tmp/custom-folder', '🎯');
+        expect(VirtualFS.getFolder('tmp/custom-folder')?.icon).toBe('🎯');
+    });
+});
+
+// ─── load() – localStorage persistence round-trip ────────────────────────────
+
+describe('VirtualFS – load() via localStorage', () => {
+    it('restores a saved file after delete-without-save + load()', async () => {
+        VirtualFS.createFile('tmp/persist-test.txt', 'should survive');
+        await VirtualFS.forceSaveAsync(); // writes to localStorage via LocalStorageAdapter
+
+        // Remove from in-memory state without triggering a new save
+        VirtualFS.delete('tmp/persist-test.txt');
+        vi.clearAllTimers();
+
+        // Reload: localStorage still has the file
+        await VirtualFS.load();
+
+        expect(VirtualFS.exists('tmp/persist-test.txt')).toBe(true);
+        expect(VirtualFS.readFile('tmp/persist-test.txt')).toBe('should survive');
+    });
+
+    it('starts with default structure after reset() + load() with no prior data', async () => {
+        localStorage.clear();
+        VirtualFS.reset();
+        await VirtualFS.forceSaveAsync();
+        await VirtualFS.load();
+
+        expect(VirtualFS.exists('home/marvin')).toBe(true);
+        expect(VirtualFS.exists('tmp')).toBe(true);
+    });
+});
