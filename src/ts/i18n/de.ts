@@ -36,6 +36,21 @@ export const de = {
         german: 'Deutsch',
         english: 'Englisch',
     },
+    welcomeDialog: {
+        caption: 'Willkommen',
+        title: 'Marvins Portfolio',
+        subtitle: 'Um das Portfolio zu erkunden, klicke auf <strong>Fortfahren</strong>.',
+        continue: 'Fortfahren',
+        controls: {
+            closeTitle: 'Schließen',
+            closeAria: 'Fenster schließen',
+            minimizeTitle: 'Fenster minimieren',
+            minimizeAria: 'Fenster minimieren',
+            zoomTitle: 'Fenster zoomen',
+            zoomAria: 'Fenster zoomen',
+            continueAria: 'Fortfahren',
+        },
+    },
     header: {
         profile: {
             about: 'Über Marvin',

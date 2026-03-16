@@ -48,27 +48,24 @@ const CLOSE_ID = 'welcome-dialog-close';
 const MINIMIZE_ID = 'welcome-dialog-minimize';
 const ZOOM_ID = 'welcome-dialog-zoom';
 const MIN_TOP_OFFSET = 44;
-const EDGE_PADDING = 16;
+const HORIZONTAL_EDGE_PADDING = 0;
+const VERTICAL_EDGE_PADDING = 16;
 
 function getViewportBounds() {
     const top = Math.max(MIN_TOP_OFFSET, Math.round(window.getMenuBarBottom?.() || MIN_TOP_OFFSET));
-    const left = EDGE_PADDING;
-    const right = Math.max(
-        EDGE_PADDING,
-        window.getDockReservedBottom?.() ? EDGE_PADDING : EDGE_PADDING
-    );
+    const left = HORIZONTAL_EDGE_PADDING;
     return {
         minLeft: left,
         minTop: top,
-        maxWidth: Math.max(320, window.innerWidth - EDGE_PADDING * 2),
-        maxHeight: Math.max(260, window.innerHeight - top - EDGE_PADDING),
+        maxWidth: Math.max(320, window.innerWidth - HORIZONTAL_EDGE_PADDING * 2),
+        maxHeight: Math.max(260, window.innerHeight - top - VERTICAL_EDGE_PADDING),
     };
 }
 
 function clampWindowPosition(left: number, top: number, width: number, height: number) {
     const viewport = getViewportBounds();
-    const maxLeft = Math.max(viewport.minLeft, window.innerWidth - width - EDGE_PADDING);
-    const maxTop = Math.max(viewport.minTop, window.innerHeight - height - EDGE_PADDING);
+    const maxLeft = Math.max(viewport.minLeft, window.innerWidth - width - HORIZONTAL_EDGE_PADDING);
+    const maxTop = Math.max(viewport.minTop, window.innerHeight - height - VERTICAL_EDGE_PADDING);
     return {
         left: Math.min(Math.max(viewport.minLeft, left), maxLeft),
         top: Math.min(Math.max(viewport.minTop, top), maxTop),
@@ -414,23 +411,30 @@ function buildOverlay(): HTMLElement {
                         id="${CLOSE_ID}"
                         title="Schließen"
                         aria-label="Fenster schließen"
+                        data-i18n-title="welcomeDialog.controls.closeTitle"
+                        data-i18n-aria-label="welcomeDialog.controls.closeAria"
                         class="welcome-traffic-light"
                     ></button>
                     <button
                         id="${MINIMIZE_ID}"
                         title="Fenster minimieren"
                         aria-label="Fenster minimieren"
+                        data-i18n-title="welcomeDialog.controls.minimizeTitle"
+                        data-i18n-aria-label="welcomeDialog.controls.minimizeAria"
                         class="welcome-traffic-light"
                     ></button>
                     <button
                         id="${ZOOM_ID}"
                         title="Fenster zoomen"
                         aria-label="Fenster zoomen"
+                        data-i18n-title="welcomeDialog.controls.zoomTitle"
+                        data-i18n-aria-label="welcomeDialog.controls.zoomAria"
                         class="welcome-traffic-light"
                     ></button>
                 </div>
                 <span
                     id="${WINDOW_CAPTION_ID}"
+                    data-i18n="welcomeDialog.caption"
                     style="
                         position: absolute;
                         left: 50%; transform: translateX(-50%);
@@ -467,6 +471,7 @@ function buildOverlay(): HTMLElement {
 
                 <h1
                     id="welcome-dialog-title"
+                    data-i18n="welcomeDialog.title"
                     style="
                         font-size: 26px;
                         font-weight: 500;
@@ -479,6 +484,7 @@ function buildOverlay(): HTMLElement {
 
                 <p
                     id="${SUBTITLE_ID}"
+                    data-i18n-html="welcomeDialog.subtitle"
                     style="
                     font-size: 14px;
                     color: rgba(31,41,55,0.72);
@@ -495,6 +501,7 @@ function buildOverlay(): HTMLElement {
                 <button
                     id="${CONTINUE_ID}"
                     aria-label="Fortfahren"
+                    data-i18n-aria-label="welcomeDialog.controls.continueAria"
                 >
                     <span style="
                         width: 44px; height: 44px;
@@ -508,11 +515,16 @@ function buildOverlay(): HTMLElement {
                             <path d="M7 4l5 5-5 5" stroke="#1f2937" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </span>
-                    <span style="font-size:12px;color:#1f2937;font-weight:600;letter-spacing:0.01em;">Fortfahren</span>
+                    <span
+                        data-i18n="welcomeDialog.continue"
+                        style="font-size:12px;color:#1f2937;font-weight:600;letter-spacing:0.01em;"
+                    >Fortfahren</span>
                 </button>
             </div>
         </div>
     `;
+
+    window.appI18n?.applyTranslations?.(overlay);
 
     const win = overlay.querySelector<HTMLElement>(`#${WINDOW_ID}`);
     if (win) {
