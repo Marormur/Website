@@ -39,7 +39,7 @@ export const en = {
     header: {
         profile: {
             about: 'About Marvin',
-            resetLayout: 'Reset windows',
+            resetLayout: 'Reset website',
             settings: 'System settings',
             linkedin: 'LinkedIn',
         },

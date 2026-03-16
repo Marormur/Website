@@ -1308,6 +1308,28 @@ class VirtualFileSystemManager {
     }
 
     /**
+     * PURPOSE: Clears all persisted filesystem data for a true first-visit reset.
+     * WHY: Test runs need a deterministic baseline without stale IndexedDB/localStorage data.
+     * OUTPUT: In-memory state is reset to defaults and persisted VFS storage is removed.
+     */
+    async hardReset(): Promise<void> {
+        if (this.saveTimeout !== null) {
+            window.clearTimeout(this.saveTimeout);
+            this.saveTimeout = null;
+        }
+
+        this.dirtyPaths.clear();
+        this.structureDirty = false;
+        this.root = this.createDefaultStructure();
+
+        if (typeof this.storage.clear === 'function') {
+            await this.storage.clear();
+        }
+
+        logger.debug('STORAGE', '[VirtualFS] Hard reset cleared persisted state');
+    }
+
+    /**
      * Export a deep copy of the current filesystem state as a plain object.
      *
      * The returned object can be serialized to JSON and later restored via {@link import}.

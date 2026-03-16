@@ -145,7 +145,6 @@ export function getWindowActions(): ActionMap {
                 resetWindowLayout?: () => void;
                 StorageSystem?: { resetWindowLayout?: () => void };
                 API?: { storage?: { resetWindowLayout?: () => void } };
-                resetWelcomeDialogAndShow?: () => void;
             }>('');
             g?.hideMenuDropdowns?.();
 
@@ -159,9 +158,6 @@ export function getWindowActions(): ActionMap {
             } else {
                 logger.warn('UI', 'resetWindowLayout: no reset function available');
             }
-
-            // Ensure reset action is visible to users: show welcome dialog again.
-            g?.resetWelcomeDialogAndShow?.();
         },
 
         openProgramInfo: () => {

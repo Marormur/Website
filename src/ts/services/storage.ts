@@ -380,6 +380,65 @@ import logger from '../core/logger.js';
 
     // ===== Layout Reset =====
 
+    async function clearIndexedDbState(): Promise<void> {
+        const virtualFs = w['VirtualFS'] as
+            | {
+                  hardReset?: () => Promise<void>;
+              }
+            | undefined;
+
+        if (typeof virtualFs?.hardReset === 'function') {
+            await virtualFs.hardReset();
+            return;
+        }
+
+        if (typeof indexedDB === 'undefined') return;
+
+        await new Promise<void>(resolve => {
+            try {
+                const request = indexedDB.deleteDatabase('VirtualFS');
+                request.onsuccess = () => resolve();
+                request.onerror = () => {
+                    logger.warn('STORAGE', 'VirtualFS IndexedDB konnte nicht gelöscht werden');
+                    resolve();
+                };
+                request.onblocked = () => {
+                    logger.warn('STORAGE', 'VirtualFS IndexedDB-Löschung ist blockiert');
+                    resolve();
+                };
+            } catch (err) {
+                logger.warn('STORAGE', 'VirtualFS IndexedDB-Löschung fehlgeschlagen:', err);
+                resolve();
+            }
+        });
+    }
+
+    async function resetWebsiteStateAndReload(): Promise<void> {
+        try {
+            await clearIndexedDbState();
+        } catch (err) {
+            logger.warn(
+                'STORAGE',
+                'IndexedDB state konnte nicht vollständig gelöscht werden:',
+                err
+            );
+        }
+
+        try {
+            localStorage.clear();
+        } catch (err) {
+            logger.warn('STORAGE', 'localStorage konnte nicht vollständig gelöscht werden:', err);
+        }
+
+        try {
+            sessionStorage.clear();
+        } catch (err) {
+            logger.warn('STORAGE', 'sessionStorage konnte nicht vollständig gelöscht werden:', err);
+        }
+
+        window.location.reload();
+    }
+
     function resetWindowLayout(): void {
         // Close all open windows first before resetting state
         const registry = w['WindowRegistry'] as Record<string, unknown> | undefined;
@@ -459,11 +518,7 @@ import logger from '../core/logger.js';
             | undefined;
         if (typeof updateProgramLabelByTopModal === 'function') updateProgramLabelByTopModal();
 
-        // Re-show welcome dialog after a full reset to restore first-run UX.
-        const resetWelcomeDialogAndShow = w['resetWelcomeDialogAndShow'] as
-            | (() => void)
-            | undefined;
-        if (typeof resetWelcomeDialogAndShow === 'function') resetWelcomeDialogAndShow();
+        void resetWebsiteStateAndReload();
     }
 
     // ===== Public API (global) =====
