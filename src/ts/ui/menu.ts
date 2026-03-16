@@ -5,6 +5,7 @@
 
 import { translate } from '../services/i18n';
 import logger from '../core/logger.js';
+import { getLogicalViewportWidth, getLogicalViewportHeight } from '../utils/viewport.js';
 
 type MenuHandler = (...args: unknown[]) => unknown;
 const menuActionHandlers = new Map<string, MenuHandler>();
@@ -27,6 +28,19 @@ type WindowMenuController = {
     center?: () => void;
     type?: string;
 } | null;
+
+type WindowLayoutController = WindowMenuController & {
+    element?: HTMLElement | null;
+    isMaximized?: boolean;
+    position?: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    };
+    bringToFront?: () => void;
+    _saveState?: () => void;
+};
 
 const MULTI_WINDOW_MODAL_TYPE_MAP: Record<string, string> = {
     'projects-modal': 'finder',
@@ -625,6 +639,217 @@ function createWindowMenuSection(context: MenuContext) {
     };
 }
 
+function focusNextWindow(appType?: string): void {
+    const registry = window['WindowRegistry'];
+    if (!registry || typeof registry.getAllWindows !== 'function') return;
+
+    const windows = (registry.getAllWindows(appType) || []) as Array<{
+        id?: string;
+        zIndex?: number;
+        bringToFront?: () => void;
+        focus?: () => void;
+    }>;
+    if (windows.length < 2) return;
+
+    const sorted = [...windows].sort((a, b) => (a?.zIndex || 0) - (b?.zIndex || 0));
+    const active = registry.getActiveWindow?.();
+    const currentIndex = sorted.findIndex(win => !!active && win.id === active.id);
+    const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % sorted.length : 0;
+    const nextWindow = sorted[nextIndex];
+    if (!nextWindow) return;
+
+    if (typeof nextWindow.bringToFront === 'function') {
+        nextWindow.bringToFront();
+        return;
+    }
+    if (typeof nextWindow.focus === 'function') {
+        nextWindow.focus();
+        return;
+    }
+    if (typeof registry.setActiveWindow === 'function') {
+        registry.setActiveWindow(nextWindow.id ?? null);
+    }
+}
+
+function getWindowTabNavigationState(windowController: WindowMenuController): {
+    canNavigate: boolean;
+    canDetach: boolean;
+    previous?: () => void;
+    next?: () => void;
+} {
+    const w = windowController as unknown as {
+        tabs?: Map<string, unknown>;
+        activeTabId?: string | null;
+        setActiveTab?: (tabId: string) => void;
+    };
+    if (!(w?.tabs instanceof Map) || typeof w?.setActiveTab !== 'function') {
+        return { canNavigate: false, canDetach: false };
+    }
+
+    const tabIds = Array.from(w.tabs.keys());
+    if (tabIds.length <= 1) {
+        return { canNavigate: false, canDetach: false };
+    }
+
+    const currentIndex = Math.max(0, tabIds.indexOf(w.activeTabId || tabIds[0]));
+    return {
+        canNavigate: true,
+        canDetach: false,
+        previous: () => {
+            const nextIndex = (currentIndex - 1 + tabIds.length) % tabIds.length;
+            const nextTabId = tabIds[nextIndex];
+            if (nextTabId) w.setActiveTab?.(nextTabId);
+        },
+        next: () => {
+            const nextIndex = (currentIndex + 1) % tabIds.length;
+            const nextTabId = tabIds[nextIndex];
+            if (nextTabId) w.setActiveTab?.(nextTabId);
+        },
+    };
+}
+
+function applyWindowLayout(
+    windowController: WindowMenuController,
+    bounds: { x: number; y: number; width: number; height: number },
+    options: { overrideMinConstraints?: boolean; resetMinConstraints?: boolean } = {}
+): void {
+    const w = windowController as WindowLayoutController;
+    const el = w?.element;
+    if (!el) return;
+
+    if (typeof w.isMaximized === 'boolean') {
+        w.isMaximized = false;
+    }
+
+    const minWidthPx = options.overrideMinConstraints ? 120 : 320;
+    const minHeightPx = options.overrideMinConstraints ? 120 : 240;
+
+    const normalized = {
+        x: Math.max(0, Math.round(bounds.x)),
+        y: Math.max(0, Math.round(bounds.y)),
+        width: Math.max(minWidthPx, Math.round(bounds.width)),
+        height: Math.max(minHeightPx, Math.round(bounds.height)),
+    };
+
+    // Some window shells define CSS/Tailwind min-w/min-h classes.
+    // For explicit move/resize presets we temporarily lower those constraints so
+    // left/right/top/bottom layouts can actually change the size on smaller screens.
+    if (options.overrideMinConstraints) {
+        el.style.setProperty('min-width', `${normalized.width}px`, 'important');
+        el.style.setProperty('min-height', `${normalized.height}px`, 'important');
+    } else if (options.resetMinConstraints) {
+        el.style.removeProperty('min-width');
+        el.style.removeProperty('min-height');
+    }
+
+    el.style.left = `${normalized.x}px`;
+    el.style.top = `${normalized.y}px`;
+    el.style.width = `${normalized.width}px`;
+    el.style.height = `${normalized.height}px`;
+
+    if (w.position) {
+        w.position.x = normalized.x;
+        w.position.y = normalized.y;
+        w.position.width = normalized.width;
+        w.position.height = normalized.height;
+    }
+
+    w.bringToFront?.();
+    w._saveState?.();
+}
+
+function getWindowWorkArea(): { x: number; y: number; width: number; height: number } {
+    const top = Math.max(0, Math.round(window.getMenuBarBottom?.() || 0));
+    const bottomReserve = Math.max(0, Math.round(window.getDockReservedBottom?.() || 0));
+    const width = Math.max(640, Math.round(getLogicalViewportWidth() || 1280));
+    const height = Math.max(
+        400,
+        Math.round((getLogicalViewportHeight() || 800) - top - bottomReserve)
+    );
+    return { x: 0, y: top, width, height };
+}
+
+function applyMoveResizePreset(
+    windowController: WindowMenuController,
+    preset: 'leftHalf' | 'rightHalf' | 'topHalf' | 'bottomHalf' | 'standard'
+): void {
+    const area = getWindowWorkArea();
+    const halfWidth = Math.round(area.width / 2);
+    const halfHeight = Math.round(area.height / 2);
+    const targetHalfWidth = Math.min(area.width, Math.max(320, halfWidth));
+    const targetHalfHeight = Math.min(area.height, Math.max(200, halfHeight));
+
+    if (preset === 'leftHalf') {
+        applyWindowLayout(
+            windowController,
+            {
+                x: area.x,
+                y: area.y,
+                width: targetHalfWidth,
+                height: area.height,
+            },
+            { overrideMinConstraints: true }
+        );
+        return;
+    }
+    if (preset === 'rightHalf') {
+        applyWindowLayout(
+            windowController,
+            {
+                x: area.x + area.width - targetHalfWidth,
+                y: area.y,
+                width: targetHalfWidth,
+                height: area.height,
+            },
+            { overrideMinConstraints: true }
+        );
+        return;
+    }
+    if (preset === 'topHalf') {
+        applyWindowLayout(
+            windowController,
+            {
+                x: area.x,
+                y: area.y,
+                width: area.width,
+                height: targetHalfHeight,
+            },
+            { overrideMinConstraints: true }
+        );
+        return;
+    }
+    if (preset === 'bottomHalf') {
+        applyWindowLayout(
+            windowController,
+            {
+                x: area.x,
+                y: area.y + area.height - targetHalfHeight,
+                width: area.width,
+                height: targetHalfHeight,
+            },
+            { overrideMinConstraints: true }
+        );
+        return;
+    }
+
+    const targetWidth = Math.round(Math.min(1100, area.width * 0.72));
+    const targetHeight = Math.round(Math.min(760, area.height * 0.78));
+    applyWindowLayout(
+        windowController,
+        {
+            x: area.x + (area.width - targetWidth) / 2,
+            y: area.y + (area.height - targetHeight) / 2,
+            width: targetWidth,
+            height: targetHeight,
+        },
+        { resetMinConstraints: true }
+    );
+}
+
+function applyTilePreset(windowController: WindowMenuController, side: 'left' | 'right'): void {
+    applyMoveResizePreset(windowController, side === 'left' ? 'leftHalf' : 'rightHalf');
+}
+
 function getWindowMenuItems(context: MenuContext) {
     const windowController = resolveWindowMenuController(context);
     const canClose = typeof windowController?.close === 'function';
@@ -636,6 +861,189 @@ function getWindowMenuItems(context: MenuContext) {
     const isFinder =
         context?.modalId === 'projects-modal' ||
         window['WindowRegistry']?.getActiveWindow?.()?.type === 'finder';
+
+    if (isFinder) {
+        const tabState = getWindowTabNavigationState(windowController);
+        const registryActive = window['WindowRegistry']?.getActiveWindow?.() as
+            | WindowLayoutController
+            | undefined;
+        const registryFinderFallback = (window['WindowRegistry']?.getAllWindows?.('finder')?.[0] ||
+            null) as WindowLayoutController | null;
+        const controllerTarget = windowController as WindowLayoutController;
+        const modalFallbackElement = context?.modalId
+            ? document.getElementById(context.modalId)
+            : null;
+        const layoutTarget: WindowLayoutController =
+            (registryActive && registryActive.element
+                ? registryActive
+                : registryFinderFallback && registryFinderFallback.element
+                  ? registryFinderFallback
+                  : controllerTarget?.element
+                    ? controllerTarget
+                    : modalFallbackElement
+                      ? ({ element: modalFallbackElement } as WindowLayoutController)
+                      : null) || null;
+        const hasLayoutTarget = !!layoutTarget?.element;
+        const finderItems: Record<string, unknown>[] = [
+            {
+                id: 'window-put-in-dock',
+                label: () => translate('menu.window.putInDock'),
+                shortcut: '⌘M',
+                disabled: !canMinimize,
+                icon: 'windowMinimize',
+                action: () => {
+                    windowController?.minimize?.();
+                },
+            },
+            {
+                id: 'window-zoom-alt',
+                label: () => translate('menu.window.zoomAlt'),
+                disabled: !canZoom,
+                icon: 'windowZoom',
+                action: () => {
+                    windowController?.toggleMaximize?.();
+                },
+            },
+            {
+                id: 'window-zoom',
+                label: () => translate('menu.window.zoom'),
+                shortcut: '⌃⌘F',
+                disabled: !canZoom,
+                icon: 'windowZoom',
+                action: () => {
+                    windowController?.toggleMaximize?.();
+                },
+            },
+            {
+                id: 'window-center',
+                label: () => translate('menu.window.center'),
+                disabled: !canCenter,
+                icon: 'window',
+                action: () => {
+                    windowController?.center?.();
+                },
+            },
+            { type: 'separator' },
+            {
+                id: 'window-move-resize',
+                label: () => translate('menu.window.moveAndResize'),
+                disabled: !hasLayoutTarget,
+                submenu: true,
+                submenuItems: [
+                    {
+                        id: 'window-move-left-half',
+                        label: () => translate('menu.window.moveLeftHalf'),
+                        action: () => applyMoveResizePreset(layoutTarget, 'leftHalf'),
+                    },
+                    {
+                        id: 'window-move-right-half',
+                        label: () => translate('menu.window.moveRightHalf'),
+                        action: () => applyMoveResizePreset(layoutTarget, 'rightHalf'),
+                    },
+                    {
+                        id: 'window-move-top-half',
+                        label: () => translate('menu.window.moveTopHalf'),
+                        action: () => applyMoveResizePreset(layoutTarget, 'topHalf'),
+                    },
+                    {
+                        id: 'window-move-bottom-half',
+                        label: () => translate('menu.window.moveBottomHalf'),
+                        action: () => applyMoveResizePreset(layoutTarget, 'bottomHalf'),
+                    },
+                    { type: 'separator' },
+                    {
+                        id: 'window-move-standard',
+                        label: () => translate('menu.window.restoreStandardSize'),
+                        action: () => applyMoveResizePreset(layoutTarget, 'standard'),
+                    },
+                ],
+            },
+            {
+                id: 'window-tile',
+                label: () => translate('menu.window.tile'),
+                disabled: !hasLayoutTarget,
+                submenu: true,
+                submenuItems: [
+                    {
+                        id: 'window-tile-left',
+                        label: () => translate('menu.window.tileLeft'),
+                        action: () => applyTilePreset(layoutTarget, 'left'),
+                    },
+                    {
+                        id: 'window-tile-right',
+                        label: () => translate('menu.window.tileRight'),
+                        action: () => applyTilePreset(layoutTarget, 'right'),
+                    },
+                ],
+            },
+            {
+                id: 'window-remove-from-set',
+                label: () => translate('menu.window.removeFromSet'),
+                disabled: true,
+            },
+            {
+                id: 'window-next-window',
+                label: () => translate('menu.window.nextWindow'),
+                shortcut: '⌘<',
+                disabled: (window['WindowRegistry']?.getAllWindows?.('finder')?.length || 0) <= 1,
+                action: () => {
+                    focusNextWindow('finder');
+                },
+            },
+            {
+                id: 'window-show-progress',
+                label: () => translate('menu.window.showProgress'),
+                disabled: true,
+            },
+            { type: 'separator' },
+            {
+                id: 'window-all-front',
+                label: () => translate('menu.window.bringToFront'),
+                disabled: !hasAnyVisibleDialog(),
+                icon: 'windowFront',
+                action: () => {
+                    if (window['bringAllWindowsToFront']) window['bringAllWindowsToFront']();
+                },
+            },
+            { type: 'separator' },
+            {
+                id: 'window-previous-tab',
+                label: () => translate('menu.window.previousTab'),
+                shortcut: '⇧⌘[',
+                disabled: !tabState.canNavigate,
+                action: () => {
+                    tabState.previous?.();
+                },
+            },
+            {
+                id: 'window-next-tab',
+                label: () => translate('menu.window.nextTab'),
+                shortcut: '⇧⌘]',
+                disabled: !tabState.canNavigate,
+                action: () => {
+                    tabState.next?.();
+                },
+            },
+            {
+                id: 'window-move-tab-new-window',
+                label: () => translate('menu.window.moveTabToNewWindow'),
+                disabled: !tabState.canDetach,
+            },
+            {
+                id: 'window-merge-all-windows',
+                label: () => translate('menu.window.mergeAllWindows'),
+                disabled: true,
+            },
+        ];
+
+        const multiInstanceItems = getMultiInstanceMenuItems(context);
+        if (multiInstanceItems.length > 0) {
+            finderItems.push({ type: 'separator' });
+            finderItems.push(...multiInstanceItems);
+        }
+
+        return finderItems;
+    }
 
     const items: Record<string, unknown>[] = [
         {
@@ -754,7 +1162,7 @@ function getMultiInstanceMenuItems(context: MenuContext) {
             newKey: string;
             create?: (title: string) => void;
         };
-        const configs: LabelConfig[] = [
+        const allConfigs: LabelConfig[] = [
             {
                 type: 'finder',
                 label: 'Finder',
@@ -774,6 +1182,7 @@ function getMultiInstanceMenuItems(context: MenuContext) {
                 create: (title: string) => window['TextEditorWindow']?.create?.({ title }),
             },
         ];
+        const configs = isFinder ? allConfigs.filter(cfg => cfg.type === 'finder') : allConfigs;
 
         const active = registry.getActiveWindow?.();
         let anyListed = false;
@@ -819,7 +1228,8 @@ function getMultiInstanceMenuItems(context: MenuContext) {
                 const numberLabel = `${cfg.label} ${idx + 1}`;
                 items.push({
                     id: `window-instance-${w.id}`,
-                    label: () => `${isActive ? '✓ ' : ''}${numberLabel}`,
+                    label: () => numberLabel,
+                    checked: isActive,
                     shortcut: idx < 9 ? `⌘${idx + 1}` : undefined,
                     action: () => {
                         if (typeof w.bringToFront === 'function') {
@@ -901,7 +1311,8 @@ function getMultiInstanceMenuItems(context: MenuContext) {
             const numberLabel = `${typeLabel} ${index + 1}`;
             items.push({
                 id: `window-instance-${instance.instanceId}`,
-                label: () => `${isActive ? '✓ ' : ''}${numberLabel}`,
+                label: () => numberLabel,
+                checked: isActive,
                 shortcut: index < 9 ? `⌘${index + 1}` : undefined,
                 action: () => {
                     manager.setActiveInstance(instance.instanceId);
@@ -1006,6 +1417,150 @@ const menuDefinitions: Record<string, MenuSectionBuilder> = {
 
 let currentMenuModalId: string | null = null;
 
+function renderDropdownItems(
+    dropdown: HTMLUListElement,
+    items: Record<string, unknown>[],
+    context: MenuContext
+): void {
+    items.forEach(item => {
+        if (item.type === 'separator') {
+            const separator = document.createElement('li');
+            separator.className = 'menu-separator';
+            separator.setAttribute('role', 'separator');
+            separator.setAttribute('aria-hidden', 'true');
+            dropdown.appendChild(separator);
+            return;
+        }
+
+        const li = document.createElement('li');
+        li.setAttribute('role', 'none');
+
+        const submenuItems =
+            Array.isArray(item.submenuItems) && item.submenuItems.length > 0
+                ? normalizeMenuItems(item.submenuItems as unknown[], context)
+                : [];
+        const hasSubmenu = submenuItems.length > 0;
+        if (hasSubmenu) {
+            li.classList.add('menu-item-with-submenu');
+        }
+
+        const tagName = item.href ? 'a' : 'button';
+        const actionEl = document.createElement(tagName) as HTMLButtonElement | HTMLAnchorElement;
+        actionEl.className = 'menu-item';
+        if (tagName === 'button') {
+            actionEl.type = 'button';
+        } else if (actionEl instanceof HTMLAnchorElement) {
+            actionEl.href = (item.href as string) || '#';
+            if (item.external) {
+                actionEl.rel = 'noopener noreferrer';
+                actionEl.target = '_blank';
+            }
+        }
+
+        const itemLabel =
+            item.label !== null
+                ? typeof item.label === 'function'
+                    ? item.label(context)
+                    : item.label
+                : '';
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'menu-item-label';
+        if (item.icon && window.IconSystem) {
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'menu-item-icon';
+            const iconSvg = window.IconSystem.getMenuIconSvg
+                ? window.IconSystem.getMenuIconSvg(String(item.icon))
+                : '';
+            if (window.IconSystem.renderIconIntoElement)
+                window.IconSystem.renderIconIntoElement(iconSpan, iconSvg, String(item.icon));
+            labelSpan.appendChild(iconSpan);
+        }
+        labelSpan.appendChild(document.createTextNode(itemLabel));
+        actionEl.appendChild(labelSpan);
+
+        const trailingSpan = document.createElement('span');
+        trailingSpan.className = 'menu-item-trailing';
+        let hasTrailing = false;
+
+        if (item.shortcut) {
+            const shortcutSpan = document.createElement('span');
+            shortcutSpan.className = 'menu-item-shortcut';
+            shortcutSpan.textContent =
+                typeof item.shortcut === 'function' ? item.shortcut() : item.shortcut;
+            trailingSpan.appendChild(shortcutSpan);
+            hasTrailing = true;
+        }
+
+        if (item.submenu || hasSubmenu) {
+            const chevronSpan = document.createElement('span');
+            chevronSpan.className = 'menu-item-chevron';
+            chevronSpan.textContent = '›';
+            chevronSpan.setAttribute('aria-hidden', 'true');
+            trailingSpan.appendChild(chevronSpan);
+            hasTrailing = true;
+        }
+
+        if (item.checked) {
+            const checkmarkSpan = document.createElement('span');
+            checkmarkSpan.className = 'menu-item-checkmark';
+            checkmarkSpan.textContent = '✓';
+            checkmarkSpan.setAttribute('aria-hidden', 'true');
+            trailingSpan.appendChild(checkmarkSpan);
+            hasTrailing = true;
+        }
+
+        if (item.trailingText) {
+            const infoSpan = document.createElement('span');
+            infoSpan.className = 'menu-item-trailing-text';
+            infoSpan.textContent = String(item.trailingText);
+            trailingSpan.appendChild(infoSpan);
+            hasTrailing = true;
+        }
+
+        if (hasTrailing) {
+            actionEl.appendChild(trailingSpan);
+        }
+
+        actionEl.setAttribute('role', 'menuitem');
+        if (item.submenu || hasSubmenu) {
+            actionEl.setAttribute('aria-haspopup', 'menu');
+        }
+        if (item.title) actionEl.title = String(item.title);
+
+        const isDisabled = Boolean(item.disabled);
+        if (isDisabled) {
+            actionEl.setAttribute('aria-disabled', 'true');
+            if (tagName === 'button' && actionEl instanceof HTMLButtonElement) {
+                actionEl.disabled = true;
+            }
+        } else if (typeof item.action === 'function') {
+            const actionId = registerMenuAction(item.action as MenuHandler);
+            if (actionId) actionEl.dataset.menuAction = actionId;
+        }
+
+        if (item.href && typeof item.onClick === 'function') {
+            actionEl.addEventListener('click', (event: Event) => {
+                const result = (item.onClick as (e: Event) => boolean | void)(event);
+                if (result === false) event.preventDefault();
+            });
+        }
+
+        li.appendChild(actionEl);
+
+        if (hasSubmenu && !isDisabled) {
+            const submenu = document.createElement('ul');
+            submenu.className = 'menu-dropdown menu-submenu';
+            submenu.setAttribute('role', 'menu');
+            renderDropdownItems(submenu, submenuItems, context);
+            if (submenu.childElementCount > 0) {
+                li.appendChild(submenu);
+            }
+        }
+
+        dropdown.appendChild(li);
+    });
+}
+
 export function renderApplicationMenu(activeModalId?: string | null) {
     const container = document.getElementById('menubar-links');
     if (!container) return;
@@ -1068,79 +1623,7 @@ export function renderApplicationMenu(activeModalId?: string | null) {
         dropdown.className = 'menu-dropdown hidden';
         dropdown.setAttribute('role', 'menu');
         dropdown.setAttribute('aria-labelledby', buttonId);
-        items.forEach(item => {
-            if (item.type === 'separator') {
-                const separator = document.createElement('li');
-                separator.className = 'menu-separator';
-                separator.setAttribute('role', 'separator');
-                separator.setAttribute('aria-hidden', 'true');
-                dropdown.appendChild(separator);
-                return;
-            }
-            const li = document.createElement('li');
-            li.setAttribute('role', 'none');
-            const tagName = item.href ? 'a' : 'button';
-            const actionEl = document.createElement(tagName) as
-                | HTMLButtonElement
-                | HTMLAnchorElement;
-            actionEl.className = 'menu-item';
-            if (tagName === 'button') {
-                actionEl.type = 'button';
-            } else if (actionEl instanceof HTMLAnchorElement) {
-                actionEl.href = (item.href as string) || '#';
-                if (item.external) {
-                    actionEl.rel = 'noopener noreferrer';
-                    actionEl.target = '_blank';
-                }
-            }
-            const itemLabel =
-                item.label !== null
-                    ? typeof item.label === 'function'
-                        ? item.label(context)
-                        : item.label
-                    : '';
-            const labelSpan = document.createElement('span');
-            labelSpan.className = 'menu-item-label';
-            if (item.icon && window.IconSystem) {
-                const iconSpan = document.createElement('span');
-                iconSpan.className = 'menu-item-icon';
-                const iconSvg = window.IconSystem.getMenuIconSvg
-                    ? window.IconSystem.getMenuIconSvg(String(item.icon))
-                    : '';
-                if (window.IconSystem.renderIconIntoElement)
-                    window.IconSystem.renderIconIntoElement(iconSpan, iconSvg, String(item.icon));
-                labelSpan.appendChild(iconSpan);
-            }
-            labelSpan.appendChild(document.createTextNode(itemLabel));
-            actionEl.appendChild(labelSpan);
-            if (item.shortcut) {
-                const shortcutSpan = document.createElement('span');
-                shortcutSpan.className = 'menu-item-shortcut';
-                shortcutSpan.textContent =
-                    typeof item.shortcut === 'function' ? item.shortcut() : item.shortcut;
-                actionEl.appendChild(shortcutSpan);
-            }
-            actionEl.setAttribute('role', 'menuitem');
-            if (item.title) actionEl.title = String(item.title);
-            const isDisabled = Boolean(item.disabled);
-            if (isDisabled) {
-                actionEl.setAttribute('aria-disabled', 'true');
-                if (tagName === 'button' && actionEl instanceof HTMLButtonElement) {
-                    actionEl.disabled = true;
-                }
-            } else if (typeof item.action === 'function') {
-                const actionId = registerMenuAction(item.action as MenuHandler);
-                if (actionId) actionEl.dataset.menuAction = actionId;
-            }
-            if (item.href && typeof item.onClick === 'function') {
-                actionEl.addEventListener('click', (event: Event) => {
-                    const result = (item.onClick as (e: Event) => boolean | void)(event);
-                    if (result === false) event.preventDefault();
-                });
-            }
-            li.appendChild(actionEl);
-            dropdown.appendChild(li);
-        });
+        renderDropdownItems(dropdown, items, context);
         if (!dropdown.childElementCount) return;
         trigger.appendChild(button);
         trigger.appendChild(dropdown);

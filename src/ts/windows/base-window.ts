@@ -337,7 +337,9 @@ export class BaseWindow {
             Object.assign(resizer.style, {
                 position: 'absolute',
                 zIndex: '9999',
-                backgroundColor: 'transparent',
+                // Safari can ignore fully transparent hit-targets for cursor feedback.
+                // Keep this effectively invisible but still reliably hit-testable.
+                backgroundColor: 'rgba(0, 0, 0, 0.001)',
                 pointerEvents: 'auto',
                 touchAction: 'none',
                 cursor: handle.cursor,
@@ -485,49 +487,49 @@ export class BaseWindow {
                 name: 'top',
                 cursor: 'n-resize',
                 directions: ['n'],
-                style: { top: '-4px', left: '12px', right: '12px', height: '8px' },
+                style: { top: '0', left: '10px', right: '10px', height: '10px' },
             },
             {
                 name: 'bottom',
                 cursor: 's-resize',
                 directions: ['s'],
-                style: { bottom: '-4px', left: '12px', right: '12px', height: '8px' },
+                style: { bottom: '0', left: '10px', right: '10px', height: '10px' },
             },
             {
                 name: 'left',
                 cursor: 'w-resize',
                 directions: ['w'],
-                style: { left: '-4px', top: '12px', bottom: '12px', width: '8px' },
+                style: { left: '0', top: '10px', bottom: '10px', width: '10px' },
             },
             {
                 name: 'right',
                 cursor: 'e-resize',
                 directions: ['e'],
-                style: { right: '-4px', top: '12px', bottom: '12px', width: '8px' },
+                style: { right: '0', top: '10px', bottom: '10px', width: '10px' },
             },
             {
                 name: 'top-left',
                 cursor: 'nw-resize',
                 directions: ['n', 'w'],
-                style: { top: '-6px', left: '-6px', width: '14px', height: '14px' },
+                style: { top: '0', left: '0', width: '14px', height: '14px' },
             },
             {
                 name: 'top-right',
                 cursor: 'ne-resize',
                 directions: ['n', 'e'],
-                style: { top: '-6px', right: '-6px', width: '14px', height: '14px' },
+                style: { top: '0', right: '0', width: '14px', height: '14px' },
             },
             {
                 name: 'bottom-left',
                 cursor: 'sw-resize',
                 directions: ['s', 'w'],
-                style: { bottom: '-6px', left: '-6px', width: '14px', height: '14px' },
+                style: { bottom: '0', left: '0', width: '14px', height: '14px' },
             },
             {
                 name: 'bottom-right',
                 cursor: 'se-resize',
                 directions: ['s', 'e'],
-                style: { bottom: '-6px', right: '-6px', width: '14px', height: '14px' },
+                style: { bottom: '0', right: '0', width: '14px', height: '14px' },
             },
         ];
 
