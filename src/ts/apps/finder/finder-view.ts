@@ -23,7 +23,7 @@ import { BaseTab, type TabConfig, type TabState } from '../../windows/base-tab.j
 import type { FinderWindow } from './finder-window.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
 import PreviewInstanceManager from '../../windows/preview-instance-manager.js';
-import { h, diff, patch, createElement, type VNode } from '../../core/vdom.js';
+import { h, type VNode } from '../../core/vdom.js';
 import { FinderUI } from './finder-ui.js';
 import logger from '../../core/logger.js';
 
@@ -119,6 +119,71 @@ interface GitHubContentItem {
     [key: string]: unknown;
 }
 
+interface FinderGitHubAPI {
+    fetchRepoContents?: (
+        user: string,
+        repo: string,
+        path?: string,
+        opts?: Record<string, unknown>
+    ) => Promise<unknown>;
+    prefetchUserRepos?: (user: string) => void;
+    fetchUserRepos?: (user: string, opts?: Record<string, unknown>) => Promise<unknown>;
+    getCached?: (key: string) => unknown;
+    getCacheState?: (bucket: 'repos' | 'contents', repo?: string, path?: string) => unknown;
+    isCacheStale?: (bucket: 'repos' | 'contents', repo?: string, path?: string) => boolean;
+    readCache?: (bucket: 'repos' | 'contents', repo?: string, path?: string) => unknown;
+    writeCache?: (bucket: 'repos' | 'contents', repo: string, path: string, data: unknown) => void;
+}
+
+interface VirtualFSEntry {
+    type?: 'folder' | 'file' | 'dir' | string;
+    icon?: string;
+    size?: number;
+    modified?: string;
+}
+
+interface WindowRegistryLike {
+    getWindowsByType?: (type: string) => unknown[];
+    registerWindow?: (win: unknown) => void;
+    getWindow?: (id: string) => unknown;
+}
+
+interface TextEditorWindowFactory {
+    create?: () => unknown;
+}
+
+interface TextEditorSystemLike {
+    loadRemoteFile?: (input: {
+        content?: string;
+        fileName?: string;
+        repo?: string;
+        path?: string;
+        branch?: string;
+        name?: string;
+        downloadUrl?: string | null;
+    }) => void | Promise<void>;
+}
+
+declare global {
+    interface Window {
+        appI18n?: {
+            translate?: (
+                key: string,
+                params?: Record<string, unknown>,
+                options?: { fallback?: string }
+            ) => string;
+        };
+        WindowRegistry?: WindowRegistryLike;
+        TextEditorWindow?: TextEditorWindowFactory;
+        TextEditorSystem?: TextEditorSystemLike;
+        GITHUB_USERNAME?: string;
+        GitHubAPI?: FinderGitHubAPI | null;
+        FinderWindow?: unknown;
+        FinderView?: unknown;
+        getMenuBarBottom?: () => number;
+    }
+}
+
 interface GalleryReadmePreview {
     title: string;
     excerpt: string;
@@ -188,7 +253,7 @@ export class FinderView extends BaseTab {
     githubError = false;
     githubErrorMessage = '';
     githubLoading = false;
-    lastGithubItemsMap: Map<string, any>;
+    lastGithubItemsMap: Map<string, GitHubRepo | GitHubContentItem>;
     private githubReadmePreviewCache: Map<string, GalleryReadmePreview | null> = new Map();
     private githubReadmePreviewLoading: Set<string> = new Set();
     private githubLoadingInProgress = false; // Prevent recursive calls
@@ -835,10 +900,12 @@ export class FinderView extends BaseTab {
         // For root, pass '/' or [] to VirtualFS.list()
         // For subfolders, pass path parts WITHOUT leading '/'
         const path = this.currentPath.length === 0 ? '/' : this.currentPath;
-        const items = VirtualFS.list(path);
-        return Object.entries(items).map(([name, item]: [string, any]) => ({
+        const items = VirtualFS.list(path) as Record<string, VirtualFSEntry>;
+        return Object.entries(items).map(([name, item]) => ({
             name,
-            type: item.type as 'folder' | 'file',
+            type: (item.type === 'folder' || item.type === 'dir' ? 'folder' : 'file') as
+                | 'folder'
+                | 'file',
             icon: item.icon || (item.type === 'folder' ? '📁' : '📄'),
             size: item.size || 0,
             modified: item.modified || new Date().toISOString(),
@@ -1622,10 +1689,10 @@ export class FinderView extends BaseTab {
 
                     // Fallback: if a global TextEditorSystem exists, load remote file there
                     if (
-                        (window as any).TextEditorSystem &&
-                        typeof (window as any).TextEditorSystem.loadRemoteFile === 'function'
+                        window.TextEditorSystem &&
+                        typeof window.TextEditorSystem.loadRemoteFile === 'function'
                     ) {
-                        (window as any).TextEditorSystem.loadRemoteFile({
+                        window.TextEditorSystem.loadRemoteFile({
                             content,
                             fileName,
                             repo: meta?.repo,
@@ -1663,12 +1730,26 @@ export class FinderView extends BaseTab {
                 if (!repo) return;
                 const subPath = this.currentPath.slice(1).concat(name).join('/');
                 const maybe = this.lastGithubItemsMap.get(name);
+                const maybeContent =
+                    maybe &&
+                    typeof maybe === 'object' &&
+                    ('download_url' in maybe || 'content' in maybe || 'type' in maybe)
+                        ? (maybe as GitHubContentItem)
+                        : null;
+                const directDownloadUrl =
+                    typeof maybeContent?.download_url === 'string'
+                        ? maybeContent.download_url
+                        : null;
+                const embeddedContent =
+                    typeof maybeContent?.content === 'string' ? maybeContent.content : null;
+                const embeddedEncoding =
+                    typeof maybeContent?.encoding === 'string' ? maybeContent.encoding : null;
 
                 // If the listing item contains a direct download_url (as our test mocks do), prefer it
-                if (maybe && maybe.download_url) {
+                if (directDownloadUrl) {
                     try {
                         if (imageExts.has(ext)) {
-                            const url = maybe.download_url;
+                            const url = directDownloadUrl;
                             try {
                                 // Try to fetch the resource and open as blob URL to avoid runtime 404/cors
                                 const resp = await fetch(url);
@@ -1701,7 +1782,7 @@ export class FinderView extends BaseTab {
                             return;
                         }
                         if (pdfExts.has(ext)) {
-                            window.open(maybe.download_url, '_blank');
+                            window.open(directDownloadUrl, '_blank');
                             return;
                         }
                     } catch (eurl) {
@@ -1715,11 +1796,11 @@ export class FinderView extends BaseTab {
 
                 try {
                     // If API object already contains content (rare for listings), decode and open
-                    if (maybe && maybe.content) {
+                    if (embeddedContent) {
                         const raw =
-                            maybe.encoding === 'base64'
-                                ? atob((maybe.content || '').replace(/\n/g, ''))
-                                : maybe.content;
+                            embeddedEncoding === 'base64'
+                                ? atob(embeddedContent.replace(/\n/g, ''))
+                                : embeddedContent;
                         if (textExts.has(ext)) {
                             openInTextEditor(name, raw, { repo, path: subPath });
                             return;
@@ -1728,8 +1809,8 @@ export class FinderView extends BaseTab {
                         try {
                             if (imageExts.has(ext)) {
                                 const b64 =
-                                    maybe.encoding === 'base64'
-                                        ? (maybe.content || '').replace(/\n/g, '')
+                                    embeddedEncoding === 'base64'
+                                        ? embeddedContent.replace(/\n/g, '')
                                         : '';
                                 if (b64) {
                                     const bytes = atob(b64);
@@ -1763,8 +1844,8 @@ export class FinderView extends BaseTab {
                             }
                             if (pdfExts.has(ext)) {
                                 const b64 =
-                                    maybe.encoding === 'base64'
-                                        ? (maybe.content || '').replace(/\n/g, '')
+                                    embeddedEncoding === 'base64'
+                                        ? embeddedContent.replace(/\n/g, '')
                                         : '';
                                 if (b64) {
                                     const bytes = atob(b64);
@@ -2511,17 +2592,7 @@ export class FinderView extends BaseTab {
         return window.GITHUB_USERNAME || 'Marormur';
     }
 
-    private getAPI(): {
-        fetchRepoContents?: (
-            user: string,
-            repo: string,
-            path?: string,
-            opts?: Record<string, unknown>
-        ) => Promise<unknown>;
-        prefetchUserRepos?: (user: string) => void;
-        fetchUserRepos?: (user: string, opts?: Record<string, unknown>) => Promise<unknown>;
-        getCached?: (key: string) => unknown;
-    } | null {
+    private getAPI(): FinderGitHubAPI | null {
         return window.GitHubAPI || null;
     }
 
@@ -2681,15 +2752,15 @@ export class FinderView extends BaseTab {
 
                 // Check cache state using the new API
                 const cacheState =
-                    (API as any).getCacheState?.('repos') ??
-                    ((API as any).isCacheStale?.('repos')
+                    API.getCacheState?.('repos') ??
+                    (API.isCacheStale?.('repos')
                         ? 'stale'
-                        : (API as any).readCache?.('repos')
+                        : API.readCache?.('repos')
                           ? 'fresh'
                           : 'missing');
 
                 const cached = this._readGithubCache(cacheKey);
-                const apiCached = (API as any).readCache?.('repos');
+                const apiCached = API.readCache?.('repos');
 
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
@@ -2704,7 +2775,7 @@ export class FinderView extends BaseTab {
                         this._showRefreshIndicator();
                         API.fetchUserRepos(username)
                             .then((freshRepos: unknown) => {
-                                (API as any).writeCache?.('repos', '', '', freshRepos);
+                                API.writeCache?.('repos', '', '', freshRepos);
                                 this._writeGithubCache(cacheKey, freshRepos);
                                 if (!this._isCurrentGithubLocation(requestedPath)) {
                                     return;
@@ -2731,7 +2802,7 @@ export class FinderView extends BaseTab {
                     this._renderAll();
 
                     const repos = API.fetchUserRepos ? await API.fetchUserRepos(username) : [];
-                    (API as any).writeCache?.('repos', '', '', repos);
+                    API.writeCache?.('repos', '', '', repos);
                     this._writeGithubCache(cacheKey, repos);
                     if (!this._isCurrentGithubLocation(requestedPath)) {
                         return;
@@ -2748,15 +2819,15 @@ export class FinderView extends BaseTab {
 
                 // Check cache state
                 const cacheState =
-                    (API as any).getCacheState?.('contents', repo, subPath) ??
-                    ((API as any).isCacheStale?.('contents', repo, subPath)
+                    API.getCacheState?.('contents', repo, subPath) ??
+                    (API.isCacheStale?.('contents', repo, subPath)
                         ? 'stale'
-                        : (API as any).readCache?.('contents', repo, subPath)
+                        : API.readCache?.('contents', repo, subPath)
                           ? 'fresh'
                           : 'missing');
 
                 const cached = this._readGithubCache(cacheKey);
-                const apiCached = (API as any).readCache?.('contents', repo, subPath);
+                const apiCached = API.readCache?.('contents', repo, subPath);
 
                 if (cached || apiCached) {
                     // Show cached data immediately (optimistic UI)
@@ -2771,7 +2842,7 @@ export class FinderView extends BaseTab {
                         this._showRefreshIndicator();
                         API.fetchRepoContents(username, repo, subPath)
                             .then((freshContents: unknown) => {
-                                (API as any).writeCache?.('contents', repo, subPath, freshContents);
+                                API.writeCache?.('contents', repo, subPath, freshContents);
                                 this._writeGithubCache(cacheKey, freshContents);
                                 if (!this._isCurrentGithubLocation(requestedPath)) {
                                     return;
@@ -2800,7 +2871,7 @@ export class FinderView extends BaseTab {
                     const contents = API.fetchRepoContents
                         ? await API.fetchRepoContents(username, repo, subPath)
                         : [];
-                    (API as any).writeCache?.('contents', repo, subPath, contents);
+                    API.writeCache?.('contents', repo, subPath, contents);
                     this._writeGithubCache(cacheKey, contents);
                     if (!this._isCurrentGithubLocation(requestedPath)) {
                         return;
