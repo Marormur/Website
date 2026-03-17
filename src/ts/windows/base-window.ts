@@ -326,7 +326,12 @@ export class BaseWindow {
             }
 
             this.bringToFront();
-            this.toggleMaximize();
+            const action = window.DockSystem?.getTitlebarDoubleClickAction?.() || 'zoom';
+            if (action === 'minimize') {
+                this.minimize();
+            } else {
+                this.toggleMaximize();
+            }
             e.preventDefault();
         });
 
@@ -790,8 +795,13 @@ export class BaseWindow {
      */
     minimize(): void {
         this.isMinimized = true;
+        if (
+            this.element &&
+            window.DockSystem?.animateWindowMinimize?.(this.element, this.id, () => this.hide())
+        ) {
+            return;
+        }
         this.hide();
-        // TODO: Add to dock/taskbar
     }
 
     /**

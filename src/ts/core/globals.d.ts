@@ -181,6 +181,38 @@ declare global {
             loadDockOrder?: () => string[] | null;
             saveDockOrder?: (order: string[]) => void;
             applyDockOrder?: (order: string[]) => void;
+            getDockPreferences?: () => {
+                size: number;
+                magnification: number;
+                position: 'bottom' | 'left' | 'right';
+                minimizeEffect: 'genie' | 'scale';
+                titlebarDoubleClickAction: 'zoom' | 'minimize';
+                minimizeWindowsIntoAppIcon: boolean;
+                autoHide: boolean;
+                animateOpeningApps: boolean;
+                showOpenIndicators: boolean;
+                showRecentApps: boolean;
+            };
+            setDockPreferences?: (preferences: {
+                size: number;
+                magnification: number;
+                position: 'bottom' | 'left' | 'right';
+                minimizeEffect: 'genie' | 'scale';
+                titlebarDoubleClickAction: 'zoom' | 'minimize';
+                minimizeWindowsIntoAppIcon: boolean;
+                autoHide: boolean;
+                animateOpeningApps: boolean;
+                showOpenIndicators: boolean;
+                showRecentApps: boolean;
+            }) => unknown;
+            updateDockPreferences?: (preferences: Record<string, unknown>) => unknown;
+            applyDockPreferences?: (preferences?: Record<string, unknown> | unknown) => void;
+            getTitlebarDoubleClickAction?: () => 'zoom' | 'minimize';
+            animateWindowMinimize?: (
+                windowElement: HTMLElement,
+                windowId: string,
+                onComplete?: () => void
+            ) => boolean;
         };
         LaunchpadSystem?: {
             container?: HTMLElement | null;

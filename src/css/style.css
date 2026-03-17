@@ -855,6 +855,165 @@ html.dark .traffic-light-control::after {
     opacity: 0.75;
 }
 
+.settings-dock-page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.settings-dock-slider-card,
+.settings-dock-list-card {
+    padding: 10px;
+}
+
+.settings-dock-slider-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.settings-dock-slider-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.04);
+}
+
+.settings-dock-slider-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.settings-dock-slider-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(15, 23, 42, 0.9);
+}
+
+.settings-dock-range {
+    width: 100%;
+    accent-color: #0a84ff;
+}
+
+.settings-dock-slider-scale {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(51, 65, 85, 0.76);
+}
+
+.settings-dock-slider-scale--ends {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-dock-slider-scale span:first-child {
+    text-align: left;
+}
+
+.settings-dock-slider-scale span:nth-child(2) {
+    text-align: center;
+}
+
+.settings-dock-slider-scale span:last-child {
+    text-align: right;
+}
+
+.settings-dock-list-card {
+    overflow: hidden;
+}
+
+.settings-dock-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 12px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.settings-dock-row:last-child {
+    border-bottom: 0;
+}
+
+.settings-dock-row-copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.settings-dock-row-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.settings-dock-select {
+    min-width: 150px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 9px 12px;
+}
+
+.settings-dock-row--toggle {
+    cursor: pointer;
+}
+
+.settings-dock-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 24px;
+}
+
+.settings-dock-toggle-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.settings-dock-toggle-track {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    border-radius: 999px;
+    background: rgba(100, 116, 139, 0.42);
+    transition: background-color 0.18s ease;
+}
+
+.settings-dock-toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.24);
+    transition: transform 0.18s ease;
+}
+
+.settings-dock-toggle-input:checked + .settings-dock-toggle-track {
+    background: #0a84ff;
+}
+
+.settings-dock-toggle-input:checked + .settings-dock-toggle-track::after {
+    transform: translateX(18px);
+}
+
 .settings-wifi-page {
     display: flex;
     flex-direction: column;
@@ -1406,6 +1565,37 @@ html.dark .settings-scale-recommendation-btn:hover:not(:disabled) {
     border-color: rgba(125, 211, 252, 0.5);
 }
 
+html.dark .settings-dock-slider-field {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+html.dark .settings-dock-slider-value,
+html.dark .settings-dock-row-title {
+    color: #f8fbff;
+}
+
+html.dark .settings-dock-slider-scale {
+    color: rgba(224, 231, 244, 0.7);
+}
+
+html.dark .settings-dock-row {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .settings-dock-select {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f8fbff;
+}
+
+html.dark .settings-dock-toggle-track {
+    background: rgba(148, 163, 184, 0.34);
+}
+
+html.dark .settings-dock-toggle-input:checked + .settings-dock-toggle-track {
+    background: #0a84ff;
+}
+
 html.dark .settings-wifi-group-title {
     color: rgba(226, 232, 240, 0.82);
 }
@@ -1558,6 +1748,19 @@ html.dark .settings-wifi-connected-status {
 
     .settings-overview-title {
         font-size: 30px;
+    }
+
+    .settings-dock-slider-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-dock-row {
+        grid-template-columns: 1fr;
+        justify-items: start;
+    }
+
+    .settings-dock-select {
+        width: 100%;
     }
 
     .settings-overview-description {
@@ -3270,13 +3473,29 @@ html.dark #about-modal .about-copyright {
    This is below the menubar (2147483500 for header, 2147483647 for dropdowns)
    and below Launchpad (2147483600). */
 #dock {
+    --dock-base-transform: translate3d(0, 0, 0);
+    --dock-icon-size: 72px;
+    --dock-icon-emoji-size: 64px;
+    --dock-item-gap: 6px;
+    --dock-tray-padding-inline: 12px;
+    --dock-tray-padding-block: 8px;
+    --dock-tray-radius: 18px;
+    --dock-tooltip-offset: 12px;
     pointer-events: auto;
     z-index: 2147483550 !important;
+    transform: var(--dock-base-transform);
+    transition:
+        transform 0.22s ease,
+        opacity 0.18s ease;
 }
 
 #dock .dock-tray {
     width: max-content;
-    border-radius: 18px;
+    display: inline-flex;
+    align-items: flex-end;
+    gap: var(--dock-item-gap);
+    padding: var(--dock-tray-padding-block) var(--dock-tray-padding-inline);
+    border-radius: var(--dock-tray-radius);
     background: rgba(245, 245, 247, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.45);
     box-shadow:
@@ -3294,13 +3513,24 @@ html.dark #dock .dock-tray {
         0 2px 6px rgba(255, 255, 255, 0.06) inset;
 }
 
+#dock[data-dock-position='left'] .dock-tray,
+#dock[data-dock-position='right'] .dock-tray {
+    flex-direction: column;
+    align-items: center;
+}
+
 #dock .dock-item {
-    margin: 0 6px;
+    margin: 0 var(--dock-item-gap);
+}
+
+#dock[data-dock-position='left'] .dock-item,
+#dock[data-dock-position='right'] .dock-item {
+    margin: var(--dock-item-gap) 0;
 }
 
 #dock .dock-icon {
-    width: 64px;
-    height: 64px;
+    width: var(--dock-icon-size);
+    height: var(--dock-icon-size);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3317,22 +3547,30 @@ html.dark #dock .dock-tray {
 }
 
 #dock .dock-icon .program-icon-emoji {
-    font-size: 56px;
+    font-size: var(--dock-icon-emoji-size);
 }
 
 @media (min-width: 768px) {
-    #dock .dock-icon {
-        width: 72px;
-        height: 72px;
+    #dock[data-dock-position='bottom'] .dock-icon {
+        width: var(--dock-icon-size);
+        height: var(--dock-icon-size);
     }
 
-    #dock .dock-icon .program-icon-emoji {
-        font-size: 64px;
+    #dock[data-dock-position='bottom'] .dock-icon .program-icon-emoji {
+        font-size: var(--dock-icon-emoji-size);
     }
 }
 
 #dock .dock-icon {
     transform-origin: bottom center;
+}
+
+#dock[data-dock-position='left'] .dock-icon {
+    transform-origin: left center;
+}
+
+#dock[data-dock-position='right'] .dock-icon {
+    transform-origin: right center;
 }
 
 #dock .dock-tooltip {
@@ -3346,6 +3584,58 @@ html.dark #dock .dock-tray {
 
 html.dark #dock .dock-tooltip {
     background: rgba(0, 0, 0, 0.7);
+}
+
+#dock[data-dock-position='left'] .dock-tooltip {
+    bottom: auto !important;
+    left: calc(100% + var(--dock-tooltip-offset));
+    right: auto;
+    top: 50%;
+    margin-bottom: 0 !important;
+    transform: translateY(-50%);
+}
+
+#dock[data-dock-position='right'] .dock-tooltip {
+    bottom: auto !important;
+    left: auto;
+    right: calc(100% + var(--dock-tooltip-offset));
+    top: 50%;
+    margin-bottom: 0 !important;
+    transform: translateY(-50%);
+}
+
+#dock.dock-auto-hide-hidden[data-dock-position='bottom'] {
+    transform: translateY(calc(100% + 20px));
+    opacity: 0;
+}
+
+#dock.dock-auto-hide-hidden[data-dock-position='left'] {
+    transform: translateX(calc(-100% - 20px));
+    opacity: 0;
+}
+
+#dock.dock-auto-hide-hidden[data-dock-position='right'] {
+    transform: translateX(calc(100% + 20px));
+    opacity: 0;
+}
+
+#dock .dock-icon.dock-icon--launching {
+    animation: dock-launch-bounce 0.62s cubic-bezier(0.2, 0.85, 0.2, 1);
+}
+
+@keyframes dock-launch-bounce {
+    0% {
+        transform: translateY(0) scale(1);
+    }
+    35% {
+        transform: translateY(-14px) scale(1.08);
+    }
+    65% {
+        transform: translateY(3px) scale(0.98);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* Dock indicator dots */
@@ -3364,6 +3654,22 @@ html.dark #dock .dock-tooltip {
 html.dark .dock-indicator {
     background-color: rgb(243, 244, 246); /* gray-100 */
     box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+}
+
+#dock[data-dock-position='left'] .dock-indicator,
+#dock[data-dock-position='right'] .dock-indicator {
+    bottom: auto;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#dock[data-dock-position='left'] .dock-indicator {
+    right: -0.2rem;
+}
+
+#dock[data-dock-position='right'] .dock-indicator {
+    left: -0.2rem;
 }
 
 /* ============================================================================

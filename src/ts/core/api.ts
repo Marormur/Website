@@ -96,6 +96,11 @@ logger.debug('APP', 'API loaded');
             'getDockReservedBottom',
             'initDockMagnification',
             'updateDockIndicators',
+            'getDockPreferences',
+            'setDockPreferences',
+            'updateDockPreferences',
+            'applyDockPreferences',
+            'getTitlebarDoubleClickAction',
         ] as const),
 
         menu: createModuleProxy('MenuSystem', [

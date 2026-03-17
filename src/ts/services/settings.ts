@@ -11,7 +11,27 @@ logger.debug('APP', 'Settings Module loaded');
 
     // ===== Types =====
 
-    type SectionName = 'wifi' | 'bluetooth' | 'general' | 'general-info' | 'display' | 'language';
+    type SectionName =
+        | 'wifi'
+        | 'bluetooth'
+        | 'general'
+        | 'general-info'
+        | 'desktop-dock'
+        | 'display'
+        | 'language';
+
+    interface DockPreferencesShape {
+        size: number;
+        magnification: number;
+        position: 'bottom' | 'left' | 'right';
+        minimizeEffect: 'genie' | 'scale';
+        titlebarDoubleClickAction: 'zoom' | 'minimize';
+        minimizeWindowsIntoAppIcon: boolean;
+        autoHide: boolean;
+        animateOpeningApps: boolean;
+        showOpenIndicators: boolean;
+        showRecentApps: boolean;
+    }
 
     type GitHubCommitResponse = Array<{
         sha?: string;
@@ -34,12 +54,13 @@ logger.debug('APP', 'Settings Module loaded');
         syncIconThemePreference(): void;
         syncLanguagePreference(): void;
         syncDisplayScalePreference(): void;
+        syncDockPreferences(): void;
         showSection(section: SectionName, options?: { pushHistory?: boolean }): void;
         getSectionTitle(section: SectionName): { key: string; fallback: string };
         translateLabel(key: string, fallback: string): string;
         resolveSidebarPage(
             section: SectionName
-        ): 'wifi' | 'bluetooth' | 'general' | 'display' | 'language';
+        ): 'wifi' | 'bluetooth' | 'general' | 'desktop-dock' | 'display' | 'language';
         syncWifiNetworkList(): void;
         syncBluetoothDeviceList(): void;
         syncGeneralInfoDetails(): void;
@@ -81,6 +102,7 @@ logger.debug('APP', 'Settings Module loaded');
             this.syncIconThemePreference();
             this.syncLanguagePreference();
             this.syncDisplayScalePreference();
+            this.syncDockPreferences();
             this.syncWifiNetworkList();
             this.syncBluetoothDeviceList();
             this.syncGeneralInfoDetails();
@@ -153,6 +175,10 @@ logger.debug('APP', 'Settings Module loaded');
                                 <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="general" data-settings-page="general">
                                     <span class="settings-nav-icon" aria-hidden="true">⚙️</span>
                                     <span class="settings-nav-title" data-i18n="settingsPage.nav.general">Allgemein</span>
+                                </button>
+                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="desktop-dock" data-settings-page="desktop-dock">
+                                    <span class="settings-nav-icon" aria-hidden="true">🧰</span>
+                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.desktopDock">Schreibtisch &amp; Dock</span>
                                 </button>
                                 <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="display" data-settings-page="display">
                                     <span class="settings-nav-icon" aria-hidden="true">🖥️</span>
@@ -461,6 +487,127 @@ logger.debug('APP', 'Settings Module loaded');
                                 <div class="settings-info-row">
                                     <span class="settings-info-key">Viewport-Auflösung</span>
                                     <span class="settings-info-value" data-settings-info-field="browser-viewport">Wird geladen ...</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="settings-desktop-dock" class="settings-section hidden">
+                            <div class="settings-section-header">
+                                <h3 class="settings-section-title" data-i18n="settingsPage.desktopDock.title">Schreibtisch &amp; Dock</h3>
+                                <p class="settings-section-description" data-i18n="settingsPage.desktopDock.description">Passe das Dock-Verhalten mit macOS-aehnlichen Optionen fuer Groesse, Vergroesserung und Sichtbarkeit an.</p>
+                            </div>
+
+                            <div class="settings-dock-page">
+                                <div class="settings-option-card settings-dock-slider-card">
+                                    <div class="settings-dock-slider-grid">
+                                        <label class="settings-dock-slider-field">
+                                            <span class="settings-dock-slider-heading">
+                                                <span class="settings-dock-row-title" data-i18n="settingsPage.desktopDock.size">Groesse</span>
+                                                <output class="settings-dock-slider-value" data-settings-dock-size-value>72 px</output>
+                                            </span>
+                                            <input type="range" min="0" max="100" step="1" value="56" class="settings-dock-range" data-settings-dock-size />
+                                            <span class="settings-dock-slider-scale settings-dock-slider-scale--ends" aria-hidden="true">
+                                                <span data-i18n="settingsPage.desktopDock.small">Klein</span>
+                                                <span data-i18n="settingsPage.desktopDock.large">Groß</span>
+                                            </span>
+                                        </label>
+
+                                        <label class="settings-dock-slider-field">
+                                            <span class="settings-dock-slider-heading">
+                                                <span class="settings-dock-row-title" data-i18n="settingsPage.desktopDock.magnification">Vergrößerung</span>
+                                                <output class="settings-dock-slider-value" data-settings-dock-magnification-value>52%</output>
+                                            </span>
+                                            <input type="range" min="0" max="100" step="1" value="52" class="settings-dock-range" data-settings-dock-magnification />
+                                            <span class="settings-dock-slider-scale" aria-hidden="true">
+                                                <span data-i18n="settingsPage.desktopDock.off">Aus</span>
+                                                <span data-i18n="settingsPage.desktopDock.small">Klein</span>
+                                                <span data-i18n="settingsPage.desktopDock.large">Groß</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="settings-option-card settings-dock-list-card">
+                                    <label class="settings-dock-row">
+                                        <span class="settings-dock-row-copy">
+                                            <span class="settings-dock-row-title" data-i18n="settingsPage.desktopDock.position">Position auf dem Bildschirm</span>
+                                        </span>
+                                        <select class="settings-dock-select" data-settings-dock-position>
+                                            <option value="bottom" data-i18n="settingsPage.desktopDock.positionOptions.bottom">Unten</option>
+                                            <option value="left" data-i18n="settingsPage.desktopDock.positionOptions.left">Links</option>
+                                            <option value="right" data-i18n="settingsPage.desktopDock.positionOptions.right">Rechts</option>
+                                        </select>
+                                    </label>
+
+                                    <label class="settings-dock-row">
+                                        <span class="settings-dock-row-copy">
+                                            <span class="settings-dock-row-title" data-i18n="settingsPage.desktopDock.minimizeEffect">Effekt beim Ablegen</span>
+                                        </span>
+                                        <select class="settings-dock-select" data-settings-dock-minimize-effect>
+                                            <option value="genie" data-i18n="settingsPage.desktopDock.minimizeEffectOptions.genie">Trichter</option>
+                                            <option value="scale" data-i18n="settingsPage.desktopDock.minimizeEffectOptions.scale">Skalieren</option>
+                                        </select>
+                                    </label>
+
+                                    <label class="settings-dock-row">
+                                        <span class="settings-dock-row-copy">
+                                            <span class="settings-dock-row-title" data-i18n="settingsPage.desktopDock.titlebarDoubleClick">Doppelklick auf Titelleiste</span>
+                                        </span>
+                                        <select class="settings-dock-select" data-settings-dock-titlebar-double-click>
+                                            <option value="zoom" data-i18n="settingsPage.desktopDock.titlebarDoubleClickOptions.zoom">Zoomen</option>
+                                            <option value="minimize" data-i18n="settingsPage.desktopDock.titlebarDoubleClickOptions.minimize">Im Dock ablegen</option>
+                                        </select>
+                                    </label>
+
+                                    <label class="settings-dock-row settings-dock-row--toggle">
+                                        <span class="settings-dock-row-copy">
+                                            <span class="settings-dock-row-title" data-i18n="settingsPage.desktopDock.minimizeIntoAppIcon">Fenster hinter Programmsymbol im Dock ablegen</span>
+                                        </span>
+                                        <span class="settings-dock-toggle">
+                                            <input type="checkbox" class="settings-dock-toggle-input" data-settings-dock-minimize-to-app-icon />
+                                            <span class="settings-dock-toggle-track"></span>
+                                        </span>
+                                    </label>
+
+                                    <label class="settings-dock-row settings-dock-row--toggle">
+                                        <span class="settings-dock-row-copy">
+                                            <span class="settings-dock-row-title" data-i18n="settingsPage.desktopDock.autoHide">Dock automatisch ein- und ausblenden</span>
+                                        </span>
+                                        <span class="settings-dock-toggle">
+                                            <input type="checkbox" class="settings-dock-toggle-input" data-settings-dock-auto-hide />
+                                            <span class="settings-dock-toggle-track"></span>
+                                        </span>
+                                    </label>
+
+                                    <label class="settings-dock-row settings-dock-row--toggle">
+                                        <span class="settings-dock-row-copy">
+                                            <span class="settings-dock-row-title" data-i18n="settingsPage.desktopDock.animateOpeningApps">Öffnen von Programmen animieren</span>
+                                        </span>
+                                        <span class="settings-dock-toggle">
+                                            <input type="checkbox" class="settings-dock-toggle-input" data-settings-dock-animate-opening />
+                                            <span class="settings-dock-toggle-track"></span>
+                                        </span>
+                                    </label>
+
+                                    <label class="settings-dock-row settings-dock-row--toggle">
+                                        <span class="settings-dock-row-copy">
+                                            <span class="settings-dock-row-title" data-i18n="settingsPage.desktopDock.showOpenIndicators">Anzeige für geöffnete Programme einblenden</span>
+                                        </span>
+                                        <span class="settings-dock-toggle">
+                                            <input type="checkbox" class="settings-dock-toggle-input" data-settings-dock-show-indicators />
+                                            <span class="settings-dock-toggle-track"></span>
+                                        </span>
+                                    </label>
+
+                                    <label class="settings-dock-row settings-dock-row--toggle">
+                                        <span class="settings-dock-row-copy">
+                                            <span class="settings-dock-row-title" data-i18n="settingsPage.desktopDock.showRecentApps">Vorgeschlagene und letzte Apps im Dock anzeigen</span>
+                                        </span>
+                                        <span class="settings-dock-toggle">
+                                            <input type="checkbox" class="settings-dock-toggle-input" data-settings-dock-show-recents />
+                                            <span class="settings-dock-toggle-track"></span>
+                                        </span>
+                                    </label>
                                 </div>
                             </div>
                         </section>
@@ -825,6 +972,165 @@ logger.debug('APP', 'Settings Module loaded');
                 displayScaleRange.dispatchEvent(new Event('input', { bubbles: true }));
                 displayScaleRange.dispatchEvent(new Event('change', { bubbles: true }));
             });
+
+            const getDockSystem = () => {
+                const API = (
+                    window as Window & {
+                        API?: {
+                            dock?: {
+                                getDockPreferences?: () => DockPreferencesShape;
+                                updateDockPreferences?: (
+                                    preferences: Partial<DockPreferencesShape>
+                                ) => DockPreferencesShape;
+                            };
+                        };
+                    }
+                ).API;
+                const DockSystem = (
+                    window as Window & {
+                        DockSystem?: {
+                            getDockPreferences?: () => DockPreferencesShape;
+                            updateDockPreferences?: (
+                                preferences: Partial<DockPreferencesShape>
+                            ) => DockPreferencesShape;
+                        };
+                    }
+                ).DockSystem;
+
+                return {
+                    getDockPreferences:
+                        API?.dock?.getDockPreferences || DockSystem?.getDockPreferences,
+                    updateDockPreferences:
+                        API?.dock?.updateDockPreferences || DockSystem?.updateDockPreferences,
+                };
+            };
+
+            const dockSizeRange = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-size]'
+            );
+            const dockSizeValue = this.container.querySelector<HTMLOutputElement>(
+                '[data-settings-dock-size-value]'
+            );
+            const dockMagnificationRange = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-magnification]'
+            );
+            const dockMagnificationValue = this.container.querySelector<HTMLOutputElement>(
+                '[data-settings-dock-magnification-value]'
+            );
+            const dockPositionSelect = this.container.querySelector<HTMLSelectElement>(
+                '[data-settings-dock-position]'
+            );
+            const dockMinimizeEffectSelect = this.container.querySelector<HTMLSelectElement>(
+                '[data-settings-dock-minimize-effect]'
+            );
+            const dockTitlebarDoubleClickSelect = this.container.querySelector<HTMLSelectElement>(
+                '[data-settings-dock-titlebar-double-click]'
+            );
+            const dockMinimizeToAppIcon = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-minimize-to-app-icon]'
+            );
+            const dockAutoHide = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-auto-hide]'
+            );
+            const dockAnimateOpening = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-animate-opening]'
+            );
+            const dockShowIndicators = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-show-indicators]'
+            );
+            const dockShowRecents = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-show-recents]'
+            );
+
+            const renderDockSizeValue = (value: number) => {
+                if (!dockSizeValue) return;
+                const px = Math.round(48 + (value / 100) * 32);
+                dockSizeValue.value = `${px} px`;
+                dockSizeValue.textContent = `${px} px`;
+            };
+
+            const renderDockMagnificationValue = (value: number) => {
+                if (!dockMagnificationValue) return;
+                const label =
+                    value <= 0
+                        ? this.translateLabel('settingsPage.desktopDock.off', 'Aus')
+                        : `${value}%`;
+                dockMagnificationValue.value = label;
+                dockMagnificationValue.textContent = label;
+            };
+
+            const updateDockPreference = (preferences: Partial<DockPreferencesShape>) => {
+                const dockSystem = getDockSystem();
+                if (typeof dockSystem.updateDockPreferences === 'function') {
+                    dockSystem.updateDockPreferences(preferences);
+                }
+            };
+
+            dockSizeRange?.addEventListener('input', () => {
+                const value = Number.parseInt(dockSizeRange.value, 10);
+                if (!Number.isFinite(value)) return;
+                renderDockSizeValue(value);
+            });
+            dockSizeRange?.addEventListener('change', () => {
+                const value = Number.parseInt(dockSizeRange.value, 10);
+                if (!Number.isFinite(value)) return;
+                updateDockPreference({ size: value });
+                renderDockSizeValue(value);
+            });
+
+            dockMagnificationRange?.addEventListener('input', () => {
+                const value = Number.parseInt(dockMagnificationRange.value, 10);
+                if (!Number.isFinite(value)) return;
+                renderDockMagnificationValue(value);
+            });
+            dockMagnificationRange?.addEventListener('change', () => {
+                const value = Number.parseInt(dockMagnificationRange.value, 10);
+                if (!Number.isFinite(value)) return;
+                updateDockPreference({ magnification: value });
+                renderDockMagnificationValue(value);
+            });
+
+            dockPositionSelect?.addEventListener('change', () => {
+                updateDockPreference({
+                    position: dockPositionSelect.value as DockPreferencesShape['position'],
+                });
+            });
+
+            dockMinimizeEffectSelect?.addEventListener('change', () => {
+                updateDockPreference({
+                    minimizeEffect:
+                        dockMinimizeEffectSelect.value as DockPreferencesShape['minimizeEffect'],
+                });
+            });
+
+            dockTitlebarDoubleClickSelect?.addEventListener('change', () => {
+                updateDockPreference({
+                    titlebarDoubleClickAction:
+                        dockTitlebarDoubleClickSelect.value as DockPreferencesShape['titlebarDoubleClickAction'],
+                });
+            });
+
+            dockMinimizeToAppIcon?.addEventListener('change', () => {
+                updateDockPreference({
+                    minimizeWindowsIntoAppIcon: dockMinimizeToAppIcon.checked,
+                });
+            });
+
+            dockAutoHide?.addEventListener('change', () => {
+                updateDockPreference({ autoHide: dockAutoHide.checked });
+            });
+
+            dockAnimateOpening?.addEventListener('change', () => {
+                updateDockPreference({ animateOpeningApps: dockAnimateOpening.checked });
+            });
+
+            dockShowIndicators?.addEventListener('change', () => {
+                updateDockPreference({ showOpenIndicators: dockShowIndicators.checked });
+            });
+
+            dockShowRecents?.addEventListener('change', () => {
+                updateDockPreference({ showRecentApps: dockShowRecents.checked });
+            });
         },
 
         /**
@@ -986,6 +1292,99 @@ logger.debug('APP', 'Settings Module loaded');
             }
         },
 
+        syncDockPreferences(): void {
+            if (!this.container) return;
+
+            const API = (
+                window as Window & {
+                    API?: { dock?: { getDockPreferences?: () => DockPreferencesShape } };
+                }
+            ).API;
+            const DockSystem = (
+                window as Window & {
+                    DockSystem?: { getDockPreferences?: () => DockPreferencesShape };
+                }
+            ).DockSystem;
+
+            const preferences =
+                API?.dock?.getDockPreferences?.() || DockSystem?.getDockPreferences?.();
+            if (!preferences) return;
+
+            const dockSizeRange = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-size]'
+            );
+            const dockSizeValue = this.container.querySelector<HTMLOutputElement>(
+                '[data-settings-dock-size-value]'
+            );
+            const dockMagnificationRange = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-magnification]'
+            );
+            const dockMagnificationValue = this.container.querySelector<HTMLOutputElement>(
+                '[data-settings-dock-magnification-value]'
+            );
+            const dockPositionSelect = this.container.querySelector<HTMLSelectElement>(
+                '[data-settings-dock-position]'
+            );
+            const dockMinimizeEffectSelect = this.container.querySelector<HTMLSelectElement>(
+                '[data-settings-dock-minimize-effect]'
+            );
+            const dockTitlebarDoubleClickSelect = this.container.querySelector<HTMLSelectElement>(
+                '[data-settings-dock-titlebar-double-click]'
+            );
+            const dockMinimizeToAppIcon = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-minimize-to-app-icon]'
+            );
+            const dockAutoHide = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-auto-hide]'
+            );
+            const dockAnimateOpening = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-animate-opening]'
+            );
+            const dockShowIndicators = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-show-indicators]'
+            );
+            const dockShowRecents = this.container.querySelector<HTMLInputElement>(
+                '[data-settings-dock-show-recents]'
+            );
+
+            const sizePx = Math.round(48 + (preferences.size / 100) * 32);
+            const magnificationLabel =
+                preferences.magnification <= 0
+                    ? this.translateLabel('settingsPage.desktopDock.off', 'Aus')
+                    : `${preferences.magnification}%`;
+
+            if (dockSizeRange) dockSizeRange.value = String(preferences.size);
+            if (dockSizeValue) {
+                dockSizeValue.value = `${sizePx} px`;
+                dockSizeValue.textContent = `${sizePx} px`;
+            }
+            if (dockMagnificationRange) {
+                dockMagnificationRange.value = String(preferences.magnification);
+            }
+            if (dockMagnificationValue) {
+                dockMagnificationValue.value = magnificationLabel;
+                dockMagnificationValue.textContent = magnificationLabel;
+            }
+            if (dockPositionSelect) dockPositionSelect.value = preferences.position;
+            if (dockMinimizeEffectSelect) {
+                dockMinimizeEffectSelect.value = preferences.minimizeEffect;
+            }
+            if (dockTitlebarDoubleClickSelect) {
+                dockTitlebarDoubleClickSelect.value = preferences.titlebarDoubleClickAction;
+            }
+            if (dockMinimizeToAppIcon) {
+                dockMinimizeToAppIcon.checked = preferences.minimizeWindowsIntoAppIcon;
+            }
+            if (dockAutoHide) dockAutoHide.checked = preferences.autoHide;
+            if (dockAnimateOpening) {
+                dockAnimateOpening.checked = preferences.animateOpeningApps;
+            }
+            if (dockShowIndicators) {
+                dockShowIndicators.checked = preferences.showOpenIndicators;
+            }
+            if (dockShowRecents) dockShowRecents.checked = preferences.showRecentApps;
+        },
+
         syncWifiNetworkList(): void {
             const systemUI = (
                 window as Window & {
@@ -1124,6 +1523,7 @@ logger.debug('APP', 'Settings Module loaded');
                 'bluetooth',
                 'general',
                 'general-info',
+                'desktop-dock',
                 'display',
                 'language',
             ];
@@ -1174,6 +1574,11 @@ logger.debug('APP', 'Settings Module loaded');
                     return { key: 'settingsPage.bluetooth.title', fallback: 'Bluetooth' };
                 case 'general-info':
                     return { key: 'settingsPage.general.infoTitle', fallback: 'Info' };
+                case 'desktop-dock':
+                    return {
+                        key: 'settingsPage.desktopDock.title',
+                        fallback: 'Schreibtisch & Dock',
+                    };
                 case 'display':
                     return { key: 'settingsPage.nav.display', fallback: 'Darstellung' };
                 case 'language':
@@ -1208,12 +1613,14 @@ logger.debug('APP', 'Settings Module loaded');
 
         resolveSidebarPage(
             section: SectionName
-        ): 'wifi' | 'bluetooth' | 'general' | 'display' | 'language' {
+        ): 'wifi' | 'bluetooth' | 'general' | 'desktop-dock' | 'display' | 'language' {
             switch (section) {
                 case 'wifi':
                     return 'wifi';
                 case 'bluetooth':
                     return 'bluetooth';
+                case 'desktop-dock':
+                    return 'desktop-dock';
                 case 'display':
                     return 'display';
                 case 'language':
@@ -1313,6 +1720,9 @@ logger.debug('APP', 'Settings Module loaded');
     });
     window.addEventListener('displayScalePreferenceChange', () => {
         SettingsSystem.syncDisplayScalePreference();
+    });
+    window.addEventListener('dockPreferenceChange', () => {
+        SettingsSystem.syncDockPreferences();
     });
 })();
 
