@@ -5124,9 +5124,49 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
 
 .finder-gallery-main {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(220px, 32%, 320px);
+    --finder-gallery-preview-width: 68%;
+    grid-template-columns: minmax(0, var(--finder-gallery-preview-width)) 10px minmax(220px, 1fr);
     flex: 1;
     min-height: 0;
+}
+
+.finder-gallery-main--github {
+    --finder-gallery-preview-width: 62%;
+}
+
+.finder-gallery-resizer {
+    position: relative;
+    cursor: col-resize;
+    user-select: none;
+    touch-action: none;
+    background: rgba(229, 231, 235, 0.25);
+}
+
+.finder-gallery-resizer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background: #d1d5db;
+}
+
+.finder-gallery-resizer:hover::before {
+    background: #9ca3af;
+}
+
+.dark .finder-gallery-resizer {
+    background: rgba(55, 65, 81, 0.25);
+}
+
+.dark .finder-gallery-resizer::before {
+    background: #4b5563;
+}
+
+.dark .finder-gallery-resizer:hover::before {
+    background: #6b7280;
 }
 
 .finder-gallery-preview {
@@ -5137,7 +5177,7 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
     justify-content: center;
     padding: 2rem;
     min-height: 0;
-    border-right: 1px solid #e5e7eb;
+    border-right: 0;
 }
 
 .finder-gallery-preview--empty {
@@ -5145,7 +5185,7 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
 }
 
 .dark .finder-gallery-preview {
-    border-right-color: #374151;
+    border-right-color: transparent;
 }
 
 .finder-gallery-preview-icon {
@@ -5418,6 +5458,10 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
 @media (max-width: 520px) {
     .finder-gallery-main {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .finder-gallery-resizer {
+        display: none;
     }
 
     .finder-gallery-preview {

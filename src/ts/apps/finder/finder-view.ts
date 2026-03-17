@@ -154,6 +154,7 @@ interface FinderViewContentState {
     sortOrder?: 'asc' | 'desc';
     sidebarWidth?: number;
     columnWidths?: { name: number; size: number; modified: number };
+    galleryPreviewWidthPct?: number;
     favorites?: string[];
 }
 
@@ -180,6 +181,7 @@ export class FinderView extends BaseTab {
     _renderedItems: FileItem[];
     sidebarWidth: number;
     columnWidths: { name: number; size: number; modified: number };
+    galleryPreviewWidthPct: number;
 
     // Favorites and Recent Files
     favorites: Set<string>;
@@ -251,6 +253,9 @@ export class FinderView extends BaseTab {
             size: 112, // w-28
             modified: 160, // w-40
         };
+        this.galleryPreviewWidthPct = FinderView.clampGalleryPreviewWidthPct(
+            contentState?.galleryPreviewWidthPct ?? (this.source === 'github' ? 62 : 68)
+        );
 
         // Tab-specific state (session restore) should override global Finder preferences.
         if (
@@ -1072,6 +1077,54 @@ export class FinderView extends BaseTab {
         document.body.style.userSelect = 'none';
     }
 
+    private static clampGalleryPreviewWidthPct(value: number): number {
+        return Math.max(30, Math.min(80, value));
+    }
+
+    private startGalleryResize(e: MouseEvent): void {
+        const target = e.currentTarget as HTMLElement | null;
+        const galleryMain = target?.closest('.finder-gallery-main') as HTMLElement | null;
+        if (!galleryMain) return;
+
+        const handleWidth = 10;
+        const mainRect = galleryMain.getBoundingClientRect();
+        const availableWidth = Math.max(0, mainRect.width - handleWidth);
+        if (availableWidth <= 0) return;
+
+        const minPreviewPx = 180;
+        const minInfoPx = 240;
+        const startX = e.clientX;
+        const startPreviewPx = (availableWidth * this.galleryPreviewWidthPct) / 100;
+
+        const onMouseMove = (moveEvent: MouseEvent) => {
+            const deltaX = moveEvent.clientX - startX;
+            const maxPreview = Math.max(minPreviewPx, availableWidth - minInfoPx);
+            const minPreview = Math.min(minPreviewPx, maxPreview);
+            const nextPreviewPx = Math.max(
+                minPreview,
+                Math.min(maxPreview, startPreviewPx + deltaX)
+            );
+
+            this.galleryPreviewWidthPct = FinderView.clampGalleryPreviewWidthPct(
+                (nextPreviewPx / availableWidth) * 100
+            );
+            this._renderAll();
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            this._persistState();
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    }
+
     renderGridView(items: FileItem[]): VNode {
         return h(
             'div',
@@ -1173,7 +1226,24 @@ export class FinderView extends BaseTab {
         return h(
             'div',
             { className: 'finder-gallery-container', 'data-finder-content': 'gallery' },
-            h('div', { className: 'finder-gallery-main' }, previewNode, infoPanelNode),
+            h(
+                'div',
+                {
+                    className: `finder-gallery-main${this.source === 'github' ? ' finder-gallery-main--github' : ''}`,
+                    style: `--finder-gallery-preview-width: ${this.galleryPreviewWidthPct}%;`,
+                },
+                previewNode,
+                h('div', {
+                    className: 'finder-gallery-resizer',
+                    role: 'separator',
+                    'aria-orientation': 'vertical',
+                    onmousedown: (e: MouseEvent) => {
+                        e.preventDefault();
+                        this.startGalleryResize(e);
+                    },
+                }),
+                infoPanelNode
+            ),
             h(
                 'div',
                 { className: 'finder-gallery-strip' },
@@ -2387,6 +2457,7 @@ export class FinderView extends BaseTab {
             recentFiles: this.recentFiles,
             sidebarWidth: this.sidebarWidth,
             columnWidths: this.columnWidths,
+            galleryPreviewWidthPct: this.galleryPreviewWidthPct,
         };
         this.metadata.modified = Date.now();
 
