@@ -116,12 +116,25 @@ export function getWindowActions(): ActionMap {
         closeTopWindow: () => {
             const g = getGlobal<{
                 hideMenuDropdowns?: () => void;
+                WindowRegistry?: {
+                    getActiveWindow?: () => { close?: () => void } | null;
+                    getTopWindow?: () => { close?: () => void } | null;
+                };
                 WindowManager?: { getTopWindow?: () => unknown; close?: (id: string) => void };
                 saveOpenModals?: () => void;
                 updateDockIndicators?: () => void;
                 updateProgramLabelByTopModal?: () => void;
             }>('');
             g?.hideMenuDropdowns?.();
+
+            // Prefer multi-window close path so registry, z-index and dock indicators
+            // stay in sync (legacy WindowManager only hides modal shells).
+            const activeWindow =
+                g?.WindowRegistry?.getActiveWindow?.() || g?.WindowRegistry?.getTopWindow?.();
+            if (activeWindow?.close) {
+                activeWindow.close();
+                return;
+            }
 
             const maybeTop = g?.WindowManager?.getTopWindow?.();
             let topId: string | null = null;

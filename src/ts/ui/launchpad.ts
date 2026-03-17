@@ -5,7 +5,7 @@
 
 import logger from '../core/logger.js';
 import { translate } from '../services/i18n';
-import { renderProgramIcon, resolveProgramIcon } from '../windows/window-icons.js';
+import { WINDOW_ICONS, renderProgramIcon, resolveProgramIcon } from '../windows/window-icons.js';
 
 logger.debug('UI', 'Launchpad (TS) loaded');
 
@@ -13,6 +13,13 @@ logger.debug('UI', 'Launchpad (TS) loaded');
     'use strict';
 
     type AppEntry = { id: string; name: string; icon: string; programKey?: string | null };
+
+    const CANONICAL_PROGRAM_WINDOW_IDS: Record<string, string> = {
+        'programs.finder': 'finder-modal',
+        'programs.terminal': 'terminal-modal',
+        'programs.text': 'text-modal',
+        'programs.photos': 'image-modal',
+    };
 
     let container: HTMLElement | null = null;
     let searchInput: HTMLInputElement | null = null;
@@ -81,14 +88,13 @@ logger.debug('UI', 'Launchpad (TS) loaded');
             if (id === 'about-modal') return; // About - system modal
             if (id === 'program-info-modal') return; // Program info - system modal
 
-            // Deduplicate multi-window app types (finder, terminal, text-editor)
-            // Only show one entry per app type, not one per instance
+            // Deduplicate multi-window app types and use canonical launch IDs.
+            // Dynamic window ids can outlive destroyed instances in WindowManager
+            // and would reopen stale empty shells.
             const programKey = cfg?.programKey || '';
-            const isMultiWindowType = [
-                'programs.finder',
-                'programs.terminal',
-                'programs.text',
-            ].includes(programKey);
+            const canonicalWindowId =
+                CANONICAL_PROGRAM_WINDOW_IDS[programKey] || (cfg?.id as string) || id;
+            const isMultiWindowType = Boolean(CANONICAL_PROGRAM_WINDOW_IDS[programKey]);
 
             if (isMultiWindowType && seenProgramKeys.has(programKey)) {
                 return; // skip duplicate instance of same app type
@@ -99,13 +105,25 @@ logger.debug('UI', 'Launchpad (TS) loaded');
 
             if (info) {
                 allApps.push({
-                    id,
+                    id: canonicalWindowId,
                     name: info.programLabel || translate('programs.default.label') || 'App',
                     icon: resolveProgramIcon(info.icon) || './img/sucher.png',
                     programKey: cfg ? cfg.programKey : null,
                 });
             }
         });
+
+        // Finder is a core app and should be visible in Launchpad even before
+        // the first multi-window Finder instance registers itself in WindowManager.
+        if (!seenProgramKeys.has('programs.finder')) {
+            allApps.push({
+                id: 'finder-modal',
+                name: translate('programs.finder.label', 'Finder') || 'Finder',
+                icon: resolveProgramIcon(WINDOW_ICONS.finder),
+                programKey: 'programs.finder',
+            });
+        }
+
         filteredApps = [...allApps];
         renderApps();
     }
@@ -161,6 +179,16 @@ logger.debug('UI', 'Launchpad (TS) loaded');
 
         // image-modal now maps to the new PhotosWindow implementation.
         // Do not fall back to the legacy static image-modal dialog.
+        if (windowId === 'finder-modal') {
+            const finder = (window as unknown as { FinderWindow?: { focusOrCreate?: () => void } })
+                .FinderWindow;
+            if (finder?.focusOrCreate) {
+                finder.focusOrCreate();
+                return;
+            }
+            logger.warn('UI', 'LaunchpadSystem: FinderWindow unavailable for finder-modal');
+        }
+
         if (windowId === 'image-modal') {
             const photos = (window as unknown as { PhotosWindow?: { focusOrCreate?: () => void } })
                 .PhotosWindow;
