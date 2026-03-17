@@ -6,6 +6,13 @@
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
 import logger from '../../core/logger.js';
+import {
+    detectClientCoordinateScale,
+    resolveElementLogicalPx,
+    toLogicalClientPx,
+    toLogicalPx,
+    toRenderedClientPx,
+} from '../../utils/viewport.js';
 
 export class FinderWindow extends BaseWindow {
     /** WindowTabs controller for the tab bar – created lazily in _doRenderTabs. */
@@ -18,6 +25,7 @@ export class FinderWindow extends BaseWindow {
         isDragging: false,
         offsetX: 0,
         offsetY: 0,
+        pointerScale: 1,
         lastPointerX: null as number | null,
     };
 
@@ -74,12 +82,23 @@ export class FinderWindow extends BaseWindow {
             const inFinderDragZone = target?.closest('.finder-window-drag-zone');
             if (!inFinderDragZone || isInteractiveTarget(target)) return;
 
+            const currentRect = windowEl.getBoundingClientRect();
+            this.finderDragState.pointerScale = detectClientCoordinateScale(
+                e.clientX,
+                e.clientY,
+                currentRect
+            );
+            const pointerX = toLogicalClientPx(e.clientX, this.finderDragState.pointerScale);
+            const pointerY = toLogicalClientPx(e.clientY, this.finderDragState.pointerScale);
+            const renderedPointerX = toRenderedClientPx(
+                e.clientX,
+                this.finderDragState.pointerScale
+            );
+
             if (windowEl.dataset.snapped === 'left' || windowEl.dataset.snapped === 'right') {
-                const pointerX = e.clientX;
-                const pointerY = e.clientY;
                 const initialRect = windowEl.getBoundingClientRect();
-                const preservedOffsetX = pointerX - initialRect.left;
-                const preservedOffsetY = pointerY - initialRect.top;
+                const preservedOffsetX = pointerX - toLogicalPx(initialRect.left);
+                const preservedOffsetY = pointerY - toLogicalPx(initialRect.top);
                 this.unsnap();
                 const minTopAfterUnsnap = window.getMenuBarBottom?.() || 0;
                 windowEl.style.position = 'fixed';
@@ -89,9 +108,11 @@ export class FinderWindow extends BaseWindow {
 
             const rect = windowEl.getBoundingClientRect();
             this.finderDragState.isDragging = true;
-            this.finderDragState.offsetX = e.clientX - rect.left;
-            this.finderDragState.offsetY = e.clientY - rect.top;
-            this.finderDragState.lastPointerX = e.clientX;
+            this.finderDragState.offsetX =
+                pointerX - resolveElementLogicalPx(windowEl, 'left', rect.left);
+            this.finderDragState.offsetY =
+                pointerY - resolveElementLogicalPx(windowEl, 'top', rect.top);
+            this.finderDragState.lastPointerX = renderedPointerX;
             this.bringToFront();
             e.preventDefault();
         });
@@ -109,15 +130,21 @@ export class FinderWindow extends BaseWindow {
         document.addEventListener('mousemove', (e: MouseEvent) => {
             if (!this.finderDragState.isDragging || !this.element) return;
 
-            const newX = e.clientX - this.finderDragState.offsetX;
+            const pointerX = toLogicalClientPx(e.clientX, this.finderDragState.pointerScale);
+            const pointerY = toLogicalClientPx(e.clientY, this.finderDragState.pointerScale);
+            const renderedPointerX = toRenderedClientPx(
+                e.clientX,
+                this.finderDragState.pointerScale
+            );
+            const newX = pointerX - this.finderDragState.offsetX;
             const minTop = window.getMenuBarBottom?.() || 0;
-            const newY = Math.max(minTop, e.clientY - this.finderDragState.offsetY);
+            const newY = Math.max(minTop, pointerY - this.finderDragState.offsetY);
             this.position.x = newX;
             this.position.y = newY;
             this.element.style.left = `${newX}px`;
             this.element.style.top = `${newY}px`;
 
-            this.finderDragState.lastPointerX = e.clientX;
+            this.finderDragState.lastPointerX = renderedPointerX;
             const candidate = this.getSnapCandidate(
                 this.element,
                 this.finderDragState.lastPointerX
@@ -135,6 +162,7 @@ export class FinderWindow extends BaseWindow {
                 if (candidate) this.snapTo(candidate);
                 window.hideSnapPreview?.();
             }
+            this.finderDragState.pointerScale = 1;
             this.finderDragState.lastPointerX = null;
             // Persist final position through BaseWindow's existing state mechanism.
             (this as unknown as { _saveState?: () => void })._saveState?.();
@@ -176,10 +204,10 @@ export class FinderWindow extends BaseWindow {
 
         if (!target.dataset.snapped) {
             const rect = target.getBoundingClientRect();
-            target.dataset.prevSnapLeft = `${Math.round(rect.left)}`;
-            target.dataset.prevSnapTop = `${Math.round(rect.top)}`;
-            target.dataset.prevSnapWidth = `${Math.round(rect.width)}`;
-            target.dataset.prevSnapHeight = `${Math.round(rect.height)}`;
+            target.dataset.prevSnapLeft = `${Math.round(resolveElementLogicalPx(target, 'left', rect.left))}`;
+            target.dataset.prevSnapTop = `${Math.round(resolveElementLogicalPx(target, 'top', rect.top))}`;
+            target.dataset.prevSnapWidth = `${Math.round(resolveElementLogicalPx(target, 'width', rect.width))}`;
+            target.dataset.prevSnapHeight = `${Math.round(resolveElementLogicalPx(target, 'height', rect.height))}`;
         }
 
         const metrics = window.computeSnapMetrics?.(side);

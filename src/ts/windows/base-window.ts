@@ -7,7 +7,15 @@ import type { BaseTab } from '../windows/base-tab.js';
 import { getZIndexManager } from './z-index-manager.js';
 import logger from '../core/logger.js';
 import { WINDOW_ICONS } from './window-icons.js';
-import { getLogicalViewportWidth, getLogicalViewportHeight } from '../utils/viewport.js';
+import {
+    detectClientCoordinateScale,
+    getLogicalViewportWidth,
+    getLogicalViewportHeight,
+    resolveElementLogicalPx,
+    toLogicalClientPx,
+    toLogicalPx,
+    toRenderedClientPx,
+} from '../utils/viewport.js';
 
 export interface WindowPosition {
     x: number;
@@ -89,6 +97,7 @@ export class BaseWindow {
         startY: number;
         offsetX: number;
         offsetY: number;
+        pointerScale: number;
         lastPointerX: number | null;
     };
 
@@ -113,6 +122,7 @@ export class BaseWindow {
             startY: 0,
             offsetX: 0,
             offsetY: 0,
+            pointerScale: 1,
             lastPointerX: null,
         };
 
@@ -269,16 +279,22 @@ export class BaseWindow {
         this.titlebarElement.addEventListener('mousedown', (e: MouseEvent) => {
             if ((e.target as HTMLElement).tagName === 'BUTTON') return; // Ignore control buttons
 
+            const currentRect = this.element?.getBoundingClientRect();
+            this.dragState.pointerScale = currentRect
+                ? detectClientCoordinateScale(e.clientX, e.clientY, currentRect)
+                : 1;
+            const pointerX = toLogicalClientPx(e.clientX, this.dragState.pointerScale);
+            const pointerY = toLogicalClientPx(e.clientY, this.dragState.pointerScale);
+            const renderedPointerX = toRenderedClientPx(e.clientX, this.dragState.pointerScale);
+
             if (
                 this.element &&
                 (this.element.dataset.snapped === 'left' ||
                     this.element.dataset.snapped === 'right')
             ) {
-                const pointerX = e.clientX;
-                const pointerY = e.clientY;
                 const initialRect = this.element.getBoundingClientRect();
-                const preservedOffsetX = pointerX - initialRect.left;
-                const preservedOffsetY = pointerY - initialRect.top;
+                const preservedOffsetX = pointerX - toLogicalPx(initialRect.left);
+                const preservedOffsetY = pointerY - toLogicalPx(initialRect.top);
                 this._unsnap();
                 const minTopAfterUnsnap = window.getMenuBarBottom?.() || 0;
                 this.element.style.position = 'fixed';
@@ -287,14 +303,17 @@ export class BaseWindow {
             }
 
             this.dragState.isDragging = true;
-            this.dragState.startX = e.clientX;
-            this.dragState.startY = e.clientY;
-            this.dragState.lastPointerX = e.clientX;
+            this.dragState.startX = pointerX;
+            this.dragState.startY = pointerY;
+            this.dragState.lastPointerX = renderedPointerX;
 
             const rect = this.element?.getBoundingClientRect();
             if (rect) {
-                this.dragState.offsetX = this.dragState.startX - rect.left;
-                this.dragState.offsetY = this.dragState.startY - rect.top;
+                this.dragState.offsetX =
+                    this.dragState.startX -
+                    resolveElementLogicalPx(this.element, 'left', rect.left);
+                this.dragState.offsetY =
+                    this.dragState.startY - resolveElementLogicalPx(this.element, 'top', rect.top);
             }
 
             e.preventDefault();
@@ -314,13 +333,16 @@ export class BaseWindow {
         document.addEventListener('mousemove', (e: MouseEvent) => {
             if (!this.dragState.isDragging || !this.element) return;
 
-            const newX = e.clientX - this.dragState.offsetX;
+            const pointerX = toLogicalClientPx(e.clientX, this.dragState.pointerScale);
+            const pointerY = toLogicalClientPx(e.clientY, this.dragState.pointerScale);
+            const renderedPointerX = toRenderedClientPx(e.clientX, this.dragState.pointerScale);
+            const newX = pointerX - this.dragState.offsetX;
             const minTop = window.getMenuBarBottom?.() || 0;
-            const newY = Math.max(minTop, e.clientY - this.dragState.offsetY);
+            const newY = Math.max(minTop, pointerY - this.dragState.offsetY);
 
             this.position.x = newX;
             this.position.y = newY;
-            this.dragState.lastPointerX = e.clientX;
+            this.dragState.lastPointerX = renderedPointerX;
 
             this._updatePosition();
 
@@ -338,6 +360,7 @@ export class BaseWindow {
                     if (candidate) this._snapTo(candidate);
                     window.hideSnapPreview?.();
                 }
+                this.dragState.pointerScale = 1;
                 this.dragState.lastPointerX = null;
                 this._saveState();
             }
@@ -380,10 +403,10 @@ export class BaseWindow {
 
         if (!target.dataset.snapped) {
             const rect = target.getBoundingClientRect();
-            target.dataset.prevSnapLeft = `${Math.round(rect.left)}`;
-            target.dataset.prevSnapTop = `${Math.round(rect.top)}`;
-            target.dataset.prevSnapWidth = `${Math.round(rect.width)}`;
-            target.dataset.prevSnapHeight = `${Math.round(rect.height)}`;
+            target.dataset.prevSnapLeft = `${Math.round(resolveElementLogicalPx(target, 'left', rect.left))}`;
+            target.dataset.prevSnapTop = `${Math.round(resolveElementLogicalPx(target, 'top', rect.top))}`;
+            target.dataset.prevSnapWidth = `${Math.round(resolveElementLogicalPx(target, 'width', rect.width))}`;
+            target.dataset.prevSnapHeight = `${Math.round(resolveElementLogicalPx(target, 'height', rect.height))}`;
         }
 
         const metrics = window.computeSnapMetrics?.(side);
@@ -822,13 +845,35 @@ export class BaseWindow {
             const rect = windowEl.getBoundingClientRect();
             const currentLeft = parseFloat(windowEl.style.left);
             const currentTop = parseFloat(windowEl.style.top);
-            const resolvedLeft = Number.isFinite(currentLeft) ? currentLeft : rect.left;
-            const resolvedTop = Number.isFinite(currentTop) ? currentTop : rect.top;
+            const resolvedLeft = Number.isFinite(currentLeft)
+                ? currentLeft
+                : resolveElementLogicalPx(windowEl, 'left', rect.left);
+            const resolvedTop = Number.isFinite(currentTop)
+                ? currentTop
+                : resolveElementLogicalPx(windowEl, 'top', rect.top);
+            const currentWidth = parseFloat(windowEl.style.width);
+            const currentHeight = parseFloat(windowEl.style.height);
             this.restoreBeforeMaximize = {
                 x: Math.round(resolvedLeft),
                 y: Math.round(resolvedTop),
-                width: Math.round(rect.width || this.position.width),
-                height: Math.round(rect.height || this.position.height),
+                width: Math.round(
+                    Number.isFinite(currentWidth)
+                        ? currentWidth
+                        : resolveElementLogicalPx(
+                              windowEl,
+                              'width',
+                              rect.width || this.position.width
+                          )
+                ),
+                height: Math.round(
+                    Number.isFinite(currentHeight)
+                        ? currentHeight
+                        : resolveElementLogicalPx(
+                              windowEl,
+                              'height',
+                              rect.height || this.position.height
+                          )
+                ),
             };
 
             const minTop = Math.round(window.getMenuBarBottom?.() || 0);

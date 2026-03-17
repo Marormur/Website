@@ -5,7 +5,15 @@
 
 import { getZIndexManager } from '../windows/z-index-manager.js';
 import logger from '../core/logger.js';
-import { getLogicalViewportWidth, getLogicalViewportHeight } from '../utils/viewport.js';
+import {
+    detectClientCoordinateScale,
+    getLogicalViewportWidth,
+    getLogicalViewportHeight,
+    resolveElementLogicalPx,
+    toLogicalClientPx,
+    toLogicalPx,
+    toRenderedClientPx,
+} from '../utils/viewport.js';
 
 export class Dialog {
     modal: HTMLElement;
@@ -320,7 +328,7 @@ export class Dialog {
 
     getSnapCandidate(target: HTMLElement | null, pointerX: number | null) {
         if (!target) return null;
-        const viewportWidth = Math.max(getLogicalViewportWidth(), 0);
+        const viewportWidth = Math.max(window.innerWidth || 0, 0);
         if (viewportWidth <= 0) return null;
         const threshold = Math.max(3, Math.min(14, viewportWidth * 0.0035));
         const rect = target.getBoundingClientRect();
@@ -361,6 +369,7 @@ export class Dialog {
         if (!target) return;
         let offsetX = 0,
             offsetY = 0;
+        let pointerScale = 1;
         const handleMouseDown = (e: MouseEvent) => {
             const dragHeader = (e.target as Element).closest?.(
                 '.draggable-header'
@@ -378,23 +387,28 @@ export class Dialog {
             )
                 return;
             if (this.modal.dataset && this.modal.dataset.maximized === 'true') return;
+            const currentRect = target.getBoundingClientRect();
+            pointerScale = detectClientCoordinateScale(e.clientX, e.clientY, currentRect);
             const pointerX = e.clientX;
             const pointerY = e.clientY;
+            const logicalPointerX = toLogicalClientPx(pointerX, pointerScale);
+            const logicalPointerY = toLogicalClientPx(pointerY, pointerScale);
+            const renderedPointerX = toRenderedClientPx(pointerX, pointerScale);
             const initialSnapSide = this.modal.dataset ? this.modal.dataset.snapped : null;
             let rect = target.getBoundingClientRect();
-            let localOffsetX = pointerX - rect.left;
-            let localOffsetY = pointerY - rect.top;
+            let localOffsetX = logicalPointerX - resolveElementLogicalPx(target, 'left', rect.left);
+            let localOffsetY = logicalPointerY - resolveElementLogicalPx(target, 'top', rect.top);
             if (initialSnapSide) {
                 const preservedOffsetX = localOffsetX;
                 const preservedOffsetY = localOffsetY;
                 this.unsnap({ silent: true });
                 const minTopAfterUnsnap = window.getMenuBarBottom?.() || 0;
                 target.style.position = 'fixed';
-                target.style.left = `${pointerX - preservedOffsetX}px`;
-                target.style.top = `${Math.max(minTopAfterUnsnap, pointerY - preservedOffsetY)}px`;
+                target.style.left = `${logicalPointerX - preservedOffsetX}px`;
+                target.style.top = `${Math.max(minTopAfterUnsnap, logicalPointerY - preservedOffsetY)}px`;
                 rect = target.getBoundingClientRect();
-                localOffsetX = pointerX - rect.left;
-                localOffsetY = pointerY - rect.top;
+                localOffsetX = logicalPointerX - toLogicalPx(rect.left);
+                localOffsetY = logicalPointerY - toLogicalPx(rect.top);
             }
             const computedPosition = window.getComputedStyle(target).position;
             if (computedPosition === 'static' || computedPosition === 'relative') {
@@ -403,13 +417,13 @@ export class Dialog {
                 target.style.position = computedPosition;
             }
             const minTop = window.getMenuBarBottom?.() || 0;
-            target.style.left = `${pointerX - localOffsetX}px`;
-            target.style.top = `${Math.max(minTop, pointerY - localOffsetY)}px`;
+            target.style.left = `${logicalPointerX - localOffsetX}px`;
+            target.style.top = `${Math.max(minTop, logicalPointerY - localOffsetY)}px`;
             window.clampWindowToMenuBar?.(target);
             const adjustedRect = target.getBoundingClientRect();
-            offsetX = pointerX - adjustedRect.left;
-            offsetY = pointerY - adjustedRect.top;
-            this.lastDragPointerX = pointerX;
+            offsetX = logicalPointerX - resolveElementLogicalPx(target, 'left', adjustedRect.left);
+            offsetY = logicalPointerY - resolveElementLogicalPx(target, 'top', adjustedRect.top);
+            this.lastDragPointerX = renderedPointerX;
             document.body.classList.add('window-dragging');
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
@@ -442,17 +456,20 @@ export class Dialog {
                     }
                     window.saveWindowPositions?.();
                 }
+                pointerScale = 1;
                 this.lastDragPointerX = null;
             };
             const mouseMoveHandler = (e2: MouseEvent) => {
                 moved = true;
                 window.requestAnimationFrame(() => {
-                    const newLeft = e2.clientX - offsetX;
-                    const newTop = e2.clientY - offsetY;
+                    const pointerLogicalX = toLogicalClientPx(e2.clientX, pointerScale);
+                    const pointerLogicalY = toLogicalClientPx(e2.clientY, pointerScale);
+                    const newLeft = pointerLogicalX - offsetX;
+                    const newTop = pointerLogicalY - offsetY;
                     const minTop = window.getMenuBarBottom?.() || 0;
                     target.style.left = newLeft + 'px';
                     target.style.top = Math.max(minTop, newTop) + 'px';
-                    this.lastDragPointerX = e2.clientX;
+                    this.lastDragPointerX = toRenderedClientPx(e2.clientX, pointerScale);
                     const candidate = this.getSnapCandidate(target, this.lastDragPointerX);
                     if (candidate) window.showSnapPreview?.(candidate);
                     else window.hideSnapPreview?.();

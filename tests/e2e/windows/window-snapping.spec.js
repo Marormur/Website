@@ -32,6 +32,12 @@ async function bootFreshDesktop(page, baseURL) {
     await dismissWelcomeDialogIfPresent(page);
 }
 
+async function setDisplayScale(page, scale) {
+    await page.evaluate(scaleValue => {
+        window.API?.display?.setDisplayScalePreference?.(scaleValue);
+    }, scale);
+}
+
 async function createWindow(page, type, position, title) {
     await page.evaluate(
         ({ type, position, title }) => {
@@ -235,6 +241,78 @@ async function dragWithoutSnap(page, type, targetClientX) {
     return await getWindowState(page, type);
 }
 
+async function dragWithLogicalClientCoords(page, selector, moveDelta) {
+    return await page.evaluate(
+        async ({ selector, moveDelta }) => {
+            const zoom = parseFloat(document.documentElement.style.zoom || '1') || 1;
+            const handle = document.querySelector(selector);
+            const win = handle?.closest('.multi-window');
+            if (!handle || !win) {
+                return { ok: false, reason: 'window-handle-not-found' };
+            }
+
+            const rect = win.getBoundingClientRect();
+            const initialLeft = parseFloat(win.style.left || '0');
+            const initialTop = parseFloat(win.style.top || '0');
+            const startOffsetX = Math.min(
+                rect.width - 40,
+                Math.max(120, zoom * rect.right - rect.left + 20)
+            );
+            const startOffsetY = 20;
+            const rawStartX = (rect.left + startOffsetX) / zoom;
+            const rawStartY = (rect.top + startOffsetY) / zoom;
+            const rawEndX = rawStartX + moveDelta.x;
+            const rawEndY = rawStartY + moveDelta.y;
+
+            handle.dispatchEvent(
+                new MouseEvent('mousedown', {
+                    bubbles: true,
+                    cancelable: true,
+                    button: 0,
+                    clientX: rawStartX,
+                    clientY: rawStartY,
+                })
+            );
+
+            document.dispatchEvent(
+                new MouseEvent('mousemove', {
+                    bubbles: true,
+                    cancelable: true,
+                    button: 0,
+                    clientX: rawEndX,
+                    clientY: rawEndY,
+                })
+            );
+
+            await new Promise(resolve => requestAnimationFrame(() => resolve()));
+
+            const afterRect = win.getBoundingClientRect();
+            document.dispatchEvent(
+                new MouseEvent('mouseup', {
+                    bubbles: true,
+                    cancelable: true,
+                    button: 0,
+                    clientX: rawEndX,
+                    clientY: rawEndY,
+                })
+            );
+
+            return {
+                ok: true,
+                initialLeft,
+                initialTop,
+                left: parseFloat(win.style.left || '0'),
+                top: parseFloat(win.style.top || '0'),
+                renderedOffsetX: rawEndX * zoom - afterRect.left,
+                renderedOffsetY: rawEndY * zoom - afterRect.top,
+                startOffsetX,
+                startOffsetY,
+            };
+        },
+        { selector, moveDelta }
+    );
+}
+
 test.describe('Window Snapping', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await bootFreshDesktop(page, baseURL);
@@ -315,6 +393,30 @@ test.describe('Window Snapping', () => {
             expect(rightSnap.width).toBe(expectedRight.width);
             expect(rightSnap.height).toBe(expectedRight.height);
         }
+    });
+
+    test('preserves drag anchor at non-default display scale for titlebar windows', async ({
+        page,
+    }) => {
+        await setDisplayScale(page, 0.8);
+        await createWindow(
+            page,
+            'terminal',
+            { x: 300, y: 180, width: 800, height: 500 },
+            'Scaled Drag Terminal'
+        );
+
+        const dragged = await dragWithLogicalClientCoords(
+            page,
+            `${windowSelector('terminal')} .window-titlebar`,
+            { x: 260, y: 90 }
+        );
+
+        expect(dragged.ok).toBe(true);
+        expect(dragged.left - dragged.initialLeft).toBeCloseTo(260, 0);
+        expect(dragged.top - dragged.initialTop).toBeCloseTo(90, 0);
+        expect(dragged.renderedOffsetX).toBeCloseTo(dragged.startOffsetX, 1);
+        expect(dragged.renderedOffsetY).toBeCloseTo(dragged.startOffsetY, 1);
     });
 
     test('double click on window headers toggles zoom for redesigned windows and settings', async ({

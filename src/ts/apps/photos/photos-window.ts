@@ -7,12 +7,20 @@
  */
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
+import {
+    detectClientCoordinateScale,
+    resolveElementLogicalPx,
+    toLogicalClientPx,
+    toLogicalPx,
+    toRenderedClientPx,
+} from '../../utils/viewport.js';
 
 export class PhotosWindow extends BaseWindow {
     private photosDragState = {
         isDragging: false,
         offsetX: 0,
         offsetY: 0,
+        pointerScale: 1,
         lastPointerX: null as number | null,
     };
 
@@ -85,10 +93,23 @@ export class PhotosWindow extends BaseWindow {
             if (!target?.closest('.finder-window-drag-zone') || isInteractiveTarget(target)) return;
 
             const rect = windowEl.getBoundingClientRect();
+            this.photosDragState.pointerScale = detectClientCoordinateScale(
+                e.clientX,
+                e.clientY,
+                rect
+            );
+            const pointerX = toLogicalClientPx(e.clientX, this.photosDragState.pointerScale);
+            const pointerY = toLogicalClientPx(e.clientY, this.photosDragState.pointerScale);
+            const renderedPointerX = toRenderedClientPx(
+                e.clientX,
+                this.photosDragState.pointerScale
+            );
             this.photosDragState.isDragging = true;
-            this.photosDragState.offsetX = e.clientX - rect.left;
-            this.photosDragState.offsetY = e.clientY - rect.top;
-            this.photosDragState.lastPointerX = e.clientX;
+            this.photosDragState.offsetX =
+                pointerX - resolveElementLogicalPx(windowEl, 'left', rect.left);
+            this.photosDragState.offsetY =
+                pointerY - resolveElementLogicalPx(windowEl, 'top', rect.top);
+            this.photosDragState.lastPointerX = renderedPointerX;
             this.bringToFront();
             e.preventDefault();
         });
@@ -104,14 +125,20 @@ export class PhotosWindow extends BaseWindow {
 
         document.addEventListener('mousemove', (e: MouseEvent) => {
             if (!this.photosDragState.isDragging || !this.element) return;
-            const newX = e.clientX - this.photosDragState.offsetX;
+            const pointerX = toLogicalClientPx(e.clientX, this.photosDragState.pointerScale);
+            const pointerY = toLogicalClientPx(e.clientY, this.photosDragState.pointerScale);
+            const renderedPointerX = toRenderedClientPx(
+                e.clientX,
+                this.photosDragState.pointerScale
+            );
+            const newX = pointerX - this.photosDragState.offsetX;
             const minTop = window.getMenuBarBottom?.() || 0;
-            const newY = Math.max(minTop, e.clientY - this.photosDragState.offsetY);
+            const newY = Math.max(minTop, pointerY - this.photosDragState.offsetY);
             this.position.x = newX;
             this.position.y = newY;
             this.element.style.left = `${newX}px`;
             this.element.style.top = `${newY}px`;
-            this.photosDragState.lastPointerX = e.clientX;
+            this.photosDragState.lastPointerX = renderedPointerX;
 
             const candidate = this.getSnapCandidate(
                 this.element,
@@ -132,6 +159,7 @@ export class PhotosWindow extends BaseWindow {
                 window.hideSnapPreview?.();
             }
 
+            this.photosDragState.pointerScale = 1;
             this.photosDragState.lastPointerX = null;
             (this as unknown as { _saveState?: () => void })._saveState?.();
         });
