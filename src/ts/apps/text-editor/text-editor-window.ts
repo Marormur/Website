@@ -58,7 +58,7 @@ export class TextEditorWindow extends BaseWindow {
             createInstance: (cfg?: { title?: string }) => {
                 const doc = window.TextEditorDocument
                     ? new window.TextEditorDocument({
-                          title: cfg?.title || `Editor ${this.tabs.size + 1}`,
+                          title: cfg?.title || `Neues Dokument ${this.tabs.size + 1}`,
                       })
                     : null;
                 if (doc) {
@@ -100,7 +100,7 @@ export class TextEditorWindow extends BaseWindow {
 
         this.tabController = window.WindowTabs.create!(adapter, tabBar as HTMLElement, {
             addButton: true,
-            onCreateInstanceTitle: () => `Editor ${this.tabs.size + 1}`,
+            onCreateInstanceTitle: () => `Neues Dokument ${this.tabs.size + 1}`,
         });
     }
 
@@ -111,7 +111,7 @@ export class TextEditorWindow extends BaseWindow {
         }
 
         const doc = new window.TextEditorDocument({
-            title: title || `Editor ${this.tabs.size + 1}`,
+            title: title || `Neues Dokument ${this.tabs.size + 1}`,
             content: { content: content || '' },
         });
 
@@ -125,11 +125,15 @@ export class TextEditorWindow extends BaseWindow {
         // Create initial document
         window.createDocument();
 
+        // Register window BEFORE showing it, same timing semantics as TerminalWindow.
+        // This ensures WindowTabs can resolve the live instance consistently during first paint.
+        globalThis.window.WindowRegistry?.registerWindow?.(window);
+
         // Show window
         window.show();
 
-        // Register with WindowRegistry
-        globalThis.window.WindowRegistry?.registerWindow?.(window);
+        // Ensure WindowTabs rendering is executed after window is attached to the DOM.
+        window.requestTabsRender();
 
         return window;
     }

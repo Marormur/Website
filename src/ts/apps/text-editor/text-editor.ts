@@ -148,58 +148,63 @@ const TextEditorSystem: TextEditorSystemInternal = {
         if (!this.container) return;
 
         this.container.innerHTML = `
-                <div class="dialog-content flex flex-col h-full" style="background: var(--editor-body-bg, #fafafa); color: var(--editor-text, #111827);">
+                <div class="text-editor-wrapper dialog-content flex flex-col h-full">
                     <!-- File Operations Toolbar -->
-                    <div id="text-toolbar" class="flex-none" style="background: var(--editor-toolbar-bg, #f5f5f5); padding: 8px 12px; border-bottom: 1px solid var(--editor-toolbar-border, #d1d5db); display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <button type="button" data-action="textEditor:clear" class="text-editor-btn" data-i18n="textEditor.toolbar.clear" data-i18n-title="textEditor.toolbar.clear">Neu</button>
-                        <button type="button" data-action="textEditor:open" class="text-editor-btn" data-i18n="textEditor.toolbar.open" data-i18n-title="textEditor.toolbar.open">Öffnen</button>
-                        <button type="button" data-action="textEditor:save" class="text-editor-btn" id="text-save-button" data-i18n="textEditor.toolbar.save" data-i18n-title="textEditor.toolbar.save">Speichern</button>
-                        <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
-                        <button type="button" data-action="textEditor:bold" class="text-editor-btn" data-i18n-title="textEditor.toolbar.bold" style="font-weight: bold;">B</button>
-                        <button type="button" data-action="textEditor:italic" class="text-editor-btn" data-i18n-title="textEditor.toolbar.italic" style="font-style: italic;">I</button>
-                        <button type="button" data-action="textEditor:underline" class="text-editor-btn" data-i18n-title="textEditor.toolbar.underline" style="text-decoration: underline;">U</button>
-                        <button type="button" data-action="textEditor:strikethrough" class="text-editor-btn" data-i18n-title="textEditor.toolbar.strikeThrough" style="text-decoration: line-through;">S</button>
-                        <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
-                        <button type="button" data-action="textEditor:heading1" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading1">H1</button>
-                        <button type="button" data-action="textEditor:heading2" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading2">H2</button>
-                        <button type="button" data-action="textEditor:heading3" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading3">H3</button>
-                        <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
-                        <button type="button" data-action="textEditor:unorderedList" class="text-editor-btn" data-i18n-title="textEditor.toolbar.unorderedList">• List</button>
-                        <button type="button" data-action="textEditor:orderedList" class="text-editor-btn" data-i18n-title="textEditor.toolbar.orderedList">1. List</button>
-                        <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
-                        <button type="button" data-action="textEditor:alignLeft" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignLeft">⇤</button>
-                        <button type="button" data-action="textEditor:alignCenter" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignCenter">≡</button>
-                        <button type="button" data-action="textEditor:alignRight" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignRight">⇥</button>
-                        <div style="width: 1px; height: 20px; background: var(--editor-toolbar-border, #d1d5db); margin: 0 4px;"></div>
-                        <button type="button" data-action="textEditor:insertLink" class="text-editor-btn" data-i18n-title="textEditor.toolbar.insertLink">🔗</button>
-                        <button type="button" data-action="textEditor:findReplace" class="text-editor-btn" data-i18n-title="textEditor.toolbar.findReplace">🔍</button>
+                    <div id="text-toolbar" class="text-editor-toolbar flex-none">
+                        <div class="text-editor-toolbar-group">
+                            <button type="button" data-action="textEditor:clear" class="text-editor-btn" data-i18n="textEditor.toolbar.clear" data-i18n-title="textEditor.toolbar.clear">Neu</button>
+                            <button type="button" data-action="textEditor:open" class="text-editor-btn" data-i18n="textEditor.toolbar.open" data-i18n-title="textEditor.toolbar.open">Öffnen</button>
+                            <button type="button" data-action="textEditor:save" class="text-editor-btn text-editor-btn-accent" id="text-save-button" data-i18n="textEditor.toolbar.save" data-i18n-title="textEditor.toolbar.save">Speichern</button>
+                        </div>
+                        <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
+                        <div class="text-editor-toolbar-group">
+                            <button type="button" data-action="textEditor:bold" class="text-editor-btn" data-i18n-title="textEditor.toolbar.bold"><strong>B</strong></button>
+                            <button type="button" data-action="textEditor:italic" class="text-editor-btn" data-i18n-title="textEditor.toolbar.italic"><em>I</em></button>
+                            <button type="button" data-action="textEditor:underline" class="text-editor-btn" data-i18n-title="textEditor.toolbar.underline"><span class="text-editor-btn-underline">U</span></button>
+                            <button type="button" data-action="textEditor:strikethrough" class="text-editor-btn" data-i18n-title="textEditor.toolbar.strikeThrough"><span style="text-decoration: line-through;">S</span></button>
+                        </div>
+                        <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
+                        <div class="text-editor-toolbar-group">
+                            <button type="button" data-action="textEditor:heading1" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading1">H1</button>
+                            <button type="button" data-action="textEditor:heading2" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading2">H2</button>
+                            <button type="button" data-action="textEditor:heading3" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading3">H3</button>
+                        </div>
+                        <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
+                        <div class="text-editor-toolbar-group">
+                            <button type="button" data-action="textEditor:unorderedList" class="text-editor-btn" data-i18n-title="textEditor.toolbar.unorderedList">Liste</button>
+                            <button type="button" data-action="textEditor:orderedList" class="text-editor-btn" data-i18n-title="textEditor.toolbar.orderedList">1. Liste</button>
+                            <button type="button" data-action="textEditor:alignLeft" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignLeft">Links</button>
+                            <button type="button" data-action="textEditor:alignCenter" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignCenter">Mitte</button>
+                            <button type="button" data-action="textEditor:alignRight" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignRight">Rechts</button>
+                        </div>
+                        <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
+                        <div class="text-editor-toolbar-group text-editor-toolbar-group-right">
+                            <button type="button" data-action="textEditor:insertLink" class="text-editor-btn" data-i18n-title="textEditor.toolbar.insertLink">Link</button>
+                            <button type="button" data-action="textEditor:findReplace" class="text-editor-btn" data-i18n-title="textEditor.toolbar.findReplace">Suchen</button>
+                        </div>
                         <input type="file" id="text-file-input"
                             accept=".txt,.md,.markdown,.html,.htm,.css,.scss,.js,.jsx,.ts,.tsx,.json,.yml,.yaml,.xml,.csv,.tsv,.ini,.cfg,.conf,.env,.gitignore,.log,.c,.h,.cpp,.hpp,.java,.kt,.swift,.cs,.py,.rb,.php,.rs,.go,.sh,.bash,.zsh,.fish,.ps1,.bat"
                             style="display:none">
                     </div>
                     <!-- Find and Replace Panel (Hidden by default) -->
-                    <div id="find-replace-panel" class="flex-none" style="background: var(--editor-toolbar-bg, #f5f5f5); padding: 8px 12px; border-bottom: 1px solid var(--editor-toolbar-border, #d1d5db); display: none; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <input type="text" id="find-input" data-i18n-placeholder="textEditor.findReplace.find" placeholder="Find..." style="padding: 4px 8px; border: 1px solid var(--editor-toolbar-border, #d1d5db); border-radius: 4px; background: var(--editor-surface-bg, #ffffff); color: var(--editor-text, #111827); font-size: 13px;">
-                        <input type="text" id="replace-input" data-i18n-placeholder="textEditor.findReplace.replace" placeholder="Replace..." style="padding: 4px 8px; border: 1px solid var(--editor-toolbar-border, #d1d5db); border-radius: 4px; background: var(--editor-surface-bg, #ffffff); color: var(--editor-text, #111827); font-size: 13px;">
-                        <button type="button" data-action="textEditor:findNext" class="text-editor-btn" data-i18n="textEditor.findReplace.next" data-i18n-title="textEditor.findReplace.next" style="font-size: 12px;">Next</button>
-                        <button type="button" data-action="textEditor:replaceOne" class="text-editor-btn" data-i18n="textEditor.findReplace.replaceOne" data-i18n-title="textEditor.findReplace.replaceOne" style="font-size: 12px;">Replace</button>
-                        <button type="button" data-action="textEditor:replaceAll" class="text-editor-btn" data-i18n="textEditor.findReplace.replaceAll" data-i18n-title="textEditor.findReplace.replaceAll" style="font-size: 12px;">Replace All</button>
-                        <button type="button" data-action="textEditor:closeFindReplace" class="text-editor-btn" data-i18n="textEditor.findReplace.close" data-i18n-title="textEditor.findReplace.close" style="font-size: 12px;">✕</button>
+                    <div id="find-replace-panel" class="find-replace-panel flex-none" hidden>
+                        <input type="text" id="find-input" class="text-editor-input" data-i18n-placeholder="textEditor.findReplace.find" placeholder="Find...">
+                        <input type="text" id="replace-input" class="text-editor-input" data-i18n-placeholder="textEditor.findReplace.replace" placeholder="Replace...">
+                        <button type="button" data-action="textEditor:findNext" class="text-editor-btn" data-i18n="textEditor.findReplace.next" data-i18n-title="textEditor.findReplace.next">Next</button>
+                        <button type="button" data-action="textEditor:replaceOne" class="text-editor-btn" data-i18n="textEditor.findReplace.replaceOne" data-i18n-title="textEditor.findReplace.replaceOne">Replace</button>
+                        <button type="button" data-action="textEditor:replaceAll" class="text-editor-btn" data-i18n="textEditor.findReplace.replaceAll" data-i18n-title="textEditor.findReplace.replaceAll">Replace All</button>
+                        <button type="button" data-action="textEditor:closeFindReplace" class="text-editor-btn" data-i18n="textEditor.findReplace.close" data-i18n-title="textEditor.findReplace.close">✕</button>
                     </div>
-                    <div id="text-file-status" class="flex-none" style="padding: 8px 16px; border-bottom: 1px solid var(--editor-toolbar-border, #d1d5db); background: var(--editor-body-bg, #fafafa); color: var(--editor-text, #111827); font-size: 14px; opacity: 0.75; display: none;"></div>
-                    <textarea id="text-editor-textarea" spellcheck="false" wrap="off" class="flex-1 w-full resize-none p-4 border-0 outline-none"
-                        style="background: var(--editor-surface-bg, #ffffff); color: inherit; font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 14px; line-height: 1.6; tab-size: 4;"
+                    <div id="text-file-status" class="text-file-status flex-none"></div>
+                    <textarea id="text-editor-textarea" spellcheck="false" wrap="off" class="text-editor-textarea flex-1 w-full resize-none p-4 border-0 outline-none"
                         title="textarea"></textarea>
                     <!-- Status Bar with Word Count -->
-                    <div id="word-count-bar" class="flex-none" style="background: var(--editor-toolbar-bg, #f5f5f5); padding: 6px 12px; border-top: 1px solid var(--editor-toolbar-border, #d1d5db); font-size: 12px; color: var(--editor-text, #111827); opacity: 0.75; display: flex; justify-content: space-between;">
-                        <span id="word-count-display" data-i18n="textEditor.status.wordCount" data-i18n-params='{"words":0,"chars":0}'>Words: 0 | Characters: 0</span>
-                        <span id="line-col-display" data-i18n="textEditor.status.position" data-i18n-params='{"line":1,"col":1}'>Line 1, Col 1</span>
+                    <div id="word-count-bar" class="text-editor-statusbar editor-statusbar flex-none">
+                        <span id="word-count-display" class="editor-status-pill" data-i18n="textEditor.status.wordCount" data-i18n-params='{"words":0,"chars":0}'>Words: 0 | Characters: 0</span>
+                        <span id="line-col-display" class="editor-status-pill" data-i18n="textEditor.status.position" data-i18n-params='{"line":1,"col":1}'>Line 1, Col 1</span>
                     </div>
                 </div>
             `;
-
-        // Apply CSS variables for dark mode support
-        this.updateCSSVariables();
 
         // Apply i18n translations
         if (window.appI18n && typeof window.appI18n.applyTranslations === 'function') {
@@ -211,40 +216,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
      * Update CSS variables for dark mode
      */
     updateCSSVariables(): void {
-        if (!this.container) return;
-
-        const isDark = document.documentElement.classList.contains('dark');
-
-        this.container.style.setProperty('--editor-body-bg', isDark ? '#0f172a' : '#fafafa');
-        this.container.style.setProperty('--editor-text', isDark ? '#e5e7eb' : '#111827');
-        this.container.style.setProperty('--editor-toolbar-bg', isDark ? '#1f2937' : '#f5f5f5');
-        this.container.style.setProperty('--editor-toolbar-border', isDark ? '#374151' : '#d1d5db');
-        this.container.style.setProperty(
-            '--editor-toolbar-button-bg',
-            isDark ? '#111827' : '#ffffff'
-        );
-        this.container.style.setProperty(
-            '--editor-toolbar-button-hover',
-            isDark ? '#1f2937' : '#e5e7eb'
-        );
-        this.container.style.setProperty(
-            '--editor-toolbar-button-border',
-            isDark ? '#475569' : '#d1d5db'
-        );
-        this.container.style.setProperty('--editor-surface-bg', isDark ? '#111827' : '#ffffff');
-
-        // Apply button styles
-        const buttons = this.container.querySelectorAll<HTMLElement>('.text-editor-btn');
-        buttons.forEach(btn => {
-            btn.style.margin = '0';
-            btn.style.padding = '6px 12px';
-            btn.style.fontSize = '14px';
-            btn.style.border = `1px solid ${isDark ? '#475569' : '#d1d5db'}`;
-            btn.style.background = isDark ? '#111827' : '#ffffff';
-            btn.style.cursor = 'pointer';
-            btn.style.color = 'inherit';
-            btn.style.borderRadius = '6px';
-        });
+        // Kept for API compatibility; theme values are now controlled by global CSS.
     },
 
     /**
@@ -666,7 +638,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
 
         if (!this.statusState) {
             this.statusBar.textContent = '';
-            this.statusBar.style.display = 'none';
+            this.statusBar.classList.remove('is-visible');
             this.statusBar.removeAttribute('data-i18n');
             this.statusBar.removeAttribute('data-i18n-params');
             return;
@@ -703,7 +675,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
             this.statusBar.textContent = this.statusState.text;
         }
 
-        this.statusBar.style.display = 'block';
+        this.statusBar.classList.add('is-visible');
     },
 
     /**
@@ -1078,13 +1050,13 @@ const TextEditorSystem: TextEditorSystemInternal = {
     toggleFindReplace(): void {
         if (!this.findReplacePanel) return;
 
-        if (this.findReplacePanel.style.display === 'none') {
-            this.findReplacePanel.style.display = 'flex';
+        if (this.findReplacePanel.hasAttribute('hidden')) {
+            this.findReplacePanel.removeAttribute('hidden');
             if (this.findInput) {
                 this.findInput.focus();
             }
         } else {
-            this.findReplacePanel.style.display = 'none';
+            this.findReplacePanel.setAttribute('hidden', '');
             this.focusEditor();
         }
     },
@@ -1094,7 +1066,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
      */
     closeFindReplace(): void {
         if (!this.findReplacePanel) return;
-        this.findReplacePanel.style.display = 'none';
+        this.findReplacePanel.setAttribute('hidden', '');
         this.focusEditor();
     },
 

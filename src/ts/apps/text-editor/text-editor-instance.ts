@@ -60,30 +60,35 @@ logger.debug('UI', 'TextEditorInstance (TS) loaded');
 
         protected render(): void {
             if (!this.container) return;
-            const isDark = document.documentElement.classList.contains('dark');
             this.container.innerHTML = `
-                <div class="text-editor-wrapper flex flex-col h-full" style="background: ${isDark ? '#0f172a' : '#fafafa'}; color: ${isDark ? '#e5e7eb' : '#111827'};">
+                <div class="text-editor-wrapper flex flex-col h-full">
                     <!-- Toolbar -->
-                    <div class="text-editor-toolbar flex-none" style="background: ${isDark ? '#1f2937' : '#f5f5f5'}; padding: 8px 12px; border-bottom: 1px solid ${isDark ? '#374151' : '#d1d5db'}; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <button type="button" class="text-editor-btn" data-action="clear" title="Neu">Neu</button>
-                        <button type="button" class="text-editor-btn" data-action="open" title="Öffnen">Öffnen</button>
-                        <button type="button" class="text-editor-btn text-save-btn" data-action="save" title="Speichern">Speichern</button>
-                        <div class="toolbar-separator"></div>
-                        <button type="button" class="text-editor-btn" data-action="bold" title="Fett" style="font-weight: bold;">B</button>
-                        <button type="button" class="text-editor-btn" data-action="italic" title="Kursiv" style="font-style: italic;">I</button>
-                        <button type="button" class="text-editor-btn" data-action="underline" title="Unterstrichen" style="text-decoration: underline;">U</button>
-                        <div class="toolbar-separator"></div>
-                        <button type="button" class="text-editor-btn" data-action="find" title="Suchen & Ersetzen">🔍</button>
-                        <button type="button" class="text-editor-btn" data-action="toggleWrap" title="Zeilenumbruch">⏎</button>
+                    <div class="text-editor-toolbar flex-none">
+                        <div class="text-editor-toolbar-group">
+                            <button type="button" class="text-editor-btn" data-action="clear" title="Neu">Neu</button>
+                            <button type="button" class="text-editor-btn" data-action="open" title="Öffnen">Öffnen</button>
+                            <button type="button" class="text-editor-btn text-editor-btn-accent text-save-btn" data-action="save" title="Speichern">Speichern</button>
+                        </div>
+                        <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
+                        <div class="text-editor-toolbar-group">
+                            <button type="button" class="text-editor-btn" data-action="bold" title="Fett"><strong>B</strong></button>
+                            <button type="button" class="text-editor-btn" data-action="italic" title="Kursiv"><em>I</em></button>
+                            <button type="button" class="text-editor-btn" data-action="underline" title="Unterstrichen"><span class="text-editor-btn-underline">U</span></button>
+                        </div>
+                        <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
+                        <div class="text-editor-toolbar-group text-editor-toolbar-group-right">
+                            <button type="button" class="text-editor-btn" data-action="find" title="Suchen & Ersetzen">Suchen</button>
+                            <button type="button" class="text-editor-btn" data-action="toggleWrap" title="Zeilenumbruch">Wrap</button>
+                        </div>
                         <input type="file" class="text-file-input"
                             accept=".txt,.md,.markdown,.html,.css,.js,.json,.yml,.yaml,.xml"
                             style="display:none">
                     </div>
 
                     <!-- Find/Replace Panel (hidden by default) -->
-                    <div class="find-replace-panel" style="background: ${isDark ? '#1f2937' : '#f5f5f5'}; padding: 8px 12px; border-bottom: 1px solid ${isDark ? '#374151' : '#d1d5db'}; display: none; gap: 8px; align-items: center;">
-                        <input type="text" class="find-input" placeholder="Suchen..." style="padding: 4px 8px; border: 1px solid ${isDark ? '#475569' : '#d1d5db'}; border-radius: 4px; background: ${isDark ? '#111827' : '#ffffff'}; color: inherit;">
-                        <input type="text" class="replace-input" placeholder="Ersetzen..." style="padding: 4px 8px; border: 1px solid ${isDark ? '#475569' : '#d1d5db'}; border-radius: 4px; background: ${isDark ? '#111827' : '#ffffff'}; color: inherit;">
+                    <div class="find-replace-panel" hidden>
+                        <input type="text" class="find-input text-editor-input" placeholder="Suchen...">
+                        <input type="text" class="replace-input text-editor-input" placeholder="Ersetzen...">
                         <button type="button" class="text-editor-btn" data-action="findNext">Weiter</button>
                         <button type="button" class="text-editor-btn" data-action="replaceOne">Ersetzen</button>
                         <button type="button" class="text-editor-btn" data-action="replaceAll">Alle ersetzen</button>
@@ -91,52 +96,21 @@ logger.debug('UI', 'TextEditorInstance (TS) loaded');
                     </div>
 
                     <!-- Status Bar for filename -->
-                    <div class="text-file-status" style="padding: 6px 12px; border-bottom: 1px solid ${isDark ? '#374151' : '#d1d5db'}; background: ${isDark ? '#1f2937' : '#f5f5f5'}; font-size: 13px; opacity: 0.85; display: none;"></div>
+                    <div class="text-file-status"></div>
 
                     <!-- Editor Textarea -->
                     <textarea class="text-editor-textarea flex-1 w-full resize-none p-4 border-0 outline-none"
                         spellcheck="false"
                         wrap="off"
-                        style="background: ${isDark ? '#111827' : '#ffffff'}; color: inherit; font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Courier New', monospace; font-size: 14px; line-height: 1.6; tab-size: 4;"
                         placeholder="Text eingeben..."></textarea>
 
                     <!-- Status Bar -->
-                    <div class="text-editor-statusbar flex-none" style="background: ${isDark ? '#1f2937' : '#f5f5f5'}; padding: 6px 12px; border-top: 1px solid ${isDark ? '#374151' : '#d1d5db'}; font-size: 12px; opacity: 0.75; display: flex; justify-content: space-between;">
-                        <span class="word-count-display">Wörter: 0 | Zeichen: 0</span>
-                        <span class="line-col-display">Zeile 1, Spalte 1</span>
+                    <div class="text-editor-statusbar flex-none">
+                        <span class="word-count-display editor-status-pill">Wörter: 0 | Zeichen: 0</span>
+                        <span class="line-col-display editor-status-pill">Zeile 1, Spalte 1</span>
                     </div>
                 </div>
             `;
-            this._applyButtonStyles();
-        }
-
-        private _applyButtonStyles(): void {
-            if (!this.container) return;
-            const isDark = document.documentElement.classList.contains('dark');
-            const buttons = this.container.querySelectorAll(
-                '.text-editor-btn'
-            ) as NodeListOf<HTMLButtonElement>;
-            buttons.forEach(btn => {
-                (btn as HTMLElement).style.cssText = `
-                    padding: 6px 12px;
-                    font-size: 13px;
-                    border: 1px solid ${isDark ? '#475569' : '#d1d5db'};
-                    background: ${isDark ? '#111827' : '#ffffff'};
-                    color: inherit;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                `;
-            });
-            const separators = this.container.querySelectorAll('.toolbar-separator');
-            separators.forEach(sep => {
-                (sep as HTMLElement).style.cssText = `
-                    width: 1px;
-                    height: 20px;
-                    background: ${isDark ? '#475569' : '#d1d5db'};
-                    margin: 0 4px;
-                `;
-            });
         }
 
         protected attachEventListeners(): void {
@@ -368,15 +342,16 @@ logger.debug('UI', 'TextEditorInstance (TS) loaded');
 
         toggleFindReplace(): void {
             if (!this.findReplacePanel) return;
-            const isHidden = this.findReplacePanel.style.display === 'none';
-            this.findReplacePanel.style.display = isHidden ? 'flex' : 'none';
+            const isHidden = this.findReplacePanel.hasAttribute('hidden');
+            if (isHidden) this.findReplacePanel.removeAttribute('hidden');
+            else this.findReplacePanel.setAttribute('hidden', '');
             if (isHidden && this.findInput) this.findInput.focus();
             else this.editor?.focus();
         }
 
         closeFindReplace(): void {
             if (this.findReplacePanel) {
-                this.findReplacePanel.style.display = 'none';
+                this.findReplacePanel.setAttribute('hidden', '');
                 this.editor?.focus();
             }
         }
@@ -432,12 +407,12 @@ logger.debug('UI', 'TextEditorInstance (TS) loaded');
         private _showStatusBar(message: string): void {
             if (!this.statusBar) return;
             this.statusBar.textContent = message;
-            this.statusBar.style.display = 'block';
+            this.statusBar.classList.add('is-visible');
             setTimeout(() => this._hideStatusBar(), 3000);
         }
 
         private _hideStatusBar(): void {
-            if (this.statusBar) this.statusBar.style.display = 'none';
+            this.statusBar?.classList.remove('is-visible');
         }
 
         show(): void {

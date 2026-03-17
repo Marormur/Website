@@ -1282,7 +1282,7 @@ function getMultiInstanceMenuItems(context: MenuContext) {
         newInstanceKey = 'menu.window.newTerminal';
     } else if (modalId === 'text-modal' && window['TextEditorInstanceManager']) {
         manager = window['TextEditorInstanceManager'];
-        typeLabel = 'Editor';
+        typeLabel = 'Neues Dokument';
         newInstanceKey = 'menu.window.newEditor';
     }
     if (!manager) return items;

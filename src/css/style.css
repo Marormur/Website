@@ -41,19 +41,34 @@ body.window-dragging * {
     --dark-shadow: 0 26px 80px rgba(0, 0, 0, 0.45);
     --terminal-shell-bg: linear-gradient(
         160deg,
-        rgba(9, 16, 35, 0.84) 0%,
-        rgba(14, 24, 46, 0.8) 58%,
-        rgba(8, 14, 29, 0.85) 100%
+        rgba(40, 41, 46, 0.84) 0%,
+        rgba(34, 35, 40, 0.8) 58%,
+        rgba(28, 29, 34, 0.85) 100%
     );
-    --terminal-shell-border: rgba(148, 163, 184, 0.24);
-    --terminal-shell-text: rgba(214, 232, 255, 0.94);
-    --terminal-shell-muted: rgba(186, 203, 224, 0.74);
-    --terminal-shell-prompt: rgba(134, 196, 255, 0.96);
-    --terminal-shell-command: rgba(129, 191, 255, 0.96);
+    --terminal-shell-border: rgba(146, 146, 152, 0.24);
+    --terminal-shell-text: rgba(232, 232, 236, 0.94);
+    --terminal-shell-muted: rgba(188, 188, 196, 0.74);
+    --terminal-shell-prompt: rgba(208, 208, 214, 0.96);
+    --terminal-shell-command: rgba(221, 221, 227, 0.96);
     --terminal-shell-output: rgba(190, 239, 204, 0.97);
     --terminal-shell-info: rgba(250, 226, 171, 0.96);
     --terminal-shell-error: rgba(255, 166, 166, 0.96);
     --terminal-shell-caret: rgba(241, 245, 249, 0.94);
+    --editor-shell-bg: linear-gradient(
+        165deg,
+        rgba(247, 247, 248, 0.95) 0%,
+        rgba(240, 240, 242, 0.93) 54%,
+        rgba(234, 234, 237, 0.94) 100%
+    );
+    --editor-shell-border: rgba(146, 146, 152, 0.3);
+    --editor-shell-text: rgba(41, 41, 46, 0.96);
+    --editor-shell-muted: rgba(92, 92, 100, 0.78);
+    --editor-shell-surface: rgba(251, 251, 252, 0.9);
+    --editor-shell-toolbar: rgba(243, 243, 245, 0.78);
+    --editor-shell-toolbar-border: rgba(146, 146, 152, 0.26);
+    --editor-shell-accent: rgba(122, 122, 130, 0.88);
+    --editor-shell-accent-strong: rgba(98, 98, 106, 0.96);
+    --editor-shell-selection: rgba(188, 188, 194, 0.34);
     /* Increased desktop icon mask size for better visual weight */
     --desktop-icon-size: 88px;
 }
@@ -1875,15 +1890,6 @@ html.dark .window-tab-bar {
     border-color: var(--dark-border) !important;
 }
 
-html.dark .multi-window:has(.text-editor-wrapper) .window-titlebar,
-html.dark .multi-window:has(.text-editor-wrapper) .window-tab-bar,
-html.dark #text-modal .draggable-header {
-    background: rgb(44 48 56) !important;
-    background-image: none !important;
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-}
-
 html.dark .window-tab,
 html.dark .window-tabs-container {
     background-color: rgba(28, 31, 36, 0.92) !important;
@@ -1893,34 +1899,750 @@ html.dark .window-tab:hover {
     background-color: rgba(57, 61, 70, 0.82) !important;
 }
 
-html.dark .text-editor-wrapper {
-    background: rgba(28, 31, 36, 0.95) !important;
+/* ============================================================================
+   Text Editor Window Redesign (aligned with terminal chrome language)
+   ============================================================================ */
+
+.multi-window:has(.text-editor-wrapper) {
+    border: 1px solid var(--editor-shell-border) !important;
+    background: linear-gradient(
+        180deg,
+        rgba(246, 246, 248, 0.78),
+        rgba(237, 237, 241, 0.68)
+    ) !important;
+    box-shadow:
+        0 30px 62px rgba(15, 23, 42, 0.24),
+        0 1px 0 rgba(255, 255, 255, 0.5) inset !important;
+    backdrop-filter: saturate(118%) blur(11px);
+    -webkit-backdrop-filter: saturate(118%) blur(11px);
 }
 
-html.dark .text-editor-toolbar,
-html.dark .find-replace-panel,
-html.dark .text-file-status,
-html.dark .text-editor-statusbar {
-    background: rgba(38, 41, 48, 0.94) !important;
-    border-color: var(--dark-border) !important;
+.multi-window:has(.text-editor-wrapper) .window-titlebar,
+.multi-window:has(.text-editor-wrapper) .window-tab-bar {
+    border-color: var(--editor-shell-toolbar-border) !important;
+    background-color: var(--editor-shell-toolbar) !important;
+    background-image: none !important;
+    backdrop-filter: saturate(120%) blur(12px);
+    -webkit-backdrop-filter: saturate(120%) blur(12px);
 }
 
-html.dark .text-editor-textarea {
-    background: rgba(19, 22, 27, 0.96) !important;
+.multi-window:has(.text-editor-wrapper) .window-titlebar {
+    border-bottom: 0;
+}
+
+.multi-window:has(.text-editor-wrapper) .window-tab-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    margin-top: -1px;
+    border-top: 0;
+    border-bottom: 1px solid var(--editor-shell-toolbar-border);
+}
+
+.multi-window:has(.text-editor-wrapper) .window-tabs {
+    display: flex !important;
+    align-items: center;
+    gap: 4px !important;
+    width: 100%;
+    min-width: 0;
+    margin: 6px 0;
+    padding: 4px !important;
+    border-radius: 999px;
+    border: 1px solid rgba(146, 146, 152, 0.24);
+    background: linear-gradient(180deg, rgba(252, 252, 253, 0.58), rgba(244, 244, 247, 0.4));
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.72) inset,
+        0 8px 16px rgba(15, 23, 42, 0.08);
+}
+
+.multi-window:has(.text-editor-wrapper) .window-tabs + .h-px {
+    display: none;
+}
+
+.multi-window:has(.text-editor-wrapper) .window-tabs-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 5px 0;
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid rgba(146, 146, 152, 0.25);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(246, 246, 248, 0.28));
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.68) inset,
+        0 6px 14px rgba(15, 23, 42, 0.08);
+}
+
+.multi-window:has(.text-editor-wrapper) .wt-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 30px;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    border: 1px solid transparent !important;
+    background: rgba(146, 146, 152, 0.14) !important;
+    color: rgba(77, 77, 84, 0.98) !important;
+    font-weight: 500;
+    transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        box-shadow 0.16s ease,
+        color 0.16s ease;
+}
+
+.multi-window:has(.text-editor-wrapper) .wt-tab:hover {
+    background: rgba(255, 255, 255, 0.66) !important;
+    border-color: rgba(146, 146, 152, 0.32) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+}
+
+.multi-window:has(.text-editor-wrapper) .wt-tab-title {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+.multi-window:has(.text-editor-wrapper) .wt-tab-close {
+    width: 17px;
+    height: 17px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(77, 77, 84, 0.78);
+    opacity: 0.58;
+    transition:
+        opacity 0.14s ease,
+        background-color 0.14s ease,
+        color 0.14s ease;
+}
+
+.multi-window:has(.text-editor-wrapper) .wt-tab:hover .wt-tab-close {
+    opacity: 1;
+    background: rgba(146, 146, 152, 0.2);
+    color: rgba(41, 41, 46, 0.92);
+}
+
+.multi-window:has(.text-editor-wrapper) .wt-tab.bg-white,
+.multi-window:has(.text-editor-wrapper) .wt-tab[aria-selected='true'] {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: rgba(41, 41, 46, 0.98) !important;
+    border-color: rgba(146, 146, 152, 0.48) !important;
+}
+
+.multi-window:has(.text-editor-wrapper) .wt-add {
+    flex: 0 0 auto;
+    margin-left: auto;
+    width: 30px;
+    height: 30px;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(146, 146, 152, 0.46) !important;
+    color: rgba(77, 77, 84, 0.95) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.78) inset !important;
+}
+
+.multi-window:has(.text-editor-wrapper) .wt-add:hover {
+    background: rgba(255, 255, 255, 0.98) !important;
+}
+
+.multi-window:has(.text-editor-wrapper) .window-tab {
+    min-height: 28px;
+    padding: 0 11px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.18);
+    color: rgba(41, 41, 46, 0.74);
+    font-weight: 500;
+}
+
+.multi-window:has(.text-editor-wrapper) .window-tab:hover {
+    background: rgba(255, 255, 255, 0.42);
+    border-color: rgba(146, 146, 152, 0.28);
+}
+
+.multi-window:has(.text-editor-wrapper) .window-tab[aria-selected='true'] {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(246, 246, 248, 0.8));
+    border-color: rgba(146, 146, 152, 0.52);
+    border-bottom: 1px solid rgba(146, 146, 152, 0.48);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.8) inset,
+        0 6px 14px rgba(15, 23, 42, 0.14);
+}
+
+.multi-window:has(.text-editor-wrapper) .new-tab-button {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.26);
+    border: 1px solid rgba(146, 146, 152, 0.28);
+}
+
+.multi-window:has(.text-editor-wrapper) .new-tab-button:hover {
+    background: rgba(255, 255, 255, 0.62);
+}
+
+/* Legacy text modal: force terminal-like tab header controls */
+#text-modal .draggable-header {
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    background-color: var(--editor-shell-toolbar) !important;
+    background-image: none !important;
+    border-bottom: 0 !important;
+    backdrop-filter: saturate(125%) blur(13px);
+    -webkit-backdrop-filter: saturate(125%) blur(13px);
+}
+
+#text-modal #text-editor-tabs-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    margin-top: -1px;
+    border-top: 0;
+    border-bottom: 0;
+    border-left: 1px solid rgba(148, 163, 184, 0.3);
+    border-right: 1px solid rgba(148, 163, 184, 0.3);
+    background-color: var(--editor-shell-toolbar) !important;
+    background-image: none;
+    backdrop-filter: saturate(125%) blur(13px);
+    -webkit-backdrop-filter: saturate(125%) blur(13px);
+}
+
+#text-modal .text-editor-wrapper {
+    border-top: 0;
+}
+
+#text-modal .text-editor-wrapper::before {
+    background: none;
+}
+
+#text-modal .text-editor-toolbar {
+    background: var(--editor-shell-toolbar);
+}
+
+#text-modal #text-editor-tabs-container > .h-px {
+    display: none;
+}
+
+#text-modal .traffic-light-controls {
+    gap: 8px;
+}
+
+#text-modal #close-text-modal {
+    margin: 0 !important;
+    width: 12px;
+    height: 12px;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#text-modal #close-text-modal .traffic-light-control,
+#text-modal .traffic-light-controls > .traffic-light-control {
+    width: 12px;
+    height: 12px;
+}
+
+#text-modal .window-tabs {
+    display: flex !important;
+    align-items: center;
+    gap: 4px !important;
+    width: 100%;
+    min-width: 0;
+    margin: 6px 0;
+    padding: 4px !important;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: linear-gradient(180deg, rgba(241, 245, 252, 0.56), rgba(229, 236, 248, 0.34));
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.68) inset,
+        0 8px 16px rgba(15, 23, 42, 0.08);
+}
+
+#text-modal .wt-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 30px;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    border: 1px solid transparent !important;
+    background: rgba(148, 163, 184, 0.14) !important;
+    color: rgba(71, 85, 105, 0.98) !important;
+    font-weight: 500;
+    transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        box-shadow 0.16s ease,
+        color 0.16s ease;
+}
+
+#text-modal .wt-tab:hover {
+    background: rgba(255, 255, 255, 0.62) !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+}
+
+#text-modal .wt-tab-title {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+#text-modal .wt-tab-close {
+    width: 17px;
+    height: 17px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(71, 85, 105, 0.78);
+    opacity: 0.58;
+    transition:
+        opacity 0.14s ease,
+        background-color 0.14s ease,
+        color 0.14s ease;
+}
+
+#text-modal .wt-tab:hover .wt-tab-close {
+    opacity: 1;
+    background: rgba(148, 163, 184, 0.2);
+    color: rgba(30, 41, 59, 0.92);
+}
+
+#text-modal .wt-tab.bg-white,
+#text-modal .wt-tab[aria-selected='true'] {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.5) !important;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.88) inset,
+        0 1px 3px rgba(15, 23, 42, 0.14);
+}
+
+#text-modal .wt-add {
+    flex: 0 0 auto;
+    margin-left: auto;
+    width: 30px;
+    height: 30px;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(148, 163, 184, 0.5) !important;
+    color: rgba(71, 85, 105, 0.94) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.78) inset !important;
+}
+
+#text-modal .wt-add:hover {
+    background: rgba(255, 255, 255, 0.98) !important;
+}
+
+.text-editor-wrapper {
+    position: relative;
+    isolation: isolate;
+    background: var(--editor-shell-bg);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--editor-shell-text);
+}
+
+.text-editor-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(
+            120% 70% at 50% -18%,
+            rgba(210, 210, 216, 0.14) 0%,
+            rgba(210, 210, 216, 0) 68%
+        ),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 34%);
+    z-index: 0;
+}
+
+.text-editor-toolbar,
+.find-replace-panel,
+.text-file-status,
+.text-editor-textarea,
+.text-editor-statusbar {
+    position: relative;
+    z-index: 1;
+}
+
+.text-editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--editor-shell-toolbar-border);
+    background: var(--editor-shell-toolbar);
+}
+
+.text-editor-toolbar-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.text-editor-toolbar-group-right {
+    margin-left: auto;
+}
+
+.text-editor-toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(146, 146, 152, 0.34);
+}
+
+.text-editor-btn {
+    min-height: 30px;
+    padding: 0 11px;
+    border-radius: 9px;
+    border: 1px solid rgba(146, 146, 152, 0.34);
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--editor-shell-text);
+    font-size: 12px;
+    font-weight: 550;
+    letter-spacing: 0.01em;
+}
+
+.text-editor-btn:hover {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(146, 146, 152, 0.46);
+}
+
+.text-editor-btn-accent {
+    background: linear-gradient(180deg, rgba(138, 138, 146, 0.94), rgba(107, 107, 114, 0.92));
+    border-color: rgba(88, 88, 96, 0.66);
+    color: rgba(241, 245, 249, 0.98);
+}
+
+.text-editor-btn-underline {
+    text-decoration: underline;
+}
+
+.find-replace-panel {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--editor-shell-toolbar-border);
+    background: rgba(244, 244, 247, 0.78);
+}
+
+.find-replace-panel[hidden] {
+    display: none;
+}
+
+.text-editor-input {
+    min-width: 190px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(146, 146, 152, 0.3);
+    background: rgba(255, 252, 247, 0.94);
+    color: var(--editor-shell-text);
+}
+
+.text-file-status {
+    display: none;
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--editor-shell-toolbar-border);
+    background: rgba(238, 238, 242, 0.7);
+    color: var(--editor-shell-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.text-file-status.is-visible {
+    display: block;
+}
+
+.text-editor-textarea {
+    background: var(--editor-shell-surface);
+    color: var(--editor-shell-text);
+    font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    font-size: 14px;
+    line-height: 1.65;
+    tab-size: 4;
+}
+
+.text-editor-textarea::selection {
+    background: var(--editor-shell-selection);
+}
+
+.text-editor-statusbar,
+.editor-statusbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    border-top: 1px solid var(--editor-shell-toolbar-border);
+    background: rgba(239, 239, 243, 0.76);
+}
+
+.editor-status-pill {
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(146, 146, 152, 0.3);
+    background: rgba(255, 255, 255, 0.58);
+    color: var(--editor-shell-muted);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+html.dark {
+    --editor-shell-bg: linear-gradient(
+        165deg,
+        rgba(27, 29, 34, 0.95) 0%,
+        rgba(31, 33, 38, 0.92) 54%,
+        rgba(26, 28, 33, 0.95) 100%
+    );
+    --editor-shell-border: rgba(134, 134, 142, 0.36);
+    --editor-shell-text: rgba(232, 232, 236, 0.96);
+    --editor-shell-muted: rgba(188, 188, 196, 0.8);
+    --editor-shell-surface: rgba(22, 24, 30, 0.9);
+    --editor-shell-toolbar: rgba(44, 46, 54, 0.74);
+    --editor-shell-toolbar-border: rgba(134, 134, 142, 0.3);
+    --editor-shell-selection: rgba(108, 108, 116, 0.34);
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) {
+    background: linear-gradient(180deg, rgba(44, 46, 53, 0.7), rgba(30, 32, 38, 0.64)) !important;
+    box-shadow:
+        0 34px 70px rgba(3, 8, 16, 0.62),
+        0 1px 0 rgba(255, 255, 255, 0.07) inset !important;
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .window-titlebar,
+html.dark .multi-window:has(.text-editor-wrapper) .window-tab-bar,
+html.dark #text-modal .draggable-header {
+    background-color: rgba(57, 60, 68, 0.68) !important;
+    background-image: none !important;
+    border-color: rgba(134, 134, 142, 0.32) !important;
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .window-tabs {
+    background: linear-gradient(180deg, rgba(30, 32, 38, 0.5), rgba(25, 27, 33, 0.36));
+    border-color: rgba(134, 134, 142, 0.26);
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .window-tabs-container {
+    background: linear-gradient(180deg, rgba(30, 32, 38, 0.44), rgba(25, 27, 33, 0.3));
+    border-color: rgba(134, 134, 142, 0.24);
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .wt-tab {
+    background: rgba(58, 61, 70, 0.54) !important;
+    color: rgba(227, 227, 232, 0.92) !important;
+    border-color: rgba(134, 134, 142, 0.18) !important;
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .wt-tab-close {
+    color: rgba(227, 227, 232, 0.78);
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .wt-tab:hover .wt-tab-close {
+    background: rgba(108, 108, 116, 0.28);
+    color: rgba(241, 241, 245, 0.94);
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .wt-tab:hover {
+    background: rgba(74, 78, 88, 0.56) !important;
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .wt-tab.bg-white,
+html.dark .multi-window:has(.text-editor-wrapper) .wt-tab[aria-selected='true'] {
+    background: rgba(96, 99, 109, 0.8) !important;
+    color: rgba(245, 245, 248, 0.96) !important;
+    border-color: rgba(134, 134, 142, 0.56) !important;
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .wt-add {
+    background: rgba(87, 91, 100, 0.74) !important;
+    border-color: rgba(134, 134, 142, 0.44) !important;
+    color: rgba(231, 231, 236, 0.95) !important;
+    box-shadow: 0 1px 0 rgba(241, 245, 249, 0.14) inset !important;
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .wt-add:hover {
+    background: rgba(108, 112, 122, 0.8) !important;
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .window-tab {
+    background: rgba(22, 24, 30, 0.28);
+    color: rgba(227, 227, 232, 0.84);
+    border-color: rgba(134, 134, 142, 0.16);
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .window-tab:hover {
+    background: rgba(44, 46, 54, 0.48);
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .window-tab[aria-selected='true'] {
+    background: linear-gradient(180deg, rgba(96, 99, 109, 0.78), rgba(78, 81, 90, 0.62));
+    border-color: rgba(134, 134, 142, 0.34);
+    box-shadow:
+        0 1px 0 rgba(241, 245, 249, 0.18) inset,
+        0 10px 22px rgba(15, 23, 42, 0.2);
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .new-tab-button {
+    background: rgba(22, 24, 30, 0.42);
+    border-color: rgba(134, 134, 142, 0.2);
+}
+
+html.dark .multi-window:has(.text-editor-wrapper) .new-tab-button:hover {
+    background: rgba(44, 46, 54, 0.6);
+}
+
+html.dark #text-modal .draggable-header {
+    background-color: rgba(50, 53, 61, 0.76) !important;
+    background-image: none !important;
+    border-color: rgba(148, 163, 184, 0.28) !important;
+    border-bottom: 0 !important;
+}
+
+html.dark #text-modal #text-editor-tabs-container {
+    margin-top: -1px;
+    border-top: 0;
+    border-bottom: 0;
+    border-left: 1px solid rgba(148, 163, 184, 0.28);
+    border-right: 1px solid rgba(148, 163, 184, 0.28);
+    background-color: rgba(50, 53, 61, 0.76) !important;
+    background-image: none !important;
+}
+
+html.dark #text-modal .window-tabs {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.48), rgba(15, 23, 42, 0.34));
+    border-color: rgba(148, 163, 184, 0.22);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.08) inset,
+        0 8px 18px rgba(2, 6, 16, 0.36);
+}
+
+html.dark #text-modal .wt-tab {
+    background: rgba(15, 23, 42, 0.36) !important;
+    color: rgba(203, 213, 225, 0.9) !important;
+    border-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+html.dark #text-modal .wt-tab:hover {
+    background: rgba(51, 65, 85, 0.46) !important;
+}
+
+html.dark #text-modal .wt-tab-close {
+    color: rgba(203, 213, 225, 0.78);
+}
+
+html.dark #text-modal .wt-tab:hover .wt-tab-close {
+    background: rgba(100, 116, 139, 0.28);
+    color: rgba(226, 232, 240, 0.94);
+}
+
+html.dark #text-modal .wt-tab.bg-white,
+html.dark #text-modal .wt-tab[aria-selected='true'] {
+    background: rgba(71, 85, 105, 0.8) !important;
+    color: rgba(241, 245, 249, 0.96) !important;
+    border-color: rgba(148, 163, 184, 0.56) !important;
+    box-shadow:
+        0 1px 0 rgba(241, 245, 249, 0.2) inset,
+        0 2px 4px rgba(2, 6, 16, 0.35);
+}
+
+html.dark #text-modal .wt-add {
+    background: rgba(71, 85, 105, 0.72) !important;
+    border-color: rgba(148, 163, 184, 0.44) !important;
+    color: rgba(226, 232, 240, 0.94) !important;
+    box-shadow: 0 1px 0 rgba(241, 245, 249, 0.14) inset !important;
+}
+
+html.dark #text-modal .wt-add:hover {
+    background: rgba(100, 116, 139, 0.8) !important;
+}
+
+html.dark .text-editor-toolbar {
+    background: rgba(50, 53, 61, 0.76);
+    border-bottom-color: rgba(134, 134, 142, 0.26);
+}
+
+html.dark .text-editor-toolbar-divider {
+    background: rgba(134, 134, 142, 0.34);
+}
+
+html.dark .text-editor-btn {
+    border-color: rgba(134, 134, 142, 0.36);
+    background: rgba(50, 53, 61, 0.74);
+    color: rgba(231, 231, 236, 0.95);
+}
+
+html.dark .text-editor-btn:hover {
+    background: rgba(70, 74, 84, 0.82);
+}
+
+html.dark .text-editor-btn-accent {
+    background: linear-gradient(180deg, rgba(118, 122, 132, 0.92), rgba(90, 94, 103, 0.9));
+    border-color: rgba(134, 134, 142, 0.52);
+}
+
+html.dark .find-replace-panel {
+    background: rgba(50, 53, 61, 0.76);
+    border-bottom-color: rgba(134, 134, 142, 0.26);
+}
+
+html.dark .text-editor-input {
+    border-color: rgba(134, 134, 142, 0.3);
+    background: rgba(33, 35, 42, 0.86);
+    color: rgba(231, 231, 236, 0.94);
+}
+
+html.dark .text-file-status {
+    background: rgba(50, 53, 61, 0.72);
+}
+
+html.dark .text-editor-statusbar,
+html.dark .editor-statusbar {
+    background: rgba(50, 53, 61, 0.76);
+    border-top-color: rgba(134, 134, 142, 0.26);
+}
+
+html.dark .editor-status-pill {
+    border-color: rgba(134, 134, 142, 0.3);
+    background: rgba(70, 74, 84, 0.58);
 }
 
 html.dark {
     --terminal-shell-bg: linear-gradient(
         160deg,
-        rgba(8, 12, 20, 0.88) 0%,
-        rgba(10, 18, 33, 0.84) 56%,
-        rgba(8, 13, 25, 0.89) 100%
+        rgba(27, 29, 34, 0.88) 0%,
+        rgba(24, 26, 31, 0.84) 56%,
+        rgba(20, 22, 27, 0.89) 100%
     );
-    --terminal-shell-border: rgba(148, 163, 184, 0.32);
-    --terminal-shell-text: rgba(223, 236, 255, 0.96);
-    --terminal-shell-muted: rgba(186, 203, 224, 0.78);
-    --terminal-shell-prompt: rgba(155, 214, 255, 0.98);
-    --terminal-shell-command: rgba(146, 208, 255, 0.98);
+    --terminal-shell-border: rgba(134, 134, 142, 0.32);
+    --terminal-shell-text: rgba(232, 232, 236, 0.96);
+    --terminal-shell-muted: rgba(188, 188, 196, 0.78);
+    --terminal-shell-prompt: rgba(214, 214, 220, 0.98);
+    --terminal-shell-command: rgba(228, 228, 234, 0.98);
     --terminal-shell-output: rgba(196, 246, 208, 0.97);
     --terminal-shell-info: rgba(255, 233, 180, 0.97);
     --terminal-shell-error: rgba(255, 178, 178, 0.97);
@@ -1937,8 +2659,8 @@ html.dark {
     border: 1px solid var(--terminal-shell-border) !important;
     background: linear-gradient(
         180deg,
-        rgba(236, 243, 254, 0.76),
-        rgba(224, 236, 252, 0.7)
+        rgba(246, 246, 248, 0.76),
+        rgba(237, 237, 241, 0.7)
     ) !important;
     box-shadow:
         0 30px 62px rgba(15, 23, 42, 0.28),
@@ -1949,8 +2671,8 @@ html.dark {
 
 .multi-window:has(.terminal-wrapper) .window-titlebar,
 .multi-window:has(.terminal-wrapper) .window-tab-bar {
-    border-color: rgba(148, 163, 184, 0.3) !important;
-    background-color: rgba(237, 245, 255, 0.74) !important;
+    border-color: rgba(146, 146, 152, 0.3) !important;
+    background-color: rgba(243, 243, 245, 0.74) !important;
     background-image: none !important;
     backdrop-filter: saturate(125%) blur(13px);
     -webkit-backdrop-filter: saturate(125%) blur(13px);
@@ -1967,7 +2689,7 @@ html.dark {
     padding: 0 12px;
     margin-top: -1px;
     border-top: 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+    border-bottom: 1px solid rgba(146, 146, 152, 0.28);
 }
 
 .multi-window:has(.terminal-wrapper) .window-tabs {
@@ -1979,8 +2701,8 @@ html.dark {
     margin: 6px 0;
     padding: 4px !important;
     border-radius: 999px;
-    border: 1px solid rgba(148, 163, 184, 0.24);
-    background: linear-gradient(180deg, rgba(241, 245, 252, 0.56), rgba(229, 236, 248, 0.34));
+    border: 1px solid rgba(146, 146, 152, 0.24);
+    background: linear-gradient(180deg, rgba(251, 251, 252, 0.56), rgba(242, 242, 245, 0.34));
     box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.68) inset,
         0 8px 16px rgba(15, 23, 42, 0.08);
@@ -1997,8 +2719,8 @@ html.dark {
     margin: 5px 0;
     padding: 4px;
     border-radius: 12px;
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(248, 250, 252, 0.22));
+    border: 1px solid rgba(146, 146, 152, 0.25);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(246, 246, 248, 0.22));
     box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.62) inset,
         0 6px 14px rgba(15, 23, 42, 0.08);
@@ -2011,8 +2733,8 @@ html.dark {
     padding: 0 14px !important;
     border-radius: 999px !important;
     border: 1px solid transparent !important;
-    background: rgba(148, 163, 184, 0.14) !important;
-    color: rgba(71, 85, 105, 0.98) !important;
+    background: rgba(146, 146, 152, 0.14) !important;
+    color: rgba(77, 77, 84, 0.98) !important;
     font-weight: 500;
     transition:
         background-color 0.16s ease,
@@ -2285,7 +3007,7 @@ html.dark {
 }
 
 html.dark .multi-window:has(.terminal-wrapper) {
-    background: linear-gradient(180deg, rgba(36, 45, 60, 0.72), rgba(24, 30, 42, 0.66)) !important;
+    background: linear-gradient(180deg, rgba(44, 46, 53, 0.72), rgba(30, 32, 38, 0.66)) !important;
     box-shadow:
         0 34px 70px rgba(3, 8, 16, 0.64),
         0 1px 0 rgba(255, 255, 255, 0.08) inset !important;
@@ -2293,13 +3015,13 @@ html.dark .multi-window:has(.terminal-wrapper) {
 
 html.dark .multi-window:has(.terminal-wrapper) .window-titlebar,
 html.dark .multi-window:has(.terminal-wrapper) .window-tab-bar {
-    background-color: rgba(52, 62, 77, 0.68) !important;
+    background-color: rgba(50, 53, 61, 0.76) !important;
     background-image: none !important;
-    border-color: rgba(148, 163, 184, 0.28) !important;
+    border-color: rgba(134, 134, 142, 0.28) !important;
 }
 
 html.dark .multi-window:has(.terminal-wrapper) .window-titlebar.draggable-header {
-    background-color: rgba(52, 62, 77, 0.68) !important;
+    background-color: rgba(50, 53, 61, 0.76) !important;
     background-image: none !important;
     border-bottom: 0 !important;
 }
@@ -2312,8 +3034,8 @@ html.dark .multi-window:has(.terminal-wrapper) .window-tab-bar {
 html.dark .multi-window:has(.terminal-wrapper) .window-tabs {
     width: 100%;
     min-width: 0;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.48), rgba(15, 23, 42, 0.34));
-    border-color: rgba(148, 163, 184, 0.22);
+    background: linear-gradient(180deg, rgba(31, 33, 38, 0.48), rgba(27, 29, 34, 0.34));
+    border-color: rgba(134, 134, 142, 0.22);
     box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.08) inset,
         0 8px 18px rgba(2, 6, 16, 0.36);

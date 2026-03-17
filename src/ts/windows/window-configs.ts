@@ -91,7 +91,7 @@ export const windowConfigurations: WindowConfiguration[] = [
                     !window.TextEditorInstanceManager.hasInstances()
                 ) {
                     window.TextEditorInstanceManager.createInstance({
-                        title: 'Editor',
+                        title: 'Neues Dokument',
                     });
                 }
                 // Fallback: Initialize old editor module if instance manager not available

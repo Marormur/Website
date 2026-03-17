@@ -85,7 +85,7 @@ import logger from '../core/logger.js';
                     containerId: 'text-editor-container',
                     addButton: true,
                     titleFactory: manager =>
-                        `Editor ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
+                        `Neues Dokument ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
                     onEmpty: () => this.closeModalOrHide('text-modal'),
                 });
 
