@@ -6,7 +6,7 @@ on:
     workflow_dispatch:
 
 permissions:
-    contents: write
+  contents: read
     pages: write
     id-token: write
 
@@ -111,28 +111,3 @@ jobs:
             - name: Deploy to GitHub Pages
               id: deployment
               uses: actions/deploy-pages@v4
-
-    release:
-      name: Create Release
-      runs-on: ubuntu-latest
-      needs: deploy
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      permissions:
-        contents: write
-      steps:
-        - name: Compute release tag
-          id: release_tag
-          run: |
-            echo "tag=deploy-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-
-        - name: Create GitHub Release
-          uses: softprops/action-gh-release@v2
-          with:
-            tag_name: ${{ steps.release_tag.outputs.tag }}
-            target_commitish: ${{ github.sha }}
-            name: Deploy ${{ steps.release_tag.outputs.tag }}
-            generate_release_notes: true
-            body: |
-              Automated release after successful GitHub Pages deployment.
-              - Commit: ${{ github.sha }}
-              - Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
