@@ -5,6 +5,7 @@
 
 import { getJSON, setJSON } from '../services/storage-utils.js';
 import { renderProgramIcon } from '../windows/window-icons.js';
+import { toLogicalPx } from '../utils/viewport.js';
 
 type DockPosition = 'bottom' | 'left' | 'right';
 type DockMinimizeEffect = 'genie' | 'scale';
@@ -40,7 +41,7 @@ const DEFAULT_DOCK_PREFERENCES: DockPreferences = {
     minimizeEffect: 'genie',
     titlebarDoubleClickAction: 'zoom',
     minimizeWindowsIntoAppIcon: false,
-    autoHide: true,
+    autoHide: false,
     animateOpeningApps: true,
     showOpenIndicators: true,
     showRecentApps: true,
@@ -456,9 +457,10 @@ export function getDockReservedBottom(): number {
         if (preferences.position !== 'bottom') return 0;
         if (preferences.autoHide && dock.classList.contains('dock-auto-hide-hidden')) return 0;
         const rect = dock.getBoundingClientRect();
-        const viewportHeight = Math.max(window.innerHeight, 0);
+        // Keep this in logical CSS px so all window-layout math uses the same coordinate space.
+        const viewportHeight = Math.max(toLogicalPx(window.innerHeight), 0);
         if (viewportHeight <= 0) return 0;
-        return Math.round(Math.max(0, viewportHeight - rect.top));
+        return Math.round(Math.max(0, viewportHeight - toLogicalPx(rect.top)));
     } catch {
         return 0;
     }
