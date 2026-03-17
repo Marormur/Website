@@ -1,5 +1,19 @@
 import type { BaseTab } from '../../windows/base-tab.js';
 
+export interface WindowTabsController {
+    refresh: () => void;
+    destroy: () => void;
+    setTitle: (id: string, title: string) => void;
+}
+
+type WindowTabsFactory = {
+    create?: (
+        manager: ReturnType<typeof createWindowTabsAdapter>,
+        container: HTMLElement,
+        options: { addButton: boolean; onCreateInstanceTitle: () => string }
+    ) => WindowTabsController;
+};
+
 interface WindowTabsInstance {
     instanceId: string;
     title: string;
@@ -20,6 +34,24 @@ interface WindowTabsAdapterOptions {
     detachTab: (id: string) => BaseTab | null;
     createTab: (config?: { title?: string }) => BaseTab | null;
     reorderTabs: (newOrder: string[]) => void;
+}
+
+export function reorderTabMap(
+    tabs: Map<string, BaseTab>,
+    newOrder: string[]
+): Map<string, BaseTab> {
+    const rebuilt = new Map<string, BaseTab>();
+
+    newOrder.forEach(id => {
+        const tab = tabs.get(id);
+        if (tab) rebuilt.set(id, tab);
+    });
+
+    tabs.forEach((tab, id) => {
+        if (!rebuilt.has(id)) rebuilt.set(id, tab);
+    });
+
+    return rebuilt;
 }
 
 function toInstance(tab: BaseTab): WindowTabsInstance {
@@ -67,4 +99,23 @@ export function createWindowTabsAdapter(options: WindowTabsAdapterOptions) {
             return toInstance(tab);
         },
     };
+}
+
+export function mountWindowTabsController(options: {
+    windowTabs: WindowTabsFactory | undefined;
+    tabBar: HTMLElement;
+    adapter: ReturnType<typeof createWindowTabsAdapter>;
+    existingController?: WindowTabsController | null;
+    onCreateInstanceTitle: () => string;
+}): WindowTabsController | null {
+    if (!options.windowTabs?.create) return null;
+
+    if (options.existingController) {
+        options.existingController.destroy();
+    }
+
+    return options.windowTabs.create(options.adapter, options.tabBar, {
+        addButton: true,
+        onCreateInstanceTitle: options.onCreateInstanceTitle,
+    });
 }

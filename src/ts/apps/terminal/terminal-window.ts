@@ -5,7 +5,11 @@
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
-import { createWindowTabsAdapter } from '../../framework/controls/window-tabs-adapter.js';
+import {
+    createWindowTabsAdapter,
+    mountWindowTabsController,
+    reorderTabMap,
+} from '../../framework/controls/window-tabs-adapter.js';
 import logger from '../../core/logger.js';
 
 /**
@@ -81,28 +85,16 @@ export class TerminalWindow extends BaseWindow {
                 }) as unknown as BaseTab;
             },
             reorderTabs: (newOrder: string[]) => {
-                const old = this.tabs;
-                const rebuilt = new Map<string, BaseTab>();
-                newOrder.forEach(id => {
-                    const tab = old.get(id);
-                    if (tab) rebuilt.set(id, tab);
-                });
-                old.forEach((tab, id) => {
-                    if (!rebuilt.has(id)) rebuilt.set(id, tab);
-                });
-                this.tabs = rebuilt;
+                this.tabs = reorderTabMap(this.tabs, newOrder);
                 this._renderTabs();
             },
         });
 
-        // Clear existing tab controller if any
-        if (this.tabController) {
-            this.tabController.destroy();
-        }
-
-        // Create WindowTabs controller
-        this.tabController = window.WindowTabs.create!(adapter, tabBar as HTMLElement, {
-            addButton: true,
+        this.tabController = mountWindowTabsController({
+            windowTabs: window.WindowTabs,
+            tabBar: tabBar as HTMLElement,
+            adapter,
+            existingController: this.tabController,
             onCreateInstanceTitle: () => `Terminal ${this.tabs.size + 1}`,
         });
     }
