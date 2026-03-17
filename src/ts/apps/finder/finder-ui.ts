@@ -4,6 +4,7 @@ import { AppShell } from '../../framework/layout/app-shell.js';
 import { Sidebar, SidebarGroup } from '../../framework/navigation/sidebar.js';
 import { Toolbar } from '../../framework/navigation/toolbar.js';
 import { Tabs, TabItem } from '../../framework/navigation/tabs.js';
+import { createTrafficLightControlNodes } from '../../framework/controls/traffic-lights.js';
 import logger from '../../core/logger.js';
 
 export interface FinderUIProps {
@@ -939,26 +940,23 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                                 'finder-window-drag-zone cursor-move flex items-center gap-2 px-3 py-2.5',
                             style: { height: '44px' },
                         },
-                        h('div', {
-                            className:
-                                'finder-no-drag traffic-light-control traffic-light-control--close',
-                            title: 'Schließen',
-                            'data-action': 'window-close',
-                            'data-symbol': '×',
-                        }),
-                        h('div', {
-                            className:
-                                'finder-no-drag traffic-light-control traffic-light-control--minimize',
-                            title: 'Minimieren',
-                            'data-action': 'window-minimize',
-                            'data-symbol': '−',
-                        }),
-                        h('div', {
-                            className:
-                                'finder-no-drag traffic-light-control traffic-light-control--maximize',
-                            title: 'Füllen',
-                            'data-action': 'window-maximize',
-                            'data-symbol': '+',
+                        ...createTrafficLightControlNodes<VNode>(h, {
+                            defaults: {
+                                tag: 'div',
+                                noDrag: true,
+                            },
+                            close: {
+                                title: 'Schließen',
+                                dataAction: 'window-close',
+                            },
+                            minimize: {
+                                title: 'Minimieren',
+                                dataAction: 'window-minimize',
+                            },
+                            maximize: {
+                                title: 'Füllen',
+                                dataAction: 'window-maximize',
+                            },
                         })
                     ),
                     // Sidebar Content

@@ -1,5 +1,6 @@
 import logger from '../../core/logger.js';
 import { WINDOW_ICONS } from '../../windows/window-icons.js';
+import { renderTrafficLightControlsHTML } from '../../framework/controls/traffic-lights.js';
 /*
  * Fotos-App – inspiriert von der macOS Fotos Anwendung.
  * L├ñdt Bilder aus der Picsum API, gruppiert sie in verschiedene Ansichten
@@ -280,12 +281,24 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             <div class="photos-sidebar-panel">
                 <!-- Traffic Lights (Drag-Zone) -->
                 <div class="finder-window-drag-zone flex items-center gap-2 px-3" style="height:44px;flex-shrink:0;cursor:move;">
-                    <div class="finder-no-drag traffic-light-control traffic-light-control--close"
-                        data-action="window-close" data-symbol="×" title="${t('common.close', 'Schließen')}" role="button" tabindex="0"></div>
-                    <div class="finder-no-drag traffic-light-control traffic-light-control--minimize"
-                        data-action="window-minimize" data-symbol="−" title="${t('menu.window.minimize', 'Minimize')}" role="button" tabindex="0"></div>
-                    <div class="finder-no-drag traffic-light-control traffic-light-control--maximize"
-                        data-action="window-maximize" data-symbol="+" title="${t('menu.window.zoom', 'Fill')}" role="button" tabindex="0"></div>
+                    ${renderTrafficLightControlsHTML({
+                        defaults: {
+                            tag: 'div',
+                            noDrag: true,
+                        },
+                        close: {
+                            title: t('common.close', 'Schließen'),
+                            dataAction: 'window-close',
+                        },
+                        minimize: {
+                            title: t('menu.window.minimize', 'Minimize'),
+                            dataAction: 'window-minimize',
+                        },
+                        maximize: {
+                            title: t('menu.window.zoom', 'Fill'),
+                            dataAction: 'window-maximize',
+                        },
+                    })}
                 </div>
                 <!-- Sidebar body: list fills available height, controls stay bottom-aligned -->
                 <div class="flex-1 min-h-0 flex flex-col px-3 pb-3" style="padding-top:6px;">

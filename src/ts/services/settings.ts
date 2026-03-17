@@ -1,4 +1,5 @@
 import logger from '../core/logger.js';
+import { renderTrafficLightControlsHTML } from '../framework/controls/traffic-lights.js';
 /**
  * settings.ts
  * Settings Module - Inline settings UI with theme and language preferences
@@ -121,32 +122,35 @@ logger.debug('APP', 'Settings Module loaded');
                     <aside class="settings-sidebar-shell" aria-label="Settings Navigation" data-i18n-aria-label="settingsPage.sidebar.ariaLabel">
                         <div class="settings-sidebar-panel">
                             <div class="settings-sidebar-top draggable-header">
-                                <div class="settings-window-controls traffic-light-controls">
-                                    <button
-                                        type="button"
-                                        title="Schließen"
-                                        data-i18n-title="common.close"
-                                        id="close-settings-modal"
-                                        data-action="closeWindow"
-                                        data-window-id="settings-modal"
-                                        class="settings-window-control settings-window-control--close traffic-light-control traffic-light-control--close finder-no-drag"
-                                        data-symbol="×"
-                                    ></button>
-                                    <button
-                                        type="button"
-                                        class="settings-window-control settings-window-control--minimize traffic-light-control traffic-light-control--minimize"
-                                        data-symbol="−"
-                                        aria-label="Minimieren"
-                                        title="Minimieren"
-                                    ></button>
-                                    <button
-                                        type="button"
-                                        class="settings-window-control settings-window-control--maximize traffic-light-control traffic-light-control--maximize"
-                                        data-symbol="+"
-                                        aria-label="Maximieren"
-                                        title="Maximieren"
-                                    ></button>
-                                </div>
+                                ${renderTrafficLightControlsHTML({
+                                    containerClassName:
+                                        'settings-window-controls traffic-light-controls',
+                                    defaults: {
+                                        tag: 'button',
+                                    },
+                                    close: {
+                                        className:
+                                            'settings-window-control settings-window-control--close',
+                                        title: 'Schließen',
+                                        i18nTitleKey: 'common.close',
+                                        id: 'close-settings-modal',
+                                        dataAction: 'closeWindow',
+                                        dataWindowId: 'settings-modal',
+                                        noDrag: true,
+                                    },
+                                    minimize: {
+                                        className:
+                                            'settings-window-control settings-window-control--minimize',
+                                        title: 'Minimieren',
+                                        ariaLabel: 'Minimieren',
+                                    },
+                                    maximize: {
+                                        className:
+                                            'settings-window-control settings-window-control--maximize',
+                                        title: 'Maximieren',
+                                        ariaLabel: 'Maximieren',
+                                    },
+                                })}
                             </div>
                             <div class="settings-sidebar">
                                 <div class="settings-search-wrap">

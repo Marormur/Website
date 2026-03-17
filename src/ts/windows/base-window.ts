@@ -16,6 +16,7 @@ import {
     toLogicalPx,
     toRenderedClientPx,
 } from '../utils/viewport.js';
+import { createTrafficLightControlsElement } from '../framework/controls/traffic-lights.js';
 
 export interface WindowPosition {
     x: number;
@@ -218,39 +219,23 @@ export class BaseWindow {
             'window-titlebar flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-t-lg draggable-header cursor-move';
 
         // Window controls (macOS style: close, minimize, maximize as dots)
-        const controls = document.createElement('div');
-        controls.className = 'traffic-light-controls';
-
-        // Close button (red dot)
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'traffic-light-control traffic-light-control--close';
-        closeBtn.title = 'Schließen';
-        closeBtn.setAttribute('data-i18n-title', 'common.close');
-        closeBtn.setAttribute('data-symbol', '×');
-        closeBtn.addEventListener('click', () => this.close());
-
-        // Minimize button (yellow dot)
-        const minBtn = document.createElement('button');
-        minBtn.type = 'button';
-        minBtn.className = 'traffic-light-control traffic-light-control--minimize';
-        minBtn.title = 'Minimieren';
-        minBtn.setAttribute('data-i18n-title', 'menuItems.window.minimize');
-        minBtn.setAttribute('data-symbol', '−');
-        minBtn.addEventListener('click', () => this.minimize());
-
-        // Maximize button (green dot)
-        const maxBtn = document.createElement('button');
-        maxBtn.type = 'button';
-        maxBtn.className = 'traffic-light-control traffic-light-control--maximize';
-        maxBtn.title = 'Füllen';
-        maxBtn.setAttribute('data-i18n-title', 'menu.window.zoom');
-        maxBtn.setAttribute('data-symbol', '+');
-        maxBtn.addEventListener('click', () => this.toggleMaximize());
-
-        controls.appendChild(closeBtn);
-        controls.appendChild(minBtn);
-        controls.appendChild(maxBtn);
+        const controls = createTrafficLightControlsElement({
+            close: {
+                title: 'Schließen',
+                i18nTitleKey: 'common.close',
+                onClick: () => this.close(),
+            },
+            minimize: {
+                title: 'Minimieren',
+                i18nTitleKey: 'menuItems.window.minimize',
+                onClick: () => this.minimize(),
+            },
+            maximize: {
+                title: 'Füllen',
+                i18nTitleKey: 'menu.window.zoom',
+                onClick: () => this.toggleMaximize(),
+            },
+        });
 
         // Title
         const title = document.createElement('h2');

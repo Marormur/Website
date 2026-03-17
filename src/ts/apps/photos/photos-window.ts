@@ -7,23 +7,9 @@
  */
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
-import {
-    detectClientCoordinateScale,
-    resolveElementLogicalPx,
-    toLogicalClientPx,
-    toLogicalPx,
-    toRenderedClientPx,
-} from '../../utils/viewport.js';
+import { attachWindowDragZoneBehavior } from '../../framework/controls/window-drag-zone.js';
 
 export class PhotosWindow extends BaseWindow {
-    private photosDragState = {
-        isDragging: false,
-        offsetX: 0,
-        offsetY: 0,
-        pointerScale: 1,
-        lastPointerX: null as number | null,
-    };
-
     constructor(config?: Partial<WindowConfig>) {
         super({
             type: 'photos',
@@ -88,80 +74,23 @@ export class PhotosWindow extends BaseWindow {
             return Boolean(target.closest('button, input, select, textarea, a, [role="button"]'));
         };
 
-        windowEl.addEventListener('mousedown', (e: MouseEvent) => {
-            const target = e.target as HTMLElement | null;
-            if (!target?.closest('.finder-window-drag-zone') || isInteractiveTarget(target)) return;
-
-            const rect = windowEl.getBoundingClientRect();
-            this.photosDragState.pointerScale = detectClientCoordinateScale(
-                e.clientX,
-                e.clientY,
-                rect
-            );
-            const pointerX = toLogicalClientPx(e.clientX, this.photosDragState.pointerScale);
-            const pointerY = toLogicalClientPx(e.clientY, this.photosDragState.pointerScale);
-            const renderedPointerX = toRenderedClientPx(
-                e.clientX,
-                this.photosDragState.pointerScale
-            );
-            this.photosDragState.isDragging = true;
-            this.photosDragState.offsetX =
-                pointerX - resolveElementLogicalPx(windowEl, 'left', rect.left);
-            this.photosDragState.offsetY =
-                pointerY - resolveElementLogicalPx(windowEl, 'top', rect.top);
-            this.photosDragState.lastPointerX = renderedPointerX;
-            this.bringToFront();
-            e.preventDefault();
-        });
-
-        windowEl.addEventListener('dblclick', (e: MouseEvent) => {
-            const target = e.target as HTMLElement | null;
-            if (!target?.closest('.finder-window-drag-zone') || isInteractiveTarget(target)) return;
-
-            this.bringToFront();
-            this.toggleMaximize();
-            e.preventDefault();
-        });
-
-        document.addEventListener('mousemove', (e: MouseEvent) => {
-            if (!this.photosDragState.isDragging || !this.element) return;
-            const pointerX = toLogicalClientPx(e.clientX, this.photosDragState.pointerScale);
-            const pointerY = toLogicalClientPx(e.clientY, this.photosDragState.pointerScale);
-            const renderedPointerX = toRenderedClientPx(
-                e.clientX,
-                this.photosDragState.pointerScale
-            );
-            const newX = pointerX - this.photosDragState.offsetX;
-            const minTop = window.getMenuBarBottom?.() || 0;
-            const newY = Math.max(minTop, pointerY - this.photosDragState.offsetY);
-            this.position.x = newX;
-            this.position.y = newY;
-            this.element.style.left = `${newX}px`;
-            this.element.style.top = `${newY}px`;
-            this.photosDragState.lastPointerX = renderedPointerX;
-
-            const candidate = this.getSnapCandidate(
-                this.element,
-                this.photosDragState.lastPointerX
-            );
-            if (candidate) window.showSnapPreview?.(candidate);
-            else window.hideSnapPreview?.();
-        });
-
-        document.addEventListener('mouseup', () => {
-            if (!this.photosDragState.isDragging) return;
-            this.photosDragState.isDragging = false;
-
-            const target = this.element;
-            if (target) {
-                const candidate = this.getSnapCandidate(target, this.photosDragState.lastPointerX);
-                if (candidate) this.snapTo(candidate);
-                window.hideSnapPreview?.();
-            }
-
-            this.photosDragState.pointerScale = 1;
-            this.photosDragState.lastPointerX = null;
-            (this as unknown as { _saveState?: () => void })._saveState?.();
+        attachWindowDragZoneBehavior({
+            windowEl,
+            isInteractiveTarget,
+            bringToFront: () => this.bringToFront(),
+            toggleMaximize: () => this.toggleMaximize(),
+            updatePosition: (x: number, y: number, targetEl: HTMLElement) => {
+                this.position.x = x;
+                this.position.y = y;
+                targetEl.style.left = `${x}px`;
+                targetEl.style.top = `${y}px`;
+            },
+            getSnapCandidate: (target: HTMLElement | null, pointerX: number | null) =>
+                this.getSnapCandidate(target, pointerX),
+            snapTo: (side: 'left' | 'right') => this.snapTo(side),
+            persistState: () => {
+                (this as unknown as { _saveState?: () => void })._saveState?.();
+            },
         });
     }
 

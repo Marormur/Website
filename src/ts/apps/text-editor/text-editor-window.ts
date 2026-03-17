@@ -5,6 +5,7 @@
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
+import { createWindowTabsAdapter } from '../../framework/controls/window-tabs-adapter.js';
 import logger from '../../core/logger.js';
 
 export class TextEditorWindow extends BaseWindow {
@@ -34,65 +35,33 @@ export class TextEditorWindow extends BaseWindow {
         const tabBar = this.element.querySelector(`#${this.id}-tabs`);
         if (!tabBar) return;
 
-        const makeInst = (tab: BaseTab) => ({
-            instanceId: tab.id,
-            title: tab.title,
-            metadata: { tabLabel: tab.title },
-            __tab: tab,
-            show: () => tab.show(),
-            hide: () => tab.hide(),
-        });
-        const adapter = {
-            getAllInstances: () => Array.from(this.tabs.values()).map(makeInst),
-            getActiveInstance: () => {
-                const activeId = this.activeTabId;
-                const t = activeId ? this.tabs.get(activeId) : null;
-                return t ? makeInst(t) : null;
+        const adapter = createWindowTabsAdapter({
+            tabs: this.tabs,
+            getActiveTabId: () => this.activeTabId,
+            setActiveTab: (id: string) => this.setActiveTab(id),
+            addTab: (tab: BaseTab) => this.addTab(tab),
+            removeTab: (id: string) => this.removeTab(id),
+            detachTab: (id: string) => this.detachTab(id),
+            createTab: (cfg?: { title?: string }) => {
+                if (!window.TextEditorDocument) return null;
+                return new window.TextEditorDocument({
+                    title: cfg?.title || `Neues Dokument ${this.tabs.size + 1}`,
+                }) as unknown as BaseTab;
             },
-            getAllInstanceIds: () => Array.from(this.tabs.keys()),
-            getInstance: (id: string) => {
-                const t = this.tabs.get(id) || null;
-                return t ? makeInst(t) : null;
-            },
-            setActiveInstance: (id: string) => this.setActiveTab(id),
-            createInstance: (cfg?: { title?: string }) => {
-                const doc = window.TextEditorDocument
-                    ? new window.TextEditorDocument({
-                          title: cfg?.title || `Neues Dokument ${this.tabs.size + 1}`,
-                      })
-                    : null;
-                if (doc) {
-                    this.addTab(doc as unknown as BaseTab);
-                    return makeInst(doc as unknown as BaseTab);
-                }
-                return null;
-            },
-            destroyInstance: (id: string) => this.removeTab(id),
-            getInstanceCount: () => this.tabs.size,
-            reorderInstances: (newOrder: string[]) => {
+            reorderTabs: (newOrder: string[]) => {
                 const old = this.tabs;
                 const rebuilt = new Map<string, BaseTab>();
                 newOrder.forEach(id => {
-                    const t = old.get(id);
-                    if (t) rebuilt.set(id, t);
+                    const tab = old.get(id);
+                    if (tab) rebuilt.set(id, tab);
                 });
-                old.forEach((t, id) => {
-                    if (!rebuilt.has(id)) rebuilt.set(id, t);
+                old.forEach((tab, id) => {
+                    if (!rebuilt.has(id)) rebuilt.set(id, tab);
                 });
                 this.tabs = rebuilt;
                 this._renderTabs();
             },
-            detachInstance: (id: string) => {
-                const t = this.detachTab(id);
-                return t ? makeInst(t) : null;
-            },
-            adoptInstance: (inst: { instanceId?: string; __tab?: BaseTab; id?: string }) => {
-                const tab = inst.__tab || (inst as unknown as BaseTab);
-                this.addTab(tab);
-                this.setActiveTab((tab as BaseTab).id);
-                return makeInst(tab);
-            },
-        };
+        });
 
         if (this.tabController) {
             this.tabController.destroy();

@@ -5,14 +5,10 @@
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
+import { createWindowTabsAdapter } from '../../framework/controls/window-tabs-adapter.js';
 import logger from '../../core/logger.js';
-import {
-    detectClientCoordinateScale,
-    resolveElementLogicalPx,
-    toLogicalClientPx,
-    toLogicalPx,
-    toRenderedClientPx,
-} from '../../utils/viewport.js';
+import { attachWindowDragZoneBehavior } from '../../framework/controls/window-drag-zone.js';
+import { resolveElementLogicalPx, toLogicalPx } from '../../utils/viewport.js';
 
 type FinderCurrentView = 'computer' | 'github' | 'favorites' | 'recent';
 
@@ -23,14 +19,6 @@ export class FinderWindow extends BaseWindow {
         destroy: () => void;
         setTitle: (id: string, title: string) => void;
     } | null;
-    private finderDragState = {
-        isDragging: false,
-        offsetX: 0,
-        offsetY: 0,
-        pointerScale: 1,
-        lastPointerX: null as number | null,
-    };
-
     constructor(config?: Partial<WindowConfig>) {
         super({
             type: 'finder',
@@ -79,95 +67,35 @@ export class FinderWindow extends BaseWindow {
             return Boolean(target.closest('button, input, select, textarea, a, [role="button"]'));
         };
 
-        windowEl.addEventListener('mousedown', (e: MouseEvent) => {
-            const target = e.target as HTMLElement | null;
-            const inFinderDragZone = target?.closest('.finder-window-drag-zone');
-            if (!inFinderDragZone || isInteractiveTarget(target)) return;
-
-            const currentRect = windowEl.getBoundingClientRect();
-            this.finderDragState.pointerScale = detectClientCoordinateScale(
-                e.clientX,
-                e.clientY,
-                currentRect
-            );
-            const pointerX = toLogicalClientPx(e.clientX, this.finderDragState.pointerScale);
-            const pointerY = toLogicalClientPx(e.clientY, this.finderDragState.pointerScale);
-            const renderedPointerX = toRenderedClientPx(
-                e.clientX,
-                this.finderDragState.pointerScale
-            );
-
-            if (windowEl.dataset.snapped === 'left' || windowEl.dataset.snapped === 'right') {
-                const initialRect = windowEl.getBoundingClientRect();
-                const preservedOffsetX = pointerX - toLogicalPx(initialRect.left);
-                const preservedOffsetY = pointerY - toLogicalPx(initialRect.top);
-                this.unsnap();
-                const minTopAfterUnsnap = window.getMenuBarBottom?.() || 0;
-                windowEl.style.position = 'fixed';
-                windowEl.style.left = `${pointerX - preservedOffsetX}px`;
-                windowEl.style.top = `${Math.max(minTopAfterUnsnap, pointerY - preservedOffsetY)}px`;
-            }
-
-            const rect = windowEl.getBoundingClientRect();
-            this.finderDragState.isDragging = true;
-            this.finderDragState.offsetX =
-                pointerX - resolveElementLogicalPx(windowEl, 'left', rect.left);
-            this.finderDragState.offsetY =
-                pointerY - resolveElementLogicalPx(windowEl, 'top', rect.top);
-            this.finderDragState.lastPointerX = renderedPointerX;
-            this.bringToFront();
-            e.preventDefault();
-        });
-
-        windowEl.addEventListener('dblclick', (e: MouseEvent) => {
-            const target = e.target as HTMLElement | null;
-            const inFinderDragZone = target?.closest('.finder-window-drag-zone');
-            if (!inFinderDragZone || isInteractiveTarget(target)) return;
-
-            this.bringToFront();
-            this.toggleMaximize();
-            e.preventDefault();
-        });
-
-        document.addEventListener('mousemove', (e: MouseEvent) => {
-            if (!this.finderDragState.isDragging || !this.element) return;
-
-            const pointerX = toLogicalClientPx(e.clientX, this.finderDragState.pointerScale);
-            const pointerY = toLogicalClientPx(e.clientY, this.finderDragState.pointerScale);
-            const renderedPointerX = toRenderedClientPx(
-                e.clientX,
-                this.finderDragState.pointerScale
-            );
-            const newX = pointerX - this.finderDragState.offsetX;
-            const minTop = window.getMenuBarBottom?.() || 0;
-            const newY = Math.max(minTop, pointerY - this.finderDragState.offsetY);
-            this.position.x = newX;
-            this.position.y = newY;
-            this.element.style.left = `${newX}px`;
-            this.element.style.top = `${newY}px`;
-
-            this.finderDragState.lastPointerX = renderedPointerX;
-            const candidate = this.getSnapCandidate(
-                this.element,
-                this.finderDragState.lastPointerX
-            );
-            if (candidate) window.showSnapPreview?.(candidate);
-            else window.hideSnapPreview?.();
-        });
-
-        document.addEventListener('mouseup', () => {
-            if (!this.finderDragState.isDragging) return;
-            this.finderDragState.isDragging = false;
-            const target = this.element;
-            if (target) {
-                const candidate = this.getSnapCandidate(target, this.finderDragState.lastPointerX);
-                if (candidate) this.snapTo(candidate);
-                window.hideSnapPreview?.();
-            }
-            this.finderDragState.pointerScale = 1;
-            this.finderDragState.lastPointerX = null;
-            // Persist final position through BaseWindow's existing state mechanism.
-            (this as unknown as { _saveState?: () => void })._saveState?.();
+        attachWindowDragZoneBehavior({
+            windowEl,
+            isInteractiveTarget,
+            bringToFront: () => this.bringToFront(),
+            toggleMaximize: () => this.toggleMaximize(),
+            updatePosition: (x: number, y: number, targetEl: HTMLElement) => {
+                this.position.x = x;
+                this.position.y = y;
+                targetEl.style.left = `${x}px`;
+                targetEl.style.top = `${y}px`;
+            },
+            getSnapCandidate: (target: HTMLElement | null, pointerX: number | null) =>
+                this.getSnapCandidate(target, pointerX),
+            snapTo: (side: 'left' | 'right') => this.snapTo(side),
+            persistState: () => {
+                (this as unknown as { _saveState?: () => void })._saveState?.();
+            },
+            restoreFromSnappedDrag: ({ windowEl: dragEl, pointerX, pointerY }) => {
+                if (dragEl.dataset.snapped === 'left' || dragEl.dataset.snapped === 'right') {
+                    const initialRect = dragEl.getBoundingClientRect();
+                    const preservedOffsetX = pointerX - toLogicalPx(initialRect.left);
+                    const preservedOffsetY = pointerY - toLogicalPx(initialRect.top);
+                    this.unsnap();
+                    const minTopAfterUnsnap = window.getMenuBarBottom?.() || 0;
+                    dragEl.style.position = 'fixed';
+                    dragEl.style.left = `${pointerX - preservedOffsetX}px`;
+                    dragEl.style.top = `${Math.max(minTopAfterUnsnap, pointerY - preservedOffsetY)}px`;
+                }
+            },
         });
     }
 
@@ -300,66 +228,33 @@ export class FinderWindow extends BaseWindow {
         // Always show tab bar for Finder (unlike Terminal/TextEditor)
         (tabBar as HTMLElement).style.display = '';
 
-        const makeInst = (tab: BaseTab) => ({
-            instanceId: tab.id,
-            title: tab.title,
-            metadata: { tabLabel: tab.title },
-            __tab: tab,
-            show: () => tab.show(),
-            hide: () => tab.hide(),
-        });
-        const adapter = {
-            getAllInstances: () => Array.from(this.tabs.values()).map(makeInst),
-            getActiveInstance: () => {
-                const activeId = this.activeTabId;
-                const t = activeId ? this.tabs.get(activeId) : null;
-                return t ? makeInst(t) : null;
-            },
-            getAllInstanceIds: () => Array.from(this.tabs.keys()),
-            getInstance: (id: string) => {
-                const t = this.tabs.get(id) || null;
-                return t ? makeInst(t) : null;
-            },
-            setActiveInstance: (id: string) => this.setActiveTab(id),
-            createInstance: (cfg?: { title?: string }) => {
+        const adapter = createWindowTabsAdapter({
+            tabs: this.tabs,
+            getActiveTabId: () => this.activeTabId,
+            setActiveTab: (id: string) => this.setActiveTab(id),
+            addTab: (tab: BaseTab) => this.addTab(tab),
+            removeTab: (id: string) => this.removeTab(id),
+            detachTab: (id: string) => this.detachTab(id),
+            createTab: (cfg?: { title?: string }) => {
                 const view = window.FinderView
                     ? new window.FinderView({ title: cfg?.title || `Computer`, source: 'computer' })
                     : null;
-                if (view) {
-                    this.addTab(view as unknown as BaseTab);
-                    this.setActiveTab((view as unknown as BaseTab).id);
-                    return makeInst(view as unknown as BaseTab);
-                }
-                return null;
+                return view as unknown as BaseTab | null;
             },
-            destroyInstance: (id: string) => this.removeTab(id),
-            getInstanceCount: () => this.tabs.size,
-            reorderInstances: (newOrder: string[]) => {
+            reorderTabs: (newOrder: string[]) => {
                 const old = this.tabs;
                 const rebuilt = new Map<string, BaseTab>();
                 newOrder.forEach(id => {
-                    const t = old.get(id);
-                    if (t) rebuilt.set(id, t);
+                    const tab = old.get(id);
+                    if (tab) rebuilt.set(id, tab);
                 });
-                old.forEach((t, id) => {
-                    if (!rebuilt.has(id)) rebuilt.set(id, t);
+                old.forEach((tab, id) => {
+                    if (!rebuilt.has(id)) rebuilt.set(id, tab);
                 });
                 this.tabs = rebuilt;
                 this._renderTabs();
             },
-            detachInstance: (id: string) => {
-                const t = this.detachTab(id);
-                return t ? makeInst(t) : null;
-            },
-            adoptInstance: (inst: unknown) => {
-                const adopted = inst as { __tab?: BaseTab } | BaseTab;
-                const tab =
-                    (adopted as { __tab?: BaseTab }).__tab || (adopted as unknown as BaseTab);
-                this.addTab(tab);
-                this.setActiveTab((tab as BaseTab).id);
-                return makeInst(tab);
-            },
-        };
+        });
 
         // Destroy existing controller before creating new one
         if (this.tabController) {
