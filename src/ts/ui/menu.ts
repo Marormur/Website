@@ -691,7 +691,8 @@ function getWindowTabNavigationState(windowController: WindowMenuController): {
         return { canNavigate: false, canDetach: false };
     }
 
-    const currentIndex = Math.max(0, tabIds.indexOf(w.activeTabId || tabIds[0]));
+    const activeTabId = w.activeTabId ?? tabIds[0] ?? null;
+    const currentIndex = activeTabId ? Math.max(0, tabIds.indexOf(activeTabId)) : 0;
     return {
         canNavigate: true,
         canDetach: false,
@@ -873,7 +874,7 @@ function getWindowMenuItems(context: MenuContext) {
         const modalFallbackElement = context?.modalId
             ? document.getElementById(context.modalId)
             : null;
-        const layoutTarget: WindowLayoutController =
+        const layoutTarget: WindowLayoutController | null =
             (registryActive && registryActive.element
                 ? registryActive
                 : registryFinderFallback && registryFinderFallback.element

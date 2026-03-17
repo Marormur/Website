@@ -142,41 +142,6 @@ interface VirtualFSEntry {
     modified?: string;
 }
 
-interface WindowRegistryLike {
-    getWindowsByType?: (type: string) => unknown[];
-    registerWindow?: (win: unknown) => void;
-    getWindow?: (id: string) => unknown;
-}
-
-interface TextEditorWindowFactory {
-    create?: () => unknown;
-}
-
-interface TextEditorSystemLike {
-    loadRemoteFile?: (input: {
-        content?: string;
-        fileName?: string;
-        repo?: string;
-        path?: string;
-        branch?: string;
-        name?: string;
-        downloadUrl?: string | null;
-    }) => void | Promise<void>;
-}
-
-declare global {
-    interface Window {
-        WindowRegistry?: WindowRegistryLike;
-        TextEditorWindow?: TextEditorWindowFactory;
-        TextEditorSystem?: TextEditorSystemLike;
-        GITHUB_USERNAME?: string;
-        GitHubAPI?: FinderGitHubAPI | null;
-        FinderWindow?: unknown;
-        FinderView?: unknown;
-        getMenuBarBottom?: () => number;
-    }
-}
-
 interface GalleryReadmePreview {
     title: string;
     excerpt: string;
