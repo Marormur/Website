@@ -307,13 +307,13 @@ export class BaseWindow {
             this.dragState.startY = pointerY;
             this.dragState.lastPointerX = renderedPointerX;
 
-            const rect = this.element?.getBoundingClientRect();
-            if (rect) {
+            const element = this.element;
+            const rect = element?.getBoundingClientRect();
+            if (element && rect) {
                 this.dragState.offsetX =
-                    this.dragState.startX -
-                    resolveElementLogicalPx(this.element, 'left', rect.left);
+                    this.dragState.startX - resolveElementLogicalPx(element, 'left', rect.left);
                 this.dragState.offsetY =
-                    this.dragState.startY - resolveElementLogicalPx(this.element, 'top', rect.top);
+                    this.dragState.startY - resolveElementLogicalPx(element, 'top', rect.top);
             }
 
             e.preventDefault();
