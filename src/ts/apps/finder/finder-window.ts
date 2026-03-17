@@ -14,6 +14,8 @@ import {
     toRenderedClientPx,
 } from '../../utils/viewport.js';
 
+type FinderCurrentView = 'computer' | 'github' | 'favorites' | 'recent';
+
 export class FinderWindow extends BaseWindow {
     /** WindowTabs controller for the tab bar – created lazily in _doRenderTabs. */
     private tabController?: {
@@ -349,8 +351,10 @@ export class FinderWindow extends BaseWindow {
                 const t = this.detachTab(id);
                 return t ? makeInst(t) : null;
             },
-            adoptInstance: (inst: { instanceId?: string; __tab?: BaseTab; id?: string }) => {
-                const tab = inst.__tab || (inst as unknown as BaseTab);
+            adoptInstance: (inst: unknown) => {
+                const adopted = inst as { __tab?: BaseTab } | BaseTab;
+                const tab =
+                    (adopted as { __tab?: BaseTab }).__tab || (adopted as unknown as BaseTab);
                 this.addTab(tab);
                 this.setActiveTab((tab as BaseTab).id);
                 return makeInst(tab);
@@ -496,7 +500,7 @@ window.FinderSystem = {
         );
     },
     /** Navigate to a path/view. Pass view='github' to open GitHub Projekte in gallery mode. */
-    navigateTo(path: string[] | string, view?: CurrentView | null): void {
+    navigateTo(path: string[] | string, view?: FinderCurrentView | null): void {
         const fv = _ensureActiveFV();
         if (!fv) return;
         if (view === 'github') {
@@ -555,7 +559,7 @@ window.FinderSystem = {
         if (!fv) return null;
         return {
             currentPath: fv['currentPath'] as string[],
-            currentView: fv['source'] as CurrentView,
+            currentView: fv['source'] as FinderCurrentView,
             viewMode: fv['viewMode'] as 'list' | 'grid',
         };
     },

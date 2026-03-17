@@ -211,7 +211,7 @@ if (guardedWindow[guardKey]) {
 
             const currentViewMode =
                 window.FinderSystem && window.FinderSystem.getState
-                    ? window.FinderSystem.getState().viewMode
+                    ? (window.FinderSystem.getState()?.viewMode ?? 'list')
                     : 'list';
             if (currentViewMode !== 'list') {
                 items.push({

@@ -3,17 +3,22 @@
 type CurrentView = 'computer' | 'github' | 'favorites' | 'recent';
 
 declare interface FinderSystemAPI {
-  init(): void;
-  openFinder(): void;
-  closeFinder(): void;
-  navigateTo(path: string[] | string, view?: CurrentView | null): void;
-  navigateUp(): void;
-  navigateToFolder(folderName: string): void;
-  openItem(name: string, type: string): void;
-  setSortBy(field: 'name' | 'date' | 'size' | 'type'): void;
-  setViewMode(mode: 'list' | 'grid' | 'columns'): void;
-  toggleFavorite(path: string): void;
-  getState(): any;
+    init(): void;
+    openFinder(): void;
+    closeFinder(): void;
+    navigateTo(path: string[] | string, view?: CurrentView | null): void;
+    navigateUp(): void;
+    navigateToFolder(folderName: string): void;
+    openItem(name: string, type: string): void;
+    setSortBy(field: 'name' | 'date' | 'size' | 'type'): void;
+    setViewMode(mode: 'list' | 'grid' | 'columns' | 'gallery'): void;
+    toggleFavorite(path: string): void;
+    getState(): {
+        currentPath: string[];
+        currentView?: CurrentView;
+        viewMode?: 'list' | 'grid' | 'columns' | 'gallery';
+        githubRepos?: unknown[];
+    } | null;
 }
 
 declare const FinderSystem: FinderSystemAPI;

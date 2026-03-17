@@ -21,11 +21,11 @@
     "test:unit:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:coverage:watch": "vitest --coverage",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "typecheck:watch": "cross-env NODE_OPTIONS=--max-old-space-size=2048 tsc --noEmit -p tsconfig.json --watch --incremental",
-    "type:report": "type-coverage --detail",
-    "type:baseline": "type-coverage --at-least 77",
-    "type:coverage": "type-coverage --at-least 90 --detail",
+    "typecheck": "tsc --noEmit -p tsconfig.tsbuild.json",
+    "typecheck:watch": "cross-env NODE_OPTIONS=--max-old-space-size=2048 tsc --noEmit -p tsconfig.tsbuild.json --watch --incremental",
+    "type:report": "type-coverage --detail -p tsconfig.tsbuild.json",
+    "type:baseline": "type-coverage --at-least 77 -p tsconfig.tsbuild.json",
+    "type:coverage": "type-coverage --at-least 90 --detail -p tsconfig.tsbuild.json",
     "build:ts": "tsc -p tsconfig.tsbuild.json",
     "build:ts:watch": "tsc -p tsconfig.tsbuild.json --watch",
     "build:bundle": "node scripts/build-esbuild.mjs",
@@ -48,9 +48,9 @@
     "lighthouse:upload": "node scripts/performance-audit.js --mode=report",
     "lighthouse:ci": "node scripts/performance-audit.js --mode=ci",
     "bundle:analyze": "node scripts/analyze-bundle.mjs",
-    "turbo:build": "turbo run build:css build:ts build:bundle --cache-repo=.turbo",
-    "turbo:lint": "turbo run lint typecheck --cache-repo=.turbo",
-    "turbo:validate": "turbo run validate --cache-repo=.turbo",
+    "turbo:build": "turbo run build:css build:ts build:bundle",
+    "turbo:lint": "turbo run lint typecheck",
+    "turbo:validate": "turbo run validate",
     "turbo:watch": "turbo run watch:css typecheck:watch dev:bundle --parallel",
     "prepare": "husky"
   },
@@ -78,6 +78,7 @@
   "bugs": {
     "url": "https://github.com/Marormur/Website/issues"
   },
+  "packageManager": "npm@11.6.2",
   "homepage": "https://github.com/Marormur/Website#readme",
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
