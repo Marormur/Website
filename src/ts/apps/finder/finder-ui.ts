@@ -122,6 +122,8 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
     private resizeHandlersBound = false;
     private sortMenuOverlayEl: HTMLDivElement | null = null;
     private viewMenuOverlayEl: HTMLDivElement | null = null;
+    /** Tab bar component instance; stored here so onMount/onUpdate can imperatively sync the container. */
+    private tabsComponent: Tabs | null = null;
     private sidebarResizeState: {
         isResizing: boolean;
         startX: number;
@@ -899,7 +901,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         // Store tabsComponent on the instance so lifecycle hooks can imperatively
         // manage the container content to avoid duplicate DOM insertions from VDOM
         // reconciliation edge-cases.
-        (this as any).tabsComponent = new Tabs({
+        this.tabsComponent = new Tabs({
             tabs,
             activeTabId,
             onTabChange,
@@ -1033,11 +1035,11 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         try {
             const winId = this.props.windowId;
             const container = document.getElementById(`${winId}-tabs`);
-            if (container && (this as any).tabsComponent) {
+            if (container && this.tabsComponent && window.VDOM) {
                 // Clear and append rendered tabs
                 container.innerHTML = '';
-                const tabsVNode = (this as any).tabsComponent.render();
-                const node = (window as any).VDOM.createElement(tabsVNode);
+                const tabsVNode = this.tabsComponent.render();
+                const node = window.VDOM.createElement(tabsVNode);
                 container.appendChild(node);
                 this.bindTabDragHandlers(container);
             }
@@ -1056,10 +1058,10 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         try {
             const winId = this.props.windowId;
             const container = document.getElementById(`${winId}-tabs`);
-            if (container && (this as any).tabsComponent) {
+            if (container && this.tabsComponent && window.VDOM) {
                 container.innerHTML = '';
-                const tabsVNode = (this as any).tabsComponent.render();
-                const node = (window as any).VDOM.createElement(tabsVNode);
+                const tabsVNode = this.tabsComponent.render();
+                const node = window.VDOM.createElement(tabsVNode);
                 container.appendChild(node);
                 this.bindTabDragHandlers(container);
             }

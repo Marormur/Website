@@ -61,6 +61,10 @@ jobs:
             - name: Lint Code
               run: npm run lint
 
+            - name: Detect unused exports
+              run: npm run knip
+              continue-on-error: true
+
             - name: Format Check
               run: npm run format:check
 

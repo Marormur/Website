@@ -439,7 +439,7 @@ declare global {
         hideSnapPreview?: () => void;
 
         // ── Photos / Image viewer helpers ─────────────────────────────────
-        getImageViewerState?: () => { src?: string; title?: string } | null;
+        getImageViewerState?: () => { hasImage: boolean; src: string; title?: string } | null;
         openActiveImageInNewTab?: () => void;
         downloadActiveImage?: () => void;
 
@@ -483,6 +483,7 @@ declare global {
                 props: Record<string, unknown> | null,
                 ...children: unknown[]
             ) => unknown;
+            createElement: (vnode: unknown) => HTMLElement | Text;
             diff: (oldVTree: unknown, newVTree: unknown) => unknown[];
             patch: (element: HTMLElement, patches: unknown[], oldVTree?: unknown) => HTMLElement;
             EventDelegator: new (rootElement: HTMLElement) => unknown;
@@ -501,6 +502,24 @@ declare global {
         __APP_READY?: boolean;
         /** Set to true once session restore is complete. */
         __SESSION_RESTORED?: boolean;
+
+        // ── Session-restore lifecycle flags ───────────────────────────────
+        /** Promise that resolves when session restore has finished (success or failure). */
+        __sessionRestorePromise?: Promise<void>;
+        /** True while session restore is actively running. */
+        __SESSION_RESTORE_IN_PROGRESS?: boolean;
+        /** True once session restore has finished (either succeeded or failed). */
+        __SESSION_RESTORE_DONE?: boolean;
+        /** True when the multi-window session manager is active. */
+        __MULTI_WINDOW_SESSION_ACTIVE?: boolean;
+
+        // ── Bundle / init flags ───────────────────────────────────────────
+        /** Present (truthy) when the app is loaded in bundle mode. */
+        __BUNDLE_READY__?: boolean;
+        /** Truthy once VirtualFS is queryable through any active session. */
+        __VirtualFS_Ready?: boolean;
+        /** Alias of WindowRegistry exposed for legacy debug access. */
+        __WindowRegistry?: typeof globalThis extends { WindowRegistry: infer R } ? R : unknown;
 
         // ── Configuration ─────────────────────────────────────────────────
         /** GitHub username for the portfolio owner (fallback: 'Marormur') */

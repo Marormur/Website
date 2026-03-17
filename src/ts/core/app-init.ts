@@ -228,9 +228,7 @@ function initApp(): void {
     cleanupObsoleteStorage();
     funcs.restoreWindowPositions?.();
     // Suppress default init handlers while we restore previously open modals
-    (
-        window as unknown as { __SESSION_RESTORE_IN_PROGRESS?: boolean }
-    ).__SESSION_RESTORE_IN_PROGRESS = true;
+    window.__SESSION_RESTORE_IN_PROGRESS = true;
     funcs.restoreOpenModals?.();
     funcs.initSystemStatusControls?.();
 
@@ -292,22 +290,14 @@ function initApp(): void {
     const sessionRestorePromise = new Promise<void>(resolve => {
         sessionRestoreComplete = resolve;
     });
-    (window as any).__sessionRestorePromise = sessionRestorePromise;
+    window.__sessionRestorePromise = sessionRestorePromise;
 
     void runSessionRestoreOrchestration(window as unknown as Window & Record<string, unknown>)
         .catch(err => {
             logger.warn('APP', '[APP-INIT] Session restore orchestration failed:', err);
-            (
-                window as unknown as { __MULTI_WINDOW_SESSION_ACTIVE?: boolean }
-            ).__MULTI_WINDOW_SESSION_ACTIVE = false;
-            (
-                window as unknown as {
-                    __SESSION_RESTORE_IN_PROGRESS?: boolean;
-                    __SESSION_RESTORE_DONE?: boolean;
-                }
-            ).__SESSION_RESTORE_IN_PROGRESS = false;
-            (window as unknown as { __SESSION_RESTORE_DONE?: boolean }).__SESSION_RESTORE_DONE =
-                true;
+            window.__MULTI_WINDOW_SESSION_ACTIVE = false;
+            window.__SESSION_RESTORE_IN_PROGRESS = false;
+            window.__SESSION_RESTORE_DONE = true;
         })
         .finally(() => {
             // Mark session restore as complete in all outcomes
@@ -802,7 +792,7 @@ function initApp(): void {
 
     // For non-bundle usage: Auto-attach to DOMContentLoaded if not already handled
     // This ensures standalone module loading still works
-    const isBundleMode = typeof (window as any).__BUNDLE_READY__ !== 'undefined';
+    const isBundleMode = typeof window.__BUNDLE_READY__ !== 'undefined';
     if (!isBundleMode) {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initApp);

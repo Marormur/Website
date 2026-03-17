@@ -40,12 +40,12 @@ if (guardedWindow[guardKey]) {
         if (!window.dialogs) window.dialogs = {};
         if (!window.dialogs[id] && typeof window.Dialog === 'function') {
             try {
-                window.dialogs[id] = new window.Dialog(id) as any;
+                window.dialogs[id] = new window.Dialog(id);
             } catch {
                 // noop
             }
         }
-        const dlg = window.dialogs[id] as any;
+        const dlg = window.dialogs[id];
         if (dlg && typeof dlg.open === 'function') {
             dlg.open();
         } else {
@@ -113,7 +113,7 @@ if (guardedWindow[guardKey]) {
         }
 
         if (inPhotosWindow && typeof window.getImageViewerState === 'function') {
-            const st = window.getImageViewerState() as any;
+            const st = window.getImageViewerState();
             if (st && st.hasImage) {
                 items.push({
                     id: 'photos-open-tab',

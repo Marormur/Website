@@ -510,8 +510,8 @@ class MultiWindowSessionManager {
 
             // Force tab rendering after window is shown and in DOM
             // This ensures tabs are visible even if they were added before the window was shown
-            if (typeof (window as any)._renderTabs === 'function') {
-                (window as any)._renderTabs();
+            if (typeof window.requestTabsRender === 'function') {
+                window.requestTabsRender();
             }
 
             if (window.element) {
