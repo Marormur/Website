@@ -32,8 +32,9 @@
     "dev:bundle": "node scripts/build-esbuild.mjs --watch",
     "lint": "eslint --quiet \"src/ts/**/*.ts\"",
     "lint:fix": "eslint --fix \"src/ts/**/*.ts\"",
-    "format": "prettier --write \"**/*.{js,css,html,md,json}\"",
-    "format:check": "prettier --check \"**/*.{js,css,html,md,json}\"",
+    "format": "prettier --write \"**/*.{js,css,html,md,json,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{js,css,html,md,json,yml,yaml}\"",
+    "validate:workflows": "prettier --check \".github/workflows/*.{yml,yaml}\" && ruby -e 'require \"yaml\"; Dir[\".github/workflows/*.{yml,yaml}\"].each { |file| YAML.load_file(file); puts \"OK #{file}\" }'",
     "validate": "npm run typecheck && npm run type:baseline && npm run build:ts && npm run lint && npm run build:css && npm run test:e2e",
     "validate:vdom": "node scripts/validate-vdom-performance.js",
     "docs:clean": "rimraf docs/api",
@@ -62,7 +63,7 @@
       "eslint --fix",
       "prettier --write"
     ],
-    "*.{css,md,html,json}": [
+    "*.{css,md,html,json,yml,yaml}": [
       "prettier --write"
     ]
   },

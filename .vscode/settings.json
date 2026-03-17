@@ -9,6 +9,13 @@
   },
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.formatOnSave": true
+  },
+  "yaml.format.enable": true,
 
   // Editor - Visual Guides
   //   "editor.rulers": [80, 100],

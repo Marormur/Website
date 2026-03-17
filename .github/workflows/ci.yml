@@ -23,9 +23,19 @@ permissions:
     contents: read
 
 jobs:
+    workflow-lint:
+        name: Workflow Lint
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Lint GitHub Actions workflows
+              uses: rhysd/actionlint@v1
+
     quality:
         name: Code Quality
         runs-on: ubuntu-latest
+        needs: workflow-lint
         steps:
             - uses: actions/checkout@v4
 

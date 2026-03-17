@@ -343,6 +343,19 @@
       }
     },
     {
+      "label": "Workflow: Validate GitHub Actions",
+      "type": "shell",
+      "command": "npm run validate:workflows",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "Pre-Commit: Simulate",
       "type": "shell",
       "command": "npx lint-staged --diff",
