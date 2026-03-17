@@ -5,6 +5,11 @@
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import type { BaseTab } from '../../windows/base-tab.js';
+import { configureInsetWindowShell } from '../../framework/controls/inset-window-shell.js';
+import {
+    focusOrCreateWindowByType,
+    showAndRegisterWindow,
+} from '../../framework/controls/window-lifecycle.js';
 import {
     createWindowTabsAdapter,
     mountWindowTabsController,
@@ -36,26 +41,16 @@ export class FinderWindow extends BaseWindow {
 
         // Keep Finder-specific corner geometry centralized via CSS custom properties
         // so outer window and inset sidebar stay perfectly aligned.
-        windowEl.classList.add('finder-window-shell');
-        windowEl.style.setProperty('--finder-window-radius', '1.125rem');
-        windowEl.style.setProperty('--finder-sidebar-inset', '0.5rem');
-        windowEl.style.borderRadius = 'var(--finder-window-radius)';
-
-        // Finder ships its own in-content top chrome. Remove legacy BaseWindow titlebar
-        // so traffic lights are not duplicated.
-        this.titlebarElement?.remove();
-        this.titlebarElement = null;
-
-        // Remove BaseWindow's tab bar from window chrome
-        const baseTabBar = windowEl.querySelector('.window-tab-bar');
-        if (baseTabBar) {
-            baseTabBar.remove();
-        }
-
-        // Adjust content element for Finder (flex layout)
-        if (this.contentElement) {
-            this.contentElement.classList.add('flex');
-        }
+        this.titlebarElement = configureInsetWindowShell({
+            windowEl,
+            titlebarElement: this.titlebarElement,
+            shellClassName: 'finder-window-shell',
+            cssVariables: {
+                '--finder-window-radius': '1.125rem',
+                '--finder-sidebar-inset': '0.5rem',
+            },
+            contentClassListAdd: ['flex'],
+        });
 
         this.attachFinderDragHandlers(windowEl);
 
@@ -298,38 +293,14 @@ export class FinderWindow extends BaseWindow {
         const win = new FinderWindow(config);
         win.createView('Computer');
 
-        // Register window BEFORE showing it, so updateDockIndicators() can find it
-        if (window.WindowRegistry) window.WindowRegistry.registerWindow?.(win);
-
-        win.show();
-
-        // Explicitly render tabs (timing: must happen after window is shown and in DOM)
-        win.requestTabsRender();
-
-        return win;
+        return showAndRegisterWindow(win, { requestTabsRender: true });
     }
 
     static focusOrCreate(config?: Partial<WindowConfig>): FinderWindow {
-        if (!window.WindowRegistry) {
-            return FinderWindow.create(config);
-        }
-
-        const finderWindows = (window.WindowRegistry.getWindowsByType?.('finder') ??
-            []) as FinderWindow[];
-
-        if (finderWindows.length === 0) {
-            return FinderWindow.create(config);
-        }
-
-        let mostRecentWindow = finderWindows[0]!;
-        for (const win of finderWindows) {
-            if (win.zIndex > mostRecentWindow.zIndex) {
-                mostRecentWindow = win;
-            }
-        }
-
-        mostRecentWindow.bringToFront();
-        return mostRecentWindow;
+        return focusOrCreateWindowByType<FinderWindow>({
+            type: 'finder',
+            create: () => FinderWindow.create(config),
+        });
     }
 }
 

@@ -7,6 +7,11 @@
  */
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
+import { configureInsetWindowShell } from '../../framework/controls/inset-window-shell.js';
+import {
+    focusOrCreateWindowByType,
+    showAndRegisterWindow,
+} from '../../framework/controls/window-lifecycle.js';
 import { attachWindowDragZoneBehavior } from '../../framework/controls/window-drag-zone.js';
 
 export class PhotosWindow extends BaseWindow {
@@ -22,26 +27,17 @@ export class PhotosWindow extends BaseWindow {
         const win = super.createDOM();
 
         // Apply same visual shell as FinderWindow: glassmorphism outer frame
-        win.classList.add('photos-window-shell');
-        // These CSS custom properties drive the photos-sidebar-panel border-radius
-        // (window-radius minus sidebar-inset = panel corner radius)
-        win.style.setProperty('--photos-window-radius', '1.125rem');
-        win.style.setProperty('--photos-sidebar-inset', '0.5rem');
-        win.style.setProperty('--photos-sidebar-width', '224px');
-        win.style.borderRadius = 'var(--photos-window-radius)';
-
-        // Remove default tab bar (Photos has no tabs)
-        const tabBar = win.querySelector('.window-tab-bar');
-        if (tabBar) tabBar.remove();
-
-        // Remove default titlebar — traffic lights live inside the sidebar panel
-        this.titlebarElement?.remove();
-        this.titlebarElement = null;
-
-        // Content area fills the full window; sidebar is absolute-positioned inside it
-        if (this.contentElement) {
-            this.contentElement.className = 'flex-1 overflow-hidden relative';
-        }
+        this.titlebarElement = configureInsetWindowShell({
+            windowEl: win,
+            titlebarElement: this.titlebarElement,
+            shellClassName: 'photos-window-shell',
+            cssVariables: {
+                '--photos-window-radius': '1.125rem',
+                '--photos-sidebar-inset': '0.5rem',
+                '--photos-sidebar-width': '224px',
+            },
+            contentClassName: 'flex-1 overflow-hidden relative',
+        });
 
         // Build app layout via shared builder (photos-app.ts)
         // The returned container already includes the detail overlay — do NOT append it again.
@@ -146,26 +142,15 @@ export class PhotosWindow extends BaseWindow {
      * INVARIANT: At most one Photos window is active at a time (single-instance app).
      */
     static focusOrCreate(config?: Partial<WindowConfig>): PhotosWindow {
-        if (window.WindowRegistry) {
-            const existing = (window.WindowRegistry.getWindowsByType?.('photos') ??
-                []) as PhotosWindow[];
-            if (existing.length > 0) {
-                let top = existing[0]!;
-                for (const w of existing) {
-                    if (w.zIndex > top.zIndex) top = w;
-                }
-                top.bringToFront();
-                return top;
-            }
-        }
-        return PhotosWindow.create(config);
+        return focusOrCreateWindowByType<PhotosWindow>({
+            type: 'photos',
+            create: () => PhotosWindow.create(config),
+        });
     }
 
     static create(config?: Partial<WindowConfig>): PhotosWindow {
         const w = new PhotosWindow(config);
-        w.show();
-        if (window.WindowRegistry) window.WindowRegistry.registerWindow?.(w);
-        return w;
+        return showAndRegisterWindow(w);
     }
 }
 

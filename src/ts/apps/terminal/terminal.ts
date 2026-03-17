@@ -1,4 +1,10 @@
 import logger from '../../core/logger.js';
+import {
+    focusTerminalInputAtEnd,
+    getTerminalInputShell,
+    setTerminalInputShellFocused,
+    syncTerminalInputMetrics,
+} from './terminal-input-shell.js';
 /**
  * terminal.ts
  * Terminal System - A functional terminal emulator with basic command support
@@ -107,22 +113,15 @@ logger.debug('TERMINAL', 'Terminal System loaded');
         },
 
         getInputShell(): HTMLElement | null {
-            return this.container?.querySelector('[data-terminal-input-shell]') ?? null;
+            return getTerminalInputShell(this.container);
         },
 
         syncInputMetrics(): void {
-            if (!this.inputElement) return;
-            const shell = this.getInputShell();
-            const charWidth = Math.max(this.inputElement.value.length + 0.8, 1.2);
-            if (shell) shell.style.width = `${charWidth}ch`;
+            syncTerminalInputMetrics(this.inputElement, this.container);
         },
 
         focusInputAtEnd(): void {
-            if (!this.inputElement) return;
-            this.inputElement.focus();
-            const valueLength = this.inputElement.value.length;
-            this.inputElement.setSelectionRange(valueLength, valueLength);
-            this.syncInputMetrics();
+            focusTerminalInputAtEnd(this.inputElement, this.container);
         },
 
         render(): void {
@@ -223,11 +222,11 @@ logger.debug('TERMINAL', 'Terminal System loaded');
 
             this.inputElement.addEventListener('input', () => this.syncInputMetrics());
             this.inputElement.addEventListener('focus', () => {
-                this.getInputShell()?.classList.add('is-focused');
+                setTerminalInputShellFocused(this.container, true);
                 this.syncInputMetrics();
             });
             this.inputElement.addEventListener('blur', () => {
-                this.getInputShell()?.classList.remove('is-focused');
+                setTerminalInputShellFocused(this.container, false);
             });
         },
 

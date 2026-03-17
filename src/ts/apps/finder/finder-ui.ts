@@ -4,6 +4,7 @@ import { AppShell } from '../../framework/layout/app-shell.js';
 import { Sidebar, SidebarGroup } from '../../framework/navigation/sidebar.js';
 import { Toolbar } from '../../framework/navigation/toolbar.js';
 import { Tabs, TabItem } from '../../framework/navigation/tabs.js';
+import { createInsetSidebarShellVNode } from '../../framework/controls/inset-sidebar-shell.js';
 import { createTrafficLightControlNodes } from '../../framework/controls/traffic-lights.js';
 import logger from '../../core/logger.js';
 
@@ -921,48 +922,42 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                 style: { width: `${sidebarWidth}px` },
                 'data-sidebar-container': '1',
             },
-            h(
-                'div',
-                {
+            createInsetSidebarShellVNode<VNode>(h, {
+                shellProps: {
                     className: 'finder-sidebar-panel-shell h-full',
                 },
-                h(
-                    'div',
-                    {
-                        className: 'finder-sidebar-panel flex flex-col',
-                        style: { height: '100%' },
+                panelProps: {
+                    className: 'finder-sidebar-panel flex flex-col',
+                    style: { height: '100%' },
+                },
+                topProps: {
+                    className:
+                        'finder-window-drag-zone cursor-move flex items-center gap-2 px-3 py-2.5',
+                    style: { height: '44px' },
+                },
+                topChildren: createTrafficLightControlNodes<VNode>(h, {
+                    defaults: {
+                        tag: 'div',
+                        noDrag: true,
                     },
-                    // Traffic Lights (macOS style)
-                    h(
-                        'div',
-                        {
-                            className:
-                                'finder-window-drag-zone cursor-move flex items-center gap-2 px-3 py-2.5',
-                            style: { height: '44px' },
-                        },
-                        ...createTrafficLightControlNodes<VNode>(h, {
-                            defaults: {
-                                tag: 'div',
-                                noDrag: true,
-                            },
-                            close: {
-                                title: 'Schließen',
-                                dataAction: 'window-close',
-                            },
-                            minimize: {
-                                title: 'Minimieren',
-                                dataAction: 'window-minimize',
-                            },
-                            maximize: {
-                                title: 'Füllen',
-                                dataAction: 'window-maximize',
-                            },
-                        })
-                    ),
-                    // Sidebar Content
-                    h('div', { className: 'flex-1 overflow-y-auto' }, sidebarContent)
-                )
-            )
+                    close: {
+                        title: 'Schließen',
+                        dataAction: 'window-close',
+                    },
+                    minimize: {
+                        title: 'Minimieren',
+                        dataAction: 'window-minimize',
+                    },
+                    maximize: {
+                        title: 'Füllen',
+                        dataAction: 'window-maximize',
+                    },
+                }),
+                bodyProps: {
+                    className: 'flex-1 overflow-y-auto',
+                },
+                bodyChildren: [sidebarContent],
+            })
         );
 
         // Resizer für Sidebar-Breite

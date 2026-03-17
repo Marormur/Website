@@ -1,4 +1,5 @@
 import logger from '../../core/logger.js';
+import { renderInsetSidebarShellHTML } from '../../framework/controls/inset-sidebar-shell.js';
 import { WINDOW_ICONS } from '../../windows/window-icons.js';
 import { renderTrafficLightControlsHTML } from '../../framework/controls/traffic-lights.js';
 /*
@@ -276,73 +277,76 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
     function createPhotosContent(): { container: HTMLElement; detailOverlay: HTMLElement } {
         // ── Sidebar: inset frosted-glass panel (same as Finder sidebar) ─────────────
         const sidebarShell = document.createElement('div');
-        sidebarShell.className = 'photos-sidebar-shell';
-        sidebarShell.innerHTML = `
-            <div class="photos-sidebar-panel">
-                <!-- Traffic Lights (Drag-Zone) -->
-                <div class="finder-window-drag-zone flex items-center gap-2 px-3" style="height:44px;flex-shrink:0;cursor:move;">
-                    ${renderTrafficLightControlsHTML({
-                        defaults: {
-                            tag: 'div',
-                            noDrag: true,
-                        },
-                        close: {
-                            title: t('common.close', 'Schließen'),
-                            dataAction: 'window-close',
-                        },
-                        minimize: {
-                            title: t('menu.window.minimize', 'Minimize'),
-                            dataAction: 'window-minimize',
-                        },
-                        maximize: {
-                            title: t('menu.window.zoom', 'Fill'),
-                            dataAction: 'window-maximize',
-                        },
-                    })}
-                </div>
-                <!-- Sidebar body: list fills available height, controls stay bottom-aligned -->
-                <div class="flex-1 min-h-0 flex flex-col px-3 pb-3" style="padding-top:6px;">
-                    <div class="flex-1 min-h-0 overflow-y-auto pr-1">
-                        <p class="photos-sidebar-section-label" data-i18n="photos.sidebar.library">${t('photos.sidebar.library', 'Bibliothek')}</p>
-                        <nav id="photos-sidebar" class="space-y-0.5">
-                            <button type="button" data-photos-filter="all" class="photos-sidebar-button">
-                                <span data-i18n="photos.sidebar.items.all">${t('photos.sidebar.items.all', 'Alle Fotos')}</span>
-                                <span id="photos-count-all" class="photos-sidebar-count">–</span>
-                            </button>
-                            <button type="button" data-photos-filter="favorites" class="photos-sidebar-button">
-                                <span data-i18n="photos.sidebar.items.favorites">${t('photos.sidebar.items.favorites', 'Favoriten')}</span>
-                                <span id="photos-count-favorites" class="photos-sidebar-count">0</span>
-                            </button>
-                        </nav>
-                        <p class="photos-sidebar-section-label" data-i18n="photos.sidebar.filters">${t('photos.sidebar.filters', 'Filter')}</p>
-                        <nav class="space-y-0.5">
-                            <button type="button" data-photos-filter="landscape" class="photos-sidebar-button">
-                                <span data-i18n="photos.sidebar.items.landscape">${t('photos.sidebar.items.landscape', 'Querformat')}</span>
-                                <span id="photos-count-landscape" class="photos-sidebar-count">–</span>
-                            </button>
-                            <button type="button" data-photos-filter="portrait" class="photos-sidebar-button">
-                                <span data-i18n="photos.sidebar.items.portrait">${t('photos.sidebar.items.portrait', 'Hochformat')}</span>
-                                <span id="photos-count-portrait" class="photos-sidebar-count">–</span>
-                            </button>
-                            <button type="button" data-photos-filter="square" class="photos-sidebar-button">
-                                <span data-i18n="photos.sidebar.items.square">${t('photos.sidebar.items.square', 'Quadratisch')}</span>
-                                <span id="photos-count-square" class="photos-sidebar-count">–</span>
-                            </button>
-                        </nav>
-                    </div>
-                    <div class="photos-sidebar-footer mt-3 pt-3">
-                        <button id="photos-refresh" type="button"
-                            class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-2xl bg-white/60 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 transition hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-400 dark:hover:text-blue-300">
-                            <span aria-hidden="true">↻</span>
-                            <span data-i18n="photos.sidebar.refresh">${t('photos.sidebar.refresh', 'Neu laden')}</span>
+        sidebarShell.innerHTML = renderInsetSidebarShellHTML({
+            shellClassName: 'photos-sidebar-shell',
+            panelClassName: 'photos-sidebar-panel',
+            topClassName: 'finder-window-drag-zone flex items-center gap-2 px-3',
+            topAttributes: {
+                style: 'height:44px;flex-shrink:0;cursor:move;',
+            },
+            topHtml: renderTrafficLightControlsHTML({
+                defaults: {
+                    tag: 'div',
+                    noDrag: true,
+                },
+                close: {
+                    title: t('common.close', 'Schließen'),
+                    dataAction: 'window-close',
+                },
+                minimize: {
+                    title: t('menu.window.minimize', 'Minimize'),
+                    dataAction: 'window-minimize',
+                },
+                maximize: {
+                    title: t('menu.window.zoom', 'Fill'),
+                    dataAction: 'window-maximize',
+                },
+            }),
+            bodyClassName: 'flex-1 min-h-0 flex flex-col px-3 pb-3',
+            bodyAttributes: {
+                style: 'padding-top:6px;',
+            },
+            bodyHtml: `
+                <div class="flex-1 min-h-0 overflow-y-auto pr-1">
+                    <p class="photos-sidebar-section-label" data-i18n="photos.sidebar.library">${t('photos.sidebar.library', 'Bibliothek')}</p>
+                    <nav id="photos-sidebar" class="space-y-0.5">
+                        <button type="button" data-photos-filter="all" class="photos-sidebar-button">
+                            <span data-i18n="photos.sidebar.items.all">${t('photos.sidebar.items.all', 'Alle Fotos')}</span>
+                            <span id="photos-count-all" class="photos-sidebar-count">–</span>
                         </button>
-                        <p class="photos-sidebar-credit" data-i18n="photos.sidebar.sourceNote">
-                            ${t('photos.sidebar.sourceNote', 'Quelle: Lorem Picsum – zufällige kuratierte Fotokollektionen.')}
-                        </p>
-                    </div>
+                        <button type="button" data-photos-filter="favorites" class="photos-sidebar-button">
+                            <span data-i18n="photos.sidebar.items.favorites">${t('photos.sidebar.items.favorites', 'Favoriten')}</span>
+                            <span id="photos-count-favorites" class="photos-sidebar-count">0</span>
+                        </button>
+                    </nav>
+                    <p class="photos-sidebar-section-label" data-i18n="photos.sidebar.filters">${t('photos.sidebar.filters', 'Filter')}</p>
+                    <nav class="space-y-0.5">
+                        <button type="button" data-photos-filter="landscape" class="photos-sidebar-button">
+                            <span data-i18n="photos.sidebar.items.landscape">${t('photos.sidebar.items.landscape', 'Querformat')}</span>
+                            <span id="photos-count-landscape" class="photos-sidebar-count">–</span>
+                        </button>
+                        <button type="button" data-photos-filter="portrait" class="photos-sidebar-button">
+                            <span data-i18n="photos.sidebar.items.portrait">${t('photos.sidebar.items.portrait', 'Hochformat')}</span>
+                            <span id="photos-count-portrait" class="photos-sidebar-count">–</span>
+                        </button>
+                        <button type="button" data-photos-filter="square" class="photos-sidebar-button">
+                            <span data-i18n="photos.sidebar.items.square">${t('photos.sidebar.items.square', 'Quadratisch')}</span>
+                            <span id="photos-count-square" class="photos-sidebar-count">–</span>
+                        </button>
+                    </nav>
                 </div>
-            </div>
-        `;
+                <div class="photos-sidebar-footer mt-3 pt-3">
+                    <button id="photos-refresh" type="button"
+                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-2xl bg-white/60 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 transition hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-400 dark:hover:text-blue-300">
+                        <span aria-hidden="true">↻</span>
+                        <span data-i18n="photos.sidebar.refresh">${t('photos.sidebar.refresh', 'Neu laden')}</span>
+                    </button>
+                    <p class="photos-sidebar-credit" data-i18n="photos.sidebar.sourceNote">
+                        ${t('photos.sidebar.sourceNote', 'Quelle: Lorem Picsum – zufällige kuratierte Fotokollektionen.')}
+                    </p>
+                </div>
+            `,
+        });
 
         // ── Main area: topbar (drag + segments + search) + content + statusbar ──────
         const mainArea = document.createElement('div');

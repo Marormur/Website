@@ -10,6 +10,7 @@ import {
     mountWindowTabsController,
     reorderTabMap,
 } from '../../framework/controls/window-tabs-adapter.js';
+import { showAndRegisterWindow } from '../../framework/controls/window-lifecycle.js';
 import logger from '../../core/logger.js';
 
 export class TextEditorWindow extends BaseWindow {
@@ -88,17 +89,7 @@ export class TextEditorWindow extends BaseWindow {
         // Create initial document
         window.createDocument();
 
-        // Register window BEFORE showing it, same timing semantics as TerminalWindow.
-        // This ensures WindowTabs can resolve the live instance consistently during first paint.
-        globalThis.window.WindowRegistry?.registerWindow?.(window);
-
-        // Show window
-        window.show();
-
-        // Ensure WindowTabs rendering is executed after window is attached to the DOM.
-        window.requestTabsRender();
-
-        return window;
+        return showAndRegisterWindow(window, { requestTabsRender: true });
     }
 }
 

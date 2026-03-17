@@ -9,6 +9,12 @@
 import { BaseTab, type TabConfig, type TabState } from '../../windows/base-tab.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
 import { h, diff, patch, createElement, type VNode } from '../../core/vdom.js';
+import {
+    focusTerminalInputAtEnd,
+    getTerminalInputShell,
+    setTerminalInputShellFocused,
+    syncTerminalInputMetrics,
+} from './terminal-input-shell.js';
 import logger from '../../core/logger.js';
 
 /**
@@ -60,26 +66,15 @@ export class TerminalSession extends BaseTab {
     }
 
     private _getInputShell(): HTMLElement | null {
-        return this.element?.querySelector('[data-terminal-input-shell]') ?? null;
+        return getTerminalInputShell(this.element);
     }
 
     private _syncInputMetrics(): void {
-        if (!this.inputElement) return;
-
-        const shell = this._getInputShell();
-        const charWidth = Math.max(this.inputElement.value.length + 0.8, 1.2);
-        if (shell) {
-            shell.style.width = `${charWidth}ch`;
-        }
+        syncTerminalInputMetrics(this.inputElement, this.element);
     }
 
     private _focusInputAtEnd(): void {
-        if (!this.inputElement) return;
-
-        this.inputElement.focus();
-        const valueLength = this.inputElement.value.length;
-        this.inputElement.setSelectionRange(valueLength, valueLength);
-        this._syncInputMetrics();
+        focusTerminalInputAtEnd(this.inputElement, this.element);
     }
 
     private _attachSurfaceFocusHandler(): void {
@@ -152,11 +147,11 @@ export class TerminalSession extends BaseTab {
         this.inputElement.addEventListener('keydown', this._handleKeyDown.bind(this));
         this.inputElement.addEventListener('input', () => this._syncInputMetrics());
         this.inputElement.addEventListener('focus', () => {
-            this._getInputShell()?.classList.add('is-focused');
+            setTerminalInputShellFocused(this.element, true);
             this._syncInputMetrics();
         });
         this.inputElement.addEventListener('blur', () => {
-            this._getInputShell()?.classList.remove('is-focused');
+            setTerminalInputShellFocused(this.element, false);
         });
     }
 
@@ -303,7 +298,7 @@ export class TerminalSession extends BaseTab {
 
         this._syncInputMetrics();
         if (document.activeElement === this.inputElement) {
-            this._getInputShell()?.classList.add('is-focused');
+            setTerminalInputShellFocused(this.element, true);
         }
     }
 

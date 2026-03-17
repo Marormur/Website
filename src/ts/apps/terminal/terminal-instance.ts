@@ -1,4 +1,10 @@
 import logger from '../../core/logger.js';
+import {
+    focusTerminalInputAtEnd,
+    getTerminalInputShell,
+    setTerminalInputShellFocused,
+    syncTerminalInputMetrics,
+} from './terminal-input-shell.js';
 logger.debug('TERMINAL', 'TerminalInstance (TS) loaded');
 logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being loaded');
 
@@ -42,22 +48,15 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
         }
 
         private getInputShell(): HTMLElement | null {
-            return this.container?.querySelector('[data-terminal-input-shell]') ?? null;
+            return getTerminalInputShell(this.container);
         }
 
         private syncInputMetrics(): void {
-            if (!this.inputElement) return;
-            const shell = this.getInputShell();
-            const charWidth = Math.max(this.inputElement.value.length + 0.8, 1.2);
-            if (shell) shell.style.width = `${charWidth}ch`;
+            syncTerminalInputMetrics(this.inputElement, this.container);
         }
 
         private focusInputAtEnd(): void {
-            if (!this.inputElement) return;
-            this.inputElement.focus();
-            const valueLength = this.inputElement.value.length;
-            this.inputElement.setSelectionRange(valueLength, valueLength);
-            this.syncInputMetrics();
+            focusTerminalInputAtEnd(this.inputElement, this.container);
         }
 
         constructor(config: Record<string, unknown>) {
@@ -199,11 +198,11 @@ logger.debug('TERMINAL', 'MARKER_AT_TOP: terminal-instance.ts file is being load
 
             this.inputElement.addEventListener('input', () => this.syncInputMetrics());
             this.inputElement.addEventListener('focus', () => {
-                this.getInputShell()?.classList.add('is-focused');
+                setTerminalInputShellFocused(this.container, true);
                 this.syncInputMetrics();
             });
             this.inputElement.addEventListener('blur', () => {
-                this.getInputShell()?.classList.remove('is-focused');
+                setTerminalInputShellFocused(this.container, false);
             });
         }
 

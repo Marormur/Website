@@ -10,6 +10,10 @@ import {
     mountWindowTabsController,
     reorderTabMap,
 } from '../../framework/controls/window-tabs-adapter.js';
+import {
+    focusOrCreateWindowByType,
+    showAndRegisterWindow,
+} from '../../framework/controls/window-lifecycle.js';
 import logger from '../../core/logger.js';
 
 /**
@@ -125,16 +129,7 @@ export class TerminalWindow extends BaseWindow {
         // Create initial session
         window.createSession();
 
-        // Register window BEFORE showing it, so updateDockIndicators() can find it
-        globalThis.window.WindowRegistry?.registerWindow?.(window);
-
-        // Show window
-        window.show();
-
-        // Explicitly render tabs (timing: must happen after window is shown and in DOM)
-        window.requestTabsRender();
-
-        return window;
+        return showAndRegisterWindow(window, { requestTabsRender: true });
     }
 
     /**
@@ -143,35 +138,15 @@ export class TerminalWindow extends BaseWindow {
      * - If Terminal windows exist, focus the most recently active one
      */
     static focusOrCreate(config?: Partial<WindowConfig>): TerminalWindow {
-        if (!window.WindowRegistry) {
-            // Fallback: create new if registry unavailable
-            return TerminalWindow.create(config);
-        }
-
-        // Get all existing Terminal windows
-        const terminalWindows = (window.WindowRegistry.getWindowsByType?.('terminal') ??
-            []) as TerminalWindow[];
-
-        if (terminalWindows.length === 0) {
-            // No Terminal window exists → create new one
-            return TerminalWindow.create(config);
-        }
-
-        // Find the most recently active Terminal window (highest z-index)
-        let mostRecentWindow = terminalWindows[0]!;
-        for (const win of terminalWindows) {
-            if (win.zIndex > mostRecentWindow.zIndex) {
-                mostRecentWindow = win;
-            }
-        }
-        // Ensure the window has at least one session
-        if (mostRecentWindow.tabs.size === 0 && window.TerminalSession) {
-            mostRecentWindow.createSession();
-        }
-
-        // Focus the most recent Terminal window
-        mostRecentWindow.bringToFront();
-        return mostRecentWindow;
+        return focusOrCreateWindowByType<TerminalWindow>({
+            type: 'terminal',
+            create: () => TerminalWindow.create(config),
+            prepareExisting: instance => {
+                if (instance.tabs.size === 0 && window.TerminalSession) {
+                    instance.createSession();
+                }
+            },
+        });
     }
 }
 

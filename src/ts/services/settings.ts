@@ -1,4 +1,5 @@
 import logger from '../core/logger.js';
+import { renderInsetSidebarShellHTML } from '../framework/controls/inset-sidebar-shell.js';
 import { renderTrafficLightControlsHTML } from '../framework/controls/traffic-lights.js';
 /**
  * settings.ts
@@ -119,82 +120,85 @@ logger.debug('APP', 'Settings Module loaded');
 
             this.container.innerHTML = `
                 <div class="settings-app">
-                    <aside class="settings-sidebar-shell" aria-label="Settings Navigation" data-i18n-aria-label="settingsPage.sidebar.ariaLabel">
-                        <div class="settings-sidebar-panel">
-                            <div class="settings-sidebar-top draggable-header">
-                                ${renderTrafficLightControlsHTML({
-                                    containerClassName:
-                                        'settings-window-controls traffic-light-controls',
-                                    defaults: {
-                                        tag: 'button',
-                                    },
-                                    close: {
-                                        className:
-                                            'settings-window-control settings-window-control--close',
-                                        title: 'Schließen',
-                                        i18nTitleKey: 'common.close',
-                                        id: 'close-settings-modal',
-                                        dataAction: 'closeWindow',
-                                        dataWindowId: 'settings-modal',
-                                        noDrag: true,
-                                    },
-                                    minimize: {
-                                        className:
-                                            'settings-window-control settings-window-control--minimize',
-                                        title: 'Minimieren',
-                                        ariaLabel: 'Minimieren',
-                                    },
-                                    maximize: {
-                                        className:
-                                            'settings-window-control settings-window-control--maximize',
-                                        title: 'Maximieren',
-                                        ariaLabel: 'Maximieren',
-                                    },
-                                })}
+                    ${renderInsetSidebarShellHTML({
+                        shellTag: 'aside',
+                        shellClassName: 'settings-sidebar-shell',
+                        shellAttributes: {
+                            'aria-label': 'Settings Navigation',
+                            'data-i18n-aria-label': 'settingsPage.sidebar.ariaLabel',
+                        },
+                        panelClassName: 'settings-sidebar-panel',
+                        topClassName: 'settings-sidebar-top draggable-header',
+                        topHtml: renderTrafficLightControlsHTML({
+                            containerClassName: 'settings-window-controls traffic-light-controls',
+                            defaults: {
+                                tag: 'button',
+                            },
+                            close: {
+                                className: 'settings-window-control settings-window-control--close',
+                                title: 'Schließen',
+                                i18nTitleKey: 'common.close',
+                                id: 'close-settings-modal',
+                                dataAction: 'closeWindow',
+                                dataWindowId: 'settings-modal',
+                                noDrag: true,
+                            },
+                            minimize: {
+                                className:
+                                    'settings-window-control settings-window-control--minimize',
+                                title: 'Minimieren',
+                                ariaLabel: 'Minimieren',
+                            },
+                            maximize: {
+                                className:
+                                    'settings-window-control settings-window-control--maximize',
+                                title: 'Maximieren',
+                                ariaLabel: 'Maximieren',
+                            },
+                        }),
+                        bodyClassName: 'settings-sidebar',
+                        bodyHtml: `
+                            <div class="settings-search-wrap">
+                                <span class="settings-search-icon" aria-hidden="true">⌕</span>
+                                <input class="settings-search-input" type="search" placeholder="Suchen" aria-label="Suchen" data-i18n-placeholder="settingsPage.search.placeholder" data-i18n-aria-label="settingsPage.search.ariaLabel" />
                             </div>
-                            <div class="settings-sidebar">
-                                <div class="settings-search-wrap">
-                                    <span class="settings-search-icon" aria-hidden="true">⌕</span>
-                                    <input class="settings-search-input" type="search" placeholder="Suchen" aria-label="Suchen" data-i18n-placeholder="settingsPage.search.placeholder" data-i18n-aria-label="settingsPage.search.ariaLabel" />
-                                </div>
 
-                                <button type="button" class="settings-account" data-action="settings:showSection" data-section="general" data-settings-page="general">
-                                    <img src="./img/profil.jpg" alt="Profilbild" class="settings-account-avatar" />
-                                    <span class="settings-account-copy">
-                                        <span class="settings-account-name" data-i18n="settingsPage.general.name">Marvin Temmen</span>
-                                        <span class="settings-account-subline" data-i18n="settingsPage.account.subline">Apple Account</span>
-                                    </span>
-                                </button>
+                            <button type="button" class="settings-account" data-action="settings:showSection" data-section="general" data-settings-page="general">
+                                <img src="./img/profil.jpg" alt="Profilbild" class="settings-account-avatar" />
+                                <span class="settings-account-copy">
+                                    <span class="settings-account-name" data-i18n="settingsPage.general.name">Marvin Temmen</span>
+                                    <span class="settings-account-subline" data-i18n="settingsPage.account.subline">Apple Account</span>
+                                </span>
+                            </button>
 
-                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="wifi" data-settings-page="wifi">
-                                    <span class="settings-nav-icon" aria-hidden="true">📶</span>
-                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.wifi">WLAN</span>
-                                </button>
+                            <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="wifi" data-settings-page="wifi">
+                                <span class="settings-nav-icon" aria-hidden="true">📶</span>
+                                <span class="settings-nav-title" data-i18n="settingsPage.nav.wifi">WLAN</span>
+                            </button>
 
-                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="bluetooth" data-settings-page="bluetooth">
-                                    <span class="settings-nav-icon" aria-hidden="true">🔵</span>
-                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.bluetooth">Bluetooth</span>
-                                </button>
+                            <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="bluetooth" data-settings-page="bluetooth">
+                                <span class="settings-nav-icon" aria-hidden="true">🔵</span>
+                                <span class="settings-nav-title" data-i18n="settingsPage.nav.bluetooth">Bluetooth</span>
+                            </button>
 
-                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="general" data-settings-page="general">
-                                    <span class="settings-nav-icon" aria-hidden="true">⚙️</span>
-                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.general">Allgemein</span>
-                                </button>
-                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="desktop-dock" data-settings-page="desktop-dock">
-                                    <span class="settings-nav-icon" aria-hidden="true">🧰</span>
-                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.desktopDock">Schreibtisch &amp; Dock</span>
-                                </button>
-                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="display" data-settings-page="display">
-                                    <span class="settings-nav-icon" aria-hidden="true">🖥️</span>
-                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.display">Darstellung</span>
-                                </button>
-                                <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="language" data-settings-page="language">
-                                    <span class="settings-nav-icon" aria-hidden="true">🌐</span>
-                                    <span class="settings-nav-title" data-i18n="settingsPage.nav.language">Sprache</span>
-                                </button>
-                            </div>
-                        </div>
-                    </aside>
+                            <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="general" data-settings-page="general">
+                                <span class="settings-nav-icon" aria-hidden="true">⚙️</span>
+                                <span class="settings-nav-title" data-i18n="settingsPage.nav.general">Allgemein</span>
+                            </button>
+                            <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="desktop-dock" data-settings-page="desktop-dock">
+                                <span class="settings-nav-icon" aria-hidden="true">🧰</span>
+                                <span class="settings-nav-title" data-i18n="settingsPage.nav.desktopDock">Schreibtisch &amp; Dock</span>
+                            </button>
+                            <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="display" data-settings-page="display">
+                                <span class="settings-nav-icon" aria-hidden="true">🖥️</span>
+                                <span class="settings-nav-title" data-i18n="settingsPage.nav.display">Darstellung</span>
+                            </button>
+                            <button type="button" class="settings-nav-item" data-action="settings:showSection" data-section="language" data-settings-page="language">
+                                <span class="settings-nav-icon" aria-hidden="true">🌐</span>
+                                <span class="settings-nav-title" data-i18n="settingsPage.nav.language">Sprache</span>
+                            </button>
+                        `,
+                    })}
 
                     <main class="settings-main-shell">
                         <div class="settings-content-topbar draggable-header">
