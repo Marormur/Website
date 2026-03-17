@@ -412,9 +412,11 @@ function applyDockMagnificationFrame(): void {
         const tooltip = item.querySelector<HTMLElement>('.dock-tooltip');
         if (!icon) return;
 
-        const rect = icon.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
+        // Measure the stable layout center from dock-item (not from transformed dock-icon).
+        // This keeps magnification aligned with the cursor even while icon transforms animate.
+        const itemRect = item.getBoundingClientRect();
+        const centerX = itemRect.left + itemRect.width / 2;
+        const centerY = itemRect.top + itemRect.height / 2;
         const distance = Math.hypot(pointer.x - centerX, pointer.y - centerY);
         const influence = Math.exp(-(distance * distance) / (2 * sigma * sigma));
         const scale = 1 + (maxScale - 1) * influence;
