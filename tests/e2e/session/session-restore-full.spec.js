@@ -4,6 +4,38 @@
 const { test, expect } = require('@playwright/test');
 const { waitForAppReady, waitForSessionSaved } = require('../utils');
 
+async function waitForSessionStorage(page) {
+    await page.waitForFunction(
+        () => {
+            return !!(
+                localStorage.getItem('windowInstancesSession') ||
+                localStorage.getItem('multi-window-session') ||
+                localStorage.getItem('window-session')
+            );
+        },
+        { timeout: 2000 }
+    );
+}
+
+async function waitForRestoreComplete(page) {
+    await page.waitForFunction(() => window.__SESSION_RESTORED === true, { timeout: 8000 });
+}
+
+async function waitForWindowCount(page, type, expectedCount) {
+    await page.waitForFunction(
+        ({ windowType, expected }) => {
+            try {
+                const windows = window.WindowRegistry?.getWindowsByType?.(windowType) || [];
+                return windows.length >= expected;
+            } catch {
+                return false;
+            }
+        },
+        { windowType: type, expected: expectedCount },
+        { timeout: 8000 }
+    );
+}
+
 test.describe('Session Restore - Full Integration @basic', () => {
     test.beforeEach(async ({ page }) => {
         // Clear localStorage and start fresh
@@ -75,17 +107,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
             }
         });
         await waitForSessionSaved(page);
-        // Wait until a session key is present to ensure the save finished
-        await page.waitForFunction(
-            () => {
-                return !!(
-                    localStorage.getItem('windowInstancesSession') ||
-                    localStorage.getItem('multi-window-session') ||
-                    localStorage.getItem('window-session')
-                );
-            },
-            { timeout: 2000 }
-        );
+        await waitForSessionStorage(page);
 
         // Diagnostic: read saved multi-window session payload and ensure it contains our windows
         const savedInfo = await page.evaluate(() => {
@@ -115,6 +137,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
         // Reload page
         await page.reload();
         await waitForAppReady(page);
+        await waitForRestoreComplete(page);
         // Ensure restore happens (call explicitly as a fallback) and wait for registry
         await page.evaluate(async () => {
             try {
@@ -223,7 +246,8 @@ test.describe('Session Restore - Full Integration @basic', () => {
         // Reload page
         await page.reload();
         await waitForAppReady(page);
-        await page.waitForTimeout(300);
+        await waitForRestoreComplete(page);
+        await waitForWindowCount(page, 'text-editor', beforeCount + 2);
 
         // Verify text editor windows were restored
         const restoredCount = await page.evaluate(() => {
@@ -253,8 +277,6 @@ test.describe('Session Restore - Full Integration @basic', () => {
         const aboutTrigger = page.locator('[data-action="openAbout"]').first();
         await aboutTrigger.click();
 
-        await page.waitForTimeout(300);
-
         // Verify modal is visible
         const aboutModal = page.locator('#about-modal');
         await expect(aboutModal).not.toHaveClass(/hidden/);
@@ -273,21 +295,12 @@ test.describe('Session Restore - Full Integration @basic', () => {
             }
         });
         await waitForSessionSaved(page);
-        // Wait until a session key is present to ensure the save finished
-        await page.waitForFunction(
-            () => {
-                return !!(
-                    localStorage.getItem('windowInstancesSession') ||
-                    localStorage.getItem('multi-window-session') ||
-                    localStorage.getItem('window-session')
-                );
-            },
-            { timeout: 2000 }
-        );
+        await waitForSessionStorage(page);
 
         // Reload page
         await page.reload();
         await waitForAppReady(page);
+        await waitForRestoreComplete(page);
 
         // Verify modal is still visible after reload
         const aboutModalAfter = page.locator('#about-modal');
@@ -321,6 +334,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
         // Reload page
         await page.reload();
         await waitForAppReady(page);
+        await waitForRestoreComplete(page);
 
         // Verify transient modal is NOT restored
         const programInfoModal = page.locator('#program-info-modal');
@@ -411,20 +425,12 @@ test.describe('Session Restore - Full Integration @basic', () => {
             }
         });
         await waitForSessionSaved(page);
-        await page.waitForFunction(
-            () => {
-                return !!(
-                    localStorage.getItem('windowInstancesSession') ||
-                    localStorage.getItem('multi-window-session') ||
-                    localStorage.getItem('window-session')
-                );
-            },
-            { timeout: 2000 }
-        );
+        await waitForSessionStorage(page);
 
         // Reload once
         await page.reload();
         await waitForAppReady(page);
+        await waitForRestoreComplete(page);
 
         const countAfterFirstReload = await page.evaluate(() => {
             return window.WindowRegistry.getWindowsByType('terminal')?.length || 0;
@@ -433,6 +439,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
         // Reload again without changing anything
         await page.reload();
         await waitForAppReady(page);
+        await waitForRestoreComplete(page);
 
         const countAfterSecondReload = await page.evaluate(() => {
             return window.WindowRegistry.getWindowsByType('terminal')?.length || 0;
@@ -451,6 +458,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
         // Reload page
         await page.reload();
         await waitForAppReady(page);
+        await waitForRestoreComplete(page);
 
         // App should still be functional
         const dock = page.locator('#dock');
@@ -462,7 +470,6 @@ test.describe('Session Restore - Full Integration @basic', () => {
             pageErrors.push(error.message);
         });
 
-        await page.waitForTimeout(500);
         expect(pageErrors).toHaveLength(0);
     });
 
@@ -474,7 +481,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
             if (aboutDialog?.open) aboutDialog.open();
         });
 
-        await page.waitForTimeout(200);
+        await expect(page.locator('#about-modal')).not.toHaveClass(/hidden/);
 
         await page.evaluate(() => {
             // Open settings modal (will be on top)
@@ -482,7 +489,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
             if (settingsDialog?.open) settingsDialog.open();
         });
 
-        await page.waitForTimeout(200);
+        await expect(page.locator('#settings-modal')).not.toHaveClass(/hidden/);
 
         // Get z-index ordering before reload
         const zIndexesBefore = await page.evaluate(() => {
@@ -506,19 +513,11 @@ test.describe('Session Restore - Full Integration @basic', () => {
             window.SessionManager?.saveAllSessions();
         });
         await waitForSessionSaved(page);
-        await page.waitForFunction(
-            () => {
-                return !!(
-                    localStorage.getItem('windowInstancesSession') ||
-                    localStorage.getItem('multi-window-session') ||
-                    localStorage.getItem('window-session')
-                );
-            },
-            { timeout: 2000 }
-        );
+        await waitForSessionStorage(page);
 
         await page.reload();
         await waitForAppReady(page);
+        await waitForRestoreComplete(page);
 
         // Get z-index ordering after reload
         const zIndexesAfter = await page.evaluate(() => {

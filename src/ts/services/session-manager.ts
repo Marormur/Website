@@ -295,6 +295,25 @@ logger.debug('SESSION', 'SessionManager loaded');
                     (sum, arr) => sum + arr.length,
                     0
                 );
+
+                const windowCount = window.WindowRegistry?.getAllWindows?.().length || 0;
+                const multiWindowManager = (
+                    window as typeof window & {
+                        MultiWindowSessionManager?: {
+                            saveSession?: (options?: { immediate?: boolean }) => void;
+                        };
+                    }
+                ).MultiWindowSessionManager;
+
+                if (windowCount > 0 && multiWindowManager?.saveSession) {
+                    multiWindowManager.saveSession({ immediate: true });
+                } else if (instanceCount > 0) {
+                    // When only manager instances exist without registered multi-window shells,
+                    // the legacy snapshot is the only complete restore source. Remove any stale
+                    // multi-window snapshot so startup restore falls back to legacy migration.
+                    localStorage.removeItem('multi-window-session');
+                }
+
                 logger.debug(
                     'SESSION',
                     `SessionManager: Saved ${instanceCount} instances across ${Object.keys(instances).length} types`
@@ -699,7 +718,7 @@ logger.debug('SESSION', 'SessionManager loaded');
         }
 
         // Restore the imported session
-        const restored = restoreSession();
+        const restored = restoreSession({ includeModernAppTypes: true });
         if (!restored) {
             logger.warn('SESSION', 'SessionManager: Imported session saved but restoration failed');
             return false;

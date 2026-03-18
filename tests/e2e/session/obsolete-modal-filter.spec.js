@@ -7,6 +7,10 @@
 
 import { test, expect } from '@playwright/test';
 
+async function waitForRestoreComplete(page) {
+    await page.waitForFunction(() => window.__SESSION_RESTORED === true, { timeout: 8000 });
+}
+
 test.describe('Obsolete Modal Filter (Issue #133)', () => {
     test.beforeEach(async ({ page }) => {
         // Clear storage first
@@ -34,9 +38,7 @@ test.describe('Obsolete Modal Filter (Issue #133)', () => {
         // Reload to trigger migration + session restore
         await page.reload();
         await page.waitForFunction(() => window.__APP_READY === true, { timeout: 10000 });
-
-        // Wait a bit for any delayed warnings
-        await page.waitForTimeout(500);
+        await waitForRestoreComplete(page);
 
         // Assert: No warning about finder-modal should be present
         const finderWarning = warnings.find(
@@ -139,9 +141,6 @@ test.describe('Obsolete Modal Filter (Issue #133)', () => {
         // Reload to trigger migration + session restore
         await page.reload();
         await page.waitForFunction(() => window.__APP_READY === true, { timeout: 10000 });
-
-        // Wait for restore to complete
-        await page.waitForTimeout(1000);
 
         // Assert: about-modal should be visible, finder-modal should be ignored
         const aboutModal = page.locator('#about-modal');

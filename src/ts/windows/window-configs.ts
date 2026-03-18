@@ -127,35 +127,6 @@ export const windowConfigurations: WindowConfiguration[] = [
         icon: WINDOW_ICONS.default,
         closeButtonId: 'close-program-info-modal',
     },
-    {
-        id: 'terminal-modal',
-        type: 'persistent',
-        programKey: 'programs.terminal',
-        icon: WINDOW_ICONS.terminal,
-        closeButtonId: 'close-terminal-modal',
-        metadata: {
-            initHandler: function () {
-                // Primary: Create first Terminal instance when modal opens if none exist
-                if (
-                    window.TerminalInstanceManager &&
-                    !window.TerminalInstanceManager.hasInstances()
-                ) {
-                    window.TerminalInstanceManager.createInstance({
-                        title: 'Terminal',
-                    });
-                }
-                // Fallback: Initialize old terminal module if instance manager not available
-                else if (
-                    !window.TerminalInstanceManager &&
-                    window.TerminalSystem &&
-                    !window.TerminalSystem?.container
-                ) {
-                    const container = document.getElementById('terminal-container');
-                    if (container) window.TerminalSystem.init(container);
-                }
-            },
-        },
-    },
 ];
 
 // Auto-register with WindowManager when available (module load time)

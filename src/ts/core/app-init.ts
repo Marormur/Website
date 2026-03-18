@@ -105,7 +105,6 @@ function initModalIds(): { modalIds: string[]; transientModalIds: Set<string> } 
             'about-modal',
             'settings-modal',
             'text-modal',
-            'terminal-modal',
             'image-modal',
             'program-info-modal',
         ];
@@ -256,15 +255,6 @@ function initApp(): void {
         const textEditorContainer = document.getElementById('text-editor-container');
         if (textEditorContainer) {
             win.TextEditorSystem.init?.(textEditorContainer);
-        }
-    }
-
-    // Initialize terminal module (legacy) only when multi‑instance is not available
-    // Prevents duplicate inputs causing E2E strict-mode locator conflicts
-    if (!win.TerminalInstanceManager && win.TerminalSystem) {
-        const terminalContainer = document.getElementById('terminal-container');
-        if (terminalContainer) {
-            win.TerminalSystem.init?.(terminalContainer);
         }
     }
 

@@ -6,20 +6,58 @@ test.describe('Session Export/Import', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await gotoHome(page, baseURL);
         await waitForAppReady(page);
+        await page.evaluate(() => {
+            localStorage.removeItem('multi-window-session');
+            localStorage.removeItem('windowInstancesSession');
+            localStorage.removeItem('window-session');
+            window.WindowRegistry?.closeAllWindows?.();
+            window.TerminalInstanceManager?.destroyAllInstances?.();
+            window.TextEditorInstanceManager?.destroyAllInstances?.();
+        });
     });
 
-    test('should export current session as JSON file', async ({ page }) => {
-        // Create some instances to export
-        await page.evaluate(() => {
-            const termMgr = window.TerminalInstanceManager;
-            if (termMgr) {
-                termMgr.createInstance({ title: 'Test Terminal 1' });
-                termMgr.createInstance({ title: 'Test Terminal 2' });
-            }
-        });
+    async function waitForTerminalCount(page, count) {
+        await page.waitForFunction(
+            expected => {
+                const windows = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+                const total = windows.reduce((sum, win) => sum + (win.tabs?.size || 0), 0);
+                return total >= expected;
+            },
+            count,
+            { timeout: 8000 }
+        );
+    }
 
-        // Wait for auto-save to complete (SessionManager uses 750ms debounce)
-        await page.waitForTimeout(1000);
+    async function createTerminalTabs(page, count, { cwd, commands } = {}) {
+        await page.evaluate(
+            ({ count, cwd, commands }) => {
+                if (!window.TerminalWindow?.create) return;
+                const terminalWindow = window.TerminalWindow.create();
+                for (let i = 1; i < count; i++) {
+                    terminalWindow.createSession?.(`Terminal ${i + 1}`);
+                }
+
+                const session = terminalWindow.activeSession;
+                if (!session) return;
+
+                if (Array.isArray(commands) && typeof session.executeCommand === 'function') {
+                    for (const command of commands) {
+                        session.executeCommand(command);
+                    }
+                }
+
+                if (typeof cwd === 'string') {
+                    session.vfsCwd = cwd;
+                    session.updateContentState?.({ currentPath: cwd });
+                }
+            },
+            { count, cwd, commands }
+        );
+        await waitForTerminalCount(page, count);
+    }
+
+    test('should export current session as JSON file', async ({ page }) => {
+        await createTerminalTabs(page, 2);
 
         // Trigger export via ActionBus
         const downloadPromise = page.waitForEvent('download');
@@ -41,74 +79,55 @@ test.describe('Session Export/Import', () => {
         const sessionData = JSON.parse(content);
 
         // Validate session structure
-        expect(sessionData).toHaveProperty('version', '1.0');
+        expect(sessionData).toHaveProperty('version', '1.0.0');
         expect(sessionData).toHaveProperty('timestamp');
-        expect(sessionData).toHaveProperty('instances');
+        expect(sessionData).toHaveProperty('windows');
         expect(typeof sessionData.timestamp).toBe('number');
 
-        // Verify terminal instances are present
-        expect(sessionData.instances).toHaveProperty('terminal');
-        expect(Array.isArray(sessionData.instances.terminal)).toBe(true);
-        expect(sessionData.instances.terminal.length).toBeGreaterThanOrEqual(2);
+        // Verify a terminal window with tabs is present in the exported snapshot.
+        const terminalWindow = sessionData.windows.find(win => win.type === 'terminal');
+        expect(terminalWindow).toBeTruthy();
+        expect(Array.isArray(terminalWindow.tabs)).toBe(true);
+        expect(terminalWindow.tabs.length).toBeGreaterThanOrEqual(2);
     });
 
     test('should import session and restore instances', async ({ page }) => {
-        // First, create and export a session
-        await page.evaluate(() => {
-            const termMgr = window.TerminalInstanceManager;
-            if (termMgr) {
-                termMgr.createInstance({ title: 'Export Test 1' });
-                termMgr.createInstance({ title: 'Export Test 2' });
-            }
-        });
-
-        // Wait for auto-save to complete
-        await page.waitForTimeout(1000);
+        await createTerminalTabs(page, 2);
 
         const exportedJson = await page.evaluate(() => {
-            return window.SessionManager?.exportSession();
+            return window.MultiWindowSessionManager?.exportSession();
         });
 
         expect(exportedJson).toBeTruthy();
 
         // Clear all instances
         await page.evaluate(() => {
-            const termMgr = window.TerminalInstanceManager;
-            if (termMgr) {
-                termMgr.destroyAllInstances();
-            }
+            window.WindowRegistry?.closeAllWindows?.();
+            window.TerminalInstanceManager?.destroyAllInstances?.();
+            window.TextEditorInstanceManager?.destroyAllInstances?.();
         });
 
         // Verify instances are cleared
         const countBeforeImport = await page.evaluate(() => {
-            const termMgr = window.TerminalInstanceManager;
-            return termMgr ? termMgr.getInstanceCount() : 0;
+            const windows = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            return windows.reduce((sum, win) => sum + (win.tabs?.size || 0), 0);
         });
         expect(countBeforeImport).toBe(0);
 
         // Import the session
-        const importSuccess = await page.evaluate(json => {
-            return window.SessionManager?.importSession(json);
+        const importSuccess = await page.evaluate(async json => {
+            return await window.MultiWindowSessionManager?.importSession(json);
         }, exportedJson);
 
         expect(importSuccess).toBe(true);
+        await waitForTerminalCount(page, 2);
 
         // Verify instances were restored
         const countAfterImport = await page.evaluate(() => {
-            const termMgr = window.TerminalInstanceManager;
-            return termMgr ? termMgr.getInstanceCount() : 0;
+            const windows = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            return windows.reduce((sum, win) => sum + (win.tabs?.size || 0), 0);
         });
         expect(countAfterImport).toBeGreaterThanOrEqual(2);
-
-        // Verify instance titles were preserved
-        const restoredTitles = await page.evaluate(() => {
-            const termMgr = window.TerminalInstanceManager;
-            if (!termMgr) return [];
-            // @ts-ignore
-            return termMgr.getAllInstances().map(inst => inst.title);
-        });
-        expect(restoredTitles).toContain('Export Test 1');
-        expect(restoredTitles).toContain('Export Test 2');
     });
 
     test('should handle import with version mismatch gracefully', async ({ page }) => {
@@ -118,69 +137,60 @@ test.describe('Session Export/Import', () => {
             instances: { terminal: [] },
         });
 
-        const importSuccess = await page.evaluate(json => {
-            return window.SessionManager?.importSession(json);
+        const importSuccess = await page.evaluate(async json => {
+            return await window.MultiWindowSessionManager?.importSession(json);
         }, invalidSession);
 
         expect(importSuccess).toBe(false);
     });
 
     test('should handle invalid JSON gracefully', async ({ page }) => {
-        const importSuccess = await page.evaluate(() => {
-            return window.SessionManager?.importSession('not valid json {[');
+        const importSuccess = await page.evaluate(async () => {
+            return await window.MultiWindowSessionManager?.importSession('not valid json {[');
         });
 
         expect(importSuccess).toBe(false);
     });
 
     test('should preserve instance state during export/import', async ({ page }) => {
-        // Create terminal with specific state
-        await page.evaluate(() => {
-            const termMgr = window.TerminalInstanceManager;
-            if (termMgr) {
-                // Create instance (result intentionally unused - just for setup)
-                termMgr.createInstance({
-                    title: 'State Test Terminal',
-                    initialState: {
-                        currentPath: '/home/test',
-                        commandHistory: ['ls', 'cd /home', 'pwd'],
-                    },
-                });
-            }
+        await createTerminalTabs(page, 1, {
+            cwd: '/home/test',
+            commands: ['ls', 'cd /home/test', 'pwd'],
         });
-
-        // Wait for auto-save to complete
-        await page.waitForTimeout(1000);
 
         // Export session
         const exportedJson = await page.evaluate(() => {
-            return window.SessionManager?.exportSession();
+            return window.MultiWindowSessionManager?.exportSession();
         });
 
         // Clear instances
         await page.evaluate(() => {
-            const termMgr = window.TerminalInstanceManager;
-            if (termMgr) termMgr.destroyAllInstances();
+            window.WindowRegistry?.closeAllWindows?.();
+            window.TerminalInstanceManager?.destroyAllInstances?.();
+            window.TextEditorInstanceManager?.destroyAllInstances?.();
         });
 
         // Import session
-        await page.evaluate(json => {
-            return window.SessionManager?.importSession(json);
+        const importSuccess = await page.evaluate(async json => {
+            return await window.MultiWindowSessionManager?.importSession(json);
         }, exportedJson);
+        expect(importSuccess).toBe(true);
+        await waitForTerminalCount(page, 1);
 
         // Verify state was preserved
         const restoredState = await page.evaluate(() => {
-            const termMgr = window.TerminalInstanceManager;
-            if (!termMgr) return null;
-            const instances = termMgr.getAllInstances();
-            // @ts-ignore
-            const testInstance = instances.find(inst => inst.title === 'State Test Terminal');
-            return testInstance ? testInstance.state : null;
+            const terminalWindow = (window.WindowRegistry?.getAllWindows?.('terminal') || [])[0];
+            const session = terminalWindow?.activeSession;
+            if (!session) return null;
+            return {
+                currentPath: session.vfsCwd || session.currentPath || null,
+                commandHistory: session.commandHistory || [],
+            };
         });
 
         expect(restoredState).toBeTruthy();
         expect(restoredState.currentPath).toBe('/home/test');
-        expect(restoredState.commandHistory).toEqual(['ls', 'cd /home', 'pwd']);
+        expect(restoredState.commandHistory).toEqual(['ls', 'cd /home/test', 'pwd']);
     });
 
     test('should handle menu-triggered export', async ({ page }) => {
@@ -205,19 +215,20 @@ test.describe('Session Export/Import', () => {
     test('should handle empty session export', async ({ page }) => {
         // Clear all instances first
         await page.evaluate(() => {
+            window.MultiWindowSessionManager?.clearSession?.();
             window.SessionManager?.clear();
         });
 
         // Try to export
         const exportedJson = await page.evaluate(() => {
-            return window.SessionManager?.exportSession();
+            return window.MultiWindowSessionManager?.exportSession();
         });
 
         // Should still export valid JSON even if empty
         if (exportedJson) {
             const sessionData = JSON.parse(exportedJson);
-            expect(sessionData.version).toBe('1.0');
-            expect(sessionData.instances).toBeDefined();
+            expect(sessionData.version).toBe('1.0.0');
+            expect(Array.isArray(sessionData.windows)).toBe(true);
         }
     });
 });

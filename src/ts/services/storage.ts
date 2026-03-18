@@ -37,6 +37,16 @@ import logger from '../core/logger.js';
         'image-modal',
     ]);
 
+    // These app windows are owned exclusively by the multi-window/session restore pipeline.
+    // Persisting them in openModals reactivates obsolete legacy modals and visually regresses
+    // the redesigned pill-style tab headers in Terminal/Texteditor/Finder/Photos.
+    const MULTI_WINDOW_OWNED_MODAL_IDS = new Set<string>([
+        'finder-modal',
+        'terminal-modal',
+        'text-modal',
+        'image-modal',
+    ]);
+
     const getModalIds = (): string[] => {
         const ac = (w.APP_CONSTANTS as Record<string, unknown> | undefined) || undefined;
         const v = ac && (ac['MODAL_IDS'] as unknown);
@@ -99,6 +109,7 @@ import logger from '../core/logger.js';
 
         const openModals = modalIds.filter(id => {
             if (transientModalIds.has(id)) return false;
+            if (MULTI_WINDOW_OWNED_MODAL_IDS.has(id)) return false;
             const el = document.getElementById(id) as HTMLElement | null;
             if (!el) return false;
             const minimized = el.dataset && el.dataset.minimized === 'true';
@@ -167,6 +178,11 @@ import logger from '../core/logger.js';
 
             // Multi-window restore owns app window restoration.
             // Prevent stale legacy modal entries from reopening windows unexpectedly.
+            if (MULTI_WINDOW_OWNED_MODAL_IDS.has(id)) {
+                removedConflictingIds.push(id);
+                return;
+            }
+
             if (hasMultiWindowSession && MULTI_WINDOW_CONFLICT_MODAL_IDS.has(id)) {
                 removedConflictingIds.push(id);
                 return;

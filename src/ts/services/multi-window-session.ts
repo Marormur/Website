@@ -205,6 +205,37 @@ class MultiWindowSessionManager {
                 totalTabs: session.windows.reduce((sum, w) => sum + w.tabs.length, 0),
             });
 
+            if (session.windows.length === 0) {
+                const legacyRaw = localStorage.getItem(
+                    MultiWindowSessionManager.LEGACY_STORAGE_KEY
+                );
+                if (legacyRaw) {
+                    try {
+                        const legacySession = JSON.parse(legacyRaw) as LegacySession;
+                        const legacyInstanceCount = Object.values(
+                            legacySession.instances || {}
+                        ).reduce(
+                            (sum, entries) => sum + (Array.isArray(entries) ? entries.length : 0),
+                            0
+                        );
+                        if (legacyInstanceCount > 0) {
+                            localStorage.removeItem(MultiWindowSessionManager.STORAGE_KEY);
+                            logger.debug(
+                                'SESSION',
+                                '[MultiWindowSessionManager] Skipping empty multi-window save because legacy session has restorable instances'
+                            );
+                            return;
+                        }
+                    } catch (error) {
+                        logger.warn(
+                            'SESSION',
+                            '[MultiWindowSessionManager] Failed to inspect legacy session before empty save:',
+                            error
+                        );
+                    }
+                }
+            }
+
             const serialized = JSON.stringify(session);
             logger.debug(
                 'SESSION',
@@ -316,6 +347,15 @@ class MultiWindowSessionManager {
      * Restore session from localStorage
      */
     async restoreSession(): Promise<boolean> {
+        const perf = (
+            window as {
+                PerfMonitor?: {
+                    mark?: (name: string) => void;
+                    measure?: (name: string, start?: string, end?: string) => void;
+                };
+            }
+        ).PerfMonitor;
+        perf?.mark?.('session:restore:start');
         logger.debug(
             'SESSION',
             '[MultiWindowSessionManager] restoreSession() called, setting isRestoring=true'
@@ -390,6 +430,12 @@ class MultiWindowSessionManager {
             );
             return false;
         } finally {
+            perf?.mark?.('session:restore:end');
+            perf?.measure?.(
+                'session:restore-duration',
+                'session:restore:start',
+                'session:restore:end'
+            );
             logger.debug(
                 'SESSION',
                 '[MultiWindowSessionManager] restoreSession() complete, setting isRestoring=false'
@@ -859,27 +905,71 @@ class MultiWindowSessionManager {
      * Import session from JSON string
      */
     async importSession(jsonString: string): Promise<boolean> {
-        try {
-            const session = JSON.parse(jsonString) as MultiWindowSession;
+        if (!jsonString || typeof jsonString !== 'string') {
+            logger.error(
+                'SESSION',
+                '[MultiWindowSessionManager] Invalid import data (must be non-empty string)'
+            );
+            return false;
+        }
 
-            // Validate version
-            if (session.version !== MultiWindowSessionManager.VERSION) {
-                logger.warn(
-                    'SESSION',
-                    '[MultiWindowSessionManager] Version mismatch, attempting import anyway'
-                );
+        try {
+            const parsed = JSON.parse(jsonString) as MultiWindowSession | LegacySession;
+
+            if (!parsed || typeof parsed !== 'object') {
+                logger.error('SESSION', '[MultiWindowSessionManager] Invalid import payload');
+                return false;
             }
 
-            // Close all current windows
+            this.isRestoring = true;
+
             WindowRegistry.closeAllWindows();
 
-            // Restore imported session
-            await this.restoreMultiWindowSession(session);
+            if ('windows' in parsed && Array.isArray(parsed.windows)) {
+                const session = parsed as MultiWindowSession;
 
-            return true;
+                if (session.version !== MultiWindowSessionManager.VERSION) {
+                    logger.error(
+                        'SESSION',
+                        `[MultiWindowSessionManager] Version mismatch (imported: ${session.version}, current: ${MultiWindowSessionManager.VERSION})`
+                    );
+                    return false;
+                }
+
+                this.migrateSessionPaths(session);
+                localStorage.setItem(
+                    MultiWindowSessionManager.STORAGE_KEY,
+                    JSON.stringify(session)
+                );
+                await this.restoreMultiWindowSession(session);
+                return true;
+            }
+
+            if ('instances' in parsed && parsed.instances && typeof parsed.instances === 'object') {
+                const legacySession = parsed as LegacySession;
+                const legacyVersion = String(legacySession.version || '');
+                if (legacyVersion && legacyVersion !== '1.0') {
+                    logger.error(
+                        'SESSION',
+                        `[MultiWindowSessionManager] Legacy import version mismatch (imported: ${legacyVersion}, expected: 1.0)`
+                    );
+                    return false;
+                }
+
+                await this.migrateLegacySession(legacySession);
+                return true;
+            }
+
+            logger.error(
+                'SESSION',
+                '[MultiWindowSessionManager] Unsupported session format for import'
+            );
+            return false;
         } catch (error) {
             logger.error('SESSION', '[MultiWindowSessionManager] Failed to import session:', error);
             return false;
+        } finally {
+            this.isRestoring = false;
         }
     }
 

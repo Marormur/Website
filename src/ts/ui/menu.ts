@@ -44,7 +44,7 @@ type WindowLayoutController = WindowMenuController & {
 
 const MULTI_WINDOW_MODAL_TYPE_MAP: Record<string, string> = {
     'projects-modal': 'finder',
-    'terminal-modal': 'terminal',
+    terminal: 'terminal',
     'text-modal': 'text-editor',
     'image-modal': 'photos',
 };
@@ -463,8 +463,11 @@ function buildTerminalMenuDefinition(context: MenuContext) {
                         if (window['TerminalWindow']?.create) {
                             const count = registry?.getWindowCount?.('terminal') || 0;
                             window['TerminalWindow'].create({ title: `Terminal ${count + 1}` });
-                        } else if (window['TerminalInstanceManager']?.createInstance) {
-                            window['TerminalInstanceManager'].createInstance();
+                        } else {
+                            logger.warn(
+                                'UI',
+                                '[Menu] TerminalWindow is unavailable; skipping legacy terminal fallback'
+                            );
                         }
                     },
                 },
@@ -625,7 +628,7 @@ function buildTerminalMenuDefinition(context: MenuContext) {
         createWindowMenuSection(context),
         createHelpMenuSection(context, {
             itemKey: 'menu.terminal.help',
-            infoModalId: 'terminal-modal',
+            infoModalId: 'terminal',
             itemIcon: 'help',
         }),
     ];
@@ -1276,10 +1279,6 @@ function getMultiInstanceMenuItems(context: MenuContext) {
         manager = window['FinderInstanceManager'];
         typeLabel = 'Finder';
         newInstanceKey = 'menu.window.newFinder';
-    } else if (modalId === 'terminal-modal' && window['TerminalInstanceManager']) {
-        manager = window['TerminalInstanceManager'];
-        typeLabel = 'Terminal';
-        newInstanceKey = 'menu.window.newTerminal';
     } else if (modalId === 'text-modal' && window['TextEditorInstanceManager']) {
         manager = window['TextEditorInstanceManager'];
         typeLabel = 'Neues Dokument';
@@ -1413,7 +1412,7 @@ const menuDefinitions: Record<string, MenuSectionBuilder> = {
     'image-modal': buildPhotosMenuDefinition,
     'about-modal': buildAboutMenuDefinition,
     'program-info-modal': buildProgramInfoMenuDefinition,
-    'terminal-modal': buildTerminalMenuDefinition,
+    terminal: buildTerminalMenuDefinition,
 };
 
 let currentMenuModalId: string | null = null;
@@ -1574,11 +1573,11 @@ export function renderApplicationMenu(activeModalId?: string | null) {
         typeof activeModalId === 'string' &&
         activeModalId.startsWith('window-');
 
-    // Map multi-window modal IDs (or missing modal IDs) to legacy menu keys.
+    // Map multi-window modal IDs (or missing modal IDs) to menu keys.
     // IMPORTANT: Do not override explicit legacy modal contexts like settings/about.
     if ((!hasExplicitModalId || isMultiWindowModalId) && activeType) {
         if (activeType === 'terminal') {
-            activeModalId = 'terminal-modal';
+            activeModalId = 'terminal';
         } else if (activeType === 'finder') {
             activeModalId = 'projects-modal';
         } else if (activeType === 'text-editor') {

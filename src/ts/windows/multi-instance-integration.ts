@@ -44,6 +44,25 @@ import logger from '../core/logger.js';
         private integrations: Map<string, IntegrationRecord> = new Map();
         private isInitialized = false;
 
+        private disableLegacyModalIfModernWindowAvailable(options: {
+            type: string;
+            modernWindowGlobal: string;
+            modalId: string;
+        }): boolean {
+            const W = window as unknown as Record<string, any>;
+            const hasModernWindow = Boolean(W[options.modernWindowGlobal]);
+            if (!hasModernWindow) return false;
+
+            // Keep a strict single-source UI path: when modern windows are present,
+            // legacy modal/tab integration must stay inactive to avoid duplicate UIs.
+            this.closeModalOrHide(options.modalId);
+            logger.debug(
+                'WINDOW',
+                `[MultiInstanceIntegration] Skipping legacy ${options.type} modal wiring because ${options.modernWindowGlobal} is available`
+            );
+            return true;
+        }
+
         init() {
             if (this.isInitialized) return;
             if (document.readyState === 'loading') {
@@ -63,20 +82,12 @@ import logger from '../core/logger.js';
                 return;
             }
 
-            if (W.TerminalInstanceManager)
-                this.wireManager({
-                    type: 'terminal',
-                    manager: W.TerminalInstanceManager,
-                    modalId: 'terminal-modal',
-                    tabMountId: 'terminal-tabs-container',
-                    containerId: 'terminal-container',
-                    addButton: true,
-                    titleFactory: manager =>
-                        `Terminal ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
-                    onEmpty: () => this.closeModalOrHide('terminal-modal'),
-                });
-
-            if (W.TextEditorInstanceManager)
+            const skipLegacyTextEditor = this.disableLegacyModalIfModernWindowAvailable({
+                type: 'text-editor',
+                modernWindowGlobal: 'TextEditorWindow',
+                modalId: 'text-modal',
+            });
+            if (W.TextEditorInstanceManager && !skipLegacyTextEditor)
                 this.wireManager({
                     type: 'text-editor',
                     manager: W.TextEditorInstanceManager,

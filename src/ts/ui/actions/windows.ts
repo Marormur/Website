@@ -89,10 +89,10 @@ export function getWindowActions(): ActionMap {
             }
 
             // SPECIAL: Multi-Window Terminal
-            if (windowId === 'terminal-modal') {
+            if (windowId === 'terminal-modal' || windowId === 'terminal') {
                 const terminal = getGlobal<{ focusOrCreate?: () => void }>('TerminalWindow');
                 if (terminal?.focusOrCreate) {
-                    safeExecute('[ActionBus] openWindow terminal-modal', () => {
+                    safeExecute('[ActionBus] openWindow terminal', () => {
                         terminal.focusOrCreate!();
                     });
                     // Early return: Multi-window handled, skip legacy WindowManager
@@ -102,8 +102,9 @@ export function getWindowActions(): ActionMap {
                 }
                 logger.warn(
                     'UI',
-                    '[ActionBus] TerminalWindow not available; falling back to WindowManager.open("terminal-modal")'
+                    '[ActionBus] TerminalWindow not available; skipping legacy terminal fallback'
                 );
+                return;
             }
 
             const wm = getGlobal<{ open?: (id: string) => void }>('WindowManager');

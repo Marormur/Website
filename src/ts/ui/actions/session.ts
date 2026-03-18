@@ -10,16 +10,22 @@ export function getSessionActions(): ActionMap {
         'session:export': () => {
             const W = getGlobal<{
                 SessionManager?: { exportSession?: () => string | null };
+                MultiWindowSessionManager?: { exportSession?: () => string | null };
                 appI18n?: { translate?: (key: string) => string };
             }>('');
             const translate = W?.appI18n?.translate || ((k: string) => k);
 
-            if (!W?.SessionManager?.exportSession) {
-                logger.error('UI', 'SessionManager not available');
+            const exportSession =
+                W?.MultiWindowSessionManager?.exportSession || W?.SessionManager?.exportSession;
+
+            if (!exportSession) {
+                logger.error('UI', 'No session export API available');
                 return;
             }
 
-            const json = W.SessionManager.exportSession();
+            const json = exportSession.call(
+                W.MultiWindowSessionManager || W.SessionManager || undefined
+            );
             if (!json) {
                 alert(translate('menu.session.noSession'));
                 return;
@@ -41,12 +47,16 @@ export function getSessionActions(): ActionMap {
         'session:import': () => {
             const W = getGlobal<{
                 SessionManager?: { importSession?: (json: string) => boolean };
+                MultiWindowSessionManager?: { importSession?: (json: string) => Promise<boolean> };
                 appI18n?: { translate?: (key: string) => string };
             }>('');
             const translate = W?.appI18n?.translate || ((k: string) => k);
 
-            if (!W?.SessionManager?.importSession) {
-                logger.error('UI', 'SessionManager not available');
+            const importSession =
+                W?.MultiWindowSessionManager?.importSession || W?.SessionManager?.importSession;
+
+            if (!importSession) {
+                logger.error('UI', 'No session import API available');
                 return;
             }
 
@@ -65,12 +75,21 @@ export function getSessionActions(): ActionMap {
                         return;
                     }
 
-                    const success = W.SessionManager?.importSession?.(json);
-                    if (success) {
-                        logger.debug('UI', 'Session imported successfully');
-                    } else {
-                        alert(translate('menu.session.importError'));
-                    }
+                    const importPromise = W?.MultiWindowSessionManager?.importSession
+                        ? W.MultiWindowSessionManager.importSession(json)
+                        : Promise.resolve(Boolean(W?.SessionManager?.importSession?.(json)));
+
+                    importPromise
+                        .then(success => {
+                            if (success) {
+                                logger.debug('UI', 'Session imported successfully');
+                                return;
+                            }
+                            alert(translate('menu.session.importError'));
+                        })
+                        .catch(() => {
+                            alert(translate('menu.session.importError'));
+                        });
                 };
                 reader.onerror = () => {
                     alert(translate('menu.session.importError'));

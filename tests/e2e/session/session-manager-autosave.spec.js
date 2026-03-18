@@ -6,10 +6,48 @@
 import { test, expect } from '@playwright/test';
 import utils from '../utils.js';
 
+async function resetSessionState(page) {
+    await page.evaluate(() => {
+        window.SessionManager?.clear();
+        localStorage.removeItem('multi-window-session');
+        localStorage.removeItem('window-session');
+        localStorage.removeItem('openModals');
+        window.WindowRegistry?.closeAllWindows?.();
+        window.TerminalInstanceManager?.destroyAllInstances?.();
+        window.TextEditorInstanceManager?.destroyAllInstances?.();
+    });
+}
+
+async function waitForPersistedSession(page) {
+    await page.waitForFunction(() => {
+        const legacySaved = window.SessionManager?.getStats?.().hasSession === true;
+        if (legacySaved) {
+            return true;
+        }
+
+        try {
+            const modernRaw = localStorage.getItem('multi-window-session');
+            if (!modernRaw) {
+                return false;
+            }
+
+            const modernSession = JSON.parse(modernRaw);
+            return Array.isArray(modernSession?.windows) && modernSession.windows.length > 0;
+        } catch {
+            return false;
+        }
+    });
+}
+
+async function waitForRestoreComplete(page) {
+    await page.waitForFunction(() => window.__SESSION_RESTORED === true, { timeout: 8000 });
+}
+
 test.describe('SessionManager - Auto-Save', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
         await utils.waitForAppReady(page);
+        await resetSessionState(page);
     });
 
     test('SessionManager module is loaded and initialized', async ({ page }) => {
@@ -75,8 +113,7 @@ test.describe('SessionManager - Auto-Save', () => {
             }
         }, terminalId);
 
-        // Wait for debounce to complete (default 750ms + buffer)
-        await page.waitForTimeout(1000);
+        await waitForPersistedSession(page);
 
         // Trigger immediate save to ensure persistence
         await page.evaluate(() => {
@@ -143,9 +180,7 @@ test.describe('SessionManager - Auto-Save', () => {
         // Reload page
         await page.reload();
         await utils.waitForAppReady(page);
-
-        // Wait for session restore
-        await page.waitForTimeout(500);
+        await waitForRestoreComplete(page);
 
         // Check if instances were restored
         const restoredInstances = await page.evaluate(() => {
@@ -166,10 +201,6 @@ test.describe('SessionManager - Auto-Save', () => {
     });
 
     test('saves on window blur event', async ({ page }) => {
-        await page.evaluate(() => {
-            window.SessionManager?.clear();
-        });
-
         // Create an instance
         await page.evaluate(() => {
             const manager = window.TerminalInstanceManager;
@@ -181,15 +212,31 @@ test.describe('SessionManager - Auto-Save', () => {
             window.dispatchEvent(new Event('blur'));
         });
 
-        // Small wait for immediate save
-        await page.waitForTimeout(100);
+        await waitForPersistedSession(page);
 
-        // Check if saved
-        const stats = await page.evaluate(() => {
-            return window.SessionManager?.getStats();
+        const persistedState = await page.evaluate(() => {
+            const legacyStats = window.SessionManager?.getStats?.();
+            const modernRaw = localStorage.getItem('multi-window-session');
+
+            let modernWindowCount = 0;
+            if (modernRaw) {
+                try {
+                    const modernSession = JSON.parse(modernRaw);
+                    modernWindowCount = Array.isArray(modernSession?.windows)
+                        ? modernSession.windows.length
+                        : 0;
+                } catch {
+                    modernWindowCount = 0;
+                }
+            }
+
+            return {
+                legacyHasSession: legacyStats?.hasSession === true,
+                modernWindowCount,
+            };
         });
 
-        expect(stats.hasSession).toBe(true);
+        expect(persistedState.legacyHasSession || persistedState.modernWindowCount > 0).toBe(true);
     });
 
     test('debounces multiple rapid updates', async ({ page }) => {
@@ -206,12 +253,6 @@ test.describe('SessionManager - Auto-Save', () => {
             return terminal?.instanceId;
         });
 
-        // Track save operations by monitoring localStorage writes
-        const saveCountBefore = await page.evaluate(() => {
-            const key = 'windowInstancesSession';
-            return localStorage.getItem(key) ? 1 : 0;
-        });
-
         // Perform rapid updates (should be debounced)
         await page.evaluate(id => {
             const manager = window.TerminalInstanceManager;
@@ -223,8 +264,7 @@ test.describe('SessionManager - Auto-Save', () => {
             }
         }, terminalId);
 
-        // Wait for debounce to trigger (should be only ONE save)
-        await page.waitForTimeout(1000);
+        await waitForPersistedSession(page);
 
         // Force save to ensure completion
         await page.evaluate(() => {
@@ -267,7 +307,7 @@ test.describe('SessionManager - Auto-Save', () => {
             window.SessionManager?.saveAll({ immediate: true });
         });
 
-        await page.waitForTimeout(200);
+        await waitForPersistedSession(page);
 
         // Verify session exists
         let stats = await page.evaluate(() => {
@@ -301,8 +341,7 @@ test.describe('SessionManager - Auto-Save', () => {
             }
         });
 
-        // Wait for debounce
-        await page.waitForTimeout(1000);
+        await waitForPersistedSession(page);
 
         // Force save
         await page.evaluate(() => {

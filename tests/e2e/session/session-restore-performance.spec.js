@@ -16,10 +16,10 @@ async function enablePerfMonitor(page) {
 
 async function getCounts(page) {
     return page.evaluate(() => {
-        const terminalMgr = window.TerminalInstanceManager;
-        const editorMgr = window.TextEditorInstanceManager;
-        const terminals = terminalMgr?.getInstanceCount() || 0;
-        const editors = editorMgr?.getInstanceCount() || 0;
+        const terminalWindows = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+        const editorWindows = window.WindowRegistry?.getAllWindows?.('text-editor') || [];
+        const terminals = terminalWindows.reduce((sum, win) => sum + (win.tabs?.size || 0), 0);
+        const editors = editorWindows.reduce((sum, win) => sum + (win.tabs?.size || 0), 0);
         return { terminals, editors, total: terminals + editors };
     });
 }
@@ -28,10 +28,10 @@ async function waitForCountsAtLeast(page, expected, timeout = 8000) {
     await page.waitForFunction(
         ({ terminals, editors, total }) => {
             try {
-                const terminalMgr = window.TerminalInstanceManager;
-                const editorMgr = window.TextEditorInstanceManager;
-                const t = terminalMgr?.getInstanceCount() || 0;
-                const e = editorMgr?.getInstanceCount() || 0;
+                const terminalWindows = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+                const editorWindows = window.WindowRegistry?.getAllWindows?.('text-editor') || [];
+                const t = terminalWindows.reduce((sum, win) => sum + (win.tabs?.size || 0), 0);
+                const e = editorWindows.reduce((sum, win) => sum + (win.tabs?.size || 0), 0);
                 const sum = t + e;
                 return t >= terminals && e >= editors && sum >= total;
             } catch {
@@ -43,14 +43,61 @@ async function waitForCountsAtLeast(page, expected, timeout = 8000) {
     );
 }
 
+async function waitForSessionRestoreDone(page, timeout = 10000) {
+    await page.waitForFunction(() => window.__SESSION_RESTORED === true, { timeout });
+}
+
+async function resetSessionState(page) {
+    await page.evaluate(() => {
+        localStorage.removeItem('multi-window-session');
+        localStorage.removeItem('windowInstancesSession');
+        localStorage.removeItem('window-session');
+        localStorage.removeItem('openModals');
+        window.WindowRegistry?.closeAllWindows?.();
+        window.TerminalInstanceManager?.destroyAllInstances?.();
+        window.TextEditorInstanceManager?.destroyAllInstances?.();
+    });
+}
+
+async function createTerminalTabs(page, count) {
+    await page.evaluate(tabCount => {
+        if (!window.TerminalWindow?.create) return;
+        const terminalWindow = window.TerminalWindow.create();
+        for (let index = 1; index < tabCount; index++) {
+            terminalWindow.createSession?.(`Terminal ${index + 1}`);
+        }
+    }, count);
+}
+
+async function createEditorTabs(page, count) {
+    await page.evaluate(tabCount => {
+        if (!window.TextEditorWindow?.create) return;
+        const editorWindow = window.TextEditorWindow.create();
+        for (let index = 1; index < tabCount; index++) {
+            editorWindow.createDocument?.(`TextEditor ${index + 1}`);
+        }
+    }, count);
+}
+
+async function createTerminalWindows(page, count) {
+    await page.evaluate(windowCount => {
+        if (!window.TerminalWindow?.create) return;
+        for (let index = 0; index < windowCount; index++) {
+            window.TerminalWindow.create({ title: `Terminal ${index + 1}` });
+        }
+    }, count);
+}
+
 async function saveSession(page) {
     await page.evaluate(() => {
+        const hasRegisteredWindows = (window.WindowRegistry?.getAllWindows?.().length || 0) > 0;
+        if (hasRegisteredWindows && window.MultiWindowSessionManager?.saveSession) {
+            window.MultiWindowSessionManager.saveSession({ immediate: true });
+            return;
+        }
         if (window.SessionManager?.saveAll) {
             window.SessionManager.saveAll({ immediate: true });
             return;
-        }
-        if (window.MultiWindowSessionManager?.saveSession) {
-            window.MultiWindowSessionManager.saveSession({ immediate: true });
         }
     });
 
@@ -72,6 +119,7 @@ test.describe('Session Restore Performance', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
         await waitForAppReady(page);
+        await resetSessionState(page);
     });
 
     test('should restore 20 instances in < 500ms', async ({ page }) => {
@@ -83,29 +131,8 @@ test.describe('Session Restore Performance', () => {
         const textEditorCount = 8;
         const beforeCounts = await getCounts(page);
 
-        // Create Terminal instances
-        await page.evaluate(count => {
-            const manager = window.TerminalInstanceManager;
-            if (!manager) {
-                console.error('TerminalInstanceManager not found!');
-                return;
-            }
-            for (let i = 0; i < count; i++) {
-                manager.createInstance({ title: `Terminal ${i + 1}` });
-            }
-        }, terminalCount);
-
-        // Create TextEditor instances
-        await page.evaluate(count => {
-            const manager = window.TextEditorInstanceManager;
-            if (!manager) {
-                console.error('TextEditorInstanceManager not found!');
-                return;
-            }
-            for (let i = 0; i < count; i++) {
-                manager.createInstance({ title: `TextEditor ${i + 1}` });
-            }
-        }, textEditorCount);
+        await createTerminalTabs(page, terminalCount);
+        await createEditorTabs(page, textEditorCount);
 
         await waitForCountsAtLeast(page, {
             terminals: beforeCounts.terminals + terminalCount,
@@ -115,13 +142,14 @@ test.describe('Session Restore Performance', () => {
 
         // Verify instances were created
         const instanceCountBefore = await page.evaluate(() => {
-            const terminalMgr = window.TerminalInstanceManager;
-            const editorMgr = window.TextEditorInstanceManager;
+            const terminalWindows = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const editorWindows = window.WindowRegistry?.getAllWindows?.('text-editor') || [];
             return {
-                terminals: terminalMgr?.getInstanceCount() || 0,
-                editors: editorMgr?.getInstanceCount() || 0,
+                terminals: terminalWindows.reduce((sum, win) => sum + (win.tabs?.size || 0), 0),
+                editors: editorWindows.reduce((sum, win) => sum + (win.tabs?.size || 0), 0),
                 total:
-                    (terminalMgr?.getInstanceCount() || 0) + (editorMgr?.getInstanceCount() || 0),
+                    terminalWindows.reduce((sum, win) => sum + (win.tabs?.size || 0), 0) +
+                    editorWindows.reduce((sum, win) => sum + (win.tabs?.size || 0), 0),
             };
         });
 
@@ -133,15 +161,16 @@ test.describe('Session Restore Performance', () => {
 
         // Verify session was saved
         const sessionInfo = await page.evaluate(() => {
-            return window.SessionManager.getStats();
+            return window.MultiWindowSessionManager?.getSessionInfo?.();
         });
 
         console.log('Session info after save:', sessionInfo);
-        expect(sessionInfo.instanceCount).toBeGreaterThan(0);
+        expect(sessionInfo?.windowCount).toBeGreaterThan(0);
 
         // Reload page to trigger restore
         await page.reload();
         await waitForAppReady(page);
+        await waitForSessionRestoreDone(page);
 
         await waitForCountsAtLeast(page, {
             terminals: beforeCounts.terminals + terminalCount,
@@ -177,11 +206,23 @@ test.describe('Session Restore Performance', () => {
                 hasMeasures: report.length,
                 allMeasureNames: report.map(m => m.name),
                 instanceCount:
-                    (window.TerminalInstanceManager?.getInstanceCount() || 0) +
-                    (window.TextEditorInstanceManager?.getInstanceCount() || 0),
+                    (window.WindowRegistry?.getAllWindows?.('terminal') || []).reduce(
+                        (sum, win) => sum + (win.tabs?.size || 0),
+                        0
+                    ) +
+                    (window.WindowRegistry?.getAllWindows?.('text-editor') || []).reduce(
+                        (sum, win) => sum + (win.tabs?.size || 0),
+                        0
+                    ),
                 restored: {
-                    terminals: window.TerminalInstanceManager?.getInstanceCount() || 0,
-                    editors: window.TextEditorInstanceManager?.getInstanceCount() || 0,
+                    terminals: (window.WindowRegistry?.getAllWindows?.('terminal') || []).reduce(
+                        (sum, win) => sum + (win.tabs?.size || 0),
+                        0
+                    ),
+                    editors: (window.WindowRegistry?.getAllWindows?.('text-editor') || []).reduce(
+                        (sum, win) => sum + (win.tabs?.size || 0),
+                        0
+                    ),
                 },
             };
         });
@@ -205,22 +246,8 @@ test.describe('Session Restore Performance', () => {
         const textEditorCount = 15;
         const beforeCounts = await getCounts(page);
 
-        // Create instances
-        await page.evaluate(count => {
-            const manager = window.TerminalInstanceManager;
-            if (!manager) return;
-            for (let i = 0; i < count; i++) {
-                manager.createInstance({ title: `Terminal ${i + 1}` });
-            }
-        }, terminalCount);
-
-        await page.evaluate(count => {
-            const manager = window.TextEditorInstanceManager;
-            if (!manager) return;
-            for (let i = 0; i < count; i++) {
-                manager.createInstance({ title: `TextEditor ${i + 1}` });
-            }
-        }, textEditorCount);
+        await createTerminalTabs(page, terminalCount);
+        await createEditorTabs(page, textEditorCount);
 
         await waitForCountsAtLeast(page, {
             terminals: beforeCounts.terminals + terminalCount,
@@ -233,6 +260,7 @@ test.describe('Session Restore Performance', () => {
 
         await page.reload();
         await waitForAppReady(page);
+        await waitForSessionRestoreDone(page);
 
         await waitForCountsAtLeast(page, {
             terminals: beforeCounts.terminals + terminalCount,
@@ -248,8 +276,14 @@ test.describe('Session Restore Performance', () => {
 
             return {
                 instanceCount:
-                    (window.TerminalInstanceManager?.getInstanceCount() || 0) +
-                    (window.TextEditorInstanceManager?.getInstanceCount() || 0),
+                    (window.WindowRegistry?.getAllWindows?.('terminal') || []).reduce(
+                        (sum, win) => sum + (win.tabs?.size || 0),
+                        0
+                    ) +
+                    (window.WindowRegistry?.getAllWindows?.('text-editor') || []).reduce(
+                        (sum, win) => sum + (win.tabs?.size || 0),
+                        0
+                    ),
                 duration: restoreMeasure?.duration || null,
             };
         });
@@ -266,21 +300,15 @@ test.describe('Session Restore Performance', () => {
     test('should restore z-index order correctly with many instances', async ({ page }) => {
         await enablePerfMonitor(page);
 
-        // Create 10 instances and focus them in specific order
+        // Create 10 windows and focus them in specific order.
         const instanceCount = 10;
         const beforeCounts = await getCounts(page);
 
-        await page.evaluate(count => {
-            const manager = window.TerminalInstanceManager;
-            if (!manager) return;
-            for (let i = 0; i < count; i++) {
-                const instance = manager.createInstance({ title: `Terminal ${i + 1}` });
-                // Focus each instance to ensure window is opened and added to window stack
-                if (instance?.focus) {
-                    instance.focus();
-                }
-            }
-        }, instanceCount);
+        await createTerminalWindows(page, instanceCount);
+        await page.evaluate(() => {
+            const windows = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            windows.forEach(win => win.bringToFront?.());
+        });
 
         await waitForCountsAtLeast(page, {
             terminals: beforeCounts.terminals + instanceCount,
@@ -301,6 +329,7 @@ test.describe('Session Restore Performance', () => {
 
         await page.reload();
         await waitForAppReady(page);
+        await waitForSessionRestoreDone(page);
 
         // Verify z-index order is restored
         const stackAfter = await page.evaluate(() => {
@@ -317,14 +346,7 @@ test.describe('Session Restore Performance', () => {
 
         const beforeCounts = await getCounts(page);
 
-        // Create 15 Terminal instances
-        await page.evaluate(() => {
-            const manager = window.TerminalInstanceManager;
-            if (!manager) return;
-            for (let i = 0; i < 15; i++) {
-                manager.createInstance({ title: `Terminal ${i + 1}` });
-            }
-        });
+        await createTerminalTabs(page, 15);
 
         await waitForCountsAtLeast(page, {
             terminals: beforeCounts.terminals + 15,
@@ -334,7 +356,12 @@ test.describe('Session Restore Performance', () => {
 
         // Get active instance before reload
         const activeIdBefore = await page.evaluate(() => {
-            return window.TerminalInstanceManager?.getActiveInstance()?.instanceId || null;
+            const terminalWindow = (window.WindowRegistry?.getAllWindows?.('terminal') || [])[0];
+            const sessions = terminalWindow?.sessions || [];
+            const targetSession = sessions[10] || sessions[sessions.length - 1] || null;
+            if (!terminalWindow || !targetSession) return null;
+            terminalWindow.setActiveTab?.(targetSession.id);
+            return terminalWindow.activeSession?.id || null;
         });
 
         expect(activeIdBefore).not.toBeNull();
@@ -344,6 +371,7 @@ test.describe('Session Restore Performance', () => {
 
         await page.reload();
         await waitForAppReady(page);
+        await waitForSessionRestoreDone(page);
 
         await waitForCountsAtLeast(page, {
             terminals: beforeCounts.terminals + 15,
@@ -353,7 +381,8 @@ test.describe('Session Restore Performance', () => {
 
         // Verify active instance is restored
         const activeIdAfter = await page.evaluate(() => {
-            return window.TerminalInstanceManager?.getActiveInstance()?.instanceId || null;
+            const terminalWindow = (window.WindowRegistry?.getAllWindows?.('terminal') || [])[0];
+            return terminalWindow?.activeSession?.id || null;
         });
 
         expect(activeIdAfter).toBe(activeIdBefore);
@@ -367,21 +396,8 @@ test.describe('Session Restore Performance', () => {
         const editorCount = 10;
         const beforeCounts = await getCounts(page);
 
-        await page.evaluate(count => {
-            const manager = window.TerminalInstanceManager;
-            if (!manager) return;
-            for (let i = 0; i < count; i++) {
-                manager.createInstance({ title: `Terminal ${i + 1}` });
-            }
-        }, terminalCount);
-
-        await page.evaluate(count => {
-            const manager = window.TextEditorInstanceManager;
-            if (!manager) return;
-            for (let i = 0; i < count; i++) {
-                manager.createInstance({ title: `TextEditor ${i + 1}` });
-            }
-        }, editorCount);
+        await createTerminalTabs(page, terminalCount);
+        await createEditorTabs(page, editorCount);
 
         await waitForCountsAtLeast(page, {
             terminals: beforeCounts.terminals + terminalCount,
@@ -394,6 +410,7 @@ test.describe('Session Restore Performance', () => {
 
         await page.reload();
         await waitForAppReady(page);
+        await waitForSessionRestoreDone(page);
 
         await waitForCountsAtLeast(page, {
             terminals: beforeCounts.terminals + terminalCount,
@@ -404,8 +421,14 @@ test.describe('Session Restore Performance', () => {
         // Verify both types were restored correctly
         const counts = await page.evaluate(() => {
             return {
-                terminals: window.TerminalInstanceManager?.getInstanceCount() || 0,
-                editors: window.TextEditorInstanceManager?.getInstanceCount() || 0,
+                terminals: (window.WindowRegistry?.getAllWindows?.('terminal') || []).reduce(
+                    (sum, win) => sum + (win.tabs?.size || 0),
+                    0
+                ),
+                editors: (window.WindowRegistry?.getAllWindows?.('text-editor') || []).reduce(
+                    (sum, win) => sum + (win.tabs?.size || 0),
+                    0
+                ),
             };
         });
 

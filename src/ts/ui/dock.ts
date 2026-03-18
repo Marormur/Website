@@ -27,7 +27,7 @@ export interface DockPreferences {
 const DOCK_WINDOW_ICONS: Record<string, string> = {
     'launchpad-modal': 'launchpad',
     'text-modal': 'textEditor',
-    'terminal-modal': 'terminal',
+    terminal: 'terminal',
     'settings-modal': 'settings',
 };
 
@@ -519,7 +519,9 @@ export function saveDockOrder(order: string[] | null | undefined): void {
 
 export function getDockItemId(item: Element | null): string | null {
     if (!item) return null;
-    return (item.getAttribute('data-window-id') as string) || null;
+    const id = (item.getAttribute('data-window-id') as string) || null;
+    if (id === 'terminal-modal') return 'terminal';
+    return id;
 }
 
 export function getCurrentDockOrder(): string[] {
@@ -740,7 +742,7 @@ function resolveDockTargetItem(windowId: string): HTMLElement | null {
 
     const lowerWindowId = windowId.toLowerCase();
     const mappedWindowId = lowerWindowId.includes('terminal')
-        ? 'terminal-modal'
+        ? 'terminal'
         : lowerWindowId.includes('text')
           ? 'text-modal'
           : lowerWindowId.includes('setting')
@@ -755,9 +757,14 @@ function resolveDockTargetItem(windowId: string): HTMLElement | null {
         return dock.querySelector<HTMLElement>('.dock-item:not([data-window-id])');
     }
 
-    return mappedWindowId
-        ? dock.querySelector<HTMLElement>(`.dock-item[data-window-id="${mappedWindowId}"]`)
-        : null;
+    if (!mappedWindowId) return null;
+
+    const mapped = dock.querySelector<HTMLElement>(
+        `.dock-item[data-window-id="${mappedWindowId}"]`
+    );
+    if (mapped) return mapped;
+
+    return null;
 }
 
 export function animateWindowMinimize(
@@ -867,7 +874,7 @@ export function updateDockIndicators(): void {
         { modalId: 'projects-modal', indicatorId: 'projects-indicator' },
         { modalId: 'settings-modal', indicatorId: 'settings-indicator' },
         { modalId: 'text-modal', indicatorId: 'text-indicator', windowType: 'text-editor' },
-        { modalId: 'terminal-modal', indicatorId: 'terminal-indicator', windowType: 'terminal' },
+        { indicatorId: 'terminal-indicator', windowType: 'terminal' },
     ];
 
     const showIndicators = shouldShowOpenIndicators();
