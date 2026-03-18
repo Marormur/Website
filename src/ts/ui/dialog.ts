@@ -339,13 +339,11 @@ export class Dialog {
         const threshold = Math.max(3, Math.min(14, viewportWidth * 0.0035));
         const rect = target.getBoundingClientRect();
         const pointerDistLeft =
-            typeof pointerX === 'number' ? Math.max(0, pointerX) : Math.abs(rect.left);
+            typeof pointerX === 'number' ? Math.abs(pointerX) : Math.abs(rect.left);
         if (Math.abs(rect.left) <= threshold || pointerDistLeft <= threshold) return 'left';
         const distRight = viewportWidth - rect.right;
         const pointerDistRight =
-            typeof pointerX === 'number'
-                ? Math.max(0, viewportWidth - pointerX)
-                : Math.abs(distRight);
+            typeof pointerX === 'number' ? Math.abs(viewportWidth - pointerX) : Math.abs(distRight);
         if (Math.abs(distRight) <= threshold || pointerDistRight <= threshold) return 'right';
         return null;
     }
@@ -489,7 +487,10 @@ export class Dialog {
                     else window.hideSnapPreview?.();
                 });
             };
-            const mouseUpHandler = () => cleanup(true);
+            const mouseUpHandler = (e2: MouseEvent) => {
+                this.lastDragPointerX = toRenderedClientPx(e2.clientX, pointerScale);
+                cleanup(true);
+            };
             const blurHandler = () => cleanup(true);
             overlay.addEventListener('mousemove', mouseMoveHandler);
             overlay.addEventListener('mouseup', mouseUpHandler);

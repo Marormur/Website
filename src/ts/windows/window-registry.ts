@@ -21,6 +21,7 @@ class WindowRegistry {
     private initialized: boolean;
     private activeWindowId: string | null;
     private zIndexManager = getZIndexManager();
+    private viewportResizeFrameId: number | null;
 
     constructor() {
         this.windows = new Map();
@@ -29,6 +30,7 @@ class WindowRegistry {
         this.nextZIndex = BASE_Z_INDEX;
         this.initialized = false;
         this.activeWindowId = null;
+        this.viewportResizeFrameId = null;
     }
 
     /**
@@ -60,6 +62,19 @@ class WindowRegistry {
                     window.bringToFront();
                 }
             }
+        });
+
+        // Keep managed window states (snap/maximize) aligned with viewport changes.
+        window.addEventListener('resize', () => {
+            if (this.viewportResizeFrameId !== null) {
+                window.cancelAnimationFrame(this.viewportResizeFrameId);
+            }
+            this.viewportResizeFrameId = window.requestAnimationFrame(() => {
+                this.viewportResizeFrameId = null;
+                this.windows.forEach(windowInstance => {
+                    windowInstance.handleViewportResize();
+                });
+            });
         });
 
         this.initialized = true;

@@ -379,11 +379,15 @@ export class BaseWindow {
             else window.hideSnapPreview?.();
         });
 
-        document.addEventListener('mouseup', () => {
+        document.addEventListener('mouseup', (e: MouseEvent) => {
             if (this.dragState.isDragging) {
                 this.dragState.isDragging = false;
                 const target = this.element;
                 if (target) {
+                    this.dragState.lastPointerX = toRenderedClientPx(
+                        e.clientX,
+                        this.dragState.pointerScale
+                    );
                     const candidate = this._getSnapCandidate(target, this.dragState.lastPointerX);
                     if (candidate) this._snapTo(candidate);
                     window.hideSnapPreview?.();
@@ -410,14 +414,12 @@ export class BaseWindow {
         const rect = target.getBoundingClientRect();
 
         const pointerDistLeft =
-            typeof pointerX === 'number' ? Math.max(0, pointerX) : Math.abs(rect.left);
+            typeof pointerX === 'number' ? Math.abs(pointerX) : Math.abs(rect.left);
         if (Math.abs(rect.left) <= threshold || pointerDistLeft <= threshold) return 'left';
 
         const distRight = viewportWidth - rect.right;
         const pointerDistRight =
-            typeof pointerX === 'number'
-                ? Math.max(0, viewportWidth - pointerX)
-                : Math.abs(distRight);
+            typeof pointerX === 'number' ? Math.abs(viewportWidth - pointerX) : Math.abs(distRight);
         if (Math.abs(distRight) <= threshold || pointerDistRight <= threshold) return 'right';
 
         return null;
@@ -442,6 +444,8 @@ export class BaseWindow {
 
         // Snap should consume the full computed area; the default 90vh cap would otherwise
         // leave a visible gap to the dock/bottom edge.
+        target.style.minWidth = '0px';
+        target.style.minHeight = '0px';
         target.style.maxWidth = 'none';
         target.style.maxHeight = 'none';
         target.style.position = 'fixed';
@@ -456,6 +460,60 @@ export class BaseWindow {
         this.position.width = metrics.width;
         this.position.height = metrics.height;
         this.bringToFront();
+    }
+
+    /**
+     * Reflow policy for managed layouts (snap/maximize) after viewport size changes.
+     * Free-positioned windows are intentionally left untouched.
+     */
+    handleViewportResize(): void {
+        const target = this.element;
+        if (!target || target.classList.contains('hidden')) return;
+
+        const snappedSide = target.dataset.snapped;
+        if (snappedSide === 'left' || snappedSide === 'right') {
+            const metrics = window.computeSnapMetrics?.(snappedSide);
+            if (!metrics) return;
+
+            target.style.minWidth = '0px';
+            target.style.minHeight = '0px';
+            target.style.maxWidth = 'none';
+            target.style.maxHeight = 'none';
+            target.style.position = 'fixed';
+            target.style.left = `${metrics.left}px`;
+            target.style.top = `${metrics.top}px`;
+            target.style.width = `${metrics.width}px`;
+            target.style.height = `${metrics.height}px`;
+
+            this.position.x = metrics.left;
+            this.position.y = metrics.top;
+            this.position.width = metrics.width;
+            this.position.height = metrics.height;
+            return;
+        }
+
+        if (!this.isMaximized) return;
+
+        const minTop = Math.round(window.getMenuBarBottom?.() || 0);
+        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        // In maximize mode we must always fit the currently available viewport area,
+        // even when it is smaller than the normal window minimum height.
+        const maxHeight = Math.max(0, getLogicalViewportHeight() - minTop - dockReserve);
+
+        target.style.minWidth = '0px';
+        target.style.minHeight = '0px';
+        target.style.maxWidth = 'none';
+        target.style.maxHeight = 'none';
+        target.style.left = '0px';
+        target.style.top = `${minTop}px`;
+        target.style.width = `${getLogicalViewportWidth() || this.position.width}px`;
+        target.style.height = `${maxHeight}px`;
+
+        const logicalWidth = getLogicalViewportWidth();
+        this.position.x = 0;
+        this.position.y = minTop;
+        this.position.width = logicalWidth || this.position.width;
+        this.position.height = maxHeight;
     }
 
     private _unsnap(): void {
@@ -475,6 +533,8 @@ export class BaseWindow {
             Number.isFinite(restoreHeight);
 
         if (hasRestore) {
+            target.style.minWidth = '';
+            target.style.minHeight = '';
             target.style.maxWidth = '';
             target.style.maxHeight = '';
             target.style.position = 'fixed';
@@ -841,6 +901,8 @@ export class BaseWindow {
 
         if (this.isMaximized) {
             this.isMaximized = false;
+            this.element.style.minWidth = '';
+            this.element.style.minHeight = '';
             this.element.style.maxWidth = '';
             this.element.style.maxHeight = '';
             this.element.style.width = `${this.position.width}px`;
@@ -917,8 +979,11 @@ export class BaseWindow {
 
             const minTop = Math.round(window.getMenuBarBottom?.() || 0);
             const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
-            const maxHeight = Math.max(360, getLogicalViewportHeight() - minTop - dockReserve);
+            // Maximized windows should fit exactly into the menu/dock-constrained viewport.
+            const maxHeight = Math.max(0, getLogicalViewportHeight() - minTop - dockReserve);
 
+            windowEl.style.minWidth = '0px';
+            windowEl.style.minHeight = '0px';
             windowEl.style.maxWidth = 'none';
             windowEl.style.maxHeight = 'none';
             windowEl.style.left = '0px';
@@ -927,6 +992,8 @@ export class BaseWindow {
             windowEl.style.height = `${maxHeight}px`;
         } else {
             const restore = this.restoreBeforeMaximize || this.position;
+            windowEl.style.minWidth = '';
+            windowEl.style.minHeight = '';
             windowEl.style.maxWidth = '';
             windowEl.style.maxHeight = '';
             windowEl.style.left = `${restore.x}px`;
