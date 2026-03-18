@@ -239,7 +239,6 @@ export default [
         },
     },
 
-
     // TypeScript Dateien
     {
         files: ['**/*.ts'],
