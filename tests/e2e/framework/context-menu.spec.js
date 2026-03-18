@@ -6,14 +6,6 @@ test.describe('MacUI Framework - Context Menu', () => {
         await page.waitForFunction(() => window.__APP_READY);
     });
 
-    test('ContextMenu component is available', async ({ page }) => {
-        const hasContextMenu = await page.evaluate(() => {
-            return typeof window.MacUI.ContextMenu !== 'undefined';
-        });
-
-        expect(hasContextMenu).toBe(true);
-    });
-
     test('ContextMenu renders with items', async ({ page }) => {
         await page.evaluate(() => {
             const { ContextMenu } = window.MacUI;

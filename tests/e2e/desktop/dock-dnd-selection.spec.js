@@ -18,19 +18,21 @@ async function dragAfter(page, sourceId, targetId) {
     });
 }
 
-test('Drag & Drop löst keine Textselektion aus', async ({ page }) => {
-    await page.goto('/');
-    // Warte auf App-Initialisierung
-    await page.waitForFunction(() => window.__APP_READY === true, { timeout: 10000 });
-    await page.waitForSelector('#dock .dock-tray .dock-item');
+test.describe('Dock Drag & Drop - Text Selection', () => {
+    test('drag does not trigger text selection', async ({ page }) => {
+        await page.goto('/');
+        // Warte auf App-Initialisierung
+        await page.waitForFunction(() => window.__APP_READY === true, { timeout: 10000 });
+        await page.waitForSelector('#dock .dock-tray .dock-item');
 
-    // Sicherheitscheck: Vorherige Selektion leeren
-    await page.evaluate(() => window.getSelection()?.removeAllRanges());
+        // Sicherheitscheck: Vorherige Selektion leeren
+        await page.evaluate(() => window.getSelection()?.removeAllRanges());
 
-    // Führe Drag aus (Terminal hinter Texteditor)
-    await dragAfter(page, 'terminal-modal', 'text-modal');
+        // Führe Drag aus (Terminal hinter Texteditor)
+        await dragAfter(page, 'terminal-modal', 'text-modal');
 
-    // Erwartung: Keine Textselektion vorhanden
-    const selectionText = await page.evaluate(() => window.getSelection()?.toString() || '');
-    expect(selectionText).toBe('');
+        // Erwartung: Keine Textselektion vorhanden
+        const selectionText = await page.evaluate(() => window.getSelection()?.toString() || '');
+        expect(selectionText).toBe('');
+    });
 });

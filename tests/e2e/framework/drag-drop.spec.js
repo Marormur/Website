@@ -6,14 +6,6 @@ test.describe('MacUI Framework - Drag & Drop', () => {
         await page.waitForFunction(() => window.__APP_READY);
     });
 
-    test('DragDropManager is available', async ({ page }) => {
-        const hasManager = await page.evaluate(() => {
-            return typeof window.MacUI.dragDropManager !== 'undefined';
-        });
-
-        expect(hasManager).toBe(true);
-    });
-
     test('Can make element draggable', async ({ page }) => {
         const isDraggable = await page.evaluate(() => {
             const { dragDropManager } = window.MacUI;

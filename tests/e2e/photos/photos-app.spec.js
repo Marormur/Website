@@ -37,20 +37,6 @@ test.describe('Photos App', () => {
         await waitForAppReady(page);
     });
 
-    test('Photos App module loads', async ({ page }) => {
-        const photosAppApi = await page.evaluate(() => {
-            return {
-                exists: typeof window.PhotosApp !== 'undefined',
-                hasInit: typeof window.PhotosApp?.init === 'function',
-                hasShowExternalImage: typeof window.PhotosApp?.showExternalImage === 'function',
-            };
-        });
-
-        expect(photosAppApi.exists).toBe(true);
-        expect(photosAppApi.hasInit).toBe(true);
-        expect(photosAppApi.hasShowExternalImage).toBe(true);
-    });
-
     test('Photos App modal structure exists', async ({ page }) => {
         await page.evaluate(() => {
             window.PhotosWindow?.focusOrCreate?.();

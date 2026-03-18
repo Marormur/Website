@@ -5,7 +5,7 @@ const {
     waitForAppReady,
     dismissWelcomeDialogIfPresent,
     openFinderWindow,
-} = require('./utils');
+} = require('../utils');
 
 test.describe('Finder Sidebar - Collapsible Groups', () => {
     const groupAt = (page, index) => page.locator('.mb-5').nth(index);

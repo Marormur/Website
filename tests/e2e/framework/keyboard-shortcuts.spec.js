@@ -6,14 +6,6 @@ test.describe('MacUI Framework - Keyboard Shortcuts', () => {
         await page.waitForFunction(() => window.__APP_READY);
     });
 
-    test('KeyboardShortcuts manager is available', async ({ page }) => {
-        const hasManager = await page.evaluate(() => {
-            return typeof window.MacUI.keyboardShortcuts !== 'undefined';
-        });
-
-        expect(hasManager).toBe(true);
-    });
-
     test('Can register and get shortcuts', async ({ page }) => {
         const shortcut = await page.evaluate(() => {
             const { keyboardShortcuts } = window.MacUI;

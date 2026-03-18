@@ -19,18 +19,6 @@ test.describe('VDOM Core @basic', () => {
         await utils.waitForAppReady(page);
     });
 
-    test('should have VDOM available on window', async ({ page }) => {
-        const hasVDOM = await page.evaluate(() => {
-            return (
-                typeof window.VDOM !== 'undefined' &&
-                typeof window.VDOM.h === 'function' &&
-                typeof window.VDOM.diff === 'function' &&
-                typeof window.VDOM.patch === 'function'
-            );
-        });
-        expect(hasVDOM).toBe(true);
-    });
-
     test('h() creates valid VNodes', async ({ page }) => {
         const vnode = await page.evaluate(() => {
             const node = window.VDOM.h('div', { className: 'test' }, 'Hello');

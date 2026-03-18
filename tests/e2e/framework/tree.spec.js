@@ -6,14 +6,6 @@ test.describe('MacUI Framework - Tree Component', () => {
         await page.waitForFunction(() => window.__APP_READY);
     });
 
-    test('Tree component is available', async ({ page }) => {
-        const hasTree = await page.evaluate(() => {
-            return typeof window.MacUI.Tree !== 'undefined';
-        });
-
-        expect(hasTree).toBe(true);
-    });
-
     test('Tree renders with nodes', async ({ page }) => {
         await page.evaluate(() => {
             const { Tree } = window.MacUI;

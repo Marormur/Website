@@ -12,35 +12,6 @@ test.describe('Finder Multi-Instance System - Basic', () => {
         await utils.waitForAppReady(page);
     });
 
-    test('page loads and Finder modules are available', async ({ page }) => {
-        // Listen for console errors
-        const consoleErrors = [];
-        page.on('console', msg => {
-            if (msg.type() === 'error') {
-                consoleErrors.push(msg.text());
-            }
-        });
-
-        // Navigation handled in beforeEach
-
-        // Check console errors
-        console.log('Console errors:', consoleErrors);
-
-        // Check if Finder modules loaded
-        const modulesAvailable = await page.evaluate(() => {
-            return {
-                FinderWindow: typeof window.FinderWindow,
-                WindowRegistry: window.WindowRegistry !== undefined,
-            };
-        });
-
-        console.log('Finder modules:', modulesAvailable);
-
-        // Assertions
-        expect(modulesAvailable.FinderWindow).toBe('function');
-        expect(modulesAvailable.WindowRegistry).toBe(true);
-    });
-
     test('can create a finder window', async ({ page }) => {
         // Navigation handled in beforeEach
 

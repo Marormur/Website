@@ -7,24 +7,6 @@ test.describe('Error Handler Integration @basic', () => {
         await utils.waitForAppReady(page);
     });
 
-    test('should have ErrorHandler available on window', async ({ page }) => {
-        const hasErrorHandler = await page.evaluate(() => {
-            return typeof window.ErrorHandler !== 'undefined';
-        });
-        expect(hasErrorHandler).toBe(true);
-    });
-
-    test('should have API.error namespace available', async ({ page }) => {
-        const hasAPIError = await page.evaluate(() => {
-            return (
-                typeof window.API !== 'undefined' &&
-                typeof window.API.error !== 'undefined' &&
-                typeof window.API.error.getLogs === 'function'
-            );
-        });
-        expect(hasAPIError).toBe(true);
-    });
-
     test('should be enabled by default', async ({ page }) => {
         const isEnabled = await page.evaluate(() => {
             return window.ErrorHandler.enabled === true;

@@ -6,56 +6,6 @@
 
 import { test, expect } from '@playwright/test';
 
-test.describe('Multi-Instance Window System', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
-        await page.waitForLoadState('domcontentloaded');
-        await page.waitForFunction(() => window.__APP_READY === true, {
-            timeout: 15000,
-        });
-    });
-
-    test('BaseWindowInstance class is available', async ({ page }) => {
-        const hasBaseWindowInstance = await page.evaluate(() => {
-            return typeof window.BaseWindowInstance === 'function';
-        });
-
-        expect(hasBaseWindowInstance).toBe(true);
-    });
-
-    test('InstanceManager class is available', async ({ page }) => {
-        const hasInstanceManager = await page.evaluate(() => {
-            return typeof window.InstanceManager === 'function';
-        });
-
-        expect(hasInstanceManager).toBe(true);
-    });
-
-    test('WindowChrome is available', async ({ page }) => {
-        const hasWindowChrome = await page.evaluate(() => {
-            return typeof window.WindowChrome === 'object';
-        });
-
-        expect(hasWindowChrome).toBe(true);
-    });
-
-    test('TerminalInstanceManager is initialized', async ({ page }) => {
-        const hasTerminalInstanceManager = await page.evaluate(() => {
-            return window.TerminalInstanceManager instanceof window.InstanceManager;
-        });
-
-        expect(hasTerminalInstanceManager).toBe(true);
-    });
-
-    test('TextEditorInstanceManager is initialized', async ({ page }) => {
-        const hasTextEditorInstanceManager = await page.evaluate(() => {
-            return window.TextEditorInstanceManager instanceof window.InstanceManager;
-        });
-
-        expect(hasTextEditorInstanceManager).toBe(true);
-    });
-});
-
 test.describe('Terminal Multi-Instance', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');

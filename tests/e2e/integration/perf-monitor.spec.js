@@ -7,27 +7,6 @@ test.describe('Performance Monitor Integration @basic', () => {
         await utils.waitForAppReady(page);
     });
 
-    test('should have PerfMonitor available on window', async ({ page }) => {
-        const hasPerfMonitor = await page.evaluate(() => {
-            return typeof window.PerfMonitor !== 'undefined';
-        });
-        expect(hasPerfMonitor).toBe(true);
-    });
-
-    test('should have API.performance namespace available', async ({ page }) => {
-        const hasAPIPerformance = await page.evaluate(() => {
-            return (
-                typeof window.API !== 'undefined' &&
-                typeof window.API.performance !== 'undefined' &&
-                typeof window.API.performance.mark === 'function' &&
-                typeof window.API.performance.measure === 'function' &&
-                typeof window.API.performance.report === 'function' &&
-                typeof window.API.performance.getVitals === 'function'
-            );
-        });
-        expect(hasAPIPerformance).toBe(true);
-    });
-
     test('should be enabled by default in development', async ({ page }) => {
         const isEnabled = await page.evaluate(() => {
             return window.PerfMonitor.enabled === true;

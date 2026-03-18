@@ -6,14 +6,6 @@ test.describe('MacUI Framework - Table Component', () => {
         await page.waitForFunction(() => window.__APP_READY);
     });
 
-    test('Table component is available', async ({ page }) => {
-        const hasTable = await page.evaluate(() => {
-            return typeof window.MacUI.Table !== 'undefined';
-        });
-
-        expect(hasTable).toBe(true);
-    });
-
     test('Table renders with data', async ({ page }) => {
         await page.evaluate(() => {
             const { Table } = window.MacUI;

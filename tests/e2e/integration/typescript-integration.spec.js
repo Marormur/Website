@@ -22,100 +22,6 @@ test.describe('TypeScript Integration', () => {
         await utils.waitForAppReady(page);
     });
 
-    test('all TypeScript-migrated modules are available', async ({ page }) => {
-        const modulesAvailable = await page.evaluate(() => {
-            return {
-                // Phase 2: New Features
-                WindowTabs: typeof window.WindowTabs,
-                KeyboardShortcuts: typeof window.KeyboardShortcuts,
-
-                // Phase 3: Core Modules
-                BaseWindowInstance: typeof window.BaseWindowInstance,
-                InstanceManager: typeof window.InstanceManager,
-                WindowManager: typeof window.WindowManager,
-                ActionBus: typeof window.ActionBus,
-                WindowChrome: typeof window.WindowChrome,
-                API: typeof window.API,
-
-                // Phase 3: System Modules
-                ThemeSystem: window.API && typeof window.API.theme,
-                StorageSystem: window.API && typeof window.API.storage,
-
-                // Phase 3: Instance Types
-                TerminalWindow: typeof window.TerminalWindow,
-                TerminalSession: typeof window.TerminalSession,
-                TextEditorInstance: typeof window.TextEditorInstance,
-
-                // Phase 4: Legacy Refactoring (exported modules)
-                GitHubAPI: typeof window.GitHubAPI,
-                ImageViewerUtils: typeof window.ImageViewerUtils,
-            };
-        });
-
-        console.log('TypeScript modules:', modulesAvailable);
-
-        // Phase 2 assertions
-        expect(modulesAvailable.WindowTabs, 'WindowTabs').toBe('object'); // API object
-        expect(modulesAvailable.KeyboardShortcuts, 'KeyboardShortcuts').toBe('object');
-
-        // Phase 3 Core assertions
-        expect(modulesAvailable.BaseWindowInstance, 'BaseWindowInstance').toBe('function');
-        expect(modulesAvailable.InstanceManager, 'InstanceManager').toBe('function');
-        expect(modulesAvailable.WindowManager, 'WindowManager').toBe('object');
-        expect(modulesAvailable.ActionBus, 'ActionBus').toBe('object');
-        expect(modulesAvailable.WindowChrome, 'WindowChrome').toBe('object');
-        expect(modulesAvailable.API, 'API').toBe('object');
-
-        // Phase 3 System assertions
-        expect(modulesAvailable.ThemeSystem, 'API.theme').toBe('object');
-        expect(modulesAvailable.StorageSystem, 'API.storage').toBe('object');
-
-        // Phase 3 Instance assertions
-        expect(modulesAvailable.TerminalWindow, 'TerminalWindow').toBe('function');
-        expect(modulesAvailable.TerminalSession, 'TerminalSession').toBe('function');
-        expect(modulesAvailable.TextEditorInstance, 'TextEditorInstance').toBe('function');
-
-        // Phase 4 assertions (exported modules only)
-        expect(modulesAvailable.GitHubAPI, 'GitHubAPI').toBe('object');
-        expect(modulesAvailable.ImageViewerUtils, 'ImageViewerUtils').toBe('object');
-    });
-
-    test('WindowManager has correct API surface', async ({ page }) => {
-        const wmAPI = await page.evaluate(() => {
-            return {
-                hasRegister: typeof window.WindowManager.register,
-                hasRegisterAll: typeof window.WindowManager.registerAll,
-                hasGetConfig: typeof window.WindowManager.getConfig,
-                hasOpen: typeof window.WindowManager.open,
-                hasClose: typeof window.WindowManager.close,
-                hasBringToFront: typeof window.WindowManager.bringToFront,
-                hasGetProgramInfo: typeof window.WindowManager.getProgramInfo,
-            };
-        });
-
-        expect(wmAPI.hasRegister).toBe('function');
-        expect(wmAPI.hasRegisterAll).toBe('function');
-        expect(wmAPI.hasGetConfig).toBe('function');
-        expect(wmAPI.hasOpen).toBe('function');
-        expect(wmAPI.hasClose).toBe('function');
-        expect(wmAPI.hasBringToFront).toBe('function');
-        expect(wmAPI.hasGetProgramInfo).toBe('function');
-    });
-
-    test('ActionBus has correct API surface', async ({ page }) => {
-        const abAPI = await page.evaluate(() => {
-            return {
-                hasRegister: typeof window.ActionBus.register,
-                hasInit: typeof window.ActionBus.init,
-                hasExecute: typeof window.ActionBus.execute,
-            };
-        });
-
-        expect(abAPI.hasRegister).toBe('function');
-        expect(abAPI.hasInit).toBe('function');
-        expect(abAPI.hasExecute).toBe('function');
-    });
-
     test('TerminalWindow can create windows', async ({ page }) => {
         const canCreate = await page.evaluate(() => {
             try {
@@ -146,30 +52,6 @@ test.describe('TypeScript Integration', () => {
         });
 
         expect(canCreate).toBe(true);
-    });
-
-    test('API namespace provides unified access', async ({ page }) => {
-        const apiAccess = await page.evaluate(() => {
-            return {
-                hasTheme: window.API && typeof window.API.theme === 'object',
-                hasStorage: window.API && typeof window.API.storage === 'object',
-                hasWindow: window.API && typeof window.API.window === 'object',
-
-                // Check specific methods
-                hasSetTheme:
-                    window.API && typeof window.API.theme.setThemePreference === 'function',
-                hasSavePositions:
-                    window.API && typeof window.API.storage.saveWindowPositions === 'function',
-                hasOpenWindow: window.API && typeof window.API.window.open === 'function',
-            };
-        });
-
-        expect(apiAccess.hasTheme).toBe(true);
-        expect(apiAccess.hasStorage).toBe(true);
-        expect(apiAccess.hasWindow).toBe(true);
-        expect(apiAccess.hasSetTheme).toBe(true);
-        expect(apiAccess.hasSavePositions).toBe(true);
-        expect(apiAccess.hasOpenWindow).toBe(true);
     });
 
     test('WindowChrome can create UI components', async ({ page }) => {

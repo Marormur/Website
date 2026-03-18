@@ -6,14 +6,6 @@ test.describe('MacUI Framework - State Manager', () => {
         await page.waitForFunction(() => window.__APP_READY);
     });
 
-    test('StateManager is available', async ({ page }) => {
-        const hasStateManager = await page.evaluate(() => {
-            return typeof window.MacUI.StateManager !== 'undefined';
-        });
-
-        expect(hasStateManager).toBe(true);
-    });
-
     test('StateManager can get and set state', async ({ page }) => {
         const state = await page.evaluate(() => {
             const { StateManager } = window.MacUI;

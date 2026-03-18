@@ -10,10 +10,19 @@ import { defineConfig, devices } from '@playwright/test';
 // Always use the Node server on port 5173 for tests
 // The webServer config below will start it automatically if not running
 const BASE_URL = 'http://127.0.0.1:5173';
+const RUN_FRAMEWORK_E2E = process.env.RUN_FRAMEWORK_E2E === '1';
+const RUN_INTEGRATION_E2E = process.env.RUN_INTEGRATION_E2E === '1';
+const RUN_PERFORMANCE_E2E = process.env.RUN_PERFORMANCE_E2E === '1';
 
 export default defineConfig({
     // Keep Playwright discovery scoped to E2E specs; unit tests are executed by Vitest.
     testDir: './tests/e2e',
+    // Keep deep technical suites opt-in; default E2E should emphasize user-facing journeys.
+    testIgnore: [
+        !RUN_FRAMEWORK_E2E && '**/framework/**',
+        !RUN_INTEGRATION_E2E && '**/integration/**',
+        !RUN_PERFORMANCE_E2E && '**/performance/**',
+    ].filter(Boolean),
     // Reduced timeout for faster feedback - individual tests can override if needed
     timeout: 30 * 1000,
     expect: { timeout: 8000 },

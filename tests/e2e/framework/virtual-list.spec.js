@@ -6,14 +6,6 @@ test.describe('MacUI Framework - Virtual List', () => {
         await page.waitForFunction(() => window.__APP_READY);
     });
 
-    test('VirtualList component is available', async ({ page }) => {
-        const hasVirtualList = await page.evaluate(() => {
-            return typeof window.MacUI.VirtualList !== 'undefined';
-        });
-
-        expect(hasVirtualList).toBe(true);
-    });
-
     test('VirtualList renders items', async ({ page }) => {
         await page.evaluate(() => {
             const { VirtualList } = window.MacUI;

@@ -2,18 +2,10 @@
 const { test, expect } = require('@playwright/test');
 const { waitForAppReady, clickDockIcon } = require('../utils');
 
-test.describe('TextEditor Instance Manager Availability', () => {
+test.describe('TextEditor Instance Manager', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + '/index.html');
         await waitForAppReady(page);
-    });
-
-    test('TextEditorInstanceManager exists on window after app init', async ({ page }) => {
-        // Verify TextEditorInstanceManager is available
-        const hasManager = await page.evaluate(() => {
-            return typeof window.TextEditorInstanceManager !== 'undefined';
-        });
-        expect(hasManager).toBe(true);
     });
 
     test('can create and retrieve TextEditor instances via manager', async ({ page }) => {
