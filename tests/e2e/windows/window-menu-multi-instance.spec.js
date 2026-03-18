@@ -95,10 +95,13 @@ test.describe('Window Menu Multi-Instance Integration', () => {
 
         await openWindowMenu(page);
 
-        // Exactly one active checkmark is expected (✓ prefix in label text)
-        const checkmarks = page.locator('#menu-dropdown-window .menu-item', {
-            hasText: /^✓/,
+        // Exactly one active checkmark is expected.
+        // The checkmark is rendered as a dedicated `.menu-item-checkmark` span,
+        // not reliably as a label text prefix.
+        const finderItems = page.locator('#menu-dropdown-window .menu-item', {
+            hasText: /Finder\s+\d+/i,
         });
+        const checkmarks = finderItems.locator('.menu-item-checkmark');
         await expect(checkmarks).toHaveCount(1);
 
         await closeWindowMenu(page);
