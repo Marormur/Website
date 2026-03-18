@@ -170,6 +170,8 @@ export default [
                 document: 'readonly',
                 console: 'readonly',
                 navigator: 'readonly',
+                localStorage: 'readonly',
+                sessionStorage: 'readonly',
                 DataTransfer: 'readonly',
                 DragEvent: 'readonly',
 
