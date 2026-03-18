@@ -14,6 +14,21 @@ logger.debug('UI', 'Launchpad (TS) loaded');
 
     type AppEntry = { id: string; name: string; icon: string; programKey?: string | null };
 
+    const CORE_LAUNCHPAD_APPS: AppEntry[] = [
+        {
+            id: 'finder-modal',
+            name: translate('programs.finder.label', 'Finder') || 'Finder',
+            icon: resolveProgramIcon(WINDOW_ICONS.finder),
+            programKey: 'programs.finder',
+        },
+        {
+            id: 'terminal',
+            name: translate('programs.terminal.label', 'Terminal') || 'Terminal',
+            icon: resolveProgramIcon(WINDOW_ICONS.terminal),
+            programKey: 'programs.terminal',
+        },
+    ];
+
     const CANONICAL_PROGRAM_WINDOW_IDS: Record<string, string> = {
         'programs.finder': 'finder-modal',
         'programs.terminal': 'terminal',
@@ -113,16 +128,12 @@ logger.debug('UI', 'Launchpad (TS) loaded');
             }
         });
 
-        // Finder is a core app and should be visible in Launchpad even before
-        // the first multi-window Finder instance registers itself in WindowManager.
-        if (!seenProgramKeys.has('programs.finder')) {
-            allApps.push({
-                id: 'finder-modal',
-                name: translate('programs.finder.label', 'Finder') || 'Finder',
-                icon: resolveProgramIcon(WINDOW_ICONS.finder),
-                programKey: 'programs.finder',
-            });
-        }
+        CORE_LAUNCHPAD_APPS.forEach(app => {
+            if (app.programKey && seenProgramKeys.has(app.programKey)) {
+                return;
+            }
+            allApps.push({ ...app });
+        });
 
         filteredApps = [...allApps];
         renderApps();
@@ -187,6 +198,18 @@ logger.debug('UI', 'Launchpad (TS) loaded');
                 return;
             }
             logger.warn('UI', 'LaunchpadSystem: FinderWindow unavailable for finder-modal');
+        }
+
+        if (windowId === 'terminal' || windowId === 'terminal-modal') {
+            const terminal = (
+                window as unknown as { TerminalWindow?: { focusOrCreate?: () => void } }
+            ).TerminalWindow;
+            if (terminal?.focusOrCreate) {
+                terminal.focusOrCreate();
+                return;
+            }
+            logger.warn('UI', 'LaunchpadSystem: TerminalWindow unavailable for terminal');
+            return;
         }
 
         if (windowId === 'image-modal') {

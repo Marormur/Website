@@ -27,6 +27,7 @@ export interface DockPreferences {
 const DOCK_WINDOW_ICONS: Record<string, string> = {
     'launchpad-modal': 'launchpad',
     'text-modal': 'textEditor',
+    'terminal-modal': 'terminal',
     terminal: 'terminal',
     'settings-modal': 'settings',
 };
