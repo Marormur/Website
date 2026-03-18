@@ -122,6 +122,8 @@ export class PhotosWindow extends BaseWindow {
         const metrics = window.computeSnapMetrics?.(side);
         if (!metrics) return;
 
+        target.style.maxWidth = 'none';
+        target.style.maxHeight = 'none';
         target.style.position = 'fixed';
         target.style.left = `${metrics.left}px`;
         target.style.top = `${metrics.top}px`;

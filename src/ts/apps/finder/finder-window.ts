@@ -17,7 +17,11 @@ import {
 } from '../../framework/controls/window-tabs-adapter.js';
 import logger from '../../core/logger.js';
 import { attachWindowDragZoneBehavior } from '../../framework/controls/window-drag-zone.js';
-import { resolveElementLogicalPx, toLogicalPx } from '../../utils/viewport.js';
+import {
+    getLogicalViewportHeight,
+    getLogicalViewportWidth,
+    resolveElementLogicalPx,
+} from '../../utils/viewport.js';
 
 type FinderCurrentView = 'computer' | 'github' | 'favorites' | 'recent';
 
@@ -85,14 +89,56 @@ export class FinderWindow extends BaseWindow {
             },
             restoreFromSnappedDrag: ({ windowEl: dragEl, pointerX, pointerY }) => {
                 if (dragEl.dataset.snapped === 'left' || dragEl.dataset.snapped === 'right') {
-                    const initialRect = dragEl.getBoundingClientRect();
-                    const preservedOffsetX = pointerX - toLogicalPx(initialRect.left);
-                    const preservedOffsetY = pointerY - toLogicalPx(initialRect.top);
+                    const snappedRect = dragEl.getBoundingClientRect();
+                    const snappedLeft = resolveElementLogicalPx(dragEl, 'left', snappedRect.left);
+                    const snappedTop = resolveElementLogicalPx(dragEl, 'top', snappedRect.top);
+                    const snappedWidth = Math.max(
+                        1,
+                        resolveElementLogicalPx(dragEl, 'width', snappedRect.width)
+                    );
+                    const snappedHeight = Math.max(
+                        1,
+                        resolveElementLogicalPx(dragEl, 'height', snappedRect.height)
+                    );
+                    const preservedOffsetX = Math.max(
+                        0,
+                        Math.min(snappedWidth, pointerX - snappedLeft)
+                    );
+                    const preservedOffsetY = Math.max(
+                        0,
+                        Math.min(snappedHeight, pointerY - snappedTop)
+                    );
+
                     this.unsnap();
-                    const minTopAfterUnsnap = window.getMenuBarBottom?.() || 0;
-                    dragEl.style.position = 'fixed';
-                    dragEl.style.left = `${pointerX - preservedOffsetX}px`;
-                    dragEl.style.top = `${Math.max(minTopAfterUnsnap, pointerY - preservedOffsetY)}px`;
+
+                    const restoredRect = dragEl.getBoundingClientRect();
+                    const restoredWidth = Math.max(
+                        1,
+                        resolveElementLogicalPx(dragEl, 'width', restoredRect.width)
+                    );
+                    const restoredHeight = Math.max(
+                        1,
+                        resolveElementLogicalPx(dragEl, 'height', restoredRect.height)
+                    );
+                    const clampedOffsetX = Math.max(0, Math.min(restoredWidth, preservedOffsetX));
+                    const clampedOffsetY = Math.max(0, Math.min(restoredHeight, preservedOffsetY));
+                    const minTop = window.getMenuBarBottom?.() || 0;
+                    const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+                    const maxLeft = Math.max(0, getLogicalViewportWidth() - restoredWidth);
+                    const maxTop = Math.max(
+                        minTop,
+                        getLogicalViewportHeight() - dockReserve - restoredHeight
+                    );
+                    const restoredLeft = Math.max(0, Math.min(maxLeft, pointerX - clampedOffsetX));
+                    const restoredTop = Math.max(
+                        minTop,
+                        Math.min(maxTop, pointerY - clampedOffsetY)
+                    );
+
+                    dragEl.style.left = `${Math.round(restoredLeft)}px`;
+                    dragEl.style.top = `${Math.round(restoredTop)}px`;
+                    this.position.x = Math.round(restoredLeft);
+                    this.position.y = Math.round(restoredTop);
                 }
             },
         });
@@ -142,6 +188,9 @@ export class FinderWindow extends BaseWindow {
         const metrics = window.computeSnapMetrics?.(side);
         if (!metrics) return;
 
+        // Allow full-height snap; otherwise max-h:90vh creates visible edge gaps.
+        target.style.maxWidth = 'none';
+        target.style.maxHeight = 'none';
         target.style.position = 'fixed';
         target.style.left = `${metrics.left}px`;
         target.style.top = `${metrics.top}px`;
@@ -173,6 +222,8 @@ export class FinderWindow extends BaseWindow {
             Number.isFinite(restoreHeight);
 
         if (hasRestore) {
+            target.style.maxWidth = '';
+            target.style.maxHeight = '';
             target.style.position = 'fixed';
             target.style.left = `${Math.round(restoreLeft)}px`;
             target.style.top = `${Math.round(restoreTop)}px`;

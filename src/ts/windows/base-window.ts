@@ -13,7 +13,6 @@ import {
     getLogicalViewportHeight,
     resolveElementLogicalPx,
     toLogicalClientPx,
-    toLogicalPx,
     toRenderedClientPx,
 } from '../utils/viewport.js';
 import { createTrafficLightControlsElement } from '../framework/controls/traffic-lights.js';
@@ -274,17 +273,56 @@ export class BaseWindow {
 
             if (
                 this.element &&
+                currentRect &&
                 (this.element.dataset.snapped === 'left' ||
                     this.element.dataset.snapped === 'right')
             ) {
-                const initialRect = this.element.getBoundingClientRect();
-                const preservedOffsetX = pointerX - toLogicalPx(initialRect.left);
-                const preservedOffsetY = pointerY - toLogicalPx(initialRect.top);
+                const snappedLeft = resolveElementLogicalPx(this.element, 'left', currentRect.left);
+                const snappedTop = resolveElementLogicalPx(this.element, 'top', currentRect.top);
+                const snappedWidth = Math.max(
+                    1,
+                    resolveElementLogicalPx(this.element, 'width', currentRect.width)
+                );
+                const snappedHeight = Math.max(
+                    1,
+                    resolveElementLogicalPx(this.element, 'height', currentRect.height)
+                );
+                const preservedOffsetX = Math.max(
+                    0,
+                    Math.min(snappedWidth, pointerX - snappedLeft)
+                );
+                const preservedOffsetY = Math.max(
+                    0,
+                    Math.min(snappedHeight, pointerY - snappedTop)
+                );
+
                 this._unsnap();
-                const minTopAfterUnsnap = window.getMenuBarBottom?.() || 0;
-                this.element.style.position = 'fixed';
-                this.element.style.left = `${pointerX - preservedOffsetX}px`;
-                this.element.style.top = `${Math.max(minTopAfterUnsnap, pointerY - preservedOffsetY)}px`;
+
+                const restoredRect = this.element.getBoundingClientRect();
+                const restoredWidth = Math.max(
+                    1,
+                    resolveElementLogicalPx(this.element, 'width', restoredRect.width)
+                );
+                const restoredHeight = Math.max(
+                    1,
+                    resolveElementLogicalPx(this.element, 'height', restoredRect.height)
+                );
+                const clampedOffsetX = Math.max(0, Math.min(restoredWidth, preservedOffsetX));
+                const clampedOffsetY = Math.max(0, Math.min(restoredHeight, preservedOffsetY));
+                const minTop = window.getMenuBarBottom?.() || 0;
+                const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+                const maxLeft = Math.max(0, getLogicalViewportWidth() - restoredWidth);
+                const maxTop = Math.max(
+                    minTop,
+                    getLogicalViewportHeight() - dockReserve - restoredHeight
+                );
+                const restoredLeft = Math.max(0, Math.min(maxLeft, pointerX - clampedOffsetX));
+                const restoredTop = Math.max(minTop, Math.min(maxTop, pointerY - clampedOffsetY));
+
+                this.element.style.left = `${Math.round(restoredLeft)}px`;
+                this.element.style.top = `${Math.round(restoredTop)}px`;
+                this.position.x = Math.round(restoredLeft);
+                this.position.y = Math.round(restoredTop);
             }
 
             this.dragState.isDragging = true;
@@ -402,6 +440,10 @@ export class BaseWindow {
         const metrics = window.computeSnapMetrics?.(side);
         if (!metrics) return;
 
+        // Snap should consume the full computed area; the default 90vh cap would otherwise
+        // leave a visible gap to the dock/bottom edge.
+        target.style.maxWidth = 'none';
+        target.style.maxHeight = 'none';
         target.style.position = 'fixed';
         target.style.left = `${metrics.left}px`;
         target.style.top = `${metrics.top}px`;
@@ -433,6 +475,8 @@ export class BaseWindow {
             Number.isFinite(restoreHeight);
 
         if (hasRestore) {
+            target.style.maxWidth = '';
+            target.style.maxHeight = '';
             target.style.position = 'fixed';
             target.style.left = `${Math.round(restoreLeft)}px`;
             target.style.top = `${Math.round(restoreTop)}px`;

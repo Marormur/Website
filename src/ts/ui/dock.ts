@@ -5,7 +5,7 @@
 
 import { getJSON, setJSON } from '../services/storage-utils.js';
 import { renderProgramIcon } from '../windows/window-icons.js';
-import { toLogicalPx } from '../utils/viewport.js';
+import { getLogicalViewportHeight, getLogicalViewportWidth } from '../utils/viewport.js';
 
 type DockPosition = 'bottom' | 'left' | 'right';
 type DockMinimizeEffect = 'genie' | 'scale';
@@ -57,8 +57,9 @@ function positionDock(preferences: DockPreferences): void {
     const dock = getDockElement();
     if (!dock) return;
 
-    const viewportWidth = Math.max(1, window.innerWidth);
-    const viewportHeight = Math.max(1, window.innerHeight);
+    // Keep dock coordinates in the same logical CSS-px space as fixed window left/top.
+    const viewportWidth = Math.max(1, getLogicalViewportWidth());
+    const viewportHeight = Math.max(1, getLogicalViewportHeight());
     const dockRect = dock.getBoundingClientRect();
     const dockWidth = Math.max(1, dockRect.width || dock.offsetWidth || dock.scrollWidth || 0);
     const dockHeight = Math.max(1, dockRect.height || dock.offsetHeight || dock.scrollHeight || 0);
@@ -456,11 +457,18 @@ export function getDockReservedBottom(): number {
         if (!dock || dock.classList.contains('hidden')) return 0;
         if (preferences.position !== 'bottom') return 0;
         if (preferences.autoHide && dock.classList.contains('dock-auto-hide-hidden')) return 0;
-        const rect = dock.getBoundingClientRect();
-        // Keep this in logical CSS px so all window-layout math uses the same coordinate space.
-        const viewportHeight = Math.max(toLogicalPx(window.innerHeight), 0);
+        const viewportHeight = Math.max(getLogicalViewportHeight(), 0);
         if (viewportHeight <= 0) return 0;
-        return Math.round(Math.max(0, viewportHeight - toLogicalPx(rect.top)));
+
+        // Prefer computed top: fixed positioning and snap math both run in this logical CSS px space.
+        const computedTop = parseFloat(window.getComputedStyle(dock).top || '');
+        if (Number.isFinite(computedTop)) {
+            return Math.round(Math.max(0, viewportHeight - computedTop));
+        }
+
+        // Fallback for unusual layouts.
+        const rect = dock.getBoundingClientRect();
+        return Math.round(Math.max(0, viewportHeight - rect.top));
     } catch {
         return 0;
     }

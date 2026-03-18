@@ -1,12 +1,16 @@
 (function () {
     'use strict';
 
-    function getHtmlZoom(): number {
-        return parseFloat(document.documentElement.style.zoom || '1') || 1;
+    function getLogicalViewportWidth(): number {
+        const rawZoom = parseFloat(getComputedStyle(document.documentElement).zoom || '');
+        const zoom = Number.isFinite(rawZoom) && rawZoom > 0 ? rawZoom : 1;
+        return Math.max(0, Math.round(window.innerWidth / zoom));
     }
 
-    function toLogicalPx(px: number): number {
-        return px / getHtmlZoom();
+    function getLogicalViewportHeight(): number {
+        const rawZoom = parseFloat(getComputedStyle(document.documentElement).zoom || '');
+        const zoom = Number.isFinite(rawZoom) && rawZoom > 0 ? rawZoom : 1;
+        return Math.max(0, Math.round(window.innerHeight / zoom));
     }
 
     // ============================================================================
@@ -22,8 +26,16 @@
         if (!header) {
             return 0;
         }
+        const computed = window.getComputedStyle(header);
+        const top = parseFloat(computed.top || '0');
+        const height = parseFloat(computed.height || '');
+
+        if (Number.isFinite(height)) {
+            return Math.round((Number.isFinite(top) ? top : 0) + height);
+        }
+
         const rect = header.getBoundingClientRect();
-        return Math.round(toLogicalPx(rect.bottom));
+        return Math.round(rect.bottom);
     }
 
     /**
@@ -44,9 +56,9 @@
             target.style.top = `${minTop}px`;
         } else if (Number.isNaN(numericTop)) {
             const rect = target.getBoundingClientRect();
-            if (toLogicalPx(rect.top) < minTop) {
+            if (rect.top < minTop) {
                 if (!target.style.left) {
-                    target.style.left = `${Math.round(toLogicalPx(rect.left))}px`;
+                    target.style.left = `${Math.round(rect.left)}px`;
                 }
                 target.style.top = `${minTop}px`;
             }
@@ -63,8 +75,8 @@
     ): { left: number; top: number; width: number; height: number } | null {
         if (side !== 'left' && side !== 'right') return null;
         const minTop = Math.round(getMenuBarBottom());
-        const viewportWidth = Math.max(Math.round(toLogicalPx(window.innerWidth)), 0);
-        const viewportHeight = Math.max(Math.round(toLogicalPx(window.innerHeight)), 0);
+        const viewportWidth = getLogicalViewportWidth();
+        const viewportHeight = getLogicalViewportHeight();
         if (viewportWidth <= 0 || viewportHeight <= 0) return null;
         const minWidth = Math.min(320, viewportWidth);
         const halfWidth = Math.round(viewportWidth / 2);

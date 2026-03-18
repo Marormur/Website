@@ -257,6 +257,8 @@ export class Dialog {
             ds.prevSnapTop = target.style.top || computed.top || '';
             ds.prevSnapWidth = target.style.width || computed.width || '';
             ds.prevSnapHeight = target.style.height || computed.height || '';
+            ds.prevSnapMaxWidth = target.style.maxWidth || '';
+            ds.prevSnapMaxHeight = target.style.maxHeight || '';
             ds.prevSnapPosition = target.style.position || computed.position || '';
             ds.prevSnapRight = target.style.right || computed.right || '';
             ds.prevSnapBottom = target.style.bottom || computed.bottom || '';
@@ -266,6 +268,8 @@ export class Dialog {
             this.unsnap({ silent: true });
             return null;
         }
+        target.style.maxWidth = 'none';
+        target.style.maxHeight = 'none';
         target.style.position = 'fixed';
         target.style.top = `${metrics.top}px`;
         target.style.left = `${metrics.left}px`;
@@ -300,6 +304,8 @@ export class Dialog {
         restore('prevSnapTop', 'top');
         restore('prevSnapWidth', 'width');
         restore('prevSnapHeight', 'height');
+        restore('prevSnapMaxWidth', 'maxWidth');
+        restore('prevSnapMaxHeight', 'maxHeight');
         restore('prevSnapPosition', 'position');
         restore('prevSnapRight', 'right');
         restore('prevSnapBottom', 'bottom');
@@ -399,16 +405,24 @@ export class Dialog {
             let localOffsetX = logicalPointerX - resolveElementLogicalPx(target, 'left', rect.left);
             let localOffsetY = logicalPointerY - resolveElementLogicalPx(target, 'top', rect.top);
             if (initialSnapSide) {
-                const preservedOffsetX = localOffsetX;
-                const preservedOffsetY = localOffsetY;
+                const snappedWidth = Math.max(
+                    1,
+                    resolveElementLogicalPx(target, 'width', rect.width)
+                );
+                const snappedHeight = Math.max(
+                    1,
+                    resolveElementLogicalPx(target, 'height', rect.height)
+                );
+                const preservedOffsetX = Math.max(0, Math.min(snappedWidth, localOffsetX));
+                const preservedOffsetY = Math.max(0, Math.min(snappedHeight, localOffsetY));
+
                 this.unsnap({ silent: true });
-                const minTopAfterUnsnap = window.getMenuBarBottom?.() || 0;
-                target.style.position = 'fixed';
-                target.style.left = `${logicalPointerX - preservedOffsetX}px`;
-                target.style.top = `${Math.max(minTopAfterUnsnap, logicalPointerY - preservedOffsetY)}px`;
+
                 rect = target.getBoundingClientRect();
-                localOffsetX = logicalPointerX - toLogicalPx(rect.left);
-                localOffsetY = logicalPointerY - toLogicalPx(rect.top);
+                const restoredWidth = Math.max(1, toLogicalPx(rect.width));
+                const restoredHeight = Math.max(1, toLogicalPx(rect.height));
+                localOffsetX = Math.max(0, Math.min(restoredWidth, preservedOffsetX));
+                localOffsetY = Math.max(0, Math.min(restoredHeight, preservedOffsetY));
             }
             const computedPosition = window.getComputedStyle(target).position;
             if (computedPosition === 'static' || computedPosition === 'relative') {
