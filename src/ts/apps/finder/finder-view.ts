@@ -1745,6 +1745,24 @@ export class FinderView extends BaseTab {
                         openInTextEditor(name, content);
                         return;
                     }
+                    // Images: prefer srcUrl (static asset reference) then data-URI content
+                    if (imageExts.has(ext)) {
+                        const file = VirtualFS.getFile(pathParts);
+                        const imgSrc =
+                            file?.srcUrl ??
+                            (content?.startsWith('data:') || content?.startsWith('blob:')
+                                ? content
+                                : null);
+                        if (
+                            imgSrc &&
+                            PreviewInstanceManager &&
+                            typeof PreviewInstanceManager.openImages === 'function'
+                        ) {
+                            const displayPath = pathParts.join('/');
+                            PreviewInstanceManager.openImages([imgSrc], 0, displayPath);
+                            return;
+                        }
+                    }
                 } catch (e) {
                     logger.warn('FINDER', '[FinderView] VirtualFS read failed:', e);
                 }

@@ -731,10 +731,26 @@ export const de = {
     },
     preview: {
         noImage: 'Kein Bild ausgewählt',
+        imageViewer: 'Bildbetrachter',
+        placeholder: 'Öffne eine Bilddatei aus dem Sucher, um die Vorschau zu sehen.',
         zoomIn: 'Vergrößern',
         zoomOut: 'Verkleinern',
         next: 'Nächstes Bild',
         prev: 'Vorheriges Bild',
+        labels: {
+            file: 'Datei',
+            path: 'Pfad',
+            status: 'Status',
+            zoom: 'Zoom',
+            shortcuts: 'Kurzbefehle',
+        },
+        aria: {
+            toolbarNavigation: 'Vorschau-Werkzeugleiste',
+            toolbarFileActions: 'Vorschau-Dateiaktionen',
+        },
+        download: {
+            defaultFileName: 'bild',
+        },
         dragDrop: 'Bild hierher ziehen',
         contextMenu: 'Kontextmenü',
     },

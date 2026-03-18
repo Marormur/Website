@@ -45,6 +45,19 @@ import { renderProgramIcon, resolveProgramIcon, WINDOW_ICONS } from '../windows/
                             copyright: '© 2024-2026',
                         },
                     },
+                    preview: {
+                        modalId: null,
+                        programLabel: t('programs.preview.label', 'Vorschau'),
+                        infoLabel: t('programs.preview.infoLabel', 'Bildvorschau'),
+                        fallbackInfoModalId: 'program-info-modal',
+                        icon: resolveProgramIcon(WINDOW_ICONS.preview),
+                        about: {
+                            name: t('programs.preview.about.name', 'Vorschau'),
+                            tagline: t('programs.preview.about.tagline', 'Schnelle Bildanzeige'),
+                            version: t('programs.preview.about.version', '1.0'),
+                            copyright: t('programs.preview.about.copyright', '© 2025 Marormur'),
+                        },
+                    },
                     terminal: {
                         modalId: null,
                         programLabel: t('programs.terminal.label', 'Terminal'),

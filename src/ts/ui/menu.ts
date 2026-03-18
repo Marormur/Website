@@ -44,6 +44,7 @@ type WindowLayoutController = WindowMenuController & {
 
 const MULTI_WINDOW_MODAL_TYPE_MAP: Record<string, string> = {
     'projects-modal': 'finder',
+    'preview-modal': 'preview',
     terminal: 'terminal',
     'text-modal': 'text-editor',
     'image-modal': 'photos',
@@ -391,6 +392,53 @@ function buildPhotosMenuDefinition(context: MenuContext) {
         createHelpMenuSection(context, {
             itemKey: 'menu.image.help',
             infoModalId: 'image-modal',
+            itemIcon: 'help',
+        }),
+    ];
+}
+
+function buildPreviewMenuDefinition(context: MenuContext) {
+    const state = (
+        window['getImageViewerState'] ? window['getImageViewerState']() : { hasImage: false }
+    ) as { hasImage?: boolean };
+    return [
+        {
+            id: 'file',
+            label: () => translate('menu.sections.file'),
+            items: [
+                {
+                    id: 'preview-open-tab',
+                    label: () => translate('menu.image.openInTab'),
+                    disabled: !state?.hasImage,
+                    icon: 'imageOpen',
+                    action: () => {
+                        if (window['openActiveImageInNewTab']) window['openActiveImageInNewTab']();
+                    },
+                },
+                {
+                    id: 'preview-download',
+                    label: () => translate('menu.image.saveImage'),
+                    disabled: !state?.hasImage,
+                    icon: 'download',
+                    action: () => {
+                        if (window['downloadActiveImage']) window['downloadActiveImage']();
+                    },
+                },
+                { type: 'separator' },
+                {
+                    id: 'preview-close',
+                    label: () => translate('menu.image.close'),
+                    shortcut: '⌘W',
+                    disabled: () => !(context && resolveWindowMenuController(context)),
+                    icon: 'close',
+                    action: () => closeContextWindow(context),
+                },
+            ],
+        },
+        createWindowMenuSection(context),
+        createHelpMenuSection(context, {
+            itemKey: 'menu.image.help',
+            infoModalId: 'preview-modal',
             itemIcon: 'help',
         }),
     ];
@@ -1407,6 +1455,7 @@ const menuDefinitions: Record<string, MenuSectionBuilder> = {
     default: buildDefaultMenuDefinition,
     'projects-modal': buildFinderMenuDefinition,
     'settings-modal': buildSettingsMenuDefinition,
+    'preview-modal': buildPreviewMenuDefinition,
     'text-modal': buildTextEditorMenuDefinition,
     // Legacy modal key kept for compatibility, now backed by PhotosWindow.
     'image-modal': buildPhotosMenuDefinition,
@@ -1580,6 +1629,8 @@ export function renderApplicationMenu(activeModalId?: string | null) {
             activeModalId = 'terminal';
         } else if (activeType === 'finder') {
             activeModalId = 'projects-modal';
+        } else if (activeType === 'preview') {
+            activeModalId = 'preview-modal';
         } else if (activeType === 'text-editor') {
             activeModalId = 'text-modal';
         } else if (activeType === 'photos') {

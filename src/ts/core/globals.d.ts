@@ -170,6 +170,18 @@ declare global {
             create?: (config?: { title?: string }) => unknown;
             focusOrCreate?: (config?: { title?: string }) => unknown;
         };
+        /** PreviewWindow class for creating preview windows */
+        PreviewWindow?: {
+            create?: (config?: { title?: string }) => unknown;
+            focusOrCreate?: (config?: { title?: string }) => unknown;
+            getActiveViewerState?: () => {
+                hasImage: boolean;
+                src: string;
+                title?: string;
+            } | null;
+            openActiveImageInNewTab?: () => void;
+            downloadActiveImage?: () => void;
+        };
         DockSystem?: {
             init?: () => void;
             update?: () => void;
@@ -438,7 +450,7 @@ declare global {
         showSnapPreview?: (side: 'left' | 'right') => void;
         hideSnapPreview?: () => void;
 
-        // ── Photos / Image viewer helpers ─────────────────────────────────
+        // ── Photos / Preview / Image viewer helpers ───────────────────────
         getImageViewerState?: () => { hasImage: boolean; src: string; title?: string } | null;
         openActiveImageInNewTab?: () => void;
         downloadActiveImage?: () => void;

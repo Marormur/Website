@@ -107,6 +107,18 @@ export const windowConfigurations: WindowConfiguration[] = [
         },
     },
     {
+        id: 'preview-modal',
+        type: 'persistent',
+        programKey: 'programs.preview',
+        icon: WINDOW_ICONS.preview,
+        closeButtonId: null,
+        metadata: {
+            initHandler: function () {
+                window.PreviewWindow?.focusOrCreate?.();
+            },
+        },
+    },
+    {
         id: 'image-modal',
         // Legacy key for Photos app; handled by PhotosWindow (no static modal in index.html).
         type: 'transient',

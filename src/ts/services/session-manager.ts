@@ -66,6 +66,7 @@ logger.debug('SESSION', 'SessionManager loaded');
         'terminal',
         'text-editor',
         'finder',
+        'preview',
         'photos',
     ]);
 

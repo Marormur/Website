@@ -107,16 +107,16 @@ test.describe('Finder GitHub integration', () => {
         const wallRow = githubItem(finderWindow, 'wallpaper.png');
         await expect(wallRow).toBeVisible({ timeout: 20000 });
         await openGithubItem(finderWindow, 'wallpaper.png');
-        // Current behavior opens an image in a Photos window instance.
+        // Image files from Finder should open in the dedicated Preview window.
         await page.waitForFunction(
-            () => (window.WindowRegistry?.getAllWindows?.('photos') || []).length > 0,
+            () => (window.WindowRegistry?.getAllWindows?.('preview') || []).length > 0,
             { timeout: 10000 }
         );
 
-        const photosWindowCount = await page.evaluate(
-            () => (window.WindowRegistry?.getAllWindows?.('photos') || []).length
+        const previewWindowCount = await page.evaluate(
+            () => (window.WindowRegistry?.getAllWindows?.('preview') || []).length
         );
-        expect(photosWindowCount).toBeGreaterThan(0);
+        expect(previewWindowCount).toBeGreaterThan(0);
     });
 
     test('Back and forward switch GitHub folder contents reliably', async ({ page, baseURL }) => {

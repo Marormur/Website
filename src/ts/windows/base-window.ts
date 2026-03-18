@@ -1283,8 +1283,10 @@ export class BaseWindow {
         // Map window types to programKey/icon used by the menubar
         const map: Record<string, { programKey: string; icon: string }> = {
             finder: { programKey: 'programs.finder', icon: WINDOW_ICONS.finder },
+            preview: { programKey: 'programs.preview', icon: WINDOW_ICONS.preview },
             'text-editor': { programKey: 'programs.text', icon: WINDOW_ICONS.textEditor },
             terminal: { programKey: 'programs.terminal', icon: WINDOW_ICONS.terminal },
+            photos: { programKey: 'programs.photos', icon: WINDOW_ICONS.photos },
         };
         const meta = map[this.type] || {
             programKey: 'programs.default',

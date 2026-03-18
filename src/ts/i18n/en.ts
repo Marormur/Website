@@ -729,10 +729,26 @@ export const en = {
     },
     preview: {
         noImage: 'No image selected',
+        imageViewer: 'Image viewer',
+        placeholder: 'Open an image file from Finder to preview it.',
         zoomIn: 'Zoom in',
         zoomOut: 'Zoom out',
         next: 'Next image',
         prev: 'Previous image',
+        labels: {
+            file: 'File',
+            path: 'Path',
+            status: 'Status',
+            zoom: 'Zoom',
+            shortcuts: 'Shortcuts',
+        },
+        aria: {
+            toolbarNavigation: 'Preview toolbar',
+            toolbarFileActions: 'Preview file actions',
+        },
+        download: {
+            defaultFileName: 'image',
+        },
         dragDrop: 'Drag image here',
         contextMenu: 'Context menu',
     },

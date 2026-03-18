@@ -32,6 +32,7 @@ logger.debug('UI', 'Launchpad (TS) loaded');
     const CANONICAL_PROGRAM_WINDOW_IDS: Record<string, string> = {
         'programs.finder': 'finder-modal',
         'programs.terminal': 'terminal',
+        'programs.preview': 'preview-modal',
         'programs.text': 'text-modal',
         'programs.photos': 'image-modal',
     };

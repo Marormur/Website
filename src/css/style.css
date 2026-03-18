@@ -6019,6 +6019,438 @@ html.dark .photos-card[data-favorite='true']::after {
 }
 
 /* ============================================================
+ * Preview App Window Shell — gleiche Designsprache wie Finder/Fotos
+ * ============================================================ */
+
+.preview-window-shell {
+    --preview-window-radius: 1.125rem;
+    --preview-sidebar-inset: 0.5rem;
+    --preview-sidebar-width: 238px;
+    border-radius: var(--preview-window-radius) !important;
+    border: 1px solid rgba(148, 163, 184, 0.24) !important;
+    background:
+        radial-gradient(120% 100% at 100% 0%, rgba(56, 189, 248, 0.12) 0%, transparent 44%),
+        linear-gradient(180deg, rgba(248, 250, 252, 0.992) 0%, rgba(240, 244, 249, 0.984) 100%) !important;
+    box-shadow:
+        0 28px 52px rgba(15, 23, 42, 0.2),
+        0 1px 0 rgba(255, 255, 255, 0.7) inset !important;
+}
+
+html.dark .preview-window-shell {
+    border-color: rgba(116, 125, 146, 0.32) !important;
+    background:
+        radial-gradient(120% 100% at 100% 0%, rgba(56, 189, 248, 0.12) 0%, transparent 48%),
+        linear-gradient(180deg, rgba(31, 34, 42, 0.98) 0%, rgba(23, 26, 33, 0.96) 100%) !important;
+    box-shadow:
+        0 32px 72px rgba(3, 7, 18, 0.48),
+        0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+.preview-app-shell {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.preview-sidebar-shell {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--preview-sidebar-width, 238px);
+    z-index: 2;
+    padding: var(--preview-sidebar-inset, 0.5rem) 0 var(--preview-sidebar-inset, 0.5rem)
+        var(--preview-sidebar-inset, 0.5rem);
+    overflow: hidden;
+}
+
+.preview-sidebar-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: calc(
+        var(--preview-window-radius, 1.125rem) - var(--preview-sidebar-inset, 0.5rem)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.99));
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.78) inset,
+        -1px 0 0 rgba(148, 163, 184, 0.16) inset,
+        0 10px 22px rgba(15, 23, 42, 0.08);
+    backdrop-filter: saturate(130%) blur(80px);
+    -webkit-backdrop-filter: saturate(130%) blur(80px);
+    overflow: hidden;
+}
+
+html.dark .preview-sidebar-panel {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(rgba(24, 28, 35, 0.99), rgba(24, 28, 35, 0.99));
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        -1px 0 0 rgba(255, 255, 255, 0.09) inset,
+        0 12px 24px rgba(2, 6, 23, 0.44);
+}
+
+.preview-sidebar-meta {
+    display: grid;
+    gap: 10px;
+}
+
+.preview-sidebar-meta-card {
+    display: grid;
+    gap: 4px;
+    padding: 12px 13px;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(248, 250, 252, 0.88));
+    box-shadow: 0 8px 18px rgba(148, 163, 184, 0.08);
+}
+
+html.dark .preview-sidebar-meta-card {
+    border-color: rgba(148, 163, 184, 0.16);
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.42), rgba(15, 23, 42, 0.28));
+    box-shadow: 0 10px 22px rgba(2, 6, 23, 0.22);
+}
+
+.preview-sidebar-meta-label,
+.preview-sidebar-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(51, 65, 85, 0.5);
+}
+
+html.dark .preview-sidebar-meta-label,
+html.dark .preview-sidebar-section-label {
+    color: rgba(148, 163, 184, 0.58);
+}
+
+.preview-sidebar-meta-value {
+    color: rgba(15, 23, 42, 0.9);
+    font-size: 0.93rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+html.dark .preview-sidebar-meta-value {
+    color: rgba(241, 245, 249, 0.92);
+}
+
+.preview-sidebar-path {
+    font-weight: 500;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.preview-sidebar-shortcuts {
+    margin-top: auto;
+    padding-top: 18px;
+}
+
+.preview-sidebar-shortcut-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0;
+    display: grid;
+    gap: 8px;
+}
+
+.preview-sidebar-shortcut-list li {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    font-size: 0.85rem;
+    color: rgba(51, 65, 85, 0.82);
+}
+
+html.dark .preview-sidebar-shortcut-list li {
+    color: rgba(203, 213, 225, 0.78);
+}
+
+.preview-sidebar-shortcut-list li span:first-child {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 0 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(255, 255, 255, 0.58);
+    font-weight: 700;
+}
+
+html.dark .preview-sidebar-shortcut-list li span:first-child {
+    background: rgba(51, 65, 85, 0.48);
+    border-color: rgba(148, 163, 184, 0.16);
+}
+
+.preview-main-area {
+    margin-left: var(--preview-sidebar-width, 238px);
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.preview-content-topbar {
+    min-height: 48px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 14px 8px;
+    cursor: move;
+}
+
+.preview-toolbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(255, 255, 255, 0.48);
+}
+
+.preview-toolbar-button {
+    width: 30px;
+    min-width: 30px;
+    height: 28px;
+    border-radius: 999px;
+    border: 0;
+    background: transparent;
+    color: rgba(51, 65, 85, 0.9);
+    font-size: 18px;
+    font-family:
+        'SF Pro Text',
+        -apple-system,
+        system-ui,
+        sans-serif;
+    font-weight: 400;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background-color 0.14s ease,
+        color 0.14s ease;
+}
+
+html.dark .preview-toolbar {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+html.dark .preview-toolbar-button {
+    color: rgba(226, 232, 240, 0.92);
+}
+
+.preview-toolbar-button:hover:not(:disabled) {
+    background: rgba(15, 23, 42, 0.08);
+}
+
+html.dark .preview-toolbar-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.preview-toolbar-button:disabled {
+    color: rgba(148, 163, 184, 0.9);
+    cursor: not-allowed;
+}
+
+html.dark .preview-toolbar-button:disabled {
+    color: rgba(148, 163, 184, 0.68);
+}
+
+.preview-toolbar-button--wide {
+    width: 34px;
+    min-width: 34px;
+}
+
+.preview-toolbar-separator {
+    width: 1px;
+    height: 24px;
+    background: rgba(148, 163, 184, 0.65);
+}
+
+html.dark .preview-toolbar-separator {
+    background: rgba(148, 163, 184, 0.46);
+}
+
+.preview-title-cluster {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    text-align: center;
+}
+
+.preview-title-cluster strong {
+    font-size: 0.98rem;
+    color: rgba(15, 23, 42, 0.92);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+html.dark .preview-title-cluster strong {
+    color: rgba(248, 250, 252, 0.96);
+}
+
+.preview-title-cluster span {
+    font-size: 0.78rem;
+    color: rgba(71, 85, 105, 0.78);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+html.dark .preview-title-cluster span {
+    color: rgba(148, 163, 184, 0.76);
+}
+
+.preview-stage-wrap {
+    flex: 1;
+    min-height: 0;
+    padding: 0 16px 16px;
+}
+
+.preview-stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 24px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background:
+        radial-gradient(100% 120% at 50% 0%, rgba(14, 165, 233, 0.08) 0%, transparent 52%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(241, 245, 249, 0.9));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.8),
+        0 20px 44px rgba(148, 163, 184, 0.16);
+}
+
+html.dark .preview-stage {
+    border-color: rgba(148, 163, 184, 0.14);
+    background:
+        radial-gradient(100% 120% at 50% 0%, rgba(56, 189, 248, 0.12) 0%, transparent 50%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.92));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 24px 48px rgba(2, 6, 23, 0.34);
+}
+
+.preview-stage-empty {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    max-width: 420px;
+    padding: 24px;
+    text-align: center;
+    color: rgba(71, 85, 105, 0.88);
+}
+
+/* Ensure Tailwind's .hidden overrides display:grid (same specificity, need compound selector) */
+.preview-stage-empty.hidden {
+    display: none;
+}
+
+html.dark .preview-stage-empty {
+    color: rgba(203, 213, 225, 0.8);
+}
+
+.preview-stage-empty-icon {
+    width: 68px;
+    height: 68px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.7);
+    font-size: 2rem;
+    box-shadow: 0 16px 32px rgba(148, 163, 184, 0.16);
+}
+
+html.dark .preview-stage-empty-icon {
+    background: rgba(30, 41, 59, 0.72);
+    box-shadow: 0 18px 36px rgba(2, 6, 23, 0.34);
+}
+
+.preview-stage-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 18px;
+    box-shadow: 0 30px 65px rgba(15, 23, 42, 0.18);
+    transition: transform 0.18s ease;
+}
+
+html.dark .preview-stage-image {
+    box-shadow: 0 32px 72px rgba(2, 6, 23, 0.42);
+}
+
+.preview-statusbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 18px 14px;
+    font-size: 0.8rem;
+    color: rgba(71, 85, 105, 0.78);
+}
+
+html.dark .preview-statusbar {
+    color: rgba(148, 163, 184, 0.76);
+}
+
+@media (max-width: 900px) {
+    .preview-sidebar-shell {
+        width: 208px;
+    }
+
+    .preview-main-area {
+        margin-left: 208px;
+    }
+}
+
+@media (max-width: 720px) {
+    .preview-app-shell {
+        flex-direction: column;
+    }
+
+    .preview-sidebar-shell {
+        position: relative;
+        width: 100%;
+        padding: 0.5rem 0.5rem 0;
+        inset: auto;
+    }
+
+    .preview-main-area {
+        margin-left: 0;
+        min-height: 0;
+    }
+
+    .preview-content-topbar {
+        grid-template-columns: 1fr;
+        justify-items: center;
+    }
+
+    .preview-toolbar {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
+/* ============================================================
  * Photos App Window Shell — gleiche Designsprache wie Finder
  * ============================================================ */
 

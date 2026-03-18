@@ -30,7 +30,7 @@ type RestoreWindow = Window & {
  *
  * CONTEXT FOR AI AGENTS:
  * - This is the transitional boundary between modern multi-window restore and legacy restore.
- * - Keep modern app windows (terminal/text/finder/photos) on the multi-window path only.
+ * - Keep modern app windows (terminal/text/finder/preview/photos) on the multi-window path only.
  * - Legacy restore is intentionally retained for compatibility and should be reduced over time.
  */
 export async function runSessionRestoreOrchestration(win: RestoreWindow): Promise<void> {
@@ -85,7 +85,7 @@ export async function runSessionRestoreOrchestration(win: RestoreWindow): Promis
         }
 
         if (win.SessionManager?.restoreSession) {
-            // Migration rule: app window instances (terminal/text/finder/photos) restore via
+            // Migration rule: app window instances (terminal/text/finder/preview/photos) restore via
             // MultiWindowSessionManager only. Legacy restore remains for legacy-only state.
             // TODO(legacy-restore-migration): Remove this fallback after legacy-only instance types are migrated.
             win.SessionManager.restoreSession({ includeModernAppTypes: false });

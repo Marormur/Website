@@ -6,10 +6,15 @@ import logger from '../core/logger.js';
     type GlobalWindow = {
         dialogs?: Record<string, { modal?: HTMLElement | null } | undefined>;
         postToTextEditor?: (msg: EditorMessage) => void;
-        getImageViewerState?: () => { hasImage: boolean; src: string };
+        getImageViewerState?: () => { hasImage: boolean; src: string; title?: string };
         openActiveImageInNewTab?: () => void;
         downloadActiveImage?: () => void;
         sendTextEditorMenuAction?: (command: string) => void;
+        PreviewWindow?: {
+            getActiveViewerState?: () => { hasImage: boolean; src: string; title?: string } | null;
+            openActiveImageInNewTab?: () => void;
+            downloadActiveImage?: () => void;
+        };
     } & Window;
 
     const gw = window as unknown as GlobalWindow;
@@ -56,7 +61,12 @@ import logger from '../core/logger.js';
     }
 
     // --- Image Viewer Helpers ---
-    function getImageViewerState(): { hasImage: boolean; src: string } {
+    function getImageViewerState(): { hasImage: boolean; src: string; title?: string } {
+        const previewState = gw.PreviewWindow?.getActiveViewerState?.();
+        if (previewState?.hasImage && previewState.src) {
+            return previewState;
+        }
+
         const viewer = document.getElementById('image-viewer') as HTMLImageElement | null;
         if (!viewer) return { hasImage: false, src: '' };
         const hidden = viewer.classList.contains('hidden');
@@ -66,12 +76,20 @@ import logger from '../core/logger.js';
     }
 
     function openActiveImageInNewTab(): void {
+        if (gw.PreviewWindow?.getActiveViewerState?.()?.hasImage) {
+            gw.PreviewWindow.openActiveImageInNewTab?.();
+            return;
+        }
         const state = getImageViewerState();
         if (!state.hasImage || !state.src) return;
         window.open(state.src, '_blank', 'noopener');
     }
 
     function downloadActiveImage(): void {
+        if (gw.PreviewWindow?.getActiveViewerState?.()?.hasImage) {
+            gw.PreviewWindow.downloadActiveImage?.();
+            return;
+        }
         const state = getImageViewerState();
         if (!state.hasImage || !state.src) return;
         const link = document.createElement('a');

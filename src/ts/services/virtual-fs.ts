@@ -339,6 +339,9 @@ interface FileItem {
     size: number;
     created: string;
     modified: string;
+    /** Optional: relative URL to a real static asset (e.g. './img/profil.jpg').
+     *  If set, the Finder opens this URL directly instead of using content. */
+    srcUrl?: string;
 }
 
 interface FolderItem {
@@ -499,7 +502,79 @@ class VirtualFileSystemManager {
                                         icon: '🖼️',
                                         created: now,
                                         modified: now,
-                                        children: {},
+                                        children: {
+                                            'profil.jpg': {
+                                                type: 'file',
+                                                icon: '🖼️',
+                                                content: '',
+                                                srcUrl: './img/profil.jpg',
+                                                size: 0,
+                                                created: now,
+                                                modified: now,
+                                            },
+                                            'wallpaper.png': {
+                                                type: 'file',
+                                                icon: '🖼️',
+                                                content: '',
+                                                srcUrl: './img/wallpaper.png',
+                                                size: 0,
+                                                created: now,
+                                                modified: now,
+                                            },
+                                            'App-Icons': {
+                                                type: 'folder',
+                                                icon: '📁',
+                                                created: now,
+                                                modified: now,
+                                                children: {
+                                                    'imageviewer.png': {
+                                                        type: 'file',
+                                                        icon: '🖼️',
+                                                        content: '',
+                                                        srcUrl: './img/imageviewer.png',
+                                                        size: 0,
+                                                        created: now,
+                                                        modified: now,
+                                                    },
+                                                    'launchpad.png': {
+                                                        type: 'file',
+                                                        icon: '🖼️',
+                                                        content: '',
+                                                        srcUrl: './img/launchpad.png',
+                                                        size: 0,
+                                                        created: now,
+                                                        modified: now,
+                                                    },
+                                                    'notepad.png': {
+                                                        type: 'file',
+                                                        icon: '🖼️',
+                                                        content: '',
+                                                        srcUrl: './img/notepad.png',
+                                                        size: 0,
+                                                        created: now,
+                                                        modified: now,
+                                                    },
+                                                    'settings.png': {
+                                                        type: 'file',
+                                                        icon: '🖼️',
+                                                        content: '',
+                                                        srcUrl: './img/settings.png',
+                                                        size: 0,
+                                                        created: now,
+                                                        modified: now,
+                                                    },
+                                                    'terminal.png': {
+                                                        type: 'file',
+                                                        icon: '🖼️',
+                                                        content: '',
+                                                        srcUrl: './img/terminal.png',
+                                                        size: 0,
+                                                        created: now,
+                                                        modified: now,
+                                                    },
+                                                },
+                                            },
+                                        },
                                     },
                                 },
                             },
@@ -596,6 +671,131 @@ class VirtualFileSystemManager {
         };
     }
 
+    /**
+     * PURPOSE: Idempotent migration for stored VFS structures from older versions.
+     * WHY: Users with an existing IndexedDB snapshot won't see newly added default
+     *      files (e.g. Pictures assets). This method patches their live root in-memory
+     *      so the Finder shows the images on first open without losing other changes.
+     * INVARIANT: Only adds missing entries; never overwrites existing ones.
+     */
+    private migrateStoredStructure(): void {
+        const now = new Date().toISOString();
+        try {
+            const marvin = this.getFolder('/home/marvin') as
+                | (FolderItem & { children: Record<string, FSItem> })
+                | null;
+            if (!marvin) return;
+
+            // Ensure Pictures folder exists
+            if (!marvin.children['Pictures']) {
+                marvin.children['Pictures'] = {
+                    type: 'folder',
+                    icon: '🖼️',
+                    created: now,
+                    modified: now,
+                    children: {},
+                };
+            }
+            const pictures = marvin.children['Pictures'] as FolderItem & {
+                children: Record<string, FSItem>;
+            };
+
+            const defaultImages: Record<string, FileItem> = {
+                'profil.jpg': {
+                    type: 'file',
+                    icon: '🖼️',
+                    content: '',
+                    srcUrl: './img/profil.jpg',
+                    size: 0,
+                    created: now,
+                    modified: now,
+                },
+                'wallpaper.png': {
+                    type: 'file',
+                    icon: '🖼️',
+                    content: '',
+                    srcUrl: './img/wallpaper.png',
+                    size: 0,
+                    created: now,
+                    modified: now,
+                },
+            };
+            for (const [name, entry] of Object.entries(defaultImages)) {
+                if (!pictures.children[name]) pictures.children[name] = entry;
+            }
+
+            // Ensure App-Icons subfolder
+            if (!pictures.children['App-Icons']) {
+                pictures.children['App-Icons'] = {
+                    type: 'folder',
+                    icon: '📁',
+                    created: now,
+                    modified: now,
+                    children: {},
+                };
+            }
+            const appIcons = pictures.children['App-Icons'] as FolderItem & {
+                children: Record<string, FSItem>;
+            };
+            const defaultIcons: Record<string, FileItem> = {
+                'imageviewer.png': {
+                    type: 'file',
+                    icon: '🖼️',
+                    content: '',
+                    srcUrl: './img/imageviewer.png',
+                    size: 0,
+                    created: now,
+                    modified: now,
+                },
+                'launchpad.png': {
+                    type: 'file',
+                    icon: '🖼️',
+                    content: '',
+                    srcUrl: './img/launchpad.png',
+                    size: 0,
+                    created: now,
+                    modified: now,
+                },
+                'notepad.png': {
+                    type: 'file',
+                    icon: '🖼️',
+                    content: '',
+                    srcUrl: './img/notepad.png',
+                    size: 0,
+                    created: now,
+                    modified: now,
+                },
+                'settings.png': {
+                    type: 'file',
+                    icon: '🖼️',
+                    content: '',
+                    srcUrl: './img/settings.png',
+                    size: 0,
+                    created: now,
+                    modified: now,
+                },
+                'terminal.png': {
+                    type: 'file',
+                    icon: '🖼️',
+                    content: '',
+                    srcUrl: './img/terminal.png',
+                    size: 0,
+                    created: now,
+                    modified: now,
+                },
+            };
+            for (const [name, entry] of Object.entries(defaultIcons)) {
+                if (!appIcons.children[name]) appIcons.children[name] = entry;
+            }
+
+            this.structureDirty = true;
+            this.scheduleSave();
+            logger.debug('STORAGE', '[VirtualFS] migrateStoredStructure: Pictures assets applied');
+        } catch (e) {
+            logger.warn('STORAGE', '[VirtualFS] migrateStoredStructure failed:', e);
+        }
+    }
+
     // ========================================================================
     // Persistence
     // ========================================================================
@@ -650,6 +850,7 @@ class VirtualFileSystemManager {
                     }
                 }
                 this.root = stored;
+                this.migrateStoredStructure();
                 logger.debug('STORAGE', `[VirtualFS] Loaded from ${adapterName}`);
             } else {
                 // Use default structure if no valid data in storage

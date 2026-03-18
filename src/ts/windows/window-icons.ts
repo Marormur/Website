@@ -7,6 +7,7 @@ import { getString, setString } from '../services/storage-utils.js';
 
 export type ProgramIconKey =
     | 'finder'
+    | 'preview'
     | 'textEditor'
     | 'terminal'
     | 'photos'
@@ -23,6 +24,7 @@ const DEFAULT_ICON_THEME: ProgramIconTheme = 'emoji';
 const PROGRAM_ICON_SETS: Record<ProgramIconTheme, Record<ProgramIconKey, string>> = {
     emoji: {
         finder: '🗂️',
+        preview: '🔎',
         textEditor: '📝',
         terminal: '💻',
         photos: '🖼️',
@@ -33,6 +35,7 @@ const PROGRAM_ICON_SETS: Record<ProgramIconTheme, Record<ProgramIconKey, string>
     },
     custom: {
         finder: './img/sucher.png',
+        preview: './img/imageviewer.png',
         textEditor: './img/notepad.png',
         terminal: './img/terminal.png',
         photos: './img/photos-app-icon.svg',
@@ -56,6 +59,9 @@ const WINDOW_ICONS = {
     },
     get textEditor(): string {
         return getProgramIcon('textEditor');
+    },
+    get preview(): string {
+        return getProgramIcon('preview');
     },
     get terminal(): string {
         return getProgramIcon('terminal');
