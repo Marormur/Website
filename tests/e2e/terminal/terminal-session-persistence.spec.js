@@ -6,6 +6,15 @@
 const { test, expect } = require('@playwright/test');
 const { waitForAppReady } = require('../utils');
 
+const firstTerminalWindow = page => page.locator('[id^="window-terminal"]').first();
+
+async function waitForTerminalUiReady(page) {
+    const terminalWindow = firstTerminalWindow(page);
+    await terminalWindow.getByRole('heading', { name: 'Terminal' }).waitFor({ state: 'visible' });
+    // Use the explicit tab-add button class to avoid colliding with window control '+' buttons.
+    await terminalWindow.locator('button.wt-add').first().waitFor({ state: 'visible' });
+}
+
 test.describe('Terminal Session Persistence', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + '/index.html');
@@ -25,9 +34,8 @@ test.describe('Terminal Session Persistence', () => {
             },
             { timeout: 5000 }
         );
-        // Additionally wait for Terminal DOM to be present and tabs rendered
-        await page.getByRole('heading', { name: 'Terminal' }).waitFor({ state: 'visible' });
-        await page.getByRole('button', { name: '+' }).waitFor({ state: 'visible' });
+        // Additionally wait for Terminal DOM to be present and tabs rendered.
+        await waitForTerminalUiReady(page);
 
         // Execute command to add to history
         await page.evaluate(() => {
@@ -56,9 +64,11 @@ test.describe('Terminal Session Persistence', () => {
         // Reload
         await page.reload();
         await waitForAppReady(page);
-        // Ensure restored Terminal window and its tabs exist in DOM
-        await page.getByRole('heading', { name: 'Terminal' }).waitFor({ state: 'visible' });
-        await page.getByRole('button', { name: '+' }).waitFor({ state: 'visible' });
+        await page.waitForFunction(() => {
+            return (window.WindowRegistry?.getAllWindows('terminal')?.length || 0) >= 1;
+        });
+        // Ensure restored Terminal window and its tabs exist in DOM.
+        await waitForTerminalUiReady(page);
 
         // Verify window restored
         const windowCount = await page.evaluate(() => {
@@ -119,12 +129,15 @@ test.describe('Terminal Session Persistence', () => {
         // Reload
         await page.reload();
         await waitForAppReady(page);
-        // Scope waits to a specific Terminal dialog to avoid strict mode violation when multiple exist
-        const firstTerminalWindow = page.locator('[id^="window-terminal"]').first();
-        await firstTerminalWindow
+        await page.waitForFunction(() => {
+            return window.WindowRegistry?.getAllWindows('terminal')?.length === 2;
+        });
+        // Scope waits to a specific Terminal dialog to avoid strict mode violations.
+        const restoredTerminalWindow = firstTerminalWindow(page);
+        await restoredTerminalWindow
             .getByRole('heading', { name: 'Terminal' })
             .waitFor({ state: 'visible' });
-        await firstTerminalWindow.getByRole('button', { name: '+' }).waitFor({ state: 'visible' });
+        await restoredTerminalWindow.locator('button.wt-add').first().waitFor({ state: 'visible' });
 
         // Verify both windows restored
         const windowCount = await page.evaluate(() => {
@@ -175,8 +188,10 @@ test.describe('Terminal Session Persistence', () => {
         // Reload
         await page.reload();
         await waitForAppReady(page);
-        await page.getByRole('heading', { name: 'Terminal' }).waitFor({ state: 'visible' });
-        await page.getByRole('button', { name: '+' }).waitFor({ state: 'visible' });
+        await page.waitForFunction(() => {
+            return (window.WindowRegistry?.getAllWindows('terminal')?.length || 0) >= 1;
+        });
+        await waitForTerminalUiReady(page);
 
         // Verify all tabs restored
         const sessionCount = await page.evaluate(() => {
@@ -238,8 +253,10 @@ test.describe('Terminal Session Persistence', () => {
 
         await page.reload();
         await waitForAppReady(page);
-        await page.getByRole('heading', { name: 'Terminal' }).waitFor({ state: 'visible' });
-        await page.getByRole('button', { name: '+' }).waitFor({ state: 'visible' });
+        await page.waitForFunction(() => {
+            return (window.WindowRegistry?.getAllWindows('terminal')?.length || 0) >= 1;
+        });
+        await waitForTerminalUiReady(page);
 
         // Verify same session is active
         const activeIdAfter = await page.evaluate(() => {
@@ -286,6 +303,10 @@ test.describe('Terminal Session Persistence', () => {
         // Reload
         await page.reload();
         await waitForAppReady(page);
+        await page.waitForFunction(() => {
+            return (window.WindowRegistry?.getAllWindows('terminal')?.length || 0) >= 1;
+        });
+        await waitForTerminalUiReady(page);
 
         // Verify window was restored (position restoration is implementation-dependent)
         const windowInfo = await page.evaluate(() => {
