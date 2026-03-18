@@ -367,6 +367,33 @@ interface FSEvent {
 
 type FSListener = (event: FSEvent) => void;
 
+type GitHubRepoSummary = {
+    name?: string;
+    [key: string]: unknown;
+};
+
+type GitHubContentSummary = {
+    name?: string;
+    type?: string;
+    size?: number;
+    content?: string;
+    encoding?: string;
+    [key: string]: unknown;
+};
+
+type GitHubApiNamespace = {
+    fetchUserRepos?: (
+        username: string,
+        params?: { per_page?: number; sort?: string }
+    ) => Promise<unknown[]>;
+    fetchRepoContents?: (username: string, repo: string, subPath?: string) => Promise<unknown>;
+    readCache?: <T = unknown>(
+        kind: 'repos' | 'contents',
+        repo?: string,
+        subPath?: string
+    ) => T | null;
+};
+
 // ============================================================================
 // Virtual File System Manager
 // ============================================================================
@@ -399,6 +426,10 @@ class VirtualFileSystemManager {
     private dirtyPaths: Set<string> = new Set();
     private structureDirty = false;
     private readonly DELTA_THRESHOLD = 10;
+    private readonly GITHUB_MOUNT_PATH_PARTS = ['Volumes', 'GitHub-Projekte'] as const;
+    private readonly GITHUB_MOUNT_REFRESH_MS = 60 * 1000;
+    private readonly githubHydrationInFlight = new Set<string>();
+    private readonly githubHydratedAt = new Map<string, number>();
 
     private getRootContainer(): Record<string, FSItem> {
         return this.root['/'].children;
@@ -580,6 +611,31 @@ class VirtualFileSystemManager {
                             },
                         },
                     },
+                    Volumes: {
+                        type: 'folder',
+                        icon: '💽',
+                        created: now,
+                        modified: now,
+                        children: {
+                            'GitHub-Projekte': {
+                                type: 'folder',
+                                icon: '📂',
+                                created: now,
+                                modified: now,
+                                children: {
+                                    'README.txt': {
+                                        type: 'file',
+                                        icon: '📝',
+                                        content:
+                                            'macOS-like mount for GitHub projects.\n\nUse this path in Finder/Terminal:\n- /Volumes/GitHub-Projekte\n\nNote: This folder is a local VFS mount point. The Finder sidebar GitHub view still loads live data from GitHub API.\n',
+                                        size: 224,
+                                        created: now,
+                                        modified: now,
+                                    },
+                                },
+                            },
+                        },
+                    },
                     etc: {
                         type: 'folder',
                         icon: '⚙️',
@@ -681,6 +737,43 @@ class VirtualFileSystemManager {
     private migrateStoredStructure(): void {
         const now = new Date().toISOString();
         try {
+            const rootChildren = this.getRootContainer();
+            if (!rootChildren['Volumes']) {
+                rootChildren['Volumes'] = {
+                    type: 'folder',
+                    icon: '💽',
+                    created: now,
+                    modified: now,
+                    children: {},
+                };
+            }
+            const volumes = rootChildren['Volumes'] as FolderItem & {
+                children: Record<string, FSItem>;
+            };
+            if (!volumes.children['GitHub-Projekte']) {
+                volumes.children['GitHub-Projekte'] = {
+                    type: 'folder',
+                    icon: '📂',
+                    created: now,
+                    modified: now,
+                    children: {},
+                };
+            }
+            const githubMount = volumes.children['GitHub-Projekte'] as FolderItem & {
+                children: Record<string, FSItem>;
+            };
+            if (!githubMount.children['README.txt']) {
+                githubMount.children['README.txt'] = {
+                    type: 'file',
+                    icon: '📝',
+                    content:
+                        'macOS-like mount for GitHub projects.\n\nUse this path in Finder/Terminal:\n- /Volumes/GitHub-Projekte\n\nNote: This folder is a local VFS mount point. The Finder sidebar GitHub view still loads live data from GitHub API.\n',
+                    size: 224,
+                    created: now,
+                    modified: now,
+                };
+            }
+
             const marvin = this.getFolder('/home/marvin') as
                 | (FolderItem & { children: Record<string, FSItem> })
                 | null;
@@ -796,6 +889,221 @@ class VirtualFileSystemManager {
         }
     }
 
+    private getGithubApi(): GitHubApiNamespace | null {
+        return (window as unknown as { GitHubAPI?: GitHubApiNamespace }).GitHubAPI || null;
+    }
+
+    private getGithubUsername(): string {
+        const raw = (window as unknown as { GITHUB_USERNAME?: unknown }).GITHUB_USERNAME;
+        if (typeof raw === 'string' && raw.trim().length > 0) {
+            return raw.trim();
+        }
+        return 'Marormur';
+    }
+
+    private isGithubMountPath(parts: string[]): boolean {
+        if (parts.length < this.GITHUB_MOUNT_PATH_PARTS.length) return false;
+        return (
+            parts[0] === this.GITHUB_MOUNT_PATH_PARTS[0] &&
+            parts[1] === this.GITHUB_MOUNT_PATH_PARTS[1]
+        );
+    }
+
+    private ensureFolderByParts(parts: string[], icon = '📁'): FolderItem | null {
+        if (parts.length === 0) return null;
+
+        const now = new Date().toISOString();
+        let current = this.getRootContainer();
+        let currentFolder: FolderItem | null = null;
+
+        for (let i = 0; i < parts.length; i++) {
+            const name = parts[i] || '';
+            if (!name) return null;
+            const existing = current[name];
+
+            if (!existing) {
+                const isRootMountRepo = i === 2 && this.isGithubMountPath(parts.slice(0, 2));
+                const newFolder: FolderItem = {
+                    type: 'folder',
+                    icon: isRootMountRepo ? '📦' : icon,
+                    created: now,
+                    modified: now,
+                    children: {},
+                };
+                current[name] = newFolder;
+                this.structureDirty = true;
+                current = newFolder.children;
+                currentFolder = newFolder;
+                continue;
+            }
+
+            if (existing.type !== 'folder') {
+                return null;
+            }
+
+            currentFolder = existing;
+            current = existing.children;
+        }
+
+        return currentFolder;
+    }
+
+    private markGithubHydrated(key: string): void {
+        this.githubHydratedAt.set(key, Date.now());
+    }
+
+    private shouldSkipGithubHydration(key: string): boolean {
+        const last = this.githubHydratedAt.get(key);
+        if (!last) return false;
+        return Date.now() - last < this.GITHUB_MOUNT_REFRESH_MS;
+    }
+
+    private async hydrateGithubMountPath(path: string | string[], force = false): Promise<void> {
+        const parts = this.parsePath(path);
+        if (!this.isGithubMountPath(parts)) return;
+
+        const key = this.normalizePath(parts);
+        if (this.githubHydrationInFlight.has(key)) return;
+        if (!force && this.shouldSkipGithubHydration(key)) return;
+
+        this.githubHydrationInFlight.add(key);
+        try {
+            const api = this.getGithubApi();
+            if (!api) return;
+
+            const username = this.getGithubUsername();
+            const mountFolder = this.ensureFolderByParts([...this.GITHUB_MOUNT_PATH_PARTS], '💽');
+            if (!mountFolder) return;
+
+            if (parts.length <= 2) {
+                const cachedRepos = api.readCache?.<unknown[]>('repos', '', '') || null;
+                const reposRaw =
+                    cachedRepos ||
+                    (typeof api.fetchUserRepos === 'function'
+                        ? await api.fetchUserRepos(username, { per_page: 100, sort: 'updated' })
+                        : []);
+                const repos = Array.isArray(reposRaw) ? (reposRaw as GitHubRepoSummary[]) : [];
+
+                const now = new Date().toISOString();
+                const nextChildren: Record<string, FSItem> = {};
+
+                for (const repo of repos) {
+                    const repoName = typeof repo?.name === 'string' ? repo.name.trim() : '';
+                    if (!repoName) continue;
+                    const existingRepo = mountFolder.children[repoName];
+                    nextChildren[repoName] =
+                        existingRepo && existingRepo.type === 'folder'
+                            ? {
+                                  ...existingRepo,
+                                  icon: '📦',
+                                  modified: now,
+                              }
+                            : {
+                                  type: 'folder',
+                                  icon: '📦',
+                                  created: now,
+                                  modified: now,
+                                  children: {},
+                              };
+                }
+
+                mountFolder.children = nextChildren;
+                mountFolder.modified = now;
+                this.structureDirty = true;
+                this.scheduleSave();
+                this.emit({
+                    type: 'update',
+                    path: this.normalizePath(this.GITHUB_MOUNT_PATH_PARTS as unknown as string[]),
+                    item: mountFolder,
+                });
+                this.markGithubHydrated(key);
+                return;
+            }
+
+            const repo = parts[2] || '';
+            if (!repo) return;
+            const subPath = parts.slice(3).join('/');
+            const targetFolder = this.ensureFolderByParts(parts, '📁');
+            if (!targetFolder) return;
+
+            const cacheState = api.readCache?.<unknown>('contents', repo, subPath) ?? null;
+            const contentsRaw =
+                cacheState ??
+                (typeof api.fetchRepoContents === 'function'
+                    ? await api.fetchRepoContents(username, repo, subPath)
+                    : []);
+
+            const contents = Array.isArray(contentsRaw)
+                ? (contentsRaw as GitHubContentSummary[])
+                : [];
+            const now = new Date().toISOString();
+            const nextChildren: Record<string, FSItem> = {};
+
+            for (const entry of contents) {
+                const name = typeof entry?.name === 'string' ? entry.name.trim() : '';
+                if (!name) continue;
+                const entryType = entry?.type === 'dir' ? 'folder' : 'file';
+                if (entryType === 'folder') {
+                    const existing = targetFolder.children[name];
+                    nextChildren[name] =
+                        existing && existing.type === 'folder'
+                            ? {
+                                  ...existing,
+                                  icon: '📁',
+                                  modified: now,
+                              }
+                            : {
+                                  type: 'folder',
+                                  icon: '📁',
+                                  created: now,
+                                  modified: now,
+                                  children: {},
+                              };
+                    continue;
+                }
+
+                const maybeBase64 =
+                    typeof entry.content === 'string' && entry.encoding === 'base64'
+                        ? entry.content
+                        : '';
+                const fileContent = maybeBase64
+                    ? (() => {
+                          try {
+                              return atob(maybeBase64.replace(/\n/g, ''));
+                          } catch {
+                              return '';
+                          }
+                      })()
+                    : '';
+                const size = typeof entry.size === 'number' ? entry.size : fileContent.length;
+
+                nextChildren[name] = {
+                    type: 'file',
+                    icon: '📄',
+                    content: fileContent,
+                    size,
+                    created: now,
+                    modified: now,
+                };
+            }
+
+            targetFolder.children = nextChildren;
+            targetFolder.modified = now;
+            this.structureDirty = true;
+            this.scheduleSave();
+            this.emit({
+                type: 'update',
+                path: this.normalizePath(parts),
+                item: targetFolder,
+            });
+            this.markGithubHydrated(key);
+        } catch (error) {
+            logger.warn('GITHUB', '[VirtualFS] hydrateGithubMountPath failed:', error);
+        } finally {
+            this.githubHydrationInFlight.delete(key);
+        }
+    }
+
     // ========================================================================
     // Persistence
     // ========================================================================
@@ -865,6 +1173,10 @@ class VirtualFileSystemManager {
 
         perf?.mark('vfs:load:end');
         perf?.measure('vfs:load-duration', 'vfs:load:start', 'vfs:load:end');
+
+        // Warm up GitHub mount after initial VFS load so Finder/Terminal can browse
+        // /Volumes/GitHub-Projekte as a real tree backed by GitHub API data.
+        void this.hydrateGithubMountPath(this.GITHUB_MOUNT_PATH_PARTS as unknown as string[], true);
     }
 
     private scheduleSave(): void {
@@ -1109,6 +1421,10 @@ class VirtualFileSystemManager {
      * @returns The item, or `null`.
      */
     get(path: string | string[]): FSItem | null {
+        const parts = this.parsePath(path);
+        if (this.isGithubMountPath(parts)) {
+            void this.hydrateGithubMountPath(parts);
+        }
         return this.navigate(path);
     }
 
@@ -1119,6 +1435,10 @@ class VirtualFileSystemManager {
      * @returns `FolderItem` or `null`.
      */
     getFolder(path: string | string[]): FolderItem | null {
+        const parts = this.parsePath(path);
+        if (this.isGithubMountPath(parts)) {
+            void this.hydrateGithubMountPath(parts);
+        }
         const item = this.navigate(path);
         return item?.type === 'folder' ? item : null;
     }
@@ -1130,6 +1450,10 @@ class VirtualFileSystemManager {
      * @returns `FileItem` or `null`.
      */
     getFile(path: string | string[]): FileItem | null {
+        const parts = this.parsePath(path);
+        if (this.isGithubMountPath(parts)) {
+            void this.hydrateGithubMountPath(parts.slice(0, -1));
+        }
         const item = this.navigate(path);
         return item?.type === 'file' ? item : null;
     }
@@ -1148,6 +1472,10 @@ class VirtualFileSystemManager {
      */
     list(path: string | string[] = []): Record<string, FSItem> {
         const parts = this.parsePath(path);
+
+        if (this.isGithubMountPath(parts)) {
+            void this.hydrateGithubMountPath(parts);
+        }
 
         // Empty path = list root folder's children
         if (parts.length === 0) {
@@ -1172,6 +1500,10 @@ class VirtualFileSystemManager {
      * ```
      */
     readFile(path: string | string[]): string | null {
+        const parts = this.parsePath(path);
+        if (this.isGithubMountPath(parts)) {
+            void this.hydrateGithubMountPath(parts.slice(0, -1));
+        }
         const file = this.getFile(path);
         return file?.content || null;
     }
