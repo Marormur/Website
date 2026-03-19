@@ -11,7 +11,17 @@ test.describe('TextEditor Instance Manager', () => {
     test('can create and retrieve TextEditor instances via manager', async ({ page }) => {
         // Open TextEditor
         await clickDockIcon(page, 'text-modal');
-        await expect(page.locator('#text-modal')).not.toHaveClass(/hidden/);
+        await page.waitForFunction(
+            () => (window.WindowRegistry?.getWindowsByType?.('text-editor') || []).length > 0,
+            { timeout: 10000 }
+        );
+
+        const editorWindowId = await page.evaluate(() => {
+            const windows = window.WindowRegistry?.getWindowsByType?.('text-editor') || [];
+            return windows[windows.length - 1]?.id || null;
+        });
+        expect(editorWindowId).toBeTruthy();
+        await expect(page.locator(`#${editorWindowId}`)).toBeVisible();
 
         // Create an instance and retrieve it
         const instResult = await page.evaluate(() => {

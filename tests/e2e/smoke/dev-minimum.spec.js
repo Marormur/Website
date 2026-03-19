@@ -36,15 +36,20 @@ test.describe('Dev Minimum Smoke @smoke', () => {
     });
 
     test('text editor opens from window manager', async ({ page }) => {
-        await page.evaluate(() => {
+        const windowId = await page.evaluate(() => {
             if (window.WindowManager?.open) {
                 window.WindowManager.open('text-modal');
             }
+
+            const windows = window.WindowRegistry?.getWindowsByType?.('text-editor') || [];
+            return windows[windows.length - 1]?.id || null;
         });
 
-        const modal = page.locator('#text-modal');
-        await expect(modal).toBeVisible({ timeout: 10000 });
-        await expect(modal.locator('#text-editor-container')).toBeVisible();
+        expect(windowId).toBeTruthy();
+
+        const editorWindow = page.locator(`#${windowId}`).first();
+        await expect(editorWindow).toBeVisible({ timeout: 10000 });
+        await expect(editorWindow.locator('textarea').first()).toBeVisible();
     });
 
     test('settings window opens', async ({ page }) => {

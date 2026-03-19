@@ -293,6 +293,40 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
             ).PerfMonitor;
             perf?.mark(`window:open:${windowId}:start`);
 
+            if (windowId === 'text-modal') {
+                const textEditorWindow = window.TextEditorWindow;
+                const openedWindow =
+                    textEditorWindow?.focusOrCreate?.() || textEditorWindow?.create?.();
+
+                if (openedWindow) {
+                    const legacyModal = document.getElementById(windowId);
+                    if (legacyModal) {
+                        const domUtils = (window as any).DOMUtils;
+                        if (domUtils && typeof domUtils.hide === 'function') {
+                            domUtils.hide(legacyModal);
+                        } else {
+                            legacyModal.classList.add('hidden');
+                        }
+                        if (legacyModal.dataset) delete legacyModal.dataset.minimized;
+                    }
+
+                    window.hideMenuDropdowns?.();
+                    window.saveOpenModals?.();
+                    window.updateDockIndicators?.();
+                    window.updateProgramLabelByTopModal?.();
+
+                    perf?.mark(`window:open:${windowId}:end`);
+                    if (perf?.measure) {
+                        perf.measure(
+                            `window:open:${windowId}`,
+                            `window:open:${windowId}:start`,
+                            `window:open:${windowId}:end`
+                        );
+                    }
+                    return;
+                }
+            }
+
             const config = this.getConfig(windowId);
             // Run the configured initHandler on every open. Some windows rely on
             // per-open initialization (e.g., Finder multi-instance recreation).

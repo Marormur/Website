@@ -83,6 +83,7 @@ export function createWindowTabsAdapter(options: WindowTabsAdapterOptions) {
             const tab = options.createTab(cfg);
             if (!tab) return null;
             options.addTab(tab);
+            options.setActiveTab(tab.id);
             return toInstance(tab);
         },
         destroyInstance: (id: string) => options.removeTab(id),

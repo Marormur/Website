@@ -35,6 +35,11 @@ if (guardedWindow[guardKey]) {
               };
 
     function openModal(id: string) {
+        if (window.WindowManager?.open) {
+            window.WindowManager.open(id);
+            return;
+        }
+
         const el = document.getElementById(id);
         if (!el) return;
         if (!window.dialogs) window.dialogs = {};
