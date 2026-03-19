@@ -5482,54 +5482,197 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 2rem;
-    background: transparent;
+    padding: clamp(1rem, 1.8vw, 1.5rem) clamp(1rem, 2.8vw, 2.25rem) clamp(1.25rem, 2.2vw, 2rem);
+    border-radius: 1.75rem;
+    background:
+        radial-gradient(circle at 25% 5%, rgba(120, 160, 255, 0.18), rgba(120, 160, 255, 0) 35%),
+        radial-gradient(circle at 92% 0%, rgba(95, 240, 190, 0.14), rgba(95, 240, 190, 0) 28%),
+        linear-gradient(180deg, rgba(8, 10, 15, 0.96), rgba(8, 10, 15, 0.82));
+    color: #f3f4f6;
+    animation: launchpad-fade-in 280ms ease-out;
+}
+
+@keyframes launchpad-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.launchpad-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.7rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.launchpad-header-title-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+}
+
+.launchpad-header-glyph {
+    width: 1.55rem;
+    height: 1.55rem;
+    color: rgba(245, 245, 245, 0.92);
+    opacity: 0.9;
+    flex-shrink: 0;
+}
+
+.launchpad-header-glyph svg {
+    width: 100%;
+    height: 100%;
+}
+
+.launchpad-header-title {
+    margin: 0;
+    font-size: clamp(1.75rem, 2.8vw, 2.05rem);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: rgba(250, 250, 250, 0.97);
+    line-height: 1.1;
+}
+
+.launchpad-header-menu {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.09);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.18rem;
+    cursor: default;
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+.launchpad-header-menu span {
+    width: 0.23rem;
+    height: 0.23rem;
+    border-radius: 999px;
+    background: rgba(250, 250, 250, 0.95);
 }
 
 .launchpad-search {
     display: flex;
-    justify-content: center;
-    margin-bottom: 2rem;
+    align-items: center;
+    position: relative;
+    width: min(100%, 680px);
+    margin-bottom: 0.65rem;
+}
+
+.launchpad-search-icon {
+    position: absolute;
+    left: 1.05rem;
+    width: 1rem;
+    height: 1rem;
+    color: rgba(231, 234, 243, 0.55);
+    pointer-events: none;
+}
+
+.launchpad-search-icon svg {
+    width: 100%;
+    height: 100%;
 }
 
 .launchpad-search-input {
     width: 100%;
-    max-width: 600px;
-    padding: 0.75rem 1.5rem;
-    font-size: 1.125rem;
-    border: 2px solid rgba(148, 163, 184, 0.3);
-    border-radius: 2rem;
-    background: rgba(255, 255, 255, 0.95);
-    color: #1e293b;
+    padding: 0.68rem 1rem 0.68rem 2.7rem;
+    font-size: 0.94rem;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(245, 247, 255, 0.98);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
     outline: none;
-    transition: all 0.2s ease;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .dark .launchpad-search-input {
-    background: rgba(30, 41, 59, 0.95);
-    color: #e2e8f0;
-    border-color: rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(245, 247, 255, 0.98);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .launchpad-search-input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: rgba(181, 212, 255, 0.9);
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        0 0 0 3px rgba(130, 178, 255, 0.24);
+}
+
+.launchpad-category-bar {
+    display: flex;
+    gap: 0.55rem;
+    overflow-x: auto;
+    padding: 0.08rem 0.15rem 0.25rem;
+    margin-bottom: 0.9rem;
+    scrollbar-width: none;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.launchpad-category-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.launchpad-category-pill {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0.3rem 0.72rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: rgba(245, 245, 250, 0.78);
+    background: rgba(255, 255, 255, 0.08);
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.launchpad-category-pill:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.launchpad-category-pill.is-active {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.98);
 }
 
 .launchpad-apps-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 1rem;
-    padding: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: clamp(0.9rem, 1.45vw, 1.3rem) clamp(0.5rem, 1.1vw, 1rem);
+    padding: 0.45rem 0.25rem 0.6rem;
     overflow-y: auto;
     flex: 1;
-    /* When empty, center the content */
     align-content: start;
 }
 
 @media (min-width: 768px) {
     .launchpad-apps-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
     }
 }
 
@@ -5537,49 +5680,57 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 0.5rem;
+    gap: 0.52rem;
+    padding: 0.3rem 0.2rem 0.42rem;
     background: transparent;
     border: none;
-    border-radius: 1rem;
+    border-radius: 0.9rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+        transform 0.16s ease,
+        background 0.16s ease;
     outline: none;
 }
 
 .launchpad-app-button:hover {
-    background: rgba(59, 130, 246, 0.08);
-    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.07);
+    transform: translateY(-2px) scale(1.01);
 }
 
 .dark .launchpad-app-button:hover {
-    background: rgba(59, 130, 246, 0.15);
+    background: rgba(255, 255, 255, 0.07);
 }
 
 .launchpad-app-button:active {
-    transform: translateY(-2px);
+    transform: translateY(0) scale(0.99);
 }
 
 .launchpad-app-button:focus-visible {
-    outline: 2px solid #3b82f6;
-    outline-offset: 4px;
+    outline: 2px solid rgba(176, 214, 255, 0.95);
+    outline-offset: 2px;
 }
 
 .launchpad-app-icon {
-    width: 80px;
-    height: 80px;
+    width: clamp(66px, 7vw, 78px);
+    height: clamp(66px, 7vw, 78px);
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 1.25rem;
+    border-radius: 1.2rem;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: all 0.2s ease;
+    box-shadow:
+        0 10px 24px rgba(0, 0, 0, 0.38),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transition:
+        transform 0.16s ease,
+        box-shadow 0.16s ease;
 }
 
 .launchpad-app-button:hover .launchpad-app-icon {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    transform: scale(1.05);
+    box-shadow:
+        0 14px 28px rgba(0, 0, 0, 0.44),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    transform: translateY(-1px) scale(1.035);
 }
 
 .launchpad-app-icon img {
@@ -5602,20 +5753,19 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
 }
 
 .launchpad-app-label {
-    font-size: 0.875rem;
+    font-size: 0.83rem;
     font-weight: 500;
-    color: #334155;
+    color: rgba(249, 250, 254, 0.98);
     text-align: center;
     line-height: 1.2;
-    max-width: 100%;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    -webkit-hyphens: auto;
-    hyphens: auto;
+    max-width: min(100%, 104px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .dark .launchpad-app-label {
-    color: #e2e8f0;
+    color: rgba(249, 250, 254, 0.98);
 }
 
 .launchpad-empty {
@@ -5624,38 +5774,170 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
     align-items: center;
     justify-content: center;
     min-height: 300px;
-    color: #64748b;
-    font-size: 1.125rem;
+    color: rgba(243, 244, 247, 0.8);
+    font-size: 1rem;
 }
 
 .dark .launchpad-empty {
-    color: #94a3b8;
+    color: rgba(243, 244, 247, 0.8);
 }
 
 /* Launchpad modal specific styling */
 #launchpad-modal {
-    /* Wrapper needs to be interactive for E2E background-click close */
-    pointer-events: auto;
-    /* Ensure launchpad overlays the menubar (z-index ~10000) */
-    z-index: 11000;
+    z-index: 2147483600;
 }
 
 /* Position launchpad between menubar and dock */
 .launchpad-modal-wrapper {
     align-items: center;
-    /* Account for menubar (~44px) and dock (~80px + margins) */
-    padding-top: 44px;
-    padding-bottom: 100px;
+    padding-top: 40px;
+    padding-bottom: 132px;
+    padding-left: clamp(10px, 2.2vw, 24px);
+    padding-right: clamp(10px, 2.2vw, 24px);
 }
 
 .launchpad-modal-inner {
-    background: rgba(255, 255, 255, 0.7);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
+    width: min(88vw, 980px);
+    height: min(66vh, 620px);
+    max-height: calc(100vh - 184px);
+    border-radius: 2rem;
+    background: rgba(8, 10, 15, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    -webkit-backdrop-filter: blur(24px) saturate(1.1);
+    backdrop-filter: blur(24px) saturate(1.1);
+    box-shadow:
+        0 38px 70px rgba(0, 0, 0, 0.56),
+        inset 0 1px 0 rgba(255, 255, 255, 0.26);
 }
 
 .dark .launchpad-modal-inner {
-    background: rgba(30, 41, 59, 0.7);
+    background: rgba(8, 10, 15, 0.62);
+}
+
+html:not(.dark) .launchpad-container {
+    background:
+        radial-gradient(circle at 18% 0%, rgba(126, 165, 252, 0.2), rgba(126, 165, 252, 0) 32%),
+        radial-gradient(circle at 92% 0%, rgba(96, 215, 178, 0.18), rgba(96, 215, 178, 0) 26%),
+        linear-gradient(180deg, rgba(246, 248, 252, 0.93), rgba(238, 242, 248, 0.9));
+    color: #111827;
+}
+
+html:not(.dark) .launchpad-header {
+    border-bottom-color: rgba(100, 116, 139, 0.25);
+}
+
+html:not(.dark) .launchpad-header-glyph {
+    color: rgba(30, 41, 59, 0.75);
+}
+
+html:not(.dark) .launchpad-header-title {
+    color: rgba(15, 23, 42, 0.95);
+}
+
+html:not(.dark) .launchpad-header-menu {
+    border-color: rgba(100, 116, 139, 0.35);
+    background: rgba(255, 255, 255, 0.6);
+}
+
+html:not(.dark) .launchpad-header-menu span {
+    background: rgba(51, 65, 85, 0.8);
+}
+
+html:not(.dark) .launchpad-search-icon {
+    color: rgba(71, 85, 105, 0.65);
+}
+
+html:not(.dark) .launchpad-search-input {
+    background: rgba(255, 255, 255, 0.72);
+    color: rgba(15, 23, 42, 0.95);
+    border-color: rgba(100, 116, 139, 0.35);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+html:not(.dark) .launchpad-search-input:focus {
+    border-color: rgba(56, 120, 228, 0.7);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 0 0 3px rgba(56, 120, 228, 0.18);
+}
+
+html:not(.dark) .launchpad-category-bar {
+    border-bottom-color: rgba(100, 116, 139, 0.2);
+}
+
+html:not(.dark) .launchpad-category-pill {
+    background: rgba(51, 65, 85, 0.08);
+    color: rgba(30, 41, 59, 0.84);
+}
+
+html:not(.dark) .launchpad-category-pill:hover {
+    background: rgba(51, 65, 85, 0.13);
+    color: rgba(15, 23, 42, 0.92);
+}
+
+html:not(.dark) .launchpad-category-pill.is-active {
+    background: rgba(51, 65, 85, 0.2);
+    border-color: rgba(100, 116, 139, 0.36);
+    color: rgba(15, 23, 42, 0.98);
+}
+
+html:not(.dark) .launchpad-app-button:hover {
+    background: rgba(51, 65, 85, 0.08);
+}
+
+html:not(.dark) .launchpad-app-button:focus-visible {
+    outline-color: rgba(56, 120, 228, 0.82);
+}
+
+html:not(.dark) .launchpad-app-icon {
+    box-shadow:
+        0 8px 18px rgba(30, 41, 59, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+html:not(.dark) .launchpad-app-button:hover .launchpad-app-icon {
+    box-shadow:
+        0 12px 22px rgba(30, 41, 59, 0.26),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+html:not(.dark) .launchpad-app-label {
+    color: rgba(15, 23, 42, 0.92);
+}
+
+html:not(.dark) .launchpad-empty {
+    color: rgba(51, 65, 85, 0.78);
+}
+
+html:not(.dark) .launchpad-modal-inner {
+    background: rgba(246, 248, 252, 0.62);
+    border-color: rgba(100, 116, 139, 0.32);
+    box-shadow:
+        0 30px 56px rgba(30, 41, 59, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+@media (max-width: 767px) {
+    .launchpad-modal-wrapper {
+        padding-top: 20px;
+        padding-bottom: 92px;
+    }
+
+    .launchpad-modal-inner {
+        width: min(98vw, 98vw);
+        height: min(78vh, 78vh);
+        max-height: calc(100vh - 120px);
+        border-radius: 1.2rem;
+    }
+
+    .launchpad-container {
+        padding: 0.85rem 0.8rem 1rem;
+    }
+
+    .launchpad-search {
+        width: 100%;
+    }
 }
 
 /* ==============================

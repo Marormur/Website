@@ -192,7 +192,18 @@ function initApp(): void {
             try {
                 const inner = launchpadModal.querySelector('.launchpad-modal-inner');
                 const target = e.target as Node;
-                if (inner ? !inner.contains(target) : target === launchpadModal) {
+                const path =
+                    typeof (e as Event & { composedPath?: () => EventTarget[] }).composedPath ===
+                    'function'
+                        ? (e as Event & { composedPath: () => EventTarget[] }).composedPath()
+                        : [];
+                const clickedInside = inner
+                    ? path.length > 0
+                        ? path.includes(inner)
+                        : inner.contains(target)
+                    : false;
+
+                if (inner ? !clickedInside : target === launchpadModal) {
                     const launchpadDialog = dialogs['launchpad-modal'] as { close?: () => void };
                     launchpadDialog?.close?.();
                 }

@@ -12,7 +12,22 @@ logger.debug('UI', 'Launchpad (TS) loaded');
 (() => {
     'use strict';
 
-    type AppEntry = { id: string; name: string; icon: string; programKey?: string | null };
+    type AppCategory =
+        | 'all'
+        | 'utilities'
+        | 'productivity'
+        | 'developer'
+        | 'entertainment'
+        | 'creativity'
+        | 'social';
+
+    type AppEntry = {
+        id: string;
+        name: string;
+        icon: string;
+        programKey?: string | null;
+        category?: AppCategory;
+    };
 
     const CORE_LAUNCHPAD_APPS: AppEntry[] = [
         {
@@ -39,11 +54,129 @@ logger.debug('UI', 'Launchpad (TS) loaded');
 
     let container: HTMLElement | null = null;
     let searchInput: HTMLInputElement | null = null;
+    let categoryBar: HTMLElement | null = null;
     let appsGrid: HTMLElement | null = null;
     let allApps: AppEntry[] = [];
     let filteredApps: AppEntry[] = [];
+    let activeCategory: AppCategory = 'all';
+    let searchQuery = '';
+
+    const CATEGORY_ORDER: AppCategory[] = [
+        'all',
+        'utilities',
+        'productivity',
+        'developer',
+        'entertainment',
+        'creativity',
+        'social',
+    ];
 
     // translate() wird zentral aus i18n.ts importiert
+
+    function isGermanLocale(): boolean {
+        const docLang = (document.documentElement.lang || '').toLowerCase();
+        if (docLang) return docLang.startsWith('de');
+        return (navigator.language || '').toLowerCase().startsWith('de');
+    }
+
+    function getCategoryLabel(category: AppCategory): string {
+        const de: Record<AppCategory, string> = {
+            all: 'Alle',
+            utilities: 'Dienstprogramme',
+            productivity: 'Produktivität & Finanzen',
+            developer: 'Developer Tools',
+            entertainment: 'Unterhaltung',
+            creativity: 'Kreativität',
+            social: 'Soziale Netze',
+        };
+        const en: Record<AppCategory, string> = {
+            all: 'All',
+            utilities: 'Utilities',
+            productivity: 'Productivity & Finance',
+            developer: 'Developer Tools',
+            entertainment: 'Entertainment',
+            creativity: 'Creativity',
+            social: 'Social',
+        };
+        return isGermanLocale() ? de[category] : en[category];
+    }
+
+    function inferCategory(app: Pick<AppEntry, 'id' | 'name' | 'programKey'>): AppCategory {
+        const haystack = `${app.id} ${app.name} ${app.programKey || ''}`.toLowerCase();
+
+        if (
+            /terminal|code|studio|developer|dev|editor|text|console|debug|preview|vscode/.test(
+                haystack
+            )
+        ) {
+            return 'developer';
+        }
+        if (/settings|finder|system|monitor|utility|about|preferences/.test(haystack)) {
+            return 'utilities';
+        }
+        if (/photos|image|camera|design|draw|media|creative/.test(haystack)) {
+            return 'creativity';
+        }
+        if (/mail|message|chat|social|discord|slack|whatsapp/.test(haystack)) {
+            return 'social';
+        }
+        if (/game|music|video|tv|entertainment|player/.test(haystack)) {
+            return 'entertainment';
+        }
+        if (/project|task|calendar|notes|finance|productivity/.test(haystack)) {
+            return 'productivity';
+        }
+
+        return 'utilities';
+    }
+
+    function applyFilters(): void {
+        filteredApps = allApps.filter(app => {
+            const categoryMatch = activeCategory === 'all' || app.category === activeCategory;
+            if (!categoryMatch) return false;
+            if (!searchQuery) return true;
+            return app.name.toLowerCase().includes(searchQuery);
+        });
+        renderApps();
+    }
+
+    function renderCategoryBar(): void {
+        if (!categoryBar) return;
+        const bar = categoryBar;
+
+        const available = new Set<AppCategory>(['all']);
+        allApps.forEach(app => {
+            if (app.category) available.add(app.category);
+        });
+
+        bar.innerHTML = '';
+        CATEGORY_ORDER.forEach(category => {
+            if (!available.has(category)) return;
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'launchpad-category-pill';
+            if (category === activeCategory) {
+                button.classList.add('is-active');
+            }
+            button.textContent = getCategoryLabel(category);
+            button.setAttribute('data-category', category);
+            button.setAttribute('aria-pressed', category === activeCategory ? 'true' : 'false');
+            bar.appendChild(button);
+        });
+    }
+
+    function handleCategoryClick(event: Event): void {
+        const target = event.target as HTMLElement | null;
+        if (!target) return;
+        const categoryButton = target.closest<HTMLButtonElement>('[data-category]');
+        if (!categoryButton) return;
+        event.stopPropagation();
+        const category = categoryButton.getAttribute('data-category') as AppCategory | null;
+        if (!category || activeCategory === category) return;
+        activeCategory = category;
+        renderCategoryBar();
+        applyFilters();
+    }
 
     function init(containerElement: HTMLElement): void {
         if (!containerElement) {
@@ -63,7 +196,34 @@ logger.debug('UI', 'Launchpad (TS) loaded');
         if (!container) return;
         container.innerHTML = `
             <div class="launchpad-container">
+                <div class="launchpad-header">
+                    <div class="launchpad-header-title-wrap">
+                        <span class="launchpad-header-glyph" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="3" y="3" width="4" height="4" rx="1" fill="currentColor" />
+                                <rect x="10" y="3" width="4" height="4" rx="1" fill="currentColor" />
+                                <rect x="17" y="3" width="4" height="4" rx="1" fill="currentColor" />
+                                <rect x="3" y="10" width="4" height="4" rx="1" fill="currentColor" />
+                                <rect x="10" y="10" width="4" height="4" rx="1" fill="currentColor" />
+                                <rect x="17" y="10" width="4" height="4" rx="1" fill="currentColor" />
+                                <rect x="3" y="17" width="4" height="4" rx="1" fill="currentColor" />
+                                <rect x="10" y="17" width="4" height="4" rx="1" fill="currentColor" />
+                                <rect x="17" y="17" width="4" height="4" rx="1" fill="currentColor" />
+                            </svg>
+                        </span>
+                        <h2 class="launchpad-header-title">${translate('dock.launchpad', 'Apps') || 'Apps'}</h2>
+                    </div>
+                    <button type="button" class="launchpad-header-menu" aria-label="Launchpad options">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
                 <div class="launchpad-search">
+                    <span class="launchpad-search-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2" />
+                            <path d="M20 20L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </span>
                     <input
                         id="launchpad-search-input"
                         type="text"
@@ -71,13 +231,16 @@ logger.debug('UI', 'Launchpad (TS) loaded');
                         class="launchpad-search-input"
                     />
                 </div>
+                <div id="launchpad-category-bar" class="launchpad-category-bar" role="toolbar"></div>
                 <div id="launchpad-apps-grid" class="launchpad-apps-grid"></div>
             </div>
         `;
 
         searchInput = container.querySelector<HTMLInputElement>('#launchpad-search-input');
+        categoryBar = container.querySelector<HTMLElement>('#launchpad-category-bar');
         appsGrid = container.querySelector<HTMLElement>('#launchpad-apps-grid');
         if (searchInput) searchInput.addEventListener('input', handleSearch);
+        if (categoryBar) categoryBar.addEventListener('click', handleCategoryClick);
     }
 
     function loadApps(): void {
@@ -125,6 +288,11 @@ logger.debug('UI', 'Launchpad (TS) loaded');
                     name: info.programLabel || translate('programs.default.label') || 'App',
                     icon: resolveProgramIcon(info.icon) || './img/sucher.png',
                     programKey: cfg ? cfg.programKey : null,
+                    category: inferCategory({
+                        id: canonicalWindowId,
+                        name: info.programLabel || translate('programs.default.label') || 'App',
+                        programKey: cfg ? cfg.programKey : null,
+                    }),
                 });
             }
         });
@@ -133,17 +301,16 @@ logger.debug('UI', 'Launchpad (TS) loaded');
             if (app.programKey && seenProgramKeys.has(app.programKey)) {
                 return;
             }
-            allApps.push({ ...app });
+            allApps.push({ ...app, category: inferCategory(app) });
         });
 
-        filteredApps = [...allApps];
-        renderApps();
+        renderCategoryBar();
+        applyFilters();
     }
 
     function handleSearch(e: Event): void {
-        const q = (e.target as HTMLInputElement).value.toLowerCase().trim();
-        filteredApps = q ? allApps.filter(a => a.name.toLowerCase().includes(q)) : [...allApps];
-        renderApps();
+        searchQuery = (e.target as HTMLInputElement).value.toLowerCase().trim();
+        applyFilters();
     }
 
     function renderApps(): void {
@@ -256,8 +423,10 @@ logger.debug('UI', 'Launchpad (TS) loaded');
 
     function clearSearch(): void {
         if (searchInput) searchInput.value = '';
-        filteredApps = [...allApps];
-        renderApps();
+        searchQuery = '';
+        activeCategory = 'all';
+        renderCategoryBar();
+        applyFilters();
     }
 
     window.addEventListener('languagePreferenceChange', () => {
