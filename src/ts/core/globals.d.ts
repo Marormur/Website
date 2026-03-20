@@ -340,7 +340,10 @@ declare global {
             content?: { content?: string };
         }) => { id: string; title: string; show?: () => void; hide?: () => void };
         /** TextEditorWindow class/factory for creating text editor windows. */
-        TextEditorWindow?: { create?: (config?: { title?: string }) => unknown };
+        TextEditorWindow?: {
+            create?: (config?: { title?: string }) => unknown;
+            focusOrCreate?: (config?: { title?: string }) => unknown;
+        };
         /** FinderView class for creating finder views/tabs (constructor reference). */
         FinderView?: new (config?: {
             id?: string;
