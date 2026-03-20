@@ -16,6 +16,10 @@ test.describe('Finder active tab persistence across reload', () => {
     });
 
     test('restores Finder tabs and state after page reload', async ({ page }) => {
+        // Increase timeout: this test includes a full page.reload() + waitForAppReady
+        // which can take 30+ seconds in bundle mode.
+        test.setTimeout(60000);
+
         // Open Finder
         const finderWindow = await openFinderWindow(page);
         await finderWindow.waitFor({ state: 'visible', timeout: 10000 });

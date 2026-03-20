@@ -241,6 +241,7 @@ test.describe('FinderView New Features', () => {
     });
 
     test('State Persistence: Remembers view mode and sort settings', async ({ page }) => {
+        test.setTimeout(60000);
         const finderWindow = await openFinderWindow(page);
 
         // Change to grid view

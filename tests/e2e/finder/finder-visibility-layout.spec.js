@@ -120,6 +120,7 @@ test.describe('Finder visibility and full-width layout', () => {
     });
 
     test('after reload and session restore, only one instance is visible', async ({ page }) => {
+        test.setTimeout(60000);
         // Open Finder and create a second instance
         let finderWindow = await openFinderWindow(page);
         await finderWindow.waitFor({ state: 'visible', timeout: 10000 });

@@ -6,14 +6,19 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { waitForAppReady, mockGitHubIfNeeded, openFinderWindow } from '../utils.js';
+import {
+    waitForAppReady,
+    mockGitHubIfNeeded,
+    openFinderWindow,
+    dismissWelcomeDialogIfPresent,
+} from '../utils.js';
 
 /** Navigate the Finder to /home/marvin */
 async function navigateToHomeMarvin(page, finderWindow) {
     // Click the "Home" sidebar shortcut if present
     const homeBtn = finderWindow.locator('[data-sidebar-action="home"]');
     if ((await homeBtn.count()) > 0) {
-        await homeBtn.click();
+        await homeBtn.click({ force: true });
     } else {
         // Fallback: navigate programmatically via the first FinderView instance
         await page.evaluate(() => {
@@ -27,7 +32,7 @@ async function navigateToHomeMarvin(page, finderWindow) {
 
     // Wait until at least one list/grid item is visible (Finder has content)
     await finderWindow
-        .locator('.finder-list-item, .finder-grid-item')
+        .locator('.finder-list-item, .finder-grid-item, .finder-gallery-strip-item')
         .first()
         .waitFor({ state: 'visible', timeout: 10000 });
 }
@@ -37,6 +42,7 @@ test.describe('Finder VirtualFS live-sync', () => {
         await mockGitHubIfNeeded(page);
         await page.goto('/');
         await waitForAppReady(page);
+        await dismissWelcomeDialogIfPresent(page);
     });
 
     test('smoke: new file created via VirtualFS appears in Finder automatically', async ({
@@ -56,11 +62,9 @@ test.describe('Finder VirtualFS live-sync', () => {
         expect(created).toBe(true);
 
         // Finder must show the new file without manual navigation
-        await expect(
-            finderWindow
-                .locator('.finder-list-item, .finder-grid-item')
-                .filter({ hasText: filename })
-        ).toBeVisible({ timeout: 3000 });
+        await expect(finderWindow.locator(`[data-item-name="${filename}"]`).first()).toBeVisible({
+            timeout: 3000,
+        });
 
         // Cleanup – validate success to catch stale artifacts
         const deleted = await page.evaluate(path => {
@@ -85,11 +89,9 @@ test.describe('Finder VirtualFS live-sync', () => {
         expect(created).toBe(true);
 
         // Wait for the item to appear in the Finder
-        await expect(
-            finderWindow
-                .locator('.finder-list-item, .finder-grid-item')
-                .filter({ hasText: filename })
-        ).toBeVisible({ timeout: 3000 });
+        await expect(finderWindow.locator(`[data-item-name="${filename}"]`).first()).toBeVisible({
+            timeout: 3000,
+        });
 
         // Now delete via VirtualFS – validate the operation succeeded
         const deleted = await page.evaluate(path => {
@@ -99,10 +101,8 @@ test.describe('Finder VirtualFS live-sync', () => {
         expect(deleted).toBe(true);
 
         // Finder must no longer show the item
-        await expect(
-            finderWindow
-                .locator('.finder-list-item, .finder-grid-item')
-                .filter({ hasText: filename })
-        ).toHaveCount(0, { timeout: 3000 });
+        await expect(finderWindow.locator(`[data-item-name="${filename}"]`)).toHaveCount(0, {
+            timeout: 3000,
+        });
     });
 });

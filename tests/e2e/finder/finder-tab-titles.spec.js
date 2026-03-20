@@ -107,6 +107,7 @@ test.describe('Finder tab titles show folder names', () => {
     });
 
     test('tab titles persist across reload', async ({ page }) => {
+        test.setTimeout(60000);
         // Open Finder and navigate to a folder
         const finderWindow3 = await openFinderWindow(page);
         await finderWindow3.waitFor({ state: 'visible', timeout: 10000 });

@@ -51,6 +51,10 @@ test.describe('Finder reopen after closing all tabs', () => {
     });
 
     test('Reopen renders fresh content and tab', async ({ page }) => {
+        // Increase timeout: this test does two openFinder calls plus cleanup,
+        // which can exceed 30s in bundle mode due to startup overhead.
+        test.setTimeout(60000);
+
         // Open Finder and create a second tab
         let finderWindow = await openFinder(page);
         const addButton = await getFinderAddTabButton(page, finderWindow);

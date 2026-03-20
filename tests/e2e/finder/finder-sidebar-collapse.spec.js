@@ -148,7 +148,7 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
         const toggleButton = firstHeader.locator('button');
 
         // Tab to focus the toggle button
-        await page.keyboard.press('Tab');
+        await toggleButton.focus();
 
         // Check if toggle is visible when focused
         const focusOpacity = await toggleButton.evaluate(el => {

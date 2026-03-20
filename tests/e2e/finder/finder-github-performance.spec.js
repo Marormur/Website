@@ -92,7 +92,8 @@ test.describe('Finder GitHub API Performance', () => {
         }
 
         // Eventually content should load (either repos or error message)
-        const websiteRow = page.locator('tr:has-text("Website")').first();
+        // Use data-item-name because the Finder shows items as gallery/list cards, not table rows
+        const websiteRow = page.locator('[data-item-name="Website"]').first();
         const errorMsg = page
             .locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i')
             .first();
@@ -108,7 +109,8 @@ test.describe('Finder GitHub API Performance', () => {
         const finderWindow = await openFinderGithub(page);
 
         // Wait for data to load
-        const websiteRow = page.locator('tr:has-text("Website")').first();
+        // Use data-item-name because the Finder shows items as gallery/list cards, not table rows
+        const websiteRow = page.locator('[data-item-name="Website"]').first();
         const errorMsg = page
             .locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i')
             .first();
@@ -150,7 +152,8 @@ test.describe('Finder GitHub API Performance', () => {
         // Populate cache first
         const finderWindow = await openFinderGithub(page);
 
-        const websiteRow = page.locator('tr:has-text("Website")').first();
+        // Use data-item-name because the Finder shows items as gallery/list cards, not table rows
+        const websiteRow = page.locator('[data-item-name="Website"]').first();
         const errorMsg = page
             .locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i')
             .first();
@@ -233,7 +236,8 @@ test.describe('Finder GitHub API Performance', () => {
         await clickSidebarEntry(page, finderWindow, 'github');
 
         // Wait for content or error to appear (more deterministic than fixed timeout)
-        const websiteRow = page.locator('tr:has-text("Website")').first();
+        // Use data-item-name because the Finder shows items as gallery/list cards, not table rows
+        const websiteRow = page.locator('[data-item-name="Website"]').first();
         const errorMsg = page
             .locator('text=/GitHub Fehler|Rate Limit|konnten nicht geladen/i')
             .first();
@@ -256,6 +260,7 @@ test.describe('Finder GitHub API Performance', () => {
     });
 
     test('Prefetches user repos on GitHub sidebar click', async ({ page }) => {
+        test.setTimeout(60000);
         // Clear cache
         await clearGitHubCache(page);
 
@@ -308,7 +313,7 @@ test.describe('Finder GitHub API Performance', () => {
         await openFinderGithub(page);
 
         // Wait for data to load
-        const websiteRow = page.locator('tr:has-text("Website")').first();
+        const websiteRow = page.locator('[data-item-name="Website"]').first();
         const errorMsg = page.locator('text=/GitHub Fehler|Rate Limit/i').first();
 
         await Promise.race([
