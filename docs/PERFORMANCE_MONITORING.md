@@ -1,44 +1,48 @@
-# Performance Monitoring Dashboard - Phase 3
+# Performance Monitoring
 
 ## Overview
 
-This document describes the Phase 3 implementation: E2E Performance Tests + Monitoring Dashboard for the VDOM migration.
+Dokumentiert den `PerfMonitor` (`src/ts/core/perf-monitor.ts`) und die zugehörigen E2E-Performance-Tests.
 
-## Implemented Features
+## PerfMonitor API
 
-### 1. Enhanced PerfMonitor (`src/ts/core/perf-monitor.ts`)
+### Methoden
 
-**New Capabilities:**
+| Methode                               | Beschreibung                                                               |
+| ------------------------------------- | -------------------------------------------------------------------------- |
+| `enable()` / `disable()` / `toggle()` | Monitoring aktivieren/deaktivieren (persistiert in `localStorage`)         |
+| `mark(name)`                          | Setzt einen `performance.mark`                                             |
+| `measure(name, start?, end?)`         | Misst zwischen zwei Marks, speichert in `metrics`                          |
+| `measureFunction(name, fn)`           | Wrapper: misst Ausführungszeit von `fn`, gibt Rückgabewert zurück          |
+| `getStats(name)`                      | Gibt `{ avg, min, max, p95, count }` oder `null` zurück                    |
+| `reportStats()`                       | Gibt alle gesammelten Stats via `logger.debug` aus (gruppiert)             |
+| `report(options?)`                    | Gibt Top-N-`PerformanceMeasure`-Einträge aus, optional mit Core Web Vitals |
+| `getVitals()`                         | Gibt gemessene Core Web Vitals zurück (`LCP`, `FID`, `CLS`, `TTFB`)        |
 
-- **Statistics Tracking**: `metrics` Map stores timing data across multiple measurements
-- **`measureFunction(name, fn)`**: Convenient wrapper to measure function execution time
-- **`getStats(name)`**: Returns statistics object with:
-    - `avg`: Average execution time
-    - `min`: Minimum execution time
-    - `max`: Maximum execution time
-    - `p95`: 95th percentile
-    - `count`: Number of measurements
-- **`reportStats()`**: Outputs formatted statistics table via `console.table()`
+**Standardverhalten:** Im Dev-Modus (`localhost` / Port vorhanden) automatisch aktiviert.
 
-**Example Usage:**
+### Beispiel
 
 ```javascript
-// Measure a function
+// Funktion messen
 const result = window.PerfMonitor.measureFunction('render-list', () => {
-    renderListView(items);
+    return renderListView(items);
 });
 
-// Get statistics after multiple calls
+// Statistiken abfragen
 const stats = window.PerfMonitor.getStats('render-list');
-// { avg: 12.5, min: 10.2, max: 15.8, p95: 14.9, count: 10 }
+// { avg: 12.5, min: 0, max: 15.8, p95: 14.9, count: 10 }
+// Hinweis: min kann bei sehr schnellen Operationen 0 sein (performance.now()-Auflösung)
 
-// Report all statistics
+// Alle Stats im Dev-Log ausgeben
 window.PerfMonitor.reportStats();
-// Outputs formatted console.table with all tracked operations
 ```
 
-**API Integration:**
-All new methods are also available via the `API.performance` facade:
+**Hinweis:** `reportStats()` schreibt via `logger.debug`, nicht via `console.table`.
+
+### API-Facade
+
+Alle Methoden sind auch über `API.performance` verfügbar:
 
 ```javascript
 API.performance.measureFunction('operation', fn);
@@ -46,131 +50,54 @@ API.performance.getStats('operation');
 API.performance.reportStats();
 ```
 
-### 2. E2E Performance Tests
+## E2E-Performance-Tests
 
-#### `tests/e2e/performance/vdom-performance.spec.js`
+Performance-Tests sind per Default deaktiviert und werden nur mit `npm run test:e2e:performance` ausgeführt.
 
-Comprehensive VDOM performance test suite covering:
+### `perf-monitor-stats.spec.js` — Aktueller Stand: ✅ Funktioniert
 
-**FinderView Tests:**
+| Test                                     | Status                                         |
+| ---------------------------------------- | ---------------------------------------------- |
+| `measureFunction()` helper               | ✅                                             |
+| Metrics über mehrere Aufrufe             | ✅ (min kann `0` sein bei schnellen Ops)       |
+| Statistikberechnung (avg, min, max, p95) | ✅                                             |
+| `reportStats()` Ausgabe                  | ✅ (via `logger.debug`, nicht `console.table`) |
+| API-Facade-Integration                   | ✅                                             |
 
-- Render 100 items < 50ms
-- Render 1000 items (stress test) < 200ms
-- Navigation speed < 50ms
-- Selection speed < 20ms
-- Scroll preservation during navigation
-- Selection preservation during updates
+### `vdom-performance.spec.js` — Aktueller Stand: Teilweise
 
-**Terminal Tests:**
+**FinderView-Tests** — Die Tests enthalten Guards und springen per `test.skip` über nicht implementierte Teile. Die VDOM-Methoden `renderListView`, `navigateTo` und `selectItem` sind an `activeTab` noch nicht verfügbar.
 
-- Add 100 output lines < 100ms
-- Input focus preservation (revalidation)
-- Command execution speed < 50ms
+**Terminal-Tests** — Laufen durch (Add 100 lines: ~0,2 ms, Command execution: ~0,5 ms).
 
-**TextEditor Tests:**
+**TextEditor-Tests** — Broken: Selector `.dock-item[data-window-id="texteditor-modal"]` findet kein Element im DOM.
 
-- Toolbar updates < 20ms
-- Editor focus preservation
+**Memory-Leak-Test** — Überspringt in headless Chromium, da `performance.memory` nicht verfügbar ist.
 
-**Memory Leak Tests:**
+### Performance-Zielwerte
 
-- VDOM cleanup after unmount (< 10MB for 10k elements)
+| Operation              | Ziel    | Status                           |
+| ---------------------- | ------- | -------------------------------- |
+| FinderView Render 100  | < 50ms  | Pending (API fehlt)              |
+| FinderView Render 1000 | < 200ms | Pending (API fehlt)              |
+| FinderView Navigate    | < 50ms  | Pending (API fehlt)              |
+| FinderView Select      | < 20ms  | Pending (API fehlt)              |
+| Terminal Output 100    | < 100ms | ✅                               |
+| Terminal Execute       | < 50ms  | ✅                               |
+| TextEditor Toolbar     | < 20ms  | Broken (Selector veraltet)       |
+| Memory Overhead        | < 10MB  | Skip (kein `performance.memory`) |
 
-**Note:** These tests depend on complete VDOM migrations (issues #135, #136, #137). Some tests may need adjustments based on actual implementation details.
-
-#### `tests/e2e/performance/perf-monitor-stats.spec.js`
-
-Tests for the enhanced PerfMonitor statistics functionality:
-
-- `measureFunction()` helper
-- Metrics tracking across multiple calls
-- Statistics calculation (avg, min, max, p95)
-- `reportStats()` console.table output
-- API facade integration
-
-### 3. Performance Targets
-
-| Operation              | Target  | Test Location                |
-| ---------------------- | ------- | ---------------------------- |
-| FinderView Render 100  | < 50ms  | vdom-performance.spec.js:27  |
-| FinderView Render 1000 | < 200ms | vdom-performance.spec.js:74  |
-| FinderView Navigate    | < 50ms  | vdom-performance.spec.js:106 |
-| FinderView Select      | < 20ms  | vdom-performance.spec.js:137 |
-| Terminal Output 100    | < 100ms | vdom-performance.spec.js:307 |
-| Terminal Execute       | < 50ms  | vdom-performance.spec.js:364 |
-| TextEditor Toolbar     | < 20ms  | vdom-performance.spec.js:410 |
-| Memory Overhead        | < 10MB  | vdom-performance.spec.js:476 |
-
-## Usage in Applications
-
-### Integrating Performance Monitoring
-
-Apps can use the enhanced PerfMonitor to track their own performance:
-
-```javascript
-// In FinderView renderListView():
-window.PerfMonitor.measureFunction('finder-render-list', () => {
-    // Actual rendering logic
-    this.renderListViewInternal(items);
-});
-
-// Later, check performance
-const stats = window.PerfMonitor.getStats('finder-render-list');
-console.log(
-    `Average render time: ${stats.avg.toFixed(2)}ms (${stats.count} renders)`
-);
-```
-
-### Development Dashboard
-
-During development, enable PerfMonitor and generate reports:
-
-```javascript
-// In browser console
-window.PerfMonitor.enable();
-
-// ... interact with the app ...
-
-// View performance report
-window.PerfMonitor.reportStats();
-```
-
-This outputs a formatted table showing all tracked operations with their statistics.
-
-## Running Tests
+## Tests ausführen
 
 ```bash
-# Run all performance tests
-npm run test:e2e -- tests/e2e/performance/ --project=chromium
+# Alle Performance-Tests
+npm run test:e2e:performance
 
-# Run specific test suite
-npm run test:e2e -- tests/e2e/performance/perf-monitor-stats.spec.js --project=chromium
-
-# Run with performance monitoring enabled
-PERF_MONITOR=1 npm run test:e2e -- tests/e2e/performance/
+# Nur PerfMonitor-Stats
+npm run test:e2e:performance -- tests/e2e/performance/perf-monitor-stats.spec.js --project=chromium
 ```
 
-## Notes & Limitations
+## Quellen
 
-1. **Dependency on VDOM Migrations**: Some tests in `vdom-performance.spec.js` depend on completed VDOM migrations (#135, #136, #137). Tests include guards to skip gracefully if required features are not yet available.
-
-2. **Realistic Targets**: Performance targets have been adjusted from the original spec to be more realistic:
-    - Terminal addOutput: 100ms (vs 5ms in spec) - accounts for actual DOM manipulation overhead
-3. **Memory Tests**: Memory leak detection requires Chrome's `performance.memory` API and will be skipped in other browsers.
-
-4. **Test Environment**: Tests run in a headless browser environment which may have different performance characteristics than a real browser.
-
-## Future Enhancements
-
-- Visual regression tests using Playwright screenshots
-- Integration with CI/CD performance budgets
-- Performance trending dashboard (track performance over time)
-- Automated performance regression detection
-- Integration with real user monitoring (RUM) tools
-
-## References
-
-- Parent Issue: #134
-- Related Issues: #135, #136, #137 (VDOM Migrations)
-- PerfMonitor Source: `src/ts/core/perf-monitor.ts`
-- API Facade: `src/ts/core/api.ts`
+- PerfMonitor: `src/ts/core/perf-monitor.ts`
+- API-Facade: `src/ts/core/api.ts`
