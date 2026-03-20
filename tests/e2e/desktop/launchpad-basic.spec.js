@@ -54,6 +54,19 @@ test.describe('Launchpad Basic Functionality', () => {
         await expect(launchpadModal).toBeVisible();
     });
 
+    test('should toggle launchpad when clicking dock icon repeatedly', async ({ page }) => {
+        const launchpadModal = page.locator('#launchpad-modal');
+
+        await utils.clickDockIcon(page, 'launchpad-modal');
+        await expect(launchpadModal).not.toHaveClass(/hidden/);
+
+        await utils.clickDockIcon(page, 'launchpad-modal');
+        await expect(launchpadModal).toHaveClass(/hidden/);
+
+        await utils.clickDockIcon(page, 'launchpad-modal');
+        await expect(launchpadModal).not.toHaveClass(/hidden/);
+    });
+
     test('should display apps grid', async ({ page }) => {
         // Open launchpad reliably
         await openLaunchpad(page);

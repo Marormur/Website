@@ -29,12 +29,21 @@ export function getWindowActions(): ActionMap {
 
         openWindow: (params: Params) => {
             const windowId = params.windowId;
+            const isLaunchpadTarget = windowId === 'launchpad-modal';
 
-            // Close launchpad if it's open (clicking dock icon while launchpad is visible)
+            // Launchpad dock behavior should be a strict toggle:
+            // second click closes it, third click opens it again.
             const launchpadModal = document.getElementById('launchpad-modal');
-            if (launchpadModal && !launchpadModal.classList.contains('hidden')) {
+            const isLaunchpadVisible =
+                !!launchpadModal && !launchpadModal.classList.contains('hidden');
+            if (isLaunchpadVisible) {
                 const dialogs = getGlobal<Record<string, { close?: () => void }>>('dialogs');
                 dialogs?.['launchpad-modal']?.close?.();
+
+                // Toggle close: do not reopen Launchpad in the same click cycle.
+                if (isLaunchpadTarget) {
+                    return;
+                }
             }
 
             // SPECIAL: Finder uses Multi-Window system (no windowId needed for dock icon)

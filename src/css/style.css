@@ -5484,10 +5484,10 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
     height: 100%;
     padding: clamp(1rem, 1.8vw, 1.5rem) clamp(1rem, 2.8vw, 2.25rem) clamp(1.25rem, 2.2vw, 2rem);
     border-radius: 1.75rem;
-    background:
-        radial-gradient(circle at 25% 5%, rgba(120, 160, 255, 0.18), rgba(120, 160, 255, 0) 35%),
-        radial-gradient(circle at 92% 0%, rgba(95, 240, 190, 0.14), rgba(95, 240, 190, 0) 28%),
-        linear-gradient(180deg, rgba(8, 10, 15, 0.96), rgba(8, 10, 15, 0.82));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.16));
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    -webkit-backdrop-filter: saturate(155%) blur(18px);
+    backdrop-filter: saturate(155%) blur(18px);
     color: #f3f4f6;
     animation: launchpad-fade-in 280ms ease-out;
 }
@@ -5800,25 +5800,34 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
     width: min(88vw, 980px);
     height: min(66vh, 620px);
     max-height: calc(100vh - 184px);
+    /* Upward nudge to better match macOS Launchpad visual centering. */
+    transform: translateY(-30px);
     border-radius: 2rem;
-    background: rgba(8, 10, 15, 0.62);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    -webkit-backdrop-filter: blur(24px) saturate(1.1);
-    backdrop-filter: blur(24px) saturate(1.1);
+    background: rgba(245, 245, 247, 0.54);
+    border: 1px solid rgba(255, 255, 255, 0.46);
+    -webkit-backdrop-filter: saturate(160%) blur(20px);
+    backdrop-filter: saturate(160%) blur(20px);
     box-shadow:
-        0 38px 70px rgba(0, 0, 0, 0.56),
-        inset 0 1px 0 rgba(255, 255, 255, 0.26);
+        0 28px 56px rgba(0, 0, 0, 0.34),
+        0 2px 8px rgba(0, 0, 0, 0.12) inset;
 }
 
 .dark .launchpad-modal-inner {
-    background: rgba(8, 10, 15, 0.62);
+    background: linear-gradient(180deg, rgba(38, 41, 48, 0.56), rgba(28, 31, 36, 0.5));
+    border-color: var(--dark-border-strong);
+    box-shadow:
+        0 34px 62px rgba(0, 0, 0, 0.46),
+        0 2px 8px rgba(255, 255, 255, 0.06) inset;
+}
+
+.dark .launchpad-container {
+    background: linear-gradient(180deg, rgba(22, 25, 31, 0.5), rgba(18, 21, 27, 0.44));
+    border-color: rgba(255, 255, 255, 0.16);
 }
 
 html:not(.dark) .launchpad-container {
-    background:
-        radial-gradient(circle at 18% 0%, rgba(126, 165, 252, 0.2), rgba(126, 165, 252, 0) 32%),
-        radial-gradient(circle at 92% 0%, rgba(96, 215, 178, 0.18), rgba(96, 215, 178, 0) 26%),
-        linear-gradient(180deg, rgba(246, 248, 252, 0.93), rgba(238, 242, 248, 0.9));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.22));
+    border-color: rgba(255, 255, 255, 0.45);
     color: #111827;
 }
 
@@ -5928,6 +5937,7 @@ html:not(.dark) .launchpad-modal-inner {
         width: min(98vw, 98vw);
         height: min(78vh, 78vh);
         max-height: calc(100vh - 120px);
+        transform: translateY(-12px);
         border-radius: 1.2rem;
     }
 

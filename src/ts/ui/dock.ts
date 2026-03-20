@@ -326,6 +326,14 @@ function bindDockInteractions(): void {
             ) as HTMLElement | null;
             if (!dockItem || !shouldAnimateOpeningApps()) return;
 
+            const windowId = dockItem.getAttribute('data-window-id');
+            if (windowId === 'launchpad-modal') {
+                const launchpadModal = document.getElementById('launchpad-modal');
+                const isVisible = !!launchpadModal && !launchpadModal.classList.contains('hidden');
+                // Skip opening animation when this click performs Launchpad toggle-close.
+                if (isVisible) return;
+            }
+
             const icon = dockItem.querySelector<HTMLElement>('.dock-icon');
             if (!icon) return;
 

@@ -222,6 +222,14 @@ function initApp(): void {
                     if (launchpadModal.classList.contains('hidden')) return;
                     const inner = launchpadModal.querySelector('.launchpad-modal-inner');
                     const target = e.target as Node;
+                    const targetElement = e.target instanceof Element ? e.target : null;
+                    // Let launchpad dock clicks pass through to ActionBus openWindow.
+                    // Otherwise this capture handler closes first and the bubble phase reopens it.
+                    if (
+                        targetElement?.closest('#dock .dock-item[data-window-id="launchpad-modal"]')
+                    ) {
+                        return;
+                    }
                     if (inner && inner.contains(target)) return; // clicked inside → ignore
                     const launchpadDialog = dialogs['launchpad-modal'] as { close?: () => void };
                     launchpadDialog?.close?.();
