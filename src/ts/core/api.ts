@@ -79,6 +79,13 @@ logger.debug('APP', 'API loaded');
             'applyDisplayScale',
         ] as const),
 
+        uiMode: createModuleProxy('UiModeSystem', [
+            'setUIModePreference',
+            'getUIModePreference',
+            'getEffectiveUIMode',
+            'isMobileMode',
+        ] as const),
+
         icon: createModuleProxy('IconSystem', [
             'ensureSvgNamespace',
             'getMenuIconSvg',
@@ -306,6 +313,8 @@ logger.debug('APP', 'API loaded');
     w.setDisplayScalePreference = createLegacyWrapper('display.setDisplayScalePreference');
     w.getDisplayScalePreference = createLegacyWrapper('display.getDisplayScalePreference');
     w.getRecommendedDisplayScale = createLegacyWrapper('display.getRecommendedDisplayScale');
+    w.setUIModePreference = createLegacyWrapper('uiMode.setUIModePreference');
+    w.getUIModePreference = createLegacyWrapper('uiMode.getUIModePreference');
 
     // Icon
     w.ensureSvgNamespace = createLegacyWrapper('icon.ensureSvgNamespace');

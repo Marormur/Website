@@ -77,11 +77,22 @@ import { getString, setString } from '../services/storage-utils.js';
         return scale.toFixed(2).replace(/\.00$/, '').replace(/0$/, '');
     }
 
+    function isMobileUIModeActive(): boolean {
+        return document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+    }
+
     function applyDisplayScale(scale: number): void {
         const safeScale = clampDisplayScale(scale);
-        document.documentElement.style.setProperty('--app-display-scale', formatScale(safeScale));
+        // Mobile mode uses a touch-first coordinate space. For reliable hit-testing,
+        // keep CSS zoom at 1.0 while preserving the saved desktop preference.
+        const effectiveScale = isMobileUIModeActive() ? 1 : safeScale;
+
+        document.documentElement.style.setProperty(
+            '--app-display-scale',
+            formatScale(effectiveScale)
+        );
         // Chromium (inkl. VS Code Webview) skaliert via CSS zoom konsistent das komplette UI.
-        document.documentElement.style.setProperty('zoom', formatScale(safeScale));
+        document.documentElement.style.setProperty('zoom', formatScale(effectiveScale));
     }
 
     function setDisplayScalePreference(scale: number): void {
@@ -144,6 +155,10 @@ import { getString, setString } from '../services/storage-utils.js';
     // Initialize
     updateThemeFromPreference();
     applyDisplayScale(displayScalePreference);
+
+    window.addEventListener('uiModeEffectiveChange', () => {
+        applyDisplayScale(displayScalePreference);
+    });
 
     const handleSystemThemeChange = () => {
         updateThemeFromPreference();

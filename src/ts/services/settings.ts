@@ -53,6 +53,7 @@ logger.debug('APP', 'Settings Module loaded');
         render(): void;
         attachListeners(): void;
         syncThemePreference(): void;
+        syncUIModePreference(): void;
         syncIconThemePreference(): void;
         syncLanguagePreference(): void;
         syncDisplayScalePreference(): void;
@@ -101,6 +102,7 @@ logger.debug('APP', 'Settings Module loaded');
             this.render();
             this.attachListeners();
             this.syncThemePreference();
+            this.syncUIModePreference();
             this.syncIconThemePreference();
             this.syncLanguagePreference();
             this.syncDisplayScalePreference();
@@ -644,6 +646,31 @@ logger.debug('APP', 'Settings Module loaded');
                                 </label>
                             </fieldset>
 
+                            <fieldset class="settings-option-card">
+                                <legend class="settings-option-legend" data-i18n="settingsPage.display.uiMode.legend">Oberflächenmodus</legend>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="ui-mode-preference" value="auto" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.display.uiMode.options.auto.label">✨ Automatisch</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.display.uiMode.options.auto.description">Passt den Modus je nach Gerät und Viewport an.</span>
+                                    </span>
+                                </label>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="ui-mode-preference" value="desktop" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.display.uiMode.options.desktop.label">🖥️ Desktop (macOS)</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.display.uiMode.options.desktop.description">Klassisches Fenster- und Dock-Layout.</span>
+                                    </span>
+                                </label>
+                                <label class="settings-radio-row">
+                                    <input type="radio" name="ui-mode-preference" value="mobile" class="settings-radio-input" />
+                                    <span class="settings-radio-copy">
+                                        <span class="settings-radio-title" data-i18n="settingsPage.display.uiMode.options.mobile.label">📱 Mobil (iOS-inspiriert)</span>
+                                        <span class="settings-radio-description" data-i18n="settingsPage.display.uiMode.options.mobile.description">Aktiviert mobile Navigation und kompaktere UI-Größen.</span>
+                                    </span>
+                                </label>
+                            </fieldset>
+
                             <fieldset class="settings-option-card settings-scale-card">
                                 <legend class="settings-option-legend" data-i18n="settingsPage.display.scale.legend">Skalierung</legend>
                                 <div class="settings-scale-row">
@@ -686,14 +713,12 @@ logger.debug('APP', 'Settings Module loaded');
                                     <input type="radio" name="icon-theme" value="emoji" class="settings-radio-input" />
                                     <span class="settings-radio-copy">
                                         <span class="settings-radio-title" data-i18n="settingsPage.display.iconTheme.options.emoji.label">🙂 Emojis</span>
-                                        <span class="settings-radio-description" data-i18n="settingsPage.display.iconTheme.options.emoji.description">Verwendet skalierbare Emoji-Symbole als Standard.</span>
                                     </span>
                                 </label>
                                 <label class="settings-radio-row">
                                     <input type="radio" name="icon-theme" value="custom" class="settings-radio-input" />
                                     <span class="settings-radio-copy">
                                         <span class="settings-radio-title" data-i18n="settingsPage.display.iconTheme.options.custom.label">🖼️ Eigene Icons</span>
-                                        <span class="settings-radio-description" data-i18n="settingsPage.display.iconTheme.options.custom.description">Nutze deine bisherigen Bilddateien für Programme.</span>
                                     </span>
                                 </label>
                             </fieldset>
@@ -799,6 +824,39 @@ logger.debug('APP', 'Settings Module loaded');
                             ThemeSystem.setThemePreference(theme);
                         }
                     }
+                });
+            });
+
+            const uiModeRadios = this.container.querySelectorAll<HTMLInputElement>(
+                'input[name="ui-mode-preference"]'
+            );
+            uiModeRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (!radio.checked) return;
+
+                    const preference = radio.value as 'auto' | 'desktop' | 'mobile';
+                    const API = (
+                        window as Window & {
+                            API?: {
+                                uiMode?: {
+                                    setUIModePreference(pref: 'auto' | 'desktop' | 'mobile'): void;
+                                };
+                            };
+                        }
+                    ).API;
+                    if (API?.uiMode?.setUIModePreference) {
+                        API.uiMode.setUIModePreference(preference);
+                        return;
+                    }
+
+                    const UiModeSystem = (
+                        window as Window & {
+                            UiModeSystem?: {
+                                setUIModePreference(pref: 'auto' | 'desktop' | 'mobile'): void;
+                            };
+                        }
+                    ).UiModeSystem;
+                    UiModeSystem?.setUIModePreference?.(preference);
                 });
             });
 
@@ -1168,10 +1226,45 @@ logger.debug('APP', 'Settings Module loaded');
             });
         },
 
+        syncUIModePreference(): void {
+            if (!this.container) return;
+
+            let preference: 'auto' | 'desktop' | 'mobile' = 'auto';
+            const API = (
+                window as Window & {
+                    API?: {
+                        uiMode?: {
+                            getUIModePreference(): 'auto' | 'desktop' | 'mobile';
+                        };
+                    };
+                }
+            ).API;
+            const UiModeSystem = (
+                window as Window & {
+                    UiModeSystem?: {
+                        getUIModePreference(): 'auto' | 'desktop' | 'mobile';
+                    };
+                }
+            ).UiModeSystem;
+
+            if (API?.uiMode?.getUIModePreference) {
+                preference = API.uiMode.getUIModePreference();
+            } else if (UiModeSystem?.getUIModePreference) {
+                preference = UiModeSystem.getUIModePreference();
+            }
+
+            const uiModeRadios = this.container.querySelectorAll<HTMLInputElement>(
+                'input[name="ui-mode-preference"]'
+            );
+            uiModeRadios.forEach(radio => {
+                radio.checked = radio.value === preference;
+            });
+        },
+
         syncIconThemePreference(): void {
             if (!this.container) return;
 
-            let preference: 'emoji' | 'custom' = 'emoji';
+            let preference: 'emoji' | 'custom' = 'custom';
             const API = (
                 window as Window & {
                     API?: { iconTheme?: { getProgramIconTheme(): 'emoji' | 'custom' } };
@@ -1719,6 +1812,12 @@ logger.debug('APP', 'Settings Module loaded');
 
     window.addEventListener('themePreferenceChange', () => {
         SettingsSystem.syncThemePreference();
+    });
+    window.addEventListener('uiModePreferenceChange', () => {
+        SettingsSystem.syncUIModePreference();
+    });
+    window.addEventListener('uiModeEffectiveChange', () => {
+        SettingsSystem.syncUIModePreference();
     });
     window.addEventListener('iconThemeChange', () => {
         SettingsSystem.syncIconThemePreference();

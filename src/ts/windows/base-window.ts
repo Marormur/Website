@@ -91,6 +91,12 @@ export class BaseWindow {
     activeTabId: string | null;
     metadata: Record<string, unknown>;
     private restoreBeforeMaximize: WindowPosition | null;
+    private desktopLayoutBeforeMobile: {
+        position: WindowPosition;
+        isMaximized: boolean;
+        snappedSide: 'left' | 'right' | null;
+        restoreBeforeMaximize: WindowPosition | null;
+    } | null = null;
     private dragState: {
         isDragging: boolean;
         startX: number;
@@ -100,6 +106,104 @@ export class BaseWindow {
         pointerScale: number;
         lastPointerX: number | null;
     };
+
+    private _isMobileUIMode(): boolean {
+        return document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+    }
+
+    private _applyResponsiveWindowLayout(): void {
+        if (!this.element) return;
+
+        if (!this._isMobileUIMode()) {
+            this.element.removeAttribute('data-window-ui-mode');
+            return;
+        }
+
+        // Save desktop geometry exactly once before entering mobile fill mode.
+        if (!this.desktopLayoutBeforeMobile) {
+            const snappedValue = this.element.dataset.snapped;
+            this.desktopLayoutBeforeMobile = {
+                position: {
+                    x: this.position.x,
+                    y: this.position.y,
+                    width: this.position.width,
+                    height: this.position.height,
+                },
+                isMaximized: this.isMaximized,
+                snappedSide:
+                    snappedValue === 'left' || snappedValue === 'right' ? snappedValue : null,
+                restoreBeforeMaximize: this.restoreBeforeMaximize
+                    ? {
+                          x: this.restoreBeforeMaximize.x,
+                          y: this.restoreBeforeMaximize.y,
+                          width: this.restoreBeforeMaximize.width,
+                          height: this.restoreBeforeMaximize.height,
+                      }
+                    : null,
+            };
+        }
+
+        const minTop = Math.round(window.getMenuBarBottom?.() || 0);
+        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        const maxHeight = Math.max(0, getLogicalViewportHeight() - minTop - dockReserve);
+        const logicalWidth = Math.max(1, getLogicalViewportWidth());
+
+        this.element.setAttribute('data-window-ui-mode', 'mobile');
+        this.element.style.minWidth = '0px';
+        this.element.style.minHeight = '0px';
+        this.element.style.maxWidth = 'none';
+        this.element.style.maxHeight = 'none';
+        this.element.style.left = '0px';
+        this.element.style.top = `${minTop}px`;
+        this.element.style.width = `${logicalWidth}px`;
+        this.element.style.height = `${maxHeight}px`;
+
+        this.isMaximized = true;
+        this.position.x = 0;
+        this.position.y = minTop;
+        this.position.width = logicalWidth;
+        this.position.height = maxHeight;
+    }
+
+    private _restoreDesktopLayoutAfterMobile(): void {
+        if (!this.element || !this.desktopLayoutBeforeMobile) return;
+
+        const snapshot = this.desktopLayoutBeforeMobile;
+        const target = this.element;
+
+        target.style.minWidth = '';
+        target.style.minHeight = '';
+        target.style.maxWidth = '';
+        target.style.maxHeight = '';
+        target.style.left = `${snapshot.position.x}px`;
+        target.style.top = `${snapshot.position.y}px`;
+        target.style.width = `${snapshot.position.width}px`;
+        target.style.height = `${snapshot.position.height}px`;
+
+        if (snapshot.snappedSide) {
+            target.dataset.snapped = snapshot.snappedSide;
+        } else {
+            delete target.dataset.snapped;
+        }
+
+        this.isMaximized = snapshot.isMaximized;
+        this.position.x = snapshot.position.x;
+        this.position.y = snapshot.position.y;
+        this.position.width = snapshot.position.width;
+        this.position.height = snapshot.position.height;
+        this.restoreBeforeMaximize = snapshot.restoreBeforeMaximize
+            ? {
+                  x: snapshot.restoreBeforeMaximize.x,
+                  y: snapshot.restoreBeforeMaximize.y,
+                  width: snapshot.restoreBeforeMaximize.width,
+                  height: snapshot.restoreBeforeMaximize.height,
+              }
+            : null;
+
+        target.removeAttribute('data-window-ui-mode');
+        this.desktopLayoutBeforeMobile = null;
+        this._saveState();
+    }
 
     constructor(config: WindowConfig) {
         // Set type FIRST, before generating ID (ID generation uses this.type)
@@ -261,6 +365,7 @@ export class BaseWindow {
         if (!this.titlebarElement) return;
 
         this.titlebarElement.addEventListener('mousedown', (e: MouseEvent) => {
+            if (this._isMobileUIMode()) return;
             if ((e.target as HTMLElement).tagName === 'BUTTON') return; // Ignore control buttons
 
             const currentRect = this.element?.getBoundingClientRect();
@@ -343,6 +448,7 @@ export class BaseWindow {
         });
 
         this.titlebarElement.addEventListener('dblclick', (e: MouseEvent) => {
+            if (this._isMobileUIMode()) return;
             const target = e.target as HTMLElement | null;
             if (target?.closest('button, a, input, select, textarea, [role="button"]')) {
                 return;
@@ -469,6 +575,16 @@ export class BaseWindow {
     handleViewportResize(): void {
         const target = this.element;
         if (!target || target.classList.contains('hidden')) return;
+
+        if (!this._isMobileUIMode() && target.getAttribute('data-window-ui-mode') === 'mobile') {
+            this._restoreDesktopLayoutAfterMobile();
+            return;
+        }
+
+        if (this._isMobileUIMode()) {
+            this._applyResponsiveWindowLayout();
+            return;
+        }
 
         const snappedSide = target.dataset.snapped;
         if (snappedSide === 'left' || snappedSide === 'right') {
@@ -605,6 +721,7 @@ export class BaseWindow {
             this.element!.appendChild(resizer);
 
             const startResize = (event: MouseEvent) => {
+                if (this._isMobileUIMode()) return;
                 event.preventDefault();
                 event.stopPropagation();
 
@@ -826,6 +943,7 @@ export class BaseWindow {
             } else {
                 this.element.classList.remove('hidden');
             }
+            this._applyResponsiveWindowLayout();
         }
         this.bringToFront();
         // Update menubar to reflect new active window
@@ -906,6 +1024,7 @@ export class BaseWindow {
             this.element.style.maxWidth = '';
             this.element.style.maxHeight = '';
             this.element.style.width = `${this.position.width}px`;
+            this.desktopLayoutBeforeMobile = null;
             this.element.style.height = `${this.position.height}px`;
         }
 
@@ -1025,6 +1144,7 @@ export class BaseWindow {
         // Track active window in WindowRegistry if available
         W.WindowRegistry?.setActiveWindow?.(this.id);
         W.updateProgramLabelByTopModal?.();
+        W.updateDockIndicators?.();
         // Refresh dynamic application menu (e.g. switch to Terminal menu)
         const menuSystem = W.MenuSystem;
         if (menuSystem?.renderApplicationMenu) {

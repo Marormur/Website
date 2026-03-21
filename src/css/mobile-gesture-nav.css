@@ -1,0 +1,176 @@
+/* ==========================================================================
+   Mobile Gesture Navigation Bar
+   iOS-like bottom navigation for mobile mode
+   ========================================================================== */
+
+/**
+ * PURPOSE: Provide slim gesture navigation bar that replaces dock when app is open
+ * DESIGN: Mimics iOS home indicator bar - minimal, gesture-friendly
+ * INVARIANT: Only visible when an app window is open in mobile mode
+ */
+
+#mobile-gesture-nav-bar {
+    bottom: 10px;
+    left: auto;
+    right: auto;
+    top: auto;
+    width: auto;
+    min-width: 60px;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(20px);
+    border-radius: 22px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    padding: 0 16px;
+}
+
+#mobile-gesture-nav-bar.light {
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+html.dark #mobile-gesture-nav-bar {
+    background: rgba(15, 15, 17, 0.8);
+}
+
+/**
+ * Home button styling
+ * DESIGN: Large touch target (44px minimum) for reliable mobile interaction
+ */
+
+.mobile-gesture-nav-home-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 24px;
+    padding: 0;
+    transition: all 150ms ease-in-out;
+    color: inherit;
+}
+
+.mobile-gesture-nav-home-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.1);
+}
+
+.mobile-gesture-nav-home-btn:active {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(0.95);
+}
+
+html.dark .mobile-gesture-nav-home-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+html.dark .mobile-gesture-nav-home-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Light mode color adjustments */
+
+html.light #mobile-gesture-nav-bar {
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+html.light .mobile-gesture-nav-home-btn {
+    color: #1c1c1e;
+}
+
+html.light .mobile-gesture-nav-home-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+html.light .mobile-gesture-nav-home-btn:active {
+    background: rgba(0, 0, 0, 0.12);
+}
+
+/* Dark mode color adjustments */
+
+html.dark #mobile-gesture-nav-bar {
+    background: rgba(38, 41, 48, 0.85);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+html.dark .mobile-gesture-nav-home-btn {
+    color: #f3f4f6;
+}
+
+html.dark .mobile-gesture-nav-home-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+html.dark .mobile-gesture-nav-home-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Ensure smooth dock transitions */
+
+#dock {
+    transition: opacity 200ms ease-in-out;
+}
+
+/* Mobile screens should always be above gesture nav */
+
+#mobile-screens-wrapper {
+    z-index: 1999;
+}
+
+/* Hide home/launchpad layer while an app window is active to prevent icon overlay above apps. */
+#mobile-screens-wrapper.mobile-screens-wrapper--app-open {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Accessibility: Reduce motion if preferred */
+
+@media (prefers-reduced-motion: reduce) {
+    #mobile-gesture-nav-bar,
+    #dock,
+    .mobile-gesture-nav-home-btn {
+        transition: opacity 100ms linear !important;
+    }
+
+    .mobile-gesture-nav-home-btn:hover {
+        transform: none !important;
+    }
+
+    .mobile-gesture-nav-home-btn:active {
+        transform: none !important;
+    }
+}
+
+/* Dock visibility states */
+
+#dock.mobile-gesture-nav-hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+#dock.mobile-gesture-nav-visible {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+}
+
+#mobile-gesture-nav-bar.mobile-gesture-nav-visible {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+}
+
+#mobile-gesture-nav-bar.mobile-gesture-nav-hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}

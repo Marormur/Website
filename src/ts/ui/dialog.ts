@@ -20,6 +20,18 @@ export class Dialog {
     modalId: string;
     windowEl: HTMLElement | null;
     lastDragPointerX: number | null;
+    private desktopLayoutBeforeMobile: {
+        left: string;
+        top: string;
+        width: string;
+        height: string;
+        maxWidth: string;
+        maxHeight: string;
+        position: string;
+        right: string;
+        bottom: string;
+        maximized: string | undefined;
+    } | null;
 
     constructor(modalId: string) {
         this.modalId = modalId;
@@ -35,12 +47,85 @@ export class Dialog {
             ? helper(this.modal)
             : (this.modal.querySelector('.autopointer') as HTMLElement) || this.modal;
         this.lastDragPointerX = null;
+        this.desktopLayoutBeforeMobile = null;
         this.init();
+    }
+
+    private isMobileUIMode(): boolean {
+        return document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+    }
+
+    private shouldApplyMobileFillLayout(): boolean {
+        return this.modalId === 'settings-modal';
+    }
+
+    private applyResponsiveLayoutForCurrentMode(): void {
+        if (!this.shouldApplyMobileFillLayout()) return;
+
+        const target = this.windowEl || this.modal;
+        if (!target) return;
+
+        if (!this.isMobileUIMode()) {
+            if (!this.desktopLayoutBeforeMobile) return;
+
+            const snapshot = this.desktopLayoutBeforeMobile;
+            target.style.left = snapshot.left;
+            target.style.top = snapshot.top;
+            target.style.width = snapshot.width;
+            target.style.height = snapshot.height;
+            target.style.maxWidth = snapshot.maxWidth;
+            target.style.maxHeight = snapshot.maxHeight;
+            target.style.position = snapshot.position;
+            target.style.right = snapshot.right;
+            target.style.bottom = snapshot.bottom;
+
+            if (snapshot.maximized !== undefined) {
+                this.modal.dataset.maximized = snapshot.maximized;
+            } else {
+                delete this.modal.dataset.maximized;
+            }
+
+            this.desktopLayoutBeforeMobile = null;
+            return;
+        }
+
+        if (!this.desktopLayoutBeforeMobile) {
+            this.desktopLayoutBeforeMobile = {
+                left: target.style.left || '',
+                top: target.style.top || '',
+                width: target.style.width || '',
+                height: target.style.height || '',
+                maxWidth: target.style.maxWidth || '',
+                maxHeight: target.style.maxHeight || '',
+                position: target.style.position || '',
+                right: target.style.right || '',
+                bottom: target.style.bottom || '',
+                maximized: this.modal.dataset.maximized,
+            };
+        }
+
+        const minTop = Math.round(window.getMenuBarBottom?.() || 0);
+        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        const maxHeight = Math.max(0, getLogicalViewportHeight() - minTop - dockReserve);
+
+        target.style.maxWidth = 'none';
+        target.style.maxHeight = 'none';
+        target.style.position = 'fixed';
+        target.style.left = '0px';
+        target.style.top = `${minTop}px`;
+        target.style.width = `${Math.max(1, getLogicalViewportWidth())}px`;
+        target.style.height = `${maxHeight}px`;
+        target.style.right = '';
+        target.style.bottom = '';
+        this.modal.dataset.maximized = 'true';
     }
 
     init() {
         this.makeDraggable();
         this.makeResizable();
+        window.addEventListener('uiModeEffectiveChange', () => {
+            this.applyResponsiveLayoutForCurrentMode();
+        });
         const closeButton = this.modal.querySelector(
             '.draggable-header button[id^="close-"]'
         ) as HTMLElement | null;
@@ -108,6 +193,7 @@ export class Dialog {
 
         if (this.modal && this.modal.dataset) delete this.modal.dataset.minimized;
         this.bringToFront();
+        this.applyResponsiveLayoutForCurrentMode();
         this.enforceMenuBarBoundary();
         window.saveOpenModals?.();
         window.updateDockIndicators?.();

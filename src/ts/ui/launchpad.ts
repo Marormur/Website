@@ -450,12 +450,36 @@ logger.debug('UI', 'Launchpad (TS) loaded');
         });
     }
 
+    /**
+     * Initialize launchpad in fullscreen mode (for mobile paging)
+     * PURPOSE: Render launchpad grid on second mobile screen
+     * INPUT: containerElement (should be #launchpad-fullscreen-container)
+     * NOTES: Similar to init() but adapted for fullscreen/mobile context
+     */
+    function initFullscreen(containerElement: HTMLElement): void {
+        if (!containerElement) {
+            logger.warn('UI', 'LaunchpadSystem: No fullscreen container element provided');
+            return;
+        }
+
+        container = containerElement;
+
+        // Render fullscreen layout
+        containerElement.innerHTML = `
+            <div class="launchpad-apps-grid mobile-launchpad-grid"></div>
+        `;
+
+        appsGrid = containerElement.querySelector<HTMLElement>('.launchpad-apps-grid');
+        loadApps();
+    }
+
     window.LaunchpadSystem = {
         init,
+        initFullscreen,
         refresh,
         clearSearch,
         get container() {
             return container;
         },
-    };
+    } as Record<string, unknown>;
 })();

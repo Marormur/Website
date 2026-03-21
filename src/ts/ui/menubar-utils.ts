@@ -35,6 +35,10 @@
         return Boolean(document.querySelector('.menu-dropdown:not(.hidden)'));
     }
 
+    function isMobileUIMode(): boolean {
+        return document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+    }
+
     function toggleMenuDropdown(trigger: HTMLElement, options: TriggerOptions = {}): void {
         if (!trigger) return;
         const menuId = trigger.getAttribute('aria-controls');
@@ -116,6 +120,7 @@
         });
 
         el.addEventListener('mouseenter', () => {
+            if (isMobileUIMode()) return;
             if (clickJustOccurred) return;
             (window as unknown as { __lastMenuInteractionAt?: number }).__lastMenuInteractionAt =
                 Date.now();

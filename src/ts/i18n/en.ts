@@ -666,6 +666,23 @@ export const en = {
             title: 'Appearance options',
             description: 'Adjust how the desktop handles light and dark mode.',
             legend: 'Dark mode',
+            uiMode: {
+                legend: 'Interface mode',
+                options: {
+                    auto: {
+                        label: '✨ Automatic',
+                        description: 'Adapts mode based on device capabilities and viewport.',
+                    },
+                    desktop: {
+                        label: '🖥️ Desktop (macOS)',
+                        description: 'Classic multi-window layout with desktop dock behavior.',
+                    },
+                    mobile: {
+                        label: '📱 Mobile (iOS-inspired)',
+                        description: 'Enables compact spacing and mobile-oriented navigation.',
+                    },
+                },
+            },
             iconTheme: {
                 legend: 'App icons',
                 options: {

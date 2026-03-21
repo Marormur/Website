@@ -667,6 +667,23 @@ export const de = {
             title: 'Darstellungsoptionen',
             description: 'Passe an, wie der Desktop mit hellem und dunklem Design umgeht.',
             legend: 'Darkmode',
+            uiMode: {
+                legend: 'Oberflächenmodus',
+                options: {
+                    auto: {
+                        label: '✨ Automatisch',
+                        description: 'Passt den Modus je nach Gerät und Viewport an.',
+                    },
+                    desktop: {
+                        label: '🖥️ Desktop (macOS)',
+                        description: 'Klassisches Fenster- und Dock-Layout.',
+                    },
+                    mobile: {
+                        label: '📱 Mobil (iOS-inspiriert)',
+                        description: 'Aktiviert mobile Navigation und kompaktere UI-Größen.',
+                    },
+                },
+            },
             iconTheme: {
                 legend: 'Programm-Icons',
                 options: {

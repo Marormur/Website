@@ -1613,6 +1613,13 @@ function renderDropdownItems(
 export function renderApplicationMenu(activeModalId?: string | null) {
     const container = document.getElementById('menubar-links');
     if (!container) return;
+
+    if (document.documentElement.getAttribute('data-ui-mode') === 'mobile') {
+        container.innerHTML = '';
+        currentMenuModalId = activeModalId || null;
+        return;
+    }
+
     // Detect active window type from WindowRegistry to switch menu dynamically
     const registry = window.WindowRegistry;
     const activeType = registry?.getActiveWindow?.()?.type;

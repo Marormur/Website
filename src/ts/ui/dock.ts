@@ -48,15 +48,35 @@ const DEFAULT_DOCK_PREFERENCES: DockPreferences = {
     showRecentApps: true,
 };
 
+const WINDOW_TYPE_TO_DOCK_ID: Record<string, string> = {
+    finder: 'finder',
+    terminal: 'terminal-modal',
+    'text-editor': 'text-modal',
+    settings: 'settings-modal',
+    launchpad: 'launchpad-modal',
+};
+
 let dockPointer: { x: number; y: number } | null = null;
 let dockMagnificationRafId: number | null = null;
 let autoHideHoveringDock = false;
 let autoHideHideTimer: number | null = null;
 let dockInteractionsBound = false;
 
+function isMobileUIMode(): boolean {
+    return document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+}
+
 function positionDock(preferences: DockPreferences): void {
     const dock = getDockElement();
     if (!dock) return;
+
+    if (isMobileUIMode()) {
+        dock.style.left = '';
+        dock.style.right = '';
+        dock.style.top = '';
+        dock.style.bottom = '';
+        return;
+    }
 
     // Keep dock coordinates in the same logical CSS-px space as fixed window left/top.
     const viewportWidth = Math.max(1, getLogicalViewportWidth());
@@ -359,13 +379,15 @@ export function applyDockPreferences(preferences?: unknown): void {
         preferences === undefined
             ? getDockPreferences()
             : normalizeDockPreferences(preferences as Partial<DockPreferences>);
+    const mobileMode = isMobileUIMode();
+    const effectivePosition: DockPosition = mobileMode ? 'bottom' : resolvedPreferences.position;
 
     const sizePx = getDockSizePx(resolvedPreferences.size);
     const tooltipOffsetPx = Math.max(10, Math.round(sizePx * 0.18));
 
     dock.classList.remove('bottom-4', 'left-1/2', '-translate-x-1/2');
 
-    dock.dataset.dockPosition = resolvedPreferences.position;
+    dock.dataset.dockPosition = effectivePosition;
     dock.style.setProperty('--dock-icon-size', `${sizePx}px`);
     dock.style.setProperty('--dock-icon-emoji-size', `${Math.round(sizePx * 0.88)}px`);
     dock.style.setProperty('--dock-item-gap', `${Math.round(sizePx * 0.085)}px`);
@@ -379,11 +401,14 @@ export function applyDockPreferences(preferences?: unknown): void {
     dock.style.removeProperty('top');
     dock.style.removeProperty('bottom');
     dock.style.setProperty('--dock-base-transform', 'translate3d(0, 0, 0)');
-    positionDock(resolvedPreferences);
+    positionDock({
+        ...resolvedPreferences,
+        position: effectivePosition,
+    });
 
-    dock.classList.toggle('dock-auto-hide-enabled', resolvedPreferences.autoHide);
+    dock.classList.toggle('dock-auto-hide-enabled', !mobileMode && resolvedPreferences.autoHide);
 
-    if (resolvedPreferences.autoHide) {
+    if (!mobileMode && resolvedPreferences.autoHide) {
         if (autoHideHoveringDock) {
             revealDock();
         } else {
@@ -776,6 +801,48 @@ function resolveDockTargetItem(windowId: string): HTMLElement | null {
     return null;
 }
 
+function resolveActiveDockItemId(): string | null {
+    const activeWindow = window.WindowRegistry?.getActiveWindow?.();
+    const activeType = activeWindow?.type;
+    if (activeType && WINDOW_TYPE_TO_DOCK_ID[activeType]) {
+        return WINDOW_TYPE_TO_DOCK_ID[activeType];
+    }
+
+    const visibleModal = Array.from(document.querySelectorAll<HTMLElement>('.modal:not(.hidden)'))
+        .sort((a, b) => {
+            const aZ = Number.parseInt(window.getComputedStyle(a).zIndex || '0', 10) || 0;
+            const bZ = Number.parseInt(window.getComputedStyle(b).zIndex || '0', 10) || 0;
+            return bZ - aZ;
+        })
+        .find(Boolean);
+
+    if (!visibleModal) return null;
+
+    const modalId = visibleModal.id;
+    if (modalId === 'projects-modal') return 'finder';
+    return modalId || null;
+}
+
+function updateDockActiveState(): void {
+    const dock = getDockElement();
+    if (!dock) return;
+
+    const activeId = resolveActiveDockItemId();
+    const isMobileMode = document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+
+    dock.querySelectorAll<HTMLElement>('.dock-item').forEach(item => {
+        const itemId = getDockItemId(item);
+        const isActive = !!activeId && itemId === activeId;
+        item.classList.toggle('dock-item--active', isActive && isMobileMode);
+
+        if (isActive) {
+            item.setAttribute('aria-current', 'page');
+        } else {
+            item.removeAttribute('aria-current');
+        }
+    });
+}
+
 export function animateWindowMinimize(
     windowElement: HTMLElement,
     windowId: string,
@@ -926,6 +993,8 @@ export function updateDockIndicators(): void {
             }
         }
     });
+
+    updateDockActiveState();
 }
 
 if (typeof window !== 'undefined') {
@@ -952,6 +1021,10 @@ if (typeof window !== 'undefined') {
 
     window.addEventListener('iconThemeChange', () => {
         renderDockProgramIcons();
+    });
+
+    window.addEventListener('uiModeEffectiveChange', () => {
+        updateDockIndicators();
     });
 }
 

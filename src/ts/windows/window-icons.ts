@@ -19,7 +19,7 @@ export type ProgramIconKey =
 export type ProgramIconTheme = 'emoji' | 'custom';
 
 const ICON_THEME_KEY = 'programIconTheme';
-const DEFAULT_ICON_THEME: ProgramIconTheme = 'emoji';
+const DEFAULT_ICON_THEME: ProgramIconTheme = 'custom';
 
 const PROGRAM_ICON_SETS: Record<ProgramIconTheme, Record<ProgramIconKey, string>> = {
     emoji: {

@@ -252,6 +252,12 @@ declare global {
         ThemeSystem?: {
             setThemePreference?: (pref: 'dark' | 'light' | 'system') => void;
         };
+        UiModeSystem?: {
+            setUIModePreference?: (pref: 'auto' | 'desktop' | 'mobile') => void;
+            getUIModePreference?: () => 'auto' | 'desktop' | 'mobile';
+            getEffectiveUIMode?: () => 'desktop' | 'mobile';
+            isMobileMode?: () => boolean;
+        };
         /** Multi-instance modal integration. */
         multiInstanceIntegration?: {
             init?: () => void;

@@ -14,6 +14,7 @@ export {};
 import { installShim } from '../compat/instance-shims';
 import { cleanupObsoleteStorage } from '../services/storage-migration';
 import { runSessionRestoreOrchestration } from '../services/restore-orchestrator';
+import '../ui/mobile-paging.js';
 import logger from './logger.js';
 
 /**
@@ -47,6 +48,11 @@ interface IDialog {
 interface GlobalModules {
     ActionBus?: {
         init?: () => void;
+    };
+    MobilePagingSystem?: {
+        initMobilePaging?: () => void;
+        navigateToPage?: (pageId: 0 | 1) => void;
+        getCurrentPage?: () => 0 | 1;
     };
     DesktopSystem?: {
         initDesktop?: () => void;
@@ -253,6 +259,11 @@ function initApp(): void {
     // Initialize desktop icons
     if (win.DesktopSystem) {
         win.DesktopSystem.initDesktop?.();
+    }
+
+    // Initialize mobile paging system (iOS-like home screen + launchpad navigation)
+    if (win.MobilePagingSystem) {
+        win.MobilePagingSystem.initMobilePaging?.();
     }
 
     // Finder initialisieren nach Dialog-Setup

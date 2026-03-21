@@ -23,6 +23,30 @@ class WindowRegistry {
     private zIndexManager = getZIndexManager();
     private viewportResizeFrameId: number | null;
 
+    private _isMobileUIMode(): boolean {
+        return document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+    }
+
+    private _applyMobileWindowVisibility(): void {
+        const isMobile = this._isMobileUIMode();
+
+        this.windows.forEach(windowInstance => {
+            if (!windowInstance.element) return;
+
+            if (!isMobile) {
+                windowInstance.element.removeAttribute('data-mobile-inactive');
+                return;
+            }
+
+            const isActive = this.activeWindowId === windowInstance.id;
+            if (isActive) {
+                windowInstance.element.removeAttribute('data-mobile-inactive');
+            } else {
+                windowInstance.element.setAttribute('data-mobile-inactive', 'true');
+            }
+        });
+    }
+
     constructor() {
         this.windows = new Map();
         // Start with a higher base to avoid conflicts with legacy modals
@@ -77,6 +101,13 @@ class WindowRegistry {
             });
         });
 
+        window.addEventListener('uiModeEffectiveChange', () => {
+            this.windows.forEach(windowInstance => {
+                windowInstance.handleViewportResize();
+            });
+            this._applyMobileWindowVisibility();
+        });
+
         this.initialized = true;
     }
 
@@ -91,6 +122,7 @@ class WindowRegistry {
         );
         // If no active window yet, set the first registered as active
         if (!this.activeWindowId) this.activeWindowId = window.id;
+        this._applyMobileWindowVisibility();
     }
 
     /**
@@ -107,6 +139,7 @@ class WindowRegistry {
                 const top = this.getTopWindow();
                 this.activeWindowId = top ? top.id : null;
             }
+            this._applyMobileWindowVisibility();
         }
     }
 
@@ -198,6 +231,8 @@ class WindowRegistry {
      */
     setActiveWindow(windowId: string | null): void {
         this.activeWindowId = windowId;
+        this._applyMobileWindowVisibility();
+        window.updateDockIndicators?.();
     }
 
     /**

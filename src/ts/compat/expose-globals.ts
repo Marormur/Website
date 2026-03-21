@@ -40,6 +40,7 @@ import '../ui/menubar-utils';
 import '../ui/context-menu';
 import '../services/storage';
 import '../services/theme';
+import '../services/ui-mode';
 import '../windows/base-window-instance'; // Must come before instance types
 import '../windows/instance-manager';
 import '../windows/window-chrome';

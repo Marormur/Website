@@ -7,6 +7,7 @@
         <link rel="icon" href="./img/sucher.png" />
         <link rel="stylesheet" href="./dist/output.css" />
         <link rel="stylesheet" href="./src/css/style.css" />
+        <link rel="stylesheet" href="./src/css/mobile-gesture-nav.css" />
 
         <!-- Early readiness monitor: mark __APP_READY only after core globals appear, with a hard
              fallback after a generous timeout to keep tests unblocked. -->
@@ -159,6 +160,7 @@
                     './js/ui/launchpad.js',
                     './js/apps/photos/image-viewer-utils.js',
                     './js/services/program-menu-sync.js',
+                    './js/ui/mobile-paging.js',
                     './js/core/app-init.js',
                     './js/core/framework-init.js',
                     './app.js',
@@ -332,6 +334,7 @@
                     './js/ui/launchpad.js',
                     './js/apps/photos/image-viewer-utils.js',
                     './js/services/program-menu-sync.js',
+                    './js/ui/mobile-paging.js',
                     './js/core/app-init.js',
                     './js/core/framework-init.js',
                     './app.js',
@@ -1000,6 +1003,42 @@
                 <span id="clock" class="menubar-clock no-select" aria-live="polite"></span>
             </div>
         </header>
+
+        <!-- Mobile Screens Container (iOS-like paging: Home Screen + Launchpad) -->
+        <div id="mobile-screens-wrapper" class="mobile-screens-wrapper hidden">
+            <div id="mobile-screens-container" class="mobile-screens-container">
+                <!-- Screen 1: Home/Desktop with App Icons -->
+                <div id="home-screen" class="mobile-screen home-screen">
+                    <div class="mobile-home-content">
+                        <!-- Desktop icons will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Screen 2: Launchpad (App Launcher) -->
+                <div id="launchpad-screen" class="mobile-screen launchpad-screen">
+                    <div id="launchpad-fullscreen-container" class="launchpad-fullscreen-container">
+                        <!-- Launchpad grid will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Indicator Dots (bottom) -->
+            <div class="mobile-page-dots">
+                <span
+                    class="mobile-page-dot mobile-page-dot--active"
+                    data-page="0"
+                    aria-label="Startseite"
+                    data-i18n-aria-label="mobile.home"
+                ></span>
+                <span
+                    class="mobile-page-dot"
+                    data-page="1"
+                    aria-label="Launchpad"
+                    data-i18n-aria-label="mobile.launchpad"
+                ></span>
+            </div>
+        </div>
+
         <!-- Desktop -->
         <div id="desktop" class="desktop-area" aria-label="Desktop">
             <div
