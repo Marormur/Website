@@ -101,6 +101,84 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
     const windowRegistry = new Map<string, WindowConfig>();
     const zIndexManager = getZIndexManager();
 
+    type ManagedWindowLike = {
+        id: string;
+        type: string;
+        zIndex: number;
+        close?: () => void;
+    };
+
+    function resolveModernWindowType(windowId: string): string | null {
+        if (windowId === 'projects-modal' || windowId === 'finder-modal') return 'finder';
+        if (windowId === 'terminal-modal' || windowId === 'terminal') return 'terminal';
+        if (windowId === 'text-modal') return 'text-editor';
+        return null;
+    }
+
+    function getFrontmostManagedWindowByType(type: string): ManagedWindowLike | null {
+        const windows = (window.WindowRegistry?.getWindowsByType?.(type) ??
+            []) as ManagedWindowLike[];
+        if (!Array.isArray(windows) || windows.length === 0) return null;
+
+        return windows.reduce((top, current) => (current.zIndex > top.zIndex ? current : top));
+    }
+
+    function hideLegacyModalShell(windowId: string): void {
+        const legacyModal = document.getElementById(windowId);
+        if (!legacyModal) return;
+
+        const domUtils = (window as any).DOMUtils;
+        if (domUtils && typeof domUtils.hide === 'function') {
+            domUtils.hide(legacyModal);
+        } else {
+            legacyModal.classList.add('hidden');
+        }
+        if (legacyModal.dataset) delete legacyModal.dataset.minimized;
+    }
+
+    function syncLegacyModernWindowOpen(windowId: string): boolean {
+        const resolvedType = resolveModernWindowType(windowId);
+        if (!resolvedType) return false;
+
+        let openedWindow: unknown = null;
+
+        if (resolvedType === 'finder') {
+            openedWindow =
+                window.FinderWindow?.focusOrCreate?.() || window.FinderWindow?.create?.();
+        } else if (resolvedType === 'terminal') {
+            openedWindow =
+                window.TerminalWindow?.focusOrCreate?.() || window.TerminalWindow?.create?.();
+        } else if (resolvedType === 'text-editor') {
+            openedWindow =
+                window.TextEditorWindow?.focusOrCreate?.() || window.TextEditorWindow?.create?.();
+        }
+
+        if (!openedWindow) return false;
+
+        hideLegacyModalShell(windowId);
+        window.hideMenuDropdowns?.();
+        window.saveOpenModals?.();
+        window.updateDockIndicators?.();
+        window.updateProgramLabelByTopModal?.();
+        return true;
+    }
+
+    function syncLegacyModernWindowClose(windowId: string): boolean {
+        const resolvedType = resolveModernWindowType(windowId);
+        if (!resolvedType) return false;
+
+        const activeWindow = window.WindowRegistry?.getActiveWindow?.() as ManagedWindowLike | null;
+        const targetWindow =
+            activeWindow?.type === resolvedType
+                ? activeWindow
+                : getFrontmostManagedWindowByType(resolvedType);
+
+        if (!targetWindow?.close) return false;
+
+        targetWindow.close();
+        return true;
+    }
+
     const WindowManager = {
         /**
          * Get current top z-index for synchronization.
@@ -293,38 +371,16 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
             ).PerfMonitor;
             perf?.mark(`window:open:${windowId}:start`);
 
-            if (windowId === 'text-modal') {
-                const textEditorWindow = window.TextEditorWindow;
-                const openedWindow =
-                    textEditorWindow?.focusOrCreate?.() || textEditorWindow?.create?.();
-
-                if (openedWindow) {
-                    const legacyModal = document.getElementById(windowId);
-                    if (legacyModal) {
-                        const domUtils = (window as any).DOMUtils;
-                        if (domUtils && typeof domUtils.hide === 'function') {
-                            domUtils.hide(legacyModal);
-                        } else {
-                            legacyModal.classList.add('hidden');
-                        }
-                        if (legacyModal.dataset) delete legacyModal.dataset.minimized;
-                    }
-
-                    window.hideMenuDropdowns?.();
-                    window.saveOpenModals?.();
-                    window.updateDockIndicators?.();
-                    window.updateProgramLabelByTopModal?.();
-
-                    perf?.mark(`window:open:${windowId}:end`);
-                    if (perf?.measure) {
-                        perf.measure(
-                            `window:open:${windowId}`,
-                            `window:open:${windowId}:start`,
-                            `window:open:${windowId}:end`
-                        );
-                    }
-                    return;
+            if (syncLegacyModernWindowOpen(windowId)) {
+                perf?.mark(`window:open:${windowId}:end`);
+                if (perf?.measure) {
+                    perf.measure(
+                        `window:open:${windowId}`,
+                        `window:open:${windowId}:start`,
+                        `window:open:${windowId}:end`
+                    );
                 }
+                return;
             }
 
             const config = this.getConfig(windowId);
@@ -398,6 +454,16 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
                 }
             ).PerfMonitor;
             perf?.mark(`window:close:${windowId}:start`);
+
+            if (syncLegacyModernWindowClose(windowId)) {
+                perf?.mark(`window:close:${windowId}:end`);
+                perf?.measure(
+                    `window:close:${windowId}`,
+                    `window:close:${windowId}:start`,
+                    `window:close:${windowId}:end`
+                );
+                return;
+            }
 
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.close === 'function') {

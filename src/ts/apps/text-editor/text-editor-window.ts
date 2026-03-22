@@ -10,7 +10,10 @@ import {
     mountWindowTabsController,
     reorderTabMap,
 } from '../../framework/controls/window-tabs-adapter.js';
-import { showAndRegisterWindow } from '../../framework/controls/window-lifecycle.js';
+import {
+    focusOrCreateWindowByType,
+    showAndRegisterWindow,
+} from '../../framework/controls/window-lifecycle.js';
 import logger from '../../core/logger.js';
 
 export class TextEditorWindow extends BaseWindow {
@@ -90,6 +93,18 @@ export class TextEditorWindow extends BaseWindow {
         window.createDocument();
 
         return showAndRegisterWindow(window, { requestTabsRender: true });
+    }
+
+    static focusOrCreate(config?: Partial<WindowConfig>): TextEditorWindow {
+        return focusOrCreateWindowByType<TextEditorWindow>({
+            type: 'text-editor',
+            create: () => TextEditorWindow.create(config),
+            prepareExisting: instance => {
+                if (instance.tabs.size === 0 && window.TextEditorDocument) {
+                    instance.createDocument();
+                }
+            },
+        });
     }
 }
 

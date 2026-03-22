@@ -338,7 +338,10 @@ declare global {
             hide?: () => void;
         };
         /** TerminalWindow class/factory for creating terminal windows. */
-        TerminalWindow?: { create?: (config?: { title?: string }) => unknown };
+        TerminalWindow?: {
+            create?: (config?: { title?: string }) => unknown;
+            focusOrCreate?: (config?: { title?: string }) => unknown;
+        };
         /** TextEditorDocument class for creating editor documents (constructor reference). */
         TextEditorDocument?: new (config?: {
             id?: string;

@@ -943,6 +943,7 @@ export class BaseWindow {
             } else {
                 this.element.classList.remove('hidden');
             }
+            this.isMinimized = false;
             this._applyResponsiveWindowLayout();
         }
         this.bringToFront();
@@ -1427,7 +1428,7 @@ export class BaseWindow {
             if (typeof WM.setDialogInstance === 'function') {
                 WM.setDialogInstance(this.id, {
                     open: () => this.show(),
-                    close: () => this.hide(),
+                    close: () => this.close(),
                     bringToFront: () => this.bringToFront(),
                 });
             }

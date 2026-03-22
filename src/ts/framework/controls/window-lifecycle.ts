@@ -1,6 +1,9 @@
 interface FocusableWindowLike {
     zIndex: number;
     bringToFront: () => void;
+    show?: () => void;
+    element?: HTMLElement | null;
+    isMinimized?: boolean;
 }
 
 interface ShowableWindowLike {
@@ -42,6 +45,13 @@ export function focusOrCreateWindowByType<T extends FocusableWindowLike>(options
     }
 
     options.prepareExisting?.(existing);
+
+    const isHidden = !!existing.element?.classList.contains('hidden');
+    if (typeof existing.show === 'function' && (isHidden || existing.isMinimized)) {
+        existing.show();
+        return existing;
+    }
+
     existing.bringToFront();
     return existing;
 }
