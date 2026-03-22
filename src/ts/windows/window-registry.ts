@@ -75,18 +75,26 @@ class WindowRegistry {
         // Sync z-index with legacy WindowManager
         this._syncZIndexWithWindowManager();
 
-        // Listen for clicks to bring windows to front
-        document.addEventListener('mousedown', (e: MouseEvent) => {
-            const target = e.target as HTMLElement;
-            const modal = target.closest('.modal');
-            if (modal) {
-                const windowId = modal.id;
-                const window = this.windows.get(windowId);
-                if (window) {
-                    window.bringToFront();
+        // Listen for clicks to bring windows to front.
+        // IMPORTANT: capture:true ensures this fires *before* any stopPropagation()
+        // inside child elements (resize handles, tabs, finder items, etc.) can
+        // swallow the event. Without capture, those children would silently block
+        // the focus-shift for the unfocused window.
+        document.addEventListener(
+            'mousedown',
+            (e: MouseEvent) => {
+                const target = e.target as HTMLElement;
+                const modal = target.closest('.modal');
+                if (modal) {
+                    const windowId = modal.id;
+                    const win = this.windows.get(windowId);
+                    if (win) {
+                        win.bringToFront();
+                    }
                 }
-            }
-        });
+            },
+            { capture: true }
+        );
 
         // Keep managed window states (snap/maximize) aligned with viewport changes.
         window.addEventListener('resize', () => {
@@ -228,9 +236,15 @@ class WindowRegistry {
     /**
      * Mark a window as actively focused. Consumers (menus) can use this
      * to react to focus changes and render the correct application menu.
+     * Also updates the invisible focus-overlay on all windows so the newly
+     * active window loses its overlay and every other window (re-)gains it.
      */
     setActiveWindow(windowId: string | null): void {
         this.activeWindowId = windowId;
+        // Update focus overlays: active window → overlay off, rest → overlay on
+        this.windows.forEach(win => {
+            win.setFocusOverlay(win.id === windowId);
+        });
         this._applyMobileWindowVisibility();
         window.updateDockIndicators?.();
     }

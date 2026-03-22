@@ -4355,6 +4355,8 @@ html.dark #about-modal .about-copyright {
     --dock-base-transform: translate3d(0, 0, 0);
     --dock-icon-size: 72px;
     --dock-icon-emoji-size: 64px;
+    --dock-minimized-width: 84px;
+    --dock-minimized-height: 54px;
     --dock-item-gap: 6px;
     --dock-tray-padding-inline: 12px;
     --dock-tray-padding-block: 8px;
@@ -4382,6 +4384,29 @@ html.dark #about-modal .about-copyright {
         0 2px 6px rgba(0, 0, 0, 0.12) inset;
     -webkit-backdrop-filter: saturate(160%) blur(18px);
     backdrop-filter: saturate(160%) blur(18px);
+}
+
+#dock .dock-apps,
+#dock .dock-minimized-section,
+#dock .dock-minimized-items {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: var(--dock-item-gap);
+}
+
+#dock .dock-item-separator {
+    flex: 0 0 auto;
+    align-self: center;
+    width: 1px;
+    height: calc(var(--dock-icon-size) * 0.72);
+    margin: 0 calc(var(--dock-item-gap) * 1.3);
+    border-radius: 999px;
+    background: linear-gradient(
+        180deg,
+        rgba(148, 163, 184, 0.04),
+        rgba(148, 163, 184, 0.46),
+        rgba(148, 163, 184, 0.04)
+    );
 }
 
 :root[data-ui-mode='mobile'] #dock {
@@ -4454,10 +4479,52 @@ html.dark #dock .dock-tray {
         0 2px 6px rgba(255, 255, 255, 0.06) inset;
 }
 
+html.dark #dock .dock-item-separator {
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.03),
+        rgba(255, 255, 255, 0.16),
+        rgba(255, 255, 255, 0.03)
+    );
+}
+
 #dock[data-dock-position='left'] .dock-tray,
 #dock[data-dock-position='right'] .dock-tray {
     flex-direction: column;
     align-items: center;
+}
+
+#dock[data-dock-position='left'] .dock-apps,
+#dock[data-dock-position='left'] .dock-minimized-section,
+#dock[data-dock-position='left'] .dock-minimized-items,
+#dock[data-dock-position='right'] .dock-apps,
+#dock[data-dock-position='right'] .dock-minimized-section,
+#dock[data-dock-position='right'] .dock-minimized-items {
+    flex-direction: column;
+    align-items: center;
+}
+
+#dock[data-dock-position='left'] .dock-item-separator,
+#dock[data-dock-position='right'] .dock-item-separator {
+    width: calc(var(--dock-icon-size) * 0.72);
+    height: 1px;
+    margin: calc(var(--dock-item-gap) * 1.3) 0;
+    background: linear-gradient(
+        90deg,
+        rgba(148, 163, 184, 0.04),
+        rgba(148, 163, 184, 0.46),
+        rgba(148, 163, 184, 0.04)
+    );
+}
+
+html.dark #dock[data-dock-position='left'] .dock-item-separator,
+html.dark #dock[data-dock-position='right'] .dock-item-separator {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.03),
+        rgba(255, 255, 255, 0.16),
+        rgba(255, 255, 255, 0.03)
+    );
 }
 
 #dock .dock-item {
@@ -4501,13 +4568,13 @@ html.dark[data-ui-mode='mobile'] #dock .dock-item.dock-item--active {
     will-change: transform;
 }
 
-#dock .dock-icon .program-icon-image {
+#dock .dock-icon > .program-icon-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-#dock .dock-icon .program-icon-emoji {
+#dock .dock-icon > .program-icon-emoji {
     font-size: var(--dock-icon-emoji-size);
 }
 
@@ -4517,13 +4584,105 @@ html.dark[data-ui-mode='mobile'] #dock .dock-item.dock-item--active {
         height: var(--dock-icon-size);
     }
 
-    #dock[data-dock-position='bottom'] .dock-icon .program-icon-emoji {
+    #dock[data-dock-position='bottom'] .dock-icon > .program-icon-emoji {
         font-size: var(--dock-icon-emoji-size);
     }
 }
 
 #dock .dock-icon {
     transform-origin: bottom center;
+}
+
+#dock .dock-minimized-item {
+    position: relative;
+}
+
+#dock .dock-icon--minimized {
+    width: var(--dock-minimized-width);
+    height: var(--dock-minimized-height);
+    padding: 3px;
+    border-radius: 15px;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(234, 238, 244, 0.62));
+    border: 1px solid rgba(255, 255, 255, 0.62);
+    box-shadow:
+        0 10px 22px rgba(15, 23, 42, 0.16),
+        0 1px 0 rgba(255, 255, 255, 0.68) inset;
+}
+
+html.dark #dock .dock-icon--minimized {
+    background: linear-gradient(180deg, rgba(61, 66, 76, 0.82), rgba(42, 46, 54, 0.74));
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow:
+        0 14px 28px rgba(0, 0, 0, 0.42),
+        0 1px 0 rgba(255, 255, 255, 0.08) inset;
+}
+
+#dock .dock-icon--minimized.dock-icon--fallback {
+    width: var(--dock-icon-size);
+    height: var(--dock-icon-size);
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+#dock .dock-window-preview {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(226, 232, 240, 0.18));
+}
+
+html.dark #dock .dock-window-preview {
+    background: linear-gradient(180deg, rgba(75, 85, 99, 0.32), rgba(30, 41, 59, 0.18));
+}
+
+#dock .dock-window-preview > .modal,
+#dock .dock-window-preview > .multi-window {
+    margin: 0;
+    box-shadow: none !important;
+    border-radius: 12px;
+}
+
+#dock .dock-window-preview-badge {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.92);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+html.dark #dock .dock-window-preview-badge {
+    background: rgba(22, 24, 29, 0.82);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.42);
+}
+
+#dock .dock-window-preview-badge > .program-icon-image,
+#dock .dock-window-preview-badge > .program-icon-emoji {
+    width: 100%;
+    height: 100%;
+}
+
+#dock .dock-window-preview-badge > .program-icon-emoji {
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #dock[data-dock-position='left'] .dock-icon {

@@ -201,9 +201,10 @@ export class Dialog {
             minimizeEl.style.cursor = 'pointer';
             minimizeEl.title = minimizeEl.title || 'Minimieren';
             minimizeEl.dataset.dialogAction = 'minimize';
-            if (!minimizeEl.dataset.dialogBoundMinimize && this.modalId !== 'settings-modal') {
+            if (!minimizeEl.dataset.dialogBoundMinimize) {
                 minimizeEl.dataset.dialogBoundMinimize = 'true';
                 minimizeEl.addEventListener('click', e => {
+                    e.preventDefault();
                     e.stopPropagation();
                     this.minimize();
                 });
@@ -214,83 +215,13 @@ export class Dialog {
             maximizeEl.style.cursor = 'pointer';
             maximizeEl.title = maximizeEl.title || 'Maximieren';
             maximizeEl.dataset.dialogAction = 'maximize';
-            if (!maximizeEl.dataset.dialogBoundMaximize && this.modalId !== 'settings-modal') {
+            if (!maximizeEl.dataset.dialogBoundMaximize) {
                 maximizeEl.dataset.dialogBoundMaximize = 'true';
                 maximizeEl.addEventListener('click', e => {
+                    e.preventDefault();
                     e.stopPropagation();
                     this.toggleMaximize();
                 });
-            }
-        }
-
-        if (this.modalId === 'settings-modal') {
-            const settingsPanel = this.modal.querySelector(
-                '.settings-sidebar-panel'
-            ) as HTMLElement | null;
-            if (settingsPanel && !settingsPanel.dataset.dialogBoundSettingsPanelClick) {
-                settingsPanel.dataset.dialogBoundSettingsPanelClick = 'true';
-                settingsPanel.addEventListener(
-                    'click',
-                    e => {
-                        const controls = settingsPanel.querySelector(
-                            '.settings-window-controls'
-                        ) as HTMLElement | null;
-                        if (!controls) return;
-
-                        const buttons = Array.from(
-                            controls.querySelectorAll('.settings-window-control')
-                        ) as HTMLElement[];
-                        if (buttons.length === 0) return;
-
-                        const controlsRect = controls.getBoundingClientRect();
-                        const pointerX = e.clientX;
-                        const pointerY = e.clientY;
-                        const withinExpandedControls =
-                            pointerX >= controlsRect.left - 10 &&
-                            pointerX <= controlsRect.right + 10 &&
-                            pointerY >= controlsRect.top - 10 &&
-                            pointerY <= controlsRect.bottom + 10;
-                        if (!withinExpandedControls) return;
-
-                        const hitButton = buttons.reduce((nearest, candidate) => {
-                            const nearestRect = nearest.getBoundingClientRect();
-                            const candidateRect = candidate.getBoundingClientRect();
-                            const nearestCenterX = nearestRect.left + nearestRect.width / 2;
-                            const nearestCenterY = nearestRect.top + nearestRect.height / 2;
-                            const candidateCenterX = candidateRect.left + candidateRect.width / 2;
-                            const candidateCenterY = candidateRect.top + candidateRect.height / 2;
-                            const nearestDistance = Math.hypot(
-                                pointerX - nearestCenterX,
-                                pointerY - nearestCenterY
-                            );
-                            const candidateDistance = Math.hypot(
-                                pointerX - candidateCenterX,
-                                pointerY - candidateCenterY
-                            );
-                            return candidateDistance < nearestDistance ? candidate : nearest;
-                        });
-
-                        const action = hitButton.dataset.dialogAction;
-                        if (action === 'close') {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            this.close();
-                            return;
-                        }
-                        if (action === 'minimize') {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            this.minimize();
-                            return;
-                        }
-                        if (action === 'maximize') {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            this.toggleMaximize();
-                        }
-                    },
-                    true
-                );
             }
         }
     }
@@ -313,6 +244,12 @@ export class Dialog {
             return;
         }
 
+        const dockSystem = window.DockSystem as
+            | (typeof window.DockSystem & {
+                  clearWindowPreview?: (windowId: string) => void;
+              })
+            | undefined;
+
         // Ensure instance creation for windows that need it
         this._ensureInstanceIfNeeded();
 
@@ -332,6 +269,8 @@ export class Dialog {
         }
 
         if (this.modal && this.modal.dataset) delete this.modal.dataset.minimized;
+        if (this.modal && this.modal.dataset) delete this.modal.dataset.minimizedAt;
+        dockSystem?.clearWindowPreview?.(this.modalId);
         this.bringToFront();
         this.applyResponsiveLayoutForCurrentMode();
         this.alignSettingsWindowToDesktopViewport();
@@ -356,6 +295,12 @@ export class Dialog {
     close() {
         if (this.modal.classList.contains('hidden')) return;
 
+        const dockSystem = window.DockSystem as
+            | (typeof window.DockSystem & {
+                  clearWindowPreview?: (windowId: string) => void;
+              })
+            | undefined;
+
         // Use DOMUtils if available, fallback to classList
         const domUtils = window.DOMUtils;
         if (domUtils && typeof domUtils.hide === 'function') {
@@ -367,6 +312,7 @@ export class Dialog {
         // Remove from z-index manager stack
         const zIndexManager = getZIndexManager();
         zIndexManager.removeWindow(this.modal.id);
+        dockSystem?.clearWindowPreview?.(this.modalId);
 
         window.saveOpenModals?.();
         window.updateDockIndicators?.();
@@ -374,7 +320,15 @@ export class Dialog {
     }
 
     minimize() {
+        const dockSystem = window.DockSystem as
+            | (typeof window.DockSystem & {
+                  captureWindowPreview?: (windowId: string, windowElement: HTMLElement) => void;
+              })
+            | undefined;
+
+        dockSystem?.captureWindowPreview?.(this.modalId, this.modal);
         if (this.modal.dataset) this.modal.dataset.minimized = 'true';
+        if (this.modal.dataset) this.modal.dataset.minimizedAt = String(Date.now());
 
         // Use DOMUtils if available, fallback to classList
         const domUtils = window.DOMUtils;
@@ -607,66 +561,11 @@ export class Dialog {
             ) as HTMLElement | null;
             if (!dragHeader || !this.modal.contains(dragHeader)) return;
 
+            if ((e.target as Element).closest?.('[data-dialog-action], .settings-window-control')) {
+                return;
+            }
+
             if (this.modalId === 'settings-modal') {
-                const controls = dragHeader.querySelector(
-                    '.settings-window-controls'
-                ) as HTMLElement | null;
-                if (controls) {
-                    const buttons = Array.from(
-                        controls.querySelectorAll('.settings-window-control')
-                    ) as HTMLElement[];
-                    if (buttons.length > 0) {
-                        const controlsRect = controls.getBoundingClientRect();
-                        const nearControls =
-                            e.clientX >= controlsRect.left - 12 &&
-                            e.clientX <= controlsRect.right + 12 &&
-                            e.clientY >= controlsRect.top - 12 &&
-                            e.clientY <= controlsRect.bottom + 12;
-
-                        if (nearControls) {
-                            const hitButton = buttons.reduce((nearest, candidate) => {
-                                const nearestRect = nearest.getBoundingClientRect();
-                                const candidateRect = candidate.getBoundingClientRect();
-                                const nearestCenterX = nearestRect.left + nearestRect.width / 2;
-                                const nearestCenterY = nearestRect.top + nearestRect.height / 2;
-                                const candidateCenterX =
-                                    candidateRect.left + candidateRect.width / 2;
-                                const candidateCenterY =
-                                    candidateRect.top + candidateRect.height / 2;
-                                const nearestDistance = Math.hypot(
-                                    e.clientX - nearestCenterX,
-                                    e.clientY - nearestCenterY
-                                );
-                                const candidateDistance = Math.hypot(
-                                    e.clientX - candidateCenterX,
-                                    e.clientY - candidateCenterY
-                                );
-                                return candidateDistance < nearestDistance ? candidate : nearest;
-                            });
-
-                            const action = hitButton.dataset.dialogAction;
-                            if (action === 'close') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                this.close();
-                                return;
-                            }
-                            if (action === 'minimize') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                this.minimize();
-                                return;
-                            }
-                            if (action === 'maximize') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                this.toggleMaximize();
-                                return;
-                            }
-                        }
-                    }
-                }
-
                 if (!this.isMobileUIMode() && e.detail >= 2) {
                     e.preventDefault();
                     e.stopPropagation();

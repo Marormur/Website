@@ -20,6 +20,7 @@
 - Schnelltest: `npm run test:e2e:quick` (lokal Chromium). Für Stabilität: `MOCK_GITHUB=1` und auf `window.__APP_READY` warten.
 - Volltests: `npm run test:e2e` (Headless), Varianten: headed/UI (`npm run test:e2e:headed`, `npm run test:e2e:ui`).
 - Bei UI-Änderungen immer in beiden Themes (hell/dunkel) und beiden Sprachen testen, um Theme-UI-Fehler und i18n-Probleme früh zu erkennen.
+- Änderungen immer in allen Modi verifizieren: Englisch/Deutsch, Hell/Dunkel, Desktop/Mobile.
 - Bundle- und Mock-Modus: `USE_BUNDLE=1 MOCK_GITHUB=1` mit Quick/Full Tasks vorhanden.
 - Beispiel-Task: „E2E: Test (basic smoke)“ startet erst Dev-Server, dann Quick-Test (env: `USE_NODE_SERVER=1`, `MOCK_GITHUB=1`).
 - Schreibe für Features min. 1 Smoke + 1 Edge-Case E2E. Nutze explizite `waitForSelector` statt Timeouts.

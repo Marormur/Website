@@ -73,6 +73,8 @@ interface GlobalModules {
     TerminalInstanceManager?: unknown;
     DockSystem?: {
         initDockDragDrop?: () => void;
+        captureWindowPreview?: (windowId: string, windowElement: HTMLElement) => void;
+        clearWindowPreview?: (windowId: string) => void;
     };
     SessionManager?: {
         init?: () => void;

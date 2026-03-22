@@ -11,6 +11,25 @@ type DockPosition = 'bottom' | 'left' | 'right';
 type DockMinimizeEffect = 'genie' | 'scale';
 type DockTitlebarDoubleClickAction = 'zoom' | 'minimize';
 
+interface DockManagedWindow {
+    id: string;
+    type: string;
+    metadata?: Record<string, unknown>;
+    element?: HTMLElement | null;
+    isMinimized?: boolean;
+    show?: () => void;
+    bringToFront?: () => void;
+    open?: () => void;
+}
+
+interface DockStructure {
+    tray: HTMLElement;
+    apps: HTMLElement;
+    separator: HTMLElement;
+    minimizedSection: HTMLElement;
+    minimizedItems: HTMLElement;
+}
+
 export interface DockPreferences {
     size: number;
     magnification: number;
@@ -56,11 +75,39 @@ const WINDOW_TYPE_TO_DOCK_ID: Record<string, string> = {
     launchpad: 'launchpad-modal',
 };
 
+const WINDOW_TYPE_TO_PROGRAM_ICON: Record<string, string> = {
+    finder: 'finder',
+    terminal: 'terminal',
+    'text-editor': 'textEditor',
+    settings: 'settings',
+    launchpad: 'launchpad',
+    preview: 'preview',
+    photos: 'photos',
+};
+
+const WINDOW_TYPE_TO_DOCK_TRANSLATION_KEY: Record<string, string> = {
+    finder: 'dock.finder',
+    terminal: 'dock.terminal',
+    'text-editor': 'dock.text',
+    settings: 'dock.settings',
+    launchpad: 'dock.launchpad',
+    preview: 'dock.image',
+    photos: 'dock.photos',
+};
+
+const LEGACY_MODAL_ID_TO_WINDOW_TYPE: Record<string, string> = {
+    'settings-modal': 'settings',
+    'about-modal': 'about',
+};
+
 let dockPointer: { x: number; y: number } | null = null;
 let dockMagnificationRafId: number | null = null;
+let dockRepositionRafId: number | null = null;
+let pendingDockRepositionPreferences: DockPreferences | null = null;
 let autoHideHoveringDock = false;
 let autoHideHideTimer: number | null = null;
 let dockInteractionsBound = false;
+const minimizedWindowPreviews = new Map<string, HTMLElement>();
 
 function isMobileUIMode(): boolean {
     return document.documentElement.getAttribute('data-ui-mode') === 'mobile';
@@ -107,6 +154,23 @@ function positionDock(preferences: DockPreferences): void {
     dock.style.bottom = `${edgeInset}px`;
 }
 
+function scheduleDockReposition(preferences: DockPreferences = getDockPreferences()): void {
+    pendingDockRepositionPreferences = preferences;
+
+    // First pass keeps interactions snappy (e.g. minimize/restore updates).
+    positionDock(preferences);
+
+    // Second pass runs after the browser has applied any layout/style updates
+    // caused by DOM mutations, so the dock remains visually centered.
+    if (dockRepositionRafId !== null) return;
+    dockRepositionRafId = requestAnimationFrame(() => {
+        dockRepositionRafId = null;
+        const nextPreferences = pendingDockRepositionPreferences || getDockPreferences();
+        pendingDockRepositionPreferences = null;
+        positionDock(nextPreferences);
+    });
+}
+
 function clampPercentage(value: unknown, fallback: number): number {
     const parsed = Number.parseFloat(String(value ?? ''));
     if (!Number.isFinite(parsed)) return fallback;
@@ -119,6 +183,293 @@ function getDockElement(): HTMLElement | null {
 
 function getDockTray(): HTMLElement | null {
     return document.querySelector('#dock .dock-tray');
+}
+
+function ensureDockStructure(): DockStructure | null {
+    const tray = getDockTray();
+    if (!tray) return null;
+
+    let apps = tray.querySelector<HTMLElement>('.dock-apps');
+    if (!apps) {
+        apps = document.createElement('div');
+        apps.className = 'dock-apps';
+
+        Array.from(tray.children).forEach(child => {
+            if (
+                child instanceof HTMLElement &&
+                child.classList.contains('dock-item') &&
+                !child.classList.contains('dock-minimized-item')
+            ) {
+                apps?.appendChild(child);
+            }
+        });
+
+        tray.appendChild(apps);
+    }
+
+    let separator = tray.querySelector<HTMLElement>('.dock-item-separator');
+    if (!separator) {
+        separator = document.createElement('div');
+        separator.className = 'dock-item-separator hidden';
+        separator.setAttribute('role', 'separator');
+        separator.setAttribute('aria-hidden', 'true');
+        tray.appendChild(separator);
+    }
+
+    let minimizedSection = tray.querySelector<HTMLElement>('.dock-minimized-section');
+    if (!minimizedSection) {
+        minimizedSection = document.createElement('div');
+        minimizedSection.className = 'dock-minimized-section hidden';
+        minimizedSection.setAttribute('aria-live', 'polite');
+        tray.appendChild(minimizedSection);
+    }
+
+    let minimizedItems = minimizedSection.querySelector<HTMLElement>('.dock-minimized-items');
+    if (!minimizedItems) {
+        minimizedItems = document.createElement('div');
+        minimizedItems.className = 'dock-minimized-items';
+        minimizedSection.appendChild(minimizedItems);
+    }
+
+    return {
+        tray,
+        apps,
+        separator,
+        minimizedSection,
+        minimizedItems,
+    };
+}
+
+function getDockAppsContainer(): HTMLElement | null {
+    return ensureDockStructure()?.apps || null;
+}
+
+function removeElementIds(root: HTMLElement): void {
+    root.removeAttribute('id');
+    root.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+}
+
+function resolveProgramIconForWindow(windowInstance: DockManagedWindow): string {
+    return (
+        WINDOW_TYPE_TO_PROGRAM_ICON[windowInstance.type] ||
+        DOCK_WINDOW_ICONS[windowInstance.id] ||
+        'default'
+    );
+}
+
+function resolveDockLabelForWindow(windowInstance: DockManagedWindow): string {
+    const explicitTitle =
+        typeof windowInstance.metadata?.title === 'string'
+            ? windowInstance.metadata.title.trim()
+            : '';
+    if (explicitTitle) return explicitTitle;
+
+    const translationKey = WINDOW_TYPE_TO_DOCK_TRANSLATION_KEY[windowInstance.type];
+    const fallback = windowInstance.type;
+    if (!translationKey) return fallback;
+
+    return window.appI18n?.translate?.(translationKey, fallback) || fallback;
+}
+
+function getDockPreviewSize(size: number): { width: number; height: number } {
+    const iconSize = getDockSizePx(size);
+    return {
+        width: Math.max(48, Math.round(iconSize * 1.18)),
+        height: Math.max(32, Math.round(iconSize * 0.78)),
+    };
+}
+
+function getMinimizedWindows(): DockManagedWindow[] {
+    const windows = (window.WindowRegistry?.getAllWindows?.() || []) as DockManagedWindow[];
+    const dialogs = Object.entries(window.dialogs || {}).flatMap(([dialogId, dialogInstance]) => {
+        const modal = document.getElementById(dialogId);
+        const type = LEGACY_MODAL_ID_TO_WINDOW_TYPE[dialogId];
+        if (!modal || !type || modal.dataset.minimized !== 'true') {
+            return [];
+        }
+
+        return [
+            {
+                id: dialogId,
+                type,
+                element: modal,
+                isMinimized: true,
+                metadata: {
+                    title:
+                        window.appI18n?.translate?.(
+                            WINDOW_TYPE_TO_DOCK_TRANSLATION_KEY[type] || `dock.${type}`,
+                            type
+                        ) || type,
+                    minimizedAt: Number(modal.dataset.minimizedAt || 0),
+                },
+                open:
+                    typeof dialogInstance?.open === 'function'
+                        ? () => dialogInstance.open?.()
+                        : undefined,
+                bringToFront:
+                    typeof dialogInstance?.bringToFront === 'function'
+                        ? () => dialogInstance.bringToFront?.()
+                        : undefined,
+            } satisfies DockManagedWindow,
+        ];
+    });
+
+    return [...windows, ...dialogs]
+        .filter(windowInstance => !!windowInstance?.isMinimized)
+        .sort((left, right) => {
+            const leftMinimizedAt = Number(left.metadata?.minimizedAt || 0);
+            const rightMinimizedAt = Number(right.metadata?.minimizedAt || 0);
+            if (leftMinimizedAt !== rightMinimizedAt) {
+                return leftMinimizedAt - rightMinimizedAt;
+            }
+            return left.id.localeCompare(right.id);
+        });
+}
+
+function buildMinimizedDockIcon(windowInstance: DockManagedWindow): HTMLElement {
+    const iconHost = document.createElement('span');
+    iconHost.className = 'dock-icon dock-icon--minimized';
+    iconHost.setAttribute('aria-hidden', 'true');
+
+    const previewTemplate = minimizedWindowPreviews.get(windowInstance.id);
+    if (!previewTemplate) {
+        iconHost.classList.add('dock-icon--fallback');
+        renderProgramIcon(iconHost, resolveProgramIconForWindow(windowInstance));
+        return iconHost;
+    }
+
+    const preview = document.createElement('span');
+    preview.className = 'dock-window-preview';
+
+    const previewClone = previewTemplate.cloneNode(true) as HTMLElement;
+    const sourceWidth = Number.parseFloat(previewTemplate.dataset.previewSourceWidth || '0');
+    const sourceHeight = Number.parseFloat(previewTemplate.dataset.previewSourceHeight || '0');
+    const previewSize = getDockPreviewSize(getDockPreferences().size);
+    const scale =
+        sourceWidth > 0 && sourceHeight > 0
+            ? Math.min(previewSize.width / sourceWidth, previewSize.height / sourceHeight)
+            : 1;
+
+    previewClone.style.transform = `scale(${Math.max(0.01, scale).toFixed(4)})`;
+    preview.appendChild(previewClone);
+    iconHost.appendChild(preview);
+
+    const badge = document.createElement('span');
+    badge.className = 'dock-window-preview-badge';
+    renderProgramIcon(badge, resolveProgramIconForWindow(windowInstance));
+    iconHost.appendChild(badge);
+
+    return iconHost;
+}
+
+function createMinimizedDockItem(windowInstance: DockManagedWindow): HTMLElement {
+    const item = document.createElement('div');
+    item.className = 'dock-item dock-minimized-item group relative flex flex-col items-center';
+    item.dataset.minimizedWindowId = windowInstance.id;
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+
+    const label = resolveDockLabelForWindow(windowInstance);
+    item.setAttribute('aria-label', label);
+    item.title = label;
+
+    const tooltip = document.createElement('span');
+    tooltip.className =
+        'dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50';
+    tooltip.textContent = label;
+
+    item.appendChild(tooltip);
+    item.appendChild(buildMinimizedDockIcon(windowInstance));
+    return item;
+}
+
+function syncMinimizedDockItems(preferences: DockPreferences = getDockPreferences()): void {
+    const structure = ensureDockStructure();
+    if (!structure) return;
+
+    const isVisibleSection =
+        !isMobileUIMode() &&
+        !preferences.minimizeWindowsIntoAppIcon &&
+        getMinimizedWindows().length > 0;
+
+    structure.separator.classList.toggle('hidden', !isVisibleSection);
+    structure.minimizedSection.classList.toggle('hidden', !isVisibleSection);
+    structure.minimizedItems.replaceChildren();
+
+    if (!isVisibleSection) {
+        scheduleDockReposition(preferences);
+        return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    getMinimizedWindows().forEach(windowInstance => {
+        fragment.appendChild(createMinimizedDockItem(windowInstance));
+    });
+
+    structure.minimizedItems.appendChild(fragment);
+    scheduleDockReposition(preferences);
+}
+
+function restoreMinimizedWindow(windowId: string): boolean {
+    const windowInstance = window.WindowRegistry?.getWindow?.(windowId) as DockManagedWindow | null;
+    if (!windowInstance) {
+        const dialogInstance = window.dialogs?.[windowId] as
+            | { open?: () => void; bringToFront?: () => void }
+            | undefined;
+        if (!dialogInstance?.open) {
+            minimizedWindowPreviews.delete(windowId);
+            syncMinimizedDockItems();
+            return false;
+        }
+
+        minimizedWindowPreviews.delete(windowId);
+        dialogInstance.open();
+        dialogInstance.bringToFront?.();
+        syncMinimizedDockItems();
+        return true;
+    }
+
+    minimizedWindowPreviews.delete(windowId);
+    windowInstance.show?.();
+    windowInstance.bringToFront?.();
+    syncMinimizedDockItems();
+    return true;
+}
+
+export function captureWindowPreview(windowId: string, windowElement: HTMLElement): void {
+    const sourceRect = windowElement.getBoundingClientRect();
+    if (sourceRect.width <= 0 || sourceRect.height <= 0) {
+        minimizedWindowPreviews.delete(windowId);
+        return;
+    }
+
+    const clone = windowElement.cloneNode(true) as HTMLElement;
+    removeElementIds(clone);
+    clone.classList.remove('hidden');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.style.position = 'absolute';
+    clone.style.left = '0';
+    clone.style.top = '0';
+    clone.style.width = `${sourceRect.width}px`;
+    clone.style.height = `${sourceRect.height}px`;
+    clone.style.margin = '0';
+    clone.style.maxWidth = 'none';
+    clone.style.maxHeight = 'none';
+    clone.style.minWidth = '0';
+    clone.style.minHeight = '0';
+    clone.style.pointerEvents = 'none';
+    clone.style.overflow = 'hidden';
+    clone.style.transformOrigin = 'top left';
+    clone.style.visibility = 'visible';
+    clone.style.zIndex = '1';
+    clone.dataset.previewSourceWidth = `${sourceRect.width}`;
+    clone.dataset.previewSourceHeight = `${sourceRect.height}`;
+
+    minimizedWindowPreviews.set(windowId, clone);
+}
+
+export function clearWindowPreview(windowId: string): void {
+    minimizedWindowPreviews.delete(windowId);
 }
 
 function normalizeDockPreferences(
@@ -170,12 +521,13 @@ function getDockMagnificationScale(magnification: number): number {
 }
 
 function renderDockProgramIcons(): void {
-    const dock = getDockElement();
-    if (!dock) return;
+    const appsContainer = getDockAppsContainer();
+    const root = appsContainer || getDockElement();
+    if (!root) return;
 
-    dock.querySelectorAll<HTMLElement>('.dock-item').forEach(item => {
+    root.querySelectorAll<HTMLElement>('.dock-item').forEach(item => {
         const currentIcon = item.querySelector<HTMLElement>('.dock-icon');
-        if (!currentIcon) return;
+        if (!currentIcon || currentIcon.classList.contains('dock-icon--minimized')) return;
 
         const iconValue = item.dataset.windowId
             ? DOCK_WINDOW_ICONS[item.dataset.windowId] || 'default'
@@ -310,6 +662,31 @@ function bindDockInteractions(): void {
         if (getDockPreferences().autoHide) scheduleDockHide();
     });
 
+    dock.addEventListener('click', event => {
+        const minimizedItem = (event.target as Element | null)?.closest(
+            '.dock-minimized-item'
+        ) as HTMLElement | null;
+        const windowId = minimizedItem?.dataset.minimizedWindowId;
+        if (!windowId) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        restoreMinimizedWindow(windowId);
+    });
+
+    dock.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+
+        const minimizedItem = (event.target as Element | null)?.closest(
+            '.dock-minimized-item'
+        ) as HTMLElement | null;
+        const windowId = minimizedItem?.dataset.minimizedWindowId;
+        if (!windowId) return;
+
+        event.preventDefault();
+        restoreMinimizedWindow(windowId);
+    });
+
     document.addEventListener('mousemove', event => {
         const preferences = getDockPreferences();
         if (!preferences.autoHide) return;
@@ -384,6 +761,7 @@ export function applyDockPreferences(preferences?: unknown): void {
 
     const sizePx = getDockSizePx(resolvedPreferences.size);
     const tooltipOffsetPx = Math.max(10, Math.round(sizePx * 0.18));
+    const previewSize = getDockPreviewSize(resolvedPreferences.size);
 
     dock.classList.remove('bottom-4', 'left-1/2', '-translate-x-1/2');
 
@@ -395,6 +773,8 @@ export function applyDockPreferences(preferences?: unknown): void {
     dock.style.setProperty('--dock-tray-padding-block', `${Math.round(sizePx * 0.12)}px`);
     dock.style.setProperty('--dock-tray-radius', `${Math.round(sizePx * 0.28)}px`);
     dock.style.setProperty('--dock-tooltip-offset', `${tooltipOffsetPx}px`);
+    dock.style.setProperty('--dock-minimized-width', `${previewSize.width}px`);
+    dock.style.setProperty('--dock-minimized-height', `${previewSize.height}px`);
 
     dock.style.removeProperty('left');
     dock.style.removeProperty('right');
@@ -559,18 +939,18 @@ export function getDockItemId(item: Element | null): string | null {
 }
 
 export function getCurrentDockOrder(): string[] {
-    const tray = getDockTray();
-    if (!tray) return [];
-    return Array.from(tray.querySelectorAll('.dock-item'))
+    const apps = getDockAppsContainer();
+    if (!apps) return [];
+    return Array.from(apps.querySelectorAll('.dock-item'))
         .map(it => getDockItemId(it))
         .filter(Boolean) as string[];
 }
 
 export function applyDockOrder(order: string[] | null | undefined): void {
     if (!Array.isArray(order) || !order.length) return;
-    const tray = getDockTray();
-    if (!tray) return;
-    const items = Array.from(tray.querySelectorAll<HTMLElement>('.dock-item'));
+    const apps = getDockAppsContainer();
+    if (!apps) return;
+    const items = Array.from(apps.querySelectorAll<HTMLElement>('.dock-item'));
     const map = new Map(items.map(it => [getDockItemId(it), it]));
     const fragment = document.createDocumentFragment();
     order.forEach(id => {
@@ -581,7 +961,8 @@ export function applyDockOrder(order: string[] | null | undefined): void {
         }
     });
     for (const [, el] of map) fragment.appendChild(el);
-    tray.appendChild(fragment);
+    apps.appendChild(fragment);
+    scheduleDockReposition(getDockPreferences());
 }
 
 export function createPlaceholder(width?: number, height?: number): HTMLElement {
@@ -597,7 +978,7 @@ export function createPlaceholder(width?: number, height?: number): HTMLElement 
 
 export function initDockDragDrop(): void {
     const dock = getDockElement();
-    const tray = getDockTray();
+    const tray = getDockAppsContainer();
     if (!dock || !tray) return;
 
     const persisted = loadDockOrder();
@@ -945,6 +1326,7 @@ export function animateWindowMinimize(
 export function updateDockIndicators(): void {
     const domUtils = window.DOMUtils;
     const isMobileMode = document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+    const preferences = getDockPreferences();
 
     const indicatorMappings = [
         { indicatorId: 'finder-indicator', windowType: 'finder' },
@@ -955,6 +1337,8 @@ export function updateDockIndicators(): void {
     ];
 
     const showIndicators = !isMobileMode && shouldShowOpenIndicators();
+
+    syncMinimizedDockItems(preferences);
 
     indicatorMappings.forEach(mapping => {
         const indicator = document.getElementById(mapping.indicatorId);
@@ -1014,6 +1398,8 @@ if (typeof window !== 'undefined') {
         applyDockPreferences,
         getTitlebarDoubleClickAction,
         animateWindowMinimize,
+        captureWindowPreview,
+        clearWindowPreview,
     };
 
     if (typeof window.updateDockIndicators !== 'function') {
@@ -1022,6 +1408,7 @@ if (typeof window !== 'undefined') {
 
     window.addEventListener('iconThemeChange', () => {
         renderDockProgramIcons();
+        syncMinimizedDockItems();
     });
 
     window.addEventListener('uiModeEffectiveChange', () => {

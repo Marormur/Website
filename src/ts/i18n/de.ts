@@ -675,11 +675,11 @@ export const de = {
                         description: 'Passt den Modus je nach Gerät und Viewport an.',
                     },
                     desktop: {
-                        label: '🖥️ Desktop (macOS)',
+                        label: '🖥️ Desktop',
                         description: 'Klassisches Fenster- und Dock-Layout.',
                     },
                     mobile: {
-                        label: '📱 Mobil (iOS-inspiriert)',
+                        label: '📱 Mobil',
                         description: 'Aktiviert mobile Navigation und kompaktere UI-Größen.',
                     },
                 },

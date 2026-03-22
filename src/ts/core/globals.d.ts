@@ -225,6 +225,8 @@ declare global {
                 windowId: string,
                 onComplete?: () => void
             ) => boolean;
+            captureWindowPreview?: (windowId: string, windowElement: HTMLElement) => void;
+            clearWindowPreview?: (windowId: string) => void;
         };
         LaunchpadSystem?: {
             container?: HTMLElement | null;

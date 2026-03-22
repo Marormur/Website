@@ -91,6 +91,8 @@ export class BaseWindow {
     activeTabId: string | null;
     metadata: Record<string, unknown>;
     private restoreBeforeMaximize: WindowPosition | null;
+    /** Invisible overlay shown on unfocused windows to reliably intercept the first click. */
+    private _focusOverlay: HTMLElement | null = null;
     private desktopLayoutBeforeMobile: {
         position: WindowPosition;
         isMaximized: boolean;
@@ -703,14 +705,53 @@ export class BaseWindow {
 
     /**
      * Klick in das Fenster bringt es nach vorne und aktualisiert Menubar‑Status.
+     *
+     * WHY: Zwei-Schicht-Strategie für zuverlässigen Fokus-Wechsel:
+     *  1) Das unsichtbare Overlay fängt den *ersten* Klick auf ein inaktives Fenster
+     *     vollständig ab (kein versehentliches Auslösen von Kind-Elementen).
+     *  2) Das capture-Listener-Flag am window-Element greift zusätzlich für alle
+     *     Klicks, falls das Overlay nicht aktiv ist.
+     * INVARIANT: _focusOverlay wird von setFocusOverlay() verwaltet; nie direkt
+     *     manipulieren.
      */
     private _attachFocusHandler(): void {
         if (!this.element) return;
 
-        // Bring window to front when clicked anywhere
-        this.element.addEventListener('mousedown', () => {
-            this.bringToFront();
+        // --- Unsichtbares Fokus-Overlay ---
+        // Liegt über dem gesamten Fensterinhalt (z-index > Resize-Handles bei 9999).
+        // Ist aktiv, wenn dieses Fenster nicht das vorderste ist. Der erste Klick
+        // fokussiert das Fenster und entfernt das Overlay – weitere Klicks gehen
+        // dann direkt an die Kind-Elemente.
+        const overlay = document.createElement('div');
+        overlay.className = 'window-focus-overlay';
+        Object.assign(overlay.style, {
+            position: 'absolute',
+            inset: '0',
+            zIndex: '10000',
+            background: 'transparent',
+            pointerEvents: 'auto',
+            cursor: 'default',
+            display: 'none', // initially hidden (window starts as active)
         });
+        overlay.addEventListener('mousedown', e => {
+            e.stopPropagation();
+            this.bringToFront();
+            // Hide immediately so the *next* click reaches the underlying element.
+            overlay.style.display = 'none';
+        });
+        this.element.appendChild(overlay);
+        this._focusOverlay = overlay;
+
+        // --- Fallback-Handler (capture) ---
+        // Greift für Klicks außerhalb des Overlays (z. B. Titelleiste, Resize-Griffe),
+        // und für alle Elemente, die stopPropagation() im Bubbling aufrufen würden.
+        this.element.addEventListener(
+            'mousedown',
+            () => {
+                this.bringToFront();
+            },
+            { capture: true }
+        );
     }
 
     /**
@@ -951,6 +992,12 @@ export class BaseWindow {
      * und ruft bringToFront() + Menubar‑Update. Persistiert den Zustand.
      */
     show(): void {
+        const dockSystem = window.DockSystem as
+            | (typeof window.DockSystem & {
+                  clearWindowPreview?: (windowId: string) => void;
+              })
+            | undefined;
+
         if (!this.element) {
             this.createDOM();
             document.body.appendChild(this.element!);
@@ -973,6 +1020,7 @@ export class BaseWindow {
                 this.element.classList.remove('hidden');
             }
             this.isMinimized = false;
+            dockSystem?.clearWindowPreview?.(this.id);
             this._applyResponsiveWindowLayout();
             this._enforceDesktopTitlebarBoundary();
         }
@@ -1005,7 +1053,14 @@ export class BaseWindow {
      * sodass dieser Aufräumarbeiten übernehmen kann.
      */
     close(): void {
+        const dockSystem = window.DockSystem as
+            | (typeof window.DockSystem & {
+                  clearWindowPreview?: (windowId: string) => void;
+              })
+            | undefined;
+
         this.hide();
+        dockSystem?.clearWindowPreview?.(this.id);
 
         // Remove from z-index manager stack
         const W = window;
@@ -1032,14 +1087,28 @@ export class BaseWindow {
      * kann später hier erfolgen.
      */
     minimize(): void {
+        const dockSystem = window.DockSystem as
+            | (typeof window.DockSystem & {
+                  captureWindowPreview?: (windowId: string, windowElement: HTMLElement) => void;
+              })
+            | undefined;
+
         this.isMinimized = true;
+        this.metadata.minimizedAt = Date.now();
+        if (this.element) {
+            dockSystem?.captureWindowPreview?.(this.id, this.element);
+        }
         if (
             this.element &&
-            window.DockSystem?.animateWindowMinimize?.(this.element, this.id, () => this.hide())
+            window.DockSystem?.animateWindowMinimize?.(this.element, this.id, () => {
+                this.hide();
+                window.updateDockIndicators?.();
+            })
         ) {
             return;
         }
         this.hide();
+        window.updateDockIndicators?.();
     }
 
     /**
@@ -1182,6 +1251,20 @@ export class BaseWindow {
             // Pass current menu modal id so sections rebuild with new active context
             const current = menuSystem.getCurrentMenuModalId?.();
             menuSystem.renderApplicationMenu(current);
+        }
+    }
+
+    /**
+     * Zeigt oder versteckt das unsichtbare Fokus-Overlay.
+     *
+     * PURPOSE: Wird von WindowRegistry.setActiveWindow() aufgerufen, um das Overlay
+     *   auf inaktiven Fenstern zu aktivieren und auf dem aktiven Fenster auszublenden.
+     * INPUT: active=true → Overlay ausblenden (dieses Fenster ist das aktive)
+     *        active=false → Overlay einblenden (dieses Fenster ist inaktiv)
+     */
+    setFocusOverlay(active: boolean): void {
+        if (this._focusOverlay) {
+            this._focusOverlay.style.display = active ? 'none' : 'block';
         }
     }
 

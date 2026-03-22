@@ -674,11 +674,11 @@ export const en = {
                         description: 'Adapts mode based on device capabilities and viewport.',
                     },
                     desktop: {
-                        label: '🖥️ Desktop (macOS)',
+                        label: '🖥️ Desktop',
                         description: 'Classic multi-window layout with desktop dock behavior.',
                     },
                     mobile: {
-                        label: '📱 Mobile (iOS-inspired)',
+                        label: '📱 Mobile',
                         description: 'Enables compact spacing and mobile-oriented navigation.',
                     },
                 },
