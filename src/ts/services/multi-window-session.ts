@@ -207,6 +207,37 @@ class MultiWindowSessionManager {
             });
 
             if (session.windows.length === 0) {
+                const isMobileUIMode =
+                    document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+                if (isMobileUIMode) {
+                    try {
+                        const existingSessionRaw = localStorage.getItem(
+                            MultiWindowSessionManager.STORAGE_KEY
+                        );
+                        if (existingSessionRaw) {
+                            const existingSession = JSON.parse(existingSessionRaw) as {
+                                windows?: unknown[];
+                            };
+                            if (
+                                Array.isArray(existingSession.windows) &&
+                                existingSession.windows.length > 0
+                            ) {
+                                logger.debug(
+                                    'SESSION',
+                                    '[MultiWindowSessionManager] Skipping empty save in mobile mode to preserve existing desktop session'
+                                );
+                                return;
+                            }
+                        }
+                    } catch (error) {
+                        logger.warn(
+                            'SESSION',
+                            '[MultiWindowSessionManager] Failed to inspect existing session before mobile empty save:',
+                            error
+                        );
+                    }
+                }
+
                 const legacyRaw = localStorage.getItem(
                     MultiWindowSessionManager.LEGACY_STORAGE_KEY
                 );

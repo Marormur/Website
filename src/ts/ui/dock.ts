@@ -944,6 +944,7 @@ export function animateWindowMinimize(
 
 export function updateDockIndicators(): void {
     const domUtils = window.DOMUtils;
+    const isMobileMode = document.documentElement.getAttribute('data-ui-mode') === 'mobile';
 
     const indicatorMappings = [
         { indicatorId: 'finder-indicator', windowType: 'finder' },
@@ -953,7 +954,7 @@ export function updateDockIndicators(): void {
         { indicatorId: 'terminal-indicator', windowType: 'terminal' },
     ];
 
-    const showIndicators = shouldShowOpenIndicators();
+    const showIndicators = !isMobileMode && shouldShowOpenIndicators();
 
     indicatorMappings.forEach(mapping => {
         const indicator = document.getElementById(mapping.indicatorId);
@@ -1024,7 +1025,21 @@ if (typeof window !== 'undefined') {
     });
 
     window.addEventListener('uiModeEffectiveChange', () => {
-        updateDockIndicators();
+        const reapplyDockLayout = () => {
+            applyDockPreferences(getDockPreferences());
+            updateDockIndicators();
+        };
+
+        // First pass updates immediately for responsive UI feedback.
+        reapplyDockLayout();
+
+        // Second pass runs after zoom/layout updates settled (theme scale + mobile CSS switch)
+        // so dock width/position are measured in the final desktop coordinate space.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                reapplyDockLayout();
+            });
+        });
     });
 }
 

@@ -5,7 +5,6 @@
  */
 
 import logger from '../core/logger.js';
-import { renderProgramIcon, type ProgramIconKey } from '../windows/window-icons.js';
 
 logger.debug('UI', 'Mobile Paging (TS) loaded');
 
@@ -33,10 +32,124 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
     let gestureNavBar: HTMLElement | null = null;
     let isAppOpen = false;
     let windowChangeObserver: MutationObserver | null = null;
+    let isInitialized = false;
 
     const GESTURE_NAV_ID = 'mobile-gesture-nav-bar';
     const DOCK_ID = 'dock';
     const TRANSITION_DURATION = 200; // ms
+
+    function getMobileTopChromeHeight(): number {
+        const raw = getComputedStyle(document.documentElement)
+            .getPropertyValue('--ui-top-chrome-height')
+            .trim();
+        const parsed = Number.parseFloat(raw);
+        return Number.isFinite(parsed) ? parsed : 42;
+    }
+
+    function getMobileHomeButtonReserveHeight(): number {
+        const raw = getComputedStyle(document.documentElement)
+            .getPropertyValue('--ui-mobile-home-button-reserve-height')
+            .trim();
+        const parsed = Number.parseFloat(raw);
+        // Keep a conservative fallback so app content never sits beneath the home button.
+        return Number.isFinite(parsed) ? parsed : 56;
+    }
+
+    function fitModalToMobileViewport(modal: HTMLElement | null): void {
+        if (!modal || !isMobileMode()) return;
+        const appShell =
+            (modal.querySelector<HTMLElement>('.autopointer') as HTMLElement | null) || modal;
+        const topChrome = Math.max(0, Math.round(getMobileTopChromeHeight()));
+        const bottomReserve = Math.max(0, Math.round(getMobileHomeButtonReserveHeight()));
+        const height = Math.max(0, Math.round(window.innerHeight - topChrome - bottomReserve));
+
+        appShell.style.position = 'fixed';
+        appShell.style.left = '0px';
+        appShell.style.top = `${topChrome}px`;
+        appShell.style.bottom = `${bottomReserve}px`;
+        appShell.style.width = '100vw';
+        appShell.style.maxWidth = '100vw';
+        appShell.style.height = `${height}px`;
+        appShell.style.maxHeight = `${height}px`;
+    }
+
+    function closeModalElement(modal: HTMLElement): void {
+        const closeBtn = modal.querySelector<HTMLElement>(
+            '[data-action="closeWindow"], [data-close-window], [id^="close-"][id$="-modal"]'
+        );
+        if (closeBtn) {
+            closeBtn.click();
+            return;
+        }
+
+        // Last-resort fallback for legacy modal structures without close action wiring.
+        modal.classList.add('hidden');
+    }
+
+    function enforceSingleForegroundAppForMobile(): void {
+        if (!isMobileMode()) return;
+
+        const openModals = getOpenAppModals();
+        if (openModals.length === 0) {
+            onAppClosed();
+            return;
+        }
+
+        const registry = (window as unknown as { WindowRegistry?: Record<string, unknown> })
+            .WindowRegistry as
+            | {
+                  getActiveWindow?: () => Record<string, unknown> | null;
+                  getAllWindows?: () => Array<Record<string, unknown>>;
+              }
+            | undefined;
+
+        const activeWindow = registry?.getActiveWindow?.() || null;
+        const activeWindowId = activeWindow?.id || null;
+        const activeWindowElement = (activeWindow?.element as HTMLElement | undefined) || undefined;
+
+        const topMostModal = [...openModals].sort((a, b) => {
+            const aZ = Number.parseInt(getComputedStyle(a).zIndex || '0', 10) || 0;
+            const bZ = Number.parseInt(getComputedStyle(b).zIndex || '0', 10) || 0;
+            return bZ - aZ;
+        })[0];
+
+        const modalToKeep =
+            activeWindowElement && openModals.includes(activeWindowElement)
+                ? activeWindowElement
+                : topMostModal;
+
+        const allWindows = registry?.getAllWindows?.() || [];
+        allWindows.forEach(win => {
+            const runtimeWindow = win as {
+                id?: string;
+                element?: HTMLElement;
+                close?: () => void;
+            };
+            if (activeWindowId && runtimeWindow.id === activeWindowId) return;
+            if (modalToKeep && runtimeWindow.element === modalToKeep) return;
+            if (runtimeWindow.element?.classList?.contains('hidden')) return;
+            runtimeWindow.close?.();
+        });
+
+        openModals.forEach(modal => {
+            if (modal === modalToKeep) return;
+            closeModalElement(modal);
+        });
+
+        const remaining = getOpenAppModals();
+        const visibleApp =
+            modalToKeep && !modalToKeep.classList.contains('hidden')
+                ? modalToKeep
+                : remaining[0] || null;
+
+        if (!visibleApp) {
+            onAppClosed();
+            return;
+        }
+
+        fitModalToMobileViewport(visibleApp);
+        onAppOpened();
+    }
 
     /**
      * Check if mobile mode is active
@@ -109,8 +222,6 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         if (!gestureNavBar) return;
 
         // Position at bottom center of viewport, matching dock placement
-        const viewportHeight = window.innerHeight;
-        const dockHeight = 44; // Our gesture bar height
         const edgeInset = 10;
 
         gestureNavBar.style.position = 'fixed';
@@ -156,14 +267,15 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
      */
     function onAppOpened(): void {
         if (!isMobileMode()) return;
-        if (isAppOpen) return;
-
+        const wasAppOpen = isAppOpen;
         isAppOpen = true;
         mobileScreensWrapper?.classList.add('mobile-screens-wrapper--app-open');
         positionGestureNavBar();
         showGestureNav();
 
-        logger.debug('Mobile Paging', 'App opened - showing gesture nav');
+        if (!wasAppOpen) {
+            logger.debug('Mobile Paging', 'App opened - showing gesture nav');
+        }
     }
 
     /**
@@ -191,18 +303,9 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
      * Return to home (close all apps)
      */
     function returnToHome(): void {
-        // Immediately switch visual state back to home to avoid stale nav visibility
-        // while app windows are still closing asynchronously.
-        isAppOpen = false;
-        mobileScreensWrapper?.classList.remove('mobile-screens-wrapper--app-open');
-        hideGestureNav();
-        transitionToPage(0);
-
         const openModals = getOpenAppModals();
         openModals.forEach(modal => {
-            const closeBtn = modal.querySelector<HTMLElement>(
-                '[data-action="closeWindow"], [data-action="window-close"], [data-close-window]'
-            );
+            const closeBtn = modal.querySelector<HTMLElement>('[data-action="closeWindow"]');
             if (closeBtn) {
                 closeBtn.click();
                 return;
@@ -240,14 +343,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
                 return;
             }
 
-            const wasAppOpen = isAppOpen;
-            const nowAppOpen = getOpenAppModals().length > 0;
-
-            if (!nowAppOpen) {
-                onAppClosed();
-            } else if (!wasAppOpen) {
-                onAppOpened();
-            }
+            enforceSingleForegroundAppForMobile();
         };
 
         const debouncedCheck = (): void => {
@@ -341,22 +437,6 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         }
     }
 
-    function t(key: string, fallback: string): string {
-        const apiTranslate = (
-            window as Window & {
-                API?: { i18n?: { translate?: (k: string, fb?: string) => string } };
-            }
-        ).API?.i18n?.translate;
-        if (typeof apiTranslate === 'function') {
-            return apiTranslate(key, fallback);
-        }
-
-        const globalTranslate = (
-            window as Window & { translate?: (k: string, fb?: string) => string }
-        ).translate;
-        return typeof globalTranslate === 'function' ? globalTranslate(key, fallback) : fallback;
-    }
-
     /**
      * Populate home screen with app icons
      * PURPOSE: Render app shortcuts on the first mobile screen
@@ -374,43 +454,43 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         const mobileApps = [
             {
                 id: 'finder',
-                iconKey: 'finder' as ProgramIconKey,
-                label: t('dock.finder', 'Finder'),
+                emoji: '📁',
+                label: 'Finder',
                 action: 'openWindow',
                 windowId: 'finder-modal',
             },
             {
                 id: 'terminal',
-                iconKey: 'terminal' as ProgramIconKey,
-                label: t('dock.terminal', 'Terminal'),
+                emoji: '⌨️',
+                label: 'Terminal',
                 action: 'openWindow',
                 windowId: 'terminal',
             },
             {
                 id: 'text-editor',
-                iconKey: 'textEditor' as ProgramIconKey,
-                label: t('dock.text', 'Text editor'),
+                emoji: '📝',
+                label: 'Texteditor',
                 action: 'openWindow',
                 windowId: 'text-modal',
             },
             {
                 id: 'preview',
-                iconKey: 'preview' as ProgramIconKey,
-                label: t('dock.image', 'Image viewer'),
+                emoji: '👁️',
+                label: 'Vorschau',
                 action: 'openWindow',
                 windowId: 'preview-modal',
             },
             {
                 id: 'photos',
-                iconKey: 'photos' as ProgramIconKey,
-                label: t('dock.photos', 'Photos'),
+                emoji: '🖼️',
+                label: 'Fotos',
                 action: 'openWindow',
                 windowId: 'image-modal',
             },
             {
                 id: 'settings',
-                iconKey: 'settings' as ProgramIconKey,
-                label: t('dock.settings', 'System settings'),
+                emoji: '⚙️',
+                label: 'Einstellungen',
                 action: 'openWindow',
                 windowId: 'settings-modal',
             },
@@ -430,7 +510,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
 
             const iconDiv = document.createElement('div');
             iconDiv.className = 'mobile-home-app-icon-graphic';
-            renderProgramIcon(iconDiv, app.iconKey);
+            iconDiv.textContent = app.emoji;
 
             const labelDiv = document.createElement('span');
             labelDiv.className = 'mobile-home-app-icon-label';
@@ -504,12 +584,8 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
             populateLaunchpadScreen();
             setupWindowChangeMonitor();
 
-            // Re-sync state after switching back to mobile mode.
-            if (getOpenAppModals().length > 0) {
-                onAppOpened();
-            } else {
-                onAppClosed();
-            }
+            // Mobile mode supports one foreground app only.
+            enforceSingleForegroundAppForMobile();
         } else {
             hideMobileScreens();
             isAppOpen = false;
@@ -531,6 +607,12 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
      * DEPENDENCY: Dock element must be in DOM
      */
     function initMobilePaging(): void {
+        if (isInitialized) {
+            onUIModChange();
+            return;
+        }
+        isInitialized = true;
+
         logger.debug('Mobile Paging', 'Initializing');
 
         initMobileScreens();
@@ -563,11 +645,6 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
 
         // Listen for UI mode changes
         window.addEventListener('uiModeEffectiveChange', onUIModChange);
-        window.addEventListener('languagePreferenceChange', () => {
-            if (isMobileMode()) {
-                populateHomeScreen();
-            }
-        });
 
         // Initial call in case already in mobile mode
         onUIModChange();

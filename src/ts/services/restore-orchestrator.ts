@@ -56,6 +56,16 @@ export async function runSessionRestoreOrchestration(win: RestoreWindow): Promis
         // Let manager wiring settle before restore starts.
         await new Promise(resolve => setTimeout(resolve, 150));
 
+        const effectiveUIMode = document.documentElement.getAttribute('data-ui-mode');
+        if (effectiveUIMode === 'mobile') {
+            logger.debug(
+                'APP',
+                '[RESTORE-ORCHESTRATOR] Skipping startup session restore in mobile UI mode'
+            );
+            win.__MULTI_WINDOW_SESSION_ACTIVE = false;
+            return;
+        }
+
         let hasActiveMultiWindowSession = false;
 
         if (win.MultiWindowSessionManager?.restoreSession) {

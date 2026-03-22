@@ -30,6 +30,7 @@ body.window-dragging * {
     --app-safe-area-left: env(safe-area-inset-left, 0px);
     --ui-top-chrome-height: 28px;
     --ui-bottom-chrome-height: 84px;
+    --ui-mobile-home-button-reserve-height: 0px;
     --window-shadow: 0 22px 45px rgba(15, 23, 42, 0.18);
     --window-shadow-hover: 0 28px 58px rgba(15, 23, 42, 0.25);
     --window-border: rgba(15, 23, 42, 0.12);
@@ -82,6 +83,7 @@ body.window-dragging * {
 :root[data-ui-mode='mobile'] {
     --ui-top-chrome-height: calc(42px + var(--app-safe-area-top));
     --ui-bottom-chrome-height: calc(86px + var(--app-safe-area-bottom));
+    --ui-mobile-home-button-reserve-height: calc(56px + var(--app-safe-area-bottom));
 }
 
 :root[data-ui-mode='mobile'] body {
@@ -110,6 +112,25 @@ body.window-dragging * {
         0 28px 52px rgba(15, 23, 42, 0.2),
         0 1px 0 rgba(255, 255, 255, 0.7) inset;
     overflow: hidden;
+}
+
+:root[data-ui-mode='mobile'] .settings-window-shell {
+    /* Mobile mode must always fill the app viewport, even if legacy desktop
+       window positions left stale inline width/height values. */
+    position: fixed !important;
+    left: 0 !important;
+    top: var(--ui-top-chrome-height) !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    height: calc(
+        100vh - var(--ui-top-chrome-height) - var(--ui-mobile-home-button-reserve-height)
+    ) !important;
+    min-height: 0 !important;
+    max-height: calc(
+        100vh - var(--ui-top-chrome-height) - var(--ui-mobile-home-button-reserve-height)
+    ) !important;
+    border-radius: 0 !important;
 }
 
 #settings-container {

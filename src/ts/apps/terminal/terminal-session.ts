@@ -33,6 +33,7 @@ export class TerminalSession extends BaseTab {
     commandHistory: string[];
     historyIndex: number;
     vfsCwd: string;
+    previousVfsCwd: string;
     lastExecutedCommand: string;
 
     // VDOM State - tracks virtual tree for efficient updates
@@ -101,6 +102,7 @@ export class TerminalSession extends BaseTab {
         this.commandHistory = [];
         this.historyIndex = -1;
         this.vfsCwd = '/home/marvin';
+        this.previousVfsCwd = '/home/marvin';
         this.lastExecutedCommand = 'zsh';
 
         // Ensure VirtualFS has default structure for tests/dev if storage is empty or corrupted
@@ -330,6 +332,7 @@ export class TerminalSession extends BaseTab {
         const availableCommands = [
             'help',
             'clear',
+            'exit',
             'ls',
             'pwd',
             'cd',
@@ -337,9 +340,15 @@ export class TerminalSession extends BaseTab {
             'touch',
             'mkdir',
             'rm',
+            'cp',
+            'mv',
+            'rmdir',
+            'head',
+            'tail',
             'echo',
             'date',
             'whoami',
+            'uname',
         ];
 
         // Debug: current CWD and raw input
@@ -510,31 +519,335 @@ export class TerminalSession extends BaseTab {
         this.addOutput('Willkommen im Terminal! Gib "help" ein für verfügbare Befehle.', 'info');
     }
 
-    executeCommand(command: string): void {
-        this.addOutput(`guest@marvin:${this.vfsCwd}$ ${command}`, 'command');
-        const [cmd, ...args] = command.split(' ');
+    private tokenizeCommandLine(input: string): string[] {
+        const tokens: string[] = [];
+        let current = '';
+        let quote: 'single' | 'double' | null = null;
+        let escaped = false;
 
-        if (cmd === undefined) return;
+        for (let i = 0; i < input.length; i++) {
+            const ch = input[i] ?? '';
 
+            if (escaped) {
+                // Preserve the backslash for shell-like literal behavior (e.g. "\\n" stays "\\n").
+                current += `\\${ch}`;
+                escaped = false;
+                continue;
+            }
+
+            if (ch === '\\') {
+                escaped = true;
+                continue;
+            }
+
+            if (quote === 'single') {
+                if (ch === "'") quote = null;
+                else current += ch;
+                continue;
+            }
+
+            if (quote === 'double') {
+                if (ch === '"') quote = null;
+                else current += ch;
+                continue;
+            }
+
+            if (ch === "'") {
+                quote = 'single';
+                continue;
+            }
+            if (ch === '"') {
+                quote = 'double';
+                continue;
+            }
+
+            if (ch === '|' || ch === '<') {
+                if (current.length > 0) {
+                    tokens.push(current);
+                    current = '';
+                }
+                tokens.push(ch);
+                continue;
+            }
+
+            if (ch === '>') {
+                if (current.length > 0) {
+                    tokens.push(current);
+                    current = '';
+                }
+                if (input[i + 1] === '>') {
+                    tokens.push('>>');
+                    i++;
+                } else {
+                    tokens.push('>');
+                }
+                continue;
+            }
+
+            if (/\s/.test(ch)) {
+                if (current.length > 0) {
+                    tokens.push(current);
+                    current = '';
+                }
+                continue;
+            }
+
+            current += ch;
+        }
+
+        if (current.length > 0) tokens.push(current);
+        return tokens;
+    }
+
+    private splitByPipe(tokens: string[]): string[][] {
+        const segments: string[][] = [];
+        let current: string[] = [];
+
+        for (const token of tokens) {
+            if (token === '|') {
+                if (current.length === 0) return [];
+                segments.push(current);
+                current = [];
+            } else {
+                current.push(token);
+            }
+        }
+
+        if (current.length === 0) return [];
+        segments.push(current);
+        return segments;
+    }
+
+    private parseSegmentRedirection(tokens: string[]): {
+        argv: string[];
+        inputPath?: string;
+        outputPath?: string;
+        append?: boolean;
+        error?: string;
+    } {
+        const argv: string[] = [];
+        let inputPath: string | undefined;
+        let outputPath: string | undefined;
+        let append = false;
+
+        for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i] ?? '';
+            if (token === '<') {
+                const next = tokens[i + 1];
+                if (!next) return { argv, error: 'redirect: fehlender Pfad nach <' };
+                inputPath = next;
+                i++;
+                continue;
+            }
+
+            if (token === '>' || token === '>>') {
+                const next = tokens[i + 1];
+                if (!next) {
+                    return {
+                        argv,
+                        inputPath,
+                        error: `redirect: fehlender Pfad nach ${token}`,
+                    };
+                }
+                outputPath = next;
+                append = token === '>>';
+                i++;
+                continue;
+            }
+
+            argv.push(token);
+        }
+
+        return { argv, inputPath, outputPath, append };
+    }
+
+    private dispatchCommand(cmd: string, args: string[], stdin?: string): boolean {
         const commands: Record<string, () => void> = {
             help: () => this.showHelp(),
             clear: () => this.clearOutput(),
-            ls: () => this.listDirectory(args[0]),
+            exit: () => this.exitShell(),
+            ls: () => this.listDirectory(args),
             pwd: () => this.printWorkingDirectory(),
             cd: () => this.changeDirectory(args[0]),
-            cat: () => this.catFile(args[0]),
+            cat: () => this.catFile(args[0], stdin),
             touch: () => this.touch(args[0]),
-            mkdir: () => this.mkdir(args[0]),
-            rm: () => this.rm(args[0]),
+            mkdir: () => this.mkdir(args),
+            rm: () => this.rm(args),
+            cp: () => this.cp(args),
+            mv: () => this.mv(args),
+            rmdir: () => this.rmdir(args),
+            head: () => this.head(args, stdin),
+            tail: () => this.tail(args, stdin),
             echo: () => this.echo(args.join(' ')),
             date: () => this.showDate(),
-            whoami: () => this.addOutput('guest', 'output'),
+            whoami: () => this.addOutput('marvin', 'output'),
+            uname: () => this.uname(args),
         };
 
-        const commandFn = commands[cmd];
-        if (commandFn !== undefined) {
-            commandFn();
-        } else {
+        const fn = commands[cmd];
+        if (!fn) return false;
+        fn();
+        return true;
+    }
+
+    private executeCommandCaptured(
+        cmd: string,
+        args: string[],
+        stdin?: string
+    ): { stdout: string[]; stderr: string[]; recognized: boolean } {
+        const stdout: string[] = [];
+        const stderr: string[] = [];
+        const originalAddOutput = this.addOutput.bind(this);
+
+        this.addOutput = (
+            text: string,
+            type: 'command' | 'output' | 'error' | 'info' = 'output'
+        ): void => {
+            if (type === 'error') stderr.push(text);
+            else if (type !== 'command') stdout.push(text);
+        };
+
+        let recognized = false;
+        try {
+            recognized = this.dispatchCommand(cmd, args, stdin);
+            if (!recognized) {
+                stderr.push(
+                    `Befehl nicht gefunden: ${cmd}. Gib "help" ein für verfügbare Befehle.`
+                );
+            }
+        } finally {
+            this.addOutput = originalAddOutput;
+        }
+
+        return { stdout, stderr, recognized };
+    }
+
+    private writeRedirectOutput(pathArg: string, content: string, append: boolean): boolean {
+        const target = this.vfsResolve(pathArg);
+        const parent = VirtualFS.getFolder(this.parentPath(target));
+        if (!parent) {
+            this.addOutput(
+                `redirect: Verzeichnis nicht gefunden: ${this.parentPath(target)}`,
+                'error'
+            );
+            return false;
+        }
+
+        const existing = VirtualFS.get(target);
+        if (existing && existing.type === 'folder') {
+            this.addOutput(`redirect: ${pathArg}: Ist ein Verzeichnis`, 'error');
+            return false;
+        }
+
+        if (!existing) {
+            if (!VirtualFS.createFile(target, content)) {
+                this.addOutput(`redirect: Konnte nicht schreiben: ${pathArg}`, 'error');
+                return false;
+            }
+            return true;
+        }
+
+        const current = (VirtualFS.getFile(target)?.content || '') as string;
+        const next = append ? current + content : content;
+        return VirtualFS.writeFile(target, next);
+    }
+
+    private executePipeline(tokens: string[]): boolean {
+        const segments = this.splitByPipe(tokens);
+        if (segments.length === 0) {
+            this.addOutput('Syntaxfehler bei Pipeline', 'error');
+            return true;
+        }
+
+        let stdinText: string | undefined;
+
+        for (let i = 0; i < segments.length; i++) {
+            const segment = segments[i] as string[];
+            const parsed = this.parseSegmentRedirection(segment);
+            if (parsed.error) {
+                this.addOutput(parsed.error, 'error');
+                return true;
+            }
+
+            if (i > 0 && parsed.inputPath) {
+                this.addOutput('redirect: < nur im ersten Pipeline-Segment erlaubt', 'error');
+                return true;
+            }
+
+            if (i < segments.length - 1 && parsed.outputPath) {
+                this.addOutput(
+                    'redirect: > oder >> nur im letzten Pipeline-Segment erlaubt',
+                    'error'
+                );
+                return true;
+            }
+
+            if (parsed.inputPath) {
+                const content = VirtualFS.readFile(this.vfsResolve(parsed.inputPath));
+                if (content === null) {
+                    this.addOutput(`redirect: Datei nicht gefunden: ${parsed.inputPath}`, 'error');
+                    return true;
+                }
+                stdinText = content;
+            }
+
+            const [cmd, ...args] = parsed.argv;
+            if (!cmd) {
+                this.addOutput('Syntaxfehler: fehlender Befehl', 'error');
+                return true;
+            }
+
+            const result = this.executeCommandCaptured(cmd, args, stdinText);
+            if (result.stderr.length > 0) {
+                result.stderr.forEach(line => this.addOutput(line, 'error'));
+                return true;
+            }
+
+            const joined = result.stdout.join('\n');
+
+            if (i === segments.length - 1) {
+                if (parsed.outputPath) {
+                    if (!this.writeRedirectOutput(parsed.outputPath, joined, !!parsed.append)) {
+                        return true;
+                    }
+                    return true;
+                }
+
+                if (result.stdout.length === 0 && joined.length > 0) {
+                    this.addOutput(joined, 'output');
+                    return true;
+                }
+
+                result.stdout.forEach(line => this.addOutput(line, 'output'));
+                return true;
+            }
+
+            stdinText = joined;
+        }
+
+        return true;
+    }
+
+    executeCommand(command: string): void {
+        this.addOutput(`guest@marvin:${this.vfsCwd}$ ${command}`, 'command');
+        const tokens = this.tokenizeCommandLine(command);
+        const [cmd, ...args] = tokens;
+
+        if (cmd === undefined) return;
+
+        if (
+            tokens.some(token => token === '|' || token === '<' || token === '>' || token === '>>')
+        ) {
+            this.executePipeline(tokens);
+            this.commandHistory.push(command);
+            this.historyIndex = this.commandHistory.length;
+            this.updateContentState({ commandHistory: this.commandHistory });
+            this._updateTabTitle(command);
+            return;
+        }
+
+        const recognized = this.dispatchCommand(cmd, args);
+        if (!recognized) {
             this.addOutput(
                 `Befehl nicht gefunden: ${cmd}. Gib "help" ein für verfügbare Befehle.`,
                 'error'
@@ -616,38 +929,95 @@ export class TerminalSession extends BaseTab {
         }
     }
 
+    private exitShell(): void {
+        // `exit` should terminate only this session/tab. BaseWindow handles
+        // closing the entire window if this was the last remaining tab.
+        if (this.parentWindow) {
+            this.parentWindow.removeTab(this.id);
+            return;
+        }
+
+        this.destroy();
+    }
+
     showHelp(): void {
         const helpText = [
             'Verfügbare Befehle:',
             '  help     - Zeige diese Hilfe',
             '  clear    - Lösche Ausgabe',
-            '  ls       - Liste Dateien',
+            '  exit     - Beende die aktuelle Terminal-Sitzung',
+            '  ls [-la] [pfad] - Liste Dateien',
             '  pwd      - Zeige aktuelles Verzeichnis',
             '  cd <dir> - Wechsle Verzeichnis',
             '  cat <f>  - Zeige Dateiinhalt',
-            '  touch <f> - Erstelle leere Datei',
-            '  mkdir <d> - Erstelle Verzeichnis',
-            '  rm <p>    - Lösche Datei/Verzeichnis',
+            '  touch <f> [...] - Erstelle Datei oder aktualisiere Zeitstempel',
+            '  mkdir [-p] <d> [...] - Erstelle Verzeichnis(se)',
+            '  rm [-rf] <p> [...] - Lösche Datei/Verzeichnis',
+            '  cp [-r] <src> <dst> - Kopiere Datei/Verzeichnis',
+            '  mv <src> <dst> - Verschiebe/benenne um',
+            '  rmdir [-p] <d> [...] - Entferne leere Verzeichnisse',
+            '  head [-n N] [file] - Zeige erste Zeilen',
+            '  tail [-n N] [file] - Zeige letzte Zeilen',
             '  echo <t> - Gebe Text aus',
             '  date     - Zeige Datum/Zeit',
             '  whoami   - Zeige Benutzername',
+            '  uname [-a] - Zeige Systeminfo',
+            '  Pipe/Redirect: cmd1 | cmd2, > file, >> file, < file',
         ];
         helpText.forEach(l => this.addOutput(l, 'info'));
     }
 
-    listDirectory(path?: string): void {
-        const target = this.vfsResolve(path);
+    listDirectory(args: string[] = []): void {
+        let showLong = false;
+        let targetPathArg: string | undefined;
+
+        for (const arg of args) {
+            if (arg.startsWith('-') && arg !== '-') {
+                for (const flag of arg.slice(1)) {
+                    if (flag === 'l') showLong = true;
+                    else if (flag === 'a') {
+                        // Hidden files are currently not modeled in VFS; accept flag as no-op.
+                    } else {
+                        this.addOutput(`ls: ungültige Option -- ${flag}`, 'error');
+                        return;
+                    }
+                }
+                continue;
+            }
+
+            if (targetPathArg === undefined) {
+                targetPathArg = arg;
+            } else {
+                this.addOutput('ls: zu viele Operanden', 'error');
+                return;
+            }
+        }
+
+        const target = this.vfsResolve(targetPathArg);
         const item = VirtualFS.get(target);
         if (!item) {
-            this.addOutput(`Verzeichnis/Datei nicht gefunden: ${path || target}`, 'error');
+            this.addOutput(
+                `ls: ${targetPathArg || target}: Datei oder Verzeichnis nicht gefunden`,
+                'error'
+            );
             return;
         }
         if (item.type === 'file') {
-            this.addOutput('📄 ' + target.split('/').pop(), 'output');
+            const fileName = target.split('/').pop() || target;
+            if (showLong) {
+                const size = item.size || 0;
+                const modified = item.modified || new Date().toISOString();
+                const stamp = new Date(modified).toLocaleString('de-DE');
+                this.addOutput(
+                    `-rw-r--r-- ${size.toString().padStart(6, ' ')} ${stamp} ${fileName}`
+                );
+            } else {
+                this.addOutput('📄 ' + fileName, 'output');
+            }
             return;
         }
         const entries = VirtualFS.list(target);
-        const names = Object.keys(entries);
+        const names = Object.keys(entries).sort((a, b) => a.localeCompare(b));
         if (names.length === 0) {
             this.addOutput('(leer)', 'output');
             return;
@@ -655,8 +1025,20 @@ export class TerminalSession extends BaseTab {
         names.forEach(name => {
             const child = entries[name];
             if (child) {
-                const prefix = child.type === 'folder' ? '📁 ' : '📄 ';
-                this.addOutput(prefix + name, 'output');
+                if (showLong) {
+                    const perms = child.type === 'folder' ? 'drwxr-xr-x' : '-rw-r--r--';
+                    const size = child.type === 'file' ? child.size || 0 : 0;
+                    const modified = child.modified || new Date().toISOString();
+                    const stamp = new Date(modified).toLocaleString('de-DE');
+                    const displayName = child.type === 'folder' ? `${name}/` : name;
+                    this.addOutput(
+                        `${perms} ${size.toString().padStart(6, ' ')} ${stamp} ${displayName}`,
+                        'output'
+                    );
+                } else {
+                    const prefix = child.type === 'folder' ? '📁 ' : '📄 ';
+                    this.addOutput(prefix + name, 'output');
+                }
             }
         });
     }
@@ -666,6 +1048,25 @@ export class TerminalSession extends BaseTab {
     }
 
     changeDirectory(path?: string): void {
+        const requested = (path || '').trim();
+        const current = this.vfsCwd;
+
+        if (requested === '-') {
+            const target = this.previousVfsCwd || '/home/marvin';
+            const folder = VirtualFS.getFolder(target);
+            if (!folder) {
+                this.addOutput(`cd: Verzeichnis nicht gefunden: ${target}`, 'error');
+                return;
+            }
+
+            this.vfsCwd = target;
+            this.previousVfsCwd = current;
+            this.updatePrompt();
+            this.updateContentState({ currentPath: this.vfsCwd, vfsCwd: this.vfsCwd });
+            this._updateTabTitle();
+            return;
+        }
+
         const target = this.vfsResolve(path || '/home/marvin');
         const folder = VirtualFS.getFolder(target);
         if (!folder) {
@@ -673,16 +1074,22 @@ export class TerminalSession extends BaseTab {
             return;
         }
         this.vfsCwd = target;
+        this.previousVfsCwd = current;
         this.updatePrompt();
-        this.updateContentState({ currentPath: this.vfsCwd });
+        this.updateContentState({ currentPath: this.vfsCwd, vfsCwd: this.vfsCwd });
         this._updateTabTitle();
     }
 
-    catFile(filename?: string): void {
+    catFile(filename?: string, stdin?: string): void {
         if (!filename) {
+            if (typeof stdin === 'string') {
+                this.addOutput(stdin, 'output');
+                return;
+            }
             this.addOutput('Dateiname fehlt', 'error');
             return;
         }
+
         const target = this.vfsResolve(filename);
         const file = VirtualFS.getFile(target);
         if (!file) this.addOutput(`Datei nicht gefunden: ${filename}`, 'error');
@@ -695,6 +1102,118 @@ export class TerminalSession extends BaseTab {
 
     showDate(): void {
         this.addOutput(new Date().toString(), 'output');
+    }
+
+    head(args: string[] = [], stdin?: string): void {
+        let lineCount = 10;
+        let pathArg: string | undefined;
+
+        for (let i = 0; i < args.length; i++) {
+            const arg = args[i] ?? '';
+            if (arg === '-n') {
+                const val = Number(args[i + 1]);
+                if (!Number.isFinite(val) || val < 0) {
+                    this.addOutput('head: ungültige Zeilenanzahl', 'error');
+                    return;
+                }
+                lineCount = Math.floor(val);
+                i++;
+                continue;
+            }
+
+            if (arg.startsWith('-n') && arg.length > 2) {
+                const val = Number(arg.slice(2));
+                if (!Number.isFinite(val) || val < 0) {
+                    this.addOutput('head: ungültige Zeilenanzahl', 'error');
+                    return;
+                }
+                lineCount = Math.floor(val);
+                continue;
+            }
+
+            if (!pathArg) pathArg = arg;
+            else {
+                this.addOutput('head: zu viele Operanden', 'error');
+                return;
+            }
+        }
+
+        const content =
+            pathArg !== undefined
+                ? VirtualFS.readFile(this.vfsResolve(pathArg))
+                : typeof stdin === 'string'
+                  ? stdin
+                  : null;
+
+        if (content === null) {
+            this.addOutput('head: Datei nicht gefunden oder keine Eingabe', 'error');
+            return;
+        }
+
+        const lines = content.split(/\r?\n/).slice(0, lineCount);
+        lines.forEach(line => this.addOutput(line, 'output'));
+    }
+
+    tail(args: string[] = [], stdin?: string): void {
+        let lineCount = 10;
+        let pathArg: string | undefined;
+
+        for (let i = 0; i < args.length; i++) {
+            const arg = args[i] ?? '';
+            if (arg === '-n') {
+                const val = Number(args[i + 1]);
+                if (!Number.isFinite(val) || val < 0) {
+                    this.addOutput('tail: ungültige Zeilenanzahl', 'error');
+                    return;
+                }
+                lineCount = Math.floor(val);
+                i++;
+                continue;
+            }
+
+            if (arg.startsWith('-n') && arg.length > 2) {
+                const val = Number(arg.slice(2));
+                if (!Number.isFinite(val) || val < 0) {
+                    this.addOutput('tail: ungültige Zeilenanzahl', 'error');
+                    return;
+                }
+                lineCount = Math.floor(val);
+                continue;
+            }
+
+            if (!pathArg) pathArg = arg;
+            else {
+                this.addOutput('tail: zu viele Operanden', 'error');
+                return;
+            }
+        }
+
+        const content =
+            pathArg !== undefined
+                ? VirtualFS.readFile(this.vfsResolve(pathArg))
+                : typeof stdin === 'string'
+                  ? stdin
+                  : null;
+
+        if (content === null) {
+            this.addOutput('tail: Datei nicht gefunden oder keine Eingabe', 'error');
+            return;
+        }
+
+        const lines = content.split(/\r?\n/);
+        lines.slice(Math.max(lines.length - lineCount, 0)).forEach(line => this.addOutput(line));
+    }
+
+    uname(args: string[] = []): void {
+        const showAll = args.includes('-a');
+        if (showAll) {
+            this.addOutput(
+                'Darwin portfolio.local 23.0.0 Darwin Kernel Version 23.0.0: VirtualFS x86_64',
+                'output'
+            );
+            return;
+        }
+        this.addOutput('Darwin', 'output');
     }
 
     updatePrompt(): void {
@@ -756,17 +1275,19 @@ export class TerminalSession extends BaseTab {
             this.addOutput('Pfad/Dateiname fehlt', 'error');
             return;
         }
+
         const target = this.vfsResolve(path);
         const existing = VirtualFS.get(target);
         if (existing) {
-            if (existing.type === 'file') {
-                this.addOutput(`Datei existiert bereits: ${target}`, 'error');
-            } else {
-                this.addOutput(`Pfad ist ein Verzeichnis: ${target}`, 'error');
+            if (existing.type === 'folder') {
+                this.addOutput(`touch: ${target}: Ist ein Verzeichnis`, 'error');
+                return;
             }
+            // Unix-like touch behavior: update mtime when file already exists.
+            VirtualFS.writeFile(target, existing.content);
             return;
         }
-        // Ensure parent exists
+
         const parts = target.split('/');
         const name = parts.pop() as string;
         const parentPath = parts.join('/');
@@ -775,40 +1296,323 @@ export class TerminalSession extends BaseTab {
             this.addOutput(`Übergeordnetes Verzeichnis nicht gefunden: ${parentPath}`, 'error');
             return;
         }
+
         const ok = VirtualFS.createFile([...parts, name].join('/'), '');
         if (!ok) this.addOutput(`Konnte Datei nicht erstellen: ${target}`, 'error');
     }
 
-    mkdir(path?: string): void {
-        if (!path) {
-            this.addOutput('Verzeichnisname fehlt', 'error');
+    mkdir(args: string[] | string): void {
+        const argv = Array.isArray(args) ? args : args ? [args] : [];
+        let createParents = false;
+        const operands: string[] = [];
+
+        for (const arg of argv) {
+            if (arg.startsWith('-') && arg !== '-') {
+                for (const flag of arg.slice(1)) {
+                    if (flag === 'p') createParents = true;
+                    else {
+                        this.addOutput(`mkdir: ungültige Option -- ${flag}`, 'error');
+                        return;
+                    }
+                }
+            } else {
+                operands.push(arg);
+            }
+        }
+
+        if (operands.length === 0) {
+            this.addOutput('mkdir: fehlender Operand', 'error');
             return;
         }
-        const target = this.vfsResolve(path);
-        const parts = target.split('/');
-        const name = parts.pop() as string;
-        const parentPath = parts.join('/');
-        const parent = VirtualFS.getFolder(parentPath);
-        if (!parent) {
-            this.addOutput(`Übergeordnetes Verzeichnis nicht gefunden: ${parentPath}`, 'error');
-            return;
+
+        for (const operand of operands) {
+            const target = this.vfsResolve(operand);
+
+            if (createParents) {
+                const parts = target.split('/').filter(Boolean);
+                let current = '/';
+                let failed = false;
+                for (const part of parts) {
+                    const next = current === '/' ? `/${part}` : `${current}/${part}`;
+                    const item = VirtualFS.get(next);
+                    if (!item) {
+                        if (!VirtualFS.createFolder(next)) {
+                            this.addOutput(`Konnte Verzeichnis nicht erstellen: ${next}`, 'error');
+                            failed = true;
+                            break;
+                        }
+                    } else if (item.type !== 'folder') {
+                        this.addOutput(`mkdir: ${next}: Kein Verzeichnis`, 'error');
+                        failed = true;
+                        break;
+                    }
+                    current = next;
+                }
+                if (failed) return;
+                continue;
+            }
+
+            const parts = target.split('/');
+            const name = parts.pop() as string;
+            const parentPath = parts.join('/');
+            const parent = VirtualFS.getFolder(parentPath);
+            if (!parent) {
+                this.addOutput(`Übergeordnetes Verzeichnis nicht gefunden: ${parentPath}`, 'error');
+                return;
+            }
+            const ok = VirtualFS.createFolder([...parts, name].join('/'));
+            if (!ok) {
+                this.addOutput(`Konnte Verzeichnis nicht erstellen: ${target}`, 'error');
+                return;
+            }
         }
-        const ok = VirtualFS.createFolder([...parts, name].join('/'));
-        if (!ok) this.addOutput(`Konnte Verzeichnis nicht erstellen: ${target}`, 'error');
     }
 
-    rm(path?: string): void {
-        if (!path) {
-            this.addOutput('Pfad fehlt', 'error');
+    rm(args: string[] | string): void {
+        const argv = Array.isArray(args) ? args : args ? [args] : [];
+        let recursive = false;
+        let force = false;
+        const operands: string[] = [];
+
+        for (const arg of argv) {
+            if (arg.startsWith('-') && arg !== '-') {
+                for (const flag of arg.slice(1)) {
+                    if (flag === 'r' || flag === 'R') recursive = true;
+                    else if (flag === 'f') force = true;
+                    else {
+                        this.addOutput(`rm: ungültige Option -- ${flag}`, 'error');
+                        return;
+                    }
+                }
+            } else {
+                operands.push(arg);
+            }
+        }
+
+        if (operands.length === 0) {
+            this.addOutput('rm: fehlender Operand', 'error');
             return;
         }
-        const target = this.vfsResolve(path);
-        if (!VirtualFS.get(target)) {
-            this.addOutput(`Nicht gefunden: ${target}`, 'error');
+
+        for (const operand of operands) {
+            const target = this.vfsResolve(operand);
+            const item = VirtualFS.get(target);
+            if (!item) {
+                if (!force) {
+                    this.addOutput(
+                        `rm: ${operand}: Datei oder Verzeichnis nicht gefunden`,
+                        'error'
+                    );
+                }
+                continue;
+            }
+
+            if (item.type === 'folder' && !recursive) {
+                this.addOutput(`rm: ${operand}: ist ein Verzeichnis (nutze -r)`, 'error');
+                continue;
+            }
+
+            const ok = VirtualFS.delete(target);
+            if (!ok && !force) this.addOutput(`Konnte nicht löschen: ${target}`, 'error');
+        }
+    }
+
+    cp(args: string[]): void {
+        let recursive = false;
+        const operands: string[] = [];
+
+        for (const arg of args) {
+            if (arg.startsWith('-') && arg !== '-') {
+                for (const flag of arg.slice(1)) {
+                    if (flag === 'r' || flag === 'R') recursive = true;
+                    else {
+                        this.addOutput(`cp: ungültige Option -- ${flag}`, 'error');
+                        return;
+                    }
+                }
+            } else {
+                operands.push(arg);
+            }
+        }
+
+        if (operands.length !== 2) {
+            this.addOutput('cp: erwartet genau 2 Operanden: <src> <dst>', 'error');
             return;
         }
-        const ok = VirtualFS.delete(target);
-        if (!ok) this.addOutput(`Konnte nicht löschen: ${target}`, 'error');
+
+        const src = this.vfsResolve(operands[0]);
+        const dstRaw = this.vfsResolve(operands[1]);
+        const srcItem = VirtualFS.get(src);
+        if (!srcItem) {
+            this.addOutput(`cp: Quelle nicht gefunden: ${operands[0]}`, 'error');
+            return;
+        }
+
+        if (srcItem.type === 'folder' && !recursive) {
+            this.addOutput('cp: Verzeichnis nur mit -r kopierbar', 'error');
+            return;
+        }
+
+        const srcBase = src.split('/').filter(Boolean).pop() || '';
+        const dstItem = VirtualFS.get(dstRaw);
+        const dst = dstItem?.type === 'folder' ? `${dstRaw}/${srcBase}` : dstRaw;
+
+        if (srcItem.type === 'file') {
+            const parent = VirtualFS.getFolder(this.parentPath(dst));
+            if (!parent) {
+                this.addOutput(
+                    `cp: Zielverzeichnis nicht gefunden: ${this.parentPath(dst)}`,
+                    'error'
+                );
+                return;
+            }
+
+            const existing = VirtualFS.get(dst);
+            if (existing) {
+                if (existing.type === 'folder') {
+                    this.addOutput(`cp: Ziel ist ein Verzeichnis: ${dst}`, 'error');
+                    return;
+                }
+                VirtualFS.delete(dst);
+            }
+
+            if (!VirtualFS.createFile(dst, srcItem.content, srcItem.icon || '📝')) {
+                this.addOutput(`cp: Konnte Datei nicht kopieren: ${dst}`, 'error');
+            }
+            return;
+        }
+
+        this.copyFolderRecursive(src, dst);
+    }
+
+    private copyFolderRecursive(srcPath: string, dstPath: string): void {
+        const srcFolder = VirtualFS.getFolder(srcPath);
+        if (!srcFolder) {
+            this.addOutput(`cp: Quelle ist kein Verzeichnis: ${srcPath}`, 'error');
+            return;
+        }
+
+        const existingDst = VirtualFS.get(dstPath);
+        if (existingDst && existingDst.type !== 'folder') {
+            VirtualFS.delete(dstPath);
+        }
+        if (!existingDst && !VirtualFS.createFolder(dstPath, srcFolder.icon || '📁')) {
+            this.addOutput(`cp: Konnte Zielverzeichnis nicht erstellen: ${dstPath}`, 'error');
+            return;
+        }
+
+        const children = VirtualFS.list(srcPath);
+        for (const [name, child] of Object.entries(children)) {
+            const srcChild = `${srcPath}/${name}`;
+            const dstChild = `${dstPath}/${name}`;
+
+            if (child.type === 'file') {
+                const existing = VirtualFS.get(dstChild);
+                if (existing) VirtualFS.delete(dstChild);
+                VirtualFS.createFile(dstChild, child.content, child.icon || '📝');
+            } else {
+                this.copyFolderRecursive(srcChild, dstChild);
+            }
+        }
+    }
+
+    mv(args: string[]): void {
+        if (args.length !== 2) {
+            this.addOutput('mv: erwartet genau 2 Operanden: <src> <dst>', 'error');
+            return;
+        }
+
+        const src = this.vfsResolve(args[0]);
+        const dstRaw = this.vfsResolve(args[1]);
+        const srcItem = VirtualFS.get(src);
+        if (!srcItem) {
+            this.addOutput(`mv: Quelle nicht gefunden: ${args[0]}`, 'error');
+            return;
+        }
+
+        const srcBase = src.split('/').filter(Boolean).pop() || '';
+        const dstItem = VirtualFS.get(dstRaw);
+        const dst = dstItem?.type === 'folder' ? `${dstRaw}/${srcBase}` : dstRaw;
+
+        if (srcItem.type === 'folder' && (dst === src || dst.startsWith(src + '/'))) {
+            this.addOutput('mv: Ziel liegt innerhalb der Quelle', 'error');
+            return;
+        }
+
+        if (srcItem.type === 'file') {
+            const parent = VirtualFS.getFolder(this.parentPath(dst));
+            if (!parent) {
+                this.addOutput(
+                    `mv: Zielverzeichnis nicht gefunden: ${this.parentPath(dst)}`,
+                    'error'
+                );
+                return;
+            }
+
+            const existing = VirtualFS.get(dst);
+            if (existing) VirtualFS.delete(dst);
+
+            if (!VirtualFS.createFile(dst, srcItem.content, srcItem.icon || '📝')) {
+                this.addOutput(`mv: Konnte Ziel nicht erstellen: ${dst}`, 'error');
+                return;
+            }
+
+            VirtualFS.delete(src);
+            return;
+        }
+
+        this.copyFolderRecursive(src, dst);
+        VirtualFS.delete(src);
+    }
+
+    rmdir(args: string[]): void {
+        let removeParents = false;
+        const operands: string[] = [];
+
+        for (const arg of args) {
+            if (arg.startsWith('-') && arg !== '-') {
+                for (const flag of arg.slice(1)) {
+                    if (flag === 'p') removeParents = true;
+                    else {
+                        this.addOutput(`rmdir: ungültige Option -- ${flag}`, 'error');
+                        return;
+                    }
+                }
+            } else {
+                operands.push(arg);
+            }
+        }
+
+        if (operands.length === 0) {
+            this.addOutput('rmdir: fehlender Operand', 'error');
+            return;
+        }
+
+        for (const operand of operands) {
+            let target = this.vfsResolve(operand);
+            while (true) {
+                const dir = VirtualFS.getFolder(target);
+                if (!dir) {
+                    this.addOutput(`rmdir: Verzeichnis nicht gefunden: ${target}`, 'error');
+                    break;
+                }
+
+                if (Object.keys(dir.children || {}).length > 0) {
+                    this.addOutput(`rmdir: Verzeichnis nicht leer: ${target}`, 'error');
+                    break;
+                }
+
+                if (!VirtualFS.delete(target)) {
+                    this.addOutput(`rmdir: Konnte nicht löschen: ${target}`, 'error');
+                    break;
+                }
+
+                if (!removeParents) break;
+                const parent = this.parentPath(target);
+                if (parent === '/' || parent === '/home') break;
+                target = parent;
+            }
+        }
     }
 
     /**
@@ -828,6 +1632,7 @@ export class TerminalSession extends BaseTab {
             currentPath: this.vfsCwd,
             commandHistory: this.commandHistory,
             vfsCwd: this.vfsCwd,
+            previousVfsCwd: this.previousVfsCwd,
             lastExecutedCommand: this.lastExecutedCommand,
         } as TabState;
     }
@@ -843,6 +1648,10 @@ export class TerminalSession extends BaseTab {
             session.vfsCwd = state['vfsCwd'] as string;
         } else if (state['currentPath']) {
             session.vfsCwd = state['currentPath'] as string;
+        }
+
+        if (typeof state['previousVfsCwd'] === 'string') {
+            session.previousVfsCwd = state['previousVfsCwd'] as string;
         }
 
         if (state['commandHistory']) {
