@@ -8,6 +8,16 @@ import { createInsetSidebarShellVNode } from '../../framework/controls/inset-sid
 import { createTrafficLightControlNodes } from '../../framework/controls/traffic-lights.js';
 import logger from '../../core/logger.js';
 
+const DESKTOP_COMPUTER_NAME = "Marvin's MacBook Pro";
+const MOBILE_DEVICE_NAME = "Marvin's iPhone";
+
+function getSidebarDevicePresentation(): { label: string; icon: string } {
+    const isMobileMode = document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+    return isMobileMode
+        ? { label: MOBILE_DEVICE_NAME, icon: '📱' }
+        : { label: DESKTOP_COMPUTER_NAME, icon: '💻' };
+}
+
 export interface FinderUIProps {
     id: string;
     windowId: string;
@@ -552,6 +562,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
             FINDER_VIEW_MENU_OPTIONS.find(
                 option => option.key === this.normalizeViewMenuKey(viewMode)
             ) || FINDER_VIEW_MENU_OPTIONS[0]!;
+        const primaryDevice = getSidebarDevicePresentation();
 
         // Prepare Sidebar Groups
         const sidebarGroups: SidebarGroup[] = [
@@ -568,13 +579,6 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                         onClick: () => onSidebarAction('home'),
                     },
                     {
-                        id: 'computer',
-                        label: 'Computer',
-                        icon: '💻',
-                        i18nKey: 'finder.sidebar.computer',
-                        onClick: () => onSidebarAction('computer'),
-                    },
-                    {
                         id: 'recent',
                         label: 'Zuletzt verwendet',
                         icon: '🕒',
@@ -589,11 +593,24 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                 i18nKey: 'finder.sidebar.locations',
                 items: [
                     {
+                        id: 'devices',
+                        label: primaryDevice.label,
+                        icon: primaryDevice.icon,
+                        onClick: () => onSidebarAction('devices'),
+                    },
+                    {
                         id: 'github',
                         label: 'GitHub Projekte',
                         icon: '📂',
                         i18nKey: 'finder.sidebar.github',
                         onClick: () => onSidebarAction('github'),
+                    },
+                    {
+                        id: 'network',
+                        label: 'Netzwerk',
+                        icon: '🌐',
+                        i18nKey: 'finder.sidebar.network',
+                        onClick: () => onSidebarAction('network'),
                     },
                     {
                         id: 'starred',
@@ -609,7 +626,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         // Determine active sidebar ID
         let activeSidebarId = source;
         if (source === 'computer') {
-            const atHome = currentPath.length > 0 && currentPath[0] === 'home';
+            const atHome = currentPath.length > 0 && currentPath[0] === 'Users';
             activeSidebarId = atHome ? 'home' : 'computer';
         }
 
@@ -619,11 +636,15 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
             leafLabel ||
             (source === 'github'
                 ? 'GitHub'
-                : source === 'recent'
-                  ? 'Zuletzt verwendet'
-                  : source === 'starred'
-                    ? 'Markiert'
-                    : 'Computer');
+                : source === 'devices'
+                  ? primaryDevice.label
+                  : source === 'network'
+                    ? 'Netzwerk'
+                    : source === 'recent'
+                      ? 'Zuletzt verwendet'
+                      : source === 'starred'
+                        ? 'Markiert'
+                        : 'Computer');
         const isSearchExpanded = this.state.isSearchExpanded || searchTerm.length > 0;
 
         // Render Sidebar Groups inline to ensure state updates work correctly

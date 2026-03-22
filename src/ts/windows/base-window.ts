@@ -240,14 +240,43 @@ export class BaseWindow {
         return `window-${this.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     }
 
+    /**
+     * Stellt im Desktop-Modus sicher, dass die Titelleiste vollständig unterhalb
+     * der Menüleiste liegt. Wichtig für kleine Viewports und CSS-Zoom-Skalierung,
+     * damit der Drag-Header immer per Maus erreichbar bleibt.
+     */
+    private _enforceDesktopTitlebarBoundary(): void {
+        if (this._isMobileUIMode()) return;
+
+        const minTop = Math.round(window.getMenuBarBottom?.() || 0);
+        const safeTop = Math.max(minTop, Math.round(this.position.y));
+
+        this.position.y = safeTop;
+        if (this.element) {
+            this.element.style.top = `${safeTop}px`;
+        }
+    }
+
     private _getDefaultPosition(): WindowPosition {
         // Center window with slight offset for multiple windows
         const offset = Math.random() * 100 - 50;
+        const minTop = Math.round(window.getMenuBarBottom?.() || 0);
+        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        const defaultWidth = 800;
+        const defaultHeight = 600;
+        const logicalViewportWidth = getLogicalViewportWidth();
+        const logicalViewportHeight = getLogicalViewportHeight();
+
+        const centeredX = logicalViewportWidth / 2 - defaultWidth / 2 + offset;
+        const centeredY = logicalViewportHeight / 2 - defaultHeight / 2 + offset;
+        const maxX = Math.max(0, logicalViewportWidth - defaultWidth);
+        const maxY = Math.max(minTop, logicalViewportHeight - dockReserve - defaultHeight);
+
         return {
-            x: getLogicalViewportWidth() / 2 - 400 + offset,
-            y: getLogicalViewportHeight() / 2 - 300 + offset,
-            width: 800,
-            height: 600,
+            x: Math.max(0, Math.min(maxX, centeredX)),
+            y: Math.max(minTop, Math.min(maxY, centeredY)),
+            width: defaultWidth,
+            height: defaultHeight,
         };
     }
 
@@ -945,6 +974,7 @@ export class BaseWindow {
             }
             this.isMinimized = false;
             this._applyResponsiveWindowLayout();
+            this._enforceDesktopTitlebarBoundary();
         }
         this.bringToFront();
         // Update menubar to reflect new active window

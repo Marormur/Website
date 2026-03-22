@@ -453,13 +453,15 @@ class VirtualFileSystemManager {
         return {
             '/': {
                 type: 'folder',
-                icon: '/',
+                icon: '💻',
+                // Note: Root folder display name "Marvintosh HD" is handled in Finder UI
+                // Internally we use "/" for all path operations (Unix-style)
                 created: now,
                 modified: now,
                 children: {
-                    home: {
+                    Users: {
                         type: 'folder',
-                        icon: '🏠',
+                        icon: '👥',
                         created: now,
                         modified: now,
                         children: {
@@ -469,6 +471,7 @@ class VirtualFileSystemManager {
                                 created: now,
                                 modified: now,
                                 children: {
+                                    // Hidden files with leading dot – should be hidden in Finder UI
                                     '.profile': {
                                         type: 'file',
                                         icon: '⚙️',
@@ -478,23 +481,21 @@ class VirtualFileSystemManager {
                                         created: now,
                                         modified: now,
                                     },
-                                    'welcome.txt': {
+                                    '.gitconfig': {
                                         type: 'file',
-                                        icon: '👋',
+                                        icon: '⚙️',
                                         content:
-                                            'Welcome to the virtual terminal!\nType "help" to see available commands.\n',
-                                        size: 72,
+                                            '[user]\n    name = Marvin\n    email = user@example.com\n[core]\n    editor = vim\n',
+                                        size: 92,
                                         created: now,
                                         modified: now,
                                     },
-                                    'README.md': {
-                                        type: 'file',
-                                        icon: '📝',
-                                        content:
-                                            '# Welcome to your home directory\n\nThis is your personal space in the virtual file system.\n\n## Structure\n- Documents: Store your text files and documents\n- Downloads: Temporary download location\n- Pictures: Image files\n',
-                                        size: 200,
+                                    Desktop: {
+                                        type: 'folder',
+                                        icon: '🖥️',
                                         created: now,
                                         modified: now,
+                                        children: {},
                                     },
                                     Documents: {
                                         type: 'folder',
@@ -607,8 +608,46 @@ class VirtualFileSystemManager {
                                             },
                                         },
                                     },
+                                    Applications: {
+                                        type: 'folder',
+                                        icon: '🚀',
+                                        created: now,
+                                        modified: now,
+                                        children: {},
+                                    },
+                                    Library: {
+                                        type: 'folder',
+                                        icon: '📚',
+                                        created: now,
+                                        modified: now,
+                                        children: {
+                                            Preferences: {
+                                                type: 'folder',
+                                                icon: '⚙️',
+                                                created: now,
+                                                modified: now,
+                                                children: {},
+                                            },
+                                        },
+                                    },
+                                    '.Trash': {
+                                        type: 'folder',
+                                        icon: '🗑️',
+                                        created: now,
+                                        modified: now,
+                                        children: {},
+                                    },
                                 },
                             },
+                        },
+                    },
+                    Applications: {
+                        type: 'folder',
+                        icon: '📦',
+                        created: now,
+                        modified: now,
+                        children: {
+                            // System-wide applications (shortcuts/placeholders)
                         },
                     },
                     Volumes: {
@@ -619,7 +658,7 @@ class VirtualFileSystemManager {
                         children: {
                             'GitHub-Projekte': {
                                 type: 'folder',
-                                icon: '📂',
+                                icon: '🐙',
                                 created: now,
                                 modified: now,
                                 children: {
@@ -636,7 +675,8 @@ class VirtualFileSystemManager {
                             },
                         },
                     },
-                    etc: {
+                    // Hidden system directories (prefixed with.) – Terminal can still access them
+                    '.etc': {
                         type: 'folder',
                         icon: '⚙️',
                         created: now,
@@ -646,14 +686,14 @@ class VirtualFileSystemManager {
                                 type: 'file',
                                 icon: '🌐',
                                 content:
-                                    '# /etc/hosts\n127.0.0.1   localhost\n::1         localhost\n',
+                                    '# /.etc/hosts\n127.0.0.1   localhost\n::1         localhost\n',
                                 size: 57,
                                 created: now,
                                 modified: now,
                             },
                         },
                     },
-                    usr: {
+                    '.usr': {
                         type: 'folder',
                         icon: '📦',
                         created: now,
@@ -666,34 +706,9 @@ class VirtualFileSystemManager {
                                 modified: now,
                                 children: {},
                             },
-                            share: {
-                                type: 'folder',
-                                icon: '📚',
-                                created: now,
-                                modified: now,
-                                children: {
-                                    doc: {
-                                        type: 'folder',
-                                        icon: '📖',
-                                        created: now,
-                                        modified: now,
-                                        children: {
-                                            README: {
-                                                type: 'file',
-                                                icon: '📝',
-                                                content:
-                                                    'Virtual File System Documentation\n\nThis is a UNIX-like filesystem hierarchy.\n\nStandard directories:\n- /home: User home directories\n- /etc: System configuration\n- /usr: User programs and data\n- /var: Variable data (logs, temp)\n- /tmp: Temporary files\n',
-                                                size: 252,
-                                                created: now,
-                                                modified: now,
-                                            },
-                                        },
-                                    },
-                                },
-                            },
                         },
                     },
-                    var: {
+                    '.var': {
                         type: 'folder',
                         icon: '📊',
                         created: now,
@@ -715,7 +730,7 @@ class VirtualFileSystemManager {
                             },
                         },
                     },
-                    tmp: {
+                    '.tmp': {
                         type: 'folder',
                         icon: '🗑️',
                         created: now,
@@ -728,16 +743,88 @@ class VirtualFileSystemManager {
     }
 
     /**
-     * PURPOSE: Idempotent migration for stored VFS structures from older versions.
-     * WHY: Users with an existing IndexedDB snapshot won't see newly added default
-     *      files (e.g. Pictures assets). This method patches their live root in-memory
-     *      so the Finder shows the images on first open without losing other changes.
-     * INVARIANT: Only adds missing entries; never overwrites existing ones.
+     * PURPOSE: Idempotent migration for stored VFS structures from older versions (Linux-style to macOS-style).
+     * WHY: Users with an existing IndexedDB snapshot may have old structure (/home/marvin instead of /Users/marvin).
+     *      This method migrates the structure in-memory while preserving their data.
+     * INVARIANT: Only adds missing entries and ensures macOS structure; never overwrites existing user data.
+     * DEPENDENCY: Must run after load() but before any Finder operations.
      */
     private migrateStoredStructure(): void {
         const now = new Date().toISOString();
         try {
             const rootChildren = this.getRootContainer();
+
+            // Migrate /home/marvin → /Users/marvin if needed
+            const legacyHome = rootChildren['home'];
+            if (legacyHome && legacyHome.type === 'folder') {
+                const legacyMarvin = (legacyHome as FolderItem).children['marvin'];
+                if (legacyMarvin && legacyMarvin.type === 'folder') {
+                    // If Users doesn't exist yet, create it with the migrated marvin folder
+                    if (!rootChildren['Users']) {
+                        rootChildren['Users'] = {
+                            type: 'folder',
+                            icon: '👥',
+                            created: now,
+                            modified: now,
+                            children: { marvin: legacyMarvin },
+                        };
+                    }
+                    // Remove legacy /home folder after migration
+                    delete rootChildren['home'];
+                }
+            }
+
+            // Ensure macOS-standard structure exists
+            if (!rootChildren['Users']) {
+                rootChildren['Users'] = {
+                    type: 'folder',
+                    icon: '👥',
+                    created: now,
+                    modified: now,
+                    children: {
+                        marvin: {
+                            type: 'folder',
+                            icon: '👤',
+                            created: now,
+                            modified: now,
+                            children: {},
+                        },
+                    },
+                };
+            }
+
+            const users = rootChildren['Users'] as FolderItem & {
+                children: Record<string, FSItem>;
+            };
+            const marvin = users.children['marvin'] as FolderItem & {
+                children: Record<string, FSItem>;
+            };
+            if (!marvin) return;
+
+            // Ensure standard macOS directories exist
+            const requiredDirs: Record<string, { icon: string }> = {
+                Desktop: { icon: '🖥️' },
+                Documents: { icon: '📄' },
+                Downloads: { icon: '⬇️' },
+                Pictures: { icon: '🖼️' },
+                Applications: { icon: '🚀' },
+                Library: { icon: '📚' },
+                '.Trash': { icon: '🗑️' },
+            };
+
+            for (const [dirName, { icon }] of Object.entries(requiredDirs)) {
+                if (!marvin.children[dirName]) {
+                    marvin.children[dirName] = {
+                        type: 'folder',
+                        icon,
+                        created: now,
+                        modified: now,
+                        children: {},
+                    };
+                }
+            }
+
+            // Ensure Volumes structure exists
             if (!rootChildren['Volumes']) {
                 rootChildren['Volumes'] = {
                     type: 'folder',
@@ -753,46 +840,17 @@ class VirtualFileSystemManager {
             if (!volumes.children['GitHub-Projekte']) {
                 volumes.children['GitHub-Projekte'] = {
                     type: 'folder',
-                    icon: '📂',
+                    icon: '🐙',
                     created: now,
                     modified: now,
                     children: {},
                 };
             }
-            const githubMount = volumes.children['GitHub-Projekte'] as FolderItem & {
-                children: Record<string, FSItem>;
-            };
-            if (!githubMount.children['README.txt']) {
-                githubMount.children['README.txt'] = {
-                    type: 'file',
-                    icon: '📝',
-                    content:
-                        'macOS-like mount for GitHub projects.\n\nUse this path in Finder/Terminal:\n- /Volumes/GitHub-Projekte\n\nNote: This folder is a local VFS mount point. The Finder sidebar GitHub view still loads live data from GitHub API.\n',
-                    size: 224,
-                    created: now,
-                    modified: now,
-                };
-            }
 
-            const marvin = this.getFolder('/home/marvin') as
-                | (FolderItem & { children: Record<string, FSItem> })
-                | null;
-            if (!marvin) return;
-
-            // Ensure Pictures folder exists
-            if (!marvin.children['Pictures']) {
-                marvin.children['Pictures'] = {
-                    type: 'folder',
-                    icon: '🖼️',
-                    created: now,
-                    modified: now,
-                    children: {},
-                };
-            }
+            // Migrate Pictures images if they don't exist yet
             const pictures = marvin.children['Pictures'] as FolderItem & {
                 children: Record<string, FSItem>;
             };
-
             const defaultImages: Record<string, FileItem> = {
                 'profil.jpg': {
                     type: 'file',

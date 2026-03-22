@@ -287,7 +287,10 @@ export class FinderWindow extends BaseWindow {
             detachTab: (id: string) => this.detachTab(id),
             createTab: (cfg?: { title?: string }) => {
                 const view = window.FinderView
-                    ? new window.FinderView({ title: cfg?.title || `Computer`, source: 'computer' })
+                    ? new window.FinderView({
+                          title: cfg?.title || `Marvintosh HD`,
+                          source: 'computer',
+                      })
                     : null;
                 return view as unknown as BaseTab | null;
             },
@@ -311,7 +314,7 @@ export class FinderWindow extends BaseWindow {
             logger.error('FINDER', 'FinderView class not loaded');
             return null;
         }
-        const view = new window.FinderView({ title: title || `Computer`, source: 'computer' });
+        const view = new window.FinderView({ title: title || `Marvintosh HD`, source: 'computer' });
         this.addTab(view as unknown as BaseTab);
         this.setActiveTab((view as unknown as BaseTab).id);
 

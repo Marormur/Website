@@ -59,6 +59,59 @@ export class Dialog {
         return this.modalId === 'settings-modal';
     }
 
+    /**
+     * PURPOSE: Hält das Settings-Fenster im Desktop-Modus vollständig sichtbar,
+     * obwohl die Breite absichtlich begrenzt bleibt.
+     * WHY: Gespeicherte Positionen oder Viewport-Änderungen können dazu führen,
+     * dass Teile außerhalb des sichtbaren Desktops liegen.
+     *
+     * Verhalten:
+     * - Horizontale Position wird in den sichtbaren Bereich geklemmt.
+     * - Oberkante startet unterhalb der Menüleiste.
+     * - Höhe spannt den Desktop bis oberhalb des Docks.
+     */
+    private alignSettingsWindowToDesktopViewport(): void {
+        if (this.modalId !== 'settings-modal' || this.isMobileUIMode()) return;
+
+        const target = this.windowEl || this.modal;
+        if (!target) return;
+
+        const minTop = Math.max(0, Math.round(window.getMenuBarBottom?.() || 0));
+        const dockReserve = Math.max(0, Math.round(window.getDockReservedBottom?.() || 0));
+        const viewportWidth = Math.max(0, getLogicalViewportWidth());
+        const viewportHeight = Math.max(0, getLogicalViewportHeight());
+        const availableHeight = Math.max(0, viewportHeight - minTop - dockReserve);
+
+        const rect = target.getBoundingClientRect();
+        const computed = window.getComputedStyle(target);
+        const widthFromStyle = parseFloat(target.style.width || computed.width || '0');
+        const fallbackWidth = Math.round(rect.width || target.offsetWidth || 0);
+        const currentWidth = Math.max(1, Math.round(widthFromStyle || fallbackWidth || 1));
+        const maxLeft = Math.max(0, viewportWidth - currentWidth);
+
+        const leftFromStyle = parseFloat(target.style.left || computed.left || '0');
+        const fallbackLeft = Math.round(rect.left);
+        const currentLeft = Math.round(
+            Number.isFinite(leftFromStyle) ? leftFromStyle : fallbackLeft || 0
+        );
+        const clampedLeft = Math.min(maxLeft, Math.max(0, currentLeft));
+
+        target.style.position = 'fixed';
+        target.style.right = '';
+        target.style.bottom = '';
+        target.style.left = `${clampedLeft}px`;
+        target.style.top = `${minTop}px`;
+
+        if (availableHeight > 0) {
+            // Überschreibt die statische CSS-Mindesthöhe für kleine Desktops,
+            // damit das Fenster tatsächlich zwischen Menüleiste und Dock passt.
+            const adaptiveMinHeight = Math.max(0, Math.min(320, availableHeight));
+            target.style.minHeight = `${adaptiveMinHeight}px`;
+            target.style.height = `${availableHeight}px`;
+            target.style.maxHeight = `${availableHeight}px`;
+        }
+    }
+
     private applyResponsiveLayoutForCurrentMode(): void {
         if (!this.shouldApplyMobileFillLayout()) return;
 
@@ -120,12 +173,7 @@ export class Dialog {
         this.modal.dataset.maximized = 'true';
     }
 
-    init() {
-        this.makeDraggable();
-        this.makeResizable();
-        window.addEventListener('uiModeEffectiveChange', () => {
-            this.applyResponsiveLayoutForCurrentMode();
-        });
+    private bindWindowChromeControls(): void {
         const closeButton = this.modal.querySelector(
             '.draggable-header button[id^="close-"]'
         ) as HTMLElement | null;
@@ -143,29 +191,117 @@ export class Dialog {
         }
 
         const minimizeEl = this.modal.querySelector(
-            '.draggable-header .traffic-light-control--minimize, .draggable-header .bg-yellow-500.rounded-full'
+            '.draggable-header .traffic-light-control--minimize, .draggable-header .settings-window-control--minimize, .draggable-header .bg-yellow-500.rounded-full'
         ) as HTMLElement | null;
         const maximizeEl = this.modal.querySelector(
-            '.draggable-header .traffic-light-control--maximize, .draggable-header .bg-green-500.rounded-full'
+            '.draggable-header .traffic-light-control--maximize, .draggable-header .settings-window-control--maximize, .draggable-header .bg-green-500.rounded-full'
         ) as HTMLElement | null;
+
         if (minimizeEl) {
             minimizeEl.style.cursor = 'pointer';
             minimizeEl.title = minimizeEl.title || 'Minimieren';
             minimizeEl.dataset.dialogAction = 'minimize';
-            minimizeEl.addEventListener('click', e => {
-                e.stopPropagation();
-                this.minimize();
-            });
+            if (!minimizeEl.dataset.dialogBoundMinimize && this.modalId !== 'settings-modal') {
+                minimizeEl.dataset.dialogBoundMinimize = 'true';
+                minimizeEl.addEventListener('click', e => {
+                    e.stopPropagation();
+                    this.minimize();
+                });
+            }
         }
+
         if (maximizeEl) {
             maximizeEl.style.cursor = 'pointer';
             maximizeEl.title = maximizeEl.title || 'Maximieren';
             maximizeEl.dataset.dialogAction = 'maximize';
-            maximizeEl.addEventListener('click', e => {
-                e.stopPropagation();
-                this.toggleMaximize();
-            });
+            if (!maximizeEl.dataset.dialogBoundMaximize && this.modalId !== 'settings-modal') {
+                maximizeEl.dataset.dialogBoundMaximize = 'true';
+                maximizeEl.addEventListener('click', e => {
+                    e.stopPropagation();
+                    this.toggleMaximize();
+                });
+            }
         }
+
+        if (this.modalId === 'settings-modal') {
+            const settingsPanel = this.modal.querySelector(
+                '.settings-sidebar-panel'
+            ) as HTMLElement | null;
+            if (settingsPanel && !settingsPanel.dataset.dialogBoundSettingsPanelClick) {
+                settingsPanel.dataset.dialogBoundSettingsPanelClick = 'true';
+                settingsPanel.addEventListener(
+                    'click',
+                    e => {
+                        const controls = settingsPanel.querySelector(
+                            '.settings-window-controls'
+                        ) as HTMLElement | null;
+                        if (!controls) return;
+
+                        const buttons = Array.from(
+                            controls.querySelectorAll('.settings-window-control')
+                        ) as HTMLElement[];
+                        if (buttons.length === 0) return;
+
+                        const controlsRect = controls.getBoundingClientRect();
+                        const pointerX = e.clientX;
+                        const pointerY = e.clientY;
+                        const withinExpandedControls =
+                            pointerX >= controlsRect.left - 10 &&
+                            pointerX <= controlsRect.right + 10 &&
+                            pointerY >= controlsRect.top - 10 &&
+                            pointerY <= controlsRect.bottom + 10;
+                        if (!withinExpandedControls) return;
+
+                        const hitButton = buttons.reduce((nearest, candidate) => {
+                            const nearestRect = nearest.getBoundingClientRect();
+                            const candidateRect = candidate.getBoundingClientRect();
+                            const nearestCenterX = nearestRect.left + nearestRect.width / 2;
+                            const nearestCenterY = nearestRect.top + nearestRect.height / 2;
+                            const candidateCenterX = candidateRect.left + candidateRect.width / 2;
+                            const candidateCenterY = candidateRect.top + candidateRect.height / 2;
+                            const nearestDistance = Math.hypot(
+                                pointerX - nearestCenterX,
+                                pointerY - nearestCenterY
+                            );
+                            const candidateDistance = Math.hypot(
+                                pointerX - candidateCenterX,
+                                pointerY - candidateCenterY
+                            );
+                            return candidateDistance < nearestDistance ? candidate : nearest;
+                        });
+
+                        const action = hitButton.dataset.dialogAction;
+                        if (action === 'close') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.close();
+                            return;
+                        }
+                        if (action === 'minimize') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.minimize();
+                            return;
+                        }
+                        if (action === 'maximize') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.toggleMaximize();
+                        }
+                    },
+                    true
+                );
+            }
+        }
+    }
+
+    init() {
+        this.makeDraggable();
+        this.makeResizable();
+        window.addEventListener('uiModeEffectiveChange', () => {
+            this.applyResponsiveLayoutForCurrentMode();
+        });
+        this.bindWindowChromeControls();
     }
 
     open() {
@@ -183,6 +319,10 @@ export class Dialog {
         // preserve original behavior
         window.hideMenuDropdowns?.();
 
+        // Settings rendert Header-Controls dynamisch beim Öffnen.
+        // Deshalb die Bindings hier erneut/idempotent anwenden.
+        this.bindWindowChromeControls();
+
         // Use DOMUtils if available, fallback to classList
         const domUtils = window.DOMUtils;
         if (domUtils && typeof domUtils.show === 'function') {
@@ -194,6 +334,7 @@ export class Dialog {
         if (this.modal && this.modal.dataset) delete this.modal.dataset.minimized;
         this.bringToFront();
         this.applyResponsiveLayoutForCurrentMode();
+        this.alignSettingsWindowToDesktopViewport();
         this.enforceMenuBarBoundary();
         window.saveOpenModals?.();
         window.updateDockIndicators?.();
@@ -465,6 +606,76 @@ export class Dialog {
                 '.draggable-header'
             ) as HTMLElement | null;
             if (!dragHeader || !this.modal.contains(dragHeader)) return;
+
+            if (this.modalId === 'settings-modal') {
+                const controls = dragHeader.querySelector(
+                    '.settings-window-controls'
+                ) as HTMLElement | null;
+                if (controls) {
+                    const buttons = Array.from(
+                        controls.querySelectorAll('.settings-window-control')
+                    ) as HTMLElement[];
+                    if (buttons.length > 0) {
+                        const controlsRect = controls.getBoundingClientRect();
+                        const nearControls =
+                            e.clientX >= controlsRect.left - 12 &&
+                            e.clientX <= controlsRect.right + 12 &&
+                            e.clientY >= controlsRect.top - 12 &&
+                            e.clientY <= controlsRect.bottom + 12;
+
+                        if (nearControls) {
+                            const hitButton = buttons.reduce((nearest, candidate) => {
+                                const nearestRect = nearest.getBoundingClientRect();
+                                const candidateRect = candidate.getBoundingClientRect();
+                                const nearestCenterX = nearestRect.left + nearestRect.width / 2;
+                                const nearestCenterY = nearestRect.top + nearestRect.height / 2;
+                                const candidateCenterX =
+                                    candidateRect.left + candidateRect.width / 2;
+                                const candidateCenterY =
+                                    candidateRect.top + candidateRect.height / 2;
+                                const nearestDistance = Math.hypot(
+                                    e.clientX - nearestCenterX,
+                                    e.clientY - nearestCenterY
+                                );
+                                const candidateDistance = Math.hypot(
+                                    e.clientX - candidateCenterX,
+                                    e.clientY - candidateCenterY
+                                );
+                                return candidateDistance < nearestDistance ? candidate : nearest;
+                            });
+
+                            const action = hitButton.dataset.dialogAction;
+                            if (action === 'close') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                this.close();
+                                return;
+                            }
+                            if (action === 'minimize') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                this.minimize();
+                                return;
+                            }
+                            if (action === 'maximize') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                this.toggleMaximize();
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                if (!this.isMobileUIMode() && e.detail >= 2) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.refocus();
+                    this.alignSettingsWindowToDesktopViewport();
+                    return;
+                }
+            }
+
             this.refocus();
             if (
                 (e.target as Element).closest &&
@@ -594,6 +805,11 @@ export class Dialog {
             if ((e.target as Element).closest?.('[data-dialog-action]')) return;
 
             this.refocus();
+            if (this.modalId === 'settings-modal' && !this.isMobileUIMode()) {
+                this.alignSettingsWindowToDesktopViewport();
+                e.preventDefault();
+                return;
+            }
             this.toggleMaximize();
             e.preventDefault();
         };

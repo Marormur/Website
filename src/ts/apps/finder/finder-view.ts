@@ -27,7 +27,7 @@ import { h, type VNode } from '../../core/vdom.js';
 import { FinderUI } from './finder-ui.js';
 import logger from '../../core/logger.js';
 
-const ROOT_FOLDER_NAME = 'Computer';
+const ROOT_FOLDER_NAME = 'Marvintosh HD';
 
 type ViewMode = 'list' | 'grid' | 'gallery';
 
@@ -169,7 +169,17 @@ interface FinderPreferencesStore {
     byLocation: Record<string, FinderPreferences>;
 }
 
-type FinderSource = 'computer' | 'github' | 'recent' | 'starred';
+type FinderSource = 'computer' | 'github' | 'recent' | 'starred' | 'devices' | 'network';
+
+const DESKTOP_COMPUTER_NAME = "Marvin's MacBook Pro";
+const MOBILE_DEVICE_NAME = "Marvin's iPhone";
+
+function getPrimaryFinderDevice(): { label: string; icon: string } {
+    const isMobileMode = document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+    return isMobileMode
+        ? { label: MOBILE_DEVICE_NAME, icon: '📱' }
+        : { label: DESKTOP_COMPUTER_NAME, icon: '💻' };
+}
 
 export class FinderView extends BaseTab {
     source: FinderSource;
@@ -232,7 +242,7 @@ export class FinderView extends BaseTab {
     constructor(config?: Partial<TabConfig> & { source?: FinderSource }) {
         super({
             type: 'finder-view',
-            title: config?.title || 'Computer',
+            title: config?.title || 'Marvintosh HD',
             icon: '💻',
             ...config,
         });
@@ -363,11 +373,21 @@ export class FinderView extends BaseTab {
     private handleSidebarAction(action: string): void {
         if (action === 'home') {
             this.source = 'computer';
-            this.currentPath = ['home', 'marvin'];
+            this.currentPath = ['Users', 'marvin'];
             this._addToHistory();
             this._applyLocationPreferences();
         } else if (action === 'computer') {
             this.source = 'computer';
+            this.goRoot();
+        } else if (action === 'devices') {
+            this.source = 'devices';
+            // Clear rendered items when switching sources
+            this._renderedItems = [];
+            this.goRoot();
+        } else if (action === 'network') {
+            this.source = 'network';
+            // Clear rendered items when switching sources
+            this._renderedItems = [];
             this.goRoot();
         } else if (action === 'github') {
             this.source = 'github';
@@ -572,6 +592,12 @@ export class FinderView extends BaseTab {
                     : leaf || t('finder.sidebar.computer', 'Computer');
                 break;
             }
+            case 'devices':
+                label = getPrimaryFinderDevice().label;
+                break;
+            case 'network':
+                label = t('finder.sidebar.network', 'Netzwerk');
+                break;
             case 'github':
                 label = atRoot
                     ? 'GitHub'
@@ -727,7 +753,18 @@ export class FinderView extends BaseTab {
     renderBreadcrumbs(): VNode {
         // Build breadcrumb parts as VNodes
         const breadcrumbParts: VNode[] = [];
-        const viewLabel = this.source === 'github' ? 'GitHub' : 'Computer';
+        const viewLabel =
+            this.source === 'github'
+                ? 'GitHub'
+                : this.source === 'devices'
+                  ? getPrimaryFinderDevice().label
+                  : this.source === 'network'
+                    ? 'Netzwerk'
+                    : this.source === 'recent'
+                      ? 'Zuletzt verwendet'
+                      : this.source === 'starred'
+                        ? 'Markiert'
+                        : 'Computer';
 
         // Root button
         breadcrumbParts.push(
@@ -821,6 +858,10 @@ export class FinderView extends BaseTab {
             items = this.getRecentItems();
         } else if (this.source === 'starred') {
             items = this.getFavoriteItems();
+        } else if (this.source === 'devices') {
+            items = this.getDevicesItems();
+        } else if (this.source === 'network') {
+            items = this.getNetworkItems();
         } else {
             items = this.getComputerItems();
         }
@@ -864,15 +905,72 @@ export class FinderView extends BaseTab {
         // For subfolders, pass path parts WITHOUT leading '/'
         const path = this.currentPath.length === 0 ? '/' : this.currentPath;
         const items = VirtualFS.list(path) as Record<string, VirtualFSEntry>;
-        return Object.entries(items).map(([name, item]) => ({
-            name,
-            type: (item.type === 'folder' || item.type === 'dir' ? 'folder' : 'file') as
-                | 'folder'
-                | 'file',
-            icon: item.icon || (item.type === 'folder' ? '📁' : '📄'),
-            size: item.size || 0,
-            modified: item.modified || new Date().toISOString(),
-        }));
+        // Filter out hidden files (starting with .)
+        return Object.entries(items)
+            .filter(([name]) => !name.startsWith('.'))
+            .map(([name, item]) => ({
+                name,
+                type: (item.type === 'folder' || item.type === 'dir' ? 'folder' : 'file') as
+                    | 'folder'
+                    | 'file',
+                icon: item.icon || (item.type === 'folder' ? '📁' : '📄'),
+                size: item.size || 0,
+                modified: item.modified || new Date().toISOString(),
+            }));
+    }
+
+    getDevicesItems(): FileItem[] {
+        /**
+         * PURPOSE: Show all mounted volumes/disks in the system.
+         * WHY: macOS Finder shows this view when "Computer" is clicked,
+         *      allowing users to see all available storage devices.
+         * CURRENTLY: Only "Marvintosh HD" (the main volume) is available.
+         * FUTURE: Can be extended to support multiple volumes or external drives.
+         */
+        const devices: FileItem[] = [
+            {
+                name: 'Marvintosh HD',
+                type: 'folder',
+                icon: '💽',
+                size: 0,
+                modified: new Date().toISOString(),
+            },
+            {
+                name: 'Netzwerk',
+                type: 'folder',
+                icon: '🌐',
+                size: 0,
+                modified: new Date().toISOString(),
+            },
+        ];
+        return devices;
+    }
+
+    getNetworkItems(): FileItem[] {
+        /**
+         * PURPOSE: Show network locations and shared resources.
+         * WHY: macOS Finder shows a network browser allowing users to access
+         *      other computers and network shares.
+         * CURRENTLY: Placeholder implementation - shows example network locations.
+         * FUTURE: Will integrate with actual network discovery services.
+         */
+        const networkItems: FileItem[] = [
+            {
+                name: 'Local Network',
+                type: 'folder',
+                icon: '🌐',
+                size: 0,
+                modified: new Date().toISOString(),
+            },
+            {
+                name: 'Connected Servers',
+                type: 'folder',
+                icon: '🖥️',
+                size: 0,
+                modified: new Date().toISOString(),
+            },
+        ];
+        return networkItems;
     }
 
     sortItems(items: FileItem[]): FileItem[] {
@@ -1599,6 +1697,18 @@ export class FinderView extends BaseTab {
 
     async openItem(name: string, type: 'folder' | 'file'): Promise<void> {
         if (type === 'folder') {
+            if (this.source === 'devices') {
+                if (name === 'Netzwerk') {
+                    this.source = 'network';
+                    this.goRoot();
+                    return;
+                }
+                if (name === 'Marvintosh HD') {
+                    this.source = 'computer';
+                    this.goRoot();
+                    return;
+                }
+            }
             this.navigateToFolder(name);
         } else {
             // Special handling for recent files: navigate to original location

@@ -247,6 +247,9 @@ html.dark .traffic-light-control::after {
     align-items: center;
     gap: 8px;
     flex: 0 0 auto;
+    position: relative;
+    z-index: 6;
+    pointer-events: auto;
 }
 
 .settings-window-control {
@@ -257,6 +260,9 @@ html.dark .traffic-light-control::after {
     padding: 0;
     display: inline-block;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25) inset;
+    position: relative;
+    z-index: 7;
+    pointer-events: auto;
 }
 
 .settings-window-control--close {
