@@ -27,7 +27,7 @@ jobs:
         name: Workflow Lint
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
 
             - name: Lint GitHub Actions workflows
               uses: rhysd/actionlint@v1.7.11
@@ -37,10 +37,10 @@ jobs:
         runs-on: ubuntu-latest
         needs: workflow-lint
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -72,7 +72,7 @@ jobs:
               run: npm run build:css
 
             - name: Upload build artifacts
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: build-${{ github.sha }}
                   path: |
@@ -88,10 +88,10 @@ jobs:
             contents: read
             id-token: write
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -124,7 +124,7 @@ jobs:
 
             - name: Upload coverage report
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: coverage-report-${{ github.sha }}
                   path: coverage/
@@ -135,10 +135,10 @@ jobs:
         runs-on: ubuntu-latest
         needs: [quality, test-unit]
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -162,7 +162,7 @@ jobs:
 
             - name: Upload test results
               if: failure()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: test-results-chromium
                   path: test-results/
@@ -174,10 +174,10 @@ jobs:
         needs: [quality, test-unit, test-smoke-chromium]
         if: github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.event.inputs.fullRegression == 'true') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[test-all]')) || (github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[test-all]'))
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -201,7 +201,7 @@ jobs:
 
             - name: Upload test results
               if: failure()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: test-results-full-chromium
                   path: test-results/
@@ -216,10 +216,10 @@ jobs:
             matrix:
                 browser: [firefox, webkit]
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -243,7 +243,7 @@ jobs:
 
             - name: Upload test results
               if: failure()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: test-results-${{ matrix.browser }}
                   path: test-results/
@@ -253,10 +253,10 @@ jobs:
         name: Security Audit
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: '20'
 
