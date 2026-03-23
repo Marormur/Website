@@ -46,7 +46,6 @@
 - README (`readme.md`) gelegentlich aktualisieren; Hauptwissen in Code-Kommentaren halten.
 - Docs-Minimalismus: `docs/` nur für wirklich notwendige, langlebige Betriebsinfos nutzen; bevorzugt Wissen direkt als JSDoc/Inline-Kommentar an der Implementierung pflegen.
 - Vor dem Hinzufügen neuer Markdown-Dokumente immer prüfen, ob die Info stattdessen als klarer Code-Kommentar an der betroffenen API/Logik besser aufgehoben ist.
-- Commit-Messages: sehr kurz und aussagekräftig, ohne unnötige Details (z. B. `finder navigation fixes`).
 
 ## Code-Dokumentationsrichtlinien (TS/Web)
 

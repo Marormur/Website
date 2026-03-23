@@ -3612,8 +3612,13 @@ html.dark .menubar-logo:focus-visible {
     padding-inline: 12px;
 }
 
-:root[data-ui-mode='mobile'] .multi-window .window-titlebar .traffic-light-controls {
-    display: none;
+:root[data-ui-mode='mobile'] .traffic-light-controls,
+:root[data-ui-mode='mobile'] .traffic-light-control,
+:root[data-ui-mode='mobile'] .settings-window-control,
+:root[data-ui-mode='mobile'] .welcome-traffic-lights,
+:root[data-ui-mode='mobile'] .welcome-traffic-light,
+:root[data-ui-mode='mobile'] #about-modal .about-window-controls {
+    display: none !important;
 }
 
 :root[data-ui-mode='mobile'] .multi-window .window-tab-bar {
