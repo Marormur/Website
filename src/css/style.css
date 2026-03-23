@@ -4471,7 +4471,7 @@ html.dark #about-modal .about-copyright {
 
 :root[data-ui-mode='mobile'] #dock .dock-tray {
     width: 100%;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     gap: 4px;
     padding: 10px 12px;
@@ -4481,6 +4481,20 @@ html.dark #about-modal .about-copyright {
     box-shadow:
         0 18px 34px rgba(15, 23, 42, 0.2),
         0 1px 0 rgba(255, 255, 255, 0.76) inset;
+}
+
+:root[data-ui-mode='mobile'] #dock .dock-apps {
+    display: flex;
+    width: 100%;
+    justify-content: space-evenly;
+    align-items: center;
+    gap: 0;
+}
+
+/* Keep mobile dock icon row centered by disabling minimized previews in this layout. */
+:root[data-ui-mode='mobile'] #dock .dock-item-separator,
+:root[data-ui-mode='mobile'] #dock .dock-minimized-section {
+    display: none !important;
 }
 
 :root[data-ui-mode='mobile'] #dock[data-dock-position='left'] .dock-tray,
