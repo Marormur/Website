@@ -23,6 +23,15 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
     let launchpadScreen: HTMLElement | null = null;
     let mobileScreensWrapper: HTMLElement | null = null;
     let pageDots: NodeListOf<HTMLElement> | null = null;
+    let pageGestureHandlersAttached = false;
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let swipeCurrentDeltaX = 0;
+    let swipeAxisLock: 'x' | 'y' | null = null;
+    let isTrackingSwipe = false;
+    let wheelDeltaAccumulator = 0;
+    let wheelAccumulatorResetTimer: number | null = null;
+    let lastWheelPageChangeAt = 0;
 
     // ============================================================================
     // Mobile Gesture Navigation Bar (Dock Management)
@@ -37,6 +46,11 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
     const GESTURE_NAV_ID = 'mobile-gesture-nav-bar';
     const DOCK_ID = 'dock';
     const TRANSITION_DURATION = 200; // ms
+    const PAGE_TRANSITION = 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    const SWIPE_AXIS_LOCK_THRESHOLD = 12;
+    const SWIPE_PAGE_CHANGE_THRESHOLD = 64;
+    const WHEEL_PAGE_CHANGE_THRESHOLD = 80;
+    const WHEEL_PAGE_CHANGE_COOLDOWN = 280;
 
     function getMobileTopChromeHeight(): number {
         const raw = getComputedStyle(document.documentElement)
@@ -53,6 +67,59 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         const parsed = Number.parseFloat(raw);
         // Keep a conservative fallback so app content never sits beneath the home button.
         return Number.isFinite(parsed) ? parsed : 56;
+    }
+
+    function setScreensTranslatePercent(translatePercent: number, animated: boolean): void {
+        if (!screensContainer) return;
+
+        screensContainer.style.transition = animated ? PAGE_TRANSITION : 'none';
+        screensContainer.style.transform = `translateX(${translatePercent}%)`;
+    }
+
+    function getPageTranslatePercent(pageId: PageId): number {
+        return pageId === 0 ? 0 : -100;
+    }
+
+    function clampTranslatePercent(translatePercent: number): number {
+        return Math.min(0, Math.max(-100, translatePercent));
+    }
+
+    function getPageFromSwipeDelta(deltaX: number): PageId | null {
+        if (Math.abs(deltaX) < SWIPE_PAGE_CHANGE_THRESHOLD) {
+            return null;
+        }
+
+        if (deltaX < 0 && currentPage < 1) {
+            return 1;
+        }
+
+        if (deltaX > 0 && currentPage > 0) {
+            return 0;
+        }
+
+        return currentPage;
+    }
+
+    function getPageFromWheelDelta(deltaX: number): PageId {
+        return deltaX > 0 ? 1 : 0;
+    }
+
+    function resetWheelAccumulator(): void {
+        wheelDeltaAccumulator = 0;
+        if (wheelAccumulatorResetTimer !== null) {
+            clearTimeout(wheelAccumulatorResetTimer);
+            wheelAccumulatorResetTimer = null;
+        }
+    }
+
+    function resetSwipeTracking(restoreAnimatedPosition = true): void {
+        isTrackingSwipe = false;
+        swipeAxisLock = null;
+        swipeCurrentDeltaX = 0;
+
+        if (restoreAnimatedPosition) {
+            setScreensTranslatePercent(getPageTranslatePercent(currentPage), true);
+        }
     }
 
     function fitModalToMobileViewport(modal: HTMLElement | null): void {
@@ -384,8 +451,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
 
         // INVARIANT: Screen transitions are smooth via CSS transitions
         // Each page is 50% of container width, so translate by 50% per page
-        const translateX = pageId === 0 ? '0%' : '-100%';
-        screensContainer.style.transform = `translateX(${translateX})`;
+        setScreensTranslatePercent(getPageTranslatePercent(pageId), true);
 
         // Update page dots
         if (pageDots) {
@@ -395,6 +461,148 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         }
 
         logger.debug('Mobile Paging', `Transitioned to page ${pageId}`);
+    }
+
+    /**
+     * PURPOSE: Interpret horizontal touch gestures as page navigation while preserving
+     * vertical scrolling inside each mobile screen.
+     */
+    function attachPageGestureHandlers(): void {
+        if (!mobileScreensWrapper || !screensContainer || pageGestureHandlersAttached) return;
+
+        const onTouchStart = (event: TouchEvent): void => {
+            if (!isMobileMode() || isAppOpen || event.touches.length !== 1) {
+                return;
+            }
+
+            const touch = event.touches.item(0);
+            if (!touch) {
+                return;
+            }
+
+            swipeStartX = touch.clientX;
+            swipeStartY = touch.clientY;
+            swipeCurrentDeltaX = 0;
+            swipeAxisLock = null;
+            isTrackingSwipe = true;
+        };
+
+        const onTouchMove = (event: TouchEvent): void => {
+            if (!isTrackingSwipe || !isMobileMode() || isAppOpen || event.touches.length !== 1) {
+                return;
+            }
+
+            const touch = event.touches.item(0);
+            const containerElement = screensContainer;
+            const wrapperElement = mobileScreensWrapper;
+            if (!touch || !containerElement || !wrapperElement) {
+                return;
+            }
+
+            const deltaX = touch.clientX - swipeStartX;
+            const deltaY = touch.clientY - swipeStartY;
+            const absDeltaX = Math.abs(deltaX);
+            const absDeltaY = Math.abs(deltaY);
+
+            if (!swipeAxisLock) {
+                const dominantDelta = Math.max(absDeltaX, absDeltaY);
+                if (dominantDelta < SWIPE_AXIS_LOCK_THRESHOLD) {
+                    return;
+                }
+
+                swipeAxisLock = absDeltaX > absDeltaY ? 'x' : 'y';
+            }
+
+            if (swipeAxisLock !== 'x') {
+                return;
+            }
+
+            event.preventDefault();
+            swipeCurrentDeltaX = deltaX;
+
+            const containerWidth = containerElement.clientWidth || wrapperElement.clientWidth;
+            if (containerWidth <= 0) {
+                return;
+            }
+
+            const translateOffset = (deltaX / containerWidth) * 100;
+            const translatePercent = clampTranslatePercent(
+                getPageTranslatePercent(currentPage) + translateOffset
+            );
+
+            setScreensTranslatePercent(translatePercent, false);
+        };
+
+        const finalizeSwipe = (): void => {
+            if (!isTrackingSwipe) {
+                return;
+            }
+
+            const targetPage =
+                swipeAxisLock === 'x' ? getPageFromSwipeDelta(swipeCurrentDeltaX) : null;
+            resetSwipeTracking(false);
+
+            if (targetPage === null) {
+                transitionToPage(currentPage);
+                return;
+            }
+
+            transitionToPage(targetPage);
+        };
+
+        const onWheel = (event: WheelEvent): void => {
+            if (!isMobileMode() || isAppOpen) {
+                return;
+            }
+
+            const absDeltaX = Math.abs(event.deltaX);
+            const absDeltaY = Math.abs(event.deltaY);
+            if (absDeltaX <= absDeltaY || absDeltaX < 4) {
+                return;
+            }
+
+            wheelDeltaAccumulator += event.deltaX;
+
+            if (wheelAccumulatorResetTimer !== null) {
+                clearTimeout(wheelAccumulatorResetTimer);
+            }
+
+            wheelAccumulatorResetTimer = window.setTimeout(() => {
+                resetWheelAccumulator();
+            }, 140);
+
+            if (Math.abs(wheelDeltaAccumulator) < WHEEL_PAGE_CHANGE_THRESHOLD) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const now = Date.now();
+            if (now - lastWheelPageChangeAt < WHEEL_PAGE_CHANGE_COOLDOWN) {
+                return;
+            }
+
+            const targetPage = getPageFromWheelDelta(wheelDeltaAccumulator);
+            resetWheelAccumulator();
+
+            if (targetPage === currentPage) {
+                return;
+            }
+
+            lastWheelPageChangeAt = now;
+            transitionToPage(targetPage);
+        };
+
+        mobileScreensWrapper.addEventListener('touchstart', onTouchStart, { passive: true });
+        mobileScreensWrapper.addEventListener('touchmove', onTouchMove, { passive: false });
+        mobileScreensWrapper.addEventListener('touchend', finalizeSwipe);
+        mobileScreensWrapper.addEventListener('touchcancel', () => {
+            resetSwipeTracking();
+        });
+        mobileScreensWrapper.addEventListener('wheel', onWheel, { passive: false });
+
+        pageGestureHandlersAttached = true;
+        logger.debug('Mobile Paging', 'Page gesture handlers attached');
     }
 
     /**
@@ -413,8 +621,9 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         }
 
         // Set initial transform state
-        screensContainer.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        screensContainer.style.transition = PAGE_TRANSITION;
         transitionToPage(0);
+        attachPageGestureHandlers();
 
         // Set display visible in mobile mode
         if (isMobileMode()) {

@@ -4791,6 +4791,8 @@ html.dark #dock .dock-window-preview-badge {
     display: flex;
     flex: 1;
     overflow: hidden;
+    touch-action: pan-y pinch-zoom;
+    overscroll-behavior-x: contain;
     width: 100%;
 }
 
