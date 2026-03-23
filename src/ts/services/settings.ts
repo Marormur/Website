@@ -14,6 +14,7 @@ logger.debug('APP', 'Settings Module loaded');
     // ===== Types =====
 
     type SectionName =
+        | 'menu'
         | 'wifi'
         | 'bluetooth'
         | 'general'
@@ -48,6 +49,8 @@ logger.debug('APP', 'Settings Module loaded');
         currentSection: SectionName;
         sectionHistory: SectionName[];
         historyIndex: number;
+        lastResponsiveCompactMode: boolean | null;
+        settingsShellResizeObserver: ResizeObserver | null;
         container: HTMLElement | null;
         init(containerOrId: HTMLElement | string): void;
         render(): void;
@@ -61,9 +64,12 @@ logger.debug('APP', 'Settings Module loaded');
         showSection(section: SectionName, options?: { pushHistory?: boolean }): void;
         getSectionTitle(section: SectionName): { key: string; fallback: string };
         translateLabel(key: string, fallback: string): string;
+        isMobileMode(): boolean;
+        isCompactMobileLayout(): boolean;
+        syncResponsiveLayout(options?: { resetToDefault?: boolean }): void;
         resolveSidebarPage(
             section: SectionName
-        ): 'wifi' | 'bluetooth' | 'general' | 'desktop-dock' | 'display' | 'language';
+        ): 'wifi' | 'bluetooth' | 'general' | 'desktop-dock' | 'display' | 'language' | null;
         syncWifiNetworkList(): void;
         syncBluetoothDeviceList(): void;
         syncGeneralInfoDetails(): void;
@@ -79,6 +85,8 @@ logger.debug('APP', 'Settings Module loaded');
         currentSection: 'general',
         sectionHistory: ['general'],
         historyIndex: 0,
+        lastResponsiveCompactMode: null,
+        settingsShellResizeObserver: null,
         container: null,
 
         /**
@@ -99,7 +107,19 @@ logger.debug('APP', 'Settings Module loaded');
             this.currentSection = 'general';
             this.sectionHistory = ['general'];
             this.historyIndex = 0;
+            this.lastResponsiveCompactMode = null;
+            this.settingsShellResizeObserver?.disconnect();
+            this.settingsShellResizeObserver = null;
             this.render();
+
+            const settingsShell = this.container.closest<HTMLElement>('.settings-window-shell');
+            if (settingsShell && typeof ResizeObserver !== 'undefined') {
+                this.settingsShellResizeObserver = new ResizeObserver(() => {
+                    this.syncResponsiveLayout();
+                });
+                this.settingsShellResizeObserver.observe(settingsShell);
+            }
+
             this.attachListeners();
             this.syncThemePreference();
             this.syncUIModePreference();
@@ -111,7 +131,7 @@ logger.debug('APP', 'Settings Module loaded');
             this.syncBluetoothDeviceList();
             this.syncGeneralInfoDetails();
             void this.fetchLatestGithubCommit();
-            this.showSection('general', { pushHistory: false });
+            this.syncResponsiveLayout({ resetToDefault: true });
         },
 
         /**
@@ -121,7 +141,7 @@ logger.debug('APP', 'Settings Module loaded');
             if (!this.container) return;
 
             this.container.innerHTML = `
-                <div class="settings-app">
+                <div class="settings-app" data-settings-layout="default" data-settings-mobile-view="menu">
                     ${renderInsetSidebarShellHTML({
                         shellTag: 'aside',
                         shellClassName: 'settings-sidebar-shell',
@@ -209,6 +229,34 @@ logger.debug('APP', 'Settings Module loaded');
                                 <button type="button" class="settings-content-nav-btn" data-settings-nav="forward" data-dialog-action="navigate-forward" aria-label="Vorwärts" title="Vorwärts">›</button>
                             </div>
                             <h2 class="settings-content-title" data-settings-current-title data-i18n="settingsPage.general.title">Allgemein</h2>
+                            ${renderTrafficLightControlsHTML({
+                                containerClassName:
+                                    'settings-window-controls settings-content-window-controls traffic-light-controls',
+                                defaults: {
+                                    tag: 'button',
+                                },
+                                close: {
+                                    className:
+                                        'settings-window-control settings-window-control--close',
+                                    title: 'Schließen',
+                                    i18nTitleKey: 'common.close',
+                                    dataAction: 'closeWindow',
+                                    dataWindowId: 'settings-modal',
+                                    noDrag: true,
+                                },
+                                minimize: {
+                                    className:
+                                        'settings-window-control settings-window-control--minimize',
+                                    title: 'Minimieren',
+                                    ariaLabel: 'Minimieren',
+                                },
+                                maximize: {
+                                    className:
+                                        'settings-window-control settings-window-control--maximize',
+                                    title: 'Maximieren',
+                                    ariaLabel: 'Maximieren',
+                                },
+                            })}
                         </div>
 
                         <div class="settings-main">
@@ -1620,6 +1668,7 @@ logger.debug('APP', 'Settings Module loaded');
 
             // Hide all sections
             const sections: SectionName[] = [
+                'menu',
                 'wifi',
                 'bluetooth',
                 'general',
@@ -1636,7 +1685,8 @@ logger.debug('APP', 'Settings Module loaded');
             });
 
             // Show target section
-            const target = this.container.querySelector(`#settings-${section}`);
+            const target =
+                section === 'menu' ? null : this.container.querySelector(`#settings-${section}`);
             if (target) {
                 target.classList.remove('hidden');
             }
@@ -1657,7 +1707,7 @@ logger.debug('APP', 'Settings Module loaded');
             );
             navItems.forEach(item => {
                 const itemPage = item.getAttribute('data-settings-page');
-                if (itemPage === activeSidebarPage) {
+                if (activeSidebarPage && itemPage === activeSidebarPage) {
                     item.classList.add('settings-nav-item--active');
                 } else {
                     item.classList.remove('settings-nav-item--active');
@@ -1669,6 +1719,8 @@ logger.debug('APP', 'Settings Module loaded');
 
         getSectionTitle(section: SectionName): { key: string; fallback: string } {
             switch (section) {
+                case 'menu':
+                    return { key: 'settingsPage.title', fallback: 'Einstellungen' };
                 case 'wifi':
                     return { key: 'settingsPage.wifi.title', fallback: 'WLAN' };
                 case 'bluetooth':
@@ -1712,10 +1764,106 @@ logger.debug('APP', 'Settings Module loaded');
             return fallback;
         },
 
+        isMobileMode(): boolean {
+            return document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+        },
+
+        isCompactMobileLayout(): boolean {
+            if (!this.container) return false;
+
+            const settingsApp = this.container.querySelector<HTMLElement>('.settings-app');
+            const settingsShell = this.container.closest<HTMLElement>('.settings-window-shell');
+            const shellWidth = settingsShell?.getBoundingClientRect().width ?? window.innerWidth;
+
+            const sidebarWidthRaw = settingsApp
+                ? getComputedStyle(settingsApp).getPropertyValue('--settings-sidebar-width')
+                : '';
+            const parsedSidebarWidth = Number.parseFloat(sidebarWidthRaw);
+            const sidebarWidth =
+                Number.isFinite(parsedSidebarWidth) && parsedSidebarWidth > 0
+                    ? parsedSidebarWidth
+                    : 252;
+
+            // Keep two-column layout until main content is approximately as narrow as the sidebar.
+            const compactSwitchWidth = Math.round(sidebarWidth * 2 + 28);
+            const mobileViewportSwitch = this.isMobileMode() && window.innerWidth <= 680;
+
+            return shellWidth <= compactSwitchWidth || mobileViewportSwitch;
+        },
+
+        syncResponsiveLayout(options?: { resetToDefault?: boolean }): void {
+            if (!this.container) return;
+
+            const app = this.container.querySelector<HTMLElement>('.settings-app');
+            const isCompact = this.isCompactMobileLayout();
+
+            if (app) {
+                app.dataset.settingsLayout = isCompact ? 'compact-mobile' : 'default';
+            }
+
+            if (options?.resetToDefault) {
+                if (isCompact) {
+                    this.sectionHistory = ['menu'];
+                    this.historyIndex = 0;
+                    this.lastResponsiveCompactMode = isCompact;
+                    this.showSection('menu', { pushHistory: false });
+                    return;
+                }
+
+                this.sectionHistory = ['general'];
+                this.historyIndex = 0;
+                this.lastResponsiveCompactMode = isCompact;
+                this.showSection('general', { pushHistory: false });
+                return;
+            }
+
+            if (this.lastResponsiveCompactMode === isCompact) {
+                this.updateNavigationChrome();
+                return;
+            }
+
+            this.lastResponsiveCompactMode = isCompact;
+
+            if (isCompact) {
+                if (this.currentSection === 'general' || this.currentSection === 'menu') {
+                    this.sectionHistory = ['menu'];
+                    this.historyIndex = 0;
+                    this.showSection('menu', { pushHistory: false });
+                    return;
+                }
+
+                if (this.currentSection === 'general-info') {
+                    this.sectionHistory = ['menu', 'general', 'general-info'];
+                    this.historyIndex = 2;
+                    this.showSection(this.currentSection, { pushHistory: false });
+                    return;
+                }
+
+                this.sectionHistory = ['menu', this.currentSection];
+                this.historyIndex = 1;
+                this.showSection(this.currentSection, { pushHistory: false });
+                return;
+            }
+
+            const nextSection = this.currentSection === 'menu' ? 'general' : this.currentSection;
+            const filteredHistory = this.sectionHistory.filter(
+                (section): section is Exclude<SectionName, 'menu'> => section !== 'menu'
+            );
+
+            this.sectionHistory = filteredHistory.length > 0 ? filteredHistory : ['general'];
+            const nextIndex = this.sectionHistory.indexOf(
+                nextSection as Exclude<SectionName, 'menu'>
+            );
+            this.historyIndex = nextIndex >= 0 ? nextIndex : 0;
+            this.showSection(nextSection, { pushHistory: false });
+        },
+
         resolveSidebarPage(
             section: SectionName
-        ): 'wifi' | 'bluetooth' | 'general' | 'desktop-dock' | 'display' | 'language' {
+        ): 'wifi' | 'bluetooth' | 'general' | 'desktop-dock' | 'display' | 'language' | null {
             switch (section) {
+                case 'menu':
+                    return null;
                 case 'wifi':
                     return 'wifi';
                 case 'bluetooth':
@@ -1749,6 +1897,9 @@ logger.debug('APP', 'Settings Module loaded');
         updateNavigationChrome(): void {
             if (!this.container) return;
 
+            const app = this.container.querySelector<HTMLElement>('.settings-app');
+            const isCompact = this.isCompactMobileLayout();
+
             const backBtn = this.container.querySelector<HTMLButtonElement>(
                 '[data-settings-nav="back"]'
             );
@@ -1757,7 +1908,13 @@ logger.debug('APP', 'Settings Module loaded');
             );
 
             const canGoBack = this.historyIndex > 0;
-            const canGoForward = this.historyIndex < this.sectionHistory.length - 1;
+            const canGoForward = !isCompact && this.historyIndex < this.sectionHistory.length - 1;
+
+            if (app) {
+                app.dataset.settingsLayout = isCompact ? 'compact-mobile' : 'default';
+                app.dataset.settingsMobileView =
+                    isCompact && this.currentSection !== 'menu' ? 'detail' : 'menu';
+            }
 
             if (backBtn) {
                 backBtn.disabled = !canGoBack;
@@ -1784,6 +1941,8 @@ logger.debug('APP', 'Settings Module loaded');
          * Destroy settings module
          */
         destroy(): void {
+            this.settingsShellResizeObserver?.disconnect();
+            this.settingsShellResizeObserver = null;
             if (this.container) {
                 this.container.innerHTML = '';
                 this.container = null;
@@ -1818,6 +1977,7 @@ logger.debug('APP', 'Settings Module loaded');
     });
     window.addEventListener('uiModeEffectiveChange', () => {
         SettingsSystem.syncUIModePreference();
+        SettingsSystem.syncResponsiveLayout();
     });
     window.addEventListener('iconThemeChange', () => {
         SettingsSystem.syncIconThemePreference();
@@ -1830,6 +1990,9 @@ logger.debug('APP', 'Settings Module loaded');
     });
     window.addEventListener('dockPreferenceChange', () => {
         SettingsSystem.syncDockPreferences();
+    });
+    window.addEventListener('resize', () => {
+        SettingsSystem.syncResponsiveLayout();
     });
 })();
 

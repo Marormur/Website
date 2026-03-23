@@ -683,13 +683,6 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
                 windowId: 'text-modal',
             },
             {
-                id: 'preview',
-                emoji: '👁️',
-                label: 'Vorschau',
-                action: 'openWindow',
-                windowId: 'preview-modal',
-            },
-            {
                 id: 'photos',
                 emoji: '🖼️',
                 label: 'Fotos',

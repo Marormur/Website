@@ -27,8 +27,13 @@ interface WindowDragZoneBehaviorOptions {
 }
 
 export function attachWindowDragZoneBehavior(options: WindowDragZoneBehaviorOptions): void {
+    const DRAG_START_THRESHOLD_PX = 3;
+
     const state = {
         isDragging: false,
+        pendingDrag: false,
+        startPointerX: 0,
+        startPointerY: 0,
         offsetX: 0,
         offsetY: 0,
         pointerScale: 1,
@@ -45,22 +50,26 @@ export function attachWindowDragZoneBehavior(options: WindowDragZoneBehaviorOpti
         state.pointerScale = detectClientCoordinateScale(e.clientX, e.clientY, rect);
         const pointerX = toLogicalClientPx(e.clientX, state.pointerScale);
         const pointerY = toLogicalClientPx(e.clientY, state.pointerScale);
-        const renderedPointerX = toRenderedClientPx(e.clientX, state.pointerScale);
-
-        options.restoreFromSnappedDrag?.({ windowEl: options.windowEl, pointerX, pointerY });
-
         const liveRect = options.windowEl.getBoundingClientRect();
-        state.isDragging = true;
+
+        state.pendingDrag = true;
+        state.isDragging = false;
+        state.startPointerX = pointerX;
+        state.startPointerY = pointerY;
         state.offsetX = pointerX - resolveElementLogicalPx(options.windowEl, 'left', liveRect.left);
         state.offsetY = pointerY - resolveElementLogicalPx(options.windowEl, 'top', liveRect.top);
-        state.lastPointerX = renderedPointerX;
-        options.bringToFront();
+        state.lastPointerX = null;
+
         e.preventDefault();
     });
 
-    options.windowEl.addEventListener('dblclick', (e: MouseEvent) => {
+    options.windowEl.addEventListener('click', (e: MouseEvent) => {
         const target = e.target as HTMLElement | null;
-        if (!target?.closest(dragZoneSelector) || options.isInteractiveTarget(target)) return;
+        const dragZone = target?.closest(dragZoneSelector) as HTMLElement | null;
+        if (!dragZone || options.isInteractiveTarget(target)) return;
+        // Use browser-native click detail to only react on the second
+        // click of a true double-click sequence on this drag zone.
+        if (e.detail !== 2) return;
 
         options.bringToFront();
         options.toggleMaximize();
@@ -68,11 +77,25 @@ export function attachWindowDragZoneBehavior(options: WindowDragZoneBehaviorOpti
     });
 
     document.addEventListener('mousemove', (e: MouseEvent) => {
-        if (!state.isDragging) return;
-
         const pointerX = toLogicalClientPx(e.clientX, state.pointerScale);
         const pointerY = toLogicalClientPx(e.clientY, state.pointerScale);
         const renderedPointerX = toRenderedClientPx(e.clientX, state.pointerScale);
+
+        if (state.pendingDrag && !state.isDragging) {
+            const movedX = Math.abs(pointerX - state.startPointerX);
+            const movedY = Math.abs(pointerY - state.startPointerY);
+            const movedEnough =
+                movedX >= DRAG_START_THRESHOLD_PX || movedY >= DRAG_START_THRESHOLD_PX;
+            if (!movedEnough) return;
+
+            state.isDragging = true;
+            state.pendingDrag = false;
+            options.restoreFromSnappedDrag?.({ windowEl: options.windowEl, pointerX, pointerY });
+            options.bringToFront();
+        }
+
+        if (!state.isDragging) return;
+
         const newX = pointerX - state.offsetX;
         const minTop = window.getMenuBarBottom?.() || 0;
         const newY = Math.max(minTop, pointerY - state.offsetY);
@@ -86,6 +109,13 @@ export function attachWindowDragZoneBehavior(options: WindowDragZoneBehaviorOpti
     });
 
     document.addEventListener('mouseup', () => {
+        if (state.pendingDrag && !state.isDragging) {
+            state.pendingDrag = false;
+            state.pointerScale = 1;
+            state.lastPointerX = null;
+            return;
+        }
+
         if (!state.isDragging) return;
         state.isDragging = false;
 

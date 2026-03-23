@@ -174,10 +174,12 @@ export class Dialog {
     }
 
     private bindWindowChromeControls(): void {
-        const closeButton = this.modal.querySelector(
-            '.draggable-header button[id^="close-"]'
-        ) as HTMLElement | null;
-        if (closeButton) {
+        const closeButtons = Array.from(
+            this.modal.querySelectorAll<HTMLElement>(
+                '.draggable-header button[id^="close-"], .draggable-header .settings-window-control--close, .draggable-header .traffic-light-control--close, .draggable-header .bg-red-500.rounded-full'
+            )
+        );
+        closeButtons.forEach(closeButton => {
             closeButton.style.cursor = 'pointer';
             closeButton.dataset.dialogAction = 'close';
             if (!closeButton.dataset.dialogBoundClose) {
@@ -188,16 +190,14 @@ export class Dialog {
                     this.close();
                 });
             }
-        }
+        });
 
-        const minimizeEl = this.modal.querySelector(
-            '.draggable-header .traffic-light-control--minimize, .draggable-header .settings-window-control--minimize, .draggable-header .bg-yellow-500.rounded-full'
-        ) as HTMLElement | null;
-        const maximizeEl = this.modal.querySelector(
-            '.draggable-header .traffic-light-control--maximize, .draggable-header .settings-window-control--maximize, .draggable-header .bg-green-500.rounded-full'
-        ) as HTMLElement | null;
-
-        if (minimizeEl) {
+        const minimizeButtons = Array.from(
+            this.modal.querySelectorAll<HTMLElement>(
+                '.draggable-header .traffic-light-control--minimize, .draggable-header .settings-window-control--minimize, .draggable-header .bg-yellow-500.rounded-full'
+            )
+        );
+        minimizeButtons.forEach(minimizeEl => {
             minimizeEl.style.cursor = 'pointer';
             minimizeEl.title = minimizeEl.title || 'Minimieren';
             minimizeEl.dataset.dialogAction = 'minimize';
@@ -209,9 +209,14 @@ export class Dialog {
                     this.minimize();
                 });
             }
-        }
+        });
 
-        if (maximizeEl) {
+        const maximizeButtons = Array.from(
+            this.modal.querySelectorAll<HTMLElement>(
+                '.draggable-header .traffic-light-control--maximize, .draggable-header .settings-window-control--maximize, .draggable-header .bg-green-500.rounded-full'
+            )
+        );
+        maximizeButtons.forEach(maximizeEl => {
             maximizeEl.style.cursor = 'pointer';
             maximizeEl.title = maximizeEl.title || 'Maximieren';
             maximizeEl.dataset.dialogAction = 'maximize';
@@ -223,7 +228,7 @@ export class Dialog {
                     this.toggleMaximize();
                 });
             }
-        }
+        });
     }
 
     init() {
@@ -231,6 +236,7 @@ export class Dialog {
         this.makeResizable();
         window.addEventListener('uiModeEffectiveChange', () => {
             this.applyResponsiveLayoutForCurrentMode();
+            this.makeResizable();
         });
         this.bindWindowChromeControls();
     }
@@ -718,7 +724,13 @@ export class Dialog {
 
     makeResizable() {
         if (this.modal.dataset.noResize === 'true') return;
-        const resizeAxis = this.modal.dataset.resizeAxis || 'both';
+        const configuredResizeAxis = this.modal.dataset.resizeAxis || 'both';
+        // Desktop settings should be freely resizable in both axes.
+        // On mobile we keep the configured axis because the window is viewport-filled.
+        const resizeAxis =
+            this.modalId === 'settings-modal' && !this.isMobileUIMode()
+                ? 'both'
+                : configuredResizeAxis;
         const target = this.windowEl || this.modal;
         if (!target) return;
         const existingHandles = target.querySelectorAll('.resizer');

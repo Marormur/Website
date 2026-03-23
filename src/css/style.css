@@ -93,8 +93,9 @@ body.window-dragging * {
 .settings-window-shell {
     --settings-window-radius: 1.25rem;
     --settings-sidebar-inset: 0.5rem;
-    width: min(980px, calc(100vw - 40px)) !important;
-    max-width: calc(100vw - 40px) !important;
+    width: min(980px, calc(100vw - 40px));
+    max-width: calc(100vw - 40px);
+    min-width: 380px;
     min-height: 520px;
     position: relative;
     border-radius: var(--settings-window-radius);
@@ -662,6 +663,11 @@ html.dark .traffic-light-control::after {
     color: rgba(15, 23, 42, 0.9);
 }
 
+.settings-content-window-controls {
+    display: none;
+    margin-left: auto;
+}
+
 .settings-main {
     flex: 1;
     min-height: 0;
@@ -726,6 +732,183 @@ html.dark .traffic-light-control::after {
     margin-bottom: 0;
     color: rgba(51, 65, 85, 0.78);
     font-size: 14px;
+}
+
+.settings-app[data-settings-layout='compact-mobile'][data-settings-mobile-view='menu']
+    .settings-sidebar-shell {
+    display: block;
+}
+
+.settings-app[data-settings-layout='compact-mobile'][data-settings-mobile-view='menu']
+    .settings-main-shell {
+    display: none;
+}
+
+.settings-app[data-settings-layout='compact-mobile'][data-settings-mobile-view='detail']
+    .settings-sidebar-shell {
+    display: none;
+}
+
+.settings-app[data-settings-layout='compact-mobile'][data-settings-mobile-view='detail']
+    .settings-main-shell {
+    display: flex;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] {
+    display: block;
+    background: linear-gradient(
+        180deg,
+        rgba(245, 247, 251, 0.98) 0%,
+        rgba(237, 241, 247, 0.98) 100%
+    );
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-sidebar-shell,
+.settings-app[data-settings-layout='compact-mobile'] .settings-main-shell {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    padding: 0;
+    border-radius: 0;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-sidebar-panel,
+.settings-app[data-settings-layout='compact-mobile'] .settings-main-shell {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-sidebar-top,
+.settings-app[data-settings-layout='compact-mobile'] .settings-content-topbar {
+    height: 52px;
+    padding: 0 16px;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-sidebar {
+    padding: 8px 12px 20px;
+    gap: 4px;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-search-wrap {
+    margin: 8px 4px 14px;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-search-input {
+    height: 38px;
+    border-radius: 14px;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-account,
+.settings-app[data-settings-layout='compact-mobile'] .settings-nav-item {
+    min-height: 56px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.6) inset,
+        0 10px 20px rgba(15, 23, 42, 0.06);
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-account {
+    margin-bottom: 10px;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-nav-item {
+    margin-bottom: 6px;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-nav-item::after {
+    content: '›';
+    margin-left: auto;
+    font-size: 20px;
+    line-height: 1;
+    color: rgba(51, 65, 85, 0.55);
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-nav-item--active {
+    background: rgba(255, 255, 255, 0.9);
+    color: #0f172a;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.68) inset,
+        0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-main {
+    padding: 16px 16px 28px;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-section {
+    max-width: none;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-content-topbar {
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: linear-gradient(
+        180deg,
+        rgba(245, 247, 251, 0.94) 0%,
+        rgba(245, 247, 251, 0.72) 100%
+    );
+    backdrop-filter: saturate(140%) blur(18px);
+    -webkit-backdrop-filter: saturate(140%) blur(18px);
+}
+
+.settings-app[data-settings-layout='compact-mobile'][data-settings-mobile-view='detail']
+    .settings-content-window-controls {
+    display: inline-flex;
+    order: 0;
+    margin-left: 0;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.settings-app[data-settings-layout='compact-mobile'][data-settings-mobile-view='detail']
+    .settings-content-nav {
+    order: 1;
+    margin-left: 6px;
+}
+
+.settings-app[data-settings-layout='compact-mobile'][data-settings-mobile-view='detail']
+    .settings-content-title {
+    order: 2;
+    margin-left: 8px;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-content-nav {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-content-nav::after {
+    display: none;
+}
+
+.settings-app[data-settings-layout='compact-mobile']
+    .settings-content-nav-btn[data-settings-nav='forward'] {
+    display: none;
+}
+
+.settings-app[data-settings-layout='compact-mobile']
+    .settings-content-nav-btn[data-settings-nav='back'] {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-overview-panel,
+.settings-app[data-settings-layout='compact-mobile'] .settings-info-card,
+.settings-app[data-settings-layout='compact-mobile'] .settings-option-card {
+    border-radius: 18px;
 }
 
 .settings-device-hero {
@@ -1578,6 +1761,38 @@ html.dark .settings-main-shell {
     background: linear-gradient(180deg, rgba(31, 34, 42, 0.98) 0%, rgba(24, 27, 34, 0.97) 100%);
 }
 
+html.dark .settings-app[data-settings-layout='compact-mobile'] {
+    background: linear-gradient(180deg, rgba(17, 20, 24, 0.99) 0%, rgba(20, 24, 32, 0.99) 100%);
+}
+
+html.dark .settings-app[data-settings-layout='compact-mobile'] .settings-content-topbar {
+    background: linear-gradient(180deg, rgba(17, 20, 24, 0.92) 0%, rgba(17, 20, 24, 0.72) 100%);
+}
+
+html.dark .settings-app[data-settings-layout='compact-mobile'] .settings-account,
+html.dark .settings-app[data-settings-layout='compact-mobile'] .settings-nav-item {
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.05) inset,
+        0 12px 24px rgba(2, 6, 23, 0.32);
+}
+
+html.dark .settings-app[data-settings-layout='compact-mobile'] .settings-nav-item::after {
+    color: rgba(226, 232, 240, 0.56);
+}
+
+html.dark .settings-app[data-settings-layout='compact-mobile'] .settings-nav-item--active {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(248, 251, 255, 0.96);
+}
+
+html.dark
+    .settings-app[data-settings-layout='compact-mobile']
+    .settings-content-nav-btn[data-settings-nav='back'] {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
 html.dark .settings-section-title {
     color: #f8fbff;
 }
@@ -1804,37 +2019,6 @@ html.dark .settings-wifi-connected-status {
 }
 
 @media (max-width: 720px) {
-    .settings-app {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .settings-sidebar-shell {
-        position: relative;
-        top: auto;
-        left: auto;
-        bottom: auto;
-        width: auto;
-        z-index: auto;
-        padding: 8px 8px 6px;
-    }
-
-    .settings-sidebar-panel {
-        max-height: 230px;
-    }
-
-    .settings-main-shell {
-        min-height: 0;
-    }
-
-    .settings-content-topbar {
-        padding-left: 16px;
-    }
-
-    .settings-main {
-        padding: 18px;
-    }
-
     .settings-device-name {
         font-size: 34px;
     }
