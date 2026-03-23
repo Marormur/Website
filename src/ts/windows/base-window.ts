@@ -16,6 +16,7 @@ import {
     toRenderedClientPx,
 } from '../utils/viewport.js';
 import { createTrafficLightControlsElement } from '../framework/controls/traffic-lights.js';
+import { createTabHeaderControlElement } from '../framework/controls/tab-header-control.js';
 
 export interface WindowPosition {
     x: number;
@@ -312,10 +313,13 @@ export class BaseWindow {
         this.titlebarElement = this._createTitlebar();
         windowEl.appendChild(this.titlebarElement);
 
-        // Tab bar container
-        const tabBar = document.createElement('div');
+        // Tab bar container – unified tab-header-control for consistent 44px height across all apps
+        const tabBar = createTabHeaderControlElement({
+            containerClassName: 'window-tab-bar',
+            dataAppType: this.type,
+            role: 'tablist',
+        });
         tabBar.id = `${this.id}-tabs`;
-        tabBar.className = 'window-tab-bar';
         windowEl.appendChild(tabBar);
 
         // Content area

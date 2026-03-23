@@ -17,9 +17,36 @@ body {
     padding: 0;
 }
 
-/* Window Tabs Styling */
+/* ============================================================================
+   Tab Header Control – Unified Tab Bar Container (44px, macOS standard)
+   Replaces/consolidates .window-tab-bar across Text Editor, Finder, Terminal
+   ============================================================================ */
+.tab-header-control {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    --tab-header-gap: 8px;
+    --tab-header-padding: 0 12px;
+}
+
+.tab-header-layout {
+    display: flex;
+    align-items: center;
+    gap: var(--tab-header-gap);
+    padding: var(--tab-header-padding);
+    width: 100%;
+    height: 100%;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Backward compat: .window-tab-bar now delegates to tab-header-control */
 .window-tab-bar {
-    height: 40px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
     -webkit-user-select: none;
     /* Safari/iOS support */
     user-select: none;

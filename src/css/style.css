@@ -90,10 +90,6 @@ body.window-dragging * {
     background-position: center top !important;
 }
 
-/* ==========================================================================
-   Settings App Refresh (macOS inspired)
-   ========================================================================== */
-
 .settings-window-shell {
     --settings-window-radius: 1.25rem;
     --settings-sidebar-inset: 0.5rem;
@@ -162,6 +158,7 @@ body.window-dragging * {
     width: 12px;
     height: 12px;
     border-radius: 999px;
+    margin-bottom: 6px;
     border: none;
     padding: 0;
     margin: 0;
@@ -242,6 +239,57 @@ html.dark .traffic-light-control::after {
     outline-offset: 2px;
 }
 
+/* ==========================================================================
+   Tab Header Control – Unified styling for Text Editor, Finder, Terminal
+   Replaces .window-tab-bar with data-app-type-based selectors
+   ========================================================================== */
+
+/* Ensure tab-header-control inherits consistent height + layout from CSS */
+.tab-header-control {
+    flex-shrink: 0;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Data-app-type variants: ensure all apps share consistent base styling */
+[data-app-type='text-editor'].tab-header-control,
+[data-app-type='finder'].tab-header-control,
+[data-app-type='terminal'].tab-header-control {
+    backdrop-filter: saturate(120%) blur(12px);
+    -webkit-backdrop-filter: saturate(120%) blur(12px);
+}
+
+/* ==========================================================================
+   Text Editor – Tab Header (with data-app-type selector)
+   ========================================================================== */
+[data-app-type='text-editor'].window-tab-bar {
+    border-color: var(--editor-shell-toolbar-border) !important;
+    background-color: var(--editor-shell-toolbar) !important;
+    background-image: none !important;
+}
+
+[data-app-type='text-editor'] .window-titlebar {
+    border-bottom: 0;
+}
+
+/* ==========================================================================
+   Finder – Tab Header (with data-app-type selector)
+   ========================================================================== */
+[data-app-type='finder'].window-tab-bar {
+    border-color: rgba(146, 146, 152, 0.3) !important;
+    background-color: rgba(243, 243, 245, 0.74) !important;
+    background-image: none !important;
+}
+
+/* ==========================================================================
+   Terminal – Tab Header (with data-app-type selector)
+   ========================================================================== */
+[data-app-type='terminal'].window-tab-bar {
+    border-color: rgba(146, 146, 152, 0.3) !important;
+    background-color: rgba(243, 243, 245, 0.74) !important;
+    background-image: none !important;
+}
+
 .settings-window-controls {
     display: inline-flex;
     align-items: center;
@@ -256,7 +304,7 @@ html.dark .traffic-light-control::after {
     width: 12px;
     height: 12px;
     border-radius: 999px;
-    border: none;
+    margin-bottom: 2px;
     padding: 0;
     display: inline-block;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25) inset;
@@ -312,8 +360,8 @@ html.dark .traffic-light-control::after {
 
 .settings-sidebar-panel {
     height: 100%;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto auto;
     border-radius: calc(var(--settings-window-radius) - var(--settings-sidebar-inset));
     border: 1px solid rgba(255, 255, 255, 0.55);
     /* Simulate frosted glass: heavy tint keeps it nearly opaque like real macOS. */
@@ -334,18 +382,23 @@ html.dark .traffic-light-control::after {
     padding: 0 12px;
     border-bottom: none;
     background: transparent;
+    flex-shrink: 0;
 }
 
 .settings-sidebar {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 0 1 auto;
     min-height: 0;
-    padding: 14px 12px 12px;
+    padding: 0 12px 12px;
     overflow: auto;
 }
 
 .settings-search-wrap {
     position: relative;
-    margin-bottom: 14px;
+    margin: 8px 0 8px 0;
+    padding-top: 0;
 }
 
 .settings-search-icon {
@@ -361,13 +414,13 @@ html.dark .traffic-light-control::after {
 
 .settings-search-input {
     width: 100%;
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(15, 23, 42, 0.16);
     border-radius: 12px;
     height: 32px;
     padding: 0 12px 0 34px;
     font-size: 14px;
     color: #0f172a;
-    background: rgba(15, 23, 42, 0.05);
+    background: rgba(15, 23, 42, 0.08);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) inset;
 }
 
@@ -417,6 +470,7 @@ html.dark .traffic-light-control::after {
     font-size: 15px;
     font-weight: 600;
     line-height: 1.2;
+    color: #0f172a;
 }
 
 .settings-account-subline {
@@ -437,7 +491,7 @@ html.dark .traffic-light-control::after {
     width: 100%;
     border: none;
     background: transparent;
-    color: rgba(15, 23, 42, 0.88);
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -1962,26 +2016,25 @@ html.dark .window-tab:hover {
 }
 
 .multi-window:has(.text-editor-wrapper) .window-titlebar,
+/* CONSOLIDATED: Text Editor uses data-app-type selector for consistency */
 .multi-window:has(.text-editor-wrapper) .window-tab-bar {
+    height: 44px;
     border-color: var(--editor-shell-toolbar-border) !important;
     background-color: var(--editor-shell-toolbar) !important;
     background-image: none !important;
     backdrop-filter: saturate(120%) blur(12px);
     -webkit-backdrop-filter: saturate(120%) blur(12px);
-}
-
-.multi-window:has(.text-editor-wrapper) .window-titlebar {
-    border-bottom: 0;
-}
-
-.multi-window:has(.text-editor-wrapper) .window-tab-bar {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 0 12px;
-    margin-top: -1px;
+    margin: 0;
     border-top: 0;
     border-bottom: 1px solid var(--editor-shell-toolbar-border);
+}
+
+.multi-window:has(.text-editor-wrapper) .window-titlebar {
+    border-bottom: 0;
 }
 
 .multi-window:has(.text-editor-wrapper) .window-tabs {
@@ -2479,11 +2532,13 @@ html.dark .multi-window:has(.text-editor-wrapper) {
 }
 
 html.dark .multi-window:has(.text-editor-wrapper) .window-titlebar,
-html.dark .multi-window:has(.text-editor-wrapper) .window-tab-bar,
-html.dark #text-modal .draggable-header {
+html.dark .multi-window:has(.text-editor-wrapper) .window-tab-bar {
+    height: 44px;
     background-color: rgba(57, 60, 68, 0.68) !important;
     background-image: none !important;
     border-color: rgba(134, 134, 142, 0.32) !important;
+    margin: 0 !important;
+    margin-top: 0 !important;
 }
 
 html.dark .multi-window:has(.text-editor-wrapper) .window-tabs {
@@ -2714,26 +2769,25 @@ html.dark {
 }
 
 .multi-window:has(.terminal-wrapper) .window-titlebar,
+/* CONSOLIDATED: Terminal uses data-app-type selector for consistency */
 .multi-window:has(.terminal-wrapper) .window-tab-bar {
+    height: 44px;
     border-color: rgba(146, 146, 152, 0.3) !important;
     background-color: rgba(243, 243, 245, 0.74) !important;
     background-image: none !important;
     backdrop-filter: saturate(125%) blur(13px);
     -webkit-backdrop-filter: saturate(125%) blur(13px);
-}
-
-.multi-window:has(.terminal-wrapper) .window-titlebar {
-    border-bottom: 0;
-}
-
-.multi-window:has(.terminal-wrapper) .window-tab-bar {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 0 12px;
-    margin-top: -1px;
+    margin: 0;
     border-top: 0;
     border-bottom: 1px solid rgba(146, 146, 152, 0.28);
+}
+
+.multi-window:has(.terminal-wrapper) .window-titlebar {
+    border-bottom: 0;
 }
 
 .multi-window:has(.terminal-wrapper) .window-tabs {
@@ -3059,20 +3113,18 @@ html.dark .multi-window:has(.terminal-wrapper) {
 
 html.dark .multi-window:has(.terminal-wrapper) .window-titlebar,
 html.dark .multi-window:has(.terminal-wrapper) .window-tab-bar {
+    height: 44px;
     background-color: rgba(50, 53, 61, 0.76) !important;
     background-image: none !important;
     border-color: rgba(134, 134, 142, 0.28) !important;
+    margin: 0 !important;
+    border-top: 0 !important;
 }
 
 html.dark .multi-window:has(.terminal-wrapper) .window-titlebar.draggable-header {
     background-color: rgba(50, 53, 61, 0.76) !important;
     background-image: none !important;
     border-bottom: 0 !important;
-}
-
-html.dark .multi-window:has(.terminal-wrapper) .window-tab-bar {
-    margin-top: -1px;
-    border-top: 0 !important;
 }
 
 html.dark .multi-window:has(.terminal-wrapper) .window-tabs {

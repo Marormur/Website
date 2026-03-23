@@ -1,4 +1,5 @@
 import type { BaseTab } from '../../windows/base-tab.js';
+import { createTabHeaderControlElement } from './tab-header-control.js';
 
 export interface WindowTabsController {
     refresh: () => void;
