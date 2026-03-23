@@ -3667,9 +3667,26 @@ html.dark .menubar {
     margin-left: 12px;
 }
 
+.mobile-status-back-button {
+    display: none !important;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    padding-inline: 10px;
+}
+
 :root[data-ui-mode='mobile'] .menubar-links,
 :root[data-ui-mode='mobile'] #program-menu-container {
     display: none;
+}
+
+:root[data-ui-mode='mobile'] .mobile-status-back-button {
+    display: inline-flex !important;
+    margin-right: 2px;
+}
+
+:root[data-ui-mode='mobile'] .mobile-status-back-button.hidden {
+    display: none !important;
 }
 
 :root[data-ui-mode='mobile'] #apple-menu-container .menubar-logo {

@@ -89,6 +89,9 @@ export const de = {
             label: 'Apple-Menü',
         },
         applicationMenus: 'Anwendungsmenüs',
+        navigation: {
+            back: 'Zurück',
+        },
         controlCenter: {
             label: 'Kontrollzentrum',
             quickActions: 'Schnellaktionen',

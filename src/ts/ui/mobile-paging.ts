@@ -44,13 +44,20 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
     let isInitialized = false;
 
     const GESTURE_NAV_ID = 'mobile-gesture-nav-bar';
+    const BACK_BUTTON_ID = 'mobile-status-back-button';
     const DOCK_ID = 'dock';
+    const MAX_APP_HISTORY = 6;
     const TRANSITION_DURATION = 200; // ms
     const PAGE_TRANSITION = 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
     const SWIPE_AXIS_LOCK_THRESHOLD = 12;
     const SWIPE_PAGE_CHANGE_THRESHOLD = 64;
     const WHEEL_PAGE_CHANGE_THRESHOLD = 80;
     const WHEEL_PAGE_CHANGE_COOLDOWN = 280;
+
+    let mobileStatusBackButton: HTMLButtonElement | null = null;
+    let activeAppModalId: string | null = null;
+    const appHistoryStack: string[] = [];
+    let suppressNextHistoryPush = false;
 
     function getMobileTopChromeHeight(): number {
         const raw = getComputedStyle(document.documentElement)
@@ -153,6 +160,120 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         modal.classList.add('hidden');
     }
 
+    function getBackButtonElement(): HTMLButtonElement | null {
+        if (mobileStatusBackButton && document.body.contains(mobileStatusBackButton)) {
+            return mobileStatusBackButton;
+        }
+        mobileStatusBackButton = document.getElementById(
+            BACK_BUTTON_ID
+        ) as HTMLButtonElement | null;
+        return mobileStatusBackButton;
+    }
+
+    function updateBackButtonVisibility(): void {
+        const backButton = getBackButtonElement();
+        if (!backButton) return;
+
+        const shouldShow = isMobileMode() && isAppOpen && appHistoryStack.length > 0;
+        backButton.classList.toggle('hidden', !shouldShow);
+        backButton.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+    }
+
+    function clearAppSwitchHistory(): void {
+        activeAppModalId = null;
+        appHistoryStack.length = 0;
+        suppressNextHistoryPush = false;
+        updateBackButtonVisibility();
+    }
+
+    function pushHistoryEntry(modalId: string): void {
+        if (!modalId) return;
+        if (appHistoryStack[appHistoryStack.length - 1] === modalId) return;
+
+        appHistoryStack.push(modalId);
+        while (appHistoryStack.length > MAX_APP_HISTORY) {
+            appHistoryStack.shift();
+        }
+    }
+
+    function trackForegroundAppChange(visibleApp: HTMLElement | null): void {
+        const nextModalId = visibleApp?.id || null;
+
+        if (!nextModalId) {
+            clearAppSwitchHistory();
+            return;
+        }
+
+        if (!activeAppModalId) {
+            activeAppModalId = nextModalId;
+            updateBackButtonVisibility();
+            return;
+        }
+
+        if (activeAppModalId !== nextModalId) {
+            if (suppressNextHistoryPush) {
+                suppressNextHistoryPush = false;
+            } else {
+                pushHistoryEntry(activeAppModalId);
+            }
+            activeAppModalId = nextModalId;
+        }
+
+        updateBackButtonVisibility();
+    }
+
+    function openAppByWindowId(windowId: string): void {
+        if (!windowId) return;
+
+        const ActionBus = (
+            window as unknown as {
+                ActionBus?: {
+                    execute?: (
+                        actionName: string,
+                        params?: Record<string, unknown>,
+                        element?: HTMLElement | null
+                    ) => void;
+                };
+            }
+        ).ActionBus;
+
+        if (ActionBus?.execute) {
+            ActionBus.execute('openWindow', { windowId });
+            return;
+        }
+
+        const wm = (window as unknown as { WindowManager?: { open?: (id: string) => void } })
+            .WindowManager;
+        wm?.open?.(windowId);
+    }
+
+    function goBackToPreviousApp(): void {
+        if (!isMobileMode()) return;
+
+        const previousAppId = appHistoryStack.pop() || null;
+        updateBackButtonVisibility();
+        if (!previousAppId) return;
+
+        suppressNextHistoryPush = true;
+        openAppByWindowId(previousAppId);
+    }
+
+    function initMobileStatusBackButton(): void {
+        const backButton = getBackButtonElement();
+        if (!backButton) return;
+
+        if (backButton.dataset.mobileBackBound !== 'true') {
+            backButton.dataset.mobileBackBound = 'true';
+            backButton.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                goBackToPreviousApp();
+            });
+        }
+
+        updateBackButtonVisibility();
+    }
+
     function enforceSingleForegroundAppForMobile(): void {
         if (!isMobileMode()) return;
 
@@ -215,6 +336,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         }
 
         fitModalToMobileViewport(visibleApp);
+        trackForegroundAppChange(visibleApp);
         onAppOpened();
     }
 
@@ -339,6 +461,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         mobileScreensWrapper?.classList.add('mobile-screens-wrapper--app-open');
         positionGestureNavBar();
         showGestureNav();
+        updateBackButtonVisibility();
 
         if (!wasAppOpen) {
             logger.debug('Mobile Paging', 'App opened - showing gesture nav');
@@ -359,6 +482,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         isAppOpen = false;
         mobileScreensWrapper?.classList.remove('mobile-screens-wrapper--app-open');
         hideGestureNav();
+        clearAppSwitchHistory();
 
         // Return to home page
         transitionToPage(0);
@@ -370,6 +494,8 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
      * Return to home (close all apps)
      */
     function returnToHome(): void {
+        clearAppSwitchHistory();
+
         const openModals = getOpenAppModals();
         openModals.forEach(modal => {
             const closeBtn = modal.querySelector<HTMLElement>('[data-action="closeWindow"]');
@@ -781,6 +907,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         const isMobile = isMobileMode();
 
         if (isMobile) {
+            initMobileStatusBackButton();
             showMobileScreens();
             populateHomeScreen();
             populateLaunchpadScreen();
@@ -793,6 +920,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
             isAppOpen = false;
             mobileScreensWrapper?.classList.remove('mobile-screens-wrapper--app-open');
             hideGestureNav();
+            clearAppSwitchHistory();
 
             if (windowChangeObserver) {
                 windowChangeObserver.disconnect();
@@ -819,6 +947,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
 
         initMobileScreens();
         attachPageDotHandlers();
+        initMobileStatusBackButton();
 
         // Wait a small amount to ensure dock element is fully rendered
         setTimeout(() => {

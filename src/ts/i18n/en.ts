@@ -89,6 +89,9 @@ export const en = {
             label: 'Apple menu',
         },
         applicationMenus: 'Application menus',
+        navigation: {
+            back: 'Back',
+        },
         controlCenter: {
             label: 'Control Center',
             quickActions: 'Quick Actions',
