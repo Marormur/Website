@@ -48,6 +48,7 @@ const DOCK_WINDOW_ICONS: Record<string, string> = {
     'text-modal': 'textEditor',
     'terminal-modal': 'terminal',
     terminal: 'terminal',
+    'image-modal': 'photos',
     'settings-modal': 'settings',
 };
 
@@ -73,6 +74,7 @@ const WINDOW_TYPE_TO_DOCK_ID: Record<string, string> = {
     'text-editor': 'text-modal',
     settings: 'settings-modal',
     launchpad: 'launchpad-modal',
+    photos: 'image-modal',
 };
 
 const WINDOW_TYPE_TO_PROGRAM_ICON: Record<string, string> = {
@@ -242,6 +244,57 @@ function ensureDockStructure(): DockStructure | null {
 
 function getDockAppsContainer(): HTMLElement | null {
     return ensureDockStructure()?.apps || null;
+}
+
+function createPhotosDockItem(): HTMLElement {
+    const item = document.createElement('div');
+    item.className = 'dock-item group relative flex flex-col items-center cursor-pointer';
+    item.setAttribute('data-action', 'openWindow');
+    item.setAttribute('data-window-id', 'image-modal');
+
+    const tooltip = document.createElement('span');
+    tooltip.className =
+        'dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50';
+    tooltip.setAttribute('data-i18n', 'dock.photos');
+    tooltip.textContent = window.appI18n?.translate?.('dock.photos', 'Fotos') || 'Fotos';
+
+    const icon = document.createElement('img');
+    icon.src = './img/photos-app-icon.svg';
+    icon.alt = 'Fotos Icon';
+    icon.className = 'dock-icon';
+
+    const indicator = document.createElement('span');
+    indicator.id = 'photos-indicator';
+    indicator.className = 'hidden dock-indicator';
+
+    item.appendChild(tooltip);
+    item.appendChild(icon);
+    item.appendChild(indicator);
+    return item;
+}
+
+function syncPhotosDockItemVisibility(): void {
+    const apps = getDockAppsContainer();
+    if (!apps) return;
+
+    const existing = apps.querySelector<HTMLElement>('.dock-item[data-window-id="image-modal"]');
+    const photosWindows = window.WindowRegistry?.getWindowsByType?.('photos');
+    const shouldShow = Array.isArray(photosWindows) && photosWindows.length > 0;
+
+    if (shouldShow && !existing) {
+        const item = createPhotosDockItem();
+        // Temporary app items belong after all fixed dock icons, but still
+        // before minimized previews because those live in .dock-minimized-section.
+        apps.appendChild(item);
+        renderDockProgramIcons();
+        scheduleDockReposition(getDockPreferences());
+        return;
+    }
+
+    if (!shouldShow && existing) {
+        existing.remove();
+        scheduleDockReposition(getDockPreferences());
+    }
 }
 
 function removeElementIds(root: HTMLElement): void {
@@ -1160,13 +1213,15 @@ function resolveDockTargetItem(windowId: string): HTMLElement | null {
         ? 'terminal'
         : lowerWindowId.includes('text')
           ? 'text-modal'
-          : lowerWindowId.includes('setting')
-            ? 'settings-modal'
-            : lowerWindowId.includes('launchpad')
-              ? 'launchpad-modal'
-              : lowerWindowId.includes('finder')
-                ? 'finder'
-                : null;
+          : lowerWindowId.includes('photo') || lowerWindowId.includes('image')
+            ? 'image-modal'
+            : lowerWindowId.includes('setting')
+              ? 'settings-modal'
+              : lowerWindowId.includes('launchpad')
+                ? 'launchpad-modal'
+                : lowerWindowId.includes('finder')
+                  ? 'finder'
+                  : null;
 
     if (mappedWindowId === 'finder') {
         return dock.querySelector<HTMLElement>('.dock-item:not([data-window-id])');
@@ -1328,12 +1383,15 @@ export function updateDockIndicators(): void {
     const isMobileMode = document.documentElement.getAttribute('data-ui-mode') === 'mobile';
     const preferences = getDockPreferences();
 
+    syncPhotosDockItemVisibility();
+
     const indicatorMappings = [
         { indicatorId: 'finder-indicator', windowType: 'finder' },
         { modalId: 'projects-modal', indicatorId: 'projects-indicator' },
         { modalId: 'settings-modal', indicatorId: 'settings-indicator' },
         { modalId: 'text-modal', indicatorId: 'text-indicator', windowType: 'text-editor' },
         { indicatorId: 'terminal-indicator', windowType: 'terminal' },
+        { indicatorId: 'photos-indicator', windowType: 'photos' },
     ];
 
     const showIndicators = !isMobileMode && shouldShowOpenIndicators();
