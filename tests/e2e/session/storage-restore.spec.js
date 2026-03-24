@@ -76,7 +76,7 @@ test.describe('Storage Modal Restore @basic', () => {
         expect(errors).toHaveLength(0);
     });
 
-    test('should ignore conflicting legacy openModals when multi-window session exists', async ({
+    test('should restore settings-modal from openModals when multi-window session exists', async ({
         page,
     }) => {
         const result = await page.evaluate(() => {
@@ -141,8 +141,8 @@ test.describe('Storage Modal Restore @basic', () => {
         });
 
         expect(result.exists).toBe(true);
-        expect(result.hidden).toBe(true);
-        expect(result.savedOpenModals).not.toContain('settings-modal');
+        expect(result.hidden).toBe(false);
+        expect(result.savedOpenModals).toContain('settings-modal');
     });
 
     test('should restore valid modals without errors', async ({ page }) => {

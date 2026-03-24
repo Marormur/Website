@@ -24,6 +24,7 @@ import logger from '../core/logger.js';
 
     const FINDER_STATE_KEY = (APP_CONSTANTS.FINDER_STATE_STORAGE_KEY as string) || 'finderState';
     const OPEN_MODALS_KEY = 'openModals';
+    const OPEN_MODAL_TOP_ID_KEY = 'openModalTopId';
     const MODAL_POSITIONS_KEY = 'modalPositions';
     const MULTI_WINDOW_SESSION_KEY = 'multi-window-session';
 
@@ -33,7 +34,6 @@ import logger from '../core/logger.js';
         'finder-modal',
         'terminal-modal',
         'text-modal',
-        'settings-modal',
         'image-modal',
     ]);
 
@@ -118,9 +118,60 @@ import logger from '../core/logger.js';
 
         try {
             setJSON(OPEN_MODALS_KEY, openModals);
+
+            // Preserve the top-most legacy modal so it can be re-focused after
+            // async multi-window session restore finishes.
+            const wm = w['WindowManager'] as
+                | { getTopWindow?: () => HTMLElement | null }
+                | undefined;
+            const topWindow = wm?.getTopWindow?.() || null;
+            const topWindowId = topWindow?.id || null;
+            const hasRestorableTop =
+                !!topWindowId &&
+                openModals.includes(topWindowId) &&
+                !MULTI_WINDOW_OWNED_MODAL_IDS.has(topWindowId) &&
+                !transientModalIds.has(topWindowId);
+
+            if (hasRestorableTop && topWindowId) {
+                setJSON(OPEN_MODAL_TOP_ID_KEY, topWindowId);
+            } else {
+                remove(OPEN_MODAL_TOP_ID_KEY);
+            }
         } catch (err) {
             logger.warn('STORAGE', 'Open modals konnte nicht gespeichert werden:', err);
         }
+    }
+
+    function restoreTopModalFocus(): boolean {
+        const transientModalIds = getTransientModalIds();
+        const topModalId = getJSON<string | null>(OPEN_MODAL_TOP_ID_KEY, null);
+
+        if (!topModalId || typeof topModalId !== 'string') return false;
+        if (transientModalIds.has(topModalId)) return false;
+        if (MULTI_WINDOW_OWNED_MODAL_IDS.has(topModalId)) return false;
+
+        const modal = document.getElementById(topModalId) as HTMLElement | null;
+        if (!modal || modal.classList.contains('hidden') || modal.dataset.minimized === 'true') {
+            return false;
+        }
+
+        const wm = w['WindowManager'] as { bringToFront?: (id: string) => void } | undefined;
+        if (wm && typeof wm.bringToFront === 'function') {
+            try {
+                wm.bringToFront(topModalId);
+                const updateProgramLabelByTopModal = w['updateProgramLabelByTopModal'] as
+                    | (() => void)
+                    | undefined;
+                if (typeof updateProgramLabelByTopModal === 'function') {
+                    updateProgramLabelByTopModal();
+                }
+                return true;
+            } catch (err) {
+                logger.warn('STORAGE', `Top-modal focus restore failed for "${topModalId}":`, err);
+            }
+        }
+
+        return false;
     }
 
     function restoreOpenModals(): void {
@@ -316,6 +367,8 @@ import logger from '../core/logger.js';
             | (() => void)
             | undefined;
         if (typeof updateProgramLabelByTopModal === 'function') updateProgramLabelByTopModal();
+
+        restoreTopModalFocus();
     }
 
     // ===== Window Positions & Sizes =====
@@ -548,6 +601,7 @@ import logger from '../core/logger.js';
         // Open modals
         saveOpenModals,
         restoreOpenModals,
+        restoreTopModalFocus,
 
         // Window positions
         saveWindowPositions,

@@ -668,7 +668,7 @@ export const en = {
         display: {
             title: 'Appearance options',
             description: 'Adjust how the desktop handles light and dark mode.',
-            legend: 'Dark mode',
+            legend: 'Theme',
             uiMode: {
                 legend: 'Interface mode',
                 options: {

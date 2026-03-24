@@ -669,7 +669,7 @@ export const de = {
         display: {
             title: 'Darstellungsoptionen',
             description: 'Passe an, wie der Desktop mit hellem und dunklem Design umgeht.',
-            legend: 'Darkmode',
+            legend: 'Theme',
             uiMode: {
                 legend: 'Oberflächenmodus',
                 options: {

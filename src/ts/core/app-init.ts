@@ -144,6 +144,7 @@ function initApp(): void {
         syncTopZIndexWithDOM?: () => void;
         restoreWindowPositions?: () => void;
         restoreOpenModals?: () => void;
+        restoreTopModalFocus?: () => boolean;
         initSystemStatusControls?: () => void;
         initDesktop?: () => void;
         initDockMagnification?: () => void;
@@ -322,6 +323,9 @@ function initApp(): void {
             window.__SESSION_RESTORE_DONE = true;
         })
         .finally(() => {
+            // Re-apply legacy modal focus after async session restore because
+            // multi-window restore may have changed z-order after openModals restore.
+            funcs.restoreTopModalFocus?.();
             // Mark session restore as complete in all outcomes
             sessionRestoreComplete();
         });

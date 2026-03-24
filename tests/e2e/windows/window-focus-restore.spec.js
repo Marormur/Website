@@ -354,10 +354,21 @@ test.describe('Window Focus Restoration', () => {
     test('should keep settings as active context over restored terminal after reload', async ({
         page,
     }) => {
+        await dismissWelcomeOverlayIfPresent(page);
+
         await page.evaluate(() => {
             localStorage.clear();
+            localStorage.setItem('portfolio_welcome_shown', '1');
 
             window.TerminalWindow?.focusOrCreate?.();
+            window.MultiWindowSessionManager?.saveSession?.({ immediate: true });
+        });
+
+        await openWindowAndWaitVisible(page, 'settings-modal');
+        await bringToFrontByZIndexManager(page, 'settings-modal');
+
+        await page.evaluate(() => {
+            window.saveOpenModals?.();
             window.MultiWindowSessionManager?.saveSession?.({ immediate: true });
         });
 
@@ -366,12 +377,6 @@ test.describe('Window Focus Restoration', () => {
         await dismissWelcomeOverlayIfPresent(page);
 
         await page.waitForFunction(() => window.__SESSION_RESTORED === true, { timeout: 10000 });
-
-        // openModals restore intentionally skips settings-modal when multi-window session is active
-        // to avoid legacy/multi-window conflicts. Open Settings explicitly for focus-context verification.
-        await page.evaluate(() => {
-            window.API?.window?.open?.('settings-modal');
-        });
 
         await page.waitForFunction(
             () => (window.WindowRegistry?.getAllWindows?.('terminal')?.length || 0) >= 1,

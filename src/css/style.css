@@ -362,7 +362,8 @@ html.dark .traffic-light-control::after {
 .settings-sidebar-panel {
     height: 100%;
     display: grid;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: start;
     border-radius: calc(var(--settings-window-radius) - var(--settings-sidebar-inset));
     border: 1px solid rgba(255, 255, 255, 0.55);
     /* Simulate frosted glass: heavy tint keeps it nearly opaque like real macOS. */
@@ -389,8 +390,9 @@ html.dark .traffic-light-control::after {
 .settings-sidebar {
     display: flex;
     flex-direction: column;
+    justify-content: flex-start;
     gap: 0;
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     min-height: 0;
     padding: 0 12px 12px;
     overflow: auto;
@@ -1718,6 +1720,10 @@ html.dark .settings-account:hover {
 
 html.dark .settings-account-avatar {
     border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+html.dark .settings-account-name {
+    color: #f8fafc;
 }
 
 html.dark .settings-account-subline {
