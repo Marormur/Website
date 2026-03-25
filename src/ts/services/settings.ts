@@ -1,6 +1,7 @@
 import logger from '../core/logger.js';
 import { renderInsetSidebarShellHTML } from '../framework/controls/inset-sidebar-shell.js';
 import { renderTrafficLightControlsHTML } from '../framework/controls/traffic-lights.js';
+import { getString, setString } from './storage-utils.js';
 /**
  * settings.ts
  * Settings Module - Inline settings UI with theme and language preferences
@@ -45,6 +46,36 @@ logger.debug('APP', 'Settings Module loaded');
         };
     }>;
 
+    const APP_CONSTANTS =
+        (window as unknown as { APP_CONSTANTS?: Record<string, unknown> }).APP_CONSTANTS || {};
+    const SETTINGS_SECTION_STORAGE_KEY =
+        (APP_CONSTANTS.SETTINGS_SECTION_STORAGE_KEY as string) || 'settingsCurrentSection';
+    const SETTINGS_SECTIONS: readonly SectionName[] = [
+        'menu',
+        'wifi',
+        'bluetooth',
+        'general',
+        'general-info',
+        'desktop-dock',
+        'display',
+        'language',
+    ] as const;
+
+    function isValidSectionName(value: unknown): value is SectionName {
+        return typeof value === 'string' && SETTINGS_SECTIONS.includes(value as SectionName);
+    }
+
+    function getStoredSection(): SectionName | null {
+        const stored = getString(SETTINGS_SECTION_STORAGE_KEY);
+        return isValidSectionName(stored) ? stored : null;
+    }
+
+    function getDefaultSection(): SectionName {
+        return document.documentElement.getAttribute('data-ui-mode') === 'mobile'
+            ? 'menu'
+            : 'general';
+    }
+
     interface SettingsSystemType {
         currentSection: SectionName;
         sectionHistory: SectionName[];
@@ -55,6 +86,7 @@ logger.debug('APP', 'Settings Module loaded');
         init(containerOrId: HTMLElement | string): void;
         render(): void;
         attachListeners(): void;
+        syncPersistedPreferences(): void;
         syncThemePreference(): void;
         syncUIModePreference(): void;
         syncIconThemePreference(): void;
@@ -104,8 +136,9 @@ logger.debug('APP', 'Settings Module loaded');
             }
 
             this.container = container;
-            this.currentSection = 'general';
-            this.sectionHistory = ['general'];
+            const initialSection = getStoredSection() || getDefaultSection();
+            this.currentSection = initialSection;
+            this.sectionHistory = [initialSection];
             this.historyIndex = 0;
             this.lastResponsiveCompactMode = null;
             this.settingsShellResizeObserver?.disconnect();
@@ -121,17 +154,40 @@ logger.debug('APP', 'Settings Module loaded');
             }
 
             this.attachListeners();
+            this.syncPersistedPreferences();
+            this.syncWifiNetworkList();
+            this.syncBluetoothDeviceList();
+            this.syncGeneralInfoDetails();
+            void this.fetchLatestGithubCommit();
+            this.syncResponsiveLayout();
+            this.showSection(initialSection, { pushHistory: false });
+
+            const pendingSessionRestore = (
+                window as Window & { __sessionRestorePromise?: Promise<void> }
+            ).__sessionRestorePromise;
+            if (pendingSessionRestore) {
+                void pendingSessionRestore.finally(() => {
+                    this.syncPersistedPreferences();
+                    const restoredSection = getStoredSection() || getDefaultSection();
+                    this.currentSection = restoredSection;
+                    this.sectionHistory = [restoredSection];
+                    this.historyIndex = 0;
+                    this.showSection(restoredSection, { pushHistory: false });
+                });
+            }
+        },
+
+        /**
+         * Re-apply persisted preferences after async restore phases so the UI never
+         * stays in its unselected render-default state after a reload.
+         */
+        syncPersistedPreferences(): void {
             this.syncThemePreference();
             this.syncUIModePreference();
             this.syncIconThemePreference();
             this.syncLanguagePreference();
             this.syncDisplayScalePreference();
             this.syncDockPreferences();
-            this.syncWifiNetworkList();
-            this.syncBluetoothDeviceList();
-            this.syncGeneralInfoDetails();
-            void this.fetchLatestGithubCommit();
-            this.syncResponsiveLayout({ resetToDefault: true });
         },
 
         /**
@@ -1665,19 +1721,10 @@ logger.debug('APP', 'Settings Module loaded');
             }
 
             this.currentSection = section;
+            setString(SETTINGS_SECTION_STORAGE_KEY, section);
 
             // Hide all sections
-            const sections: SectionName[] = [
-                'menu',
-                'wifi',
-                'bluetooth',
-                'general',
-                'general-info',
-                'desktop-dock',
-                'display',
-                'language',
-            ];
-            sections.forEach(name => {
+            SETTINGS_SECTIONS.forEach(name => {
                 const el = this.container?.querySelector(`#settings-${name}`);
                 if (el) {
                     el.classList.add('hidden');

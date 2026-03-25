@@ -252,14 +252,8 @@ logger.debug('APP', '✅ SystemUI loaded');
             systemStatus.connectedBluetoothDevice = saved.connectedBluetoothDevice;
         }
 
-        if (typeof saved.darkMode === 'boolean') {
-            if (typeof setThemePreference === 'function') {
-                setThemePreference(saved.darkMode ? 'dark' : 'light');
-            } else {
-                document.documentElement.classList.toggle('dark', saved.darkMode);
-            }
-        }
-
+        // Theme preference is owned by ThemeSystem/localStorage. Do not let the
+        // legacy system-status snapshot overwrite it during reload.
         systemStatus.darkMode = document.documentElement.classList.contains('dark');
     }
 
