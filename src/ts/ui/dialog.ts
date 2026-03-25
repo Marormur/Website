@@ -112,6 +112,32 @@ export class Dialog {
         }
     }
 
+    private restoreMaximizedWindowForDrag(
+        target: HTMLElement,
+        pointerLogicalX: number,
+        pointerLogicalY: number
+    ): { offsetX: number; offsetY: number } | null {
+        const ds = this.modal.dataset;
+        if (!ds || ds.maximized !== 'true') return null;
+
+        this.toggleMaximize();
+
+        const restoredRect = target.getBoundingClientRect();
+        const restoredWidth = Math.max(1, toLogicalPx(restoredRect.width));
+        const restoredHeight = Math.max(1, toLogicalPx(restoredRect.height));
+        const restoredLeft = resolveElementLogicalPx(target, 'left', restoredRect.left);
+        const restoredTop = resolveElementLogicalPx(target, 'top', restoredRect.top);
+        const offsetX = Math.max(0, Math.min(restoredWidth, pointerLogicalX - restoredLeft));
+        const offsetY = Math.max(0, Math.min(restoredHeight, pointerLogicalY - restoredTop));
+        const minTop = window.getMenuBarBottom?.() || 0;
+
+        target.style.left = `${pointerLogicalX - offsetX}px`;
+        target.style.top = `${Math.max(minTop, pointerLogicalY - offsetY)}px`;
+        window.clampWindowToMenuBar?.(target);
+
+        return { offsetX, offsetY };
+    }
+
     private applyResponsiveLayoutForCurrentMode(): void {
         if (!this.shouldApplyMobileFillLayout()) return;
 
@@ -592,7 +618,6 @@ export class Dialog {
                 (e.target as Element).closest('[data-dialog-action]')
             )
                 return;
-            if (this.modal.dataset && this.modal.dataset.maximized === 'true') return;
             const currentRect = target.getBoundingClientRect();
             pointerScale = detectClientCoordinateScale(e.clientX, e.clientY, currentRect);
             const pointerX = e.clientX;
@@ -630,13 +655,27 @@ export class Dialog {
             } else if (!target.style.position) {
                 target.style.position = computedPosition;
             }
-            const minTop = window.getMenuBarBottom?.() || 0;
-            target.style.left = `${logicalPointerX - localOffsetX}px`;
-            target.style.top = `${Math.max(minTop, logicalPointerY - localOffsetY)}px`;
-            window.clampWindowToMenuBar?.(target);
-            const adjustedRect = target.getBoundingClientRect();
-            offsetX = logicalPointerX - resolveElementLogicalPx(target, 'left', adjustedRect.left);
-            offsetY = logicalPointerY - resolveElementLogicalPx(target, 'top', adjustedRect.top);
+
+            const restoredOffsets = this.restoreMaximizedWindowForDrag(
+                target,
+                logicalPointerX,
+                logicalPointerY
+            );
+
+            if (restoredOffsets) {
+                offsetX = restoredOffsets.offsetX;
+                offsetY = restoredOffsets.offsetY;
+            } else {
+                const minTop = window.getMenuBarBottom?.() || 0;
+                target.style.left = `${logicalPointerX - localOffsetX}px`;
+                target.style.top = `${Math.max(minTop, logicalPointerY - localOffsetY)}px`;
+                window.clampWindowToMenuBar?.(target);
+                const adjustedRect = target.getBoundingClientRect();
+                offsetX =
+                    logicalPointerX - resolveElementLogicalPx(target, 'left', adjustedRect.left);
+                offsetY =
+                    logicalPointerY - resolveElementLogicalPx(target, 'top', adjustedRect.top);
+            }
             this.lastDragPointerX = renderedPointerX;
             document.body.classList.add('window-dragging');
             const overlay = document.createElement('div');

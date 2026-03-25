@@ -140,6 +140,12 @@ body.window-dragging * {
     cursor: move;
 }
 
+.draggable-header .traffic-light-controls,
+.draggable-header .traffic-light-control,
+.draggable-header .settings-window-controls {
+    pointer-events: auto;
+}
+
 .draggable-header button,
 .draggable-header [role='button'],
 .draggable-header a {
@@ -153,6 +159,7 @@ body.window-dragging * {
     flex: 0 0 auto;
     position: relative;
     z-index: 4;
+    isolation: isolate;
 }
 
 .traffic-light-control {
