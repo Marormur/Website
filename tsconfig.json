@@ -30,6 +30,13 @@
       "@/*": ["./js/*"]
     }
   },
-  "include": ["js/**/*.js", "js/**/*.ts", "app.js", "types/**/*.d.ts"],
+  "include": [
+    "js/**/*.js",
+    "js/**/*.ts",
+    "src/ts/**/*.ts",
+    "src/ts/**/*.d.ts",
+    "app.js",
+    "types/**/*.d.ts"
+  ],
   "exclude": ["node_modules", "dist", "test-results", "tests"]
 }
