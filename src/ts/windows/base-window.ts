@@ -482,8 +482,9 @@ export class BaseWindow {
             e.preventDefault();
         });
 
-        this.titlebarElement.addEventListener('dblclick', (e: MouseEvent) => {
+        this.titlebarElement.addEventListener('click', (e: MouseEvent) => {
             if (this._isMobileUIMode()) return;
+            if (e.detail !== 2 || e.button !== 0) return;
             const target = e.target as HTMLElement | null;
             if (target?.closest('button, a, input, select, textarea, [role="button"]')) {
                 return;
