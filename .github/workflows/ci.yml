@@ -27,20 +27,20 @@ jobs:
         name: Workflow Lint
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
             - name: Lint GitHub Actions workflows
-              uses: rhysd/actionlint@v1.7.11
+              uses: reviewdog/action-actionlint@144cce1f5f4aad4f36bfba866f46565ac2c93546 # v1.9.0
 
     quality:
         name: Code Quality
         runs-on: ubuntu-latest
         needs: workflow-lint
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -72,7 +72,7 @@ jobs:
               run: npm run build:css
 
             - name: Upload build artifacts
-              uses: actions/upload-artifact@v7
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
               with:
                   name: build-${{ github.sha }}
                   path: |
@@ -88,10 +88,10 @@ jobs:
             contents: read
             id-token: write
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -105,7 +105,7 @@ jobs:
 
             - name: Upload test results to Codecov
               if: ${{ !cancelled() }}
-              uses: codecov/codecov-action@v5
+              uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5
               with:
                   use_oidc: true
                   files: ./test-report.junit.xml
@@ -115,7 +115,7 @@ jobs:
 
             - name: Upload coverage to Codecov
               if: always()
-              uses: codecov/codecov-action@v5
+              uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5
               with:
                   use_oidc: true
                   files: ./coverage/lcov.info
@@ -124,7 +124,7 @@ jobs:
 
             - name: Upload coverage report
               if: always()
-              uses: actions/upload-artifact@v7
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
               with:
                   name: coverage-report-${{ github.sha }}
                   path: coverage/
@@ -135,10 +135,10 @@ jobs:
         runs-on: ubuntu-latest
         needs: [quality, test-unit]
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -147,7 +147,7 @@ jobs:
               run: npm ci
 
             - name: Cache Playwright browsers
-              uses: actions/cache@v5
+              uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
               with:
                   path: ~/.cache/ms-playwright
                   key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
@@ -162,7 +162,7 @@ jobs:
 
             - name: Upload test results
               if: failure()
-              uses: actions/upload-artifact@v7
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
               with:
                   name: test-results-chromium
                   path: test-results/
@@ -174,10 +174,10 @@ jobs:
         needs: [quality, test-unit, test-smoke-chromium]
         if: github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.event.inputs.fullRegression == 'true') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[test-all]')) || (github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[test-all]'))
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -186,7 +186,7 @@ jobs:
               run: npm ci
 
             - name: Cache Playwright browsers
-              uses: actions/cache@v5
+              uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
               with:
                   path: ~/.cache/ms-playwright
                   key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
@@ -201,7 +201,7 @@ jobs:
 
             - name: Upload test results
               if: failure()
-              uses: actions/upload-artifact@v7
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
               with:
                   name: test-results-full-chromium
                   path: test-results/
@@ -216,10 +216,10 @@ jobs:
             matrix:
                 browser: [firefox, webkit]
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -228,7 +228,7 @@ jobs:
               run: npm ci
 
             - name: Cache Playwright browsers
-              uses: actions/cache@v5
+              uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
               with:
                   path: ~/.cache/ms-playwright
                   key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
@@ -243,7 +243,7 @@ jobs:
 
             - name: Upload test results
               if: failure()
-              uses: actions/upload-artifact@v7
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
               with:
                   name: test-results-${{ matrix.browser }}
                   path: test-results/
@@ -253,10 +253,10 @@ jobs:
         name: Security Audit
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
               with:
                   node-version: '20'
 
