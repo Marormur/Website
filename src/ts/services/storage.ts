@@ -35,6 +35,7 @@ import logger from '../core/logger.js';
         'terminal-modal',
         'text-modal',
         'image-modal',
+        'about-modal',
     ]);
 
     // These app windows are owned exclusively by the multi-window/session restore pipeline.
@@ -45,6 +46,7 @@ import logger from '../core/logger.js';
         'terminal-modal',
         'text-modal',
         'image-modal',
+        'about-modal',
     ]);
 
     const getModalIds = (): string[] => {

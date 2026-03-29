@@ -308,8 +308,11 @@ Neue Code-Dateien dürfen **nicht**:
 - ✅ `src/ts/services/storage.ts`: Legacy-`openModals`-Restore ist dialogs-frei (WindowManager-first + DOM-Fallback).
 - ✅ `src/ts/core/app-init.ts`: Dialoginstanzen werden primär im WindowManager registriert; der letzte `window.dialogs`-Compat-Spiegel wurde entfernt.
 - ✅ Ergebnis: in `src/ts` gibt es keine direkten `window.dialogs`-/`dialogs[...]`-Zugriffe mehr.
+- ✅ `src/ts/apps/about/about-window.ts`: erster echter Dialog-Migrationsschritt als `BaseWindow`-Subklasse (`type: 'about'`) umgesetzt und global exponiert.
+- ✅ `src/ts/ui/actions/windows.ts`: `openAbout` nutzt jetzt primär `AboutWindow.focusOrCreate()` und schließt das Legacy-`about-modal` explizit.
+- ✅ `src/ts/services/storage.ts`: `about-modal` ist als multi-window-owned markiert, sodass Legacy-`openModals` kein Doppel-About mehr wiederherstellt.
 - dock.ts: LEGACY_MODAL_ID_TO_WINDOW_TYPE nur noch für in-flight Legacy-Dialoge (tempor.)
-- **Abhängig von:** Settings/About als BaseWindow-Subklassen implementiert.
+- **Abhängig von:** v. a. `Settings` als BaseWindow-Subklasse; `About` ist bereits migriert.
 - **Risiko:** Hoch (Settings ist feature-reich). **Aufwand:** Hoch. **Priorität:** Nach Phase 0 + 1.
 
 **Phase 3: Session Restore Simplification**

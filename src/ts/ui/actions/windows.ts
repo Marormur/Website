@@ -7,6 +7,7 @@ import logger from '../../core/logger.js';
 
 function openByTypeWithLegacyFallback(type: string, legacyModalId: string): void {
     const g = getGlobal<{
+        AboutWindow?: { focusOrCreate?: () => void };
         WindowRegistry?: {
             getActiveWindow?: () => {
                 type?: string;
@@ -15,8 +16,14 @@ function openByTypeWithLegacyFallback(type: string, legacyModalId: string): void
             } | null;
             getWindowsByType?: (t: string) => Array<{ zIndex?: number; bringToFront?: () => void }>;
         };
-        WindowManager?: { open?: (id: string) => void };
+        WindowManager?: { open?: (id: string) => void; close?: (id: string) => void };
     }>('');
+
+    if (type === 'about' && g?.AboutWindow?.focusOrCreate) {
+        g.AboutWindow.focusOrCreate();
+        g?.WindowManager?.close?.(legacyModalId);
+        return;
+    }
 
     const active = g?.WindowRegistry?.getActiveWindow?.();
     if (active?.type === type && typeof active.bringToFront === 'function') {

@@ -363,6 +363,11 @@ declare global {
             create?: (config?: { title?: string; getWindowCount?: () => number }) => unknown;
             focusOrCreate?: () => void;
         };
+        /** AboutWindow class/factory for creating about windows. */
+        AboutWindow?: {
+            create?: (config?: { title?: string }) => unknown;
+            focusOrCreate?: (config?: { title?: string }) => unknown;
+        };
         /** API facade for the application. */
         API?: {
             window?: {
