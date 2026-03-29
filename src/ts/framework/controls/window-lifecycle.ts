@@ -27,6 +27,19 @@ export function showAndRegisterWindow<T extends ShowableWindowLike>(
     if (options?.requestTabsRender) {
         instance.requestTabsRender?.();
     }
+
+    // CRITICAL: Trigger immediate session save after window is shown and registered.
+    // This ensures newly created windows (especially About/Settings) get persisted to
+    // multi-window-session, not just relying on auto-save delays.
+    const multiWindowManager = (
+        globalThis.window as typeof window & {
+            MultiWindowSessionManager?: { saveSession?: (opts?: { immediate?: boolean }) => void };
+        }
+    ).MultiWindowSessionManager;
+    if (multiWindowManager?.saveSession) {
+        multiWindowManager.saveSession({ immediate: true });
+    }
+
     return instance;
 }
 
