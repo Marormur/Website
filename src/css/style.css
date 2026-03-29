@@ -4424,6 +4424,7 @@ html.dark #snap-preview-overlay {
 :is(#about-modal, .about-window-shell) .about-hero-image-wrap {
     width: 146px;
     height: 146px;
+    aspect-ratio: 1 / 1;
     border-radius: 12px;
     overflow: hidden;
     margin-top: 26px;
@@ -4435,8 +4436,10 @@ html.dark #snap-preview-overlay {
 }
 
 :is(#about-modal, .about-window-shell) .about-hero-image {
+    display: block;
     width: 100%;
     height: 100%;
+    aspect-ratio: 1 / 1;
     object-fit: cover;
 }
 

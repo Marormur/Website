@@ -16,6 +16,7 @@ export class AboutWindow extends BaseWindow {
                 height: 560,
             },
             ...config,
+            resizable: false,
         });
     }
 
@@ -24,7 +25,6 @@ export class AboutWindow extends BaseWindow {
 
         modal.classList.add('about-window-shell');
         modal.classList.add('about-window');
-        modal.setAttribute('data-no-resize', 'true');
         modal.style.minWidth = '360px';
         modal.style.minHeight = '460px';
 

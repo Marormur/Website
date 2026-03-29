@@ -32,6 +32,7 @@ export interface WindowConfig {
     position?: WindowPosition;
     tabs?: BaseTab[];
     metadata?: Record<string, unknown>;
+    resizable?: boolean;
 }
 
 export interface WindowState {
@@ -91,6 +92,7 @@ export class BaseWindow {
     tabs: Map<string, BaseTab>;
     activeTabId: string | null;
     metadata: Record<string, unknown>;
+    resizable: boolean;
     private restoreBeforeMaximize: WindowPosition | null;
     /** Invisible overlay shown on unfocused windows to reliably intercept the first click. */
     private _focusOverlay: HTMLElement | null = null;
@@ -222,6 +224,7 @@ export class BaseWindow {
         this.tabs = new Map();
         this.activeTabId = null;
         this.metadata = config.metadata || {};
+        this.resizable = config.resizable !== false;
         this.restoreBeforeMaximize = null;
         this.dragState = {
             isDragging: false,
@@ -771,6 +774,8 @@ export class BaseWindow {
         const existingHandles = this.element.querySelectorAll('.resizer');
         existingHandles.forEach(handle => handle.remove());
 
+        if (!this.resizable) return;
+
         type ResizeHandle = {
             name: string;
             cursor: string;
@@ -982,6 +987,11 @@ export class BaseWindow {
         ];
 
         handles.forEach(createHandle);
+    }
+
+    setResizable(resizable: boolean): void {
+        this.resizable = resizable;
+        this._attachResizeHandlers();
     }
 
     private _updatePosition(): void {

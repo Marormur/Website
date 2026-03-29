@@ -37,6 +37,14 @@ export class SettingsWindow extends BaseWindow {
         const modal = super.createDOM();
         modal.classList.add('settings-window-shell');
 
+        // IMPORTANT: Remove BaseWindow's auto-generated titlebar because SettingsSystem
+        // renders its own titlebar inline (via renderTrafficLightControlsHTML in render()).
+        // This prevents double titlebar.
+        if (this.titlebarElement) {
+            this.titlebarElement.remove();
+            this.titlebarElement = null;
+        }
+
         // Set style overrides for Settings window
         modal.style.minWidth = '360px';
         modal.style.minHeight = '460px';
