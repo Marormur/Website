@@ -14,6 +14,8 @@
  * - Keine Race Conditions, da Registration vor renderApplicationMenu() passiert
  */
 
+import logger from '../core/logger.js';
+
 export interface MenuSection {
     id: string;
     label: string | (() => string);
@@ -50,7 +52,10 @@ class MenuRegistry {
      */
     register(appType: string, builder: MenuBuilder) {
         if (typeof builder !== 'function') {
-            console.warn(`MenuRegistry.register(${appType}): builder ist nicht vom Typ 'function'`);
+            logger.warn(
+                'MENU',
+                `MenuRegistry.register(${appType}): builder ist nicht vom Typ 'function'`
+            );
             return;
         }
         this.contributions.set(appType, builder);
@@ -70,7 +75,11 @@ class MenuRegistry {
             const result = builder();
             return Array.isArray(result) ? result : [];
         } catch (e) {
-            console.error(`MenuRegistry.getMenusForAppType(${appType}): builder threw an error`, e);
+            logger.error(
+                'MENU',
+                `MenuRegistry.getMenusForAppType(${appType}): builder threw an error`,
+                e
+            );
             return [];
         }
     }

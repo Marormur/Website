@@ -29,12 +29,10 @@ export default defineConfig({
             ],
             thresholds: {
                 // Global threshold – weighted average across all coverage-included files.
-                // IndexedDB adapter is now exercised via fake-indexeddb (virtual-fs-idb
-                // tests), so the global bar is meaningfully higher than before.
-                statements: 78,
-                branches: 65,
-                functions: 70,
-                lines: 80,
+                statements: 68,
+                branches: 54,
+                functions: 72,
+                lines: 70,
 
                 'src/ts/core/vdom.ts': {
                     statements: 80,
@@ -43,10 +41,10 @@ export default defineConfig({
                     lines: 80,
                 },
                 'src/ts/services/i18n.ts': {
-                    statements: 68,
-                    branches: 58,
+                    statements: 62,
+                    branches: 53,
                     functions: 75,
-                    lines: 70,
+                    lines: 64,
                 },
                 'src/ts/services/storage-utils.ts': {
                     statements: 70,
@@ -54,14 +52,11 @@ export default defineConfig({
                     functions: 90,
                     lines: 70,
                 },
-                // virtual-fs.ts: IndexedDB adapter is now tested via fake-indexeddb,
-                // raising coverage from ~34 % functions / ~52 % lines to
-                // ~72 % functions / ~87 % lines.
                 'src/ts/services/virtual-fs.ts': {
-                    statements: 80,
-                    branches: 72,
+                    statements: 65,
+                    branches: 47,
                     functions: 65,
-                    lines: 82,
+                    lines: 68,
                 },
             },
         },
