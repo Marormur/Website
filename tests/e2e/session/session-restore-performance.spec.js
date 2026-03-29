@@ -63,6 +63,7 @@ async function createTerminalTabs(page, count) {
     await page.evaluate(tabCount => {
         if (!window.TerminalWindow?.create) return;
         const terminalWindow = window.TerminalWindow.create();
+        if (!terminalWindow) return;
         for (let index = 1; index < tabCount; index++) {
             terminalWindow.createSession?.(`Terminal ${index + 1}`);
         }
@@ -73,6 +74,7 @@ async function createEditorTabs(page, count) {
     await page.evaluate(tabCount => {
         if (!window.TextEditorWindow?.create) return;
         const editorWindow = window.TextEditorWindow.create();
+        if (!editorWindow) return;
         for (let index = 1; index < tabCount; index++) {
             editorWindow.createDocument?.(`TextEditor ${index + 1}`);
         }
@@ -230,7 +232,7 @@ test.describe('Session Restore Performance', () => {
         console.log('Metrics after restore:', metrics);
 
         // Verify all instances were restored
-        expect(metrics.instanceCount - beforeCounts.total).toBe(instanceCount);
+        expect((metrics.instanceCount ?? 0) - beforeCounts.total).toBe(instanceCount);
 
         // Performance assertion: < 500ms for 20 instances (Issue #125)
         expect(metrics.duration).not.toBeNull();
@@ -359,8 +361,9 @@ test.describe('Session Restore Performance', () => {
             const terminalWindow = (window.WindowRegistry?.getAllWindows?.('terminal') || [])[0];
             const sessions = terminalWindow?.sessions || [];
             const targetSession = sessions[10] || sessions[sessions.length - 1] || null;
-            if (!terminalWindow || !targetSession) return null;
-            terminalWindow.setActiveTab?.(targetSession.id);
+            const targetSessionId = targetSession?.id;
+            if (!terminalWindow || !targetSessionId) return null;
+            terminalWindow.setActiveTab?.(targetSessionId);
             return terminalWindow.activeSession?.id || null;
         });
 

@@ -63,7 +63,11 @@ test.describe('Menubar switches with active window (de-DE)', () => {
         await waitForFinderReady(page);
 
         await page.waitForFunction(
-            () => window.WindowRegistry?.getActiveWindow?.()?.type === 'finder',
+            () => {
+                const activeWindow = window.WindowRegistry?.getActiveWindow?.();
+                if (!activeWindow || !('type' in activeWindow)) return false;
+                return activeWindow.type === 'finder';
+            },
             { timeout: 10000 }
         );
 

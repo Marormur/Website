@@ -121,20 +121,20 @@ test.describe('Dev Minimum Smoke @smoke', () => {
             expect(matched).toBe(true);
         };
 
-        expect(result.finder.calledWith).toBe('finder');
-        expectOneOf(result.finder.labels, [
+        expect(result.finder?.calledWith).toBe('finder');
+        expectOneOf(result.finder?.labels || [], [
             ['Ablage', 'Fenster', 'Hilfe'],
             ['File', 'Window', 'Help'],
         ]);
 
-        expect(result.textEditor.calledWith).toBe('text-editor');
-        expectOneOf(result.textEditor.labels, [
+        expect(result.textEditor?.calledWith).toBe('text-editor');
+        expectOneOf(result.textEditor?.labels || [], [
             ['Ablage', 'Bearbeiten', 'Darstellung', 'Fenster', 'Hilfe'],
             ['File', 'Edit', 'View', 'Window', 'Help'],
         ]);
 
-        expect(result.settings.calledWith).toBe('settings');
-        expectOneOf(result.settings.labels, [
+        expect(result.settings?.calledWith).toBe('settings');
+        expectOneOf(result.settings?.labels || [], [
             ['Ablage', 'Fenster', 'Hilfe'],
             ['File', 'Window', 'Help'],
         ]);
