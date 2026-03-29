@@ -163,6 +163,17 @@ export function getWindowActions(): ActionMap {
                 return;
             }
 
+            // SPECIAL: Multi-Window Settings/About
+            if (windowId === 'settings-modal' || windowId === 'about-modal') {
+                openByTypeWithLegacyFallback(
+                    windowId === 'settings-modal' ? 'settings' : 'about',
+                    windowId
+                );
+                const g = getGlobal<{ updateProgramLabelByTopModal?: () => void }>('');
+                g?.updateProgramLabelByTopModal?.();
+                return;
+            }
+
             const wm = getGlobal<{ open?: (id: string) => void }>('WindowManager');
             wm?.open?.(windowId);
 
