@@ -18,9 +18,9 @@ export function getPreviewActions(): ActionMap {
                 const preview = getGlobal<{
                     openImages?: (list: string[], start: number, path?: string) => void;
                 }>('PreviewInstanceManager');
-                const finder = getGlobal<{ openItem?: (name: string, type: string) => void }>(
-                    'FinderSystem'
-                );
+                const actionBus = getGlobal<{
+                    execute?: (actionName: string, params?: Record<string, string>) => void;
+                }>('ActionBus');
 
                 if (single) {
                     const list = [single];
@@ -45,7 +45,10 @@ export function getPreviewActions(): ActionMap {
 
                 const itemName = (params['itemName'] || params['name']) as string | undefined;
                 if (itemName) {
-                    finder?.openItem?.(itemName, 'file');
+                    actionBus?.execute?.('finder:openItem', {
+                        itemName,
+                        itemType: 'file',
+                    });
                 }
             });
         },

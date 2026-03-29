@@ -9,65 +9,13 @@
         <link rel="stylesheet" href="./src/css/style.css" />
         <link rel="stylesheet" href="./src/css/mobile-gesture-nav.css" />
 
-        <!-- Early readiness monitor: mark __APP_READY only after core globals appear, with a hard
-             fallback after a generous timeout to keep tests unblocked. -->
+        <!-- Initialize readiness flag; the authoritative __APP_READY signal is set in app-init.ts. -->
         <script>
             (() => {
                 const w = window;
-                w.__APP_READY = false;
-                const hasCore = () => {
-                    const base = !!(
-                        w.ActionBus &&
-                        w.WindowRegistry &&
-                        w.DockSystem &&
-                        w.WindowManager
-                    );
-                    const multiWindow = !!(
-                        w.TerminalInstanceManager &&
-                        w.TextEditorInstanceManager &&
-                        w.FinderInstanceManager
-                    );
-                    const windowComponents = !!(
-                        w.WindowComponentFactory &&
-                        typeof w.WindowComponentFactory.createTitlebar === 'function' &&
-                        typeof w.WindowComponentFactory.createToolbar === 'function' &&
-                        typeof w.WindowComponentFactory.createStatusBar === 'function'
-                    );
-                    return base && multiWindow && windowComponents;
-                };
-                const markReady = label => {
-                    if (!w.__APP_READY) {
-                        console.info(`[AppReady Monitor] ready via ${label}`);
-                        w.__APP_READY = true;
-                    }
-                };
-
-                // Poll until core is present, then mark ready
-                let polls = 0;
-                const poll = () => {
-                    if (hasCore()) {
-                        markReady('core-present');
-                        return;
-                    }
-                    polls += 1;
-                    if (polls < 60) {
-                        setTimeout(poll, 200);
-                    }
-                };
-                poll();
-
-                // Safety timeout: never force a false-positive readiness state.
-                // If core globals are still missing, keep __APP_READY=false so tests fail fast
-                // with a real initialization error instead of cascading undefined-access errors.
-                setTimeout(() => {
-                    if (hasCore()) {
-                        markReady('timeout-12s-core-confirmed');
-                    } else {
-                        console.warn(
-                            '[AppReady Monitor] timeout reached but core globals are incomplete; keeping __APP_READY=false'
-                        );
-                    }
-                }, 12000);
+                if (typeof w.__APP_READY !== 'boolean') {
+                    w.__APP_READY = false;
+                }
             })();
         </script>
 
@@ -1127,12 +1075,8 @@
                                             class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300"
                                         ></div>
 
-                                        <!-- Fallback bootstrap to guarantee init + visibility + __APP_READY
-                                             This is intentionally defensive to support bundle/non-bundle modes
-                                             and recover from rare load-event issues that can leave the app in
-                                             an unready state (causing E2E readiness timeouts) or hide desktop
-                                             icons. It is idempotent and only runs if the main init/ready flags
-                                             have not completed yet. -->
+                                        <!-- Fallback bootstrap to guarantee init + visibility.
+                                            __APP_READY is set only in app-init.ts. -->
                                         <script>
                                             (() => {
                                                 const w = window;
@@ -1193,51 +1137,11 @@
                                                     }
                                                 };
 
-                                                const hasCore = () => {
-                                                    const base = !!(
-                                                        w.ActionBus &&
-                                                        w.WindowRegistry &&
-                                                        w.DockSystem &&
-                                                        w.WindowManager
-                                                    );
-                                                    const multiWindow = !!(
-                                                        w.TerminalInstanceManager &&
-                                                        w.TextEditorInstanceManager &&
-                                                        w.FinderInstanceManager
-                                                    );
-                                                    const windowComponents = !!(
-                                                        w.WindowComponentFactory &&
-                                                        typeof w.WindowComponentFactory
-                                                            .createTitlebar === 'function' &&
-                                                        typeof w.WindowComponentFactory
-                                                            .createToolbar === 'function' &&
-                                                        typeof w.WindowComponentFactory
-                                                            .createStatusBar === 'function'
-                                                    );
-                                                    return base && multiWindow && windowComponents;
-                                                };
-                                                const markReadyFallback = label => {
-                                                    try {
-                                                        if (!w.__APP_READY && hasCore()) {
-                                                            console.info(
-                                                                `[Fallback Init] __APP_READY via ${label}`
-                                                            );
-                                                            w.__APP_READY = true;
-                                                        }
-                                                    } catch (e) {
-                                                        console.warn(
-                                                            '[Fallback Init] markReady failed:',
-                                                            e
-                                                        );
-                                                    }
-                                                };
-
                                                 // Staggered retries to survive slow loads
                                                 [500, 1500, 3000, 5000, 8000, 12000].forEach(
                                                     delay => {
                                                         setTimeout(() => {
                                                             ensureDesktopIcons();
-                                                            markReadyFallback(`t+${delay}ms`);
                                                         }, delay);
                                                     }
                                                 );

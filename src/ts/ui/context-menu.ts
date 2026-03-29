@@ -83,6 +83,56 @@ if (guardedWindow[guardKey]) {
 
     function getMenuItemsForTarget(target: Element | null) {
         const items: Array<any> = [];
+        const executeAction = (actionName: string, params: Record<string, string> = {}) => {
+            const actionBus = window.ActionBus;
+            if (actionBus && typeof actionBus.execute === 'function') {
+                actionBus.execute(actionName, params);
+            }
+        };
+        const getFinderStateSnapshot = () => {
+            const registry = window.WindowRegistry as
+                | {
+                      getWindowsByType?: (type: string) => Array<{
+                          type?: string;
+                          zIndex?: number;
+                          getState?: () => {
+                              currentPath?: string[] | string;
+                              currentView?: string;
+                              viewMode?: string;
+                          };
+                      }>;
+                      getActiveWindow?: () => {
+                          type?: string;
+                          getState?: () => {
+                              currentPath?: string[] | string;
+                              currentView?: string;
+                              viewMode?: string;
+                          };
+                      } | null;
+                  }
+                | undefined;
+
+            const activeWindow = registry?.getActiveWindow?.();
+            const finderWindow =
+                activeWindow?.type === 'finder'
+                    ? activeWindow
+                    : (registry?.getWindowsByType?.('finder') || []).reduce(
+                          (best, curr) =>
+                              !best || (curr.zIndex || 0) >= (best.zIndex || 0) ? curr : best,
+                          null as {
+                              getState?: () => {
+                                  currentPath?: string[] | string;
+                                  currentView?: string;
+                                  viewMode?: string;
+                              };
+                              zIndex?: number;
+                          } | null
+                      );
+
+            const stateFromWindow = finderWindow?.getState?.();
+            if (stateFromWindow) return stateFromWindow;
+            return null;
+        };
         const inDesktop = !!(
             target &&
             (target as Element).closest &&
@@ -159,11 +209,8 @@ if (guardedWindow[guardKey]) {
                         id: 'finder-open-item',
                         label: i18n.translate('context.finder.openItem') || 'Öffnen',
                         action: () => {
-                            if (
-                                window.FinderSystem &&
-                                typeof window.FinderSystem.openItem === 'function'
-                            )
-                                window.FinderSystem.openItem(itemName, itemType);
+                            // TODO: wäre für solche open-Aufrufe es vielleicht besser, die app mit dem item als parameter aufzurufen? Ähnlich wie ein echtes OS es macht. dann müssen wir nicht für alles aktionen definieren, sondern das regeln dann die jeweiligen programme selbst.
+                            executeAction('finder:openItem', { itemName, itemType });
                         },
                     });
 
@@ -176,11 +223,7 @@ if (guardedWindow[guardKey]) {
                                 i18n.translate('context.finder.openWithPreview') ||
                                 'Öffnen mit Vorschau',
                             action: () => {
-                                // Use ActionBus for simplicity
-                                const ab = window.ActionBus;
-                                if (ab && typeof ab.execute === 'function') {
-                                    ab.execute('openWithPreview', { itemName });
-                                }
+                                executeAction('openWithPreview', { itemName });
                             },
                         });
                     }
@@ -201,33 +244,26 @@ if (guardedWindow[guardKey]) {
                 id: 'finder-refresh',
                 label: i18n.translate('context.finder.refresh') || 'Aktualisieren',
                 action: () => {
-                    if (
-                        window.FinderSystem &&
-                        typeof window.FinderSystem.navigateTo === 'function'
-                    ) {
-                        const state = window.FinderSystem.getState();
-                        if (state) {
-                            window.FinderSystem.navigateTo(state.currentPath, state.currentView);
-                        }
+                    const state = getFinderStateSnapshot();
+                    if (!state) return;
+                    const pathValue = Array.isArray(state.currentPath)
+                        ? state.currentPath.join('/')
+                        : String(state.currentPath || '');
+                    executeAction('finder:navigateToPath', { path: pathValue });
+                    if (state.currentView) {
+                        executeAction('finder:switchView', { finderView: state.currentView });
                     }
                 },
             });
             items.push({ type: 'separator' });
 
-            const currentViewMode =
-                window.FinderSystem && window.FinderSystem.getState
-                    ? (window.FinderSystem.getState()?.viewMode ?? 'list')
-                    : 'list';
+            const currentViewMode = getFinderStateSnapshot()?.viewMode === 'grid' ? 'grid' : 'list';
             if (currentViewMode !== 'list') {
                 items.push({
                     id: 'finder-view-list',
                     label: i18n.translate('context.finder.viewList') || 'Als Liste',
                     action: () => {
-                        if (
-                            window.FinderSystem &&
-                            typeof window.FinderSystem.setViewMode === 'function'
-                        )
-                            window.FinderSystem.setViewMode('list');
+                        executeAction('finder:setViewMode', { viewMode: 'list' });
                     },
                 });
             }
@@ -236,11 +272,7 @@ if (guardedWindow[guardKey]) {
                     id: 'finder-view-grid',
                     label: i18n.translate('context.finder.viewGrid') || 'Als Raster',
                     action: () => {
-                        if (
-                            window.FinderSystem &&
-                            typeof window.FinderSystem.setViewMode === 'function'
-                        )
-                            window.FinderSystem.setViewMode('grid');
+                        executeAction('finder:setViewMode', { viewMode: 'grid' });
                     },
                 });
             }
@@ -250,24 +282,21 @@ if (guardedWindow[guardKey]) {
                 id: 'finder-sort-name',
                 label: i18n.translate('context.finder.sortByName') || 'Nach Name sortieren',
                 action: () => {
-                    if (window.FinderSystem && typeof window.FinderSystem.setSortBy === 'function')
-                        window.FinderSystem.setSortBy('name');
+                    executeAction('finder:setSortBy', { sortBy: 'name' });
                 },
             });
             items.push({
                 id: 'finder-sort-date',
                 label: i18n.translate('context.finder.sortByDate') || 'Nach Datum sortieren',
                 action: () => {
-                    if (window.FinderSystem && typeof window.FinderSystem.setSortBy === 'function')
-                        window.FinderSystem.setSortBy('date');
+                    executeAction('finder:setSortBy', { sortBy: 'date' });
                 },
             });
             items.push({
                 id: 'finder-sort-size',
                 label: i18n.translate('context.finder.sortBySize') || 'Nach Größe sortieren',
                 action: () => {
-                    if (window.FinderSystem && typeof window.FinderSystem.setSortBy === 'function')
-                        window.FinderSystem.setSortBy('size');
+                    executeAction('finder:setSortBy', { sortBy: 'size' });
                 },
             });
 

@@ -63,6 +63,83 @@ test.describe('Dev Minimum Smoke @smoke', () => {
         await expect(page.locator('#settings-modal [data-settings-page]').first()).toBeVisible();
     });
 
+    test('menu registry renders menubar for multiple app contexts', async ({ page }) => {
+        const result = await page.evaluate(() => {
+            const registry = window.MenuRegistry;
+            const menuSystem = window.MenuSystem;
+
+            if (!registry || typeof registry.getMenusForAppType !== 'function') {
+                return { error: 'MenuRegistry unavailable' };
+            }
+
+            if (!menuSystem || typeof menuSystem.renderApplicationMenu !== 'function') {
+                return { error: 'MenuSystem unavailable' };
+            }
+
+            const originalGetMenusForAppType = registry.getMenusForAppType.bind(registry);
+
+            const captureRender = modalId => {
+                let calledWith = null;
+                registry.getMenusForAppType = appType => {
+                    calledWith = appType;
+                    return originalGetMenusForAppType(appType);
+                };
+
+                menuSystem.renderApplicationMenu(modalId);
+
+                const labels = Array.from(
+                    document.querySelectorAll('#menubar-links .menubar-item')
+                ).map(element => element.textContent?.trim());
+
+                registry.getMenusForAppType = originalGetMenusForAppType;
+                return { calledWith, labels };
+            };
+
+            const finder = captureRender('projects-modal');
+            const textEditor = captureRender('text-modal');
+            const settings = captureRender('settings-modal');
+
+            menuSystem.renderApplicationMenu('projects-modal');
+
+            return {
+                finder,
+                textEditor,
+                settings,
+                registeredApps: registry.debug?.() || [],
+            };
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.registeredApps).toEqual(
+            expect.arrayContaining(['finder', 'text-editor', 'settings'])
+        );
+
+        const expectOneOf = (labels, expectedVariants) => {
+            const matched = expectedVariants.some(variant =>
+                variant.every(label => labels.includes(label))
+            );
+            expect(matched).toBe(true);
+        };
+
+        expect(result.finder.calledWith).toBe('finder');
+        expectOneOf(result.finder.labels, [
+            ['Ablage', 'Fenster', 'Hilfe'],
+            ['File', 'Window', 'Help'],
+        ]);
+
+        expect(result.textEditor.calledWith).toBe('text-editor');
+        expectOneOf(result.textEditor.labels, [
+            ['Ablage', 'Bearbeiten', 'Darstellung', 'Fenster', 'Hilfe'],
+            ['File', 'Edit', 'View', 'Window', 'Help'],
+        ]);
+
+        expect(result.settings.calledWith).toBe('settings');
+        expectOneOf(result.settings.labels, [
+            ['Ablage', 'Fenster', 'Hilfe'],
+            ['File', 'Window', 'Help'],
+        ]);
+    });
+
     test('session snapshot is persisted', async ({ page }) => {
         const finderWindow = await openFinderWindow(page);
         const addButton = await getFinderAddTabButton(page, finderWindow);

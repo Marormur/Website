@@ -7,8 +7,14 @@ type WindowWithAPI = {
     API?: {
         window: { open: (id: unknown) => unknown };
     };
+    FinderWindow?: {
+        focusOrCreate?: () => {
+            getState?: () => { currentView?: string };
+        };
+    };
 };
 const API = (window as unknown as WindowWithAPI).API;
+const windowWithAPI = window as unknown as WindowWithAPI;
 
 export interface DesktopShortcut {
     id: string;
@@ -26,19 +32,22 @@ export const DESKTOP_SHORTCUTS: DesktopShortcut[] = [
         labelKey: 'desktop.projects',
         fallbackLabel: 'Projekte',
         onOpen: () => {
-            // Öffne Finder und navigiere direkt zu GitHub Projekte
-            if (window.FinderWindow?.focusOrCreate) {
-                window.FinderWindow.focusOrCreate();
-            }
-            if (window.FinderSystem?.navigateTo) {
-                const finderState = window.FinderSystem.getState?.();
-                const alreadyInGithub = finderState?.currentView === 'github';
-
-                // Preserve the currently open GitHub folder when the user is
-                // already inside GitHub projects and only wants to refocus Finder.
-                if (!alreadyInGithub) {
-                    window.FinderSystem.navigateTo([], 'github');
+            const actionBus = window.ActionBus;
+            const executeAction = (actionName: string, params: Record<string, string> = {}) => {
+                if (actionBus && typeof actionBus.execute === 'function') {
+                    actionBus.execute(actionName, params);
                 }
+            };
+
+            // Öffne Finder und navigiere direkt zu GitHub Projekte
+            const finderWindow = windowWithAPI.FinderWindow?.focusOrCreate?.();
+            const finderState = finderWindow?.getState?.();
+            const alreadyInGithub = finderState?.currentView === 'github';
+
+            // Preserve the currently open GitHub folder when the user is
+            // already inside GitHub projects and only wants to refocus Finder.
+            if (!alreadyInGithub) {
+                executeAction('finder:switchView', { finderView: 'github' });
             }
         },
     },

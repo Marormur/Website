@@ -100,7 +100,6 @@ interface WindowManagerShape {
 interface MenuSystemShape {
     renderApplicationMenu(activeModalId?: string | null): void;
     handleMenuActionActivation?: (event: Event) => void;
-    menuDefinitions?: Record<string, unknown>;
     getCurrentMenuModalId(): string | null;
 }
 

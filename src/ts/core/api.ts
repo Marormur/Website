@@ -145,8 +145,6 @@ logger.debug('APP', 'API loaded');
             'getDialogWindowElement',
         ] as const),
 
-        finder: createModuleProxy('FinderSystem', ['init', 'openFinder', 'closeFinder'] as const),
-
         textEditor: {
             init: (container: unknown) => callWindowMethod('TextEditorSystem', 'init', container),
             loadRemoteFile: (payload: unknown) =>

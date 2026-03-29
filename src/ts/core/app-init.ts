@@ -16,6 +16,13 @@ import { cleanupObsoleteStorage } from '../services/storage-migration';
 import { runSessionRestoreOrchestration } from '../services/restore-orchestrator';
 import '../ui/mobile-paging.js';
 import logger from './logger.js';
+import '../services/menu-registry'; // Initialize global MenuRegistry
+import { registerFinderMenus } from '../apps/finder/finder-menus.js'; // Register Finder menus early
+import { registerPhotosMenus } from '../apps/photos/photos-menus.js';
+import { registerPreviewMenus } from '../apps/preview/preview-menus.js';
+import { registerTerminalMenus } from '../apps/terminal/terminal-menus.js';
+import { registerTextEditorMenus } from '../apps/text-editor/text-editor-menus.js';
+import { registerLegacyDialogMenus } from '../ui/legacy-dialog-menus.js';
 
 /**
  * Global window interface extensions for app initialization
@@ -58,9 +65,6 @@ interface GlobalModules {
         initDesktop?: () => void;
     };
     Dialog?: IDialog;
-    FinderSystem?: {
-        init?: () => void;
-    };
     SettingsSystem?: {
         init?: (container: HTMLElement) => void;
     };
@@ -259,6 +263,14 @@ function initApp(): void {
     funcs.restoreOpenModals?.();
     funcs.initSystemStatusControls?.();
 
+    // Register app-specific menus (these build menus available for rendering)
+    registerFinderMenus();
+    registerPreviewMenus();
+    registerPhotosMenus();
+    registerTerminalMenus();
+    registerTextEditorMenus();
+    registerLegacyDialogMenus();
+
     // Initialize desktop icons
     if (win.DesktopSystem) {
         win.DesktopSystem.initDesktop?.();
@@ -269,11 +281,7 @@ function initApp(): void {
         win.MobilePagingSystem.initMobilePaging?.();
     }
 
-    // Finder initialisieren nach Dialog-Setup
-    // DISABLED: Using Multi-Window FinderWindow instead of legacy FinderSystem
-    // if (win.FinderSystem && typeof win.FinderSystem.init === 'function') {
-    //     win.FinderSystem.init();
-    // }
+    // Finder wird ueber FinderWindow/Multi-Window-Lifecycle initialisiert; kein Legacy-System-Init mehr.
 
     // Initialize settings module
     if (win.SettingsSystem) {
@@ -455,6 +463,24 @@ function initApp(): void {
         try {
             // No longer wait for session restore - that's now independent
 
+            // Keep desktop icons visible even if late startup races temporarily hide
+            // the container before core readiness is signaled.
+            const ensureDesktopIconsVisible = () => {
+                try {
+                    const container = document.getElementById('desktop-icons');
+                    if (!container) return;
+                    container.classList.remove('hidden');
+                    if (!container.style.visibility) container.style.visibility = 'visible';
+                    if (!container.style.display) container.style.display = '';
+                    if (container.children.length === 0) {
+                        const g = window as Window & GlobalModules;
+                        g.DesktopSystem?.initDesktop?.();
+                    }
+                } catch (e) {
+                    logger.warn('APP', '[APP-INIT] ensureDesktopIconsVisible failed:', e);
+                }
+            };
+
             // At load time, ensure the dock is placed under document.body so
             // any legacy scripts that reparent early don't leave it inside a
             // hidden modal. Do this right before signaling readiness so tests
@@ -482,6 +508,11 @@ function initApp(): void {
             setTimeout(ensureDockInBody, 50);
             setTimeout(ensureDockInBody, 200);
             setTimeout(ensureDockInBody, 500);
+
+            ensureDesktopIconsVisible();
+            [500, 1500, 3000, 5000, 8000, 12000].forEach(delay => {
+                setTimeout(ensureDesktopIconsVisible, delay);
+            });
 
             // =====================================================================
             // PHASE 1: Expose system singletons for E2E tests and inter-module access
@@ -522,12 +553,6 @@ function initApp(): void {
             if (gw2.WindowRegistry) {
                 gw2.__WindowRegistry = gw2.WindowRegistry;
                 logger.info('APP', '[APP-INIT] WindowRegistry exposed as __WindowRegistry');
-            }
-
-            // FinderSystem - Expose for finder operations
-            if (gw2.FinderSystem) {
-                gw2.__FinderSystem = gw2.FinderSystem;
-                logger.info('APP', '[APP-INIT] FinderSystem exposed as __FinderSystem');
             }
 
             // TerminalSystem - Expose for terminal operations
@@ -764,7 +789,6 @@ function initApp(): void {
                         // List of systems to ensure exposure for
                         [
                             'WindowRegistry',
-                            'FinderSystem',
                             'TerminalSystem',
                             'LaunchpadSystem',
                             'SettingsSystem',

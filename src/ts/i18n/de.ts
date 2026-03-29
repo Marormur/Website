@@ -38,8 +38,8 @@ export const de = {
     },
     welcomeDialog: {
         caption: 'Willkommen',
-        title: 'Marvins Portfolio',
-        subtitle: 'Um das Portfolio zu erkunden, klicke auf <strong>Fortfahren</strong>.',
+        title: 'Marvins Website',
+        subtitle: 'Um die Website zu erkunden, klicke auf <strong>Fortfahren</strong>.',
         continue: 'Fortfahren',
         controls: {
             closeTitle: 'Schließen',

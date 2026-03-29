@@ -91,6 +91,8 @@ test.describe('Menubar switches with active window (de-DE)', () => {
         await expect(settingsButton).toBeVisible({ timeout: 10000 });
 
         // Settings menu should be active, not the Terminal menu.
-        await expectMenuButton(page, 'Darstellung');
+        await expectMenuButton(page, 'Ablage');
+        await expectMenuButton(page, 'Fenster');
+        await expectMenuButton(page, 'Hilfe');
     });
 });
