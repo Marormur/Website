@@ -330,13 +330,13 @@ if (guardedWindow[guardKey]) {
             items.push({
                 id: 'open-settings',
                 label: i18n.translate('context.openSettings') || 'Systemeinstellungen …',
-                action: () => openModal('settings-modal'),
+                action: () => executeAction('openSettings'),
             });
             items.push({ type: 'separator' });
             items.push({
                 id: 'about',
                 label: i18n.translate('context.about') || 'Über Marvin',
-                action: () => openModal('about-modal'),
+                action: () => executeAction('openAbout'),
             });
             return items;
         }
@@ -364,13 +364,13 @@ if (guardedWindow[guardKey]) {
         items.push({
             id: 'open-settings',
             label: i18n.translate('context.openSettings') || 'Systemeinstellungen …',
-            action: () => openModal('settings-modal'),
+            action: () => executeAction('openSettings'),
         });
         items.push({ type: 'separator' });
         items.push({
             id: 'about',
             label: i18n.translate('context.about') || 'Über Marvin',
-            action: () => openModal('about-modal'),
+            action: () => executeAction('openAbout'),
         });
         return items;
     }

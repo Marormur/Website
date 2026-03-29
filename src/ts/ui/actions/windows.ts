@@ -5,6 +5,39 @@ import type { ActionMap, Params } from './helpers.js';
 import { getGlobal, safeExecute } from './helpers.js';
 import logger from '../../core/logger.js';
 
+function openByTypeWithLegacyFallback(type: string, legacyModalId: string): void {
+    const g = getGlobal<{
+        WindowRegistry?: {
+            getActiveWindow?: () => {
+                type?: string;
+                zIndex?: number;
+                bringToFront?: () => void;
+            } | null;
+            getWindowsByType?: (t: string) => Array<{ zIndex?: number; bringToFront?: () => void }>;
+        };
+        WindowManager?: { open?: (id: string) => void };
+    }>('');
+
+    const active = g?.WindowRegistry?.getActiveWindow?.();
+    if (active?.type === type && typeof active.bringToFront === 'function') {
+        active.bringToFront();
+        return;
+    }
+
+    const windowsByType = g?.WindowRegistry?.getWindowsByType?.(type) || [];
+    const topByType = windowsByType.reduce(
+        (best, current) => (!best || (current.zIndex || 0) >= (best.zIndex || 0) ? current : best),
+        null as { zIndex?: number; bringToFront?: () => void } | null
+    );
+
+    if (topByType && typeof topByType.bringToFront === 'function') {
+        topByType.bringToFront();
+        return;
+    }
+
+    g?.WindowManager?.open?.(legacyModalId);
+}
+
 export function getWindowActions(): ActionMap {
     return {
         closeWindow: (params: Params) => {
@@ -195,22 +228,20 @@ export function getWindowActions(): ActionMap {
         openAbout: () => {
             const g = getGlobal<{
                 hideMenuDropdowns?: () => void;
-                dialogs?: Record<string, { open?: () => void }>;
                 updateProgramLabelByTopModal?: () => void;
             }>('');
             g?.hideMenuDropdowns?.();
-            g?.dialogs?.['about-modal']?.open?.();
+            openByTypeWithLegacyFallback('about', 'about-modal');
             g?.updateProgramLabelByTopModal?.();
         },
 
         openSettings: () => {
             const g = getGlobal<{
                 hideMenuDropdowns?: () => void;
-                dialogs?: Record<string, { open?: () => void }>;
                 updateProgramLabelByTopModal?: () => void;
             }>('');
             g?.hideMenuDropdowns?.();
-            g?.dialogs?.['settings-modal']?.open?.();
+            openByTypeWithLegacyFallback('settings', 'settings-modal');
             g?.updateProgramLabelByTopModal?.();
         },
 

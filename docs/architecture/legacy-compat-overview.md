@@ -292,10 +292,11 @@ Neue Code-Dateien dürfen **nicht**:
 - ✅ `src/ts/core/globals.d.ts`: verwaiste Typ-Blöcke für `TerminalSystem` und `TextEditorSystem` entfernt.
 - ✅ **Phase 1 abgeschlossen.** Verbleibende Legacy-Module (`text-editor.ts`, `terminal.ts`) gehören zur Compat-Quelle — Cleanup in Phase 4.
 
-**Phase 2: Dialog System Replacement** ← **Bereit, kann jetzt starten**
+**Phase 2: Dialog System Replacement** ← **läuft (Start erfolgt)**
 
-- ui/actions/windows.ts Z.202, 213: `dialogs['about-modal'].open()` → WindowRegistry.open('about')
-- context-menu.ts openModal-Funktion: dialogs-Zugriff → WindowRegistry
+- ✅ `src/ts/ui/actions/windows.ts`: `openAbout`/`openSettings` nutzen keine `dialogs[...]`-Opens mehr, sondern einen Registry-first + Legacy-Modal-Fallback-Bridge-Pfad.
+- ✅ `src/ts/ui/context-menu.ts`: About/Settings laufen jetzt über ActionBus (`openAbout`/`openSettings`) statt direkter `openModal('about-modal'|'settings-modal')`-Aufrufe.
+- 🔜 context-menu.ts openModal-Funktion: restlichen dialogs-Zugriff systematisch auf WindowRegistry/WindowManager-Bridge reduzieren
 - dock.ts: LEGACY_MODAL_ID_TO_WINDOW_TYPE nur noch für in-flight Legacy-Dialoge (tempor.)
 - **Abhängig von:** Settings/About als BaseWindow-Subklassen implementiert.
 - **Risiko:** Hoch (Settings ist feature-reich). **Aufwand:** Hoch. **Priorität:** Nach Phase 0 + 1.
