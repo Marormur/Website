@@ -12,6 +12,8 @@ import { TextEditorWindow } from '../apps/text-editor/text-editor-window.js';
 import { FinderWindow } from '../apps/finder/finder-window.js';
 import { PreviewWindow } from '../apps/preview/preview-window.js';
 import { PhotosWindow } from '../apps/photos/photos-window.js';
+import { AboutWindow } from '../apps/about/about-window.js';
+import { SettingsWindow } from '../apps/settings/settings-window.js';
 import { TerminalSession } from '../apps/terminal/terminal-session.js';
 import { TextEditorDocument } from '../apps/text-editor/text-editor-document.js';
 import { FinderView } from '../apps/finder/finder-view.js';
@@ -648,6 +650,12 @@ class MultiWindowSessionManager {
 
             case 'photos':
                 return new PhotosWindow(config);
+
+            case 'about':
+                return new AboutWindow(config);
+
+            case 'settings':
+                return new SettingsWindow(config);
 
             default:
                 return null;
