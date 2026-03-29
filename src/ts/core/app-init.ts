@@ -40,7 +40,6 @@ interface IWindowManager {
     getAllWindowIds?: () => string[];
     getTransientWindowIds?: () => string[];
     setDialogInstance?: (id: string, instance: unknown) => void;
-    getAllDialogInstances?: () => Record<string, unknown>;
 }
 
 /**
@@ -187,11 +186,6 @@ function initApp(): void {
             }
         });
     }
-
-    // Compat mirror: keep window.dialogs as a read-only reflection of WindowManager registrations.
-    window.dialogs = (win.WindowManager?.getAllDialogInstances?.() || {}) as NonNullable<
-        Window['dialogs']
-    >;
 
     // Add click-outside-to-close functionality for launchpad
     const launchpadModal = document.getElementById('launchpad-modal');

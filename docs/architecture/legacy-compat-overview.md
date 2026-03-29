@@ -306,8 +306,8 @@ Neue Code-Dateien dürfen **nicht**:
 - ✅ `src/ts/services/program-menu-sync.ts`: Program-Info-Fallback nutzt `WindowManager.open(...)` + `bringDialogToFront` statt direktem dialogs-Objektzugriff.
 - ✅ `src/ts/core/app-init.ts`: Launchpad-Außenklick-Schließen läuft über `WindowManager.close('launchpad-modal')` statt `dialogs['launchpad-modal'].close()`.
 - ✅ `src/ts/services/storage.ts`: Legacy-`openModals`-Restore ist dialogs-frei (WindowManager-first + DOM-Fallback).
-- ✅ `src/ts/core/app-init.ts`: Dialoginstanzen werden primär im WindowManager registriert; `window.dialogs` wird nur noch als Compat-Spiegel aus dem WindowManager gesetzt.
-- 🔜 Verbleibende bewusste Restpfade: nur `src/ts/core/app-init.ts` (Compat-Spiegel `window.dialogs`) als Übergangsbrücke für Legacy-Konsumenten.
+- ✅ `src/ts/core/app-init.ts`: Dialoginstanzen werden primär im WindowManager registriert; der letzte `window.dialogs`-Compat-Spiegel wurde entfernt.
+- ✅ Ergebnis: in `src/ts` gibt es keine direkten `window.dialogs`-/`dialogs[...]`-Zugriffe mehr.
 - dock.ts: LEGACY_MODAL_ID_TO_WINDOW_TYPE nur noch für in-flight Legacy-Dialoge (tempor.)
 - **Abhängig von:** Settings/About als BaseWindow-Subklassen implementiert.
 - **Risiko:** Hoch (Settings ist feature-reich). **Aufwand:** Hoch. **Priorität:** Nach Phase 0 + 1.
