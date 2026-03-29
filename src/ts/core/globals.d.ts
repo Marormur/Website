@@ -368,6 +368,11 @@ declare global {
             create?: (config?: { title?: string }) => unknown;
             focusOrCreate?: (config?: { title?: string }) => unknown;
         };
+        /** SettingsWindow class/factory for creating settings windows. */
+        SettingsWindow?: {
+            create?: (config?: { title?: string }) => unknown;
+            focusOrCreate?: (config?: { title?: string }) => unknown;
+        };
         /** API facade for the application. */
         API?: {
             window?: {

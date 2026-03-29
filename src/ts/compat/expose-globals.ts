@@ -66,6 +66,8 @@ import { FinderWindow as __FinderWindow__ } from '../apps/finder/finder-window';
 import { PreviewWindow as __PreviewWindow__ } from '../apps/preview/preview-window'; // Preview window
 import { PhotosWindow as __PhotosWindow__ } from '../apps/photos/photos-window'; // Photos window (BaseWindow subclass)
 import { AboutWindow as __AboutWindow__ } from '../apps/about/about-window'; // About window (BaseWindow subclass)
+import '../apps/settings/settings-window'; // Settings window (BaseWindow subclass) - sets window.SettingsWindow
+import { SettingsWindow as __SettingsWindow__ } from '../apps/settings/settings-window'; // Settings window (BaseWindow subclass)
 
 // Multi-window system (Phase 6: Session Management)
 import '../services/multi-window-session'; // Multi-window session persistence
@@ -126,6 +128,7 @@ try {
     if (!w.TerminalWindow) w.TerminalWindow = __TerminalWindow__;
     if (!w.PhotosWindow) w.PhotosWindow = __PhotosWindow__;
     if (!w.AboutWindow) w.AboutWindow = __AboutWindow__;
+    if (!w.SettingsWindow) w.SettingsWindow = __SettingsWindow__;
 } catch {
     /* ignore */
 }
@@ -138,6 +141,7 @@ try {
         TerminalWindow: !!w.TerminalWindow,
         PhotosWindow: !!w.PhotosWindow,
         AboutWindow: !!w.AboutWindow,
+        SettingsWindow: !!w.SettingsWindow,
         WindowRegistry: !!w.WindowRegistry,
         ActionBus: !!w.ActionBus,
     });
