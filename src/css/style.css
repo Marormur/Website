@@ -3831,7 +3831,7 @@ html.dark .menubar-logo:focus-visible {
 :root[data-ui-mode='mobile'] .settings-window-control,
 :root[data-ui-mode='mobile'] .welcome-traffic-lights,
 :root[data-ui-mode='mobile'] .welcome-traffic-light,
-:root[data-ui-mode='mobile'] #about-modal .about-window-controls {
+:root[data-ui-mode='mobile'] :is(#about-modal, .about-window-shell) .about-window-controls {
     display: none !important;
 }
 
@@ -4336,7 +4336,8 @@ html.dark #snap-preview-overlay {
    About Dialog (macOS inspired)
    ============================================================================ */
 
-#about-modal .about-window {
+:is(#about-modal, .about-window-shell) .about-window,
+.about-window-shell.about-window {
     width: min(334px, calc(100vw - 28px));
     height: auto;
     max-height: calc(100vh - 74px);
@@ -4357,13 +4358,13 @@ html.dark #snap-preview-overlay {
     color: #0f172a;
 }
 
-#about-modal > .absolute {
+:is(#about-modal, .about-window-shell) > .absolute {
     align-items: center;
     justify-content: center;
     padding: 18px;
 }
 
-#about-modal .about-window-header {
+:is(#about-modal, .about-window-shell) .about-window-header {
     position: absolute;
     top: 0;
     left: 0;
@@ -4378,14 +4379,14 @@ html.dark #snap-preview-overlay {
     z-index: 2;
 }
 
-#about-modal .about-window-controls {
+:is(#about-modal, .about-window-shell) .about-window-controls {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     flex: 0 0 auto;
 }
 
-#about-modal .about-window-control {
+:is(#about-modal, .about-window-shell) .about-window-control {
     width: 12px;
     height: 12px;
     border-radius: 999px;
@@ -4394,24 +4395,24 @@ html.dark #snap-preview-overlay {
     box-shadow: 0 0 0 0.5px rgba(15, 23, 42, 0.25) inset;
 }
 
-#about-modal .about-window-control--close {
+:is(#about-modal, .about-window-shell) .about-window-control--close {
     background: #ff5f57;
     cursor: pointer;
 }
 
-#about-modal .about-window-control--close:hover {
+:is(#about-modal, .about-window-shell) .about-window-control--close:hover {
     filter: brightness(0.94);
 }
 
-#about-modal .about-window-control--minimize {
+:is(#about-modal, .about-window-shell) .about-window-control--minimize {
     background: #febc2e;
 }
 
-#about-modal .about-window-control--maximize {
+:is(#about-modal, .about-window-shell) .about-window-control--maximize {
     background: #28c840;
 }
 
-#about-modal .about-window-content {
+:is(#about-modal, .about-window-shell) .about-window-content {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -4420,7 +4421,7 @@ html.dark #snap-preview-overlay {
     overflow-y: auto;
 }
 
-#about-modal .about-hero-image-wrap {
+:is(#about-modal, .about-window-shell) .about-hero-image-wrap {
     width: 146px;
     height: 146px;
     border-radius: 12px;
@@ -4433,13 +4434,13 @@ html.dark #snap-preview-overlay {
         0 1px 0 rgba(255, 255, 255, 0.45) inset;
 }
 
-#about-modal .about-hero-image {
+:is(#about-modal, .about-window-shell) .about-hero-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-#about-modal .about-person-name {
+:is(#about-modal, .about-window-shell) .about-person-name {
     margin: 0;
     font-size: clamp(1.38rem, 2.55vw, 1.92rem);
     line-height: 1.1;
@@ -4448,7 +4449,7 @@ html.dark #snap-preview-overlay {
     text-align: center;
 }
 
-#about-modal .about-person-meta {
+:is(#about-modal, .about-window-shell) .about-person-meta {
     margin-top: 6px;
     margin-bottom: 16px;
     font-size: 0.82rem;
@@ -4457,7 +4458,7 @@ html.dark #snap-preview-overlay {
     color: rgba(15, 23, 42, 0.62);
 }
 
-#about-modal .about-facts {
+:is(#about-modal, .about-window-shell) .about-facts {
     width: auto;
     max-width: 100%;
     display: table;
@@ -4466,7 +4467,7 @@ html.dark #snap-preview-overlay {
     margin-right: auto;
 }
 
-#about-modal .about-fact-row {
+:is(#about-modal, .about-window-shell) .about-fact-row {
     margin: 0;
     display: table-row;
     font-size: 0.8rem;
@@ -4474,7 +4475,7 @@ html.dark #snap-preview-overlay {
     text-align: initial;
 }
 
-#about-modal .about-fact-row strong {
+:is(#about-modal, .about-window-shell) .about-fact-row strong {
     display: table-cell;
     white-space: nowrap;
     padding-right: 12px;
@@ -4482,14 +4483,14 @@ html.dark #snap-preview-overlay {
     font-weight: 700;
 }
 
-#about-modal .about-fact-row span {
+:is(#about-modal, .about-window-shell) .about-fact-row span {
     display: table-cell;
     white-space: nowrap;
     text-align: left;
     color: rgba(15, 23, 42, 0.76);
 }
 
-#about-modal .about-more-button {
+:is(#about-modal, .about-window-shell) .about-more-button {
     margin-top: 4px;
     padding: 5px 18px;
     border: 1px solid rgba(148, 163, 184, 0.35);
@@ -4505,17 +4506,17 @@ html.dark #snap-preview-overlay {
         color 0.18s ease;
 }
 
-#about-modal .about-more-button:hover {
+:is(#about-modal, .about-window-shell) .about-more-button:hover {
     background: rgba(15, 23, 42, 0.16);
     color: rgba(15, 23, 42, 0.9);
     transform: translateY(-1px);
 }
 
-#about-modal .about-more-button:active {
+:is(#about-modal, .about-window-shell) .about-more-button:active {
     transform: translateY(0);
 }
 
-#about-modal .about-copyright {
+:is(#about-modal, .about-window-shell) .about-copyright {
     width: min(320px, 100%);
     margin-top: 18px;
     padding-top: 10px;
@@ -4526,7 +4527,8 @@ html.dark #snap-preview-overlay {
     text-align: center;
 }
 
-html.dark #about-modal .about-window {
+html.dark :is(#about-modal, .about-window-shell) .about-window,
+html.dark .about-window-shell.about-window {
     border-color: rgba(148, 163, 184, 0.22);
     background: linear-gradient(180deg, rgba(17, 20, 24, 0.96) 0%, rgba(20, 24, 32, 0.95) 100%);
     -webkit-backdrop-filter: saturate(1.1) blur(9px);
@@ -4537,75 +4539,76 @@ html.dark #about-modal .about-window {
     color: var(--dark-text);
 }
 
-html.dark #about-modal .about-window-header {
+html.dark :is(#about-modal, .about-window-shell) .about-window-header {
     background: transparent !important;
     border-bottom: none !important;
     background-image: none !important;
 }
 
-html.dark #about-modal .about-hero-image-wrap {
+html.dark :is(#about-modal, .about-window-shell) .about-hero-image-wrap {
     box-shadow:
         0 22px 36px rgba(2, 6, 23, 0.62),
         0 0 0 1px rgba(255, 255, 255, 0.04) inset;
 }
 
-html.dark #about-modal .about-person-meta {
+html.dark :is(#about-modal, .about-window-shell) .about-person-meta {
     color: rgba(229, 231, 235, 0.58);
 }
 
-html.dark #about-modal .about-fact-row span {
+html.dark :is(#about-modal, .about-window-shell) .about-fact-row span {
     color: rgba(229, 231, 235, 0.7);
 }
 
-html.dark #about-modal .about-more-button {
+html.dark :is(#about-modal, .about-window-shell) .about-more-button {
     background: rgba(255, 255, 255, 0.11);
     border-color: rgba(255, 255, 255, 0.09);
     color: rgba(229, 231, 235, 0.9);
 }
 
-html.dark #about-modal .about-more-button:hover {
+html.dark :is(#about-modal, .about-window-shell) .about-more-button:hover {
     background: rgba(255, 255, 255, 0.16);
     color: #f9fafb;
 }
 
-html.dark #about-modal .about-copyright {
+html.dark :is(#about-modal, .about-window-shell) .about-copyright {
     border-top-color: var(--dark-border);
     color: rgba(209, 213, 219, 0.45);
 }
 
 @media (max-width: 640px) {
-    #about-modal > .absolute {
+    :is(#about-modal, .about-window-shell) > .absolute {
         padding: 12px;
     }
 
-    #about-modal .about-window {
+    :is(#about-modal, .about-window-shell) .about-window,
+    .about-window-shell.about-window {
         height: auto;
         max-height: calc(100vh - 28px);
         min-height: 0;
         border-radius: 16px;
     }
 
-    #about-modal .about-window-content {
+    :is(#about-modal, .about-window-shell) .about-window-content {
         padding: 38px 12px 14px;
     }
 
-    #about-modal .about-hero-image-wrap {
+    :is(#about-modal, .about-window-shell) .about-hero-image-wrap {
         width: 126px;
         height: 126px;
         margin-top: 18px;
         margin-bottom: 14px;
     }
 
-    #about-modal .about-facts {
+    :is(#about-modal, .about-window-shell) .about-facts {
         width: auto;
         max-width: 100%;
     }
 
-    #about-modal .about-person-meta {
+    :is(#about-modal, .about-window-shell) .about-person-meta {
         font-size: 0.78rem;
     }
 
-    #about-modal .about-fact-row {
+    :is(#about-modal, .about-window-shell) .about-fact-row {
         font-size: 0.76rem;
     }
 }

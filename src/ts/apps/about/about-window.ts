@@ -23,6 +23,7 @@ export class AboutWindow extends BaseWindow {
         const modal = super.createDOM();
 
         modal.classList.add('about-window-shell');
+        modal.classList.add('about-window');
         modal.setAttribute('data-no-resize', 'true');
         modal.style.minWidth = '360px';
         modal.style.minHeight = '460px';
