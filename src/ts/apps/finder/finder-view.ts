@@ -1771,71 +1771,14 @@ export class FinderView extends BaseTab {
             ]);
             const pdfExts = new Set(['pdf']);
 
-            // Helper to open text content in TextEditorWindow
-            const openInTextEditor = (
-                fileName: string,
-                content: string,
-                meta?: { repo?: string; path?: string }
-            ) => {
+            // Helper to open text content in the modern TextEditorWindow path.
+            const openInTextEditor = (fileName: string, content: string) => {
                 try {
-                    type EditorWindow = {
-                        tabs: Map<string, { id: string; title: string }>;
-                        createDocument: (name: string, content: string) => { id: string } | null;
-                        setActiveTab: (id: string) => void;
-                        bringToFront?: () => void;
-                    };
-                    let editorWindow: EditorWindow | null = null;
-                    // Prefer existing text-editor window
                     if (
-                        window.WindowRegistry &&
-                        typeof window.WindowRegistry.getWindowsByType === 'function'
-                    ) {
-                        const existing = window.WindowRegistry.getWindowsByType('text-editor');
-                        if (existing && existing.length > 0) {
-                            editorWindow = existing[0] as EditorWindow;
-                        }
-                    }
-
-                    if (
-                        !editorWindow &&
                         window.TextEditorWindow &&
-                        typeof window.TextEditorWindow.create === 'function'
+                        typeof window.TextEditorWindow.focusOrCreateWithDocument === 'function'
                     ) {
-                        editorWindow = window.TextEditorWindow.create() as unknown as EditorWindow;
-                    }
-
-                    if (editorWindow && typeof editorWindow.createDocument === 'function') {
-                        // Check if file is already open in a tab
-                        const existingTabs = Array.from(editorWindow.tabs.values());
-                        const existingTab = existingTabs.find(tab => tab.title === fileName);
-
-                        if (existingTab) {
-                            // File already open, just switch to that tab
-                            editorWindow.setActiveTab(existingTab.id);
-                            editorWindow.bringToFront?.();
-                        } else {
-                            // Create new document tab
-                            const newDoc = editorWindow.createDocument(fileName, content);
-                            // Activate the newly created tab
-                            if (newDoc && newDoc.id) {
-                                editorWindow.setActiveTab(newDoc.id);
-                            }
-                            editorWindow.bringToFront?.();
-                        }
-                        return true;
-                    }
-
-                    // Fallback: if a global TextEditorSystem exists, load remote file there
-                    if (
-                        window.TextEditorSystem &&
-                        typeof window.TextEditorSystem.loadRemoteFile === 'function'
-                    ) {
-                        window.TextEditorSystem.loadRemoteFile({
-                            content,
-                            fileName,
-                            repo: meta?.repo,
-                            path: meta?.path,
-                        });
+                        window.TextEditorWindow.focusOrCreateWithDocument(fileName, content);
                         return true;
                     }
                 } catch (e) {
@@ -1958,7 +1901,7 @@ export class FinderView extends BaseTab {
                                 ? atob(embeddedContent.replace(/\n/g, ''))
                                 : embeddedContent;
                         if (textExts.has(ext)) {
-                            openInTextEditor(name, raw, { repo, path: subPath });
+                            openInTextEditor(name, raw);
                             return;
                         }
                         // Try to handle images/pdf embedded in the listing object
@@ -2084,7 +2027,7 @@ export class FinderView extends BaseTab {
                             const rawBase64 = (fileObj.content || '').replace(/\n/g, '');
                             const rawText = atob(rawBase64);
                             if (textExts.has(ext)) {
-                                openInTextEditor(name, rawText, { repo, path: subPath });
+                                openInTextEditor(name, rawText);
                                 return;
                             }
                             try {
@@ -2140,7 +2083,7 @@ export class FinderView extends BaseTab {
                                     ? String(fileObj.content)
                                     : '';
                             if (textExts.has(ext)) {
-                                openInTextEditor(name, raw, { repo, path: subPath });
+                                openInTextEditor(name, raw);
                                 return;
                             }
                         }
@@ -2235,8 +2178,8 @@ export class FinderView extends BaseTab {
     }
 
     /**
-     * Public helper for legacy callers (Desktop shortcut/FinderSystem) that
-     * need a deterministic transition into the GitHub root view.
+     * Public helper for the legacy compat bridge that needs a deterministic
+     * transition into the GitHub root view.
      */
     openGithubProjects(): void {
         this.source = 'github';

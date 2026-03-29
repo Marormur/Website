@@ -68,12 +68,6 @@ interface GlobalModules {
     SettingsSystem?: {
         init?: (container: HTMLElement) => void;
     };
-    TextEditorSystem?: {
-        init?: (container: HTMLElement) => void;
-    };
-    TerminalSystem?: {
-        init?: (container: HTMLElement) => void;
-    };
     TerminalInstanceManager?: unknown;
     DockSystem?: {
         initDockDragDrop?: () => void;
@@ -288,14 +282,6 @@ function initApp(): void {
         const settingsContainer = document.getElementById('settings-container');
         if (settingsContainer) {
             win.SettingsSystem.init?.(settingsContainer);
-        }
-    }
-
-    // Initialize text editor module
-    if (win.TextEditorSystem) {
-        const textEditorContainer = document.getElementById('text-editor-container');
-        if (textEditorContainer) {
-            win.TextEditorSystem.init?.(textEditorContainer);
         }
     }
 
@@ -555,12 +541,6 @@ function initApp(): void {
                 logger.info('APP', '[APP-INIT] WindowRegistry exposed as __WindowRegistry');
             }
 
-            // TerminalSystem - Expose for terminal operations
-            if (gw2.TerminalSystem) {
-                gw2.__TerminalSystem = gw2.TerminalSystem;
-                logger.info('APP', '[APP-INIT] TerminalSystem exposed as __TerminalSystem');
-            }
-
             // LaunchpadSystem - Expose for launchpad operations
             if (gw2.LaunchpadSystem) {
                 gw2.__LaunchpadSystem = gw2.LaunchpadSystem;
@@ -789,7 +769,6 @@ function initApp(): void {
                         // List of systems to ensure exposure for
                         [
                             'WindowRegistry',
-                            'TerminalSystem',
                             'LaunchpadSystem',
                             'SettingsSystem',
                             'DockSystem',

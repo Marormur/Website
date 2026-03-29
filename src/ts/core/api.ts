@@ -145,21 +145,6 @@ logger.debug('APP', 'API loaded');
             'getDialogWindowElement',
         ] as const),
 
-        textEditor: {
-            init: (container: unknown) => callWindowMethod('TextEditorSystem', 'init', container),
-            loadRemoteFile: (payload: unknown) =>
-                callWindowMethod('TextEditorSystem', 'loadRemoteFile', payload),
-            showLoading: (payload: unknown) =>
-                callWindowMethod('TextEditorSystem', 'showLoading', payload),
-            showLoadError: (payload: unknown) =>
-                callWindowMethod('TextEditorSystem', 'showLoadError', payload),
-            clearEditor: () => callWindowMethod('TextEditorSystem', 'clearEditor'),
-            saveFile: () => callWindowMethod('TextEditorSystem', 'saveFile'),
-            openFile: () => callWindowMethod('TextEditorSystem', 'openFile'),
-            handleMenuAction: (action: unknown) =>
-                callWindowMethod('TextEditorSystem', 'handleMenuAction', action),
-        },
-
         settings: {
             init: (container: unknown) => callWindowMethod('SettingsSystem', 'init', container),
             showSection: (section: unknown) =>

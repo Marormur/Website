@@ -94,15 +94,6 @@ export const windowConfigurations: WindowConfiguration[] = [
                         title: 'Neues Dokument',
                     });
                 }
-                // Fallback: Initialize old editor module if instance manager not available
-                else if (
-                    !window.TextEditorInstanceManager &&
-                    window.TextEditorSystem &&
-                    !window.TextEditorSystem?.container
-                ) {
-                    const container = document.getElementById('text-editor-container');
-                    if (container) window.TextEditorSystem.init(container);
-                }
             },
         },
     },

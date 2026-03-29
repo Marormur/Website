@@ -86,6 +86,24 @@ export class TextEditorWindow extends BaseWindow {
         return doc as unknown as BaseTab;
     }
 
+    openDocument(title: string, content: string): BaseTab | null {
+        const existingTabs = Array.from(this.tabs.values()) as Array<BaseTab & { title?: string }>;
+        const existingTab = existingTabs.find(tab => tab.title === title);
+
+        if (existingTab?.id) {
+            this.setActiveTab(existingTab.id);
+            this.bringToFront?.();
+            return existingTab;
+        }
+
+        const newDocument = this.createDocument(title, content);
+        if (newDocument?.id) {
+            this.setActiveTab(newDocument.id);
+        }
+        this.bringToFront?.();
+        return newDocument;
+    }
+
     static create(config?: Partial<WindowConfig>): TextEditorWindow {
         const window = new TextEditorWindow(config);
 
@@ -105,6 +123,12 @@ export class TextEditorWindow extends BaseWindow {
                 }
             },
         });
+    }
+
+    static focusOrCreateWithDocument(title: string, content: string): TextEditorWindow {
+        const instance = TextEditorWindow.focusOrCreate({ title });
+        instance.openDocument(title, content);
+        return instance;
     }
 }
 

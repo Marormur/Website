@@ -4,10 +4,10 @@
 
 ## `src/ts/compat/` — 2 Dateien
 
-| Datei                      | Funktion                                                                                                                                             | Status                                |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `compat/expose-globals.ts` | esbuild-Entry: importiert **alle** Module als Side-Effects, bindet sie an `window.*`                                                                 | **Notwendig** — Bundle-Einstiegspunkt |
-| `compat/instance-shims.ts` | Shim-Factory, die `window.FinderInstanceManager` / `TerminalInstanceManager` / `TextEditorInstanceManager` mit der neuen Multi-Window-API verdrahtet | **Notwendig, aber befristet**         |
+| Datei                      | Funktion                                                                                                                                                                                    | Status                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `compat/expose-globals.ts` | esbuild-Entry: importiert **alle** Module als Side-Effects, bindet sie an `window.*`                                                                                                        | **Notwendig** — Bundle-Einstiegspunkt |
+| `compat/instance-shims.ts` | Shim-Factory, die `window.FinderInstanceManager` / `TerminalInstanceManager` / `TextEditorInstanceManager` sowie den Legacy-`FinderSystem`-Bridge mit der neuen Multi-Window-API verdrahtet | **Notwendig, aber befristet**         |
 
 `compat/` ist die bewusste Brücke zwischen dem neuen TypeScript-System und älteren Konsumenten.
 **Der Ordner kann erst weg, wenn alle Konsumenten migriert sind.**
@@ -282,9 +282,17 @@ Neue Code-Dateien dürfen **nicht**:
 - ✅ `src/ts/ui/menu.ts` rendert die Menubar jetzt ausschließlich aus `MenuRegistry`-Contributions; app-spezifische Legacy-Builder und Menufallbacks sind entfernt.
 - ✅ `src/ts/core/api.ts` exponiert keinen ungenutzten `API.finder`-Proxy mehr.
 - ✅ Smoke-Test vorhanden: Registry-basierter Menubar-Render wird in Playwright abgesichert.
-- 🔜 Nächster Schritt in Phase 1: verbleibende `FinderSystem`-Nutzungen auf bewusst unterstützte Kompatibilitätspfade und Test-Fallbacks eingrenzen, dann den Shim-Abbau vorbereiten.
+- ✅ Der verbleibende globale `FinderSystem`-Shim lebt jetzt explizit in `src/ts/compat/instance-shims.ts`; `src/ts/apps/finder/finder-window.ts` liefert dafür nur noch die aktive FinderView-Anbindung.
+- ✅ Produktive `FinderSystem`-Treffer in `src/ts` sind damit auf Compat-Schicht, Typdefinition und eine gezielte FinderView-Hilfsmethode eingegrenzt.
+- ✅ `src/ts/apps/finder/finder-view.ts` öffnet Textdateien jetzt nur noch über `TextEditorWindow.focusOrCreateWithDocument(...)`; der direkte Fallback auf `window.TextEditorSystem.loadRemoteFile(...)` ist aus dem produktiven Finder-Pfad entfernt.
+- ✅ `src/ts/core/app-init.ts` initialisiert den Legacy-`TextEditorSystem` nicht mehr proaktiv beim App-Start.
+- ✅ `src/ts/core/api.ts`: ungenutzter `API.textEditor`-Proxy (8 `callWindowMethod`-Wraps auf `TextEditorSystem`) entfernt — kein Caller in `src/ts`.
+- ✅ `src/ts/windows/window-configs.ts`: Legacy-Fallback `TextEditorSystem.init()` entfernt; Primary-Path via `TextEditorInstanceManager` ist ausreichend.
+- ✅ `src/ts/core/app-init.ts`: `__TerminalSystem`-Alias-Exposition entfernt (kein Caller); `'TerminalSystem'` aus der retry-Exposure-Liste entfernt.
+- ✅ `src/ts/core/globals.d.ts`: verwaiste Typ-Blöcke für `TerminalSystem` und `TextEditorSystem` entfernt.
+- ✅ **Phase 1 abgeschlossen.** Verbleibende Legacy-Module (`text-editor.ts`, `terminal.ts`) gehören zur Compat-Quelle — Cleanup in Phase 4.
 
-**Phase 2: Dialog System Replacement** (parallel zu Phase 1 möglich)
+**Phase 2: Dialog System Replacement** ← **Bereit, kann jetzt starten**
 
 - ui/actions/windows.ts Z.202, 213: `dialogs['about-modal'].open()` → WindowRegistry.open('about')
 - context-menu.ts openModal-Funktion: dialogs-Zugriff → WindowRegistry

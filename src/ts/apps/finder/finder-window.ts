@@ -10,6 +10,7 @@ import {
     focusOrCreateWindowByType,
     showAndRegisterWindow,
 } from '../../framework/controls/window-lifecycle.js';
+import { installFinderCompatShim } from '../../compat/instance-shims.js';
 import {
     createWindowTabsAdapter,
     mountWindowTabsController,
@@ -361,14 +362,12 @@ export class FinderWindow extends BaseWindow {
 window.FinderWindow = FinderWindow;
 
 /**
- * FinderSystem shim – re-exposes the legacy FinderSystemAPI global that
- * context-menu.ts, desktop.ts and other callers rely on after finder.ts
- * was deprecated. All operations delegate to the active FinderWindow tab.
+ * Legacy compat bridge for older Finder callers. The actual global installation
+ * lives in compat/instance-shims.ts so product code keeps the compatibility
+ * surface isolated in the dedicated adapter layer.
  *
- * PURPOSE: Preserve backward-compatible global API without reintroducing
- *          the monolithic finder.ts.
- * DEPENDENCY: Must run after window.FinderWindow is set. Callers guard with
- *             `window.FinderSystem &&` so it's safe to initialise lazily here.
+ * PURPOSE: Resolve the active Finder tab for the compat shim without
+ *          reintroducing the old monolithic finder.ts module.
  */
 function _getActiveFV(): Record<string, unknown> | null {
     if (!window.WindowRegistry) return null;
@@ -402,79 +401,19 @@ function _ensureActiveFV(): Record<string, unknown> | null {
     return _getActiveFV();
 }
 
-window.FinderSystem = {
-    init(): void {},
-    openFinder(): void {
-        FinderWindow.focusOrCreate();
+installFinderCompatShim(
+    {
+        getActiveView: _getActiveFV,
+        ensureActiveView: _ensureActiveFV,
+        openFinder: () => {
+            FinderWindow.focusOrCreate();
+        },
+        closeFinder: () => {
+            if (!window.WindowRegistry) return;
+            (window.WindowRegistry.getWindowsByType?.('finder') ?? []).forEach((w: unknown) =>
+                (w as { close?: () => void }).close?.()
+            );
+        },
     },
-    closeFinder(): void {
-        if (!window.WindowRegistry) return;
-        (window.WindowRegistry.getWindowsByType?.('finder') ?? []).forEach((w: unknown) =>
-            (w as { close?: () => void }).close?.()
-        );
-    },
-    /** Navigate to a path/view. Pass view='github' to open GitHub Projekte in gallery mode. */
-    navigateTo(path: string[] | string, view?: FinderCurrentView | null): void {
-        const fv = _ensureActiveFV();
-        if (!fv) return;
-        if (view === 'github') {
-            const openGithubProjects = fv['openGithubProjects'] as
-                | ((this: Record<string, unknown>) => void)
-                | undefined;
-            if (typeof openGithubProjects === 'function') {
-                openGithubProjects.call(fv);
-            } else {
-                // Legacy fallback for older FinderView implementations.
-                fv['source'] = 'github';
-                (fv['setViewMode'] as ((m: string) => void) | undefined)?.('gallery');
-                (fv['goRoot'] as () => void)?.();
-            }
-            return;
-        }
-        fv['source'] = 'computer';
-        const parts = Array.isArray(path)
-            ? (path as string[])
-            : path
-              ? String(path).split('/').filter(Boolean)
-              : [];
-        (fv['navigateToPath'] as (p: string[]) => void)?.(parts);
-    },
-    navigateUp(): void {
-        (_getActiveFV()?.['navigateUp'] as (() => void) | undefined)?.();
-    },
-    navigateToFolder(folderName: string): void {
-        (_getActiveFV()?.['navigateToFolder'] as ((n: string) => void) | undefined)?.(folderName);
-    },
-    openItem(name: string, type: string): void {
-        void (
-            _getActiveFV()?.['openItem'] as ((n: string, t: string) => Promise<void>) | undefined
-        )?.(name, type);
-    },
-    setSortBy(field: 'name' | 'date' | 'size' | 'type'): void {
-        const keyMap: Record<string, string> = {
-            name: 'name',
-            date: 'dateModified',
-            size: 'size',
-            type: 'type',
-        };
-        (_getActiveFV()?.['setSortBy'] as ((k: string) => void) | undefined)?.(
-            keyMap[field] ?? 'name'
-        );
-    },
-    setViewMode(mode: 'list' | 'grid' | 'columns' | 'gallery'): void {
-        const normalized = mode === 'columns' ? 'list' : mode;
-        (_getActiveFV()?.['setViewMode'] as ((m: string) => void) | undefined)?.(normalized);
-    },
-    toggleFavorite(path: string): void {
-        (_getActiveFV()?.['toggleFavorite'] as ((p: string) => void) | undefined)?.(path);
-    },
-    getState() {
-        const fv = _getActiveFV();
-        if (!fv) return null;
-        return {
-            currentPath: fv['currentPath'] as string[],
-            currentView: fv['source'] as FinderCurrentView,
-            viewMode: fv['viewMode'] as 'list' | 'grid',
-        };
-    },
-};
+    window
+);

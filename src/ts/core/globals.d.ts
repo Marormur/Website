@@ -144,16 +144,6 @@ declare global {
             showSection?: (section: 'general' | 'display' | 'language') => void;
         };
         appI18n?: AppI18n;
-        TerminalSystem?: {
-            container?: HTMLElement | null;
-            init?: (container: HTMLElement) => void;
-        };
-        TextEditorSystem?: {
-            container?: HTMLElement | null;
-            init?: (container: HTMLElement) => void;
-            loadRemoteFile?: (opts: Record<string, unknown>) => void;
-            sendMenuAction?: (actionType: string) => void;
-        };
         PhotosApp?: {
             init?: () => void;
         };
@@ -353,6 +343,7 @@ declare global {
         TextEditorWindow?: {
             create?: (config?: { title?: string }) => unknown;
             focusOrCreate?: (config?: { title?: string }) => unknown;
+            focusOrCreateWithDocument?: (title: string, content: string) => unknown;
         };
         /** FinderView class for creating finder views/tabs (constructor reference). */
         FinderView?: new (config?: {
