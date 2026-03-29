@@ -40,6 +40,7 @@ interface IWindowManager {
     getAllWindowIds?: () => string[];
     getTransientWindowIds?: () => string[];
     setDialogInstance?: (id: string, instance: unknown) => void;
+    getAllDialogInstances?: () => Record<string, unknown>;
 }
 
 /**
@@ -170,8 +171,6 @@ function initApp(): void {
     });
 
     // Dialog-Instanzen erstellen und im WindowManager registrieren
-    const dialogs = window.dialogs || {};
-    window.dialogs = dialogs;
     if (modalIds && Array.isArray(modalIds)) {
         modalIds.forEach(id => {
             const modal = document.getElementById(id);
@@ -179,8 +178,6 @@ function initApp(): void {
 
             try {
                 const dialogInstance = new win.Dialog(id);
-                dialogs[id] = dialogInstance as unknown as Record<string, unknown>;
-
                 // Im WindowManager registrieren
                 if (win.WindowManager) {
                     win.WindowManager.setDialogInstance?.(id, dialogInstance);
@@ -190,6 +187,11 @@ function initApp(): void {
             }
         });
     }
+
+    // Compat mirror: keep window.dialogs as a read-only reflection of WindowManager registrations.
+    window.dialogs = (win.WindowManager?.getAllDialogInstances?.() || {}) as NonNullable<
+        Window['dialogs']
+    >;
 
     // Add click-outside-to-close functionality for launchpad
     const launchpadModal = document.getElementById('launchpad-modal');
@@ -211,8 +213,11 @@ function initApp(): void {
                     : false;
 
                 if (inner ? !clickedInside : target === launchpadModal) {
-                    const launchpadDialog = dialogs['launchpad-modal'] as { close?: () => void };
-                    launchpadDialog?.close?.();
+                    if (window.WindowManager?.close) {
+                        window.WindowManager.close('launchpad-modal');
+                    } else {
+                        launchpadModal.classList.add('hidden');
+                    }
                 }
             } catch {
                 /* ignore */
@@ -238,8 +243,11 @@ function initApp(): void {
                         return;
                     }
                     if (inner && inner.contains(target)) return; // clicked inside → ignore
-                    const launchpadDialog = dialogs['launchpad-modal'] as { close?: () => void };
-                    launchpadDialog?.close?.();
+                    if (window.WindowManager?.close) {
+                        window.WindowManager.close('launchpad-modal');
+                    } else {
+                        launchpadModal.classList.add('hidden');
+                    }
                 } catch {
                     /* ignore */
                 }

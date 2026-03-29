@@ -620,26 +620,33 @@ logger.debug('APP', '✅ SystemUI loaded');
             case 'open-bluetooth':
             case 'open-sound':
                 {
-                    const dialogs = (
-                        window as Window & { dialogs?: Record<string, { open(): void }> }
-                    ).dialogs;
-                    if (dialogs?.['settings-modal']) {
-                        dialogs['settings-modal'].open();
-                        if (actionKey === 'open-network' || actionKey === 'open-bluetooth') {
-                            requestAnimationFrame(() => {
-                                const settingsSystem = (
-                                    window as Window & {
-                                        SettingsSystem?: { showSection(section: string): void };
-                                    }
-                                ).SettingsSystem;
-                                settingsSystem?.showSection?.(
-                                    actionKey === 'open-network' ? 'wifi' : 'bluetooth'
-                                );
-                            });
+                    const actionBus = (
+                        window as Window & {
+                            ActionBus?: { execute?: (action: string, params?: unknown) => unknown };
                         }
+                    ).ActionBus;
+
+                    if (actionBus?.execute) {
+                        actionBus.execute('openSettings');
                     } else {
-                        logger.info('APP', `Aktion "${actionKey}" würde Einstellungen öffnen.`);
+                        (
+                            window as Window & { WindowManager?: { open?: (id: string) => void } }
+                        ).WindowManager?.open?.('settings-modal');
                     }
+
+                    if (actionKey === 'open-network' || actionKey === 'open-bluetooth') {
+                        requestAnimationFrame(() => {
+                            const settingsSystem = (
+                                window as Window & {
+                                    SettingsSystem?: { showSection(section: string): void };
+                                }
+                            ).SettingsSystem;
+                            settingsSystem?.showSection?.(
+                                actionKey === 'open-network' ? 'wifi' : 'bluetooth'
+                            );
+                        });
+                    }
+
                     hideMenuDropdowns();
                 }
                 break;

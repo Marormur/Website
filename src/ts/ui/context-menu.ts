@@ -42,27 +42,14 @@ if (guardedWindow[guardKey]) {
 
         const el = document.getElementById(id);
         if (!el) return;
-        if (!window.dialogs) window.dialogs = {};
-        if (!window.dialogs[id] && typeof window.Dialog === 'function') {
-            try {
-                window.dialogs[id] = new window.Dialog(id);
-            } catch {
-                // noop
-            }
-        }
-        const dlg = window.dialogs[id];
-        if (dlg && typeof dlg.open === 'function') {
-            dlg.open();
+        const domUtils = window.DOMUtils;
+        if (domUtils && typeof domUtils.show === 'function') {
+            domUtils.show(el);
         } else {
-            const domUtils = window.DOMUtils;
-            if (domUtils && typeof domUtils.show === 'function') {
-                domUtils.show(el);
-            } else {
-                el.classList.remove('hidden');
-            }
-            if (typeof window.bringDialogToFront === 'function') {
-                window.bringDialogToFront(id);
-            }
+            el.classList.remove('hidden');
+        }
+        if (typeof window.bringDialogToFront === 'function') {
+            window.bringDialogToFront(id);
         }
         if (typeof window.updateProgramLabelByTopModal === 'function') {
             window.updateProgramLabelByTopModal();

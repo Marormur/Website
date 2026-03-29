@@ -296,7 +296,18 @@ Neue Code-Dateien dürfen **nicht**:
 
 - ✅ `src/ts/ui/actions/windows.ts`: `openAbout`/`openSettings` nutzen keine `dialogs[...]`-Opens mehr, sondern einen Registry-first + Legacy-Modal-Fallback-Bridge-Pfad.
 - ✅ `src/ts/ui/context-menu.ts`: About/Settings laufen jetzt über ActionBus (`openAbout`/`openSettings`) statt direkter `openModal('about-modal'|'settings-modal')`-Aufrufe.
-- 🔜 context-menu.ts openModal-Funktion: restlichen dialogs-Zugriff systematisch auf WindowRegistry/WindowManager-Bridge reduzieren
+- ✅ `src/ts/ui/context-menu.ts`: `openModal()` erzeugt/öffnet keine `window.dialogs`-Instanzen mehr; Fallback läuft über `WindowManager` bzw. direkten DOM-Show-Pfad.
+- ✅ `src/ts/services/system.ts`: Quick-Aktionen (`open-network`, `open-bluetooth`, `open-sound`) öffnen Settings ohne direkten `dialogs['settings-modal']`-Zugriff (ActionBus-first, WindowManager-Fallback).
+- ✅ `src/ts/ui/actions/windows.ts`: Launchpad-Toggle schließt über `WindowManager.close('launchpad-modal')` statt `dialogs['launchpad-modal'].close()`.
+- ✅ `src/ts/ui/launchpad.ts`: Öffnen/Schließen nutzt keinen `window.dialogs`-Pfad mehr (WindowManager-first + DOM-Fallback).
+- ✅ `src/ts/ui/dialog-utils.ts`: `bringDialogToFront`/`bringAllWindowsToFront` nutzen WindowManager-first statt `window.dialogs`.
+- ✅ `src/ts/ui/dock.ts`: Minimized-Restore liest/öffnet keine `window.dialogs`-Instanzen mehr; Legacy-Restore läuft über `WindowManager`.
+- ✅ `src/ts/services/program-actions.ts`: Texteditor-Iframe-Lookup ist DOM-basiert (`#text-modal`) statt `dialogs['text-modal']`.
+- ✅ `src/ts/services/program-menu-sync.ts`: Program-Info-Fallback nutzt `WindowManager.open(...)` + `bringDialogToFront` statt direktem dialogs-Objektzugriff.
+- ✅ `src/ts/core/app-init.ts`: Launchpad-Außenklick-Schließen läuft über `WindowManager.close('launchpad-modal')` statt `dialogs['launchpad-modal'].close()`.
+- ✅ `src/ts/services/storage.ts`: Legacy-`openModals`-Restore ist dialogs-frei (WindowManager-first + DOM-Fallback).
+- ✅ `src/ts/core/app-init.ts`: Dialoginstanzen werden primär im WindowManager registriert; `window.dialogs` wird nur noch als Compat-Spiegel aus dem WindowManager gesetzt.
+- 🔜 Verbleibende bewusste Restpfade: nur `src/ts/core/app-init.ts` (Compat-Spiegel `window.dialogs`) als Übergangsbrücke für Legacy-Konsumenten.
 - dock.ts: LEGACY_MODAL_ID_TO_WINDOW_TYPE nur noch für in-flight Legacy-Dialoge (tempor.)
 - **Abhängig von:** Settings/About als BaseWindow-Subklassen implementiert.
 - **Risiko:** Hoch (Settings ist feature-reich). **Aufwand:** Hoch. **Priorität:** Nach Phase 0 + 1.

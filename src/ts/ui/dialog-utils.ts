@@ -36,6 +36,7 @@ declare global {
  * Type helper for WindowManager (defined in types/window-manager.d.ts)
  */
 interface IWindowManager {
+    bringToFront?: (windowId: string) => void;
     syncZIndexWithDOM?: () => void;
     getAllWindowIds?: () => string[];
 }
@@ -96,11 +97,27 @@ function syncTopZIndexWithDOM(): void {
  * @param dialogId - The ID of the dialog element to bring to front
  */
 function bringDialogToFront(dialogId: string): void {
-    if (window.dialogs?.[dialogId]) {
-        window.dialogs[dialogId].bringToFront?.();
-    } else {
-        logger.error('UI', 'Kein Dialog mit der ID ' + dialogId + ' gefunden.');
+    const win = window as Window & { WindowManager?: IWindowManager };
+    if (win.WindowManager?.bringToFront) {
+        win.WindowManager.bringToFront(dialogId);
+        return;
     }
+
+    const modal = document.getElementById(dialogId);
+    if (!modal) {
+        logger.error('UI', 'Kein Dialog mit der ID ' + dialogId + ' gefunden.');
+        return;
+    }
+
+    const domUtils = window.DOMUtils;
+    if (domUtils && typeof domUtils.show === 'function') {
+        domUtils.show(modal);
+    } else {
+        modal.classList.remove('hidden');
+    }
+
+    const zIndex = parseInt(window.getComputedStyle(modal).zIndex || '0', 10) || 0;
+    modal.style.zIndex = String(Math.max(zIndex, 1000) + 1);
 }
 
 /**
@@ -109,18 +126,18 @@ function bringDialogToFront(dialogId: string): void {
  * Iterates through all registered dialogs and calls bringToFront on visible ones.
  */
 function bringAllWindowsToFront(): void {
+    const win = window as Window & { WindowManager?: IWindowManager };
     const modalIds = getModalIds();
-    if (!window.dialogs || !modalIds || !Array.isArray(modalIds)) return;
+    if (!modalIds || !Array.isArray(modalIds)) return;
 
     modalIds.forEach(id => {
-        const dialog = window.dialogs?.[id];
-        if (
-            dialog &&
-            dialog.modal &&
-            !dialog.modal.classList.contains('hidden') &&
-            typeof dialog.bringToFront === 'function'
-        ) {
-            dialog.bringToFront();
+        const modal = document.getElementById(id);
+        if (!modal || modal.classList.contains('hidden')) return;
+
+        if (win.WindowManager?.bringToFront) {
+            win.WindowManager.bringToFront(id);
+        } else {
+            bringDialogToFront(id);
         }
     });
 }

@@ -70,8 +70,8 @@ export function getWindowActions(): ActionMap {
             const isLaunchpadVisible =
                 !!launchpadModal && !launchpadModal.classList.contains('hidden');
             if (isLaunchpadVisible) {
-                const dialogs = getGlobal<Record<string, { close?: () => void }>>('dialogs');
-                dialogs?.['launchpad-modal']?.close?.();
+                const wmForLaunchpad = getGlobal<{ close?: (id: string) => void }>('WindowManager');
+                wmForLaunchpad?.close?.('launchpad-modal');
 
                 // Toggle close: do not reopen Launchpad in the same click cycle.
                 if (isLaunchpadTarget) {

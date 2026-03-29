@@ -293,13 +293,13 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
          * @returns Record mapping window IDs to `DialogLike` instances.
          */
         getAllDialogInstances(): Record<string, DialogLike> {
-            const dialogs: Record<string, DialogLike> = {};
+            const instances: Record<string, DialogLike> = {};
             windowRegistry.forEach((config, id) => {
                 if (config.dialogInstance) {
-                    dialogs[id] = config.dialogInstance;
+                    instances[id] = config.dialogInstance;
                 }
             });
-            return dialogs;
+            return instances;
         },
 
         /**

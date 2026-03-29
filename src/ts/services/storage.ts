@@ -262,85 +262,29 @@ import logger from '../core/logger.js';
                 }
             }
 
-            // Prefer WindowManager.open() to ensure initHandler/openHandler are called
+            const showElementFallback = () => {
+                const domUtils = (w as unknown as { DOMUtils?: { show?: (el: Element) => void } })
+                    .DOMUtils;
+                if (domUtils && typeof domUtils.show === 'function') {
+                    domUtils.show(el);
+                } else {
+                    el.classList.remove('hidden');
+                }
+            };
+
+            // Prefer WindowManager.open() to ensure initHandler/openHandler are called.
+            // If that path fails, fall back to directly showing the modal element.
             const wm = w['WindowManager'] as { open?: (id: string) => void } | undefined;
             if (wm && typeof wm.open === 'function') {
                 try {
                     wm.open(id);
+                    return;
                 } catch (err) {
                     logger.warn('STORAGE', `Error restoring modal "${id}" via WindowManager:`, err);
-                    // Fallback: try direct dialog open
-                    const dialogs = w['dialogs'] as Record<string, unknown> | undefined;
-                    const dialogInstance =
-                        dialogs && (dialogs[id] as Record<string, unknown> | null);
-                    const openFn =
-                        dialogInstance && (dialogInstance['open'] as (() => void) | undefined);
-
-                    if (typeof openFn === 'function') {
-                        try {
-                            openFn();
-                        } catch (openErr) {
-                            logger.warn(
-                                'STORAGE',
-                                `Error restoring modal "${id}" via dialog.open():`,
-                                openErr
-                            );
-                            // Final fallback: show element directly
-                            const domUtils = (
-                                w as unknown as { DOMUtils?: { show?: (el: Element) => void } }
-                            ).DOMUtils;
-                            if (domUtils && typeof domUtils.show === 'function') {
-                                domUtils.show(el);
-                            } else {
-                                el.classList.remove('hidden');
-                            }
-                        }
-                    } else {
-                        // No dialog instance, show element directly
-                        const domUtils = (
-                            w as unknown as { DOMUtils?: { show?: (el: Element) => void } }
-                        ).DOMUtils;
-                        if (domUtils && typeof domUtils.show === 'function') {
-                            domUtils.show(el);
-                        } else {
-                            el.classList.remove('hidden');
-                        }
-                    }
-                }
-            } else {
-                // No WindowManager, fallback to dialog instance
-                const dialogs = w['dialogs'] as Record<string, unknown> | undefined;
-                const dialogInstance = dialogs && (dialogs[id] as Record<string, unknown> | null);
-                const openFn =
-                    dialogInstance && (dialogInstance['open'] as (() => void) | undefined);
-
-                if (typeof openFn === 'function') {
-                    try {
-                        openFn();
-                    } catch (err) {
-                        logger.warn('STORAGE', `Error restoring modal "${id}":`, err);
-                        // Fallback: show element directly
-                        const domUtils = (
-                            w as unknown as { DOMUtils?: { show?: (el: Element) => void } }
-                        ).DOMUtils;
-                        if (domUtils && typeof domUtils.show === 'function') {
-                            domUtils.show(el);
-                        } else {
-                            el.classList.remove('hidden');
-                        }
-                    }
-                } else {
-                    // No dialog instance, show element directly
-                    const domUtils = (
-                        w as unknown as { DOMUtils?: { show?: (el: Element) => void } }
-                    ).DOMUtils;
-                    if (domUtils && typeof domUtils.show === 'function') {
-                        domUtils.show(el);
-                    } else {
-                        el.classList.remove('hidden');
-                    }
                 }
             }
+
+            showElementFallback();
         });
 
         // Persist cleanup so stale legacy entries stop reappearing on each reload.

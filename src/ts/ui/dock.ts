@@ -334,7 +334,7 @@ function getDockPreviewSize(size: number): { width: number; height: number } {
 
 function getMinimizedWindows(): DockManagedWindow[] {
     const windows = (window.WindowRegistry?.getAllWindows?.() || []) as DockManagedWindow[];
-    const dialogs = Object.entries(window.dialogs || {}).flatMap(([dialogId, dialogInstance]) => {
+    const dialogs = Object.keys(LEGACY_MODAL_ID_TO_WINDOW_TYPE).flatMap(dialogId => {
         const modal = document.getElementById(dialogId);
         const type = LEGACY_MODAL_ID_TO_WINDOW_TYPE[dialogId];
         if (!modal || !type || modal.dataset.minimized !== 'true') {
@@ -355,14 +355,6 @@ function getMinimizedWindows(): DockManagedWindow[] {
                         ) || type,
                     minimizedAt: Number(modal.dataset.minimizedAt || 0),
                 },
-                open:
-                    typeof dialogInstance?.open === 'function'
-                        ? () => dialogInstance.open?.()
-                        : undefined,
-                bringToFront:
-                    typeof dialogInstance?.bringToFront === 'function'
-                        ? () => dialogInstance.bringToFront?.()
-                        : undefined,
             } satisfies DockManagedWindow,
         ];
     });
@@ -466,18 +458,16 @@ function syncMinimizedDockItems(preferences: DockPreferences = getDockPreference
 function restoreMinimizedWindow(windowId: string): boolean {
     const windowInstance = window.WindowRegistry?.getWindow?.(windowId) as DockManagedWindow | null;
     if (!windowInstance) {
-        const dialogInstance = window.dialogs?.[windowId] as
-            | { open?: () => void; bringToFront?: () => void }
-            | undefined;
-        if (!dialogInstance?.open) {
+        const wm = window.WindowManager;
+        if (!wm?.open) {
             minimizedWindowPreviews.delete(windowId);
             syncMinimizedDockItems();
             return false;
         }
 
         minimizedWindowPreviews.delete(windowId);
-        dialogInstance.open();
-        dialogInstance.bringToFront?.();
+        wm.open(windowId);
+        wm.bringToFront?.(windowId);
         syncMinimizedDockItems();
         return true;
     }

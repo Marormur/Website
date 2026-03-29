@@ -231,21 +231,24 @@ import { renderProgramIcon, resolveProgramIcon, WINDOW_ICONS } from '../windows/
         if (fallbackId === 'program-info-modal') {
             renderProgramInfo(info);
         }
-        const dialogs = (window as unknown as { dialogs?: Record<string, { open?: () => void }> })
-            .dialogs;
-        const dialogInstance = dialogs && dialogs[fallbackId];
-        if (dialogInstance && typeof dialogInstance.open === 'function') {
-            dialogInstance.open();
-        } else {
-            const modalElement = document.getElementById(fallbackId);
-            if (modalElement) {
-                modalElement.classList.remove('hidden');
-                const bringToFront = (
-                    window as unknown as { dialogs?: Record<string, { bringToFront?: () => void }> }
-                ).dialogs?.[fallbackId]?.bringToFront;
-                if (bringToFront) bringToFront();
-                updateProgramLabelByTopModal();
+        const windowManager = (
+            window as unknown as {
+                WindowManager?: {
+                    open?: (id: string) => void;
+                    bringToFront?: (id: string) => void;
+                };
             }
+        ).WindowManager;
+        if (windowManager?.open) {
+            windowManager.open(fallbackId);
+            return;
+        }
+
+        const modalElement = document.getElementById(fallbackId);
+        if (modalElement) {
+            modalElement.classList.remove('hidden');
+            window.bringDialogToFront?.(fallbackId);
+            updateProgramLabelByTopModal();
         }
     }
 

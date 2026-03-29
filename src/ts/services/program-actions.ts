@@ -21,10 +21,9 @@ import logger from '../core/logger.js';
 
     // --- Text Editor Menu Action Bridge ---
     function getTextEditorIframe(): HTMLIFrameElement | null {
-        const dialogs = gw.dialogs;
-        const dialog = dialogs ? dialogs['text-modal'] : null;
-        if (!dialog || !dialog.modal) return null;
-        return dialog.modal.querySelector('iframe');
+        const textModal = document.getElementById('text-modal');
+        if (!textModal) return null;
+        return textModal.querySelector('iframe');
     }
 
     function postToTextEditor(message: EditorMessage, attempt = 0): void {

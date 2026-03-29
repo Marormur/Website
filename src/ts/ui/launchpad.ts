@@ -350,8 +350,8 @@ logger.debug('UI', 'Launchpad (TS) loaded');
     function openApp(windowId: string): void {
         if (!windowId) return;
         const launchpadModal = document.getElementById('launchpad-modal');
-        if (launchpadModal && window.dialogs && window.dialogs['launchpad-modal']) {
-            window.dialogs['launchpad-modal'].close?.();
+        if (launchpadModal && window.WindowManager?.close) {
+            window.WindowManager.close('launchpad-modal');
         } else if (launchpadModal) {
             launchpadModal.classList.add('hidden');
         }
@@ -399,21 +399,16 @@ logger.debug('UI', 'Launchpad (TS) loaded');
             WM.open(windowId);
             return;
         }
-        const dialog = window.dialogs && window.dialogs[windowId];
-        if (dialog?.open) {
-            dialog.open();
-        } else {
-            const modalElement = document.getElementById(windowId);
-            if (modalElement) {
-                const domUtils = window.DOMUtils;
-                if (domUtils && typeof domUtils.show === 'function') {
-                    domUtils.show(modalElement);
-                } else {
-                    modalElement.classList.remove('hidden');
-                }
-                window.bringDialogToFront?.(windowId);
-                window.updateProgramLabelByTopModal?.();
+        const modalElement = document.getElementById(windowId);
+        if (modalElement) {
+            const domUtils = window.DOMUtils;
+            if (domUtils && typeof domUtils.show === 'function') {
+                domUtils.show(modalElement);
+            } else {
+                modalElement.classList.remove('hidden');
             }
+            window.bringDialogToFront?.(windowId);
+            window.updateProgramLabelByTopModal?.();
         }
     }
 
