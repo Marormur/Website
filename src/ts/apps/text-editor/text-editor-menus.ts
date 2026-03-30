@@ -20,6 +20,8 @@ function getActiveTextEditorWindow(): {
     minimize?: () => void;
     toggleMaximize?: () => void;
     center?: () => void;
+    canMinimize?: () => boolean;
+    canMaximize?: () => boolean;
 } | null {
     const registry = window['WindowRegistry'];
     const activeWindow = registry?.getActiveWindow?.() as
@@ -29,6 +31,8 @@ function getActiveTextEditorWindow(): {
               minimize?: () => void;
               toggleMaximize?: () => void;
               center?: () => void;
+              canMinimize?: () => boolean;
+              canMaximize?: () => boolean;
           }
         | undefined;
 
@@ -148,7 +152,13 @@ function getTextEditorMenus(): MenuSection[] {
                     id: 'window-minimize',
                     label: () => translate('menu.window.minimize'),
                     shortcut: '⌘M',
-                    disabled: () => typeof getActiveTextEditorWindow()?.minimize !== 'function',
+                    disabled: () => {
+                        const activeWindow = getActiveTextEditorWindow();
+                        return (
+                            typeof activeWindow?.minimize !== 'function' ||
+                            activeWindow?.canMinimize?.() === false
+                        );
+                    },
                     icon: 'windowMinimize',
                     action: () => getActiveTextEditorWindow()?.minimize?.(),
                 },
@@ -156,8 +166,13 @@ function getTextEditorMenus(): MenuSection[] {
                     id: 'window-zoom',
                     label: () => translate('menu.window.zoom'),
                     shortcut: '⌃⌘F',
-                    disabled: () =>
-                        typeof getActiveTextEditorWindow()?.toggleMaximize !== 'function',
+                    disabled: () => {
+                        const activeWindow = getActiveTextEditorWindow();
+                        return (
+                            typeof activeWindow?.toggleMaximize !== 'function' ||
+                            activeWindow?.canMaximize?.() === false
+                        );
+                    },
                     icon: 'windowZoom',
                     action: () => getActiveTextEditorWindow()?.toggleMaximize?.(),
                 },

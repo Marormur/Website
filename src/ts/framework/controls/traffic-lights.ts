@@ -18,6 +18,7 @@ interface TrafficLightButtonConfig {
     dataAction?: string;
     dataWindowId?: string;
     noDrag?: boolean;
+    disabled?: boolean;
     onClick?: () => void;
 }
 
@@ -47,12 +48,14 @@ function resolveConfig(
     const roleConfig = config[role] || {};
     const defaults = config.defaults || {};
     const tag = roleConfig.tag || defaults.tag || 'button';
+    const disabled = roleConfig.disabled ?? defaults.disabled ?? false;
     const roleClass = `traffic-light-control traffic-light-control--${role}`;
     const noDragClass = roleConfig.noDrag || defaults.noDrag ? ' finder-no-drag' : '';
+    const disabledClass = disabled ? ' traffic-light-control--disabled' : '';
 
     return {
         tag,
-        className: `${roleClass}${noDragClass}${roleConfig.className ? ` ${roleConfig.className}` : defaults.className ? ` ${defaults.className}` : ''}`,
+        className: `${roleClass}${noDragClass}${disabledClass}${roleConfig.className ? ` ${roleConfig.className}` : defaults.className ? ` ${defaults.className}` : ''}`,
         title: roleConfig.title || defaults.title || '',
         ariaLabel: roleConfig.ariaLabel || defaults.ariaLabel || '',
         i18nTitleKey: roleConfig.i18nTitleKey || defaults.i18nTitleKey || '',
@@ -61,6 +64,7 @@ function resolveConfig(
         dataAction: roleConfig.dataAction || defaults.dataAction || '',
         dataWindowId: roleConfig.dataWindowId || defaults.dataWindowId || '',
         noDrag: roleConfig.noDrag || defaults.noDrag || false,
+        disabled,
         onClick: roleConfig.onClick,
     };
 }
@@ -90,6 +94,13 @@ function applyCommonAttributes(
     }
     if (conf.dataWindowId) {
         element.setAttribute('data-window-id', conf.dataWindowId);
+    }
+    if (conf.disabled) {
+        if (element.tagName === 'BUTTON') {
+            (element as HTMLButtonElement).disabled = true;
+        } else {
+            element.setAttribute('aria-disabled', 'true');
+        }
     }
 }
 
@@ -121,7 +132,7 @@ export function createTrafficLightControlsElement(config: TrafficLightControlsCo
         }
 
         applyCommonAttributes(control, conf);
-        if (typeof conf.onClick === 'function') {
+        if (typeof conf.onClick === 'function' && !conf.disabled) {
             control.addEventListener('click', conf.onClick);
         }
         controls.appendChild(control);

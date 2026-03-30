@@ -242,6 +242,29 @@ html.dark .traffic-light-control::after {
     background: #28c840;
 }
 
+/* Disabled state: gray dot, no interaction, no hover effects */
+.traffic-light-control--disabled,
+.traffic-light-control--disabled:hover {
+    background: #c5c5c7;
+    cursor: default;
+    pointer-events: none;
+    filter: none;
+    transform: none;
+    box-shadow:
+        inset 0 0.5px 0 rgba(255, 255, 255, 0.35),
+        0 0 0 0.5px rgba(0, 0, 0, 0.1);
+}
+
+html.dark .traffic-light-control--disabled,
+html.dark .traffic-light-control--disabled:hover {
+    background: #4a4a4f;
+}
+
+/* Suppress symbol tooltip and hover symbol for disabled buttons */
+.traffic-light-control--disabled::after {
+    display: none;
+}
+
 .traffic-light-control:focus-visible {
     outline: 2px solid rgba(0, 122, 255, 0.55);
     outline-offset: 2px;

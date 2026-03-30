@@ -1,9 +1,6 @@
 /**
  * src/ts/apps/finder/finder-menus.ts
  * Finder-spezifische Menü-Definitionen
- *
- * Diese Datei wird von FinderWindow importiert und registriert sich selbst
- * via window.MenuRegistry.register('finder', getFinderMenus)
  */
 
 import { translate } from '../../services/i18n';
@@ -135,12 +132,18 @@ function getFinderWindowMenuItems(context: MenuContext) {
         minimize?: () => void;
         toggleMaximize?: () => void;
         center?: () => void;
+        canMinimize?: () => boolean;
+        canMaximize?: () => boolean;
     };
 
     const windowController = activeWindow && activeWindow.type === 'finder' ? activeWindow : null;
     const canClose = typeof windowController?.close === 'function';
-    const canMinimize = typeof windowController?.minimize === 'function';
-    const canZoom = typeof windowController?.toggleMaximize === 'function';
+    const canMinimize =
+        typeof windowController?.minimize === 'function' &&
+        windowController?.canMinimize?.() !== false;
+    const canZoom =
+        typeof windowController?.toggleMaximize === 'function' &&
+        windowController?.canMaximize?.() !== false;
     const canCenter = typeof windowController?.center === 'function';
 
     const tabState = getWindowTabNavigationState(windowController);
@@ -369,6 +372,7 @@ function getWindowTabNavigationState(windowController: unknown): {
 function getActiveFinderWindow() {
     const registry = window['WindowRegistry'];
     return registry?.getActiveWindow?.() as unknown as {
+        type?: string;
         element?: HTMLElement | null;
         position?: {
             x: number;
@@ -377,6 +381,12 @@ function getActiveFinderWindow() {
             height: number;
         };
         isMaximized?: boolean;
+        close?: () => void;
+        minimize?: () => void;
+        toggleMaximize?: () => void;
+        center?: () => void;
+        canMinimize?: () => boolean;
+        canMaximize?: () => boolean;
         bringToFront?: () => void;
         _saveState?: () => void;
     } | null;

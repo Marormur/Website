@@ -33,6 +33,8 @@ export interface WindowConfig {
     tabs?: BaseTab[];
     metadata?: Record<string, unknown>;
     resizable?: boolean;
+    disableMinimize?: boolean;
+    disableMaximize?: boolean;
 }
 
 export interface WindowState {
@@ -93,6 +95,8 @@ export class BaseWindow {
     activeTabId: string | null;
     metadata: Record<string, unknown>;
     resizable: boolean;
+    disableMinimize: boolean;
+    disableMaximize: boolean;
     private restoreBeforeMaximize: WindowPosition | null;
     /** Invisible overlay shown on unfocused windows to reliably intercept the first click. */
     private _focusOverlay: HTMLElement | null = null;
@@ -225,6 +229,8 @@ export class BaseWindow {
         this.activeTabId = null;
         this.metadata = config.metadata || {};
         this.resizable = config.resizable !== false;
+        this.disableMinimize = config.disableMinimize === true;
+        this.disableMaximize = config.disableMaximize === true;
         this.restoreBeforeMaximize = null;
         this.dragState = {
             isDragging: false,
@@ -369,11 +375,13 @@ export class BaseWindow {
             minimize: {
                 title: 'Minimieren',
                 i18nTitleKey: 'menuItems.window.minimize',
+                disabled: this.disableMinimize,
                 onClick: () => this.minimize(),
             },
             maximize: {
                 title: 'Füllen',
                 i18nTitleKey: 'menu.window.zoom',
+                disabled: this.disableMaximize,
                 onClick: () => this.toggleMaximize(),
             },
         });
@@ -496,8 +504,10 @@ export class BaseWindow {
             this.bringToFront();
             const action = window.DockSystem?.getTitlebarDoubleClickAction?.() || 'zoom';
             if (action === 'minimize') {
+                if (this.disableMinimize) return;
                 this.minimize();
             } else {
+                if (this.disableMaximize) return;
                 this.toggleMaximize();
             }
             e.preventDefault();
@@ -994,6 +1004,14 @@ export class BaseWindow {
         this._attachResizeHandlers();
     }
 
+    canMinimize(): boolean {
+        return !this.disableMinimize;
+    }
+
+    canMaximize(): boolean {
+        return !this.disableMaximize;
+    }
+
     private _updatePosition(): void {
         if (!this.element) return;
 
@@ -1102,6 +1120,8 @@ export class BaseWindow {
      * kann später hier erfolgen.
      */
     minimize(): void {
+        if (this.disableMinimize) return;
+
         const dockSystem = window.DockSystem as
             | (typeof window.DockSystem & {
                   captureWindowPreview?: (windowId: string, windowElement: HTMLElement) => void;
@@ -1171,6 +1191,8 @@ export class BaseWindow {
      * zuletzt bekannte Fensterposition als Restore-Zustand.
      */
     toggleMaximize(): void {
+        if (this.disableMaximize) return;
+
         this.isMaximized = !this.isMaximized;
 
         if (!this.element) return;

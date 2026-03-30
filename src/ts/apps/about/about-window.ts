@@ -17,6 +17,8 @@ export class AboutWindow extends BaseWindow {
             },
             ...config,
             resizable: false,
+            disableMinimize: true,
+            disableMaximize: true,
         });
     }
 

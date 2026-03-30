@@ -12,6 +12,8 @@ type PreviewWindowLike = {
     minimize?: () => void;
     toggleMaximize?: () => void;
     center?: () => void;
+    canMinimize?: () => boolean;
+    canMaximize?: () => boolean;
 };
 
 type ImageViewerState = {
@@ -78,7 +80,13 @@ function getPreviewMenus(): MenuSection[] {
                     id: 'window-minimize',
                     label: () => translate('menu.window.minimize'),
                     shortcut: '⌘M',
-                    disabled: () => typeof getActivePreviewWindow()?.minimize !== 'function',
+                    disabled: () => {
+                        const activeWindow = getActivePreviewWindow();
+                        return (
+                            typeof activeWindow?.minimize !== 'function' ||
+                            activeWindow?.canMinimize?.() === false
+                        );
+                    },
                     icon: 'windowMinimize',
                     action: () => getActivePreviewWindow()?.minimize?.(),
                 },
@@ -86,7 +94,13 @@ function getPreviewMenus(): MenuSection[] {
                     id: 'window-zoom',
                     label: () => translate('menu.window.zoom'),
                     shortcut: '⌃⌘F',
-                    disabled: () => typeof getActivePreviewWindow()?.toggleMaximize !== 'function',
+                    disabled: () => {
+                        const activeWindow = getActivePreviewWindow();
+                        return (
+                            typeof activeWindow?.toggleMaximize !== 'function' ||
+                            activeWindow?.canMaximize?.() === false
+                        );
+                    },
                     icon: 'windowZoom',
                     action: () => getActivePreviewWindow()?.toggleMaximize?.(),
                 },

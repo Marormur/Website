@@ -7,19 +7,34 @@ import { translate } from '../services/i18n';
 import type { MenuSection } from '../services/menu-registry';
 
 type DialogLike = {
+    type?: string;
     close?: () => void;
     minimize?: () => void;
     toggleMaximize?: () => void;
     center?: () => void;
     bringToFront?: () => void;
+    canMinimize?: () => boolean;
+    canMaximize?: () => boolean;
 };
 
-function getDialogController(modalId: string): DialogLike | null {
+function getDialogController(modalId: string, windowType?: string): DialogLike | null {
+    const registry = (window as any).WindowRegistry;
+    const activeWindow = registry?.getActiveWindow?.() as DialogLike | undefined;
+    if (windowType && activeWindow?.type === windowType) {
+        return activeWindow;
+    }
+
     const dialogs = (window as any).dialogs as Record<string, DialogLike> | undefined;
     return dialogs?.[modalId] || null;
 }
 
-function hasAnyVisibleDialog(): boolean {
+function hasAnyVisibleDialog(windowType?: string): boolean {
+    const registry = (window as any).WindowRegistry;
+    const windowsByType = windowType
+        ? (registry?.getWindowsByType?.(windowType) as unknown[]) || []
+        : [];
+    if (windowsByType.length > 0) return true;
+
     const dialogs = (window as any).dialogs as Record<string, unknown> | undefined;
     if (!dialogs) return false;
 
@@ -29,7 +44,7 @@ function hasAnyVisibleDialog(): boolean {
     });
 }
 
-function createLegacyWindowSection(modalId: string): MenuSection {
+function createLegacyWindowSection(modalId: string, windowType?: string): MenuSection {
     return {
         id: 'window',
         label: () => translate('menu.sections.window'),
@@ -38,30 +53,43 @@ function createLegacyWindowSection(modalId: string): MenuSection {
                 id: `${modalId}-minimize`,
                 label: () => translate('menu.window.minimize'),
                 shortcut: '⌘M',
-                disabled: () => typeof getDialogController(modalId)?.minimize !== 'function',
+                disabled: () => {
+                    const controller = getDialogController(modalId, windowType);
+                    return (
+                        typeof controller?.minimize !== 'function' ||
+                        controller?.canMinimize?.() === false
+                    );
+                },
                 icon: 'windowMinimize',
-                action: () => getDialogController(modalId)?.minimize?.(),
+                action: () => getDialogController(modalId, windowType)?.minimize?.(),
             },
             {
                 id: `${modalId}-zoom`,
                 label: () => translate('menu.window.zoom'),
                 shortcut: '⌃⌘F',
-                disabled: () => typeof getDialogController(modalId)?.toggleMaximize !== 'function',
+                disabled: () => {
+                    const controller = getDialogController(modalId, windowType);
+                    return (
+                        typeof controller?.toggleMaximize !== 'function' ||
+                        controller?.canMaximize?.() === false
+                    );
+                },
                 icon: 'windowZoom',
-                action: () => getDialogController(modalId)?.toggleMaximize?.(),
+                action: () => getDialogController(modalId, windowType)?.toggleMaximize?.(),
             },
             {
                 id: `${modalId}-center`,
                 label: () => translate('menu.window.center'),
-                disabled: () => typeof getDialogController(modalId)?.center !== 'function',
+                disabled: () =>
+                    typeof getDialogController(modalId, windowType)?.center !== 'function',
                 icon: 'window',
-                action: () => getDialogController(modalId)?.center?.(),
+                action: () => getDialogController(modalId, windowType)?.center?.(),
             },
             { type: 'separator' },
             {
                 id: `${modalId}-bring-to-front`,
                 label: () => translate('menu.window.bringToFront'),
-                disabled: !hasAnyVisibleDialog(),
+                disabled: !hasAnyVisibleDialog(windowType),
                 icon: 'windowFront',
                 action: () => {
                     const bringAllToFront = (window as any).bringAllWindowsToFront as
@@ -120,7 +148,7 @@ function getSettingsMenus(): MenuSection[] {
                 },
             ],
         },
-        createLegacyWindowSection('settings-modal'),
+        createLegacyWindowSection('settings-modal', 'settings'),
         createHelpSection('menu.settings.help', 'settings-modal'),
     ];
 }
@@ -141,7 +169,7 @@ function getAboutMenus(): MenuSection[] {
                 },
             ],
         },
-        createLegacyWindowSection('about-modal'),
+        createLegacyWindowSection('about-modal', 'about'),
         createHelpSection('menu.about.help', 'about-modal', 'info'),
     ];
 }

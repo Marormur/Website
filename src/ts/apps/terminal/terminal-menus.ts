@@ -24,6 +24,8 @@ type TerminalWindowLike = {
     minimize?: () => void;
     toggleMaximize?: () => void;
     center?: () => void;
+    canMinimize?: () => boolean;
+    canMaximize?: () => boolean;
     bringToFront?: () => void;
 };
 
@@ -204,7 +206,13 @@ function getTerminalMenus(): MenuSection[] {
                     id: 'window-minimize',
                     label: () => translate('menu.window.minimize'),
                     shortcut: '⌘M',
-                    disabled: () => typeof getActiveTerminalWindow()?.minimize !== 'function',
+                    disabled: () => {
+                        const activeWindow = getActiveTerminalWindow();
+                        return (
+                            typeof activeWindow?.minimize !== 'function' ||
+                            activeWindow?.canMinimize?.() === false
+                        );
+                    },
                     icon: 'windowMinimize',
                     action: () => getActiveTerminalWindow()?.minimize?.(),
                 },
@@ -212,7 +220,13 @@ function getTerminalMenus(): MenuSection[] {
                     id: 'window-zoom',
                     label: () => translate('menu.window.zoom'),
                     shortcut: '⌃⌘F',
-                    disabled: () => typeof getActiveTerminalWindow()?.toggleMaximize !== 'function',
+                    disabled: () => {
+                        const activeWindow = getActiveTerminalWindow();
+                        return (
+                            typeof activeWindow?.toggleMaximize !== 'function' ||
+                            activeWindow?.canMaximize?.() === false
+                        );
+                    },
                     icon: 'windowZoom',
                     action: () => getActiveTerminalWindow()?.toggleMaximize?.(),
                 },

@@ -12,6 +12,8 @@ type PhotosWindowLike = {
     minimize?: () => void;
     toggleMaximize?: () => void;
     center?: () => void;
+    canMinimize?: () => boolean;
+    canMaximize?: () => boolean;
 };
 
 type ImageViewerState = {
@@ -78,7 +80,13 @@ function getPhotosMenus(): MenuSection[] {
                     id: 'window-minimize',
                     label: () => translate('menu.window.minimize'),
                     shortcut: '⌘M',
-                    disabled: () => typeof getActivePhotosWindow()?.minimize !== 'function',
+                    disabled: () => {
+                        const activeWindow = getActivePhotosWindow();
+                        return (
+                            typeof activeWindow?.minimize !== 'function' ||
+                            activeWindow?.canMinimize?.() === false
+                        );
+                    },
                     icon: 'windowMinimize',
                     action: () => getActivePhotosWindow()?.minimize?.(),
                 },
@@ -86,7 +94,13 @@ function getPhotosMenus(): MenuSection[] {
                     id: 'window-zoom',
                     label: () => translate('menu.window.zoom'),
                     shortcut: '⌃⌘F',
-                    disabled: () => typeof getActivePhotosWindow()?.toggleMaximize !== 'function',
+                    disabled: () => {
+                        const activeWindow = getActivePhotosWindow();
+                        return (
+                            typeof activeWindow?.toggleMaximize !== 'function' ||
+                            activeWindow?.canMaximize?.() === false
+                        );
+                    },
                     icon: 'windowZoom',
                     action: () => getActivePhotosWindow()?.toggleMaximize?.(),
                 },

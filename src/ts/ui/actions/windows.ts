@@ -297,9 +297,13 @@ export function getWindowActions(): ActionMap {
                 return;
             }
 
-            const modal = element.closest('.modal') as HTMLElement | null;
+            // Support both legacy modal windows and BaseWindow shells.
+            const modal = element.closest('.modal, .multi-window') as HTMLElement | null;
             if (!modal) {
-                logger.warn('UI', '[ActionBus] window-close: no .modal ancestor found');
+                logger.warn(
+                    'UI',
+                    '[ActionBus] window-close: no .modal/.multi-window ancestor found'
+                );
                 return;
             }
 
@@ -339,9 +343,13 @@ export function getWindowActions(): ActionMap {
                 return;
             }
 
-            const modal = element.closest('.modal') as HTMLElement | null;
+            // Support both legacy modal windows and BaseWindow shells.
+            const modal = element.closest('.modal, .multi-window') as HTMLElement | null;
             if (!modal) {
-                logger.warn('UI', '[ActionBus] window-minimize: no .modal ancestor found');
+                logger.warn(
+                    'UI',
+                    '[ActionBus] window-minimize: no .modal/.multi-window ancestor found'
+                );
                 return;
             }
 

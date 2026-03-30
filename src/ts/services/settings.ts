@@ -217,8 +217,7 @@ logger.debug('APP', 'Settings Module loaded');
                                 title: 'Schließen',
                                 i18nTitleKey: 'common.close',
                                 id: 'close-settings-modal',
-                                dataAction: 'closeWindow',
-                                dataWindowId: 'settings-modal',
+                                dataAction: 'window-close',
                                 noDrag: true,
                             },
                             minimize: {
@@ -226,12 +225,16 @@ logger.debug('APP', 'Settings Module loaded');
                                     'settings-window-control settings-window-control--minimize',
                                 title: 'Minimieren',
                                 ariaLabel: 'Minimieren',
+                                dataAction: 'window-minimize',
+                                noDrag: true,
                             },
                             maximize: {
                                 className:
                                     'settings-window-control settings-window-control--maximize',
                                 title: 'Maximieren',
                                 ariaLabel: 'Maximieren',
+                                dataAction: 'window-maximize',
+                                noDrag: true,
                             },
                         }),
                         bodyClassName: 'settings-sidebar',
@@ -296,8 +299,7 @@ logger.debug('APP', 'Settings Module loaded');
                                         'settings-window-control settings-window-control--close',
                                     title: 'Schließen',
                                     i18nTitleKey: 'common.close',
-                                    dataAction: 'closeWindow',
-                                    dataWindowId: 'settings-modal',
+                                    dataAction: 'window-close',
                                     noDrag: true,
                                 },
                                 minimize: {
@@ -305,12 +307,16 @@ logger.debug('APP', 'Settings Module loaded');
                                         'settings-window-control settings-window-control--minimize',
                                     title: 'Minimieren',
                                     ariaLabel: 'Minimieren',
+                                    dataAction: 'window-minimize',
+                                    noDrag: true,
                                 },
                                 maximize: {
                                     className:
                                         'settings-window-control settings-window-control--maximize',
                                     title: 'Maximieren',
                                     ariaLabel: 'Maximieren',
+                                    dataAction: 'window-maximize',
+                                    noDrag: true,
                                 },
                             })}
                         </div>
