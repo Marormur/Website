@@ -710,6 +710,7 @@ html.dark .traffic-light-control--disabled:hover {
 
 .settings-section {
     max-width: 740px;
+    margin-inline: auto;
 }
 
 .settings-overview-panel {
