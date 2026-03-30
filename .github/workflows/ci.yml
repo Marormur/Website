@@ -30,7 +30,7 @@ jobs:
             - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
             - name: Lint GitHub Actions workflows
-              uses: reviewdog/action-actionlint@144cce1f5f4aad4f36bfba866f46565ac2c93546 # v1.9.0
+              uses: reviewdog/action-actionlint@0d952c597ef8459f634d7145b0b044a9699e5e43 # v1.71.0
 
     quality:
         name: Code Quality
@@ -105,7 +105,7 @@ jobs:
 
             - name: Upload test results to Codecov
               if: ${{ !cancelled() }}
-              uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5
+              uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
               with:
                   use_oidc: true
                   files: ./test-report.junit.xml
@@ -115,7 +115,7 @@ jobs:
 
             - name: Upload coverage to Codecov
               if: always()
-              uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5
+              uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
               with:
                   use_oidc: true
                   files: ./coverage/lcov.info
