@@ -1,6 +1,6 @@
 # Legacy & Compat – Code-Übersicht
 
-> Stand: 29. März 2026 — Phase 0 abgeschlossen, Menubar-Registry-Refactor umgesetzt
+> Stand: 30. März 2026 — Phase 0+1 abgeschlossen, Phase 2 für About/Settings umgesetzt
 
 ## `src/ts/compat/` — 2 Dateien
 
@@ -14,7 +14,7 @@
 
 ---
 
-## Die drei Legacy-Schichten im Code (~77 Fundstellen)
+## Die Legacy-Schichten im Code
 
 ### 1. `window.getDockReservedBottom` — globaler window.\*-Aufruf
 
@@ -40,8 +40,12 @@ speichert und beim Start wiederherstellt. Läuft **parallel** zum modernen Multi
 **Problem:** Beide Systeme müssen aktiv koordiniert werden. Der Konflikt-Guard in `storage.ts`
 (`removedConflictingIds`) ist der Beweis für diese Reibung.
 
-**Fix:** Erst möglich, wenn Settings/About als `BaseWindow` migriert sind.
-**Aufwand:** Hoch.
+**Status-Update:** Settings/About sind bereits als `BaseWindow` migriert.
+Die parallele Persistenz bleibt dennoch als Backward-Compatibility-Schicht bestehen.
+
+**Fix-Rest:** `openModals` perspektivisch auf read-only Fallback begrenzen und
+`multi-window-session` als alleinige Quelle erzwingen.
+**Aufwand:** Mittel–Hoch.
 
 ---
 
@@ -72,12 +76,13 @@ const LEGACY_MODAL_ID_TO_WINDOW_TYPE: Record<string, string> = {
 };
 ```
 
-Nur zwei Einträge — `settings-modal` und `about-modal` existieren als echte HTML-Dialoge, die **nicht**
-durch das WindowManager-System verwaltet werden.
+Nur zwei Einträge — `settings-modal` und `about-modal` werden als Legacy-IDs auf moderne
+Window-Typen gemappt (`settings`, `about`).
 
-**Problem:** Deutet darauf hin, dass Settings und About noch nicht als `BaseWindow` migriert sind.
-**Fix:** Settings/About als `BaseWindow`-Subklassen implementieren, Map entfernen.
-**Aufwand:** Hoch (Settings ist feature-reich).
+**Status-Update:** Settings/About sind bereits als `BaseWindow` migriert; die Map ist aktuell eine
+Kompatibilitätsschicht für Legacy-ID-Pfade (z. B. Dock/Restore-Ränder).
+
+**Fix-Rest:** Entfernen, sobald keine Legacy-Modal-ID-Pfade mehr benötigt werden.
 
 ---
 
@@ -109,28 +114,22 @@ InstanceManager-Shims.
 
 **Parallel existierende Systeme:**
 
-| System               | Dateien                | Zustand       | Nutzung                                |
-| -------------------- | ---------------------- | ------------- | -------------------------------------- |
-| Legacy `dialogs`     | `ui/dialog.ts`         | Still aktiv   | About, Settings, alte Modals (2)       |
-| `window.dialogs` Bag | `core/api.ts` Z.311-67 | Still aktiv   | Global `dialogs['settings-modal']`etc. |
-| `WindowManager`      | `windows/...`          | Partial       | Modern window lifecycle für einige     |
-| `WindowRegistry`     | `windows/...`          | Modern (Ziel) | All new windows                        |
+| System               | Dateien                | Zustand       | Nutzung                            |
+| -------------------- | ---------------------- | ------------- | ---------------------------------- |
+| Legacy `dialogs`     | `ui/dialog.ts`         | Still aktiv   | verbleibende Legacy-Modals         |
+| `window.dialogs` Bag | verteilt (Rest-Compat) | reduziert     | punktuelle Legacy-Menüs/Fallbacks  |
+| `WindowManager`      | `windows/...`          | Partial       | Modern window lifecycle für einige |
+| `WindowRegistry`     | `windows/...`          | Modern (Ziel) | All new windows                    |
 
-**Quantifizierung der `dialogs`-Nutzung:**
+**Status-Update zur `dialogs`-Nutzung:**
 
-- `ui/dialog-utils.ts`: 4 Zugriffe (Dialog-Wrapper)
-- `ui/context-menu.ts`: 4 Zugriffe (openModal-Aufrufe)
-- `core/app-init.ts`: 4 Zugriffe (Dialog-Instanz-Erstellung)
-- `ui/menu.ts`: 0 direkte `dialogs`-Zugriffe im aktiven Menubar-Pfad
-- `ui/launchpad.ts`: 3 Zugriffe
-- `services/storage.ts`: 3 Zugriffe (openModals-Restore)
-- `ui/actions/windows.ts`: 2 Zugriffe (About, Settings hardcoded!)
+- `src/ts/ui/actions/windows.ts`: About/Settings sind auf `AboutWindow`/`SettingsWindow` (`focusOrCreate`) umgestellt.
+- `src/ts/services/multi-window-session.ts`: Restore-Factory kennt `about` und `settings`.
+- `src/ts/services/storage.ts`: `about-modal`/`settings-modal` sind als konfliktbehaftete Legacy-IDs markiert,
+  wenn `multi-window-session` vorhanden ist.
 
-**Kritischer Punkt:** Settings und About sind **noch nicht** als `BaseWindow` migriert. Sie existieren
-nur als Legacy HTML-Dialoge, weswegen sie in `ui/actions/windows.ts` Z. 202, 213 hardcoded auf
-`dialogs['about-modal'].open()` fallen.
-
-**Fix:** Settings/About zu `BaseWindow` migrieren; `dialogs`-Bag nur noch für übergangsweise Komponenten.
+**Rest-Problem:** `window.dialogs` existiert noch in vereinzelten Legacy-Pfaden
+(z. B. `ui/legacy-dialog-menus.ts`, Teile von `storage.ts`/Finder-Menüs) und sollte in Phase 3/4 weiter reduziert werden.
 
 ---
 
@@ -198,6 +197,8 @@ const MULTI_WINDOW_CONFLICT_MODAL_IDS = [
     'terminal-modal',
     'text-modal',
     'image-modal',
+    'about-modal',
+    'settings-modal',
 ];
 ```
 
@@ -244,13 +245,13 @@ Neue Code-Dateien dürfen **nicht**:
 
 ## Gesamtbewertung
 
-| Schicht                              | Typ                                  | Aufwand                                          |
-| ------------------------------------ | ------------------------------------ | ------------------------------------------------ |
-| `compat/expose-globals.ts`           | Design (Bundle-Entry) — kein Problem | —                                                |
-| `compat/instance-shims.ts`           | Übergangsbrücke                      | Bleibt vorerst wegen Legacy-Konsumenten          |
-| `window.getDockReservedBottom` (12×) | Technische Schuld                    | **Mittel** — direkter Import                     |
-| `openModals`-Doppelsystem            | Technische Schuld                    | **Hoch** — abhängig von Settings/About-Migration |
-| `index.html` InstanceManager-Poll    | Technische Schuld                    | **Abgeschlossen (Phase 0)**                      |
+| Schicht                              | Typ                                  | Aufwand                                         |
+| ------------------------------------ | ------------------------------------ | ----------------------------------------------- |
+| `compat/expose-globals.ts`           | Design (Bundle-Entry) — kein Problem | —                                               |
+| `compat/instance-shims.ts`           | Übergangsbrücke                      | Bleibt vorerst wegen Legacy-Konsumenten         |
+| `window.getDockReservedBottom` (12×) | Technische Schuld                    | **Mittel** — direkter Import                    |
+| `openModals`-Doppelsystem            | Technische Schuld                    | **Mittel–Hoch** — unabhängig von About/Settings |
+| `index.html` InstanceManager-Poll    | Technische Schuld                    | **Abgeschlossen (Phase 0)**                     |
 
 ### Empfohlene Reihenfolge (4-Phasen-Migration)
 
@@ -305,14 +306,18 @@ Neue Code-Dateien dürfen **nicht**:
 - ✅ `src/ts/services/program-actions.ts`: Texteditor-Iframe-Lookup ist DOM-basiert (`#text-modal`) statt `dialogs['text-modal']`.
 - ✅ `src/ts/services/program-menu-sync.ts`: Program-Info-Fallback nutzt `WindowManager.open(...)` + `bringDialogToFront` statt direktem dialogs-Objektzugriff.
 - ✅ `src/ts/core/app-init.ts`: Launchpad-Außenklick-Schließen läuft über `WindowManager.close('launchpad-modal')` statt `dialogs['launchpad-modal'].close()`.
-- ✅ `src/ts/services/storage.ts`: Legacy-`openModals`-Restore ist dialogs-frei (WindowManager-first + DOM-Fallback).
-- ✅ `src/ts/core/app-init.ts`: Dialoginstanzen werden primär im WindowManager registriert; der letzte `window.dialogs`-Compat-Spiegel wurde entfernt.
-- ✅ Ergebnis: in `src/ts` gibt es keine direkten `window.dialogs`-/`dialogs[...]`-Zugriffe mehr.
+- ✅ `src/ts/services/storage.ts`: Legacy-`openModals`-Restore läuft WindowManager-first + DOM-Fallback; es existieren weiterhin einzelne dialogs-Compat-Zweige.
+- ✅ `src/ts/core/app-init.ts`: Dialoginstanzen werden primär im WindowManager registriert.
+- ⚠️ Ergebnis: `window.dialogs` ist im aktiven Hauptpfad stark reduziert, aber in `src/ts` weiterhin in Legacy-/Compat-Restpfaden vorhanden.
 - ✅ `src/ts/apps/about/about-window.ts`: erster echter Dialog-Migrationsschritt als `BaseWindow`-Subklasse (`type: 'about'`) umgesetzt und global exponiert.
 - ✅ `src/ts/ui/actions/windows.ts`: `openAbout` nutzt jetzt primär `AboutWindow.focusOrCreate()` und schließt das Legacy-`about-modal` explizit.
 - ✅ `src/ts/services/storage.ts`: `about-modal` ist als multi-window-owned markiert, sodass Legacy-`openModals` kein Doppel-About mehr wiederherstellt.
-- dock.ts: LEGACY_MODAL_ID_TO_WINDOW_TYPE nur noch für in-flight Legacy-Dialoge (tempor.)
-- **Abhängig von:** v. a. `Settings` als BaseWindow-Subklasse; `About` ist bereits migriert.
+- ✅ `src/ts/apps/settings/settings-window.ts`: Settings ist als `BaseWindow`-Subklasse migriert und per `SettingsWindow.focusOrCreate()` erreichbar.
+- ✅ `src/ts/ui/actions/windows.ts`: `openSettings` und `openWindow('settings-modal')` routen auf den BaseWindow-Pfad.
+- ✅ `src/ts/services/multi-window-session.ts`: Session-Restore für `about` und `settings` integriert.
+- ✅ `src/ts/windows/base-window.ts`: Drag-Handling unterstützt nahtlose (`.draggable-header`) Header in BaseWindow-basierten UIs.
+- dock.ts: LEGACY_MODAL_ID_TO_WINDOW_TYPE bleibt nur noch als in-flight Compat-Map (temporär).
+- **Abhängig von:** verbleibende Legacy-Dialoge (nicht About/Settings).
 - **Risiko:** Hoch (Settings ist feature-reich). **Aufwand:** Hoch. **Priorität:** Nach Phase 0 + 1.
 
 **Phase 3: Session Restore Simplification**
@@ -341,7 +346,7 @@ Bei jeder Änderung diese Dateien checken:
 | `src/ts/core/app-init.ts`      | 90–220, 447+, 540–700 | Shim-Install, Post-Init-Retries, \_\_APP_READY-Timing                        |
 | `src/ts/services/storage.ts`   | 26, 32–47, 177–240    | Dual-Keys, Conflict-Guard, Restore-Logik                                     |
 | `src/ts/ui/context-menu.ts`    | 151+                  | ActionBus-Dispatch + FinderWindow-State-Snapshot                             |
-| `src/ts/ui/actions/windows.ts` | 1–320, 202, 213       | About/Settings dialogs-Zugriff                                               |
+| `src/ts/ui/actions/windows.ts` | 1–360                 | BaseWindow-Routing für About/Settings + Legacy-Fallback-Pfade                |
 | `src/ts/ui/menu.ts`            | Datei insgesamt       | Registry-only Renderpfad stabil halten; keine neuen Legacy-Builder einführen |
 | `src/ts/ui/dock.ts`            | 100–103               | LEGACY_MODAL_ID_TO_WINDOW_TYPE Map                                           |
 
