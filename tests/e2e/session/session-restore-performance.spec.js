@@ -198,13 +198,15 @@ test.describe('Session Restore Performance', () => {
                 enabled: perf.enabled,
             };
 
-            // report() returns PerformanceMeasure[], not { measures: [...] }
-            const report = perf.report();
-            const restoreMeasure = report.find(m => m.name === 'session:restore-duration');
+            // Use getEntriesByName directly to avoid report()'s topN=10 limit cutting off
+            // session:restore-duration when many window:open:* measures exist after batch restore.
+            const entries = performance.getEntriesByName('session:restore-duration', 'measure');
+            const restoreMeasure = entries[entries.length - 1] || null;
 
+            const report = perf.report();
             return {
                 perfApi,
-                duration: restoreMeasure?.duration || null,
+                duration: restoreMeasure ? restoreMeasure.duration : null,
                 hasMeasures: report.length,
                 allMeasureNames: report.map(m => m.name),
                 instanceCount:

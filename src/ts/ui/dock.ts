@@ -97,11 +97,6 @@ const WINDOW_TYPE_TO_DOCK_TRANSLATION_KEY: Record<string, string> = {
     photos: 'dock.photos',
 };
 
-const LEGACY_MODAL_ID_TO_WINDOW_TYPE: Record<string, string> = {
-    'settings-modal': 'settings',
-    'about-modal': 'about',
-};
-
 let dockPointer: { x: number; y: number } | null = null;
 let dockMagnificationRafId: number | null = null;
 let dockRepositionRafId: number | null = null;
@@ -334,32 +329,8 @@ function getDockPreviewSize(size: number): { width: number; height: number } {
 
 function getMinimizedWindows(): DockManagedWindow[] {
     const windows = (window.WindowRegistry?.getAllWindows?.() || []) as DockManagedWindow[];
-    const dialogs = Object.keys(LEGACY_MODAL_ID_TO_WINDOW_TYPE).flatMap(dialogId => {
-        const modal = document.getElementById(dialogId);
-        const type = LEGACY_MODAL_ID_TO_WINDOW_TYPE[dialogId];
-        if (!modal || !type || modal.dataset.minimized !== 'true') {
-            return [];
-        }
 
-        return [
-            {
-                id: dialogId,
-                type,
-                element: modal,
-                isMinimized: true,
-                metadata: {
-                    title:
-                        window.appI18n?.translate?.(
-                            WINDOW_TYPE_TO_DOCK_TRANSLATION_KEY[type] || `dock.${type}`,
-                            type
-                        ) || type,
-                    minimizedAt: Number(modal.dataset.minimizedAt || 0),
-                },
-            } satisfies DockManagedWindow,
-        ];
-    });
-
-    return [...windows, ...dialogs]
+    return windows
         .filter(windowInstance => !!windowInstance?.isMinimized)
         .sort((left, right) => {
             const leftMinimizedAt = Number(left.metadata?.minimizedAt || 0);

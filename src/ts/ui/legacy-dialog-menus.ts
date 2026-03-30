@@ -17,28 +17,58 @@ type DialogLike = {
     canMaximize?: () => boolean;
 };
 
+type WindowManagerLike = {
+    getDialogInstance?: (windowId: string) => DialogLike | null;
+    getAllWindowIds?: () => string[];
+};
+
+type WindowRegistryLike = {
+    getActiveWindow?: () => DialogLike | undefined;
+    getWindowsByType?: (windowType: string) => unknown[];
+};
+
+type MenuRegistryLike = {
+    register?: (appType: string, resolver: () => MenuSection[]) => void;
+};
+
+type LegacyDialogGlobals = Window & {
+    WindowManager?: WindowManagerLike;
+    WindowRegistry?: WindowRegistryLike;
+    MenuRegistry?: MenuRegistryLike;
+    bringAllWindowsToFront?: () => void;
+    openProgramInfoFromMenu?: (modalId?: string | null) => void;
+};
+
+function getLegacyDialogGlobals(): LegacyDialogGlobals {
+    return window as LegacyDialogGlobals;
+}
+
+function getWindowManager(): WindowManagerLike | undefined {
+    return getLegacyDialogGlobals().WindowManager;
+}
+
 function getDialogController(modalId: string, windowType?: string): DialogLike | null {
-    const registry = (window as any).WindowRegistry;
+    const registry = getLegacyDialogGlobals().WindowRegistry;
     const activeWindow = registry?.getActiveWindow?.() as DialogLike | undefined;
     if (windowType && activeWindow?.type === windowType) {
         return activeWindow;
     }
 
-    const dialogs = (window as any).dialogs as Record<string, DialogLike> | undefined;
-    return dialogs?.[modalId] || null;
+    const wm = getWindowManager();
+    return wm?.getDialogInstance?.(modalId) || null;
 }
 
 function hasAnyVisibleDialog(windowType?: string): boolean {
-    const registry = (window as any).WindowRegistry;
+    const registry = getLegacyDialogGlobals().WindowRegistry;
     const windowsByType = windowType
         ? (registry?.getWindowsByType?.(windowType) as unknown[]) || []
         : [];
     if (windowsByType.length > 0) return true;
 
-    const dialogs = (window as any).dialogs as Record<string, unknown> | undefined;
-    if (!dialogs) return false;
+    const modalIds = getWindowManager()?.getAllWindowIds?.() || [];
+    if (!Array.isArray(modalIds) || modalIds.length === 0) return false;
 
-    return Object.keys(dialogs).some(id => {
+    return modalIds.some(id => {
         const element = document.getElementById(id);
         return !!element && !element.classList.contains('hidden');
     });
@@ -92,10 +122,7 @@ function createLegacyWindowSection(modalId: string, windowType?: string): MenuSe
                 disabled: !hasAnyVisibleDialog(windowType),
                 icon: 'windowFront',
                 action: () => {
-                    const bringAllToFront = (window as any).bringAllWindowsToFront as
-                        | (() => void)
-                        | undefined;
-                    bringAllToFront?.();
+                    getLegacyDialogGlobals().bringAllWindowsToFront?.();
                 },
             },
             { type: 'separator' },
@@ -121,10 +148,7 @@ function createHelpSection(itemKey: string, targetModalId: string, itemIcon = 'h
                 label: () => translate(itemKey),
                 icon: itemIcon,
                 action: () => {
-                    const openProgramInfoFromMenu = (window as any).openProgramInfoFromMenu as
-                        | ((modalId?: string | null) => void)
-                        | undefined;
-                    openProgramInfoFromMenu?.(targetModalId);
+                    getLegacyDialogGlobals().openProgramInfoFromMenu?.(targetModalId);
                 },
             },
         ],

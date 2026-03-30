@@ -5,6 +5,7 @@
 
 import { getZIndexManager } from '../windows/z-index-manager.js';
 import logger from '../core/logger.js';
+import { getDockReservedBottom } from './dock.js';
 import {
     detectClientCoordinateScale,
     getLogicalViewportWidth,
@@ -77,7 +78,7 @@ export class Dialog {
         if (!target) return;
 
         const minTop = Math.max(0, Math.round(window.getMenuBarBottom?.() || 0));
-        const dockReserve = Math.max(0, Math.round(window.getDockReservedBottom?.() || 0));
+        const dockReserve = Math.max(0, Math.round(getDockReservedBottom()));
         const viewportWidth = Math.max(0, getLogicalViewportWidth());
         const viewportHeight = Math.max(0, getLogicalViewportHeight());
         const availableHeight = Math.max(0, viewportHeight - minTop - dockReserve);
@@ -184,7 +185,7 @@ export class Dialog {
         }
 
         const minTop = Math.round(window.getMenuBarBottom?.() || 0);
-        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        const dockReserve = Math.round(getDockReservedBottom());
         const maxHeight = Math.max(0, getLogicalViewportHeight() - minTop - dockReserve);
 
         target.style.maxWidth = 'none';
@@ -392,7 +393,7 @@ export class Dialog {
         const width = Math.round(rect.width || target.offsetWidth || 0);
         const height = Math.round(rect.height || target.offsetHeight || 0);
         const minTop = Math.round(window.getMenuBarBottom?.() || 0);
-        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        const dockReserve = Math.round(getDockReservedBottom());
         const viewportWidth = Math.max(getLogicalViewportWidth(), width);
         const availableHeight = Math.max(height, getLogicalViewportHeight() - minTop - dockReserve);
 
@@ -448,7 +449,7 @@ export class Dialog {
         target.style.width = `${getLogicalViewportWidth()}px`;
         target.style.height = `${getLogicalViewportHeight() - minTop}px`;
         try {
-            const __dockReserve = window.getDockReservedBottom?.() || 0;
+            const __dockReserve = getDockReservedBottom();
             const __maxHeight = Math.max(0, getLogicalViewportHeight() - minTop - __dockReserve);
             target.style.height = `${__maxHeight}px`;
         } catch {}

@@ -18,15 +18,16 @@
 
 ### 1. `window.getDockReservedBottom` — globaler window.\*-Aufruf
 
-**Betroffene Dateien:** `dialog.ts`, `menu.ts`, `base-window.ts`, `finder-window.ts` (12 Stellen in `src/ts`)
+**Betroffene Dateien (vorher):** `dialog.ts`, `base-window.ts`, `finder-window.ts`, `finder-menus.ts`, `snap-utils.ts` (12 Stellen in `src/ts`)
 
 `getDockReservedBottom` wird als `window.*` aufgerufen, obwohl die Funktion in `dock.ts` implementiert
 und über `api.ts` als Legacy Wrapper exponiert wird.
 
-**Problem:** Indirekter Import via globalem `window`-Zustand statt direktem TS-Import aus `dock.ts`.
+**Status-Update (30. März 2026):** Abgeschlossen. Alle produktiven Aufrufe in `src/ts` nutzen jetzt
+direkte Imports von `getDockReservedBottom()` aus `src/ts/ui/dock.ts`.
 
-**Fix:** `window.getDockReservedBottom?.()` → direkter Import `getDockReservedBottom()` aus `dock.ts`.
-**Aufwand:** Mittel (12 Stellen, aber mechanisch).
+**Rest-Compat:** Der globale Wrapper in `core/api.ts` bleibt vorerst bestehen, damit Legacy-Konsumenten
+außerhalb der modernisierten TS-Module nicht brechen.
 
 ---
 
@@ -128,8 +129,9 @@ InstanceManager-Shims.
 - `src/ts/services/storage.ts`: `about-modal`/`settings-modal` sind als konfliktbehaftete Legacy-IDs markiert,
   wenn `multi-window-session` vorhanden ist.
 
-**Rest-Problem:** `window.dialogs` existiert noch in vereinzelten Legacy-Pfaden
-(z. B. `ui/legacy-dialog-menus.ts`, Teile von `storage.ts`/Finder-Menüs) und sollte in Phase 3/4 weiter reduziert werden.
+**Status-Update (30. März 2026):** Direkte `window.dialogs`-Zugriffe sind in `src/ts` entfernt.
+Die verbleibende Legacy-Kopplung liegt primär in Dialog-Compat-Menüs/Bridges und in der
+`openModals`-Persistenzlogik, nicht mehr im aktiven Window-Handling.
 
 ---
 
@@ -249,7 +251,7 @@ Neue Code-Dateien dürfen **nicht**:
 | ------------------------------------ | ------------------------------------ | ----------------------------------------------- |
 | `compat/expose-globals.ts`           | Design (Bundle-Entry) — kein Problem | —                                               |
 | `compat/instance-shims.ts`           | Übergangsbrücke                      | Bleibt vorerst wegen Legacy-Konsumenten         |
-| `window.getDockReservedBottom` (12×) | Technische Schuld                    | **Mittel** — direkter Import                    |
+| `window.getDockReservedBottom` (12×) | Technische Schuld                    | **Abgeschlossen (30. März 2026)**               |
 | `openModals`-Doppelsystem            | Technische Schuld                    | **Mittel–Hoch** — unabhängig von About/Settings |
 | `index.html` InstanceManager-Poll    | Technische Schuld                    | **Abgeschlossen (Phase 0)**                     |
 
@@ -307,8 +309,11 @@ Neue Code-Dateien dürfen **nicht**:
 - ✅ `src/ts/services/program-menu-sync.ts`: Program-Info-Fallback nutzt `WindowManager.open(...)` + `bringDialogToFront` statt direktem dialogs-Objektzugriff.
 - ✅ `src/ts/core/app-init.ts`: Launchpad-Außenklick-Schließen läuft über `WindowManager.close('launchpad-modal')` statt `dialogs['launchpad-modal'].close()`.
 - ✅ `src/ts/services/storage.ts`: Legacy-`openModals`-Restore läuft WindowManager-first + DOM-Fallback; es existieren weiterhin einzelne dialogs-Compat-Zweige.
+- ✅ `src/ts/services/storage.ts`: Reset-Pfad nutzt `WindowManager.getAllDialogInstances()` statt `window.dialogs`-Bag für Boundary-Reflow.
 - ✅ `src/ts/core/app-init.ts`: Dialoginstanzen werden primär im WindowManager registriert.
-- ⚠️ Ergebnis: `window.dialogs` ist im aktiven Hauptpfad stark reduziert, aber in `src/ts` weiterhin in Legacy-/Compat-Restpfaden vorhanden.
+- ✅ `src/ts/apps/finder/finder-menus.ts`: `hasAnyVisibleDialog()` prüft Sichtbarkeit jetzt über `WindowRegistry`/`WindowManager` statt `window.dialogs`.
+- ✅ `src/ts/ui/legacy-dialog-menus.ts`: Controller-/Visibility-Lookups laufen über `WindowManager` statt `window.dialogs`.
+- ✅ Ergebnis: Keine direkten `window.dialogs`-Zugriffe mehr in `src/ts`.
 - ✅ `src/ts/apps/about/about-window.ts`: erster echter Dialog-Migrationsschritt als `BaseWindow`-Subklasse (`type: 'about'`) umgesetzt und global exponiert.
 - ✅ `src/ts/ui/actions/windows.ts`: `openAbout` nutzt jetzt primär `AboutWindow.focusOrCreate()` und schließt das Legacy-`about-modal` explizit.
 - ✅ `src/ts/services/storage.ts`: `about-modal` ist als multi-window-owned markiert, sodass Legacy-`openModals` kein Doppel-About mehr wiederherstellt.
@@ -317,6 +322,7 @@ Neue Code-Dateien dürfen **nicht**:
 - ✅ `src/ts/services/multi-window-session.ts`: Session-Restore für `about` und `settings` integriert.
 - ✅ `src/ts/windows/base-window.ts`: Drag-Handling unterstützt nahtlose (`.draggable-header`) Header in BaseWindow-basierten UIs.
 - dock.ts: LEGACY_MODAL_ID_TO_WINDOW_TYPE bleibt nur noch als in-flight Compat-Map (temporär).
+- dock.ts: LEGACY_MODAL_ID_TO_WINDOW_TYPE entfernt (30. März 2026).
 - **Abhängig von:** verbleibende Legacy-Dialoge (nicht About/Settings).
 - **Risiko:** Hoch (Settings ist feature-reich). **Aufwand:** Hoch. **Priorität:** Nach Phase 0 + 1.
 
@@ -325,6 +331,15 @@ Neue Code-Dateien dürfen **nicht**:
 - storage.ts: `multi-window-session` als Single Source of Truth
 - `openModals` nur noch read-only für Fallback-Migration (1–2 Versionen)
 - Entferne MULTI_WINDOW_CONFLICT_MODAL_IDS-Filter (vorher alle Fenster via Phase 1–2 migrieren)
+
+**Status-Update (30. März 2026):**
+
+- ✅ `src/ts/services/storage.ts`: `saveOpenModals()` schreibt nicht mehr, wenn eine gültige `multi-window-session` vorhanden ist (`openModals` damit read-only Fallback bei aktivem Modern-Session-Key).
+- ✅ `src/ts/services/storage.ts`: Session-Erkennung für Multi-Window wurde in `hasMultiWindowSessionData()` zentralisiert (shared für Save/Restore).
+- ⚠️ Offen: Konflikt-Filter (`MULTI_WINDOW_CONFLICT_MODAL_IDS`) und Dual-Key-Restore bleiben bis zum finalen Single-Source-Umbau aktiv.
+- ✅ `restoreOpenModals()` kehrt sofort zurück (Early-Return), wenn `hasMultiWindowSessionData()` true ist.
+- ✅ `MULTI_WINDOW_CONFLICT_MODAL_IDS`-Konstante und Filter entfernt (Dead Code nach Early-Return).
+- ✅ `src/ts/ui/dock.ts`: `LEGACY_MODAL_ID_TO_WINDOW_TYPE` entfernt — `data-minimized` wurde nie gesetzt.
 - **Abhängig von:** Phase 1–2 abgeschlossen (alle Fenster haben moderne Owner).
 - **Risiko:** Niedrig. **Aufwand:** Mittel. **Priorität:** Zuletzt.
 
@@ -348,6 +363,6 @@ Bei jeder Änderung diese Dateien checken:
 | `src/ts/ui/context-menu.ts`    | 151+                  | ActionBus-Dispatch + FinderWindow-State-Snapshot                             |
 | `src/ts/ui/actions/windows.ts` | 1–360                 | BaseWindow-Routing für About/Settings + Legacy-Fallback-Pfade                |
 | `src/ts/ui/menu.ts`            | Datei insgesamt       | Registry-only Renderpfad stabil halten; keine neuen Legacy-Builder einführen |
-| `src/ts/ui/dock.ts`            | 100–103               | LEGACY_MODAL_ID_TO_WINDOW_TYPE Map                                           |
+| `src/ts/ui/dock.ts`            | entfernt              | LEGACY_MODAL_ID_TO_WINDOW_TYPE Map (Phase 3 abgeschlossen)                   |
 
 ---

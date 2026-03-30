@@ -15,6 +15,7 @@ import {
     toLogicalClientPx,
     toRenderedClientPx,
 } from '../utils/viewport.js';
+import { getDockReservedBottom } from '../ui/dock.js';
 import { createTrafficLightControlsElement } from '../framework/controls/traffic-lights.js';
 import { createTabHeaderControlElement } from '../framework/controls/tab-header-control.js';
 
@@ -153,7 +154,7 @@ export class BaseWindow {
         }
 
         const minTop = Math.round(window.getMenuBarBottom?.() || 0);
-        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        const dockReserve = Math.round(getDockReservedBottom());
         const maxHeight = Math.max(0, getLogicalViewportHeight() - minTop - dockReserve);
         const logicalWidth = Math.max(1, getLogicalViewportWidth());
 
@@ -273,7 +274,7 @@ export class BaseWindow {
         // Center window with slight offset for multiple windows
         const offset = Math.random() * 100 - 50;
         const minTop = Math.round(window.getMenuBarBottom?.() || 0);
-        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        const dockReserve = Math.round(getDockReservedBottom());
         const defaultWidth = 800;
         const defaultHeight = 600;
         const logicalViewportWidth = getLogicalViewportWidth();
@@ -461,7 +462,7 @@ export class BaseWindow {
                 const clampedOffsetX = Math.max(0, Math.min(restoredWidth, preservedOffsetX));
                 const clampedOffsetY = Math.max(0, Math.min(restoredHeight, preservedOffsetY));
                 const minTop = window.getMenuBarBottom?.() || 0;
-                const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+                const dockReserve = Math.round(getDockReservedBottom());
                 const maxLeft = Math.max(0, getLogicalViewportWidth() - restoredWidth);
                 const maxTop = Math.max(
                     minTop,
@@ -660,7 +661,7 @@ export class BaseWindow {
         if (!this.isMaximized) return;
 
         const minTop = Math.round(window.getMenuBarBottom?.() || 0);
-        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        const dockReserve = Math.round(getDockReservedBottom());
         // In maximize mode we must always fit the currently available viewport area,
         // even when it is smaller than the normal window minimum height.
         const maxHeight = Math.max(0, getLogicalViewportHeight() - minTop - dockReserve);
@@ -1167,7 +1168,7 @@ export class BaseWindow {
         // bei zoom != 1 die physische Breite, nicht die logische DOM-Breite.
         const viewportWidth = Math.max(getLogicalViewportWidth(), this.position.width);
         const minTop = Math.round(window.getMenuBarBottom?.() || 0);
-        const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+        const dockReserve = Math.round(getDockReservedBottom());
         const availableHeight = Math.max(
             this.position.height,
             getLogicalViewportHeight() - minTop - dockReserve
@@ -1234,7 +1235,7 @@ export class BaseWindow {
             };
 
             const minTop = Math.round(window.getMenuBarBottom?.() || 0);
-            const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+            const dockReserve = Math.round(getDockReservedBottom());
             // Maximized windows should fit exactly into the menu/dock-constrained viewport.
             const maxHeight = Math.max(0, getLogicalViewportHeight() - minTop - dockReserve);
 

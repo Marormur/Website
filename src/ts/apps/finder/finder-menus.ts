@@ -6,6 +6,7 @@
 import { translate } from '../../services/i18n';
 import logger from '../../core/logger.js';
 import { MenuSection } from '../../services/menu-registry';
+import { getDockReservedBottom } from '../../ui/dock.js';
 
 export type MenuContext = {
     modalId?: string;
@@ -534,7 +535,7 @@ function getWindowWorkArea(): { x: number; y: number; width: number; height: num
         | (() => number)
         | undefined;
     const top = Math.max(0, Math.round((window as any).getMenuBarBottom?.() || 0));
-    const bottomReserve = Math.max(0, Math.round((window as any).getDockReservedBottom?.() || 0));
+    const bottomReserve = Math.max(0, Math.round(getDockReservedBottom()));
     const width = Math.max(640, Math.round(getLogicalViewportWidth?.() || 1280));
     const height = Math.max(
         400,
@@ -606,11 +607,20 @@ function getFinderMultiInstanceMenuItems() {
 
 function hasAnyVisibleDialog(): boolean {
     try {
-        const dialogs = window['dialogs'] as Record<string, { element?: HTMLElement }>;
-        if (!dialogs || typeof dialogs !== 'object') return false;
-        return Object.values(dialogs).some(dlg =>
-            dlg?.element ? !dlg.element.classList.contains('hidden') : false
-        );
+        const registry = window['WindowRegistry'];
+        const finderWindows = registry?.getAllWindows?.('finder') || [];
+        if (Array.isArray(finderWindows) && finderWindows.length > 0) return true;
+
+        const windowManager = window['WindowManager'] as
+            | { getAllWindowIds?: () => string[] }
+            | undefined;
+        const modalIds = windowManager?.getAllWindowIds?.() || [];
+        if (!Array.isArray(modalIds) || modalIds.length === 0) return false;
+
+        return modalIds.some(id => {
+            const modal = document.getElementById(id);
+            return !!modal && !modal.classList.contains('hidden');
+        });
     } catch {
         return false;
     }

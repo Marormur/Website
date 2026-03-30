@@ -1,3 +1,5 @@
+import { getDockReservedBottom } from './dock.js';
+
 (function () {
     'use strict';
 
@@ -84,13 +86,7 @@
         const left = side === 'left' ? 0 : Math.max(0, viewportWidth - width);
         const top = minTop;
 
-        // Fetch dock reserved bottom height
-        const getDockReservedBottom = (
-            window as unknown as { getDockReservedBottom?: () => number }
-        ).getDockReservedBottom;
-        const dockReserve = Math.round(
-            typeof getDockReservedBottom === 'function' ? getDockReservedBottom() : 0
-        );
+        const dockReserve = Math.round(getDockReservedBottom());
 
         const height = Math.max(0, viewportHeight - top - dockReserve);
         return { left, top, width, height };

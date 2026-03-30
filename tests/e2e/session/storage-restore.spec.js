@@ -76,7 +76,7 @@ test.describe('Storage Modal Restore @basic', () => {
         expect(errors).toHaveLength(0);
     });
 
-    test('should restore settings-modal from openModals when multi-window session exists', async ({
+    test('should ignore settings-modal openModals entry when multi-window session exists', async ({
         page,
     }) => {
         const result = await page.evaluate(() => {
@@ -141,11 +141,11 @@ test.describe('Storage Modal Restore @basic', () => {
         });
 
         expect(result.exists).toBe(true);
-        expect(result.hidden).toBe(false);
-        expect(result.savedOpenModals).toContain('settings-modal');
+        expect(result.hidden).toBe(true);
+        expect(result.savedOpenModals).not.toContain('settings-modal');
     });
 
-    test('should restore valid modals without errors', async ({ page }) => {
+    test('should open modern about window without restore errors', async ({ page }) => {
         // Open a valid modal
         await page.goto('http://127.0.0.1:5173/index.html');
         await waitForAppReady(page);
@@ -160,11 +160,12 @@ test.describe('Storage Modal Restore @basic', () => {
         const aboutTrigger = page.locator('[data-action="openAbout"]').first();
         await aboutTrigger.click();
 
-        // Verify it's open (wait for animation/visibility)
-        const aboutModal = page.locator('#about-modal');
-        await expect(aboutModal).not.toHaveClass(/hidden/, { timeout: 5000 });
+        // About is now a BaseWindow instance; assert modern window shell is visible.
+        const aboutWindow = page.locator('.modal.multi-window[id^="window-about-"]');
+        await expect(aboutWindow).toHaveCount(1);
+        await expect(aboutWindow).toBeVisible({ timeout: 5000 });
 
-        // Now reload and verify it's restored
+        // Now reload and verify app remains healthy.
         await page.reload();
         await waitForAppReady(page);
 

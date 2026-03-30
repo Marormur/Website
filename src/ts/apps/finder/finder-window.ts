@@ -18,6 +18,7 @@ import {
 } from '../../framework/controls/window-tabs-adapter.js';
 import logger from '../../core/logger.js';
 import { attachWindowDragZoneBehavior } from '../../framework/controls/window-drag-zone.js';
+import { getDockReservedBottom } from '../../ui/dock.js';
 import {
     getLogicalViewportHeight,
     getLogicalViewportWidth,
@@ -124,7 +125,7 @@ export class FinderWindow extends BaseWindow {
                     const clampedOffsetX = Math.max(0, Math.min(restoredWidth, preservedOffsetX));
                     const clampedOffsetY = Math.max(0, Math.min(restoredHeight, preservedOffsetY));
                     const minTop = window.getMenuBarBottom?.() || 0;
-                    const dockReserve = Math.round(window.getDockReservedBottom?.() || 0);
+                    const dockReserve = Math.round(getDockReservedBottom());
                     const maxLeft = Math.max(0, getLogicalViewportWidth() - restoredWidth);
                     const maxTop = Math.max(
                         minTop,

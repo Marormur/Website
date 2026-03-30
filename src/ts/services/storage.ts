@@ -28,17 +28,6 @@ import logger from '../core/logger.js';
     const MODAL_POSITIONS_KEY = 'modalPositions';
     const MULTI_WINDOW_SESSION_KEY = 'multi-window-session';
 
-    // Legacy modal IDs that conflict with the multi-window restore pipeline.
-    // If a multi-window session exists, these IDs must not be restored from openModals.
-    const MULTI_WINDOW_CONFLICT_MODAL_IDS = new Set<string>([
-        'finder-modal',
-        'terminal-modal',
-        'text-modal',
-        'image-modal',
-        'about-modal',
-        'settings-modal',
-    ]);
-
     // These app windows are owned exclusively by the multi-window/session restore pipeline.
     // Persisting them in openModals reactivates obsolete legacy modals and visually regresses
     // the redesigned pill-style tab headers in Terminal/Texteditor/Finder/Photos.
@@ -107,9 +96,27 @@ import logger from '../core/logger.js';
 
     // ===== Open Modals Persistence =====
 
+    function hasMultiWindowSessionData(): boolean {
+        try {
+            const rawMultiSession = getString(MULTI_WINDOW_SESSION_KEY);
+            if (!rawMultiSession) return false;
+            const parsed = JSON.parse(rawMultiSession) as { windows?: unknown[] };
+            return Array.isArray(parsed.windows) && parsed.windows.length > 0;
+        } catch {
+            return false;
+        }
+    }
+
     function saveOpenModals(): void {
         const modalIds = getModalIds();
         const transientModalIds = getTransientModalIds();
+
+        // Phase 3 migration step:
+        // When the modern multi-window session key is active, openModals stays read-only
+        // as backward-compat fallback for older sessions.
+        if (hasMultiWindowSessionData()) {
+            return;
+        }
 
         const openModals = modalIds.filter(id => {
             if (transientModalIds.has(id)) return false;
@@ -179,19 +186,14 @@ import logger from '../core/logger.js';
     }
 
     function restoreOpenModals(): void {
-        const transientModalIds = getTransientModalIds();
-        let hasMultiWindowSession = false;
-
-        // Detect whether the modern multi-window restore should be the single source of truth.
-        try {
-            const rawMultiSession = getString(MULTI_WINDOW_SESSION_KEY);
-            if (rawMultiSession) {
-                const parsed = JSON.parse(rawMultiSession) as { windows?: unknown[] };
-                hasMultiWindowSession = Array.isArray(parsed.windows) && parsed.windows.length > 0;
-            }
-        } catch {
-            hasMultiWindowSession = false;
+        // When a modern multi-window session is present, skip legacy openModals restore entirely.
+        // The multi-window restore pipeline owns all window restoration in that case.
+        if (hasMultiWindowSessionData()) {
+            restoreTopModalFocus();
+            return;
         }
+
+        const transientModalIds = getTransientModalIds();
 
         // Collect targets from modern key (OPEN_MODALS_KEY) and legacy 'window-session'
         const toRestore = new Set<string>();
@@ -234,11 +236,6 @@ import logger from '../core/logger.js';
             // Multi-window restore owns app window restoration.
             // Prevent stale legacy modal entries from reopening windows unexpectedly.
             if (MULTI_WINDOW_OWNED_MODAL_IDS.has(id)) {
-                removedConflictingIds.push(id);
-                return;
-            }
-
-            if (hasMultiWindowSession && MULTI_WINDOW_CONFLICT_MODAL_IDS.has(id)) {
                 removedConflictingIds.push(id);
                 return;
             }
@@ -512,9 +509,12 @@ import logger from '../core/logger.js';
         const syncTopZIndexWithDOM = w['syncTopZIndexWithDOM'] as (() => void) | undefined;
         if (typeof syncTopZIndexWithDOM === 'function') syncTopZIndexWithDOM();
 
-        const dialogs = w['dialogs'] as Record<string, unknown> | undefined;
-        if (dialogs) {
-            Object.values(dialogs).forEach(dialog => {
+        const windowManager = w['WindowManager'] as
+            | { getAllDialogInstances?: () => Record<string, unknown> }
+            | undefined;
+        const dialogInstances = windowManager?.getAllDialogInstances?.();
+        if (dialogInstances && typeof dialogInstances === 'object') {
+            Object.values(dialogInstances).forEach(dialog => {
                 const enforce = (dialog as Record<string, unknown>)['enforceMenuBarBoundary'] as
                     | (() => void)
                     | undefined;
