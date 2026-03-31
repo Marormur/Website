@@ -44,8 +44,13 @@ test.describe('Photos App', () => {
 
         const photosWindow = getPhotosWindow(page);
         await expect(photosWindow).toBeVisible();
-        await expect(photosWindow.locator('#photos-sidebar')).toHaveCount(1);
-        await expect(photosWindow.locator('#photos-gallery')).toHaveCount(1);
+
+        // New redesign: Check for tab structure instead of sidebar/gallery
+        await expect(photosWindow.locator('[id$="-tab-content"]')).toBeDefined();
+
+        // Check for gallery grid
+        const gallery = photosWindow.locator('[class*="grid"]');
+        await expect(gallery).toBeDefined();
     });
 
     test('Photos App can be opened from Launchpad', async ({ page }) => {

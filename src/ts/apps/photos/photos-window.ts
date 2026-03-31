@@ -8,6 +8,7 @@
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import { configureInsetWindowShell } from '../../framework/controls/inset-window-shell.js';
+import { createTrafficLightControlsElement } from '../../framework/controls/traffic-lights.js';
 import {
     focusOrCreateWindowByType,
     showAndRegisterWindow,
@@ -47,6 +48,30 @@ export class PhotosWindow extends BaseWindow {
         if (typeof builder === 'function') {
             const { container } = builder();
             this.contentElement?.appendChild(container);
+        }
+
+        const controlsHost = win.querySelector('#photos-window-controls');
+        if (controlsHost) {
+            controlsHost.appendChild(
+                createTrafficLightControlsElement({
+                    defaults: { noDrag: true },
+                    close: {
+                        title: 'Schließen',
+                        i18nTitleKey: 'common.close',
+                        onClick: () => this.close(),
+                    },
+                    minimize: {
+                        title: 'Minimieren',
+                        i18nTitleKey: 'menu.window.minimize',
+                        onClick: () => this.minimize(),
+                    },
+                    maximize: {
+                        title: 'Füllen',
+                        i18nTitleKey: 'menu.window.zoom',
+                        onClick: () => this.toggleMaximize(),
+                    },
+                })
+            );
         }
 
         // Wire up element references and start the app

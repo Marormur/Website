@@ -1,15 +1,17 @@
 import logger from '../../core/logger.js';
-import { renderInsetSidebarShellHTML } from '../../framework/controls/inset-sidebar-shell.js';
 import { WINDOW_ICONS } from '../../windows/window-icons.js';
 import { renderTrafficLightControlsHTML } from '../../framework/controls/traffic-lights.js';
+
 /*
- * Fotos-App – inspiriert von der macOS Fotos Anwendung.
- * L├ñdt Bilder aus der Picsum API, gruppiert sie in verschiedene Ansichten
- * und stellt einen Detail-Viewer inklusive Favoritenverwaltung bereit.
+ * Fotos-App v2 – iOS-inspiriertes Design mit Bottom-Navigation (Mobile) / Top-Tab-Bar (Desktop).
+ * Lädt Bilder aus der Picsum API, gruppiert nach Jahr, mit Detail-Viewer und Favoritenverwaltung.
  */
+
 type Orientation = 'landscape' | 'portrait' | 'square';
 type SidebarFilter = 'all' | 'favorites' | Orientation;
-type SegmentView = 'moments' | 'collections' | 'years';
+type SegmentView = 'years' | 'albums' | 'favorites' | 'moments';
+type PhotoTab = 'photos' | 'albums' | 'for-you' | 'shared';
+type GroupByOption = 'year' | 'month';
 
 interface PicsumApiPhoto {
     id: string;
@@ -50,7 +52,6 @@ type AnyPhotoItem = PhotoLibraryItem | ExternalPhotoItem;
 
 interface PhotosElements {
     container: HTMLElement | null;
-    sidebar: HTMLElement | null;
     gallery: HTMLElement | null;
     loading: HTMLElement | null;
     error: HTMLElement | null;
@@ -58,10 +59,9 @@ interface PhotosElements {
     empty: HTMLElement | null;
     placeholder: HTMLElement | null;
     photoCount: HTMLElement | null;
-    refreshButton: HTMLButtonElement | null;
     searchInput: HTMLInputElement | null;
     searchClear: HTMLButtonElement | null;
-    sidebarButtons: HTMLButtonElement[];
+    tabButtons: Record<PhotoTab, HTMLButtonElement | null>;
     segmentButtons: HTMLButtonElement[];
     overlay: HTMLElement | null;
     detailTitle: HTMLElement | null;
@@ -79,14 +79,13 @@ interface PhotosElements {
     image: HTMLImageElement | null;
     imageInfo: HTMLElement | null;
     loader: HTMLElement | null;
-    countAll: HTMLElement | null;
-    countFavorites: HTMLElement | null;
-    countLandscape: HTMLElement | null;
-    countPortrait: HTMLElement | null;
-    countSquare: HTMLElement | null;
     titlebar: HTMLElement | null;
     statusbar: HTMLElement | null;
+    tabContent: HTMLElement | null;
+    galleryWrapper: HTMLElement | null;
+    segmentSwitcher: HTMLElement | null;
 }
+
 interface PhotosState {
     initialized: boolean;
     photos: PhotoLibraryItem[];
@@ -104,6 +103,8 @@ interface PhotosState {
     externalPhoto: ExternalPhotoItem | null;
     pendingImageId: string | null;
     orientationCounts: Record<Orientation, number>;
+    activeTab: PhotoTab;
+    groupBy: GroupByOption;
 }
 
 interface PhotosAppApi {
@@ -160,7 +161,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         filteredIndexMap: new Map(),
         favorites: new Set(),
         activeFilter: 'all',
-        activeSegment: 'moments',
+        activeSegment: 'years',
         searchTerm: '',
         isLoading: false,
         currentPage: 1,
@@ -170,11 +171,12 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         externalPhoto: null,
         pendingImageId: null,
         orientationCounts: { landscape: 0, portrait: 0, square: 0 },
+        activeTab: 'photos',
+        groupBy: 'year',
     };
 
     const elements: PhotosElements = {
         container: null,
-        sidebar: null,
         gallery: null,
         loading: null,
         error: null,
@@ -182,10 +184,14 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         empty: null,
         placeholder: null,
         photoCount: null,
-        refreshButton: null,
         searchInput: null,
         searchClear: null,
-        sidebarButtons: [],
+        tabButtons: {
+            photos: null,
+            albums: null,
+            'for-you': null,
+            shared: null,
+        },
         segmentButtons: [],
         overlay: null,
         detailTitle: null,
@@ -203,14 +209,13 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         image: null,
         imageInfo: null,
         loader: null,
-        countAll: null,
-        countFavorites: null,
-        countLandscape: null,
-        countPortrait: null,
-        countSquare: null,
         titlebar: null,
         statusbar: null,
+        tabContent: null,
+        galleryWrapper: null,
+        segmentSwitcher: null,
     };
+
     function isExternalPhoto(photo: AnyPhotoItem): photo is ExternalPhotoItem {
         return (photo as ExternalPhotoItem).isExternal === true;
     }
@@ -241,181 +246,165 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                             title="${t('photos.search.clear', 'Suche löschen')}">×</button>
                     </div>`,
                 },
-                { type: 'separator' },
-                {
-                    label: '',
-                    icon: `<div class="flex bg-gray-200 dark:bg-gray-800 rounded-full p-1 text-sm font-medium text-gray-600 dark:text-gray-300 shadow-inner" role="group">
-                        <button type="button" data-photos-segment="moments" class="photos-segment-button">${t('photos.segments.moments', 'Momente')}</button>
-                        <button type="button" data-photos-segment="collections" class="photos-segment-button">${t('photos.segments.collections', 'Sammlungen')}</button>
-                        <button type="button" data-photos-segment="years" class="photos-segment-button">${t('photos.segments.years', 'Jahre')}</button>
-                    </div>`,
-                },
             ],
             showStatusBar: true,
             statusBarLeft: t('photos.status.countPlaceholder', '– Fotos'),
             statusBarRight: '',
         });
 
-        // Store references
         elements.titlebar = titlebar;
         elements.statusbar = statusbar;
 
-        // Build content and append (detailOverlay is embedded inside container)
         const { container: contentContainer } = createPhotosContent();
         content.appendChild(contentContainer);
 
         return frame;
     }
 
-    // Build the shared content (sidebar, main area, detail overlay).
-    // Uses the same inset-sidebar-panel design language as Finder and System Settings:
-    // – Floating frosted-glass sidebar with traffic lights (photos-sidebar-shell + photos-sidebar-panel)
-    // – Content topbar with segment switcher + search (photos-content-topbar)
-    // – Detail overlay embedded directly inside the container (z-30 absolute inset-0)
-    // NOTE: detailOverlay is still returned for callers that need a reference, but it
-    //       is already appended to container – do NOT appendChild it again separately.
+    /**
+     * iOS-inspired layout:
+     * - Desktop (≥768px): Floating bottom tab panel above gallery
+     * - Mobile (<768px): Bottom tab bar
+     * - Responsive gallery grid with year grouping
+     * - Inverse feed: newest photos at bottom on init, scroll up to see older
+     */
     function createPhotosContent(): { container: HTMLElement; detailOverlay: HTMLElement } {
-        // ── Sidebar: inset frosted-glass panel (same as Finder sidebar) ─────────────
-        const sidebarShell = document.createElement('div');
-        sidebarShell.innerHTML = renderInsetSidebarShellHTML({
-            shellClassName: 'photos-sidebar-shell',
-            panelClassName: 'photos-sidebar-panel',
-            topClassName: 'finder-window-drag-zone flex items-center gap-2 px-3',
-            topAttributes: {
-                style: 'height:44px;flex-shrink:0;cursor:move;',
-            },
-            topHtml: renderTrafficLightControlsHTML({
-                defaults: {
-                    tag: 'div',
-                    noDrag: true,
-                },
-                close: {
-                    title: t('common.close', 'Schließen'),
-                    dataAction: 'window-close',
-                },
-                minimize: {
-                    title: t('menu.window.minimize', 'Minimize'),
-                    dataAction: 'window-minimize',
-                },
-                maximize: {
-                    title: t('menu.window.zoom', 'Fill'),
-                    dataAction: 'window-maximize',
-                },
-            }),
-            bodyClassName: 'flex-1 min-h-0 flex flex-col px-3 pb-3',
-            bodyAttributes: {
-                style: 'padding-top:6px;',
-            },
-            bodyHtml: `
-                <div class="flex-1 min-h-0 overflow-y-auto pr-1">
-                    <p class="photos-sidebar-section-label" data-i18n="photos.sidebar.library">${t('photos.sidebar.library', 'Bibliothek')}</p>
-                    <nav id="photos-sidebar" class="space-y-0.5">
-                        <button type="button" data-photos-filter="all" class="photos-sidebar-button">
-                            <span data-i18n="photos.sidebar.items.all">${t('photos.sidebar.items.all', 'Alle Fotos')}</span>
-                            <span id="photos-count-all" class="photos-sidebar-count">–</span>
-                        </button>
-                        <button type="button" data-photos-filter="favorites" class="photos-sidebar-button">
-                            <span data-i18n="photos.sidebar.items.favorites">${t('photos.sidebar.items.favorites', 'Favoriten')}</span>
-                            <span id="photos-count-favorites" class="photos-sidebar-count">0</span>
-                        </button>
-                    </nav>
-                    <p class="photos-sidebar-section-label" data-i18n="photos.sidebar.filters">${t('photos.sidebar.filters', 'Filter')}</p>
-                    <nav class="space-y-0.5">
-                        <button type="button" data-photos-filter="landscape" class="photos-sidebar-button">
-                            <span data-i18n="photos.sidebar.items.landscape">${t('photos.sidebar.items.landscape', 'Querformat')}</span>
-                            <span id="photos-count-landscape" class="photos-sidebar-count">–</span>
-                        </button>
-                        <button type="button" data-photos-filter="portrait" class="photos-sidebar-button">
-                            <span data-i18n="photos.sidebar.items.portrait">${t('photos.sidebar.items.portrait', 'Hochformat')}</span>
-                            <span id="photos-count-portrait" class="photos-sidebar-count">–</span>
-                        </button>
-                        <button type="button" data-photos-filter="square" class="photos-sidebar-button">
-                            <span data-i18n="photos.sidebar.items.square">${t('photos.sidebar.items.square', 'Quadratisch')}</span>
-                            <span id="photos-count-square" class="photos-sidebar-count">–</span>
-                        </button>
-                    </nav>
-                </div>
-                <div class="photos-sidebar-footer mt-3 pt-3">
-                    <button id="photos-refresh" type="button"
-                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-2xl bg-white/60 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 transition hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-400 dark:hover:text-blue-300">
-                        <span aria-hidden="true">↻</span>
-                        <span data-i18n="photos.sidebar.refresh">${t('photos.sidebar.refresh', 'Neu laden')}</span>
-                    </button>
-                    <p class="photos-sidebar-credit" data-i18n="photos.sidebar.sourceNote">
-                        ${t('photos.sidebar.sourceNote', 'Quelle: Lorem Picsum – zufällige kuratierte Fotokollektionen.')}
-                    </p>
-                </div>
-            `,
-        });
+        const container = document.createElement('div');
+        container.className = 'flex flex-col h-full w-full overflow-hidden relative';
 
-        // ── Main area: topbar (drag + segments + search) + content + statusbar ──────
-        const mainArea = document.createElement('div');
-        mainArea.className = 'flex flex-col h-full overflow-hidden';
-        mainArea.style.marginLeft = 'var(--photos-sidebar-width, 224px)';
-        mainArea.innerHTML = `
-            <!-- Content topbar (drag zone) -->
-            <div class="photos-content-topbar finder-window-drag-zone">
-                <!-- Segment-Switcher (Mitte) -->
-                <div class="flex-1 flex justify-center finder-no-drag">
-                    <div class="flex bg-gray-100/80 dark:bg-gray-800/80 rounded-full p-1 text-sm font-medium text-gray-600 dark:text-gray-300 shadow-inner"
-                         role="group" aria-label="${t('menu.sections.view', 'View')}">
-                        <button type="button" data-photos-segment="moments"
-                            class="photos-segment-button" data-i18n="photos.segments.moments">${t('photos.segments.moments', 'Momente')}</button>
-                        <button type="button" data-photos-segment="collections"
-                            class="photos-segment-button" data-i18n="photos.segments.collections">${t('photos.segments.collections', 'Sammlungen')}</button>
-                        <button type="button" data-photos-segment="years"
-                            class="photos-segment-button" data-i18n="photos.segments.years">${t('photos.segments.years', 'Jahre')}</button>
-                    </div>
-                </div>
-                <!-- Suche (rechts) -->
-                <div class="finder-no-drag relative flex-none flex items-center">
-                    <div class="relative">
-                        <input id="photos-search" type="search"
-                            placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}"
-                            class="h-7 w-40 rounded-full border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 pl-8 pr-6 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                        <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true">⌕</span>
-                        <button id="photos-search-clear" type="button"
-                            class="absolute inset-y-0 right-1.5 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 invisible pointer-events-none"
-                            title="${t('photos.search.clear', 'Clear search')}" aria-label="${t('photos.search.clear', 'Clear search')}">×</button>
-                    </div>
-                </div>
+        // ── Top Bar (desktop only): traffic lights + search ───────────────────────
+        const topTabBar = document.createElement('div');
+        topTabBar.id = 'photos-top-tabs';
+        topTabBar.className =
+            'hidden md:flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-950/50 backdrop-blur-sm finder-window-drag-zone';
+        topTabBar.innerHTML = `
+            <div class="finder-no-drag flex items-center gap-3">
+                <div id="photos-window-controls" class="flex items-center"></div>
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">${t('photos.title', 'Fotos')}</span>
             </div>
-
-            <!-- Galerie-Inhaltsbereich -->
-            <div class="flex-1 relative min-h-0 overflow-hidden">
-                <div id="photos-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 opacity-0 pointer-events-none">
-                    <div class="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300">
-                        <span class="h-10 w-10 border-4 border-gray-300 dark:border-gray-700 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin"></span>
-                        <span class="text-sm font-medium" data-i18n="photos.status.loading">${t('photos.status.loading', 'Lade Fotos…')}</span>
-                    </div>
+            <div class="flex-1"></div>
+            <div class="finder-no-drag relative flex min-w-0 w-36 lg:w-44 items-center gap-2 shrink">
+                <div class="relative min-w-0 flex-1">
+                    <input id="photos-search" type="text"
+                        placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}"
+                        class="h-8 w-full min-w-0 rounded-full border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 pl-8 pr-3 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                    <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true">⌕</span>
                 </div>
-                <div id="photos-error" class="absolute inset-x-0 top-6 mx-auto max-w-lg bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-200 rounded-2xl shadow px-5 py-4 hidden">
-                    <p class="font-semibold mb-1" data-i18n="photos.errors.heading">${t('photos.errors.heading', 'Fehler beim Laden')}</p>
-                    <p class="text-sm" data-i18n="photos.errors.description">${t('photos.errors.description', 'Bitte überprüfe deine Verbindung und versuche es erneut.')}</p>
-                    <button id="photos-error-retry" type="button"
-                        class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-100 underline decoration-dotted"
-                        data-i18n="photos.buttons.retry">${t('photos.buttons.retry', 'Erneut versuchen')}</button>
-                </div>
-                <div id="photos-gallery" class="absolute inset-0 overflow-y-auto px-5 sm:px-6 py-6 space-y-8"></div>
-                <div id="photos-empty" class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 opacity-0 pointer-events-none px-6">
-                    <div>
-                        <p class="text-lg font-semibold" data-i18n="photos.empty.title">${t('photos.empty.title', 'Keine Fotos gefunden')}</p>
-                        <p class="text-sm mt-1" data-i18n="photos.empty.description">${t('photos.empty.description', 'Passe Suche oder Filter an, um weitere Ergebnisse zu sehen.')}</p>
-                    </div>
-                </div>
-                <div id="image-placeholder"
-                    class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 opacity-0 pointer-events-none"
-                    data-i18n="photos.placeholder">${t('photos.placeholder', 'Wähle ein Foto aus, um Details zu sehen.')}</div>
-            </div>
-
-            <!-- Statusbar -->
-            <div class="window-statusbar flex items-center justify-between px-3 bg-transparent border-t border-gray-200/50 dark:border-white/5 text-xs text-gray-500 dark:text-gray-400" style="height:22px;flex-shrink:0;">
-                <span class="statusbar-left">${t('photos.status.countPlaceholder', '– Fotos')}</span>
-                <span class="statusbar-right"></span>
             </div>
         `;
 
-        // ── Detail overlay (eingebettet, z-30 über allem) ────────────────────────────
+        // ── Main content area (tab content + gallery) - takes up remaining space ────
+        const mainContent = document.createElement('div');
+        mainContent.className = 'flex-1 flex flex-col min-h-0 overflow-hidden';
+
+        // Photos Tab specific: segment switcher (Years/Albums/Favorites) + gallery
+        const photosTabContent = document.createElement('div');
+        photosTabContent.id = 'photos-tab-content';
+        photosTabContent.className = 'flex flex-col h-full min-h-0 overflow-hidden';
+        photosTabContent.innerHTML = `
+            <!-- Segment Switcher (Inside Photos Tab) -->
+            <div class="hidden md:flex items-center justify-center px-4 py-2 border-b border-gray-200/50 dark:border-gray-800/50 bg-gray-50/30 dark:bg-gray-900/30 finder-window-drag-zone">
+                <div class="flex bg-gray-100/80 dark:bg-gray-800/80 rounded-full p-1 text-sm font-medium text-gray-600 dark:text-gray-300 shadow-inner" role="group">
+                    <button type="button" data-photos-segment="years" class="photos-segment-button px-4 py-1.5 rounded-full transition">${t('photos.segments.years', 'Jahre')}</button>
+                    <button type="button" data-photos-segment="albums" class="photos-segment-button px-4 py-1.5 rounded-full transition">${t('photos.segments.albums', 'Alben')}</button>
+                    <button type="button" data-photos-segment="favorites" class="photos-segment-button px-4 py-1.5 rounded-full transition">${t('photos.segments.favorites', 'Favoriten')}</button>
+                </div>
+            </div>
+
+            <!-- Gallery Wrapper with Inverse Scroll -->
+            <div id="photos-gallery-wrapper" class="flex-1 relative min-h-0 overflow-hidden">
+                <div id="photos-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 opacity-0 pointer-events-none">
+                    <div class="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300">
+                        <span class="h-10 w-10 border-4 border-gray-300 dark:border-gray-700 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin"></span>
+                        <span class="text-sm font-medium">${t('photos.status.loading', 'Lade Fotos…')}</span>
+                    </div>
+                </div>
+                <div id="photos-error" class="absolute inset-x-0 top-6 mx-auto max-w-lg bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-200 rounded-2xl shadow px-5 py-4 hidden">
+                    <p class="font-semibold mb-1">${t('photos.errors.heading', 'Fehler beim Laden')}</p>
+                    <p class="text-sm">${t('photos.errors.description', 'Bitte überprüfe deine Verbindung und versuche es erneut.')}</p>
+                    <button id="photos-error-retry" type="button" class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-100 underline decoration-dotted">${t('photos.buttons.retry', 'Erneut versuchen')}</button>
+                </div>
+                <!-- Main gallery with inverse scroll (transform: scaleY(-1) or JS scroll) -->
+                <div id="photos-gallery" class="absolute inset-0 overflow-y-auto px-3 sm:px-6 py-6 pb-20 md:pb-24 space-y-8"></div>
+                <div id="photos-empty" class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 opacity-0 pointer-events-none px-6">
+                    <div>
+                        <p class="text-lg font-semibold">${t('photos.empty.title', 'Keine Fotos gefunden')}</p>
+                        <p class="text-sm mt-1">${t('photos.empty.description', 'Passe Suche oder Filter an.')}</p>
+                    </div>
+                </div>
+                <div id="image-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 opacity-0 pointer-events-none">${t('photos.placeholder', 'Wähle ein Foto aus.')}</div>
+            </div>
+        `;
+
+        // Placeholder Tab Contents (Albums, For You, Shared)
+        const albumsTabContent = document.createElement('div');
+        albumsTabContent.id = 'albums-tab-content';
+        albumsTabContent.className = 'hidden flex-1 flex items-center justify-center';
+        albumsTabContent.innerHTML = `<p class="text-gray-500 dark:text-gray-400">${t('photos.placeholder.comingSoon', 'Alben folgen in Kürze')}</p>`;
+
+        const forYouTabContent = document.createElement('div');
+        forYouTabContent.id = 'for-you-tab-content';
+        forYouTabContent.className = 'hidden flex-1 flex items-center justify-center';
+        forYouTabContent.innerHTML = `<p class="text-gray-500 dark:text-gray-400">${t('photos.placeholder.comingSoon', 'Kommt bald')}</p>`;
+
+        const sharedTabContent = document.createElement('div');
+        sharedTabContent.id = 'shared-tab-content';
+        sharedTabContent.className = 'hidden flex-1 flex items-center justify-center';
+        sharedTabContent.innerHTML = `<p class="text-gray-500 dark:text-gray-400">${t('photos.placeholder.comingSoon', 'Kommt bald')}</p>`;
+
+        mainContent.append(photosTabContent, albumsTabContent, forYouTabContent, sharedTabContent);
+
+        // ── Desktop Floating Tab Panel (pill, above gallery) ──────────────────────
+        const desktopFloatingTabs = document.createElement('div');
+        desktopFloatingTabs.id = 'photos-desktop-tabs';
+        desktopFloatingTabs.className =
+            'hidden md:flex absolute bottom-4 left-1/2 -translate-x-1/2 z-20 items-center gap-1 rounded-full border border-gray-200/80 dark:border-gray-700/80 bg-white/90 dark:bg-gray-900/90 p-1 shadow-lg backdrop-blur-md finder-no-drag';
+        desktopFloatingTabs.innerHTML = `
+            <button data-photo-tab="photos" class="photos-tab-button active inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 transition" aria-label="Photos">
+                <span aria-hidden="true">📷</span>
+                <span>${t('photos.tabs.photos', 'Fotos')}</span>
+            </button>
+            <button data-photo-tab="albums" class="photos-tab-button inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 transition" aria-label="Albums">
+                <span aria-hidden="true">🗂️</span>
+                <span>${t('photos.tabs.albums', 'Alben')}</span>
+            </button>
+            <button data-photo-tab="for-you" class="photos-tab-button inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 transition" aria-label="For You">
+                <span aria-hidden="true">✨</span>
+                <span class="whitespace-nowrap">${t('photos.tabs.for-you', 'Für dich')}</span>
+            </button>
+            <button data-photo-tab="shared" class="photos-tab-button inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 transition" aria-label="Shared">
+                <span aria-hidden="true">👥</span>
+                <span>${t('photos.tabs.shared', 'Geteilt')}</span>
+            </button>
+        `;
+
+        // ── Bottom Tab Navigation (visible on mobile, hidden on desktop) ────────────
+        const bottomTabBar = document.createElement('div');
+        bottomTabBar.id = 'photos-bottom-tabs';
+        bottomTabBar.className =
+            'md:hidden absolute bottom-0 left-0 right-0 flex items-center justify-around px-2 py-2 border-t border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm';
+        bottomTabBar.innerHTML = `
+            <button data-photo-tab="photos" class="photos-tab-button active flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-blue-600 dark:text-blue-400 transition" aria-label="Photos">
+                <span class="text-xl">📷</span>
+                <span class="text-xs font-medium">${t('photos.tabs.photos', 'Fotos')}</span>
+            </button>
+            <button data-photo-tab="albums" class="photos-tab-button flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition" aria-label="Albums">
+                <span class="text-xl">🗂️</span>
+                <span class="text-xs font-medium">${t('photos.tabs.albums', 'Alben')}</span>
+            </button>
+            <button data-photo-tab="for-you" class="photos-tab-button flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition" aria-label="For You">
+                <span class="text-xl">✨</span>
+                <span class="text-xs font-medium">${t('photos.tabs.for-you', 'Für dich')}</span>
+            </button>
+            <button data-photo-tab="shared" class="photos-tab-button flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition" aria-label="Shared">
+                <span class="text-xl">👥</span>
+                <span class="text-xs font-medium">${t('photos.tabs.shared', 'Geteilt')}</span>
+            </button>
+        `;
+
+        container.append(topTabBar, mainContent, desktopFloatingTabs, bottomTabBar);
+
+        // ── Detail Overlay (absolute, z-30) ────────────────────────────────────────
         const detailOverlay = document.createElement('div');
         detailOverlay.id = 'photo-detail-overlay';
         detailOverlay.className =
@@ -436,13 +425,13 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                         <button id="photo-detail-close" type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-lg leading-none transition hover:bg-gray-200 dark:hover:bg-gray-700" title="${t('common.close', 'Schließen')}">×</button>
                     </div>
                 </div>
-                <div class="flex-1 flex overflow-hidden">
-                    <button id="photo-detail-prev" type="button" class="hidden sm:flex items-center justify-center w-14 bg-transparent text-3xl text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition" title="${t('photos.detail.prev', 'Vorheriges Foto')}">‹</button>
-                    <div class="flex-1 relative bg-gray-50 dark:bg-gray-950 flex items-center justify-center overflow-hidden">
+                <div class="flex-1 overflow-hidden pointer-events-none">
+                    <div class="relative h-full bg-gray-50 dark:bg-gray-950 flex items-center justify-center overflow-hidden pointer-events-none">
+                        <button id="photo-detail-prev" type="button" class="hidden sm:inline-flex absolute left-6 top-1/2 z-20 h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-3xl text-gray-500 shadow-sm backdrop-blur-sm pointer-events-auto transition hover:bg-white hover:text-gray-700 dark:bg-gray-900/80 dark:text-gray-300 dark:hover:bg-gray-900 dark:hover:text-gray-100" title="${t('photos.detail.prev', 'Vorheriges Foto')}">‹</button>
                         <img id="image-viewer" class="max-w-full max-h-full object-contain" alt="${t('photos.detail.imageAlt', 'Ausgewähltes Foto')}" />
                         <div id="photo-detail-loader" class="absolute inset-0 flex items-center justify-center bg-gray-900/40 text-white text-sm font-medium opacity-0 pointer-events-none">${t('photos.detail.loader', 'Foto wird geladen…')}</div>
+                        <button id="photo-detail-next" type="button" class="hidden sm:inline-flex absolute right-24 top-1/2 z-20 h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-3xl text-gray-500 shadow-sm backdrop-blur-sm pointer-events-auto transition hover:bg-white hover:text-gray-700 dark:bg-gray-900/80 dark:text-gray-300 dark:hover:bg-gray-900 dark:hover:text-gray-100" title="${t('photos.detail.next', 'Nächstes Foto')}">›</button>
                     </div>
-                    <button id="photo-detail-next" type="button" class="hidden sm:flex items-center justify-center w-14 bg-transparent text-3xl text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition" title="${t('photos.detail.next', 'Nächstes Foto')}">›</button>
                 </div>
                 <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-800 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
                     <div class="flex-1" style="min-width:200px;">
@@ -456,112 +445,19 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                 </div>
             </div>
         `;
-
-        // Container: relativ positioniert, nimmt volle Fensterfläche ein
-        // Die Sidebar ist absolut positioniert (photos-sidebar-shell), der
-        // mainArea erhält margin-left in Sidebar-Breite.
-        const container = document.createElement('div');
-        container.className = 'relative h-full w-full overflow-hidden';
-        container.appendChild(sidebarShell);
-        container.appendChild(mainArea);
-        // Detail-Overlay eingebettet (NICHT nochmal extern appenden!)
         container.appendChild(detailOverlay);
 
         return { container, detailOverlay };
     }
 
-    // Expose a safe builder for window integration
     globalWindow.PhotosAppBuildContent = createPhotosContent;
 
-    // Attach the app to an existing window element (used by PhotosWindow)
-    function attachToWindow(container: HTMLElement): void {
-        if (!container) return;
-        elements.container = container;
-        elements.titlebar = container.querySelector('.window-titlebar') ?? null;
-        elements.statusbar = container.querySelector('.window-statusbar') ?? null;
-
-        cacheElements();
-        wireSidebar();
-        wireSegments();
-        wireSearch();
-        wireGallery();
-        wireDetail();
-        globalWindow.appI18n?.applyTranslations?.(elements.container ?? undefined);
-        void fetchPhotos();
-    }
-
-    globalWindow.PhotosAppAttachToWindow = attachToWindow;
-
-    function init(): void {
-        if (state.initialized) {
-            return;
-        }
-        state.initialized = true;
-
-        // Prefer the BaseWindow (multi-window) implementation when available
-        const existing = document.getElementById('photos-window');
-        if (!existing) {
-            const PhotosWindow = (window as any).PhotosWindow;
-            if (typeof PhotosWindow === 'function') {
-                // Create a PhotosWindow instance which will attach app content
-                const win = PhotosWindow.create();
-                if (win && win.element) {
-                    // Keep legacy id for tests/selection
-                    win.element.id = 'photos-window';
-                    elements.container = win.element as HTMLElement;
-                }
-            } else {
-                // Fallback: create the old modal-based UI
-                const frame = renderWindow();
-                if (!frame) {
-                    logger.error('UI', 'Failed to render photos window');
-                    return;
-                }
-
-                // Find or create container
-                let container = document.getElementById('photos-window');
-                if (!container) {
-                    container = document.createElement('div');
-                    container.id = 'photos-window';
-                    container.className =
-                        'fixed inset-0 flex items-center justify-center hidden modal relative';
-                    container.style.zIndex = '1000';
-                    document.body.appendChild(container);
-                }
-
-                // Inject frame
-                const wrapper = document.createElement('div');
-                // Match the standard window wrapper used elsewhere (rounded corners, shadow, bg + sizing)
-                wrapper.className =
-                    'bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl autopointer flex flex-col w-[min(90vw,1100px)] h-[min(85vh,780px)]';
-                wrapper.appendChild(frame);
-                container.appendChild(wrapper);
-
-                elements.container = container;
-            }
-        } else {
-            elements.container = existing;
-        }
-
-        cacheElements();
-        if (!elements.gallery) {
-            return;
-        }
-        wireSidebar();
-        wireSegments();
-        wireSearch();
-        wireGallery();
-        wireDetail();
-        globalWindow.appI18n?.applyTranslations?.(elements.container ?? undefined);
-        void fetchPhotos();
-    }
-
     function cacheElements(): void {
-        if (!elements.container) {
-            return;
-        }
-        elements.sidebar = elements.container.querySelector('#photos-sidebar') ?? null;
+        if (!elements.container) return;
+
         elements.gallery = elements.container.querySelector('#photos-gallery') ?? null;
+        elements.galleryWrapper =
+            elements.container.querySelector('#photos-gallery-wrapper') ?? null;
         elements.loading = elements.container.querySelector('#photos-loading') ?? null;
         elements.error = elements.container.querySelector('#photos-error') ?? null;
         elements.errorRetry = elements.container.querySelector(
@@ -570,15 +466,26 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         elements.empty = elements.container.querySelector('#photos-empty') ?? null;
         elements.placeholder = elements.container.querySelector('#image-placeholder') ?? null;
         elements.photoCount = elements.statusbar?.querySelector('.statusbar-left') ?? null;
-        elements.refreshButton = elements.container.querySelector(
-            '#photos-refresh'
-        ) as HTMLButtonElement | null;
         elements.searchInput = elements.container.querySelector(
             '#photos-search'
         ) as HTMLInputElement | null;
         elements.searchClear = elements.container.querySelector(
             '#photos-search-clear'
         ) as HTMLButtonElement | null;
+
+        // Cache tab buttons (both top and bottom)
+        const tabButtonsTD = elements.container.querySelectorAll('[data-photo-tab]');
+        tabButtonsTD.forEach(btn => {
+            const tab = btn.getAttribute('data-photo-tab') as PhotoTab;
+            elements.tabButtons[tab] = btn as HTMLButtonElement;
+        });
+
+        // Cache segment buttons
+        elements.segmentButtons = Array.from(
+            elements.container.querySelectorAll('[data-photos-segment]')
+        );
+
+        // Cache overlay and detail elements
         elements.overlay = elements.container.querySelector('#photo-detail-overlay') ?? null;
         elements.detailTitle = elements.container.querySelector('#photo-detail-title') ?? null;
         elements.detailMeta = elements.container.querySelector('#photo-detail-meta') ?? null;
@@ -612,92 +519,127 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         ) as HTMLImageElement | null;
         elements.imageInfo = elements.container.querySelector('#image-info') ?? null;
         elements.loader = elements.container.querySelector('#photo-detail-loader') ?? null;
-        elements.countAll = elements.container.querySelector('#photos-count-all') ?? null;
-        elements.countFavorites =
-            elements.container.querySelector('#photos-count-favorites') ?? null;
-        elements.countLandscape =
-            elements.container.querySelector('#photos-count-landscape') ?? null;
-        elements.countPortrait = elements.container.querySelector('#photos-count-portrait') ?? null;
-        elements.countSquare = elements.container.querySelector('#photos-count-square') ?? null;
-
-        const sidebarButtons =
-            elements.sidebar?.querySelectorAll<HTMLButtonElement>('button[data-photos-filter]') ??
-            [];
-        elements.sidebarButtons = Array.from(sidebarButtons);
-        const segmentButtons = elements.container.querySelectorAll<HTMLButtonElement>(
-            'button[data-photos-segment]'
-        );
-        elements.segmentButtons = Array.from(segmentButtons);
     }
 
-    function wireSidebar(): void {
-        elements.sidebarButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const filter = button.getAttribute('data-photos-filter') as SidebarFilter | null;
-                if (!filter || state.activeFilter === filter) {
-                    return;
-                }
-                state.activeFilter = filter;
-                syncSidebarSelection();
-                applyFilters();
-            });
+    function wireTabNavigation(): void {
+        // Event delegation: catches both top and bottom tab buttons
+        elements.container?.addEventListener('click', event => {
+            const btn = (event.target as HTMLElement).closest('[data-photo-tab]');
+            if (!btn) return;
+            const tab = btn.getAttribute('data-photo-tab') as PhotoTab;
+            if (tab) switchTab(tab);
         });
-        syncSidebarSelection();
-        elements.refreshButton?.addEventListener('click', () => {
-            void fetchPhotos({ refresh: true });
+    }
+
+    function switchTab(tab: PhotoTab): void {
+        state.activeTab = tab;
+
+        // Update ALL tab buttons in DOM (top + bottom bars via querySelectorAll)
+        const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+        const allTabBtns = elements.container?.querySelectorAll('[data-photo-tab]') ?? [];
+        allTabBtns.forEach(btn => {
+            const t = btn.getAttribute('data-photo-tab');
+            const isActive = t === tab;
+            btn.classList.toggle('active', isActive);
+            if (isDesktop) {
+                btn.classList.toggle('bg-blue-100', isActive);
+                btn.classList.toggle('dark:bg-blue-900/30', isActive);
+                btn.classList.toggle('text-blue-600', isActive);
+                btn.classList.toggle('dark:text-blue-400', isActive);
+                btn.classList.toggle('text-gray-700', !isActive);
+                btn.classList.toggle('dark:text-gray-300', !isActive);
+            } else {
+                btn.classList.toggle('text-blue-600', isActive);
+                btn.classList.toggle('dark:text-blue-400', isActive);
+                btn.classList.toggle('text-gray-600', !isActive);
+                btn.classList.toggle('dark:text-gray-400', !isActive);
+            }
         });
+
+        // Show/hide tab contents
+        const allContents = elements.container?.querySelectorAll('[id$="-tab-content"]') ?? [];
+        allContents.forEach(content => {
+            content.classList.add('hidden');
+        });
+
+        const tabContent = elements.container?.querySelector(`#${tab}-tab-content`);
+        if (tabContent) {
+            tabContent.classList.remove('hidden');
+        }
+
+        // If switching to photos tab, ensure gallery is rendered
+        if (tab === 'photos' && elements.gallery) {
+            renderGallery();
+        }
     }
 
     function wireSegments(): void {
-        elements.segmentButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const segment = button.getAttribute('data-photos-segment') as SegmentView | null;
-                if (!segment || state.activeSegment === segment) {
-                    return;
-                }
+        elements.segmentButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const segment = btn.getAttribute('data-photos-segment') as SegmentView;
                 state.activeSegment = segment;
-                syncSegmentSelection();
+
+                elements.segmentButtons.forEach(b => {
+                    const isSegActive = b.getAttribute('data-photos-segment') === segment;
+                    b.classList.toggle('bg-blue-600', isSegActive);
+                    b.classList.toggle('text-white', isSegActive);
+                    b.classList.toggle('bg-transparent', !isSegActive);
+                    b.classList.toggle('text-gray-600', !isSegActive);
+                    b.classList.toggle('dark:text-gray-300', !isSegActive);
+                });
+
                 renderGallery();
             });
         });
-        syncSegmentSelection();
+
+        // Initialize first segment button as active
+        if (elements.segmentButtons.length > 0) {
+            elements.segmentButtons[0]?.classList.add('bg-blue-600', 'text-white');
+        }
     }
 
     function wireSearch(): void {
-        elements.searchInput?.addEventListener('input', event => {
-            const target = event.currentTarget as HTMLInputElement;
-            state.searchTerm = target.value;
-            toggleSearchClear();
+        elements.searchInput?.addEventListener('input', e => {
+            state.searchTerm = (e.target as HTMLInputElement).value;
+            const hasText = state.searchTerm.length > 0;
+            elements.searchClear?.classList.toggle('hidden', !hasText);
             applyFilters();
         });
-        elements.searchClear?.addEventListener('click', () => {
-            if (!elements.searchInput) {
-                return;
-            }
-            elements.searchInput.value = '';
+
+        elements.searchInput?.addEventListener('keydown', event => {
+            if (event.key !== 'Escape' || !state.searchTerm) return;
             state.searchTerm = '';
-            toggleSearchClear();
+            if (elements.searchInput) {
+                elements.searchInput.value = '';
+            }
+            elements.searchClear?.classList.add('hidden');
+            applyFilters();
+            event.preventDefault();
+        });
+
+        elements.searchClear?.addEventListener('click', () => {
+            state.searchTerm = '';
+            if (elements.searchInput) {
+                elements.searchInput.value = '';
+            }
+            elements.searchClear?.classList.add('hidden');
             applyFilters();
         });
-        toggleSearchClear();
     }
 
     function wireGallery(): void {
-        elements.gallery?.addEventListener('click', event => {
-            const target = event.target as HTMLElement | null;
-            if (!target) {
-                return;
+        if (!elements.gallery) return;
+
+        elements.gallery.addEventListener('click', event => {
+            const card = (event.target as HTMLElement).closest('[data-photo-id]');
+            if (!card) return;
+            const photoId = card.getAttribute('data-photo-id');
+            if (photoId) {
+                const index = state.filteredIndexMap.get(photoId);
+                if (typeof index === 'number') {
+                    openDetail(index);
+                }
             }
-            const card = target.closest<HTMLElement>('[data-photo-index]');
-            if (!card) {
-                return;
-            }
-            const rawIndex = card.getAttribute('data-photo-index');
-            const index = rawIndex ? Number(rawIndex) : NaN;
-            if (Number.isNaN(index) || index < 0) {
-                return;
-            }
-            openDetail(index);
         });
     }
 
@@ -723,9 +665,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
     function handleImageLoaded(): void {
         setDetailLoading(false);
-        if (!elements.image) {
-            return;
-        }
+        if (!elements.image) return;
         if (state.pendingImageId) {
             const width = elements.image.naturalWidth;
             const height = elements.image.naturalHeight;
@@ -751,15 +691,13 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         if (elements.detailMeta) {
             elements.detailMeta.textContent = t(
                 'photos.errors.detailImage',
-                'The photo could not be loaded.'
+                'Foto konnte nicht geladen werden.'
             );
         }
     }
 
     async function fetchPhotos(options: { refresh?: boolean } = {}): Promise<void> {
-        if (state.isLoading) {
-            return;
-        }
+        if (state.isLoading) return;
         setError(false);
         setLoading(true);
         try {
@@ -769,18 +707,27 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             const response = await fetch(
                 `https://picsum.photos/v2/list?page=${page}&limit=${limit}`
             );
-            if (!response.ok) {
-                throw new Error('Picsum request failed');
-            }
+            if (!response.ok) throw new Error('Picsum request failed');
             const data = (await response.json()) as PicsumApiPhoto[];
-            const mapped = data.map(mapPhotoItem);
+            // Picsum has ~4200 photos; if this page is beyond the last populated page,
+            // the API returns [] with status 200 — retry with page 1 as fallback.
+            const source =
+                Array.isArray(data) && data.length > 0
+                    ? data
+                    : await (async () => {
+                          const fallback = await fetch(
+                              `https://picsum.photos/v2/list?page=1&limit=${limit}`
+                          );
+                          if (!fallback.ok) throw new Error('Picsum fallback request failed');
+                          return fallback.json() as Promise<PicsumApiPhoto[]>;
+                      })();
+            const mapped = (source as PicsumApiPhoto[]).map(mapPhotoItem);
             state.photos = mapped;
             state.currentPage = page;
             state.favorites.clear();
             state.externalPhoto = null;
             state.orientationCounts = calculateOrientationCounts(mapped);
             applyFilters();
-            updateSidebarCounts();
         } catch (error) {
             logger.warn('UI', 'Photos app: failed to load', error);
             setError(true);
@@ -800,7 +747,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         const sanitizedAuthor =
             item.author && item.author.trim().length > 0
                 ? item.author.trim()
-                : t('photos.detail.unknownPhotographer', 'Unknown photographer');
+                : t('photos.detail.unknownPhotographer', 'Unbekannter Fotograf');
         const id = String(item.id);
         return {
             id,
@@ -830,21 +777,12 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         const search = state.searchTerm.trim().toLowerCase();
         const previousActiveId = state.overlayVisible ? state.activePhotoId : null;
         const filtered = state.photos.filter(photo => {
-            if (state.activeFilter === 'favorites' && !state.favorites.has(photo.id)) {
+            if (state.activeFilter === 'favorites' && !state.favorites.has(photo.id)) return false;
+            if (state.activeFilter === 'landscape' && photo.orientation !== 'landscape')
                 return false;
-            }
-            if (state.activeFilter === 'landscape' && photo.orientation !== 'landscape') {
-                return false;
-            }
-            if (state.activeFilter === 'portrait' && photo.orientation !== 'portrait') {
-                return false;
-            }
-            if (state.activeFilter === 'square' && photo.orientation !== 'square') {
-                return false;
-            }
-            if (search && !photo.author.toLowerCase().includes(search)) {
-                return false;
-            }
+            if (state.activeFilter === 'portrait' && photo.orientation !== 'portrait') return false;
+            if (state.activeFilter === 'square' && photo.orientation !== 'square') return false;
+            if (search && !photo.author.toLowerCase().includes(search)) return false;
             return true;
         });
         state.filteredPhotos = filtered;
@@ -852,7 +790,6 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         renderGallery();
         updateEmptyState();
         updatePhotoCount();
-        updateSidebarCounts();
         if (previousActiveId) {
             const newIndex = state.filteredIndexMap.get(previousActiveId);
             if (typeof newIndex === 'number') {
@@ -866,15 +803,16 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         }
     }
 
+    /**
+     * Render gallery with year-based grouping.
+     * Photos are grouped by year, oldest year first (ascending order).
+     */
     function renderGallery(): void {
-        if (!elements.gallery) {
-            return;
-        }
+        if (!elements.gallery) return;
         elements.gallery.innerHTML = '';
-        if (!state.filteredPhotos.length) {
-            return;
-        }
-        const groups = buildGroups(state.filteredPhotos, state.activeSegment);
+        if (!state.filteredPhotos.length) return;
+
+        const groups = buildYearGroups(state.filteredPhotos);
         groups.forEach(group => {
             const section = document.createElement('section');
             section.className = 'space-y-3';
@@ -887,542 +825,329 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             title.textContent = group.title;
             const count = document.createElement('span');
             count.className = 'text-xs text-gray-500 dark:text-gray-400';
-            const countKey =
-                group.photos.length === 1
-                    ? 'photos.labels.photoSingular'
-                    : 'photos.labels.photoPlural';
-            const countLabel = t(countKey, group.photos.length === 1 ? 'Photo' : 'Photos');
-            count.textContent = `${group.photos.length} ${countLabel}`;
+            count.textContent = `${group.photos.length} ${group.photos.length === 1 ? t('photos.labels.photoSingular', 'Foto') : t('photos.labels.photoPlural', 'Fotos')}`;
             heading.append(title, count);
             section.append(heading);
 
             const grid = document.createElement('div');
-            grid.className =
-                'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 auto-rows-[minmax(140px,_auto)]';
+            grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3';
 
             group.photos.forEach(photo => {
-                const index = state.filteredIndexMap.get(photo.id) ?? -1;
-                const card = document.createElement('button');
-                card.type = 'button';
+                const card = document.createElement('div');
                 card.className =
-                    'photos-card relative group overflow-hidden rounded-2xl bg-gray-200 dark:bg-gray-800 shadow-md hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400';
-                card.dataset.photoId = photo.id;
-                card.dataset.photoIndex = String(index);
-                if (state.favorites.has(photo.id)) {
-                    card.dataset.favorite = 'true';
-                }
-                if (state.activePhotoId === photo.id && state.overlayVisible) {
-                    card.dataset.selected = 'true';
-                }
-
-                const image = document.createElement('img');
-                image.src = photo.thumbUrl;
-                image.alt = t('photos.gallery.alt', 'Photo by {author}', { author: photo.author });
-                image.loading = 'lazy';
-                image.className =
-                    'w-full h-full object-cover transition duration-300 group-hover:scale-105';
-
-                const overlay = document.createElement('div');
-                overlay.className =
-                    'absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-3 py-2 text-left';
-                const author = document.createElement('p');
-                author.className = 'text-white text-sm font-medium truncate';
-                author.textContent = photo.author;
-                const meta = document.createElement('p');
-                meta.className = 'text-white/80 text-[11px] uppercase tracking-[0.3em]';
-                meta.textContent = `${photo.year} ΓÇó ${formatOrientation(photo.orientation)}`;
-                overlay.append(author, meta);
-
-                card.append(image, overlay);
-                grid.append(card);
+                    'group relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 transition';
+                card.setAttribute('data-photo-id', photo.id);
+                card.innerHTML = `
+                    <img src="${photo.thumbUrl}" alt="" class="w-full h-full object-cover" loading="lazy" />
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition"></div>
+                `;
+                grid.appendChild(card);
             });
 
-            section.append(grid);
-            elements.gallery?.append(section);
+            section.appendChild(grid);
+            elements.gallery!.appendChild(section);
         });
+
+        // Inverted feed: start at the bottom so newest photos are visible first.
+        setTimeout(() => {
+            if (!elements.gallery) return;
+            elements.gallery.scrollTop = elements.gallery.scrollHeight;
+        }, 100);
     }
 
-    function buildGroups(photos: PhotoLibraryItem[], segment: SegmentView): PhotoGroup[] {
-        if (segment === 'collections') {
-            const orientations: Array<{ title: string; key: Orientation }> = [
-                { title: t('photos.collections.landscape', 'Landscapes'), key: 'landscape' },
-                { title: t('photos.collections.portrait', 'Portraits'), key: 'portrait' },
-                { title: t('photos.collections.square', 'Squares'), key: 'square' },
-            ];
-            return orientations
-                .map(item => ({
-                    title: item.title,
-                    photos: photos.filter(photo => photo.orientation === item.key),
-                }))
-                .filter(group => group.photos.length > 0);
-        }
-        if (segment === 'years') {
-            const byYear = new Map<number, PhotoLibraryItem[]>();
-            photos.forEach(photo => {
-                const collection = byYear.get(photo.year) ?? [];
-                collection.push(photo);
-                byYear.set(photo.year, collection);
-            });
-            return Array.from(byYear.entries())
-                .sort((a, b) => b[0] - a[0])
-                .map(([year, group]) => ({ title: String(year), photos: group }));
-        }
-        // moments -> group by author
-        const byAuthor = new Map<string, PhotoLibraryItem[]>();
+    /**
+     * Group photos by year, ascending order (oldest first).
+     */
+    function buildYearGroups(photos: PhotoLibraryItem[]): PhotoGroup[] {
+        const grouped = new Map<number, PhotoLibraryItem[]>();
         photos.forEach(photo => {
-            const key = photo.author;
-            const collection = byAuthor.get(key) ?? [];
-            collection.push(photo);
-            byAuthor.set(key, collection);
+            if (!grouped.has(photo.year)) {
+                grouped.set(photo.year, []);
+            }
+            grouped.get(photo.year)!.push(photo);
         });
-        return Array.from(byAuthor.entries())
-            .sort((a, b) => {
-                const latestA = Math.max(...a[1].map(item => item.year));
-                const latestB = Math.max(...b[1].map(item => item.year));
-                return latestB - latestA;
-            })
-            .map(([author, group]) => ({ title: author, photos: group }));
-    }
 
-    function formatOrientation(orientation: Orientation | undefined): string {
-        if (orientation === 'portrait') {
-            return t('photos.orientations.portrait', 'Portrait');
-        }
-        if (orientation === 'square') {
-            return t('photos.orientations.square', 'Square');
-        }
-        return t('photos.orientations.landscape', 'Landscape');
-    }
-
-    function setActiveCard(photoId: string): void {
-        if (!elements.gallery) {
-            return;
-        }
-        const current = elements.gallery.querySelector<HTMLElement>(
-            '.photos-card[data-selected="true"]'
-        );
-        if (current) {
-            current.removeAttribute('data-selected');
-        }
-        const next = elements.gallery.querySelector<HTMLElement>(
-            `.photos-card[data-photo-id="${photoId}"]`
-        );
-        if (next) {
-            next.dataset.selected = 'true';
-        }
-    }
-
-    function clearActiveCard(): void {
-        if (!elements.gallery) {
-            return;
-        }
-        const current = elements.gallery.querySelector<HTMLElement>(
-            '.photos-card[data-selected="true"]'
-        );
-        current?.removeAttribute('data-selected');
+        const years = Array.from(grouped.keys()).sort((a, b) => a - b);
+        return years.map(year => ({
+            title: year.toString(),
+            photos: grouped.get(year)!,
+        }));
     }
 
     function updateEmptyState(): void {
-        const shouldShow = state.filteredPhotos.length === 0;
-        elements.empty?.classList.toggle('opacity-0', !shouldShow);
-        elements.empty?.classList.toggle('pointer-events-none', !shouldShow);
+        const isEmpty = state.filteredPhotos.length === 0;
+        elements.empty?.classList.toggle('opacity-0', !isEmpty);
+        elements.empty?.classList.toggle('pointer-events-none', !isEmpty);
+        elements.gallery?.classList.toggle('opacity-0', isEmpty);
+        elements.gallery?.classList.toggle('pointer-events-none', isEmpty);
     }
 
     function updatePhotoCount(): void {
-        const total = state.filteredPhotos.length;
-        const labelKey = total === 1 ? 'photos.labels.photoSingular' : 'photos.labels.photoPlural';
-        const label = t(labelKey, total === 1 ? 'Photo' : 'Photos');
-        const segmentKey =
-            state.activeSegment === 'collections'
-                ? 'photos.segments.collections'
-                : state.activeSegment === 'years'
-                  ? 'photos.segments.years'
-                  : 'photos.segments.moments';
-        const segmentFallback =
-            state.activeSegment === 'collections'
-                ? 'Collections'
-                : state.activeSegment === 'years'
-                  ? 'Years'
-                  : 'Moments';
-        const segmentLabel = t(segmentKey, segmentFallback);
-        const statusText = t('photos.status.count', `${total} ${label} ΓÇó ${segmentLabel}`, {
-            count: total,
-            label,
-            segment: segmentLabel,
-        });
-
-        // Update statusbar if available
-        if (elements.statusbar && globalWindow.WindowChrome) {
-            globalWindow.WindowChrome.updateStatusBar(elements.statusbar, 'left', statusText);
-        }
-
-        // Fallback for old photo-count element
+        const count = state.filteredPhotos.length;
         if (elements.photoCount) {
-            elements.photoCount.textContent = statusText;
+            elements.photoCount.textContent = `${count} ${count === 1 ? t('photos.labels.photoSingular', 'Foto') : t('photos.labels.photoPlural', 'Fotos')}`;
         }
     }
 
-    function updateSidebarCounts(): void {
-        if (elements.countAll) {
-            elements.countAll.textContent = String(state.photos.length);
-        }
-        if (elements.countFavorites) {
-            elements.countFavorites.textContent = String(state.favorites.size);
-        }
-        if (elements.countLandscape) {
-            elements.countLandscape.textContent = String(state.orientationCounts.landscape);
-        }
-        if (elements.countPortrait) {
-            elements.countPortrait.textContent = String(state.orientationCounts.portrait);
-        }
-        if (elements.countSquare) {
-            elements.countSquare.textContent = String(state.orientationCounts.square);
-        }
-    }
-
-    function syncSidebarSelection(): void {
-        elements.sidebarButtons.forEach(button => {
-            const filter = button.getAttribute('data-photos-filter') as SidebarFilter | null;
-            button.dataset.active = filter === state.activeFilter ? 'true' : 'false';
-        });
-    }
-
-    function syncSegmentSelection(): void {
-        elements.segmentButtons.forEach(button => {
-            const segment = button.getAttribute('data-photos-segment') as SegmentView | null;
-            button.dataset.active = segment === state.activeSegment ? 'true' : 'false';
-        });
-    }
-
-    function toggleSearchClear(): void {
-        if (!elements.searchClear) {
-            return;
-        }
-        const hasValue = Boolean(state.searchTerm.trim());
-        elements.searchClear.classList.toggle('invisible', !hasValue);
-        elements.searchClear.classList.toggle('pointer-events-none', !hasValue);
-    }
-
-    function setLoading(isLoading: boolean): void {
-        state.isLoading = isLoading;
-        elements.loading?.classList.toggle('opacity-0', !isLoading);
-        elements.loading?.classList.toggle('pointer-events-none', !isLoading);
-    }
-
-    function setError(hasError: boolean): void {
-        elements.error?.classList.toggle('hidden', !hasError);
-    }
-
-    function openDetail(
-        index: number,
-        options: { external?: boolean; photo?: ExternalPhotoItem } = {}
-    ): void {
-        const overlay = elements.overlay;
-        if (!overlay || !elements.image) {
-            return;
-        }
-        let photo: AnyPhotoItem | null = null;
-        if (options.external && options.photo) {
-            photo = options.photo;
-            state.externalPhoto = options.photo;
-            state.selectedIndex = -1;
-            state.activePhotoId = options.photo.id;
-        } else {
-            const selected = state.filteredPhotos[index];
-            if (!selected) {
-                return;
-            }
-            photo = selected;
-            state.selectedIndex = index;
-            state.activePhotoId = selected.id;
-            state.externalPhoto = null;
-        }
+    function openDetail(index: number): void {
+        if (index < 0 || index >= state.filteredPhotos.length) return;
+        state.selectedIndex = index;
+        const photo = state.filteredPhotos[index];
+        if (!photo) return;
+        state.activePhotoId = photo.id;
         state.overlayVisible = true;
-        overlay.classList.remove('hidden');
-        overlay.classList.add('flex');
-        if (!photo) {
-            return;
-        }
-        setDetailLoading(true);
-        state.pendingImageId = photo.id;
-        if ('largeUrl' in photo && photo.largeUrl) {
-            elements.image.src = photo.largeUrl;
-        } else {
-            elements.image.src = photo.downloadUrl;
-        }
-        updateDetailMetadata(photo);
+        updateDetail();
+        elements.overlay?.classList.remove('hidden');
+        // Disable resizer pointer-events so they don't intercept nav buttons inside the overlay.
+        elements.container?.querySelectorAll<HTMLElement>('.resizer').forEach(r => {
+            r.style.pointerEvents = 'none';
+        });
+    }
+
+    function closeDetail(): void {
+        state.overlayVisible = false;
+        state.selectedIndex = -1;
+        state.activePhotoId = null;
+        elements.overlay?.classList.add('hidden');
+        // Restore resizer pointer-events.
+        elements.container?.querySelectorAll<HTMLElement>('.resizer').forEach(r => {
+            r.style.pointerEvents = '';
+        });
+    }
+
+    function updateDetail(): void {
+        const current = getCurrentDetailPhoto();
+        if (!current) return;
+        updateDetailMetadata(current);
+        loadDetailImage(current);
         updateNavigationButtons();
         updateCounter();
-        if (!options.external) {
-            setActiveCard(photo.id);
-        } else {
-            clearActiveCard();
-        }
+        setActiveCard(current.id);
     }
 
     function getCurrentDetailPhoto(): AnyPhotoItem | null {
-        if (state.externalPhoto) {
-            return state.externalPhoto;
-        }
-        if (state.selectedIndex >= 0) {
-            return state.filteredPhotos[state.selectedIndex] ?? null;
+        if (state.externalPhoto) return state.externalPhoto;
+        if (state.selectedIndex >= 0 && state.selectedIndex < state.filteredPhotos.length) {
+            const photo = state.filteredPhotos[state.selectedIndex];
+            return photo ?? null;
         }
         return null;
     }
 
     function updateDetailMetadata(photo: AnyPhotoItem): void {
         if (elements.detailTitle) {
-            const fallbackTitle = t('photos.detail.unknownPhoto', 'Unknown photo');
-            elements.detailTitle.textContent = photo.author || fallbackTitle;
-        }
-        if (elements.imageInfo) {
-            const label =
-                isExternalPhoto(photo) && photo.sourceName ? photo.sourceName : photo.author;
-            elements.imageInfo.textContent = label;
-        }
-        const orientationLabel = formatOrientation(photo.orientation);
-        const metaParts: string[] = [];
-        if (isExternalPhoto(photo)) {
-            metaParts.push(t('photos.detail.externalLabel', 'External photo'));
-            if (photo.sourceName) {
-                metaParts.push(photo.sourceName);
-            }
-        } else {
-            metaParts.push(String(photo.year));
-            metaParts.push(orientationLabel);
+            elements.detailTitle.textContent = isExternalPhoto(photo)
+                ? photo.sourceName || t('photos.detail.titleFallback', 'Foto')
+                : t('photos.detail.titleFallback', 'Foto');
         }
         if (elements.detailMeta) {
-            elements.detailMeta.textContent = metaParts.join(' ΓÇó ');
+            elements.detailMeta.textContent = photo.author;
         }
-        if (elements.detailDimensions) {
-            if (photo.width && photo.height) {
-                elements.detailDimensions.textContent = t(
-                    'photos.detail.dimensions',
-                    `Resolution: ${photo.width} ├ù ${photo.height}px`,
-                    { width: photo.width, height: photo.height }
-                );
-            } else {
-                elements.detailDimensions.textContent = '';
+        if (!isExternalPhoto(photo)) {
+            if (elements.detailDimensions) {
+                elements.detailDimensions.textContent = `${photo.width} × ${photo.height}px`;
             }
+        }
+    }
+
+    function loadDetailImage(photo: AnyPhotoItem): void {
+        if (!elements.image) return;
+        state.pendingImageId = photo.id;
+        setDetailLoading(true);
+        elements.image.src = isExternalPhoto(photo) ? photo.largeUrl : photo.largeUrl;
+        if (elements.detailDownload) {
+            elements.detailDownload.href = photo.downloadUrl;
+            elements.detailDownload.download = `photo-${photo.id}`;
         }
         if (elements.detailOpen) {
             elements.detailOpen.href = photo.url ?? photo.downloadUrl;
         }
-        if (elements.detailDownload) {
-            elements.detailDownload.href = photo.downloadUrl;
-            elements.detailDownload.download = t(
-                'photos.detail.downloadFilename',
-                `photo-${photo.id}.jpg`,
-                { id: photo.id }
-            );
-        }
-        updateFavoriteButton(photo);
-    }
-
-    function updateFavoriteButton(photo: AnyPhotoItem): void {
-        if (
-            !elements.detailFavorite ||
-            !elements.detailFavoriteLabel ||
-            !elements.detailFavoriteIcon
-        ) {
-            return;
-        }
-        if (isExternalPhoto(photo)) {
-            elements.detailFavorite.setAttribute('disabled', 'true');
-            elements.detailFavorite.classList.add('opacity-40', 'pointer-events-none');
-            elements.detailFavoriteLabel.textContent = t(
-                'photos.detail.favoriteUnavailable',
-                'Unavailable'
-            );
-            elements.detailFavoriteIcon.textContent = 'ΓÇô';
-            return;
-        }
-        const isFavorite = state.favorites.has(photo.id);
-        elements.detailFavorite.removeAttribute('disabled');
-        elements.detailFavorite.classList.remove('opacity-40', 'pointer-events-none');
-        const removeLabel = t('photos.detail.favoriteRemove', 'Remove favorite');
-        const addLabel = t('photos.detail.favoriteAdd', 'Add to favorites');
-        elements.detailFavoriteLabel.textContent = isFavorite ? removeLabel : addLabel;
-        elements.detailFavoriteIcon.textContent = isFavorite ? 'ΓÖÑ' : 'ΓÖí';
-    }
-
-    function closeDetail(): void {
-        if (!elements.overlay) {
-            return;
-        }
-        elements.overlay.classList.add('hidden');
-        elements.overlay.classList.remove('flex');
-        state.overlayVisible = false;
-        state.selectedIndex = -1;
-        state.activePhotoId = null;
-        state.externalPhoto = null;
-        state.pendingImageId = null;
-        clearActiveCard();
-        setDetailLoading(false);
-    }
-
-    function moveSelection(delta: number): void {
-        if (state.externalPhoto) {
-            return;
-        }
-        const nextIndex = state.selectedIndex + delta;
-        if (nextIndex < 0 || nextIndex >= state.filteredPhotos.length) {
-            return;
-        }
-        openDetail(nextIndex);
-    }
-
-    function toggleFavorite(): void {
-        if (state.externalPhoto) {
-            return;
-        }
-        const photo = state.filteredPhotos[state.selectedIndex];
-        if (!photo) {
-            return;
-        }
-        if (state.favorites.has(photo.id)) {
-            state.favorites.delete(photo.id);
-        } else {
-            state.favorites.add(photo.id);
-        }
-        updateFavoriteButton(photo);
-        updateSidebarCounts();
-        updateCardFavoriteState(photo.id);
-    }
-
-    function updateCardFavoriteState(photoId: string): void {
-        if (!elements.gallery) {
-            return;
-        }
-        const card = elements.gallery.querySelector<HTMLElement>(
-            `.photos-card[data-photo-id="${photoId}"]`
-        );
-        if (!card) {
-            return;
-        }
-        if (state.favorites.has(photoId)) {
-            card.dataset.favorite = 'true';
-        } else {
-            card.removeAttribute('data-favorite');
-        }
+        updateFavoriteButton();
     }
 
     function updateNavigationButtons(): void {
-        const hasPrev = state.selectedIndex > 0 && !state.externalPhoto;
-        const hasNext =
-            state.selectedIndex >= 0 &&
-            state.selectedIndex < state.filteredPhotos.length - 1 &&
-            !state.externalPhoto;
+        const isFirst = state.selectedIndex <= 0;
+        const isLast = state.selectedIndex >= state.filteredPhotos.length - 1;
         if (elements.detailPrev) {
-            elements.detailPrev.classList.toggle('opacity-30', !hasPrev);
-            elements.detailPrev.classList.toggle('pointer-events-none', !hasPrev);
+            elements.detailPrev.classList.toggle('opacity-50', isFirst);
+            elements.detailPrev.classList.toggle('cursor-not-allowed', isFirst);
         }
         if (elements.detailNext) {
-            elements.detailNext.classList.toggle('opacity-30', !hasNext);
-            elements.detailNext.classList.toggle('pointer-events-none', !hasNext);
+            elements.detailNext.classList.toggle('opacity-50', isLast);
+            elements.detailNext.classList.toggle('cursor-not-allowed', isLast);
         }
     }
 
     function updateCounter(): void {
-        if (!elements.detailCounter) {
-            return;
-        }
-        if (state.externalPhoto) {
-            elements.detailCounter.textContent = t(
-                'photos.detail.externalCounter',
-                'External image'
-            );
-            return;
-        }
-        if (state.selectedIndex >= 0) {
-            elements.detailCounter.textContent = t(
-                'photos.detail.counter',
-                `${state.selectedIndex + 1} of ${state.filteredPhotos.length}`,
-                { index: state.selectedIndex + 1, total: state.filteredPhotos.length }
-            );
-        } else {
-            elements.detailCounter.textContent = '';
+        if (elements.detailCounter) {
+            elements.detailCounter.textContent = `${state.selectedIndex + 1} / ${state.filteredPhotos.length}`;
         }
     }
 
-    function setDetailLoading(isLoading: boolean): void {
-        elements.loader?.classList.toggle('opacity-0', !isLoading);
-        elements.loader?.classList.toggle('pointer-events-none', !isLoading);
+    function setActiveCard(photoId: string): void {
+        elements.gallery?.querySelectorAll('[data-photo-id]').forEach(card => {
+            const isActive = card.getAttribute('data-photo-id') === photoId;
+            card.classList.toggle('ring-2', isActive);
+            card.classList.toggle('ring-blue-500', isActive);
+        });
+    }
+
+    function moveSelection(direction: number): void {
+        const newIndex = state.selectedIndex + direction;
+        if (newIndex >= 0 && newIndex < state.filteredPhotos.length) {
+            openDetail(newIndex);
+        }
+    }
+
+    function toggleFavorite(): void {
+        if (!state.activePhotoId) return;
+        const isFavorited = state.favorites.has(state.activePhotoId);
+        if (isFavorited) {
+            state.favorites.delete(state.activePhotoId);
+        } else {
+            state.favorites.add(state.activePhotoId);
+        }
+        updateFavoriteButton();
+    }
+
+    function updateFavoriteButton(): void {
+        const isFavorited = state.activePhotoId && state.favorites.has(state.activePhotoId);
+        if (elements.detailFavorite) {
+            elements.detailFavorite.classList.toggle('bg-red-100', !!isFavorited);
+            elements.detailFavorite.classList.toggle('dark:bg-red-900/30', !!isFavorited);
+            elements.detailFavorite.classList.toggle('text-red-600', !!isFavorited);
+            elements.detailFavorite.classList.toggle('dark:text-red-400', !!isFavorited);
+            if (elements.detailFavoriteIcon) {
+                elements.detailFavoriteIcon.textContent = isFavorited ? '♥' : '♡';
+            }
+            if (elements.detailFavoriteLabel) {
+                elements.detailFavoriteLabel.textContent = isFavorited
+                    ? t('photos.detail.favoriteRemove', 'Aus Favoriten')
+                    : t('photos.detail.favoriteAdd', 'Zu Favoriten');
+            }
+        }
+    }
+
+    function setDetailLoading(loading: boolean): void {
+        if (elements.loader) {
+            elements.loader.classList.toggle('opacity-0', !loading);
+            elements.loader.classList.add('pointer-events-none');
+        }
+    }
+
+    function setLoading(loading: boolean): void {
+        state.isLoading = loading;
+        if (elements.loading) {
+            elements.loading.classList.toggle('opacity-0', !loading);
+            elements.loading.classList.toggle('pointer-events-none', !loading);
+        }
+    }
+
+    function setError(hasError: boolean): void {
+        if (elements.error) {
+            elements.error.classList.toggle('hidden', !hasError);
+        }
     }
 
     function handleKeyNavigation(event: KeyboardEvent): void {
-        if (!state.overlayVisible) {
-            return;
-        }
-        if (event.key === 'Escape') {
-            closeDetail();
-        } else if (event.key === 'ArrowLeft') {
-            moveSelection(-1);
-        } else if (event.key === 'ArrowRight') {
-            moveSelection(1);
-        }
+        if (!state.overlayVisible) return;
+        if (event.key === 'Escape') closeDetail();
+        if (event.key === 'ArrowLeft') moveSelection(-1);
+        if (event.key === 'ArrowRight') moveSelection(1);
     }
 
     function getRandomPage(): number {
-        return Math.floor(Math.random() * 10) + 1;
+        // Picsum v2 API has ~4200 photos; pages beyond ~70 (limit=60) return empty arrays.
+        // Stay well within the safe range to avoid empty-result fallbacks.
+        return Math.floor(Math.random() * 60) + 1;
     }
 
-    function showExternalImage(payload: { src: string; name?: string }): void {
-        if (!payload || !payload.src) {
-            return;
-        }
-        if (!state.initialized) {
-            init();
-        }
-        const name =
-            payload.name && payload.name.trim().length > 0
-                ? payload.name.trim()
-                : t('photos.detail.externalFile', 'External file');
-        const externalPhoto: ExternalPhotoItem = {
-            id: `external-${Date.now()}`,
-            author: name,
-            downloadUrl: payload.src,
-            largeUrl: payload.src,
-            url: payload.src,
-            sourceName: name,
-            isExternal: true,
-        };
-        openDetail(-1, { external: true, photo: externalPhoto });
-    }
+    function attachToWindow(container: HTMLElement): void {
+        if (!container) return;
+        elements.container = container;
+        elements.titlebar = container.querySelector('.window-titlebar') ?? null;
+        elements.statusbar = container.querySelector('.window-statusbar') ?? null;
 
-    function handleLanguageChange(): void {
-        if (!state.initialized) {
-            return;
-        }
-        renderGallery();
-        updateEmptyState();
-        updatePhotoCount();
-        if (state.overlayVisible) {
-            const current = getCurrentDetailPhoto();
-            if (current) {
-                updateDetailMetadata(current);
-            }
-            updateNavigationButtons();
-            updateCounter();
-        } else {
-            updateCounter();
-        }
+        cacheElements();
+        wireTabNavigation();
+        wireSegments();
+        wireSearch();
+        wireGallery();
+        wireDetail();
         globalWindow.appI18n?.applyTranslations?.(elements.container ?? undefined);
+        void fetchPhotos();
     }
 
-    const api: PhotosAppApi = {
+    globalWindow.PhotosAppAttachToWindow = attachToWindow;
+
+    function init(): void {
+        if (state.initialized) return;
+        state.initialized = true;
+
+        const existing = document.getElementById('photos-window');
+        if (!existing) {
+            const PhotosWindow = (window as any).PhotosWindow;
+            if (typeof PhotosWindow === 'function') {
+                const win = PhotosWindow.create();
+                if (win && win.element) {
+                    win.element.id = 'photos-window';
+                    elements.container = win.element as HTMLElement;
+                }
+            } else {
+                const frame = renderWindow();
+                if (!frame) {
+                    logger.error('UI', 'Failed to render photos window');
+                    return;
+                }
+
+                let container = document.getElementById('photos-window');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'photos-window';
+                    container.className =
+                        'fixed inset-0 flex items-center justify-center hidden modal relative';
+                    container.style.zIndex = '1000';
+                    document.body.appendChild(container);
+                }
+
+                const wrapper = document.createElement('div');
+                wrapper.className =
+                    'bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl autopointer flex flex-col w-[min(90vw,1100px)] h-[min(85vh,780px)]';
+                wrapper.appendChild(frame);
+                container.appendChild(wrapper);
+
+                elements.container = container;
+            }
+        } else {
+            elements.container = existing;
+        }
+
+        cacheElements();
+        if (!elements.gallery) return;
+
+        wireTabNavigation();
+        wireSegments();
+        wireSearch();
+        wireGallery();
+        wireDetail();
+        globalWindow.appI18n?.applyTranslations?.(elements.container ?? undefined);
+        void fetchPhotos();
+    }
+
+    globalWindow.PhotosApp = {
         init,
-        showExternalImage,
+        showExternalImage: payload => {
+            state.externalPhoto = {
+                id: `external-${Date.now()}`,
+                author: t('photos.detail.unknownPhotographer', 'Unbekannter Fotograf'),
+                downloadUrl: payload.src,
+                largeUrl: payload.src,
+                url: payload.src,
+                sourceName: payload.name,
+                isExternal: true,
+            };
+            const index = 0;
+            openDetail(index);
+        },
     };
-
-    globalWindow.PhotosApp = api;
-
-    window.addEventListener('languagePreferenceChange', handleLanguageChange);
-
-    // Don't auto-init - let WindowManager handle it
-    // if (document.readyState === 'loading') {
-    //     document.addEventListener('DOMContentLoaded', init, { once: true });
-    // } else {
-    //     init();
-    // }
 })();
