@@ -5857,6 +5857,97 @@ html:not(.dark) .finder-vdom-root .finder-tabs-container .wt-add {
     color: #e5e7eb;
 }
 
+:root[data-ui-mode='mobile'] .finder-mobile-layout[data-finder-mobile-view='menu'] {
+    background: rgba(248, 250, 252, 0.96);
+}
+
+html.dark :root[data-ui-mode='mobile'] .finder-mobile-layout[data-finder-mobile-view='menu'],
+html.dark[data-ui-mode='mobile'] .finder-mobile-layout[data-finder-mobile-view='menu'] {
+    background: rgba(17, 24, 39, 0.94);
+}
+
+:root[data-ui-mode='mobile']
+    .finder-mobile-layout[data-finder-mobile-view='menu']
+    [data-main-toolbar-wrap],
+:root[data-ui-mode='mobile']
+    .finder-mobile-layout[data-finder-mobile-view='menu']
+    [data-main-content-wrap],
+:root[data-ui-mode='mobile']
+    .finder-mobile-layout[data-finder-mobile-view='menu']
+    [data-resize-handle='sidebar'] {
+    display: none !important;
+}
+
+:root[data-ui-mode='mobile']
+    .finder-mobile-layout[data-finder-mobile-view='menu']
+    [data-sidebar-container] {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+}
+
+:root[data-ui-mode='mobile']
+    .finder-mobile-layout[data-finder-mobile-view='menu']
+    .finder-sidebar-panel-shell {
+    padding: 0.5rem;
+}
+
+:root[data-ui-mode='mobile']
+    .finder-mobile-layout[data-finder-mobile-view='detail']
+    [data-sidebar-container] {
+    display: none !important;
+}
+
+:root[data-ui-mode='mobile']
+    .finder-mobile-layout[data-finder-mobile-view='detail']
+    [data-main-toolbar-wrap],
+:root[data-ui-mode='mobile']
+    .finder-mobile-layout[data-finder-mobile-view='detail']
+    [data-main-content-wrap] {
+    display: block !important;
+}
+
+.finder-mobile-menu-back {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid rgba(148, 163, 184, 0.36);
+    background: rgba(255, 255, 255, 0.74);
+    color: #334155;
+    font-size: 0.76rem;
+    font-weight: 600;
+    line-height: 1;
+    height: 30px;
+    padding: 0 0.7rem;
+    margin-right: 0.4rem;
+}
+
+:root[data-ui-mode='mobile']
+    .finder-mobile-layout[data-finder-mobile-view='detail']
+    .finder-mobile-menu-back {
+    display: inline-flex;
+}
+
+html.dark .finder-mobile-menu-back {
+    background: rgba(51, 65, 85, 0.65);
+    border-color: rgba(148, 163, 184, 0.32);
+    color: #e2e8f0;
+}
+
+.finder-mobile-menu-back:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+    .finder-mobile-menu-back {
+        border: 1px solid ButtonText;
+        background: ButtonFace;
+        color: ButtonText;
+    }
+}
+
 .finder-sidebar-resizer {
     background: transparent;
     border-radius: 9999px;

@@ -65,6 +65,7 @@ interface FinderUIState {
     collapsedSidebarGroups: string[];
     isSortMenuOpen: boolean;
     isViewMenuOpen: boolean;
+    mobileView: 'menu' | 'detail';
 }
 
 type FinderViewMenuKey = 'list' | 'grid' | 'columns' | 'gallery';
@@ -158,7 +159,22 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
             collapsedSidebarGroups: [],
             isSortMenuOpen: false,
             isViewMenuOpen: false,
+            mobileView: 'menu',
         };
+    }
+
+    private isMobileMode(): boolean {
+        return document.documentElement.getAttribute('data-ui-mode') === 'mobile';
+    }
+
+    private showMobileMenu(): void {
+        if (!this.isMobileMode()) return;
+        this.setState({ mobileView: 'menu' });
+    }
+
+    private showMobileDetail(): void {
+        if (!this.isMobileMode()) return;
+        this.setState({ mobileView: 'detail' });
     }
 
     private normalizeSortKey(sortBy: string): FinderSortKey {
@@ -246,6 +262,10 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         if (this.state.isViewMenuOpen) {
             this.positionViewMenuOverlay();
         }
+    };
+
+    private boundUIModeChange = () => {
+        this.setState({ mobileView: this.isMobileMode() ? 'menu' : 'detail' });
     };
 
     private renderViewMenuOverlay(): void {
@@ -630,6 +650,10 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
             activeSidebarId = atHome ? 'home' : 'computer';
         }
 
+        const isMobileMode = this.isMobileMode();
+        const mobileView = isMobileMode ? this.state.mobileView : 'detail';
+        const isMobileMenuView = isMobileMode && mobileView === 'menu';
+
         const leafLabel =
             currentPath.length > 0 ? String(currentPath[currentPath.length - 1] || '').trim() : '';
         const currentFolderName =
@@ -648,9 +672,30 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         const isSearchExpanded = this.state.isSearchExpanded || searchTerm.length > 0;
 
         // Render Sidebar Groups inline to ensure state updates work correctly
-        const renderSidebarGroup = (group: SidebarGroup) => {
+        const renderSidebarGroup = (group: SidebarGroup): VNode => {
             const groupId = group.id || group.label;
             const isCollapsed = this.state.collapsedSidebarGroups.includes(groupId);
+
+            const itemButtons = group.items.map(item => {
+                const isActive = activeSidebarId === item.id;
+                const activeClass = isActive ? 'finder-sidebar-active' : '';
+
+                return h(
+                    'button',
+                    {
+                        key: item.id,
+                        'data-sidebar-id': item.id,
+                        'data-sidebar-action': item.id,
+                        className: `finder-sidebar-item w-full text-left ${activeClass}`,
+                        onclick: () => {
+                            item.onClick?.(item.id);
+                            this.showMobileDetail();
+                        },
+                    },
+                    item.icon ? h('span', { className: 'finder-sidebar-icon' }, item.icon) : '',
+                    h('span', { 'data-i18n': item.i18nKey }, item.label)
+                );
+            });
 
             return h(
                 'div',
@@ -691,28 +736,12 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                     {
                         className: `finder-sidebar-group-items ${isCollapsed ? 'is-collapsed' : ''}`,
                     },
-                    ...group.items.map(item => {
-                        const isActive = activeSidebarId === item.id;
-                        const activeClass = isActive ? 'finder-sidebar-active' : '';
-
-                        return h(
-                            'button',
-                            {
-                                key: item.id,
-                                'data-sidebar-id': item.id,
-                                'data-sidebar-action': item.id,
-                                className: `finder-sidebar-item w-full text-left ${activeClass}`,
-                                onclick: () => item.onClick?.(item.id),
-                            },
-                            item.icon
-                                ? h('span', { className: 'finder-sidebar-icon' }, item.icon)
-                                : '',
-                            h('span', { 'data-i18n': item.i18nKey }, item.label)
-                        );
-                    })
+                    ...itemButtons
                 )
             );
         };
+
+        const sidebarGroupNodes = sidebarGroups.map(group => renderSidebarGroup(group));
 
         const sidebarContent = h(
             'aside',
@@ -722,14 +751,26 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
             },
             h(
                 'div',
-                { className: 'pt-1 pb-3 px-2' },
-                ...sidebarGroups.map(group => renderSidebarGroup(group))
+                {
+                    className: `pt-1 pb-3 px-2 ${isMobileMode ? 'finder-mobile-sidebar-menu' : ''}`,
+                },
+                ...sidebarGroupNodes
             )
         );
 
         const toolbar = new Toolbar({
             className: this.props.isActive ? 'finder-toolbar' : 'hidden',
             left: [
+                h(
+                    'button',
+                    {
+                        type: 'button',
+                        className: `finder-mobile-menu-back finder-no-drag ${isMobileMode ? '' : 'hidden'}`,
+                        'data-finder-mobile-menu-back': '1',
+                        onclick: () => this.showMobileMenu(),
+                    },
+                    '‹ Menü'
+                ),
                 h(
                     'div',
                     {
@@ -940,7 +981,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
             'div',
             {
                 className: 'absolute top-0 left-0 bottom-0 z-10 flex flex-col',
-                style: { width: `${sidebarWidth}px` },
+                style: { width: isMobileMode ? '100%' : `${sidebarWidth}px` },
                 'data-sidebar-container': '1',
             },
             createInsetSidebarShellVNode<VNode>(h, {
@@ -982,12 +1023,14 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         );
 
         // Resizer für Sidebar-Breite
-        const sidebarResizer = h('div', {
-            className:
-                'finder-sidebar-resizer absolute top-0 bottom-0 z-20 w-2 -translate-x-1 cursor-col-resize transition-colors',
-            style: { left: `${sidebarWidth - 4}px` },
-            'data-resize-handle': 'sidebar',
-        });
+        const sidebarResizer = isMobileMode
+            ? null
+            : h('div', {
+                  className:
+                      'finder-sidebar-resizer absolute top-0 bottom-0 z-20 w-2 -translate-x-1 cursor-col-resize transition-colors',
+                  style: { left: `${sidebarWidth - 4}px` },
+                  'data-resize-handle': 'sidebar',
+              });
 
         // Content Area (ohne SplitView, da Sidebar jetzt absolut positioniert ist)
         const contentArea = h(
@@ -1010,7 +1053,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
             'div',
             {
                 className: 'finder-window-drag-zone cursor-move',
-                style: { marginLeft: `${sidebarWidth}px` },
+                style: { marginLeft: isMobileMode ? '0px' : `${sidebarWidth}px` },
                 'data-main-toolbar-wrap': '1',
             },
             toolbar.render()
@@ -1022,7 +1065,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                 'div',
                 {
                     className: 'relative h-full',
-                    style: { marginLeft: `${sidebarWidth}px` },
+                    style: { marginLeft: isMobileMode ? '0px' : `${sidebarWidth}px` },
                     'data-main-content-wrap': '1',
                 },
                 contentArea
@@ -1037,9 +1080,12 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         // Wrapper mit Sidebar und Resizer
         return h(
             'div',
-            { className: 'relative w-full h-full overflow-hidden' },
+            {
+                className: 'relative w-full h-full overflow-hidden finder-mobile-layout',
+                'data-finder-mobile-view': mobileView,
+            },
             sidebarWithTrafficLights,
-            sidebarResizer,
+            ...(sidebarResizer ? [sidebarResizer] : []),
             vnode
         );
     }
@@ -1065,6 +1111,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         document.addEventListener('mousedown', this.boundDocumentMouseDown);
         document.addEventListener('keydown', this.boundDocumentKeyDown);
         window.addEventListener('resize', this.boundWindowResize);
+        window.addEventListener('uiModeEffectiveChange', this.boundUIModeChange as EventListener);
     }
 
     onUpdate(): void {
@@ -1100,6 +1147,10 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
         document.removeEventListener('mousedown', this.boundDocumentMouseDown);
         document.removeEventListener('keydown', this.boundDocumentKeyDown);
         window.removeEventListener('resize', this.boundWindowResize);
+        window.removeEventListener(
+            'uiModeEffectiveChange',
+            this.boundUIModeChange as EventListener
+        );
         this.destroySortMenuOverlay();
         this.destroyViewMenuOverlay();
 
