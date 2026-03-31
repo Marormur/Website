@@ -765,16 +765,32 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                     'button',
                     {
                         type: 'button',
+                        // In mobile mode this button doubles as folder-back (when history exists)
+                        // and sidebar-menu-back (when at the root of the history). The desktop
+                        // nav buttons (finder-content-nav) are hidden in mobile mode, so this
+                        // is the only back affordance on narrow viewports.
                         className: `finder-mobile-menu-back finder-no-drag ${isMobileMode ? '' : 'hidden'}`,
                         'data-finder-mobile-menu-back': '1',
-                        onclick: () => this.showMobileMenu(),
+                        'aria-label': isMobileMode && canGoBack ? 'Zurück' : 'Menü',
+                        onclick: () => {
+                            if (canGoBack) {
+                                onNavigateBack();
+                            } else {
+                                this.showMobileMenu();
+                            }
+                        },
                     },
-                    '‹ Menü'
+                    isMobileMode && canGoBack ? '‹ Zurück' : '‹ Menü'
                 ),
                 h(
                     'div',
                     {
+                        // Desktop-only: hide in mobile mode; the mobile-menu-back button above
+                        // takes over folder navigation on narrow viewports.
+                        // Inline style is required because .finder-content-nav { display: inline-flex }
+                        // has higher cascade priority than Tailwind's .hidden utility.
                         className: 'finder-content-nav finder-no-drag',
+                        style: isMobileMode ? { display: 'none' } : {},
                     },
                     h(
                         'button',
@@ -903,7 +919,10 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                     {
                         className:
                             'finder-no-drag relative h-8 flex items-center justify-end overflow-hidden shrink-0 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus-within:ring-2 focus-within:ring-blue-500',
+                        // In mobile mode the toolbar search is replaced by the persistent
+                        // bottom bar; inline style beats the class-level display value.
                         style: {
+                            ...(isMobileMode ? { display: 'none' } : {}),
                             height: '30px',
                             width: isSearchExpanded ? '160px' : '30px',
                             transition: 'width 220ms cubic-bezier(0.4, 0, 0.2, 1)',
@@ -1032,6 +1051,42 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                   'data-resize-handle': 'sidebar',
               });
 
+        // Mobile-only: persistent search bar at the bottom of the content area.
+        // The inline toolbar search control is hidden in mobile mode (see above).
+        const mobileSearchBar = isMobileMode
+            ? h(
+                  'div',
+                  { className: 'finder-mobile-search-bar', role: 'search' },
+                  h('span', { className: 'finder-mobile-search-icon', 'aria-hidden': 'true' }, '⌕'),
+                  h('input', {
+                      type: 'search',
+                      className: 'finder-mobile-search-input',
+                      placeholder: 'Suchen',
+                      'aria-label': 'Suchen',
+                      value: searchTerm,
+                      oninput: (e: Event) => onSearch((e.target as HTMLInputElement).value),
+                      onkeydown: (e: KeyboardEvent) => {
+                          if (e.key !== 'Escape') return;
+                          onSearch('');
+                      },
+                  }),
+                  ...(searchTerm
+                      ? [
+                            h(
+                                'button',
+                                {
+                                    type: 'button',
+                                    className: 'finder-mobile-search-clear',
+                                    'aria-label': 'Suche löschen',
+                                    onclick: () => onSearch(''),
+                                },
+                                '✕'
+                            ),
+                        ]
+                      : [])
+              )
+            : null;
+
         // Content Area (ohne SplitView, da Sidebar jetzt absolut positioniert ist)
         const contentArea = h(
             'div',
@@ -1045,7 +1100,8 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                       'data-tabs-manual': '1',
                   })
                 : h('div', { className: 'finder-tabs-placeholder hidden' }),
-            h('div', { className: 'flex-1 overflow-hidden relative' }, renderContent())
+            h('div', { className: 'flex-1 overflow-hidden relative' }, renderContent()),
+            ...(mobileSearchBar ? [mobileSearchBar] : [])
         );
 
         // Toolbar mit Margin für Sidebar

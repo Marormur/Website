@@ -5948,6 +5948,110 @@ html.dark .finder-mobile-menu-back {
     }
 }
 
+/* ---- Mobile Finder: persistent bottom search bar ---- */
+.finder-mobile-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.75rem;
+    margin: 0.5rem;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 9999px;
+    background: rgba(248, 250, 252, 0.88);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    flex-shrink: 0;
+}
+
+html.dark .finder-mobile-search-bar {
+    background: rgba(15, 23, 42, 0.88);
+    border-color: rgba(148, 163, 184, 0.12);
+}
+
+.finder-mobile-search-icon {
+    font-size: 1rem;
+    color: #64748b;
+    flex-shrink: 0;
+    pointer-events: none;
+    line-height: 1;
+}
+
+html.dark .finder-mobile-search-icon {
+    color: #94a3b8;
+}
+
+.finder-mobile-search-input {
+    flex: 1;
+    min-width: 0;
+    height: 30px;
+    padding: 0 0.25rem;
+    font-size: 0.875rem;
+    border: none;
+    background: transparent;
+    color: #0f172a;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.finder-mobile-search-input::placeholder {
+    color: #94a3b8;
+}
+
+/* Remove browser-native clear button to avoid duplicate with our custom one */
+.finder-mobile-search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+html.dark .finder-mobile-search-input {
+    color: #f1f5f9;
+}
+
+html.dark .finder-mobile-search-input::placeholder {
+    color: #64748b;
+}
+
+.finder-mobile-search-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.45);
+    color: #1e293b;
+    font-size: 0.6rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.finder-mobile-search-clear:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+html.dark .finder-mobile-search-clear {
+    background: rgba(71, 85, 105, 0.65);
+    color: #e2e8f0;
+}
+
+@media (forced-colors: active) {
+    .finder-mobile-search-bar {
+        border: 1px solid ButtonBorder;
+        background: Canvas;
+    }
+
+    .finder-mobile-search-clear {
+        border: 1px solid ButtonBorder;
+        background: ButtonFace;
+        color: ButtonText;
+    }
+}
+
 .finder-sidebar-resizer {
     background: transparent;
     border-radius: 9999px;

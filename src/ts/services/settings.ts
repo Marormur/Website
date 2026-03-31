@@ -172,7 +172,12 @@ logger.debug('APP', 'Settings Module loaded');
                     this.currentSection = restoredSection;
                     this.sectionHistory = [restoredSection];
                     this.historyIndex = 0;
-                    this.showSection(restoredSection, { pushHistory: false });
+                    // Reset so syncResponsiveLayout re-evaluates the compact layout and
+                    // prepends 'menu' to the history when needed (mobile/compact mode).
+                    // Without this, the back button stays disabled when opening directly
+                    // in a submenu after session restore.
+                    this.lastResponsiveCompactMode = null;
+                    this.syncResponsiveLayout();
                 });
             }
         },
