@@ -17,6 +17,8 @@ import { getString, setString } from '../services/storage-utils.js';
     const UI_MODE_KEY = (APP_CONSTANTS.UI_MODE_PREFERENCE_KEY as string) || 'uiModePreference';
     const MOBILE_WIDTH_THRESHOLD = 900;
     const MOBILE_HEIGHT_THRESHOLD = 760;
+    const EMULATED_PHONE_SHORT_SIDE_THRESHOLD = 520;
+    const EMULATED_PHONE_LONG_SIDE_THRESHOLD = 700;
 
     const validPreferences: UIModePreference[] = ['auto', 'desktop', 'mobile'];
 
@@ -57,13 +59,27 @@ import { getString, setString } from '../services/storage-utils.js';
         return coarsePointerQuery.matches || anyCoarsePointerQuery.matches;
     }
 
+    function isLikelyPhoneViewportEmulation(): boolean {
+        const shortestSide = Math.min(window.innerWidth, window.innerHeight);
+        const longestSide = Math.max(window.innerWidth, window.innerHeight);
+
+        return (
+            shortestSide <= EMULATED_PHONE_SHORT_SIDE_THRESHOLD &&
+            longestSide >= EMULATED_PHONE_LONG_SIDE_THRESHOLD
+        );
+    }
+
     function detectAutoMode(): EffectiveUIMode {
         const isSmallViewport =
             window.innerWidth <= MOBILE_WIDTH_THRESHOLD ||
             window.innerHeight <= MOBILE_HEIGHT_THRESHOLD;
 
-        // Require a mobile-like viewport and coarse pointer to avoid false positives on small desktop panes.
-        return isSmallViewport && isCoarsePointerDevice() ? 'mobile' : 'desktop';
+        // Browser device emulation can keep pointer media queries in desktop mode.
+        // Treat narrow phone-like viewports as mobile so responsive testing works
+        // without forcing the preference manually inside the app.
+        return isSmallViewport && (isCoarsePointerDevice() || isLikelyPhoneViewportEmulation())
+            ? 'mobile'
+            : 'desktop';
     }
 
     function resolveEffectiveMode(pref: UIModePreference): EffectiveUIMode {
