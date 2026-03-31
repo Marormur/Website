@@ -248,6 +248,7 @@ logger.debug('APP', 'Settings Module loaded');
                                 <span class="settings-search-icon" aria-hidden="true">⌕</span>
                                 <input class="settings-search-input" type="search" placeholder="Suchen" aria-label="Suchen" data-i18n-placeholder="settingsPage.search.placeholder" data-i18n-aria-label="settingsPage.search.ariaLabel" />
                             </div>
+                            <div class="settings-search-results" data-settings-search-results="true" hidden></div>
 
                             <button type="button" class="settings-account" data-action="settings:showSection" data-section="general" data-settings-page="general">
                                 <img src="./img/profil.jpg" alt="Profilbild" class="settings-account-avatar" />
@@ -910,6 +911,194 @@ logger.debug('APP', 'Settings Module loaded');
             );
             backBtn?.addEventListener('click', () => this.navigateHistory('back'));
             forwardBtn?.addEventListener('click', () => this.navigateHistory('forward'));
+
+            const searchInput =
+                this.container.querySelector<HTMLInputElement>('.settings-search-input');
+            const searchWrap = this.container.querySelector<HTMLElement>('.settings-search-wrap');
+            const searchResults = this.container.querySelector<HTMLElement>(
+                '[data-settings-search-results="true"]'
+            );
+            const sidebar = this.container.querySelector<HTMLElement>('.settings-sidebar');
+
+            const syncSearchResultsPosition = (): void => {
+                if (!searchResults || !searchWrap || !sidebar || searchResults.hidden) return;
+
+                const isCompact = this.isCompactMobileLayout();
+                searchResults.dataset.searchLayout = isCompact ? 'compact' : 'desktop';
+
+                if (isCompact) {
+                    searchResults.style.removeProperty('width');
+                    return;
+                }
+
+                const sidebarRect = sidebar.getBoundingClientRect();
+                const searchWrapRect = searchWrap.getBoundingClientRect();
+                const relativeLeft = Math.max(0, searchWrapRect.left - sidebarRect.left);
+                const relativeTop = Math.max(0, searchWrapRect.bottom - sidebarRect.top + 8);
+
+                searchResults.style.left = `${Math.round(relativeLeft)}px`;
+                searchResults.style.top = `${Math.round(relativeTop)}px`;
+                searchResults.style.width = `${Math.round(searchWrapRect.width)}px`;
+            };
+
+            const hideSearchResults = (): void => {
+                if (!searchResults || !searchWrap) return;
+                searchResults.hidden = true;
+                searchResults.dataset.searchLayout = '';
+                searchResults.innerHTML = '';
+                searchWrap.classList.remove('settings-search-wrap--open');
+                searchResults.style.removeProperty('left');
+                searchResults.style.removeProperty('top');
+                searchResults.style.removeProperty('width');
+            };
+
+            const showSearchResults = (queryRaw: string): void => {
+                if (!searchResults || !searchWrap) return;
+
+                const query = queryRaw.trim().toLowerCase();
+                if (!query) {
+                    hideSearchResults();
+                    return;
+                }
+
+                const targetButtons = this.container?.querySelectorAll<HTMLButtonElement>(
+                    '[data-action="settings:showSection"][data-section]'
+                );
+                if (!targetButtons) {
+                    hideSearchResults();
+                    return;
+                }
+
+                const seen = new Set<string>();
+                const matches: Array<{
+                    section: SectionName;
+                    icon: string;
+                    title: string;
+                    subtitle: string;
+                    score: number;
+                }> = [];
+
+                targetButtons.forEach(button => {
+                    const section = button.getAttribute('data-section') as SectionName | null;
+                    if (!section) return;
+
+                    const titleSource =
+                        button.querySelector<HTMLElement>(
+                            '.settings-nav-title, .settings-account-name, .settings-subcategory-title'
+                        )?.textContent || button.textContent;
+                    const subtitleSource =
+                        button.querySelector<HTMLElement>(
+                            '.settings-account-subline, .settings-subcategory-description'
+                        )?.textContent || '';
+                    const iconSource =
+                        button.querySelector<HTMLElement>(
+                            '.settings-nav-icon, .settings-subcategory-icon'
+                        )?.textContent || '';
+
+                    const title = (titleSource || '').replace(/\s+/g, ' ').trim();
+                    const subtitle = (subtitleSource || '').replace(/\s+/g, ' ').trim();
+                    const icon = (iconSource || '').replace(/\s+/g, ' ').trim();
+                    if (!title) return;
+
+                    const haystack = `${title} ${subtitle}`.toLowerCase();
+                    const index = haystack.indexOf(query);
+                    if (index < 0) return;
+
+                    const dedupeKey = `${section}:${title.toLowerCase()}`;
+                    if (seen.has(dedupeKey)) return;
+                    seen.add(dedupeKey);
+
+                    matches.push({
+                        section,
+                        icon,
+                        title,
+                        subtitle,
+                        score: index,
+                    });
+                });
+
+                matches.sort((a, b) => {
+                    if (a.score !== b.score) return a.score - b.score;
+                    return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+                });
+
+                const escapeHtml = (value: string): string =>
+                    value
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/\"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+
+                const locale = document.documentElement.lang || 'de';
+                const noResultsText = locale.startsWith('de')
+                    ? 'Keine Ergebnisse gefunden'
+                    : 'No results found';
+
+                if (matches.length === 0) {
+                    searchResults.innerHTML = `<p class="settings-search-empty">${escapeHtml(noResultsText)}</p>`;
+                } else {
+                    const items = matches
+                        .slice(0, 16)
+                        .map(match => {
+                            const subtitleHtml = match.subtitle
+                                ? `<span class="settings-search-result-subtitle">${escapeHtml(match.subtitle)}</span>`
+                                : '';
+                            const iconHtml = match.icon
+                                ? `<span class="settings-search-result-icon" aria-hidden="true">${escapeHtml(match.icon)}</span>`
+                                : '';
+                            return `<button type="button" class="settings-search-result-item" data-section="${match.section}">${iconHtml}<span class="settings-search-result-copy"><span class="settings-search-result-title">${escapeHtml(match.title)}</span>${subtitleHtml}</span></button>`;
+                        })
+                        .join('');
+                    searchResults.innerHTML = `<div class="settings-search-result-list" role="listbox">${items}</div>`;
+
+                    const resultButtons = searchResults.querySelectorAll<HTMLButtonElement>(
+                        '.settings-search-result-item'
+                    );
+                    resultButtons.forEach(button => {
+                        button.addEventListener('click', () => {
+                            const section = button.getAttribute(
+                                'data-section'
+                            ) as SectionName | null;
+                            if (!section) return;
+                            this.showSection(section);
+                            if (searchInput) {
+                                searchInput.value = '';
+                            }
+                            hideSearchResults();
+                        });
+                    });
+                }
+
+                searchWrap.classList.add('settings-search-wrap--open');
+                searchResults.hidden = false;
+                syncSearchResultsPosition();
+            };
+
+            searchInput?.addEventListener('input', () => {
+                showSearchResults(searchInput.value);
+            });
+
+            searchInput?.addEventListener('focus', () => {
+                showSearchResults(searchInput.value);
+            });
+
+            searchInput?.addEventListener('keydown', event => {
+                if (event.key !== 'Escape') return;
+                searchInput.value = '';
+                hideSearchResults();
+            });
+
+            this.container.addEventListener('click', event => {
+                if (!searchWrap || !searchResults) return;
+                const target = event.target as Node;
+                if (searchWrap.contains(target) || searchResults.contains(target)) return;
+                hideSearchResults();
+            });
+
+            window.addEventListener('resize', () => {
+                syncSearchResultsPosition();
+            });
 
             // Theme preference change listeners
             const themeRadios = this.container.querySelectorAll<HTMLInputElement>(
@@ -1844,9 +2033,11 @@ logger.debug('APP', 'Settings Module loaded');
 
             // Keep two-column layout until main content is approximately as narrow as the sidebar.
             const compactSwitchWidth = Math.round(sidebarWidth * 2 + 28);
-            const mobileViewportSwitch = this.isMobileMode() && window.innerWidth <= 680;
+            if (this.isMobileMode()) {
+                return true;
+            }
 
-            return shellWidth <= compactSwitchWidth || mobileViewportSwitch;
+            return shellWidth <= compactSwitchWidth;
         },
 
         syncResponsiveLayout(options?: { resetToDefault?: boolean }): void {

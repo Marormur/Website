@@ -420,6 +420,7 @@ html.dark .traffic-light-control--disabled:hover {
 }
 
 .settings-sidebar {
+    position: relative;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -434,6 +435,80 @@ html.dark .traffic-light-control--disabled:hover {
     position: relative;
     margin: 8px 0 8px 0;
     padding-top: 0;
+}
+
+.settings-search-results {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 8px);
+    width: 100%;
+    max-height: min(46vh, 360px);
+    overflow: auto;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(248, 250, 252, 0.97);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+    z-index: 45;
+}
+
+.settings-search-result-list {
+    display: grid;
+    gap: 2px;
+    padding: 6px;
+}
+
+.settings-search-result-item {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #0f172a;
+    text-align: left;
+    padding: 9px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.settings-search-result-icon {
+    width: 18px;
+    flex: 0 0 18px;
+    text-align: center;
+    opacity: 0.88;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.settings-search-result-copy {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.settings-search-result-item:hover,
+.settings-search-result-item:focus-visible {
+    background: rgba(15, 23, 42, 0.08);
+    outline: none;
+}
+
+.settings-search-result-title {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.settings-search-result-subtitle {
+    font-size: 12px;
+    color: rgba(51, 65, 85, 0.78);
+    line-height: 1.2;
+}
+
+.settings-search-empty {
+    margin: 0;
+    padding: 12px;
+    font-size: 13px;
+    color: rgba(51, 65, 85, 0.8);
 }
 
 .settings-search-icon {
@@ -824,17 +899,64 @@ html.dark .traffic-light-control--disabled:hover {
 }
 
 .settings-app[data-settings-layout='compact-mobile'] .settings-sidebar {
-    padding: 8px 12px 20px;
+    position: relative;
+    padding: 8px 12px 0;
     gap: 4px;
 }
 
+/* In compact-mobile (phone) mode the search bar moves to the bottom of the
+   sidebar panel so it is within easy thumb reach on large screens. */
 .settings-app[data-settings-layout='compact-mobile'] .settings-search-wrap {
-    margin: 8px 4px 14px;
+    order: 999;
+    margin: auto 4px 12px;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 9999px;
+    background: rgba(248, 250, 252, 0.88);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-search-icon {
+    position: static;
+    transform: none;
+    top: auto;
+    left: auto;
+    flex-shrink: 0;
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1;
+    pointer-events: none;
 }
 
 .settings-app[data-settings-layout='compact-mobile'] .settings-search-input {
-    height: 38px;
-    border-radius: 14px;
+    height: 30px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0 0.25rem;
+    font-size: 0.875rem;
+    flex: 1;
+    min-width: 0;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.settings-app[data-settings-layout='compact-mobile'] .settings-search-results {
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    bottom: 66px;
+    width: auto;
+    max-height: none;
+    border-radius: 16px;
+    background: rgba(248, 250, 252, 0.98);
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.2);
 }
 
 .settings-app[data-settings-layout='compact-mobile'] .settings-account,
@@ -1745,6 +1867,53 @@ html.dark .settings-search-input {
 
 html.dark .settings-search-input::placeholder {
     color: rgba(226, 232, 240, 0.6);
+}
+
+html.dark .settings-search-results {
+    border-color: rgba(148, 163, 184, 0.2);
+    background: rgba(15, 23, 42, 0.97);
+    box-shadow: 0 18px 34px rgba(2, 6, 23, 0.55);
+}
+
+html.dark .settings-search-result-item {
+    color: #f1f5f9;
+}
+
+html.dark .settings-search-result-item:hover,
+html.dark .settings-search-result-item:focus-visible {
+    background: rgba(148, 163, 184, 0.18);
+}
+
+html.dark .settings-search-result-subtitle,
+html.dark .settings-search-empty {
+    color: rgba(148, 163, 184, 0.95);
+}
+
+/* Dark mode overrides for the bottom search bar in compact-mobile */
+html.dark .settings-app[data-settings-layout='compact-mobile'] .settings-search-wrap {
+    background: rgba(15, 23, 42, 0.88);
+    border-color: rgba(148, 163, 184, 0.12);
+}
+
+html.dark .settings-app[data-settings-layout='compact-mobile'] .settings-search-icon {
+    color: #94a3b8;
+}
+
+html.dark .settings-app[data-settings-layout='compact-mobile'] .settings-search-input {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    color: #f1f5f9;
+}
+
+html.dark .settings-app[data-settings-layout='compact-mobile'] .settings-search-input::placeholder {
+    color: #64748b;
+}
+
+html.dark .settings-app[data-settings-layout='compact-mobile'] .settings-search-results {
+    border-color: rgba(148, 163, 184, 0.2);
+    background: rgba(15, 23, 42, 0.97);
+    box-shadow: 0 18px 34px rgba(2, 6, 23, 0.55);
 }
 
 html.dark .settings-account:hover {
