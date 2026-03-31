@@ -287,7 +287,7 @@ logger.debug('APP', 'Settings Module loaded');
                                 <button type="button" class="settings-content-nav-btn" data-settings-nav="back" data-dialog-action="navigate-back" aria-label="Zurück" title="Zurück">‹</button>
                                 <button type="button" class="settings-content-nav-btn" data-settings-nav="forward" data-dialog-action="navigate-forward" aria-label="Vorwärts" title="Vorwärts">›</button>
                             </div>
-                            <h2 class="settings-content-title" data-settings-current-title data-i18n="settingsPage.general.title">Allgemein</h2>
+                            <h2 class="settings-content-title no-select" data-settings-current-title data-i18n="settingsPage.general.title">Allgemein</h2>
                             ${renderTrafficLightControlsHTML({
                                 containerClassName:
                                     'settings-window-controls settings-content-window-controls traffic-light-controls',

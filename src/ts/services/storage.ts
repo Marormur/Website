@@ -189,6 +189,33 @@ import logger from '../core/logger.js';
         // When a modern multi-window session is present, skip legacy openModals restore entirely.
         // The multi-window restore pipeline owns all window restoration in that case.
         if (hasMultiWindowSessionData()) {
+            // Defensive cleanup: stale legacy entries may still exist from older versions.
+            // Keep legacy shells hidden so only modern BaseWindow instances remain visible.
+            MULTI_WINDOW_OWNED_MODAL_IDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.classList.add('hidden');
+                el.setAttribute('aria-hidden', 'true');
+                (el as HTMLElement).style.display = 'none';
+                (el as HTMLElement).style.pointerEvents = 'none';
+            });
+
+            try {
+                const arr = getJSON<string[]>(OPEN_MODALS_KEY, []);
+                if (Array.isArray(arr) && arr.length > 0) {
+                    const cleaned = arr.filter(id => !MULTI_WINDOW_OWNED_MODAL_IDS.has(id));
+                    if (cleaned.length !== arr.length) {
+                        setJSON(OPEN_MODALS_KEY, cleaned);
+                    }
+                }
+            } catch (err) {
+                logger.warn(
+                    'STORAGE',
+                    'Failed to clean legacy openModals in multi-window mode:',
+                    err
+                );
+            }
+
             restoreTopModalFocus();
             return;
         }

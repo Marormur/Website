@@ -5,6 +5,15 @@ import type { ActionMap, Params } from './helpers.js';
 import { getGlobal, safeExecute } from './helpers.js';
 import logger from '../../core/logger.js';
 
+function forceHideLegacyModal(modalId: string): void {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.style.display = 'none';
+    modal.style.pointerEvents = 'none';
+}
+
 function openByTypeWithLegacyFallback(type: string, legacyModalId: string): void {
     const g = getGlobal<{
         AboutWindow?: { focusOrCreate?: () => void };
@@ -22,13 +31,13 @@ function openByTypeWithLegacyFallback(type: string, legacyModalId: string): void
 
     if (type === 'about' && g?.AboutWindow?.focusOrCreate) {
         g.AboutWindow.focusOrCreate();
-        g?.WindowManager?.close?.(legacyModalId);
+        forceHideLegacyModal(legacyModalId);
         return;
     }
 
     if (type === 'settings' && g?.SettingsWindow?.focusOrCreate) {
         g.SettingsWindow.focusOrCreate();
-        g?.WindowManager?.close?.(legacyModalId);
+        forceHideLegacyModal(legacyModalId);
         return;
     }
 

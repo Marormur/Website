@@ -588,13 +588,31 @@ export class Dialog {
         let offsetX = 0,
             offsetY = 0;
         let pointerScale = 1;
-        const handleMouseDown = (e: MouseEvent) => {
-            const dragHeader = (e.target as Element).closest?.(
-                '.draggable-header'
-            ) as HTMLElement | null;
+        let activePointerId: number | null = null;
+        let activeDragHeader: HTMLElement | null = null;
+
+        const isPointerDragEvent = (event: MouseEvent | PointerEvent): event is PointerEvent =>
+            'pointerId' in event;
+
+        const getEventTargetElement = (event: Event): HTMLElement | null => {
+            const raw = event.target;
+            if (raw instanceof HTMLElement) return raw;
+            if (raw instanceof Node) return raw.parentElement;
+            return null;
+        };
+
+        const handleDragStart = (e: MouseEvent | PointerEvent) => {
+            const targetElement = getEventTargetElement(e);
+            const dragHeader = targetElement?.closest('.draggable-header') as HTMLElement | null;
             if (!dragHeader || !this.modal.contains(dragHeader)) return;
 
-            if ((e.target as Element).closest?.('[data-dialog-action], .settings-window-control')) {
+            if (isPointerDragEvent(e)) {
+                if (!e.isPrimary || e.button !== 0) return;
+            } else if (activePointerId !== null) {
+                return;
+            }
+
+            if (targetElement?.closest?.('[data-dialog-action], .settings-window-control')) {
                 return;
             }
 
@@ -608,17 +626,13 @@ export class Dialog {
                 }
             }
 
+            // Stop native text selection immediately so drag wins reliably,
+            // especially inside embedded browsers where selection can preempt mousemove.
+            e.preventDefault();
+
             this.refocus();
-            if (
-                (e.target as Element).closest &&
-                (e.target as Element).closest('button[id^="close-"]')
-            )
-                return;
-            if (
-                (e.target as Element).closest &&
-                (e.target as Element).closest('[data-dialog-action]')
-            )
-                return;
+            if (targetElement?.closest?.('button[id^="close-"]')) return;
+            if (targetElement?.closest?.('[data-dialog-action]')) return;
             const currentRect = target.getBoundingClientRect();
             pointerScale = detectClientCoordinateScale(e.clientX, e.clientY, currentRect);
             const pointerX = e.clientX;
@@ -678,6 +692,17 @@ export class Dialog {
                     logicalPointerY - resolveElementLogicalPx(target, 'top', adjustedRect.top);
             }
             this.lastDragPointerX = renderedPointerX;
+
+            if (isPointerDragEvent(e)) {
+                activePointerId = e.pointerId;
+                activeDragHeader = dragHeader;
+                try {
+                    dragHeader.setPointerCapture(e.pointerId);
+                } catch {
+                    // Some embedded browsers reject capture for synthetic or transient pointers.
+                }
+            }
+
             document.body.classList.add('window-dragging');
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
@@ -688,17 +713,31 @@ export class Dialog {
             overlay.style.zIndex = '9999';
             overlay.style.cursor = 'move';
             overlay.style.backgroundColor = 'transparent';
+            overlay.style.touchAction = 'none';
             document.body.appendChild(overlay);
             let isDragging = true;
             let moved = false;
+            const preventSelectionWhileDragging = (event: Event) => event.preventDefault();
+            document.addEventListener('selectstart', preventSelectionWhileDragging, true);
+            const selection = window.getSelection?.();
+            if (selection && selection.rangeCount > 0) {
+                selection.removeAllRanges();
+            }
             const cleanup = (shouldSave = true) => {
                 if (!isDragging) return;
                 isDragging = false;
                 document.body.classList.remove('window-dragging');
+                document.removeEventListener('selectstart', preventSelectionWhileDragging, true);
                 overlay.remove();
                 overlay.removeEventListener('mousemove', mouseMoveHandler);
                 overlay.removeEventListener('mouseup', mouseUpHandler);
+                overlay.removeEventListener('pointermove', pointerMoveHandler);
+                overlay.removeEventListener('pointerup', pointerUpHandler);
+                overlay.removeEventListener('pointercancel', pointerCancelHandler);
                 window.removeEventListener('mouseup', mouseUpHandler);
+                window.removeEventListener('pointermove', pointerMoveHandler);
+                window.removeEventListener('pointerup', pointerUpHandler);
+                window.removeEventListener('pointercancel', pointerCancelHandler);
                 window.removeEventListener('blur', blurHandler);
                 window.removeEventListener('mousemove', mouseMoveHandler);
                 window.hideSnapPreview?.();
@@ -712,42 +751,86 @@ export class Dialog {
                 }
                 pointerScale = 1;
                 this.lastDragPointerX = null;
+                if (
+                    activePointerId !== null &&
+                    activeDragHeader?.hasPointerCapture?.(activePointerId)
+                ) {
+                    try {
+                        activeDragHeader.releasePointerCapture(activePointerId);
+                    } catch {
+                        // Ignore capture release failures; drag state cleanup already completed.
+                    }
+                }
+                activePointerId = null;
+                activeDragHeader = null;
             };
-            const mouseMoveHandler = (e2: MouseEvent) => {
+
+            const updateDragPosition = (clientX: number, clientY: number) => {
                 moved = true;
                 window.requestAnimationFrame(() => {
-                    const pointerLogicalX = toLogicalClientPx(e2.clientX, pointerScale);
-                    const pointerLogicalY = toLogicalClientPx(e2.clientY, pointerScale);
+                    const pointerLogicalX = toLogicalClientPx(clientX, pointerScale);
+                    const pointerLogicalY = toLogicalClientPx(clientY, pointerScale);
                     const newLeft = pointerLogicalX - offsetX;
                     const newTop = pointerLogicalY - offsetY;
                     const minTop = window.getMenuBarBottom?.() || 0;
                     target.style.left = newLeft + 'px';
                     target.style.top = Math.max(minTop, newTop) + 'px';
-                    this.lastDragPointerX = toRenderedClientPx(e2.clientX, pointerScale);
+                    this.lastDragPointerX = toRenderedClientPx(clientX, pointerScale);
                     const candidate = this.getSnapCandidate(target, this.lastDragPointerX);
                     if (candidate) window.showSnapPreview?.(candidate);
                     else window.hideSnapPreview?.();
                 });
             };
-            const mouseUpHandler = (e2: MouseEvent) => {
-                this.lastDragPointerX = toRenderedClientPx(e2.clientX, pointerScale);
+
+            const mouseMoveHandler = (e2: MouseEvent) => {
+                if (activePointerId !== null) return;
+                updateDragPosition(e2.clientX, e2.clientY);
+            };
+
+            const pointerMoveHandler = (e2: PointerEvent) => {
+                if (activePointerId === null || e2.pointerId !== activePointerId) return;
+                updateDragPosition(e2.clientX, e2.clientY);
+            };
+
+            const finishDrag = (clientX: number) => {
+                this.lastDragPointerX = toRenderedClientPx(clientX, pointerScale);
                 cleanup(true);
             };
+
+            const mouseUpHandler = (e2: MouseEvent) => {
+                if (activePointerId !== null) return;
+                finishDrag(e2.clientX);
+            };
+
+            const pointerUpHandler = (e2: PointerEvent) => {
+                if (activePointerId === null || e2.pointerId !== activePointerId) return;
+                finishDrag(e2.clientX);
+            };
+
+            const pointerCancelHandler = (e2: PointerEvent) => {
+                if (activePointerId === null || e2.pointerId !== activePointerId) return;
+                cleanup(false);
+            };
+
             const blurHandler = () => cleanup(true);
             overlay.addEventListener('mousemove', mouseMoveHandler);
             overlay.addEventListener('mouseup', mouseUpHandler);
+            overlay.addEventListener('pointermove', pointerMoveHandler);
+            overlay.addEventListener('pointerup', pointerUpHandler);
+            overlay.addEventListener('pointercancel', pointerCancelHandler);
             window.addEventListener('mousemove', mouseMoveHandler);
             window.addEventListener('mouseup', mouseUpHandler);
+            window.addEventListener('pointermove', pointerMoveHandler);
+            window.addEventListener('pointerup', pointerUpHandler);
+            window.addEventListener('pointercancel', pointerCancelHandler);
             window.addEventListener('blur', blurHandler);
-            e.preventDefault();
         };
         const handleDoubleClick = (e: MouseEvent) => {
-            const dragHeader = (e.target as Element).closest?.(
-                '.draggable-header'
-            ) as HTMLElement | null;
+            const targetElement = getEventTargetElement(e);
+            const dragHeader = targetElement?.closest('.draggable-header') as HTMLElement | null;
             if (!dragHeader || !this.modal.contains(dragHeader)) return;
-            if ((e.target as Element).closest?.('button, a, input, select, textarea')) return;
-            if ((e.target as Element).closest?.('[data-dialog-action]')) return;
+            if (targetElement?.closest?.('button, a, input, select, textarea')) return;
+            if (targetElement?.closest?.('[data-dialog-action]')) return;
 
             this.refocus();
             if (this.modalId === 'settings-modal' && !this.isMobileUIMode()) {
@@ -758,7 +841,8 @@ export class Dialog {
             this.toggleMaximize();
             e.preventDefault();
         };
-        this.modal.addEventListener('mousedown', handleMouseDown);
+        this.modal.addEventListener('pointerdown', handleDragStart);
+        this.modal.addEventListener('mousedown', handleDragStart);
         this.modal.addEventListener('dblclick', handleDoubleClick);
     }
 

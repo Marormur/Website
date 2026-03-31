@@ -1349,7 +1349,7 @@ export function updateDockIndicators(): void {
     const indicatorMappings = [
         { indicatorId: 'finder-indicator', windowType: 'finder' },
         { modalId: 'projects-modal', indicatorId: 'projects-indicator' },
-        { modalId: 'settings-modal', indicatorId: 'settings-indicator' },
+        { modalId: 'settings-modal', indicatorId: 'settings-indicator', windowType: 'settings' },
         { modalId: 'text-modal', indicatorId: 'text-indicator', windowType: 'text-editor' },
         { indicatorId: 'terminal-indicator', windowType: 'terminal' },
         { indicatorId: 'photos-indicator', windowType: 'photos' },

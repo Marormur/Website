@@ -138,6 +138,8 @@ body.window-dragging * {
 
 .draggable-header {
     cursor: move;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .draggable-header .traffic-light-controls,

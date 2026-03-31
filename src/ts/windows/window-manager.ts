@@ -112,6 +112,8 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
         if (windowId === 'projects-modal' || windowId === 'finder-modal') return 'finder';
         if (windowId === 'terminal-modal' || windowId === 'terminal') return 'terminal';
         if (windowId === 'text-modal') return 'text-editor';
+        if (windowId === 'settings-modal') return 'settings';
+        if (windowId === 'about-modal') return 'about';
         return null;
     }
 
@@ -151,6 +153,11 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
         } else if (resolvedType === 'text-editor') {
             openedWindow =
                 window.TextEditorWindow?.focusOrCreate?.() || window.TextEditorWindow?.create?.();
+        } else if (resolvedType === 'settings') {
+            openedWindow =
+                window.SettingsWindow?.focusOrCreate?.() || window.SettingsWindow?.create?.();
+        } else if (resolvedType === 'about') {
+            openedWindow = window.AboutWindow?.focusOrCreate?.() || window.AboutWindow?.create?.();
         }
 
         if (!openedWindow) return false;

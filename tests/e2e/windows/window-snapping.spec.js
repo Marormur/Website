@@ -313,6 +313,91 @@ async function dragWithLogicalClientCoords(page, selector, moveDelta) {
     );
 }
 
+async function dragDialogWithPointerEvents(page, modalId, selector, moveDelta) {
+    return await page.evaluate(
+        async ({ modalId, selector, moveDelta }) => {
+            const modal = document.getElementById(modalId);
+            const handle = modal?.querySelector(selector);
+            const target =
+                window.StorageSystem?.getDialogWindowElement?.(modal) ||
+                modal?.querySelector('.autopointer') ||
+                modal;
+
+            if (!handle || !target || typeof PointerEvent === 'undefined') {
+                return { ok: false, reason: 'dialog-handle-not-found' };
+            }
+
+            const handleRect = handle.getBoundingClientRect();
+            const beforeRect = target.getBoundingClientRect();
+            const startX = handleRect.left + Math.max(32, Math.min(140, handleRect.width * 0.35));
+            const startY = handleRect.top + Math.max(16, Math.min(24, handleRect.height * 0.5));
+            const endX = startX + moveDelta.x;
+            const endY = startY + moveDelta.y;
+            const pointerId = 1;
+
+            handle.dispatchEvent(
+                new PointerEvent('pointerdown', {
+                    bubbles: true,
+                    cancelable: true,
+                    button: 0,
+                    buttons: 1,
+                    clientX: startX,
+                    clientY: startY,
+                    pointerId,
+                    pointerType: 'mouse',
+                    isPrimary: true,
+                })
+            );
+
+            window.dispatchEvent(
+                new PointerEvent('pointermove', {
+                    bubbles: true,
+                    cancelable: true,
+                    buttons: 1,
+                    clientX: endX,
+                    clientY: endY,
+                    pointerId,
+                    pointerType: 'mouse',
+                    isPrimary: true,
+                })
+            );
+
+            await new Promise(resolve =>
+                requestAnimationFrame(() => requestAnimationFrame(resolve))
+            );
+
+            const afterRect = target.getBoundingClientRect();
+
+            window.dispatchEvent(
+                new PointerEvent('pointerup', {
+                    bubbles: true,
+                    cancelable: true,
+                    button: 0,
+                    buttons: 0,
+                    clientX: endX,
+                    clientY: endY,
+                    pointerId,
+                    pointerType: 'mouse',
+                    isPrimary: true,
+                })
+            );
+
+            return {
+                ok: true,
+                before: {
+                    left: Math.round(beforeRect.left),
+                    top: Math.round(beforeRect.top),
+                },
+                after: {
+                    left: Math.round(afterRect.left),
+                    top: Math.round(afterRect.top),
+                },
+            };
+        },
+        { modalId, selector, moveDelta }
+    );
+}
+
 test.describe('Window Snapping', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await bootFreshDesktop(page, baseURL);
@@ -495,5 +580,23 @@ test.describe('Window Snapping', () => {
         const settingsRestored = await getDialogState(page, 'settings-modal');
         expect(settingsRestored.width).toBe(settingsBefore.width);
         expect(settingsRestored.height).toBe(settingsBefore.height);
+    });
+
+    test('settings dialog can be dragged via pointer events', async ({ page }) => {
+        await page.evaluate(() => {
+            window.API?.window?.open?.('settings-modal');
+        });
+        await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 5000 });
+
+        const dragged = await dragDialogWithPointerEvents(
+            page,
+            'settings-modal',
+            '.settings-content-topbar.draggable-header',
+            { x: 180, y: 72 }
+        );
+
+        expect(dragged.ok).toBe(true);
+        expect(dragged.after.left).toBeGreaterThan(dragged.before.left + 100);
+        expect(dragged.after.top).toBeGreaterThan(dragged.before.top + 40);
     });
 });
