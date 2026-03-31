@@ -91,7 +91,6 @@ interface WindowManagerShape {
     registerAll?: (cfgs: unknown[]) => void;
     setDialogInstance?: (id: string, instance: unknown) => void;
     getCurrentMenuModalId?: () => string | null;
-    renderApplicationMenu?: (modalId?: string | null) => void;
     open?: (id: string) => void;
     bringToFront?: (id: string) => void;
 }
@@ -110,34 +109,12 @@ declare global {
         // ── Instance Managers ─────────────────────────────────────────────
         TerminalInstanceManager?: InstanceManagerShape;
         TextEditorInstanceManager?: InstanceManagerShape;
-        FinderInstanceManager?: InstanceManagerShape;
         /** Generic InstanceManager factory (legacy entry point). */
         InstanceManager?: InstanceManagerShape & {
             create?: (type: string, cfg?: Record<string, unknown>) => InstanceManagerShape;
         };
 
         // ── App Systems ───────────────────────────────────────────────────
-        FinderSystem?: {
-            init?: () => void;
-            openFinder?: () => void;
-            closeFinder?: () => void;
-            openItem?: (name: string, type: string) => void | Promise<void>;
-            navigateTo?: (
-                path: string[] | string,
-                view?: 'computer' | 'github' | 'favorites' | 'recent' | null
-            ) => void;
-            navigateUp?: () => void;
-            navigateToFolder?: (folderName: string) => void;
-            getState?: () => {
-                viewMode?: 'list' | 'grid' | 'columns' | 'gallery';
-                currentPath: string[];
-                currentView?: 'computer' | 'github' | 'favorites' | 'recent';
-                githubRepos?: unknown[];
-            } | null;
-            setViewMode?: (mode: 'list' | 'grid' | 'columns' | 'gallery') => void;
-            setSortBy?: (field: 'name' | 'date' | 'size' | 'type') => void;
-            toggleFavorite?: (path: string) => void;
-        };
         SettingsSystem?: {
             container?: HTMLElement | null;
             init?: (containerOrId: HTMLElement | string) => void;

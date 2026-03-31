@@ -100,22 +100,8 @@ import logger from '../core/logger.js';
                     onEmpty: () => this.closeModalOrHide('text-modal'),
                 });
 
-            // Finder integration is now handled internally by FinderWindow/FinderUI (VDOM-based)
-            // to allow the tab bar to be placed inside the content area.
-            /*
-            if (W.FinderInstanceManager)
-                this.wireManager({
-                    type: 'finder',
-                    manager: W.FinderInstanceManager,
-                    modalId: null, // legacy finder-modal removed
-                    tabMountId: 'finder-tabs-container',
-                    containerId: 'finder-container',
-                    addButton: true,
-                    titleFactory: manager =>
-                        `Finder ${(manager.getInstanceCount?.() || manager.getAllInstances().length) + 1}`,
-                    // onEmpty intentionally no-op for Finder
-                });
-            */
+            // Finder integration is handled internally by FinderWindow/FinderUI (VDOM-based)
+            // so no legacy manager wiring is required here.
 
             // Ensure tabs/controllers reflect any pre-existing state and show active instance.
             // Session restoration is orchestrated by app-init; we intentionally do not call

@@ -308,10 +308,6 @@ logger.debug('APP', 'API loaded');
     w.getDockReservedBottom = createLegacyWrapper('dock.getDockReservedBottom');
     w.initDockMagnification = createLegacyWrapper('dock.initDockMagnification');
 
-    // Menu
-    w.renderApplicationMenu = createLegacyWrapper('menu.renderApplicationMenu');
-    w.handleMenuActionActivation = createLegacyWrapper('menu.handleMenuActionActivation');
-
     // Desktop
     w.initDesktop = createLegacyWrapper('desktop.initDesktop');
     w.openDesktopItemById = createLegacyWrapper('desktop.openDesktopItemById');

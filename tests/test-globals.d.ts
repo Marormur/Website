@@ -46,7 +46,6 @@ declare interface Window {
     TerminalWindow?: TestWindowFactory;
     TextEditorWindow?: TestWindowFactory;
     PhotosWindow?: TestWindowFactory;
-    FinderInstanceManager?: Record<string, unknown>;
     TextEditorInstanceManager?: {
         destroyAllInstances?: () => void;
     };

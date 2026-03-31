@@ -739,7 +739,6 @@ async function openFinderWindow(page) {
  * Criteria: window.__APP_READY === true AND at least one of
  * - WindowRegistry.getAllWindows('finder').length >= 1
  * - A visible window element with #${windowId}-tabs tab bar (new multi-window)
- * - FinderInstanceManager reports an instance count > 0 (legacy)
  */
 async function waitForFinderReady(page, opts = {}) {
     const timeout =
@@ -779,15 +778,6 @@ async function waitForFinderReady(page, opts = {}) {
                     '.modal.multi-window[id^="window-finder-"]'
                 );
                 if (anyFinderWindow && anyFinderWindow.offsetParent !== null) return true;
-                // Fallback: check for legacy FinderInstanceManager
-                if (
-                    window.FinderInstanceManager &&
-                    typeof window.FinderInstanceManager.getInstanceCount === 'function'
-                ) {
-                    try {
-                        if ((window.FinderInstanceManager.getInstanceCount() || 0) > 0) return true;
-                    } catch {}
-                }
                 return false;
             } catch {
                 return false;

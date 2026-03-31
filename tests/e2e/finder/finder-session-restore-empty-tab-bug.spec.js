@@ -59,14 +59,21 @@ test.describe('Finder Session Restore - Empty Tab Bug', () => {
         });
         expect(hasContent).toBe(true);
 
-        // Step 4: Navigate to a different folder to create more state
-        // Use FinderInstanceManager API to switch view
+        // Step 4: Navigate to a different folder to create more state via active Finder tab
         const viewSwitched = await page.evaluate(() => {
             try {
-                const manager = window.FinderInstanceManager;
-                const activeInstance = manager?.getActiveInstance?.();
-                if (activeInstance && typeof activeInstance.switchView === 'function') {
-                    activeInstance.switchView('github');
+                const registry = window.WindowRegistry;
+                if (!registry || typeof registry.getAllWindows !== 'function') return false;
+                const activeWindow =
+                    registry.getActiveWindow && registry.getActiveWindow()?.type === 'finder'
+                        ? registry.getActiveWindow()
+                        : (registry.getAllWindows('finder') || [])[0] || null;
+                if (!activeWindow) return false;
+                const activeTab = activeWindow.activeTabId
+                    ? activeWindow.tabs?.get?.(activeWindow.activeTabId)
+                    : null;
+                if (activeTab && typeof activeTab.switchView === 'function') {
+                    activeTab.switchView('github');
                     return true;
                 }
                 return false;
@@ -97,7 +104,7 @@ test.describe('Finder Session Restore - Empty Tab Bug', () => {
             const reg = window.WindowRegistry;
             if (reg && typeof reg.getAllWindows === 'function')
                 return (reg.getAllWindows('finder') || []).length > 0;
-            return !!window.FinderInstanceManager?.getActiveInstance?.();
+            return false;
         });
         if (!isActive) {
             finderWindow = await openFinderWindow(page);
@@ -112,9 +119,13 @@ test.describe('Finder Session Restore - Empty Tab Bug', () => {
 
         // Step 9: Verify at least one tab is active (has active styling)
         const restoredTabsActive = await page.evaluate(() => {
-            const manager = window.FinderInstanceManager;
-            const activeInstance = manager?.getActiveInstance?.();
-            return activeInstance ? 1 : 0;
+            const reg = window.WindowRegistry;
+            if (!reg || typeof reg.getAllWindows !== 'function') return 0;
+            const activeWindow =
+                reg.getActiveWindow && reg.getActiveWindow()?.type === 'finder'
+                    ? reg.getActiveWindow()
+                    : (reg.getAllWindows('finder') || [])[0] || null;
+            return activeWindow?.activeTabId ? 1 : 0;
         });
         expect(restoredTabsActive).toBeGreaterThan(0);
 
@@ -195,9 +206,6 @@ test.describe('Finder Session Restore - Empty Tab Bug', () => {
                 if (reg && typeof reg.getAllWindows === 'function') {
                     const wins = reg.getAllWindows('finder') || [];
                     wins.forEach(w => w.close && w.close());
-                } else {
-                    const instances = window.FinderInstanceManager?.getAllInstances?.() || [];
-                    instances.forEach(inst => inst.close?.());
                 }
             } catch {}
         });
@@ -207,7 +215,7 @@ test.describe('Finder Session Restore - Empty Tab Bug', () => {
                 const reg = window.WindowRegistry;
                 if (reg && typeof reg.getAllWindows === 'function')
                     return (reg.getAllWindows('finder') || []).length === 0;
-                return (window.FinderInstanceManager?.getInstanceCount?.() || 0) === 0;
+                return true;
             },
             { timeout: 5000 }
         );
@@ -220,11 +228,16 @@ test.describe('Finder Session Restore - Empty Tab Bug', () => {
         finderWindow2 = await openFinderWindow(page);
         await waitForFinderReady(page);
 
-        // Wait for active instance to be set
+        // Wait for active tab to be set on the active finder window
         await page.waitForFunction(
             () => {
-                const manager = window.FinderInstanceManager;
-                return manager?.getActiveInstance?.() !== undefined;
+                const reg = window.WindowRegistry;
+                if (!reg || typeof reg.getAllWindows !== 'function') return false;
+                const activeWindow =
+                    reg.getActiveWindow && reg.getActiveWindow()?.type === 'finder'
+                        ? reg.getActiveWindow()
+                        : (reg.getAllWindows('finder') || [])[0] || null;
+                return !!activeWindow?.activeTabId;
             },
             { timeout: 5000 }
         );
@@ -232,9 +245,13 @@ test.describe('Finder Session Restore - Empty Tab Bug', () => {
         // Step 9: Verify at least one tab is active
         const tabs = await getFinderTabs(page, finderWindow2);
         const activeTabCount = await page.evaluate(async () => {
-            const manager = window.FinderInstanceManager;
-            const activeInstance = manager?.getActiveInstance?.();
-            return activeInstance ? 1 : 0;
+            const reg = window.WindowRegistry;
+            if (!reg || typeof reg.getAllWindows !== 'function') return 0;
+            const activeWindow =
+                reg.getActiveWindow && reg.getActiveWindow()?.type === 'finder'
+                    ? reg.getActiveWindow()
+                    : (reg.getAllWindows('finder') || [])[0] || null;
+            return activeWindow?.activeTabId ? 1 : 0;
         });
         expect(activeTabCount).toBeGreaterThan(0);
 

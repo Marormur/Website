@@ -10,7 +10,6 @@ import {
     focusOrCreateWindowByType,
     showAndRegisterWindow,
 } from '../../framework/controls/window-lifecycle.js';
-import { installFinderCompatShim } from '../../compat/instance-shims.js';
 import {
     createWindowTabsAdapter,
     mountWindowTabsController,
@@ -361,60 +360,3 @@ export class FinderWindow extends BaseWindow {
 }
 
 window.FinderWindow = FinderWindow;
-
-/**
- * Legacy compat bridge for older Finder callers. The actual global installation
- * lives in compat/instance-shims.ts so product code keeps the compatibility
- * surface isolated in the dedicated adapter layer.
- *
- * PURPOSE: Resolve the active Finder tab for the compat shim without
- *          reintroducing the old monolithic finder.ts module.
- */
-function _getActiveFV(): Record<string, unknown> | null {
-    if (!window.WindowRegistry) return null;
-    const wins = (window.WindowRegistry.getWindowsByType?.('finder') ?? []) as FinderWindow[];
-    if (wins.length === 0) return null;
-    // Pick the window with the highest z-index (most recently focused)
-    const win = wins.reduce((a, b) => (a.zIndex >= b.zIndex ? a : b));
-    const activeTab = win.activeTabId ? win.tabs.get(win.activeTabId) : null;
-    const firstTab = win.tabs.values().next().value as BaseTab | undefined;
-    const tab = activeTab ?? firstTab ?? null;
-    if (!win.activeTabId && tab?.id) {
-        win.setActiveTab(tab.id);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return tab ? (tab as any) : null;
-}
-
-function _ensureActiveFV(): Record<string, unknown> | null {
-    const existing = _getActiveFV();
-    if (existing) return existing;
-
-    const win = FinderWindow.focusOrCreate();
-    if (!win.activeTabId && win.tabs.size === 0) {
-        win.createView('Computer');
-    }
-    if (!win.activeTabId) {
-        const firstId = win.tabs.keys().next().value as string | undefined;
-        if (firstId) win.setActiveTab(firstId);
-    }
-
-    return _getActiveFV();
-}
-
-installFinderCompatShim(
-    {
-        getActiveView: _getActiveFV,
-        ensureActiveView: _ensureActiveFV,
-        openFinder: () => {
-            FinderWindow.focusOrCreate();
-        },
-        closeFinder: () => {
-            if (!window.WindowRegistry) return;
-            (window.WindowRegistry.getWindowsByType?.('finder') ?? []).forEach((w: unknown) =>
-                (w as { close?: () => void }).close?.()
-            );
-        },
-    },
-    window
-);

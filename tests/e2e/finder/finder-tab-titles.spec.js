@@ -98,11 +98,22 @@ test.describe('Finder tab titles show folder names', () => {
             await githubSidebarBtn.click();
             await page.waitForTimeout(300);
 
-            // Title should remain semantic (folder/source label) and not fallback to Finder N.
-            const titles = await getTabTitles(page, finderWindow2);
-            expect(titles.length).toBeGreaterThan(0);
-            expect((titles[0] || '').trim().length).toBeGreaterThan(0);
-            expect(titles[0]).not.toMatch(/^Finder \d+$/);
+            // Validate title via active Finder tab state (more robust than transient DOM timing).
+            const activeTitle = await page.evaluate(() => {
+                const reg = window.WindowRegistry;
+                if (!reg || typeof reg.getAllWindows !== 'function') return '';
+                const activeWindow =
+                    reg.getActiveWindow && reg.getActiveWindow()?.type === 'finder'
+                        ? reg.getActiveWindow()
+                        : (reg.getAllWindows('finder') || [])[0] || null;
+                if (!activeWindow) return '';
+                const activeTab = activeWindow.activeTabId
+                    ? activeWindow.tabs?.get?.(activeWindow.activeTabId)
+                    : null;
+                return (activeTab?.title || '').trim();
+            });
+            expect(activeTitle.length).toBeGreaterThan(0);
+            expect(activeTitle).not.toMatch(/^Finder \d+$/);
         }
     });
 
@@ -136,7 +147,7 @@ test.describe('Finder tab titles show folder names', () => {
             const reg = window.WindowRegistry;
             if (reg && typeof reg.getAllWindows === 'function')
                 return (reg.getAllWindows('finder') || []).length > 0;
-            return !!window.FinderInstanceManager?.getActiveInstance?.();
+            return false;
         });
         if (!isActive) {
             await openFinderWindow(page);

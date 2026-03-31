@@ -388,8 +388,13 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
         await page.waitForTimeout(100);
 
         const activeBeforeClose = await page.evaluate(() => {
-            if (!window.FinderInstanceManager) return null;
-            return window.FinderInstanceManager.getActiveInstance()?.instanceId;
+            const registry = window.WindowRegistry;
+            if (!registry || typeof registry.getAllWindows !== 'function') return null;
+            const activeWindow =
+                registry.getActiveWindow && registry.getActiveWindow()?.type === 'finder'
+                    ? registry.getActiveWindow()
+                    : (registry.getAllWindows('finder') || [])[0] || null;
+            return activeWindow?.activeTabId || null;
         });
         expect(activeBeforeClose).not.toBeNull();
 
@@ -404,8 +409,13 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
 
         // Verify a new active tab is assigned
         const activeAfterClose = await page.evaluate(() => {
-            if (!window.FinderInstanceManager) return null;
-            return window.FinderInstanceManager.getActiveInstance()?.instanceId;
+            const registry = window.WindowRegistry;
+            if (!registry || typeof registry.getAllWindows !== 'function') return null;
+            const activeWindow =
+                registry.getActiveWindow && registry.getActiveWindow()?.type === 'finder'
+                    ? registry.getActiveWindow()
+                    : (registry.getAllWindows('finder') || [])[0] || null;
+            return activeWindow?.activeTabId || null;
         });
         expect(activeAfterClose).not.toBeNull();
         expect(activeAfterClose).not.toBe(activeBeforeClose);

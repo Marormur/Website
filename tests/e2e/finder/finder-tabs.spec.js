@@ -420,14 +420,17 @@ test.describe('Finder Multi-Instance Tabs', () => {
         );
         await page.waitForTimeout(300);
 
-        // Verify the active instance is still the same via manager if available, else verify visible container's data-instance-id
+        // Verify the active tab id remains valid via modern WindowRegistry/FinderWindow state.
         const activeAfterReorder = await page.evaluate(() => {
             try {
-                if (window.FinderInstanceManager) {
-                    const active = window.FinderInstanceManager.getActiveInstance();
-                    return active?.instanceId;
-                }
-                return null;
+                const registry = window.WindowRegistry;
+                if (!registry || typeof registry.getAllWindows !== 'function') return null;
+                const activeWindow =
+                    registry.getActiveWindow && registry.getActiveWindow()?.type === 'finder'
+                        ? registry.getActiveWindow()
+                        : (registry.getAllWindows('finder') || [])[0] || null;
+                if (!activeWindow) return null;
+                return activeWindow.activeTabId || null;
             } catch {
                 return null;
             }

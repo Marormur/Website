@@ -1,15 +1,15 @@
 // Ambient types for StorageSystem
 
 declare interface StorageSystemAPI {
-  readFinderState(): unknown;
-  writeFinderState(v: unknown): void;
-  clearFinderState(): void;
-  saveOpenModals(): void;
-  restoreOpenModals(): void;
-  saveWindowPositions(): void;
-  restoreWindowPositions(): void;
-  resetWindowLayout(): void;
-  getDialogWindowElement(idOrElement: string | HTMLElement | null): HTMLElement | null;
+    readFinderState(): unknown;
+    writeFinderState(v: unknown): void;
+    clearFinderState(): void;
+    saveOpenModals(): void;
+    restoreOpenModals(): void;
+    saveWindowPositions(): void;
+    restoreWindowPositions(): void;
+    resetWindowLayout(): void;
+    getDialogWindowElement(idOrElement: string | HTMLElement | null): HTMLElement | null;
 }
 
 declare const StorageSystem: StorageSystemAPI;
