@@ -65,12 +65,19 @@ export function renderDesktopShortcuts(container: HTMLElement) {
     DESKTOP_SHORTCUTS.forEach(shortcut => {
         const el = document.createElement('button');
         el.className = 'desktop-icon-button';
-        el.setAttribute('data-action', 'openDesktopItem');
+        el.setAttribute('data-action-dblclick', 'openDesktopItem');
         el.setAttribute('data-item-id', shortcut.id);
         el.setAttribute(
             'aria-label',
             translate(shortcut.labelKey, {}, { fallback: shortcut.fallbackLabel })
         );
+
+        // Keep desktop shortcuts keyboard-operable although pointer activation is on double click.
+        el.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            handleDesktopShortcutClick(shortcut.id);
+        });
 
         // Create the icon/emoji container
         const graphicDiv = document.createElement('div');

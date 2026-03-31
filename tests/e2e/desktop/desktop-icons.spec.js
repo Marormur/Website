@@ -32,13 +32,13 @@ test.describe('Desktop Icons - Basic', () => {
         expect(shortcutIds).toContain('projects');
     });
 
-    test('can click desktop icon to open window', async ({ page, baseURL }) => {
+    test('can open desktop icon window via double click', async ({ page, baseURL }) => {
         await gotoHome(page, baseURL);
 
-        // Click the first available desktop icon (robust against set changes)
+        // Open with double click to match desktop interaction behavior.
         const firstIcon = page.locator('#desktop-icons .desktop-icon-button').first();
         await expect(firstIcon).toBeVisible();
-        await firstIcon.click();
+        await firstIcon.dblclick();
 
         // Check if any app window (multi-window) is visible
         const anyModal = page.locator('.modal.multi-window:not(.hidden)').first();
