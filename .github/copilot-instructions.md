@@ -36,9 +36,10 @@
 
 ## Deployment
 
-- Build-Outputs (`dist/`, `js/`) nicht committen (außer Bundle für Deployment)
-- GitHub Pages: Auto-Deploy bei Push nach `main` (CI baut CSS via `.github/workflows/deploy.yml`)
-- Production: Bundle-Modus (`npm run build:bundle`) wird automatisch geladen
+- Build-Outputs (`dist/`, `js/`) nicht committen; Deploy-Artefakte werden in CI aus den Quellen erzeugt.
+- GitHub Pages: Auto-Deploy bei Push nach `main` über `.github/workflows/deploy.yml`.
+- Deploy-Workflow baut aus Quellen: `npm run typecheck`, `npm run build:ts`, `npm run build:css`, `npm run build:bundle`, `npm run docs:generate`.
+- Production: Bundle-Modus (`npm run build:bundle`) wird standardmäßig geladen.
 
 ## Pflege
 
@@ -46,55 +47,5 @@
 - README (`readme.md`) gelegentlich aktualisieren; Hauptwissen in Code-Kommentaren halten.
 - Docs-Minimalismus: `docs/` nur für wirklich notwendige, langlebige Betriebsinfos nutzen; bevorzugt Wissen direkt als JSDoc/Inline-Kommentar an der Implementierung pflegen.
 - Vor dem Hinzufügen neuer Markdown-Dokumente immer prüfen, ob die Info stattdessen als klarer Code-Kommentar an der betroffenen API/Logik besser aufgehoben ist.
-
-## Code-Dokumentationsrichtlinien (TS/Web)
-
-Schreibe Code-Kommentare so, dass sie sowohl für Menschen als auch für AI-Agents klar nutzbar sind.
-
-### Essenzielle Kommentar-Typen
-
-- **PURPOSE**: Was macht diese Funktion oder dieser Block?
-- **WHY**: Warum genau diese Implementierung? (nicht offensichtliche Entscheidungen)
-- **INPUT/OUTPUT**: Parameter, Rückgabewert und relevante Seiteneffekte
-- **ASSUMPTIONS**: Welche Bedingungen müssen vor dem Aufruf gelten?
-- **EDGE CASES**: Wo wird es fehleranfällig oder tricky?
-- **INVARIANTS**: Was bleibt immer wahr? (z. B. konsistente UI-/State-Kopplung)
-- **DEPENDENCIES**: Was muss davor passiert sein (Init-Reihenfolge, Services, DOM)?
-- **PERFORMANCE**: Kritische Optimierungen inkl. messbarer Wirkung
-- **THREAD-SAFE / ASYNC-SAFE**: Nebenläufigkeits- und Async-Constraints (Reentrancy, Race Conditions)
-
-### Beispiel-Muster (TypeScript)
-
-```ts
-/**
- * PURPOSE: Führt benachbarte Finder-Items zu renderbaren Gruppen zusammen.
- * WHY: Stable Sort + explizite Tie-Breaker vermeiden flackernde Reihenfolge
- *      bei identischem Zeitstempel über Restore-Zyklen hinweg.
- * INPUT: items (vorvalidiert), sortMode ('name' | 'date' | 'type')
- * OUTPUT: Deterministische Gruppenliste für das UI-Rendering
- * PERFORMANCE: Reduziert DOM-Updates im Mittel um ~30% in großen Ordnern
- * INVARIANT: Rückgabe enthält jedes valide Item genau einmal (keine Duplikate)
- * DEPENDENCY: Muss nach State-Restore, aber vor dem ersten Paint laufen
- */
-export function buildFinderRenderGroups(
-    items: FinderItem[],
-    sortMode: SortMode
-): FinderGroup[] {
-    // ...
-}
-```
-
-### AI-Agent-Kontextblöcke für komplexe Logik
-
-Für komplexe Abläufe (Restore, VirtualFS, Rendering, Performance-Pfade) nutze explizite Kontextblöcke:
-
-```ts
-// ============================================================================
-// CONTEXT FOR AI AGENTS:
-// Before modifying this restore/render path:
-// - Verify tab IDs remain stable across save/restore cycles
-// - Ensure VirtualFS state and visible UI stay synchronized (no ghost tabs)
-// - Test edge cases with multiple Finder windows and mixed sort modes
-// - Benchmark: no measurable regression in initial render time on large datasets
-// ============================================================================
-```
+- Link-first: Wenn Details bereits in `readme.md`, `CONTRIBUTING.md` oder `docs/guides/` gepflegt sind, hier nur kurz verweisen statt Inhalte zu duplizieren.
+- Kommentarrichtlinien für TypeScript liegen ausgelagert in `.github/instructions/ts-commenting.instructions.md` (zielgerichtet via `applyTo: src/ts/**/*.ts`).
