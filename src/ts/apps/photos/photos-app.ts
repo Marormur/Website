@@ -84,6 +84,7 @@ interface PhotosElements {
     tabContent: HTMLElement | null;
     galleryWrapper: HTMLElement | null;
     segmentSwitcher: HTMLElement | null;
+    scrollYearMarkers: HTMLElement | null;
 }
 
 interface PhotosState {
@@ -214,7 +215,10 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         tabContent: null,
         galleryWrapper: null,
         segmentSwitcher: null,
+        scrollYearMarkers: null,
     };
+
+    let scrollDateFramePending = false;
 
     function isExternalPhoto(photo: AnyPhotoItem): photo is ExternalPhotoItem {
         return (photo as ExternalPhotoItem).isExternal === true;
@@ -321,6 +325,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                 </div>
                 <!-- Main gallery with inverse scroll (transform: scaleY(-1) or JS scroll) -->
                 <div id="photos-gallery" class="absolute inset-0 overflow-y-auto rounded-t-3xl px-3 sm:px-6 pt-6 md:pt-24 pb-20 md:pb-24 space-y-8"></div>
+                <div id="photos-scroll-year-markers" aria-hidden="true" class="absolute right-1 top-6 bottom-20 w-12 pointer-events-none"></div>
                 <div id="photos-empty" class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 opacity-0 pointer-events-none px-6">
                     <div>
                         <p class="text-lg font-semibold">${t('photos.empty.title', 'Keine Fotos gefunden')}</p>
@@ -453,6 +458,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         elements.gallery = elements.container.querySelector('#photos-gallery') ?? null;
         elements.galleryWrapper =
             elements.container.querySelector('#photos-gallery-wrapper') ?? null;
+        elements.scrollYearMarkers =
+            elements.container.querySelector('#photos-scroll-year-markers') ?? null;
         elements.loading = elements.container.querySelector('#photos-loading') ?? null;
         elements.error = elements.container.querySelector('#photos-error') ?? null;
         elements.errorRetry = elements.container.querySelector(
@@ -565,6 +572,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         // If switching to photos tab, ensure gallery is rendered
         if (tab === 'photos' && elements.gallery) {
             renderGallery();
+        } else {
+            elements.scrollYearMarkers?.classList.add('opacity-0');
         }
     }
 
@@ -634,6 +643,112 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                 if (typeof index === 'number') {
                     openDetail(index);
                 }
+            }
+        });
+
+        elements.gallery.addEventListener('scroll', () => {
+            if (scrollDateFramePending) return;
+            scrollDateFramePending = true;
+            window.requestAnimationFrame(() => {
+                scrollDateFramePending = false;
+                updateActiveYearMarker();
+            });
+        });
+    }
+
+    function getVisibleGalleryYear(): string | null {
+        if (!elements.gallery) return null;
+
+        const sections = Array.from(
+            elements.gallery.querySelectorAll<HTMLElement>('section[data-photo-year]')
+        );
+        if (!sections.length) return null;
+
+        const galleryRect = elements.gallery.getBoundingClientRect();
+        const probeY = galleryRect.top + galleryRect.height * 0.3;
+
+        let activeSection = sections[0] ?? null;
+        sections.forEach(section => {
+            if (section.getBoundingClientRect().top <= probeY) {
+                activeSection = section;
+            }
+        });
+
+        return activeSection?.dataset.photoYear ?? null;
+    }
+
+    function renderScrollYearMarkers(): void {
+        if (!elements.gallery || !elements.scrollYearMarkers) return;
+
+        const sections = Array.from(
+            elements.gallery.querySelectorAll<HTMLElement>('section[data-photo-year]')
+        );
+        elements.scrollYearMarkers.innerHTML = '';
+        if (!sections.length) {
+            elements.scrollYearMarkers.classList.add('opacity-0');
+            return;
+        }
+
+        const maxScrollTop = Math.max(
+            1,
+            elements.gallery.scrollHeight - elements.gallery.clientHeight
+        );
+        const markerFragment = document.createDocumentFragment();
+
+        sections.forEach(section => {
+            const year = section.dataset.photoYear;
+            if (!year) return;
+
+            const marker = document.createElement('div');
+            marker.className = 'absolute right-0 -translate-y-1/2 flex items-center gap-2';
+            marker.style.top = `${Math.min(100, Math.max(0, (section.offsetTop / maxScrollTop) * 100))}%`;
+            marker.dataset.yearMarker = year;
+
+            const label = document.createElement('span');
+            label.className =
+                'text-[10px] font-semibold text-gray-500 dark:text-gray-400 opacity-70 transition-opacity';
+            label.textContent = year;
+
+            const dot = document.createElement('span');
+            dot.className =
+                'h-1.5 w-1.5 rounded-full bg-gray-400/90 dark:bg-gray-500/90 transition-all';
+            dot.setAttribute('data-year-dot', 'true');
+
+            marker.append(label, dot);
+            markerFragment.appendChild(marker);
+        });
+
+        elements.scrollYearMarkers.appendChild(markerFragment);
+        elements.scrollYearMarkers.classList.remove('opacity-0');
+        updateActiveYearMarker();
+    }
+
+    function updateActiveYearMarker(): void {
+        const activeYear = getVisibleGalleryYear();
+        const markers =
+            elements.scrollYearMarkers?.querySelectorAll<HTMLElement>('[data-year-marker]');
+        if (!markers || !markers.length) return;
+
+        markers.forEach(marker => {
+            const dot = marker.querySelector<HTMLElement>('[data-year-dot="true"]');
+            const label = marker.querySelector<HTMLElement>('span');
+            const isActive = activeYear === marker.dataset.yearMarker;
+
+            if (dot) {
+                dot.classList.toggle('h-2.5', isActive);
+                dot.classList.toggle('w-2.5', isActive);
+                dot.classList.toggle('bg-blue-500', isActive);
+                dot.classList.toggle('dark:bg-blue-400', isActive);
+                dot.classList.toggle('bg-gray-400/90', !isActive);
+                dot.classList.toggle('dark:bg-gray-500/90', !isActive);
+            }
+            if (label) {
+                label.classList.toggle('opacity-100', isActive);
+                label.classList.toggle('text-gray-700', isActive);
+                label.classList.toggle('dark:text-gray-200', isActive);
+                label.classList.toggle('opacity-70', !isActive);
+                label.classList.toggle('text-gray-500', !isActive);
+                label.classList.toggle('dark:text-gray-400', !isActive);
             }
         });
     }
@@ -805,12 +920,19 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
     function renderGallery(): void {
         if (!elements.gallery) return;
         elements.gallery.innerHTML = '';
-        if (!state.filteredPhotos.length) return;
+        if (!state.filteredPhotos.length) {
+            if (elements.scrollYearMarkers) {
+                elements.scrollYearMarkers.innerHTML = '';
+                elements.scrollYearMarkers.classList.add('opacity-0');
+            }
+            return;
+        }
 
         const groups = buildYearGroups(state.filteredPhotos);
         groups.forEach(group => {
             const section = document.createElement('section');
             section.className = 'space-y-3';
+            section.dataset.photoYear = group.title;
 
             const heading = document.createElement('div');
             heading.className = 'flex items-baseline justify-between px-2';
@@ -847,6 +969,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         setTimeout(() => {
             if (!elements.gallery) return;
             elements.gallery.scrollTop = elements.gallery.scrollHeight;
+            renderScrollYearMarkers();
+            updateActiveYearMarker();
         }, 100);
     }
 
@@ -875,6 +999,11 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         elements.empty?.classList.toggle('pointer-events-none', !isEmpty);
         elements.gallery?.classList.toggle('opacity-0', isEmpty);
         elements.gallery?.classList.toggle('pointer-events-none', isEmpty);
+        if (isEmpty) {
+            elements.scrollYearMarkers?.classList.add('opacity-0');
+        } else {
+            elements.scrollYearMarkers?.classList.remove('opacity-0');
+        }
     }
 
     function updatePhotoCount(): void {
