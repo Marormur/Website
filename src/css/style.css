@@ -209,14 +209,10 @@ html.dark .traffic-light-control::after {
     color: rgba(15, 23, 42, 0.78);
 }
 
-.draggable-header:hover .traffic-light-control::after,
-.draggable-header:focus-within .traffic-light-control::after,
 .traffic-light-controls:hover .traffic-light-control::after,
+.traffic-light-controls:focus-within .traffic-light-control::after,
 .traffic-light-control:hover::after,
-.finder-window-drag-zone:hover .traffic-light-control::after,
-.finder-window-drag-zone:focus-within .traffic-light-control::after,
-.settings-sidebar-top:hover .traffic-light-control::after,
-.settings-sidebar-top:focus-within .traffic-light-control::after {
+.traffic-light-control:focus-visible::after {
     opacity: 1;
 }
 
@@ -321,6 +317,17 @@ html.dark .traffic-light-control--disabled:hover {
     border-color: rgba(146, 146, 152, 0.3) !important;
     background-color: rgba(243, 243, 245, 0.74) !important;
     background-image: none !important;
+}
+
+.multi-window.window--seamless-topbar .window-titlebar {
+    border-bottom: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.multi-window.window--seamless-topbar .window-tab-bar {
+    border-top: 0 !important;
+    margin-top: -1px;
 }
 
 .settings-window-controls {
@@ -8087,6 +8094,17 @@ html.dark .preview-statusbar {
         0 1px 0 rgba(255, 255, 255, 0.7) inset !important;
 }
 
+.photos-window-shell .window-titlebar {
+    background: transparent;
+    border-bottom: 0 !important;
+    padding-top: 0.45rem;
+    padding-bottom: 0.35rem;
+}
+
+.photos-window-shell .window-titlebar h2 {
+    display: none;
+}
+
 :root[data-ui-mode='mobile'] .photos-window-shell {
     /* Keep Photos within the app viewport and above the mobile home-button reserve. */
     position: fixed !important;
@@ -8115,6 +8133,15 @@ html.dark .photos-window-shell {
     box-shadow:
         0 32px 72px rgba(3, 7, 18, 0.48),
         0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+html.dark .photos-window-shell .window-titlebar {
+    background: transparent;
+    border-bottom-color: transparent;
+}
+
+html.dark .photos-window-shell .window-titlebar h2 {
+    display: none;
 }
 
 /* Sidebar-Outer-Shell: absolut positioniert, beinhaltet das Panel mit Inset */

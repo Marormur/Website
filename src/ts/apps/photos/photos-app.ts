@@ -272,18 +272,13 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         const container = document.createElement('div');
         container.className = 'flex flex-col h-full w-full overflow-hidden relative';
 
-        // ── Top Bar (desktop only): traffic lights + search ───────────────────────
+        // ── Top Bar (desktop only): search and secondary controls ─────────────────
         const topTabBar = document.createElement('div');
         topTabBar.id = 'photos-top-tabs';
         topTabBar.className =
-            'hidden md:flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-950/50 backdrop-blur-sm finder-window-drag-zone';
+            'hidden md:flex absolute top-3 right-4 z-20 items-center justify-end pointer-events-none';
         topTabBar.innerHTML = `
-            <div class="finder-no-drag flex items-center gap-3">
-                <div id="photos-window-controls" class="flex items-center"></div>
-                <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">${t('photos.title', 'Fotos')}</span>
-            </div>
-            <div class="flex-1"></div>
-            <div class="finder-no-drag relative flex min-w-0 w-36 lg:w-44 items-center gap-2 shrink">
+            <div class="finder-no-drag pointer-events-auto relative flex min-w-0 w-36 lg:w-44 items-center gap-2 shrink rounded-full border border-gray-200/80 dark:border-gray-700/80 bg-white/90 dark:bg-gray-900/90 p-1.5 shadow-lg backdrop-blur-md">
                 <div class="relative min-w-0 flex-1">
                     <input id="photos-search" type="text"
                         placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}"
@@ -300,11 +295,11 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         // Photos Tab specific: segment switcher (Years/Albums/Favorites) + gallery
         const photosTabContent = document.createElement('div');
         photosTabContent.id = 'photos-tab-content';
-        photosTabContent.className = 'flex flex-col h-full min-h-0 overflow-hidden';
+        photosTabContent.className = 'relative flex flex-col h-full min-h-0 overflow-hidden';
         photosTabContent.innerHTML = `
             <!-- Segment Switcher (Inside Photos Tab) -->
-            <div class="hidden md:flex items-center justify-center px-4 py-2 border-b border-gray-200/50 dark:border-gray-800/50 bg-gray-50/30 dark:bg-gray-900/30 finder-window-drag-zone">
-                <div class="flex bg-gray-100/80 dark:bg-gray-800/80 rounded-full p-1 text-sm font-medium text-gray-600 dark:text-gray-300 shadow-inner" role="group">
+            <div class="hidden md:flex absolute top-3 left-1/2 -translate-x-1/2 z-20 items-center justify-center finder-no-drag pointer-events-none">
+                <div class="pointer-events-auto flex rounded-full border border-gray-200/80 dark:border-gray-700/80 bg-white/90 dark:bg-gray-900/90 p-1 text-sm font-medium text-gray-600 dark:text-gray-300 shadow-lg backdrop-blur-md" role="group">
                     <button type="button" data-photos-segment="years" class="photos-segment-button px-4 py-1.5 rounded-full transition">${t('photos.segments.years', 'Jahre')}</button>
                     <button type="button" data-photos-segment="albums" class="photos-segment-button px-4 py-1.5 rounded-full transition">${t('photos.segments.albums', 'Alben')}</button>
                     <button type="button" data-photos-segment="favorites" class="photos-segment-button px-4 py-1.5 rounded-full transition">${t('photos.segments.favorites', 'Favoriten')}</button>
@@ -312,7 +307,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             </div>
 
             <!-- Gallery Wrapper with Inverse Scroll -->
-            <div id="photos-gallery-wrapper" class="flex-1 relative min-h-0 overflow-hidden">
+            <div id="photos-gallery-wrapper" class="flex-1 relative min-h-0 overflow-hidden rounded-t-3xl">
                 <div id="photos-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 opacity-0 pointer-events-none">
                     <div class="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300">
                         <span class="h-10 w-10 border-4 border-gray-300 dark:border-gray-700 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin"></span>
@@ -325,7 +320,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                     <button id="photos-error-retry" type="button" class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-100 underline decoration-dotted">${t('photos.buttons.retry', 'Erneut versuchen')}</button>
                 </div>
                 <!-- Main gallery with inverse scroll (transform: scaleY(-1) or JS scroll) -->
-                <div id="photos-gallery" class="absolute inset-0 overflow-y-auto px-3 sm:px-6 py-6 pb-20 md:pb-24 space-y-8"></div>
+                <div id="photos-gallery" class="absolute inset-0 overflow-y-auto rounded-t-3xl px-3 sm:px-6 pt-6 md:pt-24 pb-20 md:pb-24 space-y-8"></div>
                 <div id="photos-empty" class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 opacity-0 pointer-events-none px-6">
                     <div>
                         <p class="text-lg font-semibold">${t('photos.empty.title', 'Keine Fotos gefunden')}</p>

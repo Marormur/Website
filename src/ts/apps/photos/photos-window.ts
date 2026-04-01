@@ -8,7 +8,6 @@
 
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
 import { configureInsetWindowShell } from '../../framework/controls/inset-window-shell.js';
-import { createTrafficLightControlsElement } from '../../framework/controls/traffic-lights.js';
 import {
     focusOrCreateWindowByType,
     showAndRegisterWindow,
@@ -20,6 +19,7 @@ export class PhotosWindow extends BaseWindow {
         super({
             type: 'photos',
             title: 'Fotos',
+            topBarStyle: 'seamless',
             ...config,
         });
     }
@@ -37,7 +37,8 @@ export class PhotosWindow extends BaseWindow {
                 '--photos-sidebar-inset': '0.5rem',
                 '--photos-sidebar-width': '224px',
             },
-            contentClassName: 'flex-1 overflow-hidden relative',
+            preserveTitlebar: true,
+            contentClassName: 'flex-1 overflow-hidden relative rounded-t-3xl',
         });
 
         // Build app layout via shared builder (photos-app.ts)
@@ -48,30 +49,6 @@ export class PhotosWindow extends BaseWindow {
         if (typeof builder === 'function') {
             const { container } = builder();
             this.contentElement?.appendChild(container);
-        }
-
-        const controlsHost = win.querySelector('#photos-window-controls');
-        if (controlsHost) {
-            controlsHost.appendChild(
-                createTrafficLightControlsElement({
-                    defaults: { noDrag: true },
-                    close: {
-                        title: 'Schließen',
-                        i18nTitleKey: 'common.close',
-                        onClick: () => this.close(),
-                    },
-                    minimize: {
-                        title: 'Minimieren',
-                        i18nTitleKey: 'menu.window.minimize',
-                        onClick: () => this.minimize(),
-                    },
-                    maximize: {
-                        title: 'Füllen',
-                        i18nTitleKey: 'menu.window.zoom',
-                        onClick: () => this.toggleMaximize(),
-                    },
-                })
-            );
         }
 
         // Wire up element references and start the app
@@ -172,7 +149,36 @@ export class PhotosWindow extends BaseWindow {
         return focusOrCreateWindowByType<PhotosWindow>({
             type: 'photos',
             create: () => PhotosWindow.create(config),
+            prepareExisting: existing => {
+                PhotosWindow.normalizeExistingWindow(existing);
+            },
         });
+    }
+
+    /**
+     * Ensures reused Photos windows from older sessions still render with
+     * the expected seamless titlebar appearance.
+     */
+    private static normalizeExistingWindow(existing: PhotosWindow): void {
+        const root = existing.element;
+        if (!root) return;
+
+        root.classList.add('photos-window-shell', 'window--seamless-topbar');
+
+        const titlebar = root.querySelector('.window-titlebar') as HTMLElement | null;
+        if (titlebar) {
+            titlebar.style.borderBottomWidth = '0px';
+        }
+
+        // Keep seamless rounding consistent for already-open windows after hot reloads.
+        const galleryWrapper = root.querySelector('#photos-gallery-wrapper') as HTMLElement | null;
+        galleryWrapper?.classList.add('rounded-t-3xl');
+
+        const windowContent = root.querySelector(`#${existing.id}-content`) as HTMLElement | null;
+        windowContent?.classList.add('rounded-t-3xl');
+
+        const gallery = root.querySelector('#photos-gallery') as HTMLElement | null;
+        gallery?.classList.add('rounded-t-3xl');
     }
 
     static create(config?: Partial<WindowConfig>): PhotosWindow {

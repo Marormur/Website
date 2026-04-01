@@ -36,6 +36,7 @@ export interface WindowConfig {
     resizable?: boolean;
     disableMinimize?: boolean;
     disableMaximize?: boolean;
+    topBarStyle?: 'default' | 'seamless';
 }
 
 export interface WindowState {
@@ -98,6 +99,7 @@ export class BaseWindow {
     resizable: boolean;
     disableMinimize: boolean;
     disableMaximize: boolean;
+    topBarStyle: 'default' | 'seamless';
     private restoreBeforeMaximize: WindowPosition | null;
     /** Invisible overlay shown on unfocused windows to reliably intercept the first click. */
     private _focusOverlay: HTMLElement | null = null;
@@ -232,6 +234,7 @@ export class BaseWindow {
         this.resizable = config.resizable !== false;
         this.disableMinimize = config.disableMinimize === true;
         this.disableMaximize = config.disableMaximize === true;
+        this.topBarStyle = config.topBarStyle || 'default';
         this.restoreBeforeMaximize = null;
         this.dragState = {
             isDragging: false,
@@ -306,6 +309,9 @@ export class BaseWindow {
         // Add 'modal' class for compatibility with existing focus/z-index management
         windowEl.className =
             'modal multi-window hidden fixed bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg flex flex-col max-h-[90vh] min-w-[560px] min-h-[360px]';
+        if (this.topBarStyle === 'seamless') {
+            windowEl.classList.add('window--seamless-topbar');
+        }
         windowEl.setAttribute('role', 'dialog');
         windowEl.setAttribute('aria-modal', 'false'); // Not a modal
 

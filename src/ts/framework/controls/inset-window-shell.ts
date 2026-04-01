@@ -3,11 +3,14 @@ interface InsetWindowShellOptions {
     titlebarElement: HTMLElement | null;
     shellClassName: string;
     cssVariables: Record<string, string>;
+    preserveTitlebar?: boolean;
     contentClassName?: string;
     contentClassListAdd?: string[];
 }
 
 export function configureInsetWindowShell(options: InsetWindowShellOptions): HTMLElement | null {
+    const preservedTitlebar = options.preserveTitlebar ? options.titlebarElement : null;
+
     options.windowEl.classList.add(options.shellClassName);
 
     Object.entries(options.cssVariables).forEach(([name, value]) => {
@@ -21,7 +24,9 @@ export function configureInsetWindowShell(options: InsetWindowShellOptions): HTM
         options.windowEl.style.borderRadius = `var(${radiusVariable})`;
     }
 
-    options.titlebarElement?.remove();
+    if (!options.preserveTitlebar) {
+        options.titlebarElement?.remove();
+    }
 
     const baseTabBar = options.windowEl.querySelector('.window-tab-bar');
     if (baseTabBar) {
@@ -38,5 +43,5 @@ export function configureInsetWindowShell(options: InsetWindowShellOptions): HTM
         }
     }
 
-    return null;
+    return preservedTitlebar;
 }
