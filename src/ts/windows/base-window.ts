@@ -1558,13 +1558,18 @@ export class BaseWindow {
         if (!WM || typeof WM.getConfig !== 'function' || typeof WM.register !== 'function') return;
         if (WM.getConfig(this.id)) return; // already registered
 
-        // Map window types to programKey/icon used by the menubar
+        // Map window types to programKey/icon used by the menubar.
+        // All known BaseWindow types must be listed here so dynamic instances
+        // register with the correct programKey and can be deduplicated in the
+        // Launchpad against the static canonical window IDs.
         const map: Record<string, { programKey: string; icon: string }> = {
             finder: { programKey: 'programs.finder', icon: WINDOW_ICONS.finder },
             preview: { programKey: 'programs.preview', icon: WINDOW_ICONS.preview },
             'text-editor': { programKey: 'programs.text', icon: WINDOW_ICONS.textEditor },
             terminal: { programKey: 'programs.terminal', icon: WINDOW_ICONS.terminal },
             photos: { programKey: 'programs.photos', icon: WINDOW_ICONS.photos },
+            settings: { programKey: 'programs.settings', icon: WINDOW_ICONS.settings },
+            about: { programKey: 'programs.about', icon: WINDOW_ICONS.profile },
         };
         const meta = map[this.type] || {
             programKey: 'programs.default',

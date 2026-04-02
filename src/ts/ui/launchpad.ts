@@ -50,6 +50,10 @@ logger.debug('UI', 'Launchpad (TS) loaded');
         'programs.preview': 'preview-modal',
         'programs.text': 'text-modal',
         'programs.photos': 'image-modal',
+        // Settings and About have known static modal IDs, so dynamic instances
+        // (window-settings-*, window-about-*) are deduplicated against them.
+        'programs.settings': 'settings-modal',
+        'programs.about': 'about-modal',
     };
 
     let container: HTMLElement | null = null;
@@ -252,6 +256,7 @@ logger.debug('UI', 'Launchpad (TS) loaded');
         const windowIds: string[] = WM.getAllWindowIds();
         allApps = [];
         const seenProgramKeys = new Set<string>();
+        const seenCanonicalIds = new Set<string>();
 
         windowIds.forEach(id => {
             const cfg = WM.getConfig(id);
@@ -275,10 +280,17 @@ logger.debug('UI', 'Launchpad (TS) loaded');
                 CANONICAL_PROGRAM_WINDOW_IDS[programKey] || (cfg?.id as string) || id;
             const isMultiWindowType = Boolean(CANONICAL_PROGRAM_WINDOW_IDS[programKey]);
 
-            if (isMultiWindowType && seenProgramKeys.has(programKey)) {
-                return; // skip duplicate instance of same app type
+            // Skip if we've already added this canonical window ID or app type
+            if (seenCanonicalIds.has(canonicalWindowId)) {
+                return;
             }
-            if (isMultiWindowType) {
+            if (isMultiWindowType && seenProgramKeys.has(programKey)) {
+                return;
+            }
+
+            // Mark as seen for deduplication
+            seenCanonicalIds.add(canonicalWindowId);
+            if (programKey && isMultiWindowType) {
                 seenProgramKeys.add(programKey);
             }
 
@@ -298,7 +310,10 @@ logger.debug('UI', 'Launchpad (TS) loaded');
         });
 
         CORE_LAUNCHPAD_APPS.forEach(app => {
-            if (app.programKey && seenProgramKeys.has(app.programKey)) {
+            if (
+                seenCanonicalIds.has(app.id) ||
+                (app.programKey && seenProgramKeys.has(app.programKey))
+            ) {
                 return;
             }
             allApps.push({ ...app, category: inferCategory(app) });
@@ -429,6 +444,17 @@ logger.debug('UI', 'Launchpad (TS) loaded');
     });
 
     window.addEventListener('iconThemeChange', () => {
+        if (container) loadApps();
+    });
+
+    // Refresh when windows are opened/closed/registered to prevent stale-entry duplicates.
+    window.addEventListener('windowOpened', () => {
+        if (container) loadApps();
+    });
+    window.addEventListener('windowClosed', () => {
+        if (container) loadApps();
+    });
+    window.addEventListener('windowRegistered', () => {
         if (container) loadApps();
     });
 

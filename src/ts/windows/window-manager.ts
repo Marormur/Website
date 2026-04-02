@@ -215,6 +215,14 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
         register(config: WindowConfigOptions): WindowConfig {
             const windowConfig = new WindowConfig(config);
             windowRegistry.set(config.id, windowConfig);
+            // Notify listeners (e.g. Launchpad) so they can refresh their app list.
+            window.dispatchEvent(
+                new CustomEvent('windowRegistered', {
+                    detail: { windowId: config.id },
+                    bubbles: false,
+                    cancelable: false,
+                })
+            );
             return windowConfig;
         },
 
@@ -390,6 +398,13 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
                 return;
             }
 
+            // Dispatch windowOpened event so UI components (like Launchpad) can refresh
+            const openedEvent = new CustomEvent('windowOpened', {
+                detail: { windowId },
+                bubbles: false,
+                cancelable: false,
+            });
+            window.dispatchEvent(openedEvent);
             const config = this.getConfig(windowId);
             // Run the configured initHandler on every open. Some windows rely on
             // per-open initialization (e.g., Finder multi-instance recreation).
@@ -471,6 +486,15 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
                 );
                 return;
             }
+
+            // Notify listeners (e.g. Launchpad) so they can refresh their app list.
+            window.dispatchEvent(
+                new CustomEvent('windowClosed', {
+                    detail: { windowId },
+                    bubbles: false,
+                    cancelable: false,
+                })
+            );
 
             const instance = this.getDialogInstance(windowId);
             if (instance && typeof instance.close === 'function') {
