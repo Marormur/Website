@@ -130,10 +130,9 @@ test.describe('Obsolete Modal Filter (Issue #133)', () => {
         expect(Object.keys(modalState)).toContain('about-modal');
     });
 
-    test('should still restore valid modals while ignoring obsolete ones', async ({ page }) => {
+    test('should ignore mixed legacy modal entries without crashing', async ({ page }) => {
         // Setup: Mix of obsolete and valid modals in localStorage
-        // The migration (cleanupObsoleteStorage) runs on page load and removes finder-modal,
-        // leaving only about-modal for session restore to open.
+        // The migration (cleanupObsoleteStorage) runs on page load and removes obsolete entries.
         await page.evaluate(() => {
             localStorage.setItem('openModals', JSON.stringify(['finder-modal', 'about-modal']));
         });
@@ -141,10 +140,15 @@ test.describe('Obsolete Modal Filter (Issue #133)', () => {
         // Reload to trigger migration + session restore
         await page.reload();
         await page.waitForFunction(() => window.__APP_READY === true, { timeout: 10000 });
+        await waitForRestoreComplete(page);
 
-        // Assert: about-modal should be visible, finder-modal should be ignored
-        const aboutModal = page.locator('#about-modal');
-        await expect(aboutModal).toBeVisible({ timeout: 5000 });
+        // Assert: App remains functional and obsolete legacy ids do not materialize broken UI.
+        await expect(page.locator('#dock')).toBeVisible({ timeout: 5000 });
+
+        const openModals = await page.evaluate(() => {
+            return JSON.parse(localStorage.getItem('openModals') || '[]');
+        });
+        expect(openModals).not.toContain('finder-modal');
 
         // Verify finder-modal is not in DOM or hidden
         const finderModal = page.locator('#finder-modal');
@@ -176,8 +180,8 @@ test.describe('Obsolete Modal Filter (Issue #133)', () => {
             return JSON.parse(localStorage.getItem('openModals') || '[]');
         });
 
-        // Assert: finder-modal should not be in saved list
+        // Assert: legacy openModals is no longer used for migrated About windows.
         expect(savedModals).not.toContain('finder-modal');
-        expect(savedModals).toContain('about-modal');
+        expect(savedModals).not.toContain('about-modal');
     });
 });

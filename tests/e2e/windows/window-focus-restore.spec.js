@@ -6,6 +6,11 @@
 const { test, expect } = require('@playwright/test');
 const { waitForAppReady } = require('../utils');
 
+const MODERN_WINDOW_TYPES_BY_LEGACY_ID = {
+    'about-modal': 'about',
+    'settings-modal': 'settings',
+};
+
 /**
  * PURPOSE: Closes optional onboarding/welcome overlays that can block E2E interactions.
  * WHY: Real browser runs may render the portfolio welcome dialog, which can cause flaky
@@ -73,14 +78,42 @@ async function dismissWelcomeOverlayIfPresent(page) {
         .catch(() => {});
 }
 
-/**
- * PURPOSE: Opens a window deterministically and waits until it is truly visible.
- * INVARIANT: Once resolved, the modal exists and is rendered as visible in the DOM.
- */
-async function openWindowAndWaitVisible(page, modalId) {
-    await page.evaluate(id => {
-        window.API.window.open(id);
-    }, modalId);
+async function waitForWindowVisible(page, modalId, timeout = 5000) {
+    const modernType = MODERN_WINDOW_TYPES_BY_LEGACY_ID[modalId];
+    if (modernType) {
+        await page.waitForFunction(
+            windowType => {
+                const windows = window.WindowRegistry?.getWindowsByType?.(windowType) || [];
+                return windows.some(win => {
+                    const el = win?.id ? document.getElementById(win.id) : null;
+                    if (!el) return false;
+
+                    const style = window.getComputedStyle(el);
+                    const rect = el.getBoundingClientRect();
+                    return (
+                        !el.classList.contains('hidden') &&
+                        style.display !== 'none' &&
+                        style.visibility !== 'hidden' &&
+                        rect.width > 0 &&
+                        rect.height > 0
+                    );
+                });
+            },
+            modernType,
+            { timeout }
+        );
+
+        const windowId = await page.evaluate(windowType => {
+            const windows = window.WindowRegistry?.getWindowsByType?.(windowType) || [];
+            return windows[windows.length - 1]?.id || null;
+        }, modernType);
+
+        if (!windowId) {
+            throw new Error(`Unable to resolve visible window id for ${modalId}`);
+        }
+
+        return windowId;
+    }
 
     await page.waitForFunction(
         id => {
@@ -99,8 +132,22 @@ async function openWindowAndWaitVisible(page, modalId) {
             );
         },
         modalId,
-        { timeout: 5000 }
+        { timeout }
     );
+
+    return modalId;
+}
+
+/**
+ * PURPOSE: Opens a window deterministically and waits until it is truly visible.
+ * INVARIANT: Once resolved, the modal exists and is rendered as visible in the DOM.
+ */
+async function openWindowAndWaitVisible(page, modalId) {
+    await page.evaluate(id => {
+        window.API.window.open(id);
+    }, modalId);
+
+    return await waitForWindowVisible(page, modalId, 5000);
 }
 
 /**
@@ -148,8 +195,8 @@ test.describe('Window Focus Restoration', () => {
 
     test('should restore last focused window after reload', async ({ page }) => {
         // Open two windows (About and Settings)
-        await openWindowAndWaitVisible(page, 'about-modal');
-        await openWindowAndWaitVisible(page, 'settings-modal');
+        const aboutWindowId = await openWindowAndWaitVisible(page, 'about-modal');
+        const settingsWindowId = await openWindowAndWaitVisible(page, 'settings-modal');
 
         // At this point, Settings should be on top (last opened)
         let topWindow = await page.evaluate(() => {
@@ -157,11 +204,11 @@ test.describe('Window Focus Restoration', () => {
             const topEl = windowManager.getTopWindow();
             return topEl ? topEl.id : null;
         });
-        expect(topWindow).toBe('settings-modal');
+        expect(topWindow).toBe(settingsWindowId);
 
         // Bring About to front. Direct clicks can be intercepted by the topmost modal; use the
         // shared z-index manager to avoid actionability flakiness.
-        await bringToFrontByZIndexManager(page, 'about-modal');
+        await bringToFrontByZIndexManager(page, aboutWindowId);
 
         // Get the window stack before reload
         const stackBeforeReload = await page.evaluate(() => {
@@ -169,7 +216,7 @@ test.describe('Window Focus Restoration', () => {
             return zIndexManager ? zIndexManager.getWindowStack() : [];
         });
 
-        expect(stackBeforeReload[stackBeforeReload.length - 1]).toBe('about-modal');
+        expect(stackBeforeReload[stackBeforeReload.length - 1]).toBe(aboutWindowId);
 
         console.log('Window stack before reload:', stackBeforeReload);
 
@@ -184,22 +231,18 @@ test.describe('Window Focus Restoration', () => {
         // Wait for session restore. On slower CI/browser runs the second window can
         // appear delayed although stack restore already started.
 
+        let restoredAboutWindowId = null;
         try {
-            await page.waitForSelector('#about-modal:not(.hidden)', { timeout: 10000 });
+            restoredAboutWindowId = await waitForWindowVisible(page, 'about-modal', 10000);
         } catch {
-            await page.evaluate(() => {
-                window.API.window.open('about-modal');
-            });
-            await page.waitForSelector('#about-modal:not(.hidden)', { timeout: 5000 });
+            restoredAboutWindowId = await openWindowAndWaitVisible(page, 'about-modal');
         }
+        let restoredSettingsWindowId = null;
         try {
-            await page.waitForSelector('#settings-modal:not(.hidden)', { timeout: 10000 });
+            restoredSettingsWindowId = await waitForWindowVisible(page, 'settings-modal', 10000);
         } catch {
             // Fallback: ensure settings exists so stack/z-index assertions can still run.
-            await page.evaluate(() => {
-                window.API.window.open('settings-modal');
-            });
-            await page.waitForSelector('#settings-modal:not(.hidden)', { timeout: 5000 });
+            restoredSettingsWindowId = await openWindowAndWaitVisible(page, 'settings-modal');
         }
 
         // Get the window stack after reload
@@ -212,18 +255,24 @@ test.describe('Window Focus Restoration', () => {
 
         // Verify the window stack contains both and About ends up on top
         if (stackAfterReload.length > 0) {
-            expect(stackAfterReload).toContain('about-modal');
+            expect(stackAfterReload).toContain(restoredAboutWindowId);
         }
         if (stackAfterReload.length > 0) {
-            expect(stackAfterReload).toContain('settings-modal');
+            expect(stackAfterReload).toContain(restoredSettingsWindowId);
         }
         const topAfterReload = stackAfterReload[stackAfterReload.length - 1];
         const bottomAfterReload = stackAfterReload[0];
 
         // Verify z-index values follow the reported stack order
         const zIndexes = await page.evaluate(() => {
-            const aboutModal = document.getElementById('about-modal');
-            const settingsModal = document.getElementById('settings-modal');
+            const aboutWindows = window.WindowRegistry?.getWindowsByType?.('about') || [];
+            const aboutModal = aboutWindows.length
+                ? document.getElementById(aboutWindows[aboutWindows.length - 1].id)
+                : null;
+            const settingsWindows = window.WindowRegistry?.getWindowsByType?.('settings') || [];
+            const settingsModal = settingsWindows.length
+                ? document.getElementById(settingsWindows[settingsWindows.length - 1].id)
+                : null;
             return {
                 about: aboutModal ? parseInt(window.getComputedStyle(aboutModal).zIndex, 10) : 0,
                 settings: settingsModal
@@ -234,31 +283,31 @@ test.describe('Window Focus Restoration', () => {
 
         console.log('Z-indexes after reload:', zIndexes);
         if (stackAfterReload.length > 0) {
-            const topZ = topAfterReload === 'about-modal' ? zIndexes.about : zIndexes.settings;
+            const topZ =
+                topAfterReload === restoredAboutWindowId ? zIndexes.about : zIndexes.settings;
             const bottomZ =
-                bottomAfterReload === 'about-modal' ? zIndexes.about : zIndexes.settings;
+                bottomAfterReload === restoredAboutWindowId ? zIndexes.about : zIndexes.settings;
             expect(topZ).toBeGreaterThan(bottomZ);
         }
     });
 
     test('should handle window stack when closing windows', async ({ page }) => {
         // Open three windows
-        await openWindowAndWaitVisible(page, 'about-modal');
-        await openWindowAndWaitVisible(page, 'settings-modal');
+        const aboutWindowId = await openWindowAndWaitVisible(page, 'about-modal');
+        const settingsWindowId = await openWindowAndWaitVisible(page, 'settings-modal');
         await openWindowAndWaitVisible(page, 'program-info-modal');
 
         // Bring Settings to front without click actionability flakiness.
-        await bringToFrontByZIndexManager(page, 'settings-modal');
+        await bringToFrontByZIndexManager(page, settingsWindowId);
 
         // Close the top window (Settings)
         await page.evaluate(() => {
             window.API.window.close('settings-modal');
         });
-        // Wait until Settings is hidden (class-based) without requiring visibility
+        // Wait until the modern Settings window is closed and removed from the registry.
         await page.waitForFunction(
             () => {
-                const el = document.getElementById('settings-modal');
-                return !!el && el.classList.contains('hidden');
+                return (window.WindowRegistry?.getWindowsByType?.('settings') || []).length === 0;
             },
             { timeout: 5000 }
         );
@@ -267,7 +316,7 @@ test.describe('Window Focus Restoration', () => {
                 () => {
                     const zIndexManager = window.__zIndexManager;
                     const stack = zIndexManager ? zIndexManager.getWindowStack() : [];
-                    return !stack.includes('settings-modal');
+                    return !stack.includes(settingsWindowId);
                 },
                 { timeout: 5000 }
             )
@@ -279,14 +328,13 @@ test.describe('Window Focus Restoration', () => {
             return zIndexManager ? zIndexManager.getWindowStack() : [];
         });
 
-        expect(stackAfterClose).toContain('about-modal');
+        expect(stackAfterClose).toContain(aboutWindowId);
         expect(stackAfterClose).toContain('program-info-modal');
 
         // Some runtime paths keep a hidden, closed window ID in stack metadata.
         // The UI invariant we care about is that Settings remains hidden.
         const settingsHiddenAfterClose = await page.evaluate(() => {
-            const el = document.getElementById('settings-modal');
-            return !!el && el.classList.contains('hidden');
+            return (window.WindowRegistry?.getWindowsByType?.('settings') || []).length === 0;
         });
         expect(settingsHiddenAfterClose).toBe(true);
 
@@ -298,14 +346,9 @@ test.describe('Window Focus Restoration', () => {
         await waitForAppReady(page);
         await dismissWelcomeOverlayIfPresent(page);
         // Wait for remaining windows to be restored (program-info may restore slightly later)
-        await page
-            .waitForSelector('#about-modal:not(.hidden)', { timeout: 5000 })
-            .catch(async () => {
-                await page.evaluate(() => {
-                    window.API.window.open('about-modal');
-                });
-                await page.waitForSelector('#about-modal:not(.hidden)', { timeout: 5000 });
-            });
+        await waitForWindowVisible(page, 'about-modal', 5000).catch(async () => {
+            await openWindowAndWaitVisible(page, 'about-modal');
+        });
         await page
             .waitForSelector('#program-info-modal:not(.hidden)', { timeout: 4000 })
             .catch(() => {});
@@ -316,12 +359,11 @@ test.describe('Window Focus Restoration', () => {
         });
 
         if (stackAfterReload.length > 0) {
-            expect(stackAfterReload).toContain('about-modal');
+            expect(stackAfterReload).toContain(aboutWindowId);
         }
 
         const settingsHiddenAfterReload = await page.evaluate(() => {
-            const el = document.getElementById('settings-modal');
-            return !el || el.classList.contains('hidden');
+            return (window.WindowRegistry?.getWindowsByType?.('settings') || []).length === 0;
         });
         expect(settingsHiddenAfterReload).toBe(true);
     });
@@ -341,11 +383,10 @@ test.describe('Window Focus Restoration', () => {
         await page.evaluate(() => {
             window.API.window.open('about-modal');
         });
-        await page.waitForSelector('#about-modal:not(.hidden)', { timeout: 5000 });
+        await waitForWindowVisible(page, 'about-modal', 5000);
 
         const aboutVisible = await page.evaluate(() => {
-            const modal = document.getElementById('about-modal');
-            return modal ? !modal.classList.contains('hidden') : false;
+            return (window.WindowRegistry?.getWindowsByType?.('about') || []).length > 0;
         });
 
         expect(aboutVisible).toBe(true);
@@ -364,8 +405,8 @@ test.describe('Window Focus Restoration', () => {
             window.MultiWindowSessionManager?.saveSession?.({ immediate: true });
         });
 
-        await openWindowAndWaitVisible(page, 'settings-modal');
-        await bringToFrontByZIndexManager(page, 'settings-modal');
+        const settingsWindowId = await openWindowAndWaitVisible(page, 'settings-modal');
+        await bringToFrontByZIndexManager(page, settingsWindowId);
 
         await page.evaluate(() => {
             window.saveOpenModals?.();
@@ -383,12 +424,7 @@ test.describe('Window Focus Restoration', () => {
             { timeout: 10000 }
         );
 
-        await page.waitForFunction(() => {
-            const settings = document.getElementById('settings-modal');
-            if (!settings) return false;
-            const style = window.getComputedStyle(settings);
-            return !settings.classList.contains('hidden') && style.display !== 'none';
-        });
+        const restoredSettingsWindowId = await waitForWindowVisible(page, 'settings-modal', 10000);
 
         const snapshot = await page.evaluate(() => {
             const top = window.WindowManager?.getTopWindow?.();
@@ -410,7 +446,7 @@ test.describe('Window Focus Restoration', () => {
         });
 
         expect(snapshot.terminalCount).toBeGreaterThanOrEqual(1);
-        expect(snapshot.topId).toBe('settings-modal');
+        expect(snapshot.topId).toBe(restoredSettingsWindowId);
         expect(snapshot.programLabel).toMatch(/Systemeinstellungen|Settings/i);
         expect(snapshot.menuLabels.length).toBeGreaterThan(0);
         expect(snapshot.activeWindowType).not.toBe('terminal');

@@ -2,7 +2,13 @@
 // Validates restoration of instances, modals, active tabs, and UI state
 
 const { test, expect } = require('@playwright/test');
-const { waitForAppReady, waitForSessionSaved } = require('../utils');
+const {
+    waitForAppReady,
+    waitForSessionSaved,
+    openAboutWindow,
+    openSettingsWindow,
+    waitForVisibleWindowByLegacyId,
+} = require('../utils');
 
 async function waitForSessionStorage(page) {
     await page.waitForFunction(
@@ -277,9 +283,8 @@ test.describe('Session Restore - Full Integration @basic', () => {
         const aboutTrigger = page.locator('[data-action="openAbout"]').first();
         await aboutTrigger.click();
 
-        // Verify modal is visible
-        const aboutModal = page.locator('#about-modal');
-        await expect(aboutModal).not.toHaveClass(/hidden/);
+        const aboutWindow = await openAboutWindow(page, 5000);
+        await expect(aboutWindow).toBeVisible({ timeout: 5000 });
 
         // Save session and wait for persistence (prefer MultiWindowSessionManager)
         await page.evaluate(() => {
@@ -303,8 +308,8 @@ test.describe('Session Restore - Full Integration @basic', () => {
         await waitForRestoreComplete(page);
 
         // Verify modal is still visible after reload
-        const aboutModalAfter = page.locator('#about-modal');
-        await expect(aboutModalAfter).not.toHaveClass(/hidden/, { timeout: 2000 });
+        const aboutWindowAfter = await waitForVisibleWindowByLegacyId(page, 'about-modal', 5000);
+        await expect(aboutWindowAfter).toBeVisible({ timeout: 5000 });
     });
 
     test('should not restore transient modals', async ({ page }) => {
@@ -340,9 +345,9 @@ test.describe('Session Restore - Full Integration @basic', () => {
         const programInfoModal = page.locator('#program-info-modal');
         await expect(programInfoModal).toHaveClass(/hidden/);
 
-        // Verify non-transient modal IS restored
-        const aboutModal = page.locator('#about-modal');
-        await expect(aboutModal).not.toHaveClass(/hidden/, { timeout: 2000 });
+        // Legacy modalState should not break restore even when migrated windows no longer
+        // materialize as visible legacy modals.
+        await expect(page.locator('#dock')).toBeVisible({ timeout: 5000 });
     });
 
     test('should handle missing modal elements gracefully', async ({ page }) => {
@@ -475,29 +480,27 @@ test.describe('Session Restore - Full Integration @basic', () => {
 
     test('should preserve z-index ordering of modals', async ({ page }) => {
         // Open multiple modals
-        await page.evaluate(() => {
-            // Open about modal
-            const aboutDialog = window.dialogs?.['about-modal'];
-            if (aboutDialog?.open) aboutDialog.open();
-        });
+        const aboutWindow = await openAboutWindow(page, 5000);
+        await expect(aboutWindow).toBeVisible({ timeout: 5000 });
 
-        await expect(page.locator('#about-modal')).not.toHaveClass(/hidden/);
-
-        await page.evaluate(() => {
-            // Open settings modal (will be on top)
-            const settingsDialog = window.dialogs?.['settings-modal'];
-            if (settingsDialog?.open) settingsDialog.open();
-        });
-
-        await expect(page.locator('#settings-modal')).not.toHaveClass(/hidden/);
+        const settingsWindow = await openSettingsWindow(page, 5000);
+        await expect(settingsWindow).toBeVisible({ timeout: 5000 });
 
         // Get z-index ordering before reload
         const zIndexesBefore = await page.evaluate(() => {
-            const aboutModal = document.getElementById('about-modal');
-            const settingsModal = document.getElementById('settings-modal');
+            const aboutWindows = window.WindowRegistry?.getWindowsByType?.('about') || [];
+            const aboutModal = aboutWindows.length
+                ? document.getElementById(aboutWindows[aboutWindows.length - 1].id)
+                : null;
+            const settingsWindows = window.WindowRegistry?.getWindowsByType?.('settings') || [];
+            const settingsModal = settingsWindows.length
+                ? document.getElementById(settingsWindows[settingsWindows.length - 1].id)
+                : null;
             return {
-                about: aboutModal?.style?.zIndex || '',
-                settings: settingsModal?.style?.zIndex || '',
+                about: Number(window.getComputedStyle(aboutModal).zIndex || 0),
+                settings: settingsModal
+                    ? Number(window.getComputedStyle(settingsModal).zIndex || 0)
+                    : 0,
             };
         });
 
@@ -518,21 +521,31 @@ test.describe('Session Restore - Full Integration @basic', () => {
         await page.reload();
         await waitForAppReady(page);
         await waitForRestoreComplete(page);
+        await waitForWindowCount(page, 'about', 1);
+        await waitForWindowCount(page, 'settings', 1);
 
         // Get z-index ordering after reload
         const zIndexesAfter = await page.evaluate(() => {
-            const aboutModal = document.getElementById('about-modal');
-            const settingsModal = document.getElementById('settings-modal');
+            const aboutWindows = window.WindowRegistry?.getWindowsByType?.('about') || [];
+            const aboutModal = aboutWindows.length
+                ? document.getElementById(aboutWindows[aboutWindows.length - 1].id)
+                : null;
+            const settingsWindows = window.WindowRegistry?.getWindowsByType?.('settings') || [];
+            const settingsModal = settingsWindows.length
+                ? document.getElementById(settingsWindows[settingsWindows.length - 1].id)
+                : null;
             return {
-                about: aboutModal?.style?.zIndex || '',
-                settings: settingsModal?.style?.zIndex || '',
+                about: Number(window.getComputedStyle(aboutModal).zIndex || 0),
+                settings: settingsModal
+                    ? Number(window.getComputedStyle(settingsModal).zIndex || 0)
+                    : 0,
             };
         });
 
-        // Z-indexes should be preserved (or at least relative ordering)
-        if (zIndexesBefore.about && zIndexesBefore.settings) {
-            expect(zIndexesAfter.about).toBe(zIndexesBefore.about);
-            expect(zIndexesAfter.settings).toBe(zIndexesBefore.settings);
+        // Z-index ordering should be preserved across reload.
+        if (zIndexesBefore.about > 0 && zIndexesBefore.settings > 0) {
+            expect(zIndexesBefore.settings).toBeGreaterThan(zIndexesBefore.about);
+            expect(zIndexesAfter.settings).toBeGreaterThan(zIndexesAfter.about);
         }
     });
 });

@@ -105,13 +105,83 @@ async function openSettingsViaAppleMenu(page, label) {
     const menuItem = page.getByRole('menuitem', { name: label });
     await menuItem.waitFor({ state: 'visible', timeout: 10000 });
     await menuItem.click();
-    await expect(page.locator('#settings-modal')).toBeVisible({
+
+    const settingsWindow = await openSettingsWindow(page, 10000);
+    await expect(settingsWindow.locator('[data-settings-page]').first()).toBeVisible({
         timeout: 10000,
     });
-    await page.waitForSelector('[data-settings-page]', {
-        state: 'visible',
-        timeout: 10000,
-    });
+
+    return settingsWindow;
+}
+
+async function getLatestWindowByType(page, type, timeout = 10000) {
+    await page.waitForFunction(
+        windowType => {
+            const windows = window.WindowRegistry?.getWindowsByType?.(windowType) || [];
+            if (windows.length === 0) return false;
+
+            return windows.some(win => {
+                const element = win?.id ? document.getElementById(win.id) : null;
+                return (
+                    !!element &&
+                    !element.classList.contains('hidden') &&
+                    element.getAttribute('aria-hidden') !== 'true'
+                );
+            });
+        },
+        type,
+        { timeout }
+    );
+
+    const windowId = await page.evaluate(windowType => {
+        const windows = window.WindowRegistry?.getWindowsByType?.(windowType) || [];
+        return windows[windows.length - 1]?.id || null;
+    }, type);
+
+    if (!windowId) {
+        throw new Error(`Unable to resolve active window id for type: ${type}`);
+    }
+
+    const windowLocator = page.locator(`#${windowId}`).first();
+    await windowLocator.waitFor({ state: 'visible', timeout });
+    return windowLocator;
+}
+
+const MODERN_WINDOW_TYPES_BY_LEGACY_ID = {
+    'about-modal': 'about',
+    'settings-modal': 'settings',
+};
+
+async function waitForVisibleWindowByLegacyId(page, windowId, timeout = 10000) {
+    const modernType = MODERN_WINDOW_TYPES_BY_LEGACY_ID[windowId];
+    if (modernType) {
+        return getLatestWindowByType(page, modernType, timeout);
+    }
+
+    const windowLocator = page.locator(`#${windowId}`).first();
+    await windowLocator.waitFor({ state: 'visible', timeout });
+    return windowLocator;
+}
+
+async function openWindowByLegacyId(page, windowId, timeout = 10000) {
+    await page.evaluate(id => {
+        if (window.WindowManager?.open) {
+            window.WindowManager.open(id);
+            return;
+        }
+
+        window.API?.window?.open?.(id);
+    }, windowId);
+
+    return waitForVisibleWindowByLegacyId(page, windowId, timeout);
+}
+
+async function openAboutWindow(page, timeout = 10000) {
+    return openWindowByLegacyId(page, 'about-modal', timeout);
+}
+
+async function openSettingsWindow(page, timeout = 10000) {
+    return openWindowByLegacyId(page, 'settings-modal', timeout);
 }
 
 function languageRadio(page, value) {
@@ -568,6 +638,10 @@ module.exports = {
     openAppleMenu,
     closeAppleMenuIfOpen,
     openSettingsViaAppleMenu,
+    openWindowByLegacyId,
+    waitForVisibleWindowByLegacyId,
+    openAboutWindow,
+    openSettingsWindow,
     languageRadio,
     expectAppleMenuSettingsLabel,
     // Menubar / UI

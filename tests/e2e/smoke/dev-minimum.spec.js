@@ -3,6 +3,7 @@ const {
     waitForAppReady,
     dismissWelcomeDialogIfPresent,
     openFinderWindow,
+    openSettingsWindow,
     getFinderAddTabButton,
     getFinderTabs,
     waitForSessionSaved,
@@ -53,14 +54,10 @@ test.describe('Dev Minimum Smoke @smoke', () => {
     });
 
     test('settings window opens', async ({ page }) => {
-        await page.evaluate(() => {
-            if (window.WindowManager?.open) {
-                window.WindowManager.open('settings-modal');
-            }
-        });
+        const settingsWindow = await openSettingsWindow(page);
 
-        await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 10000 });
-        await expect(page.locator('#settings-modal [data-settings-page]').first()).toBeVisible();
+        await expect(settingsWindow).toBeVisible({ timeout: 10000 });
+        await expect(settingsWindow.locator('[data-settings-page]').first()).toBeVisible();
     });
 
     test('menu registry renders menubar for multiple app contexts', async ({ page }) => {

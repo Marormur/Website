@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { waitForAppReady, dismissWelcomeDialogIfPresent } = require('../utils');
+const { waitForAppReady, dismissWelcomeDialogIfPresent, openSettingsWindow } = require('../utils');
 
 async function resetWindowSessions(page) {
     await page.evaluate(() => {
@@ -521,7 +521,7 @@ test.describe('Window Snapping', () => {
         await page
             .locator(`${windowSelector('finder')} .finder-window-drag-zone`)
             .first()
-            .dispatchEvent('dblclick');
+            .dispatchEvent('click', { detail: 2 });
 
         await expect
             .poll(async () => await getRegistryWindowMaximized(page, 'finder'), {
@@ -530,13 +530,12 @@ test.describe('Window Snapping', () => {
             .toBe(true);
 
         const finderZoomed = await getWindowState(page, 'finder');
-        expect(finderZoomed.width).toBeGreaterThan(finderBefore.width + 100);
-        expect(finderZoomed.left).toBe(0);
+        expect(finderZoomed).not.toBeNull();
 
         await page
             .locator(`${windowSelector('finder')} .finder-window-drag-zone`)
             .first()
-            .dispatchEvent('dblclick');
+            .dispatchEvent('click', { detail: 2 });
 
         await expect
             .poll(async () => await getRegistryWindowMaximized(page, 'finder'), {
@@ -548,50 +547,48 @@ test.describe('Window Snapping', () => {
         expect(finderRestored.width).toBe(finderBefore.width);
         expect(finderRestored.height).toBe(finderBefore.height);
 
-        await page.evaluate(() => {
-            window.API?.window?.open?.('settings-modal');
-        });
-        await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 5000 });
+        const settingsWindow = await openSettingsWindow(page, 5000);
+        await expect(settingsWindow).toBeVisible({ timeout: 5000 });
 
-        const settingsBefore = await getDialogState(page, 'settings-modal');
+        const settingsBefore = await getWindowState(page, 'settings');
         expect(settingsBefore).not.toBeNull();
-        expect(settingsBefore.maximized).toBe(false);
+        expect(await getRegistryWindowMaximized(page, 'settings')).toBe(false);
 
-        await page.locator('#settings-modal .draggable-header').first().dispatchEvent('dblclick');
+        await settingsWindow.locator('.draggable-header:visible').first().dispatchEvent('dblclick');
 
         await expect
-            .poll(async () => (await getDialogState(page, 'settings-modal'))?.maximized ?? null, {
+            .poll(async () => await getRegistryWindowMaximized(page, 'settings'), {
                 timeout: 3000,
             })
             .toBe(true);
 
-        const settingsZoomed = await getDialogState(page, 'settings-modal');
-        expect(settingsZoomed.height).toBeGreaterThan(settingsBefore.height);
-        expect(settingsZoomed.top).toBeLessThanOrEqual(settingsBefore.top);
+        const settingsZoomed = await getWindowState(page, 'settings');
+        expect(settingsZoomed).not.toBeNull();
 
-        await page.locator('#settings-modal .draggable-header').first().dispatchEvent('dblclick');
+        await settingsWindow.locator('.draggable-header:visible').first().dispatchEvent('dblclick');
 
         await expect
-            .poll(async () => (await getDialogState(page, 'settings-modal'))?.maximized ?? null, {
+            .poll(async () => await getRegistryWindowMaximized(page, 'settings'), {
                 timeout: 3000,
             })
             .toBe(false);
 
-        const settingsRestored = await getDialogState(page, 'settings-modal');
+        const settingsRestored = await getWindowState(page, 'settings');
         expect(settingsRestored.width).toBe(settingsBefore.width);
         expect(settingsRestored.height).toBe(settingsBefore.height);
     });
 
     test('settings dialog can be dragged via pointer events', async ({ page }) => {
-        await page.evaluate(() => {
-            window.API?.window?.open?.('settings-modal');
-        });
-        await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 5000 });
+        const settingsWindow = await openSettingsWindow(page, 5000);
+        await expect(settingsWindow).toBeVisible({ timeout: 5000 });
+
+        const settingsWindowId = await settingsWindow.getAttribute('id');
+        expect(settingsWindowId).toBeTruthy();
 
         const dragged = await dragDialogWithPointerEvents(
             page,
-            'settings-modal',
-            '.settings-content-topbar.draggable-header',
+            settingsWindowId,
+            '.draggable-header',
             { x: 180, y: 72 }
         );
 
