@@ -243,11 +243,20 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             toolbar: [
                 {
                     label: '',
-                    icon: `<div class="relative flex-1 sm:flex-initial" style="min-width:200px;">
-                        <input id="photos-search" type="search" placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}"
-                            class="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                        <button id="photos-search-clear" type="button" class="absolute inset-y-0 right-2 flex items-center text-xl text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 invisible pointer-events-none"
-                            title="${t('photos.search.clear', 'Suche löschen')}">×</button>
+                    icon: `<div id="photos-toolbar-search" class="relative flex items-center gap-1 min-w-0">
+                        <button id="photos-search-toggle" type="button"
+                            class="shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                            aria-label="${t('photos.search.placeholder', 'Nach Autor suchen')}"
+                            title="${t('photos.search.placeholder', 'Nach Autor suchen')}"
+                            aria-expanded="true">
+                            <svg class="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="9" r="6.5"/><line x1="14" y1="14" x2="18.5" y2="18.5"/></svg>
+                        </button>
+                        <div id="photos-search-input-wrap" class="relative flex items-center">
+                            <input id="photos-search" type="search" placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}"
+                                class="w-36 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 px-4 py-1.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                            <button id="photos-search-clear" type="button" class="absolute inset-y-0 right-2 flex items-center text-xl text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 invisible pointer-events-none"
+                                title="${t('photos.search.clear', 'Suche löschen')}">×</button>
+                        </div>
                     </div>`,
                 },
             ],
@@ -282,12 +291,17 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         topTabBar.className =
             'hidden md:flex absolute top-3 right-4 z-20 items-center justify-end pointer-events-none';
         topTabBar.innerHTML = `
-            <div class="finder-no-drag pointer-events-auto relative flex min-w-0 w-36 lg:w-44 items-center gap-2 shrink rounded-full border border-gray-200/80 dark:border-gray-700/80 bg-white/90 dark:bg-gray-900/90 p-1.5 shadow-lg backdrop-blur-md">
-                <div class="relative min-w-0 flex-1">
+            <div class="finder-no-drag pointer-events-auto relative flex items-center gap-1 rounded-full border border-gray-200/80 dark:border-gray-700/80 bg-white/90 dark:bg-gray-900/90 p-1.5 shadow-lg backdrop-blur-md">
+                <button data-photos-top-search-toggle type="button"
+                    class="shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                    aria-label="${t('photos.search.placeholder', 'Nach Autor suchen')}"
+                    title="${t('photos.search.placeholder', 'Nach Autor suchen')}">
+                    <svg class="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="9" r="6.5"/><line x1="14" y1="14" x2="18.5" y2="18.5"/></svg>
+                </button>
+                <div data-photos-top-search-input class="relative min-w-0">
                     <input id="photos-search" type="text"
                         placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}"
-                        class="h-8 w-full min-w-0 rounded-full border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 pl-8 pr-3 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                    <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true">⌕</span>
+                        class="h-8 w-36 lg:w-44 min-w-0 rounded-full border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 pl-3 pr-3 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
                 </div>
             </div>
         `;
@@ -602,6 +616,172 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         }
     }
 
+    /**
+     * Fallback-Schwellen fuer kompakte Suche. Zusaetzlich wird echte Ueberlappung gemessen.
+     * Damit kollabiert die Suche auch dann, wenn UI-Elemente sich optisch in die Quere kommen.
+     */
+    const SEARCH_COMPACT_THRESHOLD = 420;
+    const SEARCH_TOPBAR_COMPACT_FALLBACK_THRESHOLD = 760;
+
+    function shouldCompactToolbarSearch(): boolean {
+        if (!elements.container) return false;
+        if (elements.container.offsetWidth < SEARCH_COMPACT_THRESHOLD) return true;
+
+        const toolbar = elements.container.querySelector<HTMLElement>('.window-toolbar');
+        if (!toolbar) return false;
+
+        // Wenn die Toolbar selbst schmal wird, bleibt nur das Icon robust nutzbar.
+        return toolbar.clientWidth < 300;
+    }
+
+    function shouldCompactTopSearch(): boolean {
+        if (!elements.container) return false;
+        if (window.matchMedia('(max-width: 767px)').matches) return true;
+        if (elements.container.offsetWidth < SEARCH_TOPBAR_COMPACT_FALLBACK_THRESHOLD) return true;
+
+        const topTabBar = elements.container.querySelector<HTMLElement>('#photos-top-tabs');
+        const searchPill = topTabBar?.firstElementChild as HTMLElement | null;
+        const segmentGroup = elements.container.querySelector<HTMLElement>(
+            '#photos-tab-content [role="group"]'
+        );
+        const contentArea = elements.container.querySelector<HTMLElement>('#photos-tab-content');
+
+        if (!topTabBar || !searchPill || !segmentGroup || !contentArea) {
+            return false;
+        }
+
+        if (searchPill.offsetParent === null || segmentGroup.offsetParent === null) {
+            return false;
+        }
+
+        const searchRect = searchPill.getBoundingClientRect();
+        const segmentRect = segmentGroup.getBoundingClientRect();
+        const contentRect = contentArea.getBoundingClientRect();
+
+        const collisionPadding = 12;
+        const collidesWithSegments = segmentRect.right + collisionPadding >= searchRect.left;
+        const overflowsContent = searchRect.right > contentRect.right - 8;
+
+        return collidesWithSegments || overflowsContent;
+    }
+
+    function applySearchCompactState(isToolbarCompact: boolean, isTopSearchCompact: boolean): void {
+        // Toolbar-Suche (im Titelbereich)
+        const toolbarInputWrap = elements.container?.querySelector<HTMLElement>(
+            '#photos-search-input-wrap'
+        );
+        const toolbarToggle =
+            elements.container?.querySelector<HTMLButtonElement>('#photos-search-toggle');
+        if (toolbarInputWrap) {
+            toolbarInputWrap.classList.toggle('hidden', isToolbarCompact);
+        }
+        if (toolbarToggle) {
+            toolbarToggle.setAttribute('aria-expanded', isToolbarCompact ? 'false' : 'true');
+        }
+
+        // Floating Top-Tab-Bar-Suche (Desktop-Inhaltbereich)
+        const topTabBar = elements.container?.querySelector<HTMLElement>('#photos-top-tabs');
+        if (topTabBar) {
+            const topInputWrap = topTabBar.querySelector<HTMLElement>(
+                '[data-photos-top-search-input]'
+            );
+            if (topInputWrap) {
+                topInputWrap.classList.toggle('hidden', isTopSearchCompact);
+            }
+        }
+    }
+
+    /** Beobachtet die Container-Breite und kollabiert die Suche bei schmalen Fenstern. */
+    function wireSearchResize(): void {
+        if (!elements.container || typeof ResizeObserver === 'undefined') return;
+
+        // Initialen Zustand synchron setzen
+        applySearchCompactState(shouldCompactToolbarSearch(), shouldCompactTopSearch());
+
+        const observer = new ResizeObserver(([entry]) => {
+            // Neben der Breite auch tatsaechliche Ueberlappungen neu auswerten.
+            if (!entry) return;
+            applySearchCompactState(shouldCompactToolbarSearch(), shouldCompactTopSearch());
+        });
+        observer.observe(elements.container);
+    }
+
+    /**
+     * Verdrahtet den Such-Toggle-Button (Icon-only-Modus):
+     * Klick auf das Icon öffnet das Eingabefeld; Escape schließt es wieder.
+     */
+    function wireSearchToggle(): void {
+        elements.container?.addEventListener('click', e => {
+            const toggleBtn = (e.target as HTMLElement).closest<HTMLButtonElement>(
+                '#photos-search-toggle'
+            );
+            if (!toggleBtn) return;
+
+            const inputWrap = elements.container?.querySelector<HTMLElement>(
+                '#photos-search-input-wrap'
+            );
+            if (!inputWrap) return;
+
+            // Im kompakten Modus: Eingabefeld ein-/ausblenden
+            const isNowHidden = inputWrap.classList.contains('hidden');
+            inputWrap.classList.toggle('hidden', !isNowHidden);
+            toggleBtn.setAttribute('aria-expanded', String(isNowHidden));
+            if (isNowHidden) {
+                elements.searchInput?.focus();
+            }
+        });
+
+        elements.container?.addEventListener('focusout', e => {
+            const inputWrap = elements.container?.querySelector<HTMLElement>(
+                '#photos-search-input-wrap'
+            );
+            if (!inputWrap || inputWrap.classList.contains('hidden')) return;
+
+            const target = e.target as Node | null;
+            const related = (e as FocusEvent).relatedTarget as Node | null;
+            if (!target || !inputWrap.contains(target)) return;
+            if (related && inputWrap.contains(related)) return;
+            if (!shouldCompactToolbarSearch()) return;
+
+            inputWrap.classList.add('hidden');
+            const toggleBtn =
+                elements.container?.querySelector<HTMLButtonElement>('#photos-search-toggle');
+            toggleBtn?.setAttribute('aria-expanded', 'false');
+        });
+
+        // Floating Top-Tab-Bar toggle (Desktop)
+        elements.container?.addEventListener('click', e => {
+            if (!(e.target as HTMLElement).closest('[data-photos-top-search-toggle]')) return;
+            const topTabBar = elements.container?.querySelector<HTMLElement>('#photos-top-tabs');
+            const topInputWrap = topTabBar?.querySelector<HTMLElement>(
+                '[data-photos-top-search-input]'
+            );
+            if (!topInputWrap) return;
+
+            const isNowHidden = topInputWrap.classList.contains('hidden');
+            topInputWrap.classList.toggle('hidden', !isNowHidden);
+            if (isNowHidden) {
+                topTabBar?.querySelector<HTMLInputElement>('input')?.focus();
+            }
+        });
+
+        elements.container?.addEventListener('focusout', e => {
+            const topTabBar = elements.container?.querySelector<HTMLElement>('#photos-top-tabs');
+            const topInputWrap = topTabBar?.querySelector<HTMLElement>(
+                '[data-photos-top-search-input]'
+            );
+            if (!topInputWrap || topInputWrap.classList.contains('hidden')) return;
+
+            const target = e.target as Node | null;
+            const related = (e as FocusEvent).relatedTarget as Node | null;
+            if (!target || !topInputWrap.contains(target)) return;
+            if (related && topInputWrap.contains(related)) return;
+            if (!shouldCompactTopSearch()) return;
+
+            topInputWrap.classList.add('hidden');
+        });
+    }
+
     function wireSearch(): void {
         elements.searchInput?.addEventListener('input', e => {
             state.searchTerm = (e.target as HTMLInputElement).value;
@@ -611,14 +791,29 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         });
 
         elements.searchInput?.addEventListener('keydown', event => {
-            if (event.key !== 'Escape' || !state.searchTerm) return;
-            state.searchTerm = '';
-            if (elements.searchInput) {
-                elements.searchInput.value = '';
+            if (event.key === 'Escape') {
+                // Suchfeld leeren
+                if (state.searchTerm) {
+                    state.searchTerm = '';
+                    if (elements.searchInput) elements.searchInput.value = '';
+                    elements.searchClear?.classList.add('hidden');
+                    applyFilters();
+                }
+                // Im kompakten Modus Eingabefeld wieder verbergen
+                if (shouldCompactToolbarSearch()) {
+                    const inputWrap = elements.container.querySelector<HTMLElement>(
+                        '#photos-search-input-wrap'
+                    );
+                    const toggle =
+                        elements.container.querySelector<HTMLButtonElement>(
+                            '#photos-search-toggle'
+                        );
+                    inputWrap?.classList.add('hidden');
+                    toggle?.setAttribute('aria-expanded', 'false');
+                }
+                event.preventDefault();
+                return;
             }
-            elements.searchClear?.classList.add('hidden');
-            applyFilters();
-            event.preventDefault();
         });
 
         elements.searchClear?.addEventListener('click', () => {
@@ -1196,6 +1391,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         wireTabNavigation();
         wireSegments();
         wireSearch();
+        wireSearchToggle();
+        wireSearchResize();
         wireGallery();
         wireDetail();
         globalWindow.appI18n?.applyTranslations?.(elements.container ?? undefined);
@@ -1252,6 +1449,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         wireTabNavigation();
         wireSegments();
         wireSearch();
+        wireSearchToggle();
+        wireSearchResize();
         wireGallery();
         wireDetail();
         globalWindow.appI18n?.applyTranslations?.(elements.container ?? undefined);
