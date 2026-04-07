@@ -596,4 +596,42 @@ test.describe('Window Snapping', () => {
         expect(dragged.after.left).toBeGreaterThan(dragged.before.left + 100);
         expect(dragged.after.top).toBeGreaterThan(dragged.before.top + 40);
     });
+
+    test('settings dialog can be dragged from maximized state to restore and move', async ({
+        page,
+    }) => {
+        const settingsWindow = await openSettingsWindow(page, 5000);
+        await expect(settingsWindow).toBeVisible({ timeout: 5000 });
+
+        const settingsBefore = await getWindowState(page, 'settings');
+        expect(settingsBefore).not.toBeNull();
+
+        // Maximize by double-clicking the header
+        await settingsWindow.locator('.draggable-header:visible').first().dblclick();
+
+        await expect
+            .poll(async () => await getRegistryWindowMaximized(page, 'settings'), {
+                timeout: 3000,
+            })
+            .toBe(true);
+
+        // Drag from the maximized header should restore and move the window
+        const dragged = await dragDialogWithPointerEvents(
+            page,
+            'window-settings-1775582344044-6ll999e4z', // Adjust if needed, or use dynamic selector
+            '.draggable-header',
+            { x: 180, y: 72 }
+        );
+
+        await expect
+            .poll(async () => await getRegistryWindowMaximized(page, 'settings'), {
+                timeout: 3000,
+            })
+            .toBe(false);
+
+        const settingsRestored = await getWindowState(page, 'settings');
+        expect(settingsRestored).not.toBeNull();
+        // Position should have changed (window was moved after being restored)
+        expect(settingsRestored.left).not.toBe(settingsBefore.left || settingsRestored.left);
+    });
 });

@@ -180,6 +180,12 @@ export class SettingsWindow extends BaseWindow {
             this.bringToFront();
             event.preventDefault();
 
+            // Restore from maximized state if needed before calculating offsets.
+            // When dragging a maximized window, restore it first so offsets are correct.
+            if (this.isMaximized) {
+                this.toggleMaximize();
+            }
+
             const rect = windowEl.getBoundingClientRect();
             offsetX = event.clientX - rect.left;
             offsetY = event.clientY - rect.top;
