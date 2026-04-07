@@ -81,8 +81,19 @@ Thank you for your interest in contributing! This document provides guidelines f
     ```bash
     # Quick smoke on Chromium (GitHub API mocked)
     MOCK_GITHUB=1 npm run test:e2e:quick
-    # Full suite on Chromium
-    npm run test:e2e:chromium
+    # Stabiler Kernlauf fuer den Alltag
+    npm run test:e2e:core
+    # Finder / Session / Terminal gezielt
+    npm run test:e2e:stateful
+    ```
+
+    Weitere Laeufe nur bei Bedarf:
+
+    ```bash
+    # Kleine Restmenge fragiler Spezialfaelle
+    npm run test:e2e:quarantine
+    # Tiefe Technik-Suiten
+    npm run test:e2e:deep
     ```
 
 4. Build CSS:
@@ -185,8 +196,17 @@ ActionBus.register('myAction', (params, element) => {
 # Install Playwright browsers (first time only)
 npm run pw:install
 
-# Run all tests
-npm run test:e2e
+# Run the stable everyday suite
+npm run test:e2e:core
+
+# Run targeted stateful flows
+npm run test:e2e:stateful
+
+# Run quarantined special cases only when needed
+npm run test:e2e:quarantine
+
+# Run deep technical suites only when needed
+npm run test:e2e:deep
 
 # Run with UI
 npm run test:e2e:ui
@@ -216,7 +236,7 @@ test('should open window when clicking icon', async ({ page }) => {
 
 1. **Update documentation** if you've changed functionality
 2. **Add tests** for new features
-3. **Ensure all tests pass** (`npm run test:e2e`)
+3. **Ensure the appropriate tests pass** (`npm run test:e2e:core`, bei Bedarf `npm run test:e2e:stateful`)
 4. **Build CSS** (`npm run build:css`)
 5. **Update README** if adding major features
 6. **Create Pull Request** with clear description:

@@ -84,6 +84,7 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
     test('should expand group when clicking toggle button again', async ({ page }) => {
         const toggleButton = groupToggleAt(page, 0);
         const firstGroupItems = groupItemsAt(page, 0);
+        const initialItemCount = await firstGroupItems.locator('.finder-sidebar-item').count();
 
         // First collapse
         await clickGroupToggle(page, 0);
@@ -92,7 +93,7 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
         await clickGroupToggle(page, 0);
 
         await expect(firstGroupItems).not.toHaveClass(/is-collapsed/);
-        await expect(firstGroupItems.locator('.finder-sidebar-item')).toHaveCount(3);
+        await expect(firstGroupItems.locator('.finder-sidebar-item')).toHaveCount(initialItemCount);
 
         // aria-expanded should be true
         const ariaExpanded = await toggleButton.getAttribute('aria-expanded');
@@ -104,6 +105,11 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
     });
 
     test('should handle multiple groups independently', async ({ page }) => {
+        const firstGroupItems = groupItemsAt(page, 0);
+        const initialFirstGroupCount = await firstGroupItems
+            .locator('.finder-sidebar-item')
+            .count();
+
         // Collapse first group (FAVORITEN)
         const firstToggle = groupToggleAt(page, 0);
         await clickGroupToggle(page, 0);
@@ -122,7 +128,9 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
         // First should be expanded, second still collapsed
         await expect(groupItemsAt(page, 0)).not.toHaveClass(/is-collapsed/);
         await expect(groupItemsAt(page, 1)).toHaveClass(/is-collapsed/);
-        await expect(groupItemsAt(page, 0).locator('.finder-sidebar-item')).toHaveCount(3);
+        await expect(groupItemsAt(page, 0).locator('.finder-sidebar-item')).toHaveCount(
+            initialFirstGroupCount
+        );
     });
 
     test('should persist collapse state during tab navigation', async ({ page }) => {

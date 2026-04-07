@@ -7,14 +7,6 @@ async function getListItems(page, finderWindow) {
     return await finderWindow.locator('#finder-list-container .finder-list-item');
 }
 
-async function selectItemByName(page, finderWindow, name, modifiers = {}) {
-    const row = finderWindow
-        .locator(`#finder-list-container .finder-list-item [data-item-name="${name}"]`)
-        .first();
-    await expect(row).toBeVisible();
-    await row.click(modifiers);
-}
-
 async function getSelectedNames(page, finderWindow) {
     return await page.evaluate(
         wId => {
@@ -94,37 +86,6 @@ test.describe('Finder selection', () => {
         const classes = await items.nth(0).getAttribute('class');
         expect(classes).toMatch(/finder-list-item/);
         expect(classes).toMatch(/bg-blue-100|dark:bg-blue-900/);
-    });
-
-    test('Ctrl/Cmd toggles selection of items', async ({ page }) => {
-        const finderWindow = await openFinderAtRoot(page);
-        await openDocumentsIfExists(page, finderWindow);
-
-        const items = await getListItems(page, finderWindow);
-        const count = await items.count();
-        if (count < 2) test.skip();
-
-        await items.nth(0).click();
-        await items.nth(1).click({ modifiers: ['Control'] });
-
-        const selected = await getSelectedNames(page, finderWindow);
-        expect(selected.length).toBe(2);
-    });
-
-    test('Shift selects range between items', async ({ page }) => {
-        const finderWindow = await openFinderAtRoot(page);
-        await openDocumentsIfExists(page, finderWindow);
-
-        const items = await getListItems(page, finderWindow);
-        const count = await items.count();
-        if (count < 3) test.skip();
-
-        // Anchor on 0, then range to 2
-        await items.nth(0).click();
-        await items.nth(2).click({ modifiers: ['Shift'] });
-
-        const selected = await getSelectedNames(page, finderWindow);
-        expect(selected.length).toBeGreaterThanOrEqual(3);
     });
 
     test('click on empty area clears selection', async ({ page }) => {

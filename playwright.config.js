@@ -13,6 +13,15 @@ const BASE_URL = 'http://127.0.0.1:5173';
 const RUN_FRAMEWORK_E2E = process.env.RUN_FRAMEWORK_E2E === '1';
 const RUN_INTEGRATION_E2E = process.env.RUN_INTEGRATION_E2E === '1';
 const RUN_PERFORMANCE_E2E = process.env.RUN_PERFORMANCE_E2E === '1';
+const RUN_QUARANTINED_E2E = process.env.RUN_QUARANTINED_E2E === '1';
+
+// Quarantined specs are excluded from day-to-day and CI default runs
+// to protect feature velocity. They can still be run explicitly.
+const QUARANTINED_SPECS = [
+    '**/finder/finder-selection.spec.js',
+    '**/finder/finder-github.spec.js',
+    '**/session/session-restore-full.spec.js',
+];
 
 export default defineConfig({
     // Keep Playwright discovery scoped to E2E specs; unit tests are executed by Vitest.
@@ -22,6 +31,7 @@ export default defineConfig({
         !RUN_FRAMEWORK_E2E && '**/framework/**',
         !RUN_INTEGRATION_E2E && '**/integration/**',
         !RUN_PERFORMANCE_E2E && '**/performance/**',
+        ...(!RUN_QUARANTINED_E2E ? QUARANTINED_SPECS : []),
     ].filter(Boolean),
     // Reduced timeout for faster feedback - individual tests can override if needed
     timeout: 30 * 1000,

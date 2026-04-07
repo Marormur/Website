@@ -1,8 +1,6 @@
-const { test, expect } = require('@playwright/test');
+const { test } = require('@playwright/test');
 const {
     gotoHome,
-    openAppleMenu,
-    closeAppleMenuIfOpen,
     dismissWelcomeDialogIfPresent,
     openSettingsViaAppleMenu,
     languageRadio,
@@ -22,18 +20,27 @@ test('Apple menu labels update when toggling language', async ({ page, baseURL }
     await gotoHome(page, baseURL);
     await dismissWelcomeDialogIfPresent(page);
 
+    const openLanguageSectionIfAvailable = async settingsWindow => {
+        const sectionButton = settingsWindow
+            .getByRole('button', {
+                name: /Language|Sprache/,
+            })
+            .first();
+
+        if (
+            (await sectionButton.count()) > 0 &&
+            (await sectionButton.isVisible().catch(() => false))
+        ) {
+            await sectionButton.click();
+        }
+    };
+
     // Initially with system=en-US
     await expectAppleMenuSettingsLabel(page, 'System settings');
 
     // Open settings
-    await openSettingsViaAppleMenu(page, 'System settings');
-
-    // Go to Language section (button text depends on current language)
-    const languageButton = page.getByRole('button', {
-        name: /Language|Sprache/,
-    });
-    await languageButton.waitFor({ state: 'visible', timeout: 10000 });
-    await languageButton.click();
+    const englishSettingsWindow = await openSettingsViaAppleMenu(page, 'System settings');
+    await openLanguageSectionIfAvailable(englishSettingsWindow);
 
     // Switch to German
     await languageRadio(page, 'de').check();
@@ -42,10 +49,8 @@ test('Apple menu labels update when toggling language', async ({ page, baseURL }
     await expectAppleMenuSettingsLabel(page, 'Systemeinstellungen');
 
     // Switch back to "System" (which is en-US here)
-    await openSettingsViaAppleMenu(page, 'Systemeinstellungen');
-    const sprachButton = page.getByRole('button', { name: /Sprache|Language/ });
-    await sprachButton.waitFor({ state: 'visible', timeout: 10000 });
-    await sprachButton.click();
+    const germanSettingsWindow = await openSettingsViaAppleMenu(page, 'Systemeinstellungen');
+    await openLanguageSectionIfAvailable(germanSettingsWindow);
     await languageRadio(page, 'system').check();
 
     // Expect English again

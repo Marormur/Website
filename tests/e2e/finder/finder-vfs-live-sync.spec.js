@@ -13,7 +13,7 @@ import {
     dismissWelcomeDialogIfPresent,
 } from '../utils.js';
 
-/** Navigate the Finder to /home/marvin */
+/** Navigate the Finder to /Users/marvin */
 async function navigateToHomeMarvin(page, finderWindow) {
     // Click the "Home" sidebar shortcut if present
     const homeBtn = finderWindow.locator('[data-sidebar-action="home"]');
@@ -26,7 +26,7 @@ async function navigateToHomeMarvin(page, finderWindow) {
             const wins = registry?.getAllWindows?.('finder') || [];
             const win = wins[0];
             const view = win?.activeView ?? win?.tabs?.values?.()?.next?.()?.value;
-            view?.navigateToPath?.(['home', 'marvin']);
+            view?.navigateToPath?.(['Users', 'marvin']);
         });
     }
 
@@ -52,7 +52,7 @@ test.describe('Finder VirtualFS live-sync', () => {
         await navigateToHomeMarvin(page, finderWindow);
 
         const filename = `vfs-livesync-smoke-${Date.now()}.txt`;
-        const vfsPath = `/home/marvin/${filename}`;
+        const vfsPath = `/Users/marvin/${filename}`;
 
         // Create file via VirtualFS – simulates what the Terminal does
         const created = await page.evaluate(path => {
@@ -63,7 +63,7 @@ test.describe('Finder VirtualFS live-sync', () => {
 
         // Finder must show the new file without manual navigation
         await expect(finderWindow.locator(`[data-item-name="${filename}"]`).first()).toBeVisible({
-            timeout: 3000,
+            timeout: 10000,
         });
 
         // Cleanup – validate success to catch stale artifacts
@@ -79,7 +79,7 @@ test.describe('Finder VirtualFS live-sync', () => {
         await navigateToHomeMarvin(page, finderWindow);
 
         const filename = `vfs-livesync-delete-${Date.now()}.txt`;
-        const vfsPath = `/home/marvin/${filename}`;
+        const vfsPath = `/Users/marvin/${filename}`;
 
         // Pre-create the file so we can delete it
         const created = await page.evaluate(path => {
@@ -90,7 +90,7 @@ test.describe('Finder VirtualFS live-sync', () => {
 
         // Wait for the item to appear in the Finder
         await expect(finderWindow.locator(`[data-item-name="${filename}"]`).first()).toBeVisible({
-            timeout: 3000,
+            timeout: 10000,
         });
 
         // Now delete via VirtualFS – validate the operation succeeded
@@ -102,7 +102,7 @@ test.describe('Finder VirtualFS live-sync', () => {
 
         // Finder must no longer show the item
         await expect(finderWindow.locator(`[data-item-name="${filename}"]`)).toHaveCount(0, {
-            timeout: 3000,
+            timeout: 10000,
         });
     });
 });

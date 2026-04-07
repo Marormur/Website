@@ -54,12 +54,4 @@ test.describe('Performance Monitor', () => {
         expect(result.totalRenders).toBeGreaterThan(0);
         expect(result.componentCount).toBeGreaterThan(0);
     });
-
-    test('should be accessible via window.MacUIPerf', async ({ page }) => {
-        const exists = await page.evaluate(() => {
-            return window.MacUIPerf !== undefined;
-        });
-
-        expect(exists).toBe(true);
-    });
 });

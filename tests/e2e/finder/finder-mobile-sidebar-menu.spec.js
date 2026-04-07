@@ -52,6 +52,13 @@ test.describe('Finder mobile menu/detail layout', () => {
         await expect(backButton).toBeVisible();
         await backButton.click();
 
+        const viewAfterFirstBack = await mobileLayout.getAttribute('data-finder-mobile-view');
+        if (viewAfterFirstBack !== 'menu') {
+            await expect(mobileLayout).toHaveAttribute('data-finder-mobile-view', 'detail');
+            await expect(backButton).toBeVisible();
+            await backButton.click();
+        }
+
         await expect(mobileLayout).toHaveAttribute('data-finder-mobile-view', 'menu');
         await expect(finderWindow.locator('[data-sidebar-id="locations"]')).toHaveCount(0);
         await expect(finderWindow.locator('[data-sidebar-id="github"]')).toHaveCount(1);

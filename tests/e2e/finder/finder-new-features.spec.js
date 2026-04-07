@@ -24,9 +24,12 @@ test.describe('FinderView New Features', () => {
         const finderWindow = await openFinderWindow(page);
         await expect(finderWindow).toBeVisible();
 
-        // Check for data-i18n attributes (they should exist)
-        const computerBtn = finderWindow.locator('[data-sidebar-action="computer"]');
-        await expect(computerBtn).toBeVisible();
+        // Current Finder sidebar uses "devices" as the primary computer entry.
+        // Keep "computer" as fallback for backward compatibility in older builds.
+        const primaryDeviceBtn = finderWindow.locator(
+            '[data-sidebar-id="devices"], [data-sidebar-id="computer"]'
+        );
+        await expect(primaryDeviceBtn.first()).toBeVisible();
 
         // Check text content (should be in German by default or current locale)
         const sidebarTexts = await finderWindow

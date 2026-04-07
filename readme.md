@@ -82,8 +82,39 @@ npm run dev                  # dev-server starten
 npm run build:css           # CSS bauen
 npm run build:ts            # TypeScript → js/
 npm run typecheck           # Fehler-Check
-npm run test:e2e            # E2E Tests (braucht Browser)
+npm run test:e2e:core       # stabiler Kernlauf fuer den Alltag
+npm run test:e2e:stateful   # Finder/Session/Terminal gezielt pruefen
+npm run test:e2e:quarantine # kleine Restmenge fragiler Spezialfaelle
+npm run test:e2e:deep       # tiefe Technik-Suiten nur bei Bedarf
 npm run format              # Code formatieren
+```
+
+## Teststrategie
+
+Die E2E-Suite ist bewusst gestaffelt, damit Feature-Arbeit nicht von dauernden Testfixes blockiert wird.
+
+- Core: kleine, stabile User-Flows fuer den Alltag
+- Stateful: gezielt fuer Finder-, Session- und Terminal-Aenderungen
+- Quarantaene: wenige bekannte Problemfaelle, nur explizit ausfuehren
+- Deep: technische Regressionen, nicht fuer jeden lokalen Lauf gedacht
+
+Empfohlener Alltag:
+
+```bash
+npm run test:e2e:core
+```
+
+Bei Finder-/Session-/Terminal-Aenderungen zusaetzlich:
+
+```bash
+npm run test:e2e:stateful
+```
+
+Vor groesseren Umbauten oder gezielt zur Fehlersuche:
+
+```bash
+npm run test:e2e:quarantine
+npm run test:e2e:deep
 ```
 
 ## Virtual DOM (VDOM) 🚀

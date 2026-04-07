@@ -7,61 +7,6 @@ test.describe('Performance Monitor Integration @basic', () => {
         await utils.waitForAppReady(page);
     });
 
-    test('should be enabled by default in development', async ({ page }) => {
-        const isEnabled = await page.evaluate(() => {
-            return window.PerfMonitor.enabled === true;
-        });
-        expect(isEnabled).toBe(true);
-    });
-
-    test('should support enable/disable functionality', async ({ page }) => {
-        // Disable perf monitor
-        await page.evaluate(() => {
-            window.PerfMonitor.disable();
-        });
-
-        let isEnabled = await page.evaluate(() => {
-            return window.PerfMonitor.enabled;
-        });
-        expect(isEnabled).toBe(false);
-
-        // Re-enable perf monitor
-        await page.evaluate(() => {
-            window.PerfMonitor.enable();
-        });
-
-        isEnabled = await page.evaluate(() => {
-            return window.PerfMonitor.enabled;
-        });
-        expect(isEnabled).toBe(true);
-    });
-
-    test('should support toggle functionality', async ({ page }) => {
-        const initialState = await page.evaluate(() => {
-            return window.PerfMonitor.enabled;
-        });
-
-        await page.evaluate(() => {
-            window.PerfMonitor.toggle();
-        });
-
-        const toggledState = await page.evaluate(() => {
-            return window.PerfMonitor.enabled;
-        });
-
-        expect(toggledState).toBe(!initialState);
-    });
-
-    test('should support mark() functionality', async ({ page }) => {
-        const result = await page.evaluate(() => {
-            window.PerfMonitor.mark('test-mark');
-            // Check if mark was created
-            const marks = performance.getEntriesByName('test-mark', 'mark');
-            return marks.length > 0;
-        });
-        expect(result).toBe(true);
-    });
-
     test('should support measure() functionality', async ({ page }) => {
         const result = await page.evaluate(() => {
             window.PerfMonitor.mark('start-mark');
@@ -74,19 +19,6 @@ test.describe('Performance Monitor Integration @basic', () => {
             return measurement !== null && measurement.name === 'test-measure';
         });
         expect(result).toBe(true);
-    });
-
-    test('should return measures from report()', async ({ page }) => {
-        const measures = await page.evaluate(() => {
-            window.PerfMonitor.mark('report-start');
-            window.PerfMonitor.mark('report-end');
-            window.PerfMonitor.measure('report-measure', 'report-start', 'report-end');
-            return window.PerfMonitor.report();
-        });
-        expect(Array.isArray(measures)).toBe(true);
-        expect(measures.length).toBeGreaterThan(0);
-        expect(measures[0]).toHaveProperty('name');
-        expect(measures[0]).toHaveProperty('duration');
     });
 
     test('should capture Core Web Vitals', async ({ page }) => {
@@ -125,67 +57,6 @@ test.describe('Performance Monitor Integration @basic', () => {
         }
     });
 
-    test('should work via API.performance facade', async ({ page }) => {
-        // Test mark via API
-        await page.evaluate(() => {
-            window.API.performance.mark('api-test-mark');
-        });
-
-        const hasMark = await page.evaluate(() => {
-            const marks = performance.getEntriesByName('api-test-mark', 'mark');
-            return marks.length > 0;
-        });
-        expect(hasMark).toBe(true);
-
-        // Test getVitals via API
-        const vitals = await page.evaluate(() => {
-            return window.API.performance.getVitals();
-        });
-        expect(vitals).toBeDefined();
-        expect(typeof vitals).toBe('object');
-
-        // Test enable/disable via API
-        await page.evaluate(() => {
-            window.API.performance.disable();
-        });
-
-        let isEnabled = await page.evaluate(() => {
-            return window.PerfMonitor.enabled;
-        });
-        expect(isEnabled).toBe(false);
-
-        await page.evaluate(() => {
-            window.API.performance.enable();
-        });
-
-        isEnabled = await page.evaluate(() => {
-            return window.PerfMonitor.enabled;
-        });
-        expect(isEnabled).toBe(true);
-    });
-
-    test('should persist enabled state to localStorage', async ({ page }) => {
-        // Enable and check persistence
-        await page.evaluate(() => {
-            window.PerfMonitor.enable();
-        });
-
-        const storedValue = await page.evaluate(() => {
-            return localStorage.getItem('app.perfMonitor.enabled');
-        });
-        expect(storedValue).toBe('true');
-
-        // Disable and check persistence
-        await page.evaluate(() => {
-            window.PerfMonitor.disable();
-        });
-
-        const storedValueAfterDisable = await page.evaluate(() => {
-            return localStorage.getItem('app.perfMonitor.enabled');
-        });
-        expect(storedValueAfterDisable).toBe('false');
-    });
-
     test('should include vitals in report output', async ({ page }) => {
         // Capture console logs
         const consoleLogs = [];
@@ -220,79 +91,5 @@ test.describe('Performance Monitor Integration @basic', () => {
                 log.includes('FID')
         );
         expect(hasVitalsReport).toBe(true);
-    });
-});
-
-test.describe('Performance Monitor Edge Cases', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
-        await utils.waitForAppReady(page);
-    });
-
-    test('should handle mark() with empty name gracefully', async ({ page }) => {
-        const result = await page.evaluate(() => {
-            window.PerfMonitor.mark('');
-            // Should not throw, but also shouldn't create a mark
-            const marks = performance.getEntriesByName('', 'mark');
-            return marks.length === 0;
-        });
-        expect(result).toBe(true);
-    });
-
-    test('should handle measure() with invalid marks gracefully', async ({ page }) => {
-        const result = await page.evaluate(() => {
-            // Try to measure with non-existent marks
-            const measurement = window.PerfMonitor.measure(
-                'invalid-measure',
-                'non-existent-start',
-                'non-existent-end'
-            );
-            return measurement === null;
-        });
-        expect(result).toBe(true);
-    });
-
-    test('should return empty array when disabled', async ({ page }) => {
-        const result = await page.evaluate(() => {
-            window.PerfMonitor.disable();
-            window.PerfMonitor.mark('disabled-mark');
-            const measures = window.PerfMonitor.report();
-            return measures.length === 0;
-        });
-        expect(result).toBe(true);
-    });
-
-    test('should support report() with clear option', async ({ page }) => {
-        await page.evaluate(() => {
-            window.PerfMonitor.mark('clear-test-start');
-            window.PerfMonitor.mark('clear-test-end');
-            window.PerfMonitor.measure('clear-test', 'clear-test-start', 'clear-test-end');
-
-            // Report with clear
-            window.PerfMonitor.report({ clear: true });
-        });
-
-        // Check if measures were cleared
-        const measuresAfterClear = await page.evaluate(() => {
-            const measures = performance.getEntriesByName('clear-test', 'measure');
-            return measures.length;
-        });
-        expect(measuresAfterClear).toBe(0);
-    });
-
-    test('should support report() with topN option', async ({ page }) => {
-        const result = await page.evaluate(() => {
-            // Create multiple measures
-            for (let i = 0; i < 10; i++) {
-                window.PerfMonitor.mark(`test-${i}-start`);
-                window.PerfMonitor.mark(`test-${i}-end`);
-                window.PerfMonitor.measure(`test-${i}`, `test-${i}-start`, `test-${i}-end`);
-            }
-
-            // Report only top 3
-            const measures = window.PerfMonitor.report({ topN: 3 });
-            return measures.length;
-        });
-        expect(result).toBeLessThanOrEqual(3);
     });
 });

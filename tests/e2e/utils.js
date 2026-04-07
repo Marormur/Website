@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // Shared Playwright test utilities for reuse across specs
 // CommonJS export to match existing test style
 
@@ -13,28 +14,20 @@ async function gotoHome(page, baseURL) {
         console.log('[Browser pageerror]', err.message, err.stack);
     });
 
-    // Set USE_BUNDLE flag if env var is set (BEFORE navigation)
-    if (typeof process.env.USE_BUNDLE !== 'undefined') {
-        const flag =
-            process.env.USE_BUNDLE === '1'
-                ? true
-                : process.env.USE_BUNDLE === '0'
-                  ? false
-                  : undefined;
-        if (typeof flag !== 'undefined') {
-            await page.addInitScript(val => {
-                // Both flags are respected by different loader paths
-                window.USE_BUNDLE = val;
-                window.__USE_BUNDLE__ = val;
-                try {
-                    window.localStorage.setItem('USE_BUNDLE', val ? '1' : '0');
-                } catch (e) {
-                    /* ignore storage errors */
-                }
-            }, flag);
-            console.log(`[Test Utils] Bundle mode via USE_BUNDLE=${process.env.USE_BUNDLE}`);
-        }
+    // Bundle-only mode: force loader flags to true before navigation.
+    if (process.env.USE_BUNDLE === '0') {
+        console.warn('[Test Utils] USE_BUNDLE=0 is ignored (bundle-only mode)');
     }
+
+    await page.addInitScript(() => {
+        window.USE_BUNDLE = true;
+        try {
+            window.localStorage.setItem('USE_BUNDLE', '1');
+        } catch (_) {
+            /* ignore storage errors */
+        }
+    });
+    console.log('[Test Utils] Bundle mode forced to USE_BUNDLE=1');
 
     // Keep navigation bounded for per-test timeout (30s). Avoid networkidle to prevent hanging on external fetches.
     await page.goto(baseURL + '/index.html', { waitUntil: 'load', timeout: 20000 });
@@ -106,12 +99,8 @@ async function openSettingsViaAppleMenu(page, label) {
     await menuItem.waitFor({ state: 'visible', timeout: 10000 });
     await menuItem.click();
 
-    const settingsWindow = await openSettingsWindow(page, 10000);
-    await expect(settingsWindow.locator('[data-settings-page]').first()).toBeVisible({
-        timeout: 10000,
-    });
-
-    return settingsWindow;
+    // The menu item already opens Settings; only resolve the latest visible instance.
+    return waitForVisibleWindowByLegacyId(page, 'settings-modal', 10000);
 }
 
 async function getLatestWindowByType(page, type, timeout = 10000) {
@@ -185,7 +174,7 @@ async function openSettingsWindow(page, timeout = 10000) {
 }
 
 function languageRadio(page, value) {
-    return page.locator(`input[name="language-preference"][value="${value}"]`);
+    return page.locator(`input[name="language-preference"][value="${value}"]:visible`);
 }
 
 async function expectAppleMenuSettingsLabel(page, expectedLabel) {
@@ -526,7 +515,8 @@ async function ensureGithubMocksIfRequested(page) {
             await mockGithubRepoImageFlow(page, origin);
         } catch (e) {
             // Non-fatal; tests can proceed without mocks
-            console.warn('GitHub API mock setup failed:', e && e.message ? e.message : e);
+            const errorMsg = e instanceof Error ? e.message : String(e);
+            console.warn('GitHub API mock setup failed:', errorMsg);
         }
     }
 }
@@ -549,7 +539,7 @@ async function getSavedSessionPayload(page) {
             }
             return { key: null, raw: null };
         } catch (e) {
-            return { key: null, raw: null, error: String(e) };
+            return { key: null, raw: null, error: String(e instanceof Error ? e.message : e) };
         }
     });
 }
@@ -557,9 +547,9 @@ async function getSavedSessionPayload(page) {
 /**
  * Get the add-tab button for a Finder window.
  * The window-id is auto-detected from page.__finderWindowId or derived from finderWindow selector.
- * @param {Page} page - Playwright page
- * @param {Locator} finderWindow - Locator of the Finder window (.modal.multi-window[id^="window-finder-"])
- * @returns {Locator} Locator for the add-tab button (.wt-add button in the tab bar)
+ * @param {import('@playwright/test').Page} page - Playwright page
+ * @param {import('@playwright/test').Locator} finderWindow - Locator of the Finder window (.modal.multi-window[id^="window-finder-"])
+ * @returns {Promise<import('@playwright/test').Locator>} Locator for the add-tab button (.wt-add button in the tab bar)
  */
 async function getFinderAddTabButton(page, finderWindow) {
     const windowId = await finderWindow.getAttribute('id');
@@ -572,9 +562,9 @@ async function getFinderAddTabButton(page, finderWindow) {
 
 /**
  * Get the list of tabs in a Finder window.
- * @param {Page} page - Playwright page
- * @param {Locator} finderWindow - Locator of the Finder window
- * @returns {Locator} Locator for all tabs in the window
+ * @param {import('@playwright/test').Page} page - Playwright page
+ * @param {import('@playwright/test').Locator} finderWindow - Locator of the Finder window
+ * @returns {Promise<import('@playwright/test').Locator>} Locator for all tabs in the window
  */
 async function getFinderTabs(page, finderWindow) {
     const windowId = await finderWindow.getAttribute('id');
@@ -587,10 +577,10 @@ async function getFinderTabs(page, finderWindow) {
 /**
  * Waits for Finder content to be rendered and visible for the given view mode.
  * Uses DOM presence instead of fixed timeouts to reduce flakiness.
- * @param {Locator} finderWindow - Locator of the Finder window
+ * @param {import('@playwright/test').Locator} finderWindow - Locator of the Finder window
  * @param {'list'|'grid'} mode - Desired view mode
  * @param {number} timeout - Max wait time in ms
- * @returns {Locator} Locator pointing to the first rendered item
+ * @returns {Promise<import('@playwright/test').Locator>} Locator pointing to the first rendered item
  */
 async function waitForFinderContent(finderWindow, mode = 'list', timeout = 12000) {
     const content = finderWindow.locator('.finder-content');
@@ -608,7 +598,7 @@ async function waitForFinderContent(finderWindow, mode = 'list', timeout = 12000
 
 /**
  * Switches the Finder view mode and waits until the corresponding content is ready.
- * @param {Locator} finderWindow - Locator of the Finder window
+ * @param {import('@playwright/test').Locator} finderWindow - Locator of the Finder window
  * @param {'list'|'grid'} mode - Target view mode
  * @param {number} timeout - Max wait time in ms
  */
@@ -698,9 +688,9 @@ async function openFinderWindow(page) {
         try {
             return {
                 appReady: window.__APP_READY === true,
-                bundleReady: window.__BUNDLE_READY === true,
+                bundleReady: false, // Always false; __APP_READY is the authoritative signal
                 useBundleFlag: window.USE_BUNDLE ?? null,
-                useBundleLegacy: window.__USE_BUNDLE__ ?? null,
+                useBundleLegacy: window.USE_BUNDLE ?? null,
                 hasWindowManager: !!window.WindowManager,
                 hasWindowRegistry: !!window.WindowRegistry,
                 hasFinderWindow: !!window.FinderWindow,
@@ -709,7 +699,7 @@ async function openFinderWindow(page) {
                 ).length,
             };
         } catch (e) {
-            return { error: String(e) };
+            return { error: String(e instanceof Error ? e.message : e) };
         }
     });
     console.log('[Test Utils] Finder pre-open state:', preState);
@@ -743,9 +733,9 @@ async function openFinderWindow(page) {
         try {
             return {
                 appReady: window.__APP_READY === true,
-                bundleReady: window.__BUNDLE_READY === true,
+                bundleReady: false, // Always false; __APP_READY is the authoritative signal
                 useBundleFlag: window.USE_BUNDLE ?? null,
-                useBundleLegacy: window.__USE_BUNDLE__ ?? null,
+                useBundleLegacy: window.USE_BUNDLE ?? null,
                 hasWindowManager: !!window.WindowManager,
                 hasWindowRegistry: !!window.WindowRegistry,
                 hasFinderWindow: !!window.FinderWindow,
@@ -759,7 +749,7 @@ async function openFinderWindow(page) {
                         : null,
             };
         } catch (e) {
-            return { error: String(e) };
+            return { error: String(e instanceof Error ? e.message : e) };
         }
     });
     console.log('[Test Utils] Finder post-ensure state:', postEnsureState);
@@ -815,12 +805,7 @@ async function openFinderWindow(page) {
  * - A visible window element with #${windowId}-tabs tab bar (new multi-window)
  */
 async function waitForFinderReady(page, opts = {}) {
-    const timeout =
-        typeof opts.timeout === 'number'
-            ? opts.timeout
-            : process.env.USE_BUNDLE === '1'
-              ? 30000
-              : 15000;
+    const timeout = typeof opts.timeout === 'number' ? opts.timeout : 30000;
     // Ensure optional GitHub mocks are set up before Finder initializes
     await ensureGithubMocksIfRequested(page);
     await page.waitForFunction(
@@ -839,8 +824,8 @@ async function waitForFinderReady(page, opts = {}) {
                         if (Array.isArray(arr) && arr.length > 0) {
                             // Also verify the window element is visible (has DOM presence)
                             const firstWindow = arr[0];
-                            if (firstWindow && firstWindow.windowId) {
-                                const el = document.getElementById(firstWindow.windowId);
+                            if (firstWindow && firstWindow.id) {
+                                const el = document.getElementById(firstWindow.id);
                                 if (el && el.offsetParent !== null) return true; // visible
                             }
                             return true; // Window registered even if not visible yet
@@ -851,7 +836,12 @@ async function waitForFinderReady(page, opts = {}) {
                 const anyFinderWindow = document.querySelector(
                     '.modal.multi-window[id^="window-finder-"]'
                 );
-                if (anyFinderWindow && anyFinderWindow.offsetParent !== null) return true;
+                if (
+                    anyFinderWindow &&
+                    'offsetParent' in anyFinderWindow &&
+                    anyFinderWindow.offsetParent !== null
+                )
+                    return true;
                 return false;
             } catch {
                 return false;

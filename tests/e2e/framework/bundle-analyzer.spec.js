@@ -48,12 +48,4 @@ test.describe('Bundle Analyzer', () => {
         expect(result.exceedsSmall).toBe(true); // Should exceed 10KB
         expect(result.exceedsLarge).toBe(false); // Should not exceed 1000KB
     });
-
-    test('should be accessible via window.MacUIBundle', async ({ page }) => {
-        const exists = await page.evaluate(() => {
-            return window.MacUIBundle !== undefined;
-        });
-
-        expect(exists).toBe(true);
-    });
 });

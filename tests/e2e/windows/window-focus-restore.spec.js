@@ -230,6 +230,32 @@ test.describe('Window Focus Restoration', () => {
 
         // Wait for session restore. On slower CI/browser runs the second window can
         // appear delayed although stack restore already started.
+        // Wait for session restore to complete
+        await page.waitForFunction(() => window.__SESSION_RESTORED === true, { timeout: 15000 });
+        // Wait for z-index stack to be populated after restore
+        await page
+            .waitForFunction(
+                () => {
+                    const zIndexManager = window.__zIndexManager;
+                    const stack = zIndexManager?.getWindowStack?.() || [];
+                    return stack.length >= 1;
+                },
+                { timeout: 10000 }
+            )
+            .catch(() => {});
+
+        // Wait for z-index manager to have populated the window stack
+        await page.waitForFunction(
+            () => {
+                const zIndexManager = window.__zIndexManager;
+                const stack = zIndexManager?.getWindowStack?.() || [];
+                return stack.length > 0;
+            },
+            { timeout: 10000 }
+        );
+
+        // Wait for session restore. On slower CI/browser runs the second window can
+        // appear delayed although stack restore already started.
 
         let restoredAboutWindowId = null;
         try {
