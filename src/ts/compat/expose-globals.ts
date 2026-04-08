@@ -58,6 +58,7 @@ import { TerminalWindow as __TerminalWindow__ } from '../apps/terminal/terminal-
 import '../apps/text-editor/text-editor-document'; // Text editor document tab
 import '../apps/text-editor/text-editor-window'; // Text editor window
 import '../apps/text-editor/text-editor-instance'; // Text editor instance manager
+import '../apps/code-editor/code-editor-spike-window'; // Monaco spike window
 
 // Multi-window system (Phase 4: Finder)
 // Import both side-effect and named to ensure symbols are retained and exposed

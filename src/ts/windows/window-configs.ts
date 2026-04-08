@@ -98,6 +98,18 @@ export const windowConfigurations: WindowConfiguration[] = [
         },
     },
     {
+        id: 'code-editor-modal',
+        type: 'persistent',
+        programKey: 'programs.codeEditor',
+        icon: WINDOW_ICONS.textEditor,
+        closeButtonId: null,
+        metadata: {
+            initHandler: function () {
+                window.CodeEditorWindow?.focusOrCreate?.();
+            },
+        },
+    },
+    {
         id: 'preview-modal',
         type: 'persistent',
         programKey: 'programs.preview',

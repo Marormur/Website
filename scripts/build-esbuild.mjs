@@ -15,33 +15,76 @@ const common = {
     logLevel: 'info',
     metafile: analyze, // Metafile für Analyse
     legalComments: 'none', // Strip license/legal comments to reduce size
+    loader: {
+        '.ttf': 'file',
+        '.woff': 'file',
+        '.woff2': 'file',
+    },
 };
 
 const entry = path.resolve(root, 'src/ts/compat/expose-globals.ts');
 const outfile = path.resolve(root, 'js/app.bundle.js');
+const monacoWorkerOutdir = path.resolve(root, 'js/monaco-workers');
+const monacoEditorWorkerEntry = path.resolve(
+    root,
+    'node_modules/monaco-editor/esm/vs/editor/editor.worker.js'
+);
+const monacoJsonWorkerEntry = path.resolve(
+    root,
+    'node_modules/monaco-editor/esm/vs/language/json/json.worker.js'
+);
 
 (async () => {
     if (watch) {
-        const ctx = await context({
+        const appCtx = await context({
             ...common,
             entryPoints: [entry],
             outfile,
             format: 'iife',
             globalName: 'App',
         });
-        await ctx.watch();
-        console.log(`✔️  Built ${path.relative(root, outfile)} (watching)`);
-    } else {
-        const result = await build({
+        const workerCtx = await context({
             ...common,
-            entryPoints: [entry],
-            outfile,
+            sourcemap: false,
+            entryPoints: {
+                'editor.worker': monacoEditorWorkerEntry,
+                'json.worker': monacoJsonWorkerEntry,
+            },
+            outdir: monacoWorkerOutdir,
             format: 'iife',
-            globalName: 'App',
-            minify: true, // Minify in production: reduces bundle from ~915KB to ~445KB
+            minify: true,
         });
 
+        await Promise.all([appCtx.watch(), workerCtx.watch()]);
+        console.log(`✔️  Built ${path.relative(root, outfile)} (watching)`);
+        console.log(
+            `✔️  Built Monaco workers in ${path.relative(root, monacoWorkerOutdir)} (watching)`
+        );
+    } else {
+        const [result] = await Promise.all([
+            build({
+                ...common,
+                entryPoints: [entry],
+                outfile,
+                format: 'iife',
+                globalName: 'App',
+                minify: true, // Minify in production: reduces bundle from ~915KB to ~445KB
+            }),
+            build({
+                ...common,
+                sourcemap: false,
+                entryPoints: {
+                    'editor.worker': monacoEditorWorkerEntry,
+                    'json.worker': monacoJsonWorkerEntry,
+                },
+                outdir: monacoWorkerOutdir,
+                format: 'iife',
+                minify: true,
+            }),
+        ]);
+
         console.log(`✔️  Built ${path.relative(root, outfile)}`);
+        console.log(`✔️  Built Monaco workers in ${path.relative(root, monacoWorkerOutdir)}`);
 
         // Bundle-Größe anzeigen
         if (result.metafile) {

@@ -322,6 +322,24 @@ declare global {
             focusOrCreate?: (config?: { title?: string }) => unknown;
             focusOrCreateWithDocument?: (title: string, content: string) => unknown;
         };
+        /** CodeEditor window class/factory (Monaco-based). */
+        CodeEditorWindow?: {
+            create?: (config?: { title?: string }) => unknown;
+            focusOrCreate?: (config?: { title?: string }) => unknown;
+        };
+        /** Backward-compatible helper to open the Monaco-powered code editor. */
+        MonacoSpike?: {
+            open?: () => unknown;
+        };
+        /** Public code editor API for creating/opening files in the current editor window. */
+        CodeEditorApp?: {
+            open?: () => unknown;
+            newFile?: (filename?: string) => unknown;
+            openFile?: (filename: string, content: string) => unknown;
+        };
+        MonacoEnvironment?: {
+            getWorker?: (workerId: string, label: string) => Worker;
+        };
         /** FinderView class for creating finder views/tabs (constructor reference). */
         FinderView?: new (config?: {
             id?: string;

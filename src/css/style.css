@@ -283,7 +283,8 @@ html.dark .traffic-light-control--disabled:hover {
 /* Data-app-type variants: ensure all apps share consistent base styling */
 [data-app-type='text-editor'].tab-header-control,
 [data-app-type='finder'].tab-header-control,
-[data-app-type='terminal'].tab-header-control {
+[data-app-type='terminal'].tab-header-control,
+[data-app-type='code-editor'].tab-header-control {
     backdrop-filter: saturate(120%) blur(12px);
     -webkit-backdrop-filter: saturate(120%) blur(12px);
 }
@@ -317,6 +318,160 @@ html.dark .traffic-light-control--disabled:hover {
     border-color: rgba(146, 146, 152, 0.3) !important;
     background-color: rgba(243, 243, 245, 0.74) !important;
     background-image: none !important;
+}
+
+/* ============================================================================
+   Code Editor (Monaco) Phase-1A Core
+   ============================================================================ */
+[data-app-type='code-editor'].window-tab-bar {
+    border-color: rgba(37, 99, 235, 0.22) !important;
+    background: linear-gradient(
+        180deg,
+        rgba(251, 253, 255, 0.92),
+        rgba(241, 245, 249, 0.88)
+    ) !important;
+    background-image: none !important;
+}
+
+.code-editor-window-label {
+    margin-left: 12px;
+    color: #1e293b;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.code-editor-root {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    background: #1f2937;
+}
+
+.code-editor-header {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 0;
+    border-bottom: 1px solid #2f3947;
+    background: #111827;
+}
+
+.code-editor-file-tabs {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.code-editor-file-tab {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    min-width: 0;
+    position: relative;
+    border-right: 1px solid #2f3947;
+    background: #111827;
+}
+
+.code-editor-file-tab.is-active {
+    background: #1f2937;
+}
+
+.code-editor-file-tab-label {
+    border: 0;
+    background: transparent;
+    color: #cbd5e1;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 9px 10px;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    text-align: left;
+}
+
+.code-editor-file-tab.is-active .code-editor-file-tab-label {
+    color: #f8fafc;
+}
+
+.code-editor-file-tab-close {
+    border: 0;
+    background: transparent;
+    color: #94a3b8;
+    flex: 0 0 26px;
+    width: 26px;
+    height: 100%;
+    font-size: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.code-editor-file-tab-close:hover,
+.code-editor-file-tab-label:hover {
+    background: rgba(148, 163, 184, 0.18);
+}
+
+.code-editor-new-file {
+    border: 0;
+    border-left: 1px solid #2f3947;
+    padding: 0 12px;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.code-editor-new-file:hover {
+    background: #1e293b;
+}
+
+.code-editor-surface {
+    min-width: 0;
+    min-height: 0;
+}
+
+.code-editor-status {
+    border-top: 1px solid #2f3947;
+    background: #111827;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 12px;
+}
+
+html.dark [data-app-type='code-editor'].window-tab-bar {
+    border-color: rgba(71, 85, 105, 0.56) !important;
+    background: linear-gradient(180deg, rgba(35, 39, 46, 0.94), rgba(28, 32, 40, 0.92)) !important;
+}
+
+html.dark .code-editor-window-label {
+    color: #cbd5e1;
+}
+
+html.dark .code-editor-file-tab.is-active {
+    background: #0f172a;
+}
+
+@media (forced-colors: active) {
+    .code-editor-file-tab-label,
+    .code-editor-file-tab-close,
+    .code-editor-new-file {
+        background: ButtonFace;
+        color: ButtonText;
+        border-color: ButtonBorder;
+    }
+
+    .code-editor-status {
+        background: Canvas;
+        color: CanvasText;
+        border-top-color: ButtonBorder;
+    }
 }
 
 .multi-window.window--seamless-topbar .window-titlebar {

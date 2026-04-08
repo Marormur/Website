@@ -398,8 +398,13 @@ export class BaseWindow {
         title.className = 'ml-4 font-semibold text-gray-700 dark:text-gray-300 no-select';
 
         // Set i18n key based on window type
-        // Map text-editor to text for i18n key
-        const typeKey = this.type === 'text-editor' ? 'text' : this.type;
+        // Map special window types to their i18n key variants.
+        const typeKey =
+            this.type === 'text-editor'
+                ? 'text'
+                : this.type === 'code-editor'
+                  ? 'codeEditor'
+                  : this.type;
         const titleKey = `desktop.${typeKey}`;
         title.setAttribute('data-i18n', titleKey);
         title.textContent = (this.metadata.title as string | undefined) || this.type; // Fallback before i18n

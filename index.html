@@ -6,6 +6,7 @@
         <title>Marvin</title>
         <link rel="icon" href="./img/sucher.png" />
         <link rel="stylesheet" href="./dist/output.css" />
+        <link rel="stylesheet" href="./js/app.bundle.css" />
         <link rel="stylesheet" href="./src/css/style.css" />
         <link rel="stylesheet" href="./src/css/mobile-gesture-nav.css" />
 
@@ -19,15 +20,14 @@
             })();
         </script>
 
-        <!-- 🔀 Conditional Module Loading (October 28, 2025) -->
-        <!-- Controls whether to load esbuild bundle OR individual scripts -->
+        <!-- Bundle-only module loading -->
         <script>
-            // USE_BUNDLE flag: Controls module loading strategy
+            // Kept for test/debug visibility.
             // Sources (priority order):
             // 1) Env-injected (tests): window.__USE_BUNDLE__ = true/false
             // 2) URL param: ?bundle=1 or ?bundle=0
             // 3) localStorage: USE_BUNDLE = '1' or '0'
-            // Default (fallback): true (Bundle as default)
+            // Effective mode: always true (bundle-only)
 
             const urlParams = new URLSearchParams(window.location.search);
             const urlBundleParam = urlParams.get('bundle');
@@ -41,293 +41,51 @@
             const bundleFromEnv =
                 typeof window.__USE_BUNDLE__ !== 'undefined' ? !!window.__USE_BUNDLE__ : undefined;
 
-            const defaultBundle = true; // Bundle default (all modules now included)
-            // Pick first defined source, otherwise use default
-            window.USE_BUNDLE = [
-                bundleFromEnv,
-                bundleFromUrl,
-                bundleFromStorage,
-                defaultBundle,
-            ].find(v => v !== undefined);
+            const requestedBundle = [bundleFromEnv, bundleFromUrl, bundleFromStorage].find(
+                v => v !== undefined
+            );
+
+            if (requestedBundle === false) {
+                console.warn(
+                    '[Module Loader] Legacy/non-bundle mode is removed; forcing bundle mode'
+                );
+            }
+
+            window.USE_BUNDLE = true;
 
             console.log('[Module Loader] USE_BUNDLE:', window.USE_BUNDLE);
         </script>
 
         <script>
-            // Conditional loading: Either bundle OR individual scripts (sequential, no document.write)
+            // Bundle-only loader (no legacy fallback chain)
             (() => {
-                const legacyScripts = [
-                    './js/core/logger.js',
-                    './js/core/error-handler.js',
-                    './js/core/perf-monitor.js',
-                    './js/core/constants.js',
-                    './js/core/vdom.js',
-                    './js/framework/core/component.js',
-                    './js/framework/layout/app-shell.js',
-                    './js/framework/layout/split-view.js',
-                    './js/framework/navigation/sidebar.js',
-                    './js/framework/navigation/toolbar.js',
-                    './js/framework/navigation/tabs.js',
-                    './js/ui/icons.js',
-                    './js/services/theme.js',
-                    './js/ui/dock.js',
-                    './js/services/storage.js',
-                    './js/ui/snap-utils.js',
-                    './js/ui/dialog-utils.js',
-                    './js/ui/dialog.js',
-                    './js/ui/desktop.js',
-                    './js/services/system.js',
-                    './js/ui/menubar-utils.js',
-                    './js/services/program-actions.js',
-                    './js/ui/menu.js',
-                    './js/services/github-api.js',
-                    './js/apps/finder/finder.js',
-                    './js/apps/finder/finder-ui.js',
-                    './js/apps/finder/finder-view.js',
-                    './js/apps/finder/finder-window.js',
-                    './js/windows/window-manager.js',
-                    './js/ui/action-bus.js',
-                    './js/windows/window-configs.js',
-                    './js/core/api.js',
-                    './js/windows/base-window-instance.js',
-                    './js/windows/instance-manager.js',
-                    './js/windows/window-chrome.js',
-                    './js/windows/window-tabs.js',
-                    './js/ui/keyboard-shortcuts.js',
-                    './js/services/session-manager.js',
-                    './js/windows/multi-instance-integration.js',
-                    './js/ui/context-menu.js',
-                    './js/services/settings.js',
-                    './js/apps/text-editor/text-editor.js',
-                    './js/apps/text-editor/text-editor-instance.js',
-                    './js/apps/terminal/terminal.js',
-                    './js/apps/terminal/terminal-instance.js',
-                    './js/apps/photos/photos-app.js',
-                    './js/apps/photos/photos-window.js',
-                    './js/apps/finder/finder-instance.js',
-                    './js/ui/launchpad.js',
-                    './js/apps/photos/image-viewer-utils.js',
-                    './js/services/program-menu-sync.js',
-                    './js/ui/mobile-paging.js',
-                    './js/core/app-init.js',
-                    './js/core/framework-init.js',
-                    './app.js',
-                ];
-
-                // Expose list for fallback reuse
-                window.__LEGACY_SCRIPTS__ = legacyScripts;
-
-                const appended = new Set();
-                const normalize = src => new URL(src, document.baseURI).href;
-                const isAlreadyAdded = src => {
-                    const full = normalize(src);
-                    if (appended.has(full)) return true;
-                    return !!document.querySelector(
-                        `script[src="${full}"]` + `,script[src="${src}"]`
-                    );
-                };
-
-                const appendScriptOnce = (src, attrs = {}, label = 'loader') =>
+                const appendBundleScript = () =>
                     new Promise((resolve, reject) => {
-                        const full = normalize(src);
-                        if (isAlreadyAdded(src)) {
-                            appended.add(full);
+                        const src = './js/app.bundle.js';
+                        const abs = new URL(src, document.baseURI).href;
+                        const existing = document.querySelector(
+                            `script[src="${abs}"],script[src="${src}"]`
+                        );
+                        if (existing) {
                             resolve();
                             return;
                         }
 
-                        const s = document.createElement('script');
-                        s.src = src;
-                        s.async = false; // keep execution order deterministic
-                        Object.entries(attrs || {}).forEach(([k, v]) => {
-                            s.setAttribute(k, String(v));
-                        });
-                        s.onload = () => {
-                            appended.add(full);
-                            resolve();
-                        };
-                        s.onerror = err => {
-                            appended.add(full);
-                            console.error(`[Module Loader] Failed to load ${src}`, err);
-                            reject(err);
-                        };
-                        s.dataset.loader = label;
-                        document.head.appendChild(s);
+                        const script = document.createElement('script');
+                        script.src = src;
+                        script.async = false;
+                        script.dataset.loader = 'bundle';
+                        script.onload = () => resolve();
+                        script.onerror = err => reject(err);
+                        document.head.appendChild(script);
                     });
 
-                const loadSequential = async (list, label = 'legacy') => {
-                    for (const src of list) {
-                        try {
-                            await appendScriptOnce(src, {}, label);
-                        } catch (err) {
-                            // Continue loading remaining scripts even if one fails
-                            console.warn(`[Module Loader] Continuing after error for ${src}`);
-                        }
-                    }
-                };
+                window.__BUNDLE_REQUESTED_AT__ = Date.now();
+                console.log('[Module Loader] Loading esbuild bundle (bundle-only mode)...');
 
-                window.__SCRIPT_LOADER__ = {
-                    appendScriptOnce,
-                    loadSequential,
-                    legacyScripts,
-                };
-
-                const start = async () => {
-                    if (window.USE_BUNDLE) {
-                        console.log('[Module Loader] Loading esbuild bundle (includes i18n)...');
-                        await appendScriptOnce('./js/app.bundle.js', {}, 'bundle');
-                    } else {
-                        console.log('[Module Loader] Loading individual scripts...');
-                        await loadSequential(legacyScripts, 'legacy');
-                    }
-                };
-
-                // Expose promise for potential dependents
-                window.__MODULE_LOADER_PROMISE__ = start().catch(err => {
-                    console.error('[Module Loader] Fatal error during loading', err);
+                window.__MODULE_LOADER_PROMISE__ = appendBundleScript().catch(err => {
+                    console.error('[Module Loader] Bundle load failed', err);
                 });
-            })();
-        </script>
-
-        <!-- Resilient loader fallback: if neither bundle nor legacy scripts register core globals
-             within a short grace period, attempt to load the bundle again; if still absent, load
-             the legacy script list sequentially. This avoids blank/mostly-static pages when the
-             document.write path is bypassed (e.g., due to prerendering or CSP in some runners). -->
-        <script>
-            (() => {
-                const hasCore = () =>
-                    // Primary: explicit bundle/app readiness flags
-                    !!(window.__BUNDLE_READY__ || window.__APP_READY) ||
-                    // Secondary: menu/i18n presence from the bundle
-                    !!(window.MenuSystem && window.appI18n) ||
-                    // Fallback (original heuristic)
-                    !!(window.ActionBus && window.WindowRegistry && window.DockSystem);
-
-                const appendScriptOnce =
-                    window.__SCRIPT_LOADER__?.appendScriptOnce ||
-                    ((src, attrs = {}, label = 'fallback') => {
-                        const s = document.createElement('script');
-                        s.src = src;
-                        s.async = false;
-                        Object.entries(attrs || {}).forEach(([k, v]) => s.setAttribute(k, v));
-                        s.dataset.loader = label;
-                        document.head.appendChild(s);
-                        return new Promise(resolve => {
-                            const done = () => resolve();
-                            s.onload = done;
-                            s.onerror = done;
-                        });
-                    });
-
-                const loadBundleOnce = () => {
-                    if (document.querySelector('script[data-fallback-bundle]')) return;
-                    appendScriptOnce(
-                        './js/app.bundle.js',
-                        { 'data-fallback-bundle': '1' },
-                        'fallback-bundle'
-                    ).catch(err =>
-                        console.warn('[Module Loader Fallback] bundle load failed', err)
-                    );
-                };
-
-                const legacyScripts = window.__LEGACY_SCRIPTS__ || [
-                    './js/core/logger.js',
-                    './js/core/error-handler.js',
-                    './js/core/perf-monitor.js',
-                    './js/core/constants.js',
-                    './js/core/vdom.js',
-                    './js/framework/core/component.js',
-                    './js/framework/layout/app-shell.js',
-                    './js/framework/layout/split-view.js',
-                    './js/framework/navigation/sidebar.js',
-                    './js/framework/navigation/toolbar.js',
-                    './js/framework/navigation/tabs.js',
-                    './js/ui/icons.js',
-                    './js/services/theme.js',
-                    './js/ui/dock.js',
-                    './js/services/storage.js',
-                    './js/ui/snap-utils.js',
-                    './js/ui/dialog-utils.js',
-                    './js/ui/dialog.js',
-                    './js/ui/desktop.js',
-                    './js/services/system.js',
-                    './js/ui/menubar-utils.js',
-                    './js/services/program-actions.js',
-                    './js/ui/menu.js',
-                    './js/services/github-api.js',
-                    './js/apps/finder/finder.js',
-                    './js/apps/finder/finder-ui.js',
-                    './js/apps/finder/finder-view.js',
-                    './js/apps/finder/finder-window.js',
-                    './js/windows/window-manager.js',
-                    './js/ui/action-bus.js',
-                    './js/windows/window-configs.js',
-                    './js/core/api.js',
-                    './js/windows/base-window-instance.js',
-                    './js/windows/instance-manager.js',
-                    './js/windows/window-chrome.js',
-                    './js/windows/window-tabs.js',
-                    './js/ui/keyboard-shortcuts.js',
-                    './js/services/session-manager.js',
-                    './js/windows/multi-instance-integration.js',
-                    './js/ui/context-menu.js',
-                    './js/services/settings.js',
-                    './js/apps/text-editor/text-editor.js',
-                    './js/apps/text-editor/text-editor-instance.js',
-                    './js/apps/terminal/terminal.js',
-                    './js/apps/terminal/terminal-instance.js',
-                    './js/apps/photos/photos-app.js',
-                    './js/apps/photos/photos-window.js',
-                    './js/apps/finder/finder-instance.js',
-                    './js/ui/launchpad.js',
-                    './js/apps/photos/image-viewer-utils.js',
-                    './js/services/program-menu-sync.js',
-                    './js/ui/mobile-paging.js',
-                    './js/core/app-init.js',
-                    './js/core/framework-init.js',
-                    './app.js',
-                ];
-
-                let legacyLoading = false;
-                const loadLegacySequential = () => {
-                    if (legacyLoading) return;
-                    legacyLoading = true;
-                    const loader = window.__SCRIPT_LOADER__?.loadSequential;
-                    if (loader) {
-                        loader(legacyScripts, 'fallback-legacy');
-                        return;
-                    }
-                    const loadAt = idx => {
-                        if (idx >= legacyScripts.length) return;
-                        const s = document.createElement('script');
-                        s.src = legacyScripts[idx];
-                        s.onload = () => loadAt(idx + 1);
-                        s.onerror = () => loadAt(idx + 1);
-                        s.async = false;
-                        s.dataset.loader = 'fallback-legacy';
-                        document.head.appendChild(s);
-                    };
-                    loadAt(0);
-                };
-
-                const ensureLoaded = label => {
-                    if (hasCore()) return;
-                    console.warn(`[Module Loader Fallback] missing core after ${label}, retrying`);
-                    loadBundleOnce();
-                    setTimeout(() => {
-                        if (!hasCore()) {
-                            console.warn(
-                                '[Module Loader Fallback] bundle retry failed; loading legacy scripts'
-                            );
-                            loadLegacySequential();
-                        }
-                    }, 500);
-                };
-
-                // Staggered checks to survive slow environments
-                [600, 1500, 3000].forEach(delay =>
-                    setTimeout(() => ensureLoaded(`t+${delay}ms`), delay)
-                );
             })();
         </script>
     </head>
