@@ -13,7 +13,14 @@ declare global {
         demoCreateEditors?: () => void;
         demoSaveTerminals?: () => void;
         demoRestoreTerminals?: () => void;
-        // Keep other demos as optional
+        demoTerminalIsolation?: () => void;
+        demoEditorContent?: () => void;
+        demoWindowChrome?: () => void;
+        demoMaxInstances?: () => void;
+        demoActiveInstance?: () => void;
+        demoEvents?: () => void;
+        demoTabs?: () => void;
+        demoSessionSave?: () => void;
     }
 }
 
@@ -77,8 +84,9 @@ window.demoSaveTerminals = function demoSaveTerminals() {
     logger.group('WINDOW', 'Save Terminal State...');
     const terminals = window.demoCreateTerminals?.() as Record<string, unknown> | undefined;
     if (terminals && terminals.term1) {
-        terminals.term1.currentPath = '/home';
-        terminals.term1.commandHistory = ['ls', 'pwd', 'cd documents'];
+        const t1 = terminals.term1 as InstanceShape;
+        t1.currentPath = '/home';
+        t1.commandHistory = ['ls', 'pwd', 'cd documents'];
     }
     const savedState = window.TerminalInstanceManager.serializeAll?.() || [];
     try {
@@ -174,26 +182,53 @@ function logDemo(title: string, description: string): void {
         const terminals = window.demoCreateTerminals?.() as Record<string, unknown> | undefined;
         if (!terminals) return;
         if (terminals.term1) {
-            terminals.term1.currentPath = '/home/user';
-            terminals.term1.commandHistory = terminals.term1.commandHistory || [];
-            terminals.term1.commandHistory.push('ls', 'pwd');
+            const t1 = terminals.term1 as TerminalInstance;
+            t1.currentPath = '/home/user';
+            t1.commandHistory = t1.commandHistory || [];
+            t1.commandHistory.push('ls', 'pwd');
         }
         if (terminals.term2) {
-            terminals.term2.currentPath = '/var/log';
-            terminals.term2.commandHistory = terminals.term2.commandHistory || [];
-            terminals.term2.commandHistory.push('tail -f server.log');
+            const t2 = terminals.term2 as TerminalInstance;
+            t2.currentPath = '/var/log';
+            t2.commandHistory = t2.commandHistory || [];
+            t2.commandHistory.push('tail -f server.log');
         }
         if (terminals.term3) {
-            terminals.term3.currentPath = '/etc';
-            terminals.term3.commandHistory = terminals.term3.commandHistory || [];
-            terminals.term3.commandHistory.push('cat config.yaml');
+            const t3 = terminals.term3 as TerminalInstance;
+            t3.currentPath = '/etc';
+            t3.commandHistory = t3.commandHistory || [];
+            t3.commandHistory.push('cat config.yaml');
         }
-        logger.debug('WINDOW', 'Terminal 1 path:', terminals.term1?.currentPath);
-        logger.debug('WINDOW', 'Terminal 1 history:', terminals.term1?.commandHistory);
-        logger.debug('WINDOW', 'Terminal 2 path:', terminals.term2?.currentPath);
-        logger.debug('WINDOW', 'Terminal 2 history:', terminals.term2?.commandHistory);
-        logger.debug('WINDOW', 'Terminal 3 path:', terminals.term3?.currentPath);
-        logger.debug('WINDOW', 'Terminal 3 history:', terminals.term3?.commandHistory);
+        logger.debug(
+            'WINDOW',
+            'Terminal 1 path:',
+            (terminals.term1 as TerminalInstance | undefined)?.currentPath
+        );
+        logger.debug(
+            'WINDOW',
+            'Terminal 1 history:',
+            (terminals.term1 as TerminalInstance | undefined)?.commandHistory
+        );
+        logger.debug(
+            'WINDOW',
+            'Terminal 2 path:',
+            (terminals.term2 as TerminalInstance | undefined)?.currentPath
+        );
+        logger.debug(
+            'WINDOW',
+            'Terminal 2 history:',
+            (terminals.term2 as TerminalInstance | undefined)?.commandHistory
+        );
+        logger.debug(
+            'WINDOW',
+            'Terminal 3 path:',
+            (terminals.term3 as TerminalInstance | undefined)?.currentPath
+        );
+        logger.debug(
+            'WINDOW',
+            'Terminal 3 history:',
+            (terminals.term3 as TerminalInstance | undefined)?.commandHistory
+        );
         logger.debug('WINDOW', '%c✓ Alle Terminals haben isolierten State!', 'color: #00ff00');
         logger.groupEnd();
     };
@@ -258,8 +293,9 @@ function logDemo(title: string, description: string): void {
         const terminals = window.demoCreateTerminals?.() as Record<string, unknown> | undefined;
         if (!terminals) return;
         if (terminals.term1) {
-            terminals.term1.currentPath = '/home';
-            terminals.term1.commandHistory = ['ls', 'pwd', 'cd documents'];
+            const t1 = terminals.term1 as TerminalInstance;
+            t1.currentPath = '/home';
+            t1.commandHistory = ['ls', 'pwd', 'cd documents'];
         }
         const mgr = window.TerminalInstanceManager as TerminalManager | undefined;
         const savedState = mgr?.serializeAll ? mgr.serializeAll() : undefined;
@@ -362,7 +398,7 @@ function logDemo(title: string, description: string): void {
         );
         if (terminals?.term1)
             window.TerminalInstanceManager?.setActiveInstance?.(
-                (terminals['term1'] as InstanceShape | undefined).instanceId as string
+                (terminals['term1'] as InstanceShape).instanceId as string
             );
         logger.debug(
             'WINDOW',
@@ -371,7 +407,7 @@ function logDemo(title: string, description: string): void {
         );
         if (terminals?.term2)
             window.TerminalInstanceManager?.setActiveInstance?.(
-                (terminals['term2'] as InstanceShape | undefined).instanceId as string
+                (terminals['term2'] as InstanceShape).instanceId as string
             );
         logger.debug(
             'WINDOW',
@@ -392,7 +428,7 @@ function logDemo(title: string, description: string): void {
         });
         if (!terminal) return;
         terminal.on('stateChanged', (data: unknown) => {
-            logger.debug('WINDOW', 'State changed:', data.newState);
+            logger.debug('WINDOW', 'State changed:', (data as Record<string, unknown>).newState);
         });
         terminal.on('focused', () => {
             logger.debug('WINDOW', 'Terminal focused!');
