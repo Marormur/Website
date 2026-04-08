@@ -105,6 +105,18 @@ type WorkbenchContentState = {
     untitledCounter?: number;
 };
 
+type I18nParams = Record<string, string | number>;
+
+type AppI18nBridge = {
+    translate?: (
+        key: string,
+        paramsOrFallback?: I18nParams | string,
+        options?: { fallback?: string }
+    ) => string;
+    applyTranslations?: (root?: Document | Element) => void;
+    getActiveLanguage?: () => string;
+};
+
 const CODE_FONT_STACK = "Menlo, Monaco, 'SF Mono', Consolas, 'Liberation Mono', monospace";
 const DEFAULT_SOURCE = [
     'function helloCodeEditor(name: string): string {',
@@ -117,10 +129,16 @@ const DEFAULT_SOURCE = [
 let monacoModulePromise: Promise<MonacoModule> | null = null;
 let monacoWorkersConfigured = false;
 
+function resolveMonacoLocale(): 'de' | 'en' {
+    const i18n = (window as Window & { appI18n?: AppI18nBridge }).appI18n;
+    const activeLanguage = i18n?.getActiveLanguage?.() || document.documentElement.lang || 'en';
+    return activeLanguage.toLowerCase().startsWith('de') ? 'de' : 'en';
+}
+
 function ensureMonacoWorkersConfigured(): void {
     if (monacoWorkersConfigured) return;
 
-    window.MonacoEnvironment = {
+    const monacoEnvironment = {
         getWorker: (_workerId: string, label: string) => {
             const workerPath =
                 label === 'json'
@@ -128,8 +146,10 @@ function ensureMonacoWorkersConfigured(): void {
                     : './js/monaco-workers/editor.worker.js';
             return new Worker(workerPath);
         },
-    };
+        locale: resolveMonacoLocale(),
+    } as Window['MonacoEnvironment'] & { locale?: string };
 
+    window.MonacoEnvironment = monacoEnvironment;
     monacoWorkersConfigured = true;
 }
 
@@ -203,6 +223,17 @@ export class CodeEditorWorkbenchTab extends BaseTab {
             this.openGoToLine();
         }
     };
+    private readonly languagePreferenceListener = () => {
+        const monacoEnvironment = window.MonacoEnvironment as
+            | (Window['MonacoEnvironment'] & { locale?: string })
+            | undefined;
+        if (monacoEnvironment) {
+            monacoEnvironment.locale = resolveMonacoLocale();
+        }
+        this.applyTranslations();
+        this.renderExplorer();
+        this.renderFileTabs();
+    };
     private expandedFolders = new Set<string>();
     private readonly explorerRootPath = '/home/marvin';
     private folderSearchResults: FolderSearchResult[] = [];
@@ -223,7 +254,10 @@ export class CodeEditorWorkbenchTab extends BaseTab {
     constructor(config?: Partial<TabConfig>) {
         super({
             type: 'code-editor-workbench-tab',
-            title: config?.title || 'Code Editor',
+            title:
+                config?.title ||
+                window.appI18n?.translate?.('programs.codeEditor.label', 'Code Editor') ||
+                'Code Editor',
             ...config,
         });
 
@@ -318,7 +352,10 @@ export class CodeEditorWorkbenchTab extends BaseTab {
     static deserialize(state: Record<string, unknown>): CodeEditorWorkbenchTab {
         const tab = new CodeEditorWorkbenchTab({
             id: (state.id as string | undefined) || undefined,
-            title: (state.title as string | undefined) || 'Code Editor',
+            title:
+                (state.title as string | undefined) ||
+                window.appI18n?.translate?.('programs.codeEditor.label', 'Code Editor') ||
+                'Code Editor',
             content: (state.contentState as WorkbenchContentState | undefined) || {},
             metadata: {
                 created: (state.created as number | undefined) || Date.now(),
@@ -342,25 +379,41 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         const tabsHost = document.createElement('div');
         tabsHost.className = 'code-editor-file-tabs';
         tabsHost.setAttribute('role', 'tablist');
-        tabsHost.setAttribute('aria-label', 'Open files');
+        tabsHost.setAttribute('aria-label', this.t('codeEditor.aria.openFiles', 'Open files'));
+        tabsHost.setAttribute('data-i18n-aria-label', 'codeEditor.aria.openFiles');
 
         const newFileButton = document.createElement('button');
         newFileButton.type = 'button';
         newFileButton.className = 'code-editor-new-file';
-        newFileButton.textContent = 'New File';
-        newFileButton.setAttribute('aria-label', 'Create a new file tab');
+        newFileButton.textContent = this.t('codeEditor.actions.newFile', 'New File');
+        newFileButton.setAttribute('data-i18n', 'codeEditor.actions.newFile');
+        newFileButton.setAttribute(
+            'aria-label',
+            this.t('codeEditor.aria.createFileTab', 'Create a new file tab')
+        );
+        newFileButton.setAttribute('data-i18n-aria-label', 'codeEditor.aria.createFileTab');
 
         const saveFileButton = document.createElement('button');
         saveFileButton.type = 'button';
         saveFileButton.className = 'code-editor-header-action';
-        saveFileButton.textContent = 'Save';
-        saveFileButton.setAttribute('aria-label', 'Save active file to workspace');
+        saveFileButton.textContent = this.t('codeEditor.actions.save', 'Save');
+        saveFileButton.setAttribute('data-i18n', 'codeEditor.actions.save');
+        saveFileButton.setAttribute(
+            'aria-label',
+            this.t('codeEditor.aria.saveActiveFile', 'Save active file to workspace')
+        );
+        saveFileButton.setAttribute('data-i18n-aria-label', 'codeEditor.aria.saveActiveFile');
 
         const importFileButton = document.createElement('button');
         importFileButton.type = 'button';
         importFileButton.className = 'code-editor-header-action';
-        importFileButton.textContent = 'Import';
-        importFileButton.setAttribute('aria-label', 'Import local file');
+        importFileButton.textContent = this.t('codeEditor.actions.import', 'Import');
+        importFileButton.setAttribute('data-i18n', 'codeEditor.actions.import');
+        importFileButton.setAttribute(
+            'aria-label',
+            this.t('codeEditor.aria.importLocalFile', 'Import local file')
+        );
+        importFileButton.setAttribute('data-i18n-aria-label', 'codeEditor.aria.importLocalFile');
 
         header.append(tabsHost, newFileButton, saveFileButton, importFileButton);
 
@@ -369,14 +422,16 @@ export class CodeEditorWorkbenchTab extends BaseTab {
 
         const explorer = document.createElement('aside');
         explorer.className = 'code-editor-explorer';
-        explorer.setAttribute('aria-label', 'Explorer');
+        explorer.setAttribute('aria-label', this.t('codeEditor.aria.explorer', 'Explorer'));
+        explorer.setAttribute('data-i18n-aria-label', 'codeEditor.aria.explorer');
 
         const searchSection = document.createElement('section');
         searchSection.className = 'code-editor-explorer-section';
 
         const searchTitle = document.createElement('h3');
         searchTitle.className = 'code-editor-explorer-title';
-        searchTitle.textContent = 'Search';
+        searchTitle.textContent = this.t('codeEditor.sections.search', 'Search');
+        searchTitle.setAttribute('data-i18n', 'codeEditor.sections.search');
 
         const searchControls = document.createElement('div');
         searchControls.className = 'code-editor-search-controls';
@@ -384,26 +439,60 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         const folderSearchInput = document.createElement('input');
         folderSearchInput.type = 'search';
         folderSearchInput.className = 'code-editor-search-input';
-        folderSearchInput.placeholder = 'Search in folder';
-        folderSearchInput.setAttribute('aria-label', 'Search in workspace folder');
+        folderSearchInput.placeholder = this.t(
+            'codeEditor.search.folderPlaceholder',
+            'Search in folder'
+        );
+        folderSearchInput.setAttribute(
+            'data-i18n-placeholder',
+            'codeEditor.search.folderPlaceholder'
+        );
+        folderSearchInput.setAttribute(
+            'aria-label',
+            this.t('codeEditor.aria.searchWorkspaceFolder', 'Search in workspace folder')
+        );
+        folderSearchInput.setAttribute(
+            'data-i18n-aria-label',
+            'codeEditor.aria.searchWorkspaceFolder'
+        );
 
         const folderSearchButton = document.createElement('button');
         folderSearchButton.type = 'button';
         folderSearchButton.className = 'code-editor-search-button';
-        folderSearchButton.textContent = 'Find';
-        folderSearchButton.setAttribute('aria-label', 'Start folder search');
+        folderSearchButton.textContent = this.t('codeEditor.actions.find', 'Find');
+        folderSearchButton.setAttribute('data-i18n', 'codeEditor.actions.find');
+        folderSearchButton.setAttribute(
+            'aria-label',
+            this.t('codeEditor.aria.startFolderSearch', 'Start folder search')
+        );
+        folderSearchButton.setAttribute(
+            'data-i18n-aria-label',
+            'codeEditor.aria.startFolderSearch'
+        );
 
         const inFileSearchButton = document.createElement('button');
         inFileSearchButton.type = 'button';
         inFileSearchButton.className = 'code-editor-search-button';
-        inFileSearchButton.textContent = 'In File';
-        inFileSearchButton.setAttribute('aria-label', 'Open in-file search');
+        inFileSearchButton.textContent = this.t('codeEditor.actions.inFile', 'In File');
+        inFileSearchButton.setAttribute('data-i18n', 'codeEditor.actions.inFile');
+        inFileSearchButton.setAttribute(
+            'aria-label',
+            this.t('codeEditor.aria.openInFileSearch', 'Open in-file search')
+        );
+        inFileSearchButton.setAttribute('data-i18n-aria-label', 'codeEditor.aria.openInFileSearch');
 
         searchControls.append(folderSearchInput, folderSearchButton, inFileSearchButton);
 
         const folderSearchResults = document.createElement('ul');
         folderSearchResults.className = 'code-editor-search-results';
-        folderSearchResults.setAttribute('aria-label', 'Folder search results');
+        folderSearchResults.setAttribute(
+            'aria-label',
+            this.t('codeEditor.aria.folderSearchResults', 'Folder search results')
+        );
+        folderSearchResults.setAttribute(
+            'data-i18n-aria-label',
+            'codeEditor.aria.folderSearchResults'
+        );
 
         searchSection.append(searchTitle, searchControls, folderSearchResults);
 
@@ -412,7 +501,8 @@ export class CodeEditorWorkbenchTab extends BaseTab {
 
         const openEditorsTitle = document.createElement('h3');
         openEditorsTitle.className = 'code-editor-explorer-title';
-        openEditorsTitle.textContent = 'Open Editors';
+        openEditorsTitle.textContent = this.t('codeEditor.sections.openEditors', 'Open Editors');
+        openEditorsTitle.setAttribute('data-i18n', 'codeEditor.sections.openEditors');
 
         const openEditorsHost = document.createElement('ul');
         openEditorsHost.className = 'code-editor-open-editors';
@@ -424,12 +514,17 @@ export class CodeEditorWorkbenchTab extends BaseTab {
 
         const folderTitle = document.createElement('h3');
         folderTitle.className = 'code-editor-explorer-title';
-        folderTitle.textContent = 'Folder';
+        folderTitle.textContent = this.t('codeEditor.sections.folder', 'Folder');
+        folderTitle.setAttribute('data-i18n', 'codeEditor.sections.folder');
 
         const folderTreeHost = document.createElement('div');
         folderTreeHost.className = 'code-editor-folder-tree';
         folderTreeHost.setAttribute('role', 'tree');
-        folderTreeHost.setAttribute('aria-label', 'Workspace files');
+        folderTreeHost.setAttribute(
+            'aria-label',
+            this.t('codeEditor.aria.workspaceFiles', 'Workspace files')
+        );
+        folderTreeHost.setAttribute('data-i18n-aria-label', 'codeEditor.aria.workspaceFiles');
 
         folderSection.append(folderTitle, folderTreeHost);
         explorer.append(searchSection, openEditorsSection, folderSection);
@@ -437,7 +532,11 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         const editorHost = document.createElement('div');
         editorHost.className = 'code-editor-surface';
         editorHost.setAttribute('role', 'region');
-        editorHost.setAttribute('aria-label', 'Code editor');
+        editorHost.setAttribute(
+            'aria-label',
+            this.t('codeEditor.aria.editorSurface', 'Code editor')
+        );
+        editorHost.setAttribute('data-i18n-aria-label', 'codeEditor.aria.editorSurface');
 
         workspace.append(explorer, editorHost);
 
@@ -449,7 +548,7 @@ export class CodeEditorWorkbenchTab extends BaseTab {
 
         const status = document.createElement('div');
         status.className = 'code-editor-status';
-        status.textContent = 'Loading Monaco...';
+        status.textContent = this.t('codeEditor.status.loadingMonaco', 'Loading Monaco...');
 
         root.append(header, workspace, status, fileInput);
         container.append(root);
@@ -495,7 +594,9 @@ export class CodeEditorWorkbenchTab extends BaseTab {
             }
         });
         container.addEventListener('keydown', this.keydownListener);
+        window.addEventListener('languagePreferenceChange', this.languagePreferenceListener);
 
+        this.applyTranslations();
         this.renderExplorer();
         this.bindVirtualFsSync();
 
@@ -514,6 +615,18 @@ export class CodeEditorWorkbenchTab extends BaseTab {
     private setStatus(text: string): void {
         if (this.statusNode) {
             this.statusNode.textContent = text;
+        }
+    }
+
+    private t(key: string, fallback: string, params: I18nParams = {}): string {
+        const i18n = (window as Window & { appI18n?: AppI18nBridge }).appI18n;
+        return i18n?.translate?.(key, params, { fallback }) || fallback;
+    }
+
+    private applyTranslations(): void {
+        const i18n = (window as Window & { appI18n?: AppI18nBridge }).appI18n;
+        if (this.element instanceof HTMLElement) {
+            i18n?.applyTranslations?.(this.element);
         }
     }
 
@@ -573,8 +686,17 @@ export class CodeEditorWorkbenchTab extends BaseTab {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'code-editor-search-result-button';
-            button.textContent = `${result.fileName} · ${result.matchType}`;
-            button.setAttribute('aria-label', `Open search result ${result.path}`);
+            const localizedMatchType = this.t(
+                `codeEditor.search.matchType.${result.matchType}`,
+                result.matchType
+            );
+            button.textContent = `${result.fileName} · ${localizedMatchType}`;
+            button.setAttribute(
+                'aria-label',
+                this.t('codeEditor.search.openResultAria', 'Open search result {path}', {
+                    path: result.path,
+                })
+            );
             button.addEventListener('click', () => {
                 this.openFileFromVirtualFs(result.path);
                 if (this.folderSearchInput?.value) {
@@ -612,7 +734,9 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         if (!query) {
             this.folderSearchResults = [];
             this.renderFolderSearchResults();
-            this.setStatus('Folder search cleared');
+            this.setStatus(
+                this.t('codeEditor.status.folderSearchCleared', 'Folder search cleared')
+            );
             return;
         }
 
@@ -646,7 +770,11 @@ export class CodeEditorWorkbenchTab extends BaseTab {
             .filter((entry): entry is FolderSearchResult => !!entry);
 
         this.renderFolderSearchResults();
-        this.setStatus(`Folder search: ${this.folderSearchResults.length} result(s)`);
+        this.setStatus(
+            this.t('codeEditor.status.folderSearchResults', 'Folder search: {count} result(s)', {
+                count: this.folderSearchResults.length,
+            })
+        );
     }
 
     private openInFileSearch(searchString?: string): void {
@@ -658,7 +786,13 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         if (findAction) {
             void findAction.run();
             if (query) {
-                this.setStatus(`In-file search opened for: ${query}`);
+                this.setStatus(
+                    this.t(
+                        'codeEditor.status.inFileSearchOpenedForQuery',
+                        'In-file search opened for: {query}',
+                        { query }
+                    )
+                );
             }
             return;
         }
@@ -672,7 +806,7 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         const action = this.editor.getAction?.('editor.action.gotoLine');
         if (action) {
             void action.run();
-            this.setStatus('Go to line opened');
+            this.setStatus(this.t('codeEditor.status.goToLineOpened', 'Go to line opened'));
             return;
         }
 
@@ -698,7 +832,7 @@ export class CodeEditorWorkbenchTab extends BaseTab {
 
             const meta = document.createElement('span');
             meta.className = 'code-editor-open-item-meta';
-            meta.textContent = doc.vfsPath || 'not saved';
+            meta.textContent = doc.vfsPath || this.t('codeEditor.meta.notSaved', 'not saved');
 
             item.append(button, meta);
             this.openEditorsHost?.appendChild(item);
@@ -797,12 +931,14 @@ export class CodeEditorWorkbenchTab extends BaseTab {
     private openFileFromVirtualFs(path: string): void {
         const content = VirtualFS.readFile(path);
         if (content === null) {
-            this.setStatus(`Could not open ${path}`);
+            this.setStatus(
+                this.t('codeEditor.status.couldNotOpenPath', 'Could not open {path}', { path })
+            );
             return;
         }
 
         this.openDocument(this.getBasename(path), content, { vfsPath: path });
-        this.setStatus(`Opened ${path}`);
+        this.setStatus(this.t('codeEditor.status.openedPath', 'Opened {path}', { path }));
     }
 
     private saveActiveDocumentToVfs(): void {
@@ -820,7 +956,11 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         } else {
             const created = VirtualFS.createFile(targetPath, content);
             if (!created) {
-                this.setStatus(`Could not save ${targetPath}`);
+                this.setStatus(
+                    this.t('codeEditor.status.couldNotSavePath', 'Could not save {path}', {
+                        path: targetPath,
+                    })
+                );
                 return;
             }
         }
@@ -832,7 +972,7 @@ export class CodeEditorWorkbenchTab extends BaseTab {
 
         this.renderFileTabs();
         this.renderExplorer();
-        this.setStatus(`Saved ${targetPath}`);
+        this.setStatus(this.t('codeEditor.status.savedPath', 'Saved {path}', { path: targetPath }));
     }
 
     private handleLocalFileImport(event: Event): void {
@@ -845,10 +985,18 @@ export class CodeEditorWorkbenchTab extends BaseTab {
             const content = (loadEvent.target as FileReader)?.result;
             if (typeof content !== 'string') return;
             this.openDocument(file.name, content, { vfsPath: null });
-            this.setStatus(`Imported ${file.name}`);
+            this.setStatus(
+                this.t('codeEditor.status.importedFile', 'Imported {fileName}', {
+                    fileName: file.name,
+                })
+            );
         };
         reader.onerror = () => {
-            this.setStatus(`Import failed for ${file.name}`);
+            this.setStatus(
+                this.t('codeEditor.status.importFailedForFile', 'Import failed for {fileName}', {
+                    fileName: file.name,
+                })
+            );
         };
         reader.readAsText(file);
         target.value = '';
@@ -902,7 +1050,9 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         }
 
         this.editorInitPromise = (async () => {
-            this.setStatus('Initializing Monaco...');
+            this.setStatus(
+                this.t('codeEditor.status.initializingMonaco', 'Initializing Monaco...')
+            );
 
             try {
                 const monaco = await loadMonacoModule();
@@ -945,10 +1095,15 @@ export class CodeEditorWorkbenchTab extends BaseTab {
                     openDocs: () => Array.from(this.docs.values()).map(doc => doc.filename),
                 };
                 this.persistWorkbenchState();
-                this.setStatus('Code Editor ready');
+                this.setStatus(this.t('codeEditor.status.ready', 'Code Editor ready'));
             } catch (error) {
                 logger.error('CODE_EDITOR', '[Phase1A] Monaco init failed', error);
-                this.setStatus('Monaco initialization failed. Check console output.');
+                this.setStatus(
+                    this.t(
+                        'codeEditor.status.monacoInitializationFailed',
+                        'Monaco initialization failed. Check console output.'
+                    )
+                );
             } finally {
                 this.editorInitPromise = null;
             }
@@ -969,7 +1124,12 @@ export class CodeEditorWorkbenchTab extends BaseTab {
 
         if (activeDoc.isDirty !== wasDirty) {
             this.renderFileTabs();
-            this.setStatus(`${activeDoc.filename} · ${activeDoc.language}`);
+            this.setStatus(
+                this.t('codeEditor.status.fileLanguage', '{fileName} · {language}', {
+                    fileName: activeDoc.filename,
+                    language: activeDoc.language,
+                })
+            );
             this.persistWorkbenchState();
         }
     }
@@ -1027,7 +1187,12 @@ export class CodeEditorWorkbenchTab extends BaseTab {
             closeButton.type = 'button';
             closeButton.className = 'code-editor-file-tab-close';
             closeButton.textContent = '×';
-            closeButton.setAttribute('aria-label', `Close ${doc.filename}`);
+            closeButton.setAttribute(
+                'aria-label',
+                this.t('codeEditor.aria.closeFile', 'Close {fileName}', {
+                    fileName: doc.filename,
+                })
+            );
             closeButton.addEventListener('click', event => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -1126,7 +1291,12 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         this.editor.focus();
 
         this.renderFileTabs();
-        this.setStatus(`${doc.filename} · ${doc.language}`);
+        this.setStatus(
+            this.t('codeEditor.status.fileLanguage', '{fileName} · {language}', {
+                fileName: doc.filename,
+                language: doc.language,
+            })
+        );
         this.renderFolderTree();
         this.persistWorkbenchState();
     }
@@ -1137,7 +1307,11 @@ export class CodeEditorWorkbenchTab extends BaseTab {
 
         if (doc.isDirty) {
             const shouldClose = window.confirm(
-                `Unsaved changes in ${doc.filename}. Close this tab anyway?`
+                this.t(
+                    'codeEditor.confirm.closeDirtyTab',
+                    'Unsaved changes in {fileName}. Close this tab anyway?',
+                    { fileName: doc.filename }
+                )
             );
             if (!shouldClose) return;
         }
@@ -1173,7 +1347,10 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         const hasDirtyDocs = Array.from(this.docs.values()).some(doc => doc.isDirty);
         if (hasDirtyDocs) {
             const shouldCloseWindow = window.confirm(
-                'Unsaved changes exist. Close the Code Editor window anyway?'
+                this.t(
+                    'codeEditor.confirm.closeDirtyWindow',
+                    'Unsaved changes exist. Close the Code Editor window anyway?'
+                )
             );
             if (!shouldCloseWindow) return;
         }
@@ -1195,6 +1372,7 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         }
 
         this.element?.removeEventListener('keydown', this.keydownListener);
+        window.removeEventListener('languagePreferenceChange', this.languagePreferenceListener);
 
         this.editorInitPromise = null;
         delete (window as unknown as Record<string, unknown>).__MONACO_SPIKE__;
@@ -1207,7 +1385,9 @@ export class CodeEditorWindow extends BaseWindow {
     constructor(config?: Partial<WindowConfig>) {
         super({
             type: 'code-editor',
-            title: 'Code Editor',
+            title:
+                window.appI18n?.translate?.('programs.codeEditor.label', 'Code Editor') ||
+                'Code Editor',
             ...config,
         });
     }
@@ -1221,7 +1401,9 @@ export class CodeEditorWindow extends BaseWindow {
 
         const label = document.createElement('span');
         label.className = 'code-editor-window-label';
-        label.textContent = 'Code Editor';
+        label.textContent =
+            window.appI18n?.translate?.('programs.codeEditor.label', 'Code Editor') ||
+            'Code Editor';
         tabBar.appendChild(label);
     }
 
@@ -1233,7 +1415,9 @@ export class CodeEditorWindow extends BaseWindow {
         const existing = this.getWorkbench();
         if (existing) return existing;
 
-        const workbench = new CodeEditorWorkbenchTab({ title: 'Editor' });
+        const workbench = new CodeEditorWorkbenchTab({
+            title: window.appI18n?.translate?.('codeEditor.workbenchTitle', 'Editor') || 'Editor',
+        });
         this.addTab(workbench);
         this.setActiveTab(workbench.id);
         return workbench;

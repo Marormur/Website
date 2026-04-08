@@ -477,6 +477,69 @@ export const de = {
             position: 'Zeile {line}, Spalte {col}',
         },
     },
+    codeEditor: {
+        workbenchTitle: 'Editor',
+        actions: {
+            newFile: 'Neue Datei',
+            save: 'Speichern',
+            import: 'Importieren',
+            find: 'Suchen',
+            inFile: 'In Datei',
+        },
+        sections: {
+            search: 'Suche',
+            openEditors: 'Geöffnete Editoren',
+            folder: 'Ordner',
+        },
+        search: {
+            folderPlaceholder: 'Im Ordner suchen',
+            openResultAria: 'Suchergebnis öffnen {path}',
+            matchType: {
+                name: 'Name',
+                content: 'Inhalt',
+            },
+        },
+        meta: {
+            notSaved: 'nicht gespeichert',
+        },
+        aria: {
+            openFiles: 'Geöffnete Dateien',
+            createFileTab: 'Einen neuen Dateitab erstellen',
+            saveActiveFile: 'Aktive Datei im Workspace speichern',
+            importLocalFile: 'Lokale Datei importieren',
+            explorer: 'Explorer',
+            searchWorkspaceFolder: 'Im Workspace-Ordner suchen',
+            startFolderSearch: 'Ordnersuche starten',
+            openInFileSearch: 'In-Datei-Suche öffnen',
+            folderSearchResults: 'Ordnersuchergebnisse',
+            workspaceFiles: 'Workspace-Dateien',
+            editorSurface: 'Code-Editor',
+            closeFile: '{fileName} schließen',
+        },
+        status: {
+            loadingMonaco: 'Monaco wird geladen...',
+            initializingMonaco: 'Monaco wird initialisiert...',
+            ready: 'Code-Editor bereit',
+            monacoInitializationFailed:
+                'Monaco-Initialisierung fehlgeschlagen. Details in der Konsole.',
+            folderSearchCleared: 'Ordnersuche geleert',
+            folderSearchResults: 'Ordnersuche: {count} Treffer',
+            inFileSearchOpenedForQuery: 'In-Datei-Suche geöffnet für: {query}',
+            goToLineOpened: 'Gehe-zu-Zeile geöffnet',
+            fileLanguage: '{fileName} · {language}',
+            couldNotOpenPath: '{path} konnte nicht geöffnet werden',
+            openedPath: '{path} geöffnet',
+            couldNotSavePath: '{path} konnte nicht gespeichert werden',
+            savedPath: '{path} gespeichert',
+            importedFile: '{fileName} importiert',
+            importFailedForFile: 'Import fehlgeschlagen für {fileName}',
+        },
+        confirm: {
+            closeDirtyTab: 'Ungespeicherte Änderungen in {fileName}. Tab trotzdem schließen?',
+            closeDirtyWindow:
+                'Es gibt ungespeicherte Änderungen. Code-Editor-Fenster trotzdem schließen?',
+        },
+    },
     menu: {
         sections: {
             file: 'Ablage',
