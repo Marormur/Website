@@ -90,6 +90,21 @@ type FolderSearchResult = {
     preview: string;
 };
 
+type SerializedWorkbenchDoc = {
+    filename: string;
+    language: string;
+    vfsPath: string | null;
+    content: string;
+    isDirty: boolean;
+};
+
+type WorkbenchContentState = {
+    docs?: SerializedWorkbenchDoc[];
+    activeDocPath?: string | null;
+    activeDocFilename?: string;
+    untitledCounter?: number;
+};
+
 const CODE_FONT_STACK = "Menlo, Monaco, 'SF Mono', Consolas, 'Liberation Mono', monospace";
 const DEFAULT_SOURCE = [
     'function helloCodeEditor(name: string): string {',
@@ -156,7 +171,7 @@ async function loadMonacoModule(): Promise<MonacoModule> {
     return monacoModulePromise;
 }
 
-class CodeEditorWorkbenchTab extends BaseTab {
+export class CodeEditorWorkbenchTab extends BaseTab {
     private editor: MonacoStandaloneEditor | null = null;
     private monaco: MonacoModule | null = null;
     private editorHost: HTMLDivElement | null = null;
@@ -183,10 +198,16 @@ class CodeEditorWorkbenchTab extends BaseTab {
             event.preventDefault();
             this.openInFileSearch();
         }
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'g') {
+            event.preventDefault();
+            this.openGoToLine();
+        }
     };
     private expandedFolders = new Set<string>();
     private readonly explorerRootPath = '/home/marvin';
     private folderSearchResults: FolderSearchResult[] = [];
+    private isRestoringState = false;
+    private pendingRestoreState: WorkbenchContentState | null = null;
 
     private runWhenReady(action: () => void): void {
         void this.ensureEditorReady()
@@ -205,6 +226,106 @@ class CodeEditorWorkbenchTab extends BaseTab {
             title: config?.title || 'Code Editor',
             ...config,
         });
+
+        const state = this.contentState as WorkbenchContentState;
+        if (state && typeof state === 'object') {
+            this.pendingRestoreState = state;
+            if (
+                typeof state.untitledCounter === 'number' &&
+                Number.isFinite(state.untitledCounter)
+            ) {
+                this.untitledCounter = Math.max(1, Math.floor(state.untitledCounter));
+            }
+        }
+    }
+
+    private persistWorkbenchState(): void {
+        if (this.isRestoringState) return;
+
+        const docs = Array.from(this.docs.values()).map(doc => ({
+            filename: doc.filename,
+            language: doc.language,
+            vfsPath: doc.vfsPath,
+            content: doc.model.getValue?.() || '',
+            isDirty: doc.isDirty,
+        }));
+
+        const activeDoc = this.getActiveDoc();
+
+        this.updateContentState({
+            docs,
+            activeDocPath: activeDoc?.vfsPath || null,
+            activeDocFilename: activeDoc?.filename || null,
+            untitledCounter: this.untitledCounter,
+        });
+    }
+
+    private restoreFromPersistedState(): boolean {
+        if (!this.pendingRestoreState || !this.monaco) return false;
+
+        const docs = Array.isArray(this.pendingRestoreState.docs)
+            ? this.pendingRestoreState.docs
+            : [];
+        if (docs.length === 0) return false;
+
+        this.isRestoringState = true;
+        try {
+            docs.forEach(savedDoc => {
+                const docId = this.createDocument({
+                    filename: savedDoc.filename,
+                    content: savedDoc.content,
+                    vfsPath: savedDoc.vfsPath,
+                });
+                if (!docId) return;
+                const doc = this.docs.get(docId);
+                if (!doc) return;
+
+                doc.language = savedDoc.language || doc.language;
+                doc.savedVersionId = Number(doc.model.getAlternativeVersionId?.() || 0);
+                doc.isDirty = !!savedDoc.isDirty;
+            });
+
+            const activeByPath = this.pendingRestoreState.activeDocPath
+                ? Array.from(this.docs.values()).find(
+                      doc => doc.vfsPath === this.pendingRestoreState?.activeDocPath
+                  )
+                : null;
+            const activeByFilename =
+                !activeByPath && this.pendingRestoreState.activeDocFilename
+                    ? Array.from(this.docs.values()).find(
+                          doc => doc.filename === this.pendingRestoreState?.activeDocFilename
+                      )
+                    : null;
+            const fallback = Array.from(this.docs.values())[0] || null;
+
+            const targetActive = activeByPath || activeByFilename || fallback;
+            if (targetActive) {
+                this.activateDocument(targetActive.id);
+            }
+            this.renderExplorer();
+            return true;
+        } finally {
+            this.isRestoringState = false;
+            this.pendingRestoreState = null;
+        }
+    }
+
+    override serialize() {
+        this.persistWorkbenchState();
+        return super.serialize();
+    }
+
+    static deserialize(state: Record<string, unknown>): CodeEditorWorkbenchTab {
+        const tab = new CodeEditorWorkbenchTab({
+            id: (state.id as string | undefined) || undefined,
+            title: (state.title as string | undefined) || 'Code Editor',
+            content: (state.contentState as WorkbenchContentState | undefined) || {},
+            metadata: {
+                created: (state.created as number | undefined) || Date.now(),
+                modified: (state.modified as number | undefined) || Date.now(),
+            },
+        });
+        return tab;
     }
 
     createDOM(): HTMLElement {
@@ -545,6 +666,19 @@ class CodeEditorWorkbenchTab extends BaseTab {
         this.editor.trigger?.('keyboard', 'actions.find', undefined);
     }
 
+    private openGoToLine(): void {
+        if (!this.editor) return;
+
+        const action = this.editor.getAction?.('editor.action.gotoLine');
+        if (action) {
+            void action.run();
+            this.setStatus('Go to line opened');
+            return;
+        }
+
+        this.editor.trigger?.('keyboard', 'editor.action.gotoLine', undefined);
+    }
+
     private renderOpenEditors(): void {
         if (!this.openEditorsHost) return;
         this.openEditorsHost.innerHTML = '';
@@ -795,7 +929,9 @@ class CodeEditorWorkbenchTab extends BaseTab {
 
                 this.bindThemeSync(monaco);
 
-                if (!this.activeDocId) {
+                const restored = this.restoreFromPersistedState();
+
+                if (!restored && !this.activeDocId) {
                     this.createDocument({
                         filename: 'main.ts',
                         content: DEFAULT_SOURCE,
@@ -808,6 +944,7 @@ class CodeEditorWorkbenchTab extends BaseTab {
                     editor: this.editor,
                     openDocs: () => Array.from(this.docs.values()).map(doc => doc.filename),
                 };
+                this.persistWorkbenchState();
                 this.setStatus('Code Editor ready');
             } catch (error) {
                 logger.error('CODE_EDITOR', '[Phase1A] Monaco init failed', error);
@@ -833,6 +970,7 @@ class CodeEditorWorkbenchTab extends BaseTab {
         if (activeDoc.isDirty !== wasDirty) {
             this.renderFileTabs();
             this.setStatus(`${activeDoc.filename} · ${activeDoc.language}`);
+            this.persistWorkbenchState();
         }
     }
 
@@ -840,8 +978,9 @@ class CodeEditorWorkbenchTab extends BaseTab {
         if (!this.tabsHost) return;
 
         this.tabsHost.innerHTML = '';
+        const tabOrder = Array.from(this.docs.values());
 
-        this.docs.forEach(doc => {
+        tabOrder.forEach((doc, index) => {
             const tab = document.createElement('div');
             tab.className = `code-editor-file-tab ${doc.id === this.activeDocId ? 'is-active' : ''}`;
             tab.setAttribute('role', 'tab');
@@ -851,7 +990,38 @@ class CodeEditorWorkbenchTab extends BaseTab {
             activateButton.type = 'button';
             activateButton.className = 'code-editor-file-tab-label';
             activateButton.textContent = doc.isDirty ? `${doc.filename} *` : doc.filename;
+            activateButton.tabIndex = doc.id === this.activeDocId ? 0 : -1;
             activateButton.addEventListener('click', () => this.activateDocument(doc.id));
+            activateButton.addEventListener('keydown', event => {
+                if (event.key === 'ArrowRight') {
+                    event.preventDefault();
+                    const next = tabOrder[index + 1] || tabOrder[0];
+                    if (next) this.activateDocument(next.id);
+                    return;
+                }
+                if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    const prev = tabOrder[index - 1] || tabOrder[tabOrder.length - 1];
+                    if (prev) this.activateDocument(prev.id);
+                    return;
+                }
+                if (event.key === 'Home') {
+                    event.preventDefault();
+                    const first = tabOrder[0];
+                    if (first) this.activateDocument(first.id);
+                    return;
+                }
+                if (event.key === 'End') {
+                    event.preventDefault();
+                    const last = tabOrder[tabOrder.length - 1];
+                    if (last) this.activateDocument(last.id);
+                    return;
+                }
+                if (event.key === 'Delete' || event.key === 'Backspace') {
+                    event.preventDefault();
+                    this.closeDocument(doc.id);
+                }
+            });
 
             const closeButton = document.createElement('button');
             closeButton.type = 'button';
@@ -904,6 +1074,7 @@ class CodeEditorWorkbenchTab extends BaseTab {
 
         this.docs.set(doc.id, doc);
         this.activateDocument(doc.id);
+        this.persistWorkbenchState();
         return doc.id;
     }
 
@@ -929,6 +1100,7 @@ class CodeEditorWorkbenchTab extends BaseTab {
             existing.isDirty = false;
             existing.vfsPath = options?.vfsPath || existing.vfsPath;
             this.activateDocument(existing.id);
+            this.persistWorkbenchState();
             return existing.id;
         }
 
@@ -956,11 +1128,19 @@ class CodeEditorWorkbenchTab extends BaseTab {
         this.renderFileTabs();
         this.setStatus(`${doc.filename} · ${doc.language}`);
         this.renderFolderTree();
+        this.persistWorkbenchState();
     }
 
     closeDocument(docId: string): void {
         const doc = this.docs.get(docId);
         if (!doc) return;
+
+        if (doc.isDirty) {
+            const shouldClose = window.confirm(
+                `Unsaved changes in ${doc.filename}. Close this tab anyway?`
+            );
+            if (!shouldClose) return;
+        }
 
         const wasActive = this.activeDocId === docId;
         const fallbackDoc = wasActive
@@ -973,6 +1153,7 @@ class CodeEditorWorkbenchTab extends BaseTab {
             this.activeDocId = null;
             this.createDocument();
             doc.model.dispose();
+            this.persistWorkbenchState();
             return;
         }
 
@@ -985,9 +1166,18 @@ class CodeEditorWorkbenchTab extends BaseTab {
         }
 
         this.renderExplorer();
+        this.persistWorkbenchState();
     }
 
     override destroy(): void {
+        const hasDirtyDocs = Array.from(this.docs.values()).some(doc => doc.isDirty);
+        if (hasDirtyDocs) {
+            const shouldCloseWindow = window.confirm(
+                'Unsaved changes exist. Close the Code Editor window anyway?'
+            );
+            if (!shouldCloseWindow) return;
+        }
+
         this.themeObserver?.disconnect();
         this.themeObserver = null;
 

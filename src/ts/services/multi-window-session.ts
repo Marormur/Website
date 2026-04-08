@@ -14,6 +14,10 @@ import { PreviewWindow } from '../apps/preview/preview-window.js';
 import { PhotosWindow } from '../apps/photos/photos-window.js';
 import { AboutWindow } from '../apps/about/about-window.js';
 import { SettingsWindow } from '../apps/settings/settings-window.js';
+import {
+    CodeEditorWindow,
+    CodeEditorWorkbenchTab,
+} from '../apps/code-editor/code-editor-spike-window.js';
 import { TerminalSession } from '../apps/terminal/terminal-session.js';
 import { TextEditorDocument } from '../apps/text-editor/text-editor-document.js';
 import { FinderView } from '../apps/finder/finder-view.js';
@@ -26,6 +30,7 @@ export interface MultiWindowSession {
     version: string; // Schema version for migration
     timestamp: number;
     windows: WindowSessionData[];
+    windowStack?: string[]; // Z-index order of windows (bottom to top)
     metadata?: {
         theme?: string;
         language?: string;
@@ -312,10 +317,17 @@ class MultiWindowSessionManager {
     private createSession(): MultiWindowSession {
         const windows = WindowRegistry.getAllWindows();
 
+        // Capture current window stack order for restoration
+        const windowStack =
+            window.__zIndexManager && typeof window.__zIndexManager.getWindowStack === 'function'
+                ? window.__zIndexManager.getWindowStack()
+                : windows.map(w => w.id);
+
         return {
             version: MultiWindowSessionManager.VERSION,
             timestamp: Date.now(),
             windows: windows.map(window => this.serializeWindow(window)),
+            windowStack,
             metadata: {
                 theme: this.getCurrentTheme(),
                 language: this.getCurrentLanguage(),
@@ -519,6 +531,27 @@ class MultiWindowSessionManager {
         if (session.metadata) {
             this.restoreMetadata(session.metadata);
         }
+        // Restore z-index order from saved windowStack AFTER all instances are restored
+        // This synchronizes the visual z-index values with the logical window manager stack
+        const windowStack = session.windowStack || [];
+        if (windowStack.length > 0) {
+            const zIndexManager = window.__zIndexManager;
+            if (zIndexManager && typeof zIndexManager.restoreWindowStack === 'function') {
+                try {
+                    zIndexManager.restoreWindowStack(windowStack);
+                    logger.debug(
+                        'SESSION',
+                        `[MultiWindowSessionManager] Restored window stack order for ${windowStack.length} windows`
+                    );
+                } catch (err) {
+                    logger.warn(
+                        'SESSION',
+                        '[MultiWindowSessionManager] Failed to restore window stack order:',
+                        err
+                    );
+                }
+            }
+        }
 
         logger.debug('SESSION', '[MultiWindowSessionManager] Session restored successfully');
 
@@ -657,6 +690,9 @@ class MultiWindowSessionManager {
             case 'settings':
                 return new SettingsWindow(config);
 
+            case 'code-editor':
+                return new CodeEditorWindow(config);
+
             default:
                 return null;
         }
@@ -679,6 +715,11 @@ class MultiWindowSessionManager {
 
                 case 'finder-view':
                     return FinderView.deserialize(data as TabState & Record<string, unknown>);
+
+                case 'code-editor-workbench-tab':
+                    return CodeEditorWorkbenchTab.deserialize(
+                        data as TabState & Record<string, unknown>
+                    );
 
                 default:
                     logger.warn(
