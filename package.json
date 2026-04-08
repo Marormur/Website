@@ -125,5 +125,8 @@
   },
   "overrides": {
     "tmp": "^0.2.4"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.55.1"
   }
 }
