@@ -67,6 +67,7 @@ export const en = {
         projects: 'Projects',
         github: 'GitHub Projects',
         text: 'Text editor',
+        codeEditor: 'Code Editor',
         image: 'Image viewer',
         photos: 'Photos',
         settings: 'System settings',
@@ -78,6 +79,7 @@ export const en = {
         finder: 'Finder',
         projects: 'GitHub Projects',
         text: 'Text editor',
+        codeEditor: 'Code Editor',
         image: 'Image viewer',
         photos: 'Photos',
         settings: 'System settings',
@@ -114,6 +116,7 @@ export const en = {
             devices: 'Devices',
             airpods: "Marvin's AirPods Pro",
             keyboard: 'Magic Keyboard',
+            mouse: 'Magic Mouse',
             speaker: 'HomeSpeaker',
         },
         sound: {
@@ -320,6 +323,16 @@ export const en = {
             about: {
                 name: 'Text editor',
                 tagline: 'Lightweight editor for your notes.',
+                version: 'Version 1.0',
+                copyright: '© Marvin Temmen. All rights reserved.',
+            },
+        },
+        codeEditor: {
+            label: 'Code Editor',
+            infoLabel: 'About Code Editor',
+            about: {
+                name: 'Code Editor',
+                tagline: 'Monaco-based editor for source code.',
                 version: 'Version 1.0',
                 copyright: '© Marvin Temmen. All rights reserved.',
             },

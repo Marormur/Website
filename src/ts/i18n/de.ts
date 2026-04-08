@@ -67,6 +67,7 @@ export const de = {
         projects: 'Projekte',
         github: 'GitHub Projekte',
         text: 'Texteditor',
+        codeEditor: 'Code Editor',
         image: 'Bildbetrachter',
         photos: 'Fotos',
         settings: 'Systemeinstellungen',
@@ -78,6 +79,7 @@ export const de = {
         finder: 'Sucher',
         projects: 'GitHub Projekte',
         text: 'Texteditor',
+        codeEditor: 'Code Editor',
         image: 'Bildbetrachter',
         photos: 'Fotos',
         settings: 'Systemeinstellungen',
@@ -114,6 +116,7 @@ export const de = {
             devices: 'Geräte',
             airpods: 'Marvins AirPods Pro',
             keyboard: 'Magic Keyboard',
+            mouse: 'Magic Mouse',
             speaker: 'HomeSpeaker',
         },
         sound: {
@@ -355,6 +358,16 @@ export const de = {
             about: {
                 name: 'Texteditor',
                 tagline: 'Leichtgewichtiger Editor für deine Notizen.',
+                version: 'Version 1.0',
+                copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+            },
+        },
+        codeEditor: {
+            label: 'Code Editor',
+            infoLabel: 'Über Code Editor',
+            about: {
+                name: 'Code Editor',
+                tagline: 'Monaco-basierter Editor für Quellcode.',
                 version: 'Version 1.0',
                 copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
             },

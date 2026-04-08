@@ -499,12 +499,12 @@ logger.debug('APP', 'Settings Module loaded');
                                             <button
                                                 type="button"
                                                 class="menu-item system-menu-item settings-wifi-network-item settings-bluetooth-device-row"
-                                                data-device="Keyboard"
+                                                data-device="Mouse"
                                                 aria-pressed="false"
                                             >
-                                                <span class="settings-bluetooth-device-icon" aria-hidden="true">⌨️</span>
+                                                <span class="settings-bluetooth-device-icon" aria-hidden="true">🖱️</span>
                                                 <span class="settings-bluetooth-device-copy">
-                                                    <span class="menu-item-label settings-bluetooth-device-title" data-i18n="menubar.bluetooth.keyboard">Magic Keyboard</span>
+                                                    <span class="menu-item-label settings-bluetooth-device-title" data-i18n="menubar.bluetooth.mouse">Magic Mouse</span>
                                                     <span class="settings-bluetooth-device-meta">
                                                         <span
                                                             class="system-network-indicator"
