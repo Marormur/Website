@@ -25,17 +25,11 @@
     // Path Autocomplete
     "christian-kohler.path-intellisense",
 
-    // Error Lens (inline errors)
-    "usernamehw.errorlens",
-
     // EditorConfig Support
     "editorconfig.editorconfig",
 
     // TODO Highlighting
     "gruntfuggly.todo-tree",
-
-    // Spell Checker
-    "streetsidesoftware.code-spell-checker",
 
     // Import Cost (shows size of imports)
     "wix.vscode-import-cost"
