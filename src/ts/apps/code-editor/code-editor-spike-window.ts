@@ -35,6 +35,8 @@ type MonacoStandaloneEditor = {
     setModel: (model: MonacoTextModel) => void;
     saveViewState: () => MonacoViewState | null;
     restoreViewState: (state: MonacoViewState) => void;
+    getAction?: (id: string) => { run: () => Promise<void> } | null;
+    trigger?: (source: string, handlerId: string, payload?: unknown) => void;
     focus: () => void;
     dispose: () => void;
 };
@@ -81,6 +83,13 @@ type VfsEvent = {
     path: string;
 };
 
+type FolderSearchResult = {
+    path: string;
+    fileName: string;
+    matchType: 'name' | 'content';
+    preview: string;
+};
+
 const CODE_FONT_STACK = "Menlo, Monaco, 'SF Mono', Consolas, 'Liberation Mono', monospace";
 const DEFAULT_SOURCE = [
     'function helloCodeEditor(name: string): string {',
@@ -110,6 +119,13 @@ function ensureMonacoWorkersConfigured(): void {
 }
 
 function resolveMonacoTheme(): 'vs' | 'vs-dark' {
+    const themePreference = window.ThemeSystem?.getThemePreference?.();
+    if (themePreference === 'dark') return 'vs-dark';
+    if (themePreference === 'light') return 'vs';
+    if (themePreference === 'system') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'vs-dark' : 'vs';
+    }
+
     return document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs';
 }
 
@@ -147,6 +163,10 @@ class CodeEditorWorkbenchTab extends BaseTab {
     private tabsHost: HTMLDivElement | null = null;
     private openEditorsHost: HTMLUListElement | null = null;
     private folderTreeHost: HTMLDivElement | null = null;
+    private folderSearchInput: HTMLInputElement | null = null;
+    private folderSearchButton: HTMLButtonElement | null = null;
+    private inFileSearchButton: HTMLButtonElement | null = null;
+    private folderSearchResultsHost: HTMLUListElement | null = null;
     private statusNode: HTMLDivElement | null = null;
     private newFileButton: HTMLButtonElement | null = null;
     private saveFileButton: HTMLButtonElement | null = null;
@@ -158,8 +178,15 @@ class CodeEditorWorkbenchTab extends BaseTab {
     private activeDocId: string | null = null;
     private untitledCounter = 1;
     private vfsListener: ((event: VfsEvent) => void) | null = null;
+    private readonly keydownListener = (event: KeyboardEvent) => {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
+            event.preventDefault();
+            this.openInFileSearch();
+        }
+    };
     private expandedFolders = new Set<string>();
     private readonly explorerRootPath = '/home/marvin';
+    private folderSearchResults: FolderSearchResult[] = [];
 
     private runWhenReady(action: () => void): void {
         void this.ensureEditorReady()
@@ -223,6 +250,42 @@ class CodeEditorWorkbenchTab extends BaseTab {
         explorer.className = 'code-editor-explorer';
         explorer.setAttribute('aria-label', 'Explorer');
 
+        const searchSection = document.createElement('section');
+        searchSection.className = 'code-editor-explorer-section';
+
+        const searchTitle = document.createElement('h3');
+        searchTitle.className = 'code-editor-explorer-title';
+        searchTitle.textContent = 'Search';
+
+        const searchControls = document.createElement('div');
+        searchControls.className = 'code-editor-search-controls';
+
+        const folderSearchInput = document.createElement('input');
+        folderSearchInput.type = 'search';
+        folderSearchInput.className = 'code-editor-search-input';
+        folderSearchInput.placeholder = 'Search in folder';
+        folderSearchInput.setAttribute('aria-label', 'Search in workspace folder');
+
+        const folderSearchButton = document.createElement('button');
+        folderSearchButton.type = 'button';
+        folderSearchButton.className = 'code-editor-search-button';
+        folderSearchButton.textContent = 'Find';
+        folderSearchButton.setAttribute('aria-label', 'Start folder search');
+
+        const inFileSearchButton = document.createElement('button');
+        inFileSearchButton.type = 'button';
+        inFileSearchButton.className = 'code-editor-search-button';
+        inFileSearchButton.textContent = 'In File';
+        inFileSearchButton.setAttribute('aria-label', 'Open in-file search');
+
+        searchControls.append(folderSearchInput, folderSearchButton, inFileSearchButton);
+
+        const folderSearchResults = document.createElement('ul');
+        folderSearchResults.className = 'code-editor-search-results';
+        folderSearchResults.setAttribute('aria-label', 'Folder search results');
+
+        searchSection.append(searchTitle, searchControls, folderSearchResults);
+
         const openEditorsSection = document.createElement('section');
         openEditorsSection.className = 'code-editor-explorer-section';
 
@@ -248,7 +311,7 @@ class CodeEditorWorkbenchTab extends BaseTab {
         folderTreeHost.setAttribute('aria-label', 'Workspace files');
 
         folderSection.append(folderTitle, folderTreeHost);
-        explorer.append(openEditorsSection, folderSection);
+        explorer.append(searchSection, openEditorsSection, folderSection);
 
         const editorHost = document.createElement('div');
         editorHost.className = 'code-editor-surface';
@@ -274,6 +337,10 @@ class CodeEditorWorkbenchTab extends BaseTab {
         this.tabsHost = tabsHost;
         this.openEditorsHost = openEditorsHost;
         this.folderTreeHost = folderTreeHost;
+        this.folderSearchInput = folderSearchInput;
+        this.folderSearchButton = folderSearchButton;
+        this.inFileSearchButton = inFileSearchButton;
+        this.folderSearchResultsHost = folderSearchResults;
         this.statusNode = status;
         this.newFileButton = newFileButton;
         this.saveFileButton = saveFileButton;
@@ -294,6 +361,19 @@ class CodeEditorWorkbenchTab extends BaseTab {
         this.fileInput.addEventListener('change', event => {
             this.handleLocalFileImport(event);
         });
+        this.folderSearchButton.addEventListener('click', () => {
+            this.executeFolderSearch();
+        });
+        this.inFileSearchButton.addEventListener('click', () => {
+            this.openInFileSearch();
+        });
+        this.folderSearchInput.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                this.executeFolderSearch();
+            }
+        });
+        container.addEventListener('keydown', this.keydownListener);
 
         this.renderExplorer();
         this.bindVirtualFsSync();
@@ -356,8 +436,113 @@ class CodeEditorWorkbenchTab extends BaseTab {
     }
 
     private renderExplorer(): void {
+        this.renderFolderSearchResults();
         this.renderOpenEditors();
         this.renderFolderTree();
+    }
+
+    private renderFolderSearchResults(): void {
+        if (!this.folderSearchResultsHost) return;
+        this.folderSearchResultsHost.innerHTML = '';
+
+        this.folderSearchResults.slice(0, 25).forEach(result => {
+            const item = document.createElement('li');
+            item.className = 'code-editor-search-result-item';
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'code-editor-search-result-button';
+            button.textContent = `${result.fileName} · ${result.matchType}`;
+            button.setAttribute('aria-label', `Open search result ${result.path}`);
+            button.addEventListener('click', () => {
+                this.openFileFromVirtualFs(result.path);
+                if (this.folderSearchInput?.value) {
+                    this.openInFileSearch(this.folderSearchInput.value);
+                }
+            });
+
+            const meta = document.createElement('span');
+            meta.className = 'code-editor-search-result-meta';
+            meta.textContent = `${result.path} · ${result.preview}`;
+
+            item.append(button, meta);
+            this.folderSearchResultsHost?.appendChild(item);
+        });
+    }
+
+    private collectFilesFromFolder(path: string): string[] {
+        const entries = VirtualFS.list(path);
+        const files: string[] = [];
+
+        Object.entries(entries).forEach(([name, item]) => {
+            const fullPath = this.joinPath(path, name);
+            if (item.type === 'folder') {
+                files.push(...this.collectFilesFromFolder(fullPath));
+                return;
+            }
+            files.push(fullPath);
+        });
+
+        return files;
+    }
+
+    private executeFolderSearch(): void {
+        const query = this.folderSearchInput?.value?.trim() || '';
+        if (!query) {
+            this.folderSearchResults = [];
+            this.renderFolderSearchResults();
+            this.setStatus('Folder search cleared');
+            return;
+        }
+
+        const rootPath = this.getEffectiveExplorerRootPath();
+        const queryLower = query.toLowerCase();
+        const files = this.collectFilesFromFolder(rootPath);
+
+        this.folderSearchResults = files
+            .map(path => {
+                const fileName = this.getBasename(path);
+                const content = VirtualFS.readFile(path) || '';
+                const nameMatch = fileName.toLowerCase().includes(queryLower);
+                const contentIdx = content.toLowerCase().indexOf(queryLower);
+                if (!nameMatch && contentIdx < 0) return null;
+
+                const preview =
+                    contentIdx >= 0
+                        ? content
+                              .slice(Math.max(0, contentIdx - 25), contentIdx + query.length + 45)
+                              .replace(/\s+/g, ' ')
+                              .trim()
+                        : fileName;
+
+                return {
+                    path,
+                    fileName,
+                    matchType: nameMatch ? 'name' : 'content',
+                    preview: preview || fileName,
+                } as FolderSearchResult;
+            })
+            .filter((entry): entry is FolderSearchResult => !!entry);
+
+        this.renderFolderSearchResults();
+        this.setStatus(`Folder search: ${this.folderSearchResults.length} result(s)`);
+    }
+
+    private openInFileSearch(searchString?: string): void {
+        if (!this.editor) return;
+
+        const query = searchString ?? (this.folderSearchInput?.value?.trim() || '');
+
+        const findAction = this.editor.getAction?.('actions.find');
+        if (findAction) {
+            void findAction.run();
+            if (query) {
+                this.setStatus(`In-file search opened for: ${query}`);
+            }
+            return;
+        }
+
+        this.editor.trigger?.('keyboard', 'actions.find', undefined);
     }
 
     private renderOpenEditors(): void {
@@ -556,6 +741,7 @@ class CodeEditorWorkbenchTab extends BaseTab {
 
             this.renderFolderTree();
             this.renderOpenEditors();
+            this.renderFolderSearchResults();
         };
 
         VirtualFS.addEventListener(this.vfsListener);
@@ -817,6 +1003,8 @@ class CodeEditorWorkbenchTab extends BaseTab {
             VirtualFS.removeEventListener(this.vfsListener);
             this.vfsListener = null;
         }
+
+        this.element?.removeEventListener('keydown', this.keydownListener);
 
         this.editorInitPromise = null;
         delete (window as unknown as Record<string, unknown>).__MONACO_SPIKE__;
