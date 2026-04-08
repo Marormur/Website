@@ -1,6 +1,5 @@
 import logger from '../../core/logger.js';
 import { WINDOW_ICONS } from '../../windows/window-icons.js';
-import { renderTrafficLightControlsHTML } from '../../framework/controls/traffic-lights.js';
 
 /*
  * Fotos-App v2 – iOS-inspiriertes Design mit Bottom-Navigation (Mobile) / Top-Tab-Bar (Desktop).
@@ -138,6 +137,9 @@ const globalWindow = window as typeof window & {
             statusbar: HTMLElement | null;
         };
         updateStatusBar: (statusbar: HTMLElement, side: 'left' | 'right', content: string) => void;
+    };
+    PhotosWindow?: {
+        create: () => { element?: HTMLElement | null } | null;
     };
     API?: {
         window?: {
@@ -800,14 +802,13 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                     applyFilters();
                 }
                 // Im kompakten Modus Eingabefeld wieder verbergen
-                if (shouldCompactToolbarSearch()) {
-                    const inputWrap = elements.container.querySelector<HTMLElement>(
+                const container = elements.container;
+                if (container && shouldCompactToolbarSearch()) {
+                    const inputWrap = container.querySelector<HTMLElement>(
                         '#photos-search-input-wrap'
                     );
                     const toggle =
-                        elements.container.querySelector<HTMLButtonElement>(
-                            '#photos-search-toggle'
-                        );
+                        container.querySelector<HTMLButtonElement>('#photos-search-toggle');
                     inputWrap?.classList.add('hidden');
                     toggle?.setAttribute('aria-expanded', 'false');
                 }
@@ -1407,9 +1408,9 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
         const existing = document.getElementById('photos-window');
         if (!existing) {
-            const PhotosWindow = (window as any).PhotosWindow;
-            if (typeof PhotosWindow === 'function') {
-                const win = PhotosWindow.create();
+            const PhotosWindow = globalWindow.PhotosWindow;
+            if (PhotosWindow && typeof PhotosWindow.create === 'function') {
+                const win = PhotosWindow.create() as { element?: HTMLElement | null } | null;
                 if (win && win.element) {
                     win.element.id = 'photos-window';
                     elements.container = win.element as HTMLElement;
