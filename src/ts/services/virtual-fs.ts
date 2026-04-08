@@ -427,6 +427,15 @@ class VirtualFileSystemManager {
     private structureDirty = false;
     private readonly DELTA_THRESHOLD = 10;
     private readonly GITHUB_MOUNT_PATH_PARTS = ['Volumes', 'GitHub-Projekte'] as const;
+    private readonly ROOT_APPLICATIONS_PATH_PARTS = ['Applications'] as const;
+    private readonly ROOT_APPLICATIONS_REPO_SOURCE_PARTS = [
+        'Volumes',
+        'GitHub-Projekte',
+        'Website',
+        'src',
+        'ts',
+        'apps',
+    ] as const;
     private readonly GITHUB_MOUNT_REFRESH_MS = 60 * 1000;
     private readonly githubHydrationInFlight = new Set<string>();
     private readonly githubHydratedAt = new Map<string, number>();
@@ -967,6 +976,71 @@ class VirtualFileSystemManager {
         );
     }
 
+    private isRootApplicationsPath(parts: string[]): boolean {
+        return (
+            parts.length === this.ROOT_APPLICATIONS_PATH_PARTS.length &&
+            parts[0] === this.ROOT_APPLICATIONS_PATH_PARTS[0]
+        );
+    }
+
+    /**
+     * PURPOSE: Keep `/Applications` at root in sync with the repo source folder
+     * (`/Volumes/GitHub-Projekte/Website/src/ts/apps`) to simulate a hard-link-like alias.
+     * WHY: Finder should expose project app sources from a macOS-style root Applications entry.
+     * INVARIANT: We preserve the root folder shell (`/Applications` icon/metadata) and only
+     *            re-point its children to the repo source children.
+     */
+    private async syncRootApplicationsFromRepo(force = false): Promise<void> {
+        try {
+            await this.hydrateGithubMountPath(
+                this.ROOT_APPLICATIONS_REPO_SOURCE_PARTS as unknown as string[],
+                force
+            );
+
+            const sourceFolder = this.getFolder(
+                this.ROOT_APPLICATIONS_REPO_SOURCE_PARTS as unknown as string[]
+            );
+            if (!sourceFolder) return;
+
+            const now = new Date().toISOString();
+            const rootChildren = this.getRootContainer();
+            const rootApplicationsEntry = rootChildren['Applications'];
+            const rootApplications: FolderItem =
+                rootApplicationsEntry && rootApplicationsEntry.type === 'folder'
+                    ? rootApplicationsEntry
+                    : {
+                          type: 'folder',
+                          icon: '📦',
+                          created: now,
+                          modified: now,
+                          children: {},
+                      };
+
+            // Keep root-level Applications visually macOS-like while sharing the source tree.
+            rootApplications.icon = '📦';
+
+            if (
+                rootApplications.children !== sourceFolder.children ||
+                rootChildren['Applications'] !== rootApplications
+            ) {
+                rootApplications.children = sourceFolder.children;
+                rootApplications.modified = now;
+                rootChildren['Applications'] = rootApplications;
+                this.structureDirty = true;
+                this.scheduleSave();
+                this.emit({
+                    type: 'update',
+                    path: this.normalizePath(
+                        this.ROOT_APPLICATIONS_PATH_PARTS as unknown as string[]
+                    ),
+                    item: rootApplications,
+                });
+            }
+        } catch (error) {
+            logger.warn('GITHUB', '[VirtualFS] syncRootApplicationsFromRepo failed:', error);
+        }
+    }
+
     private ensureFolderByParts(parts: string[], icon = '📁'): FolderItem | null {
         if (parts.length === 0) return null;
 
@@ -1235,6 +1309,8 @@ class VirtualFileSystemManager {
         // Warm up GitHub mount after initial VFS load so Finder/Terminal can browse
         // /Volumes/GitHub-Projekte as a real tree backed by GitHub API data.
         void this.hydrateGithubMountPath(this.GITHUB_MOUNT_PATH_PARTS as unknown as string[], true);
+        // Map root /Applications to the repository apps source tree.
+        void this.syncRootApplicationsFromRepo(true);
     }
 
     private scheduleSave(): void {
@@ -1482,6 +1558,8 @@ class VirtualFileSystemManager {
         const parts = this.parsePath(path);
         if (this.isGithubMountPath(parts)) {
             void this.hydrateGithubMountPath(parts);
+        } else if (this.isRootApplicationsPath(parts)) {
+            void this.syncRootApplicationsFromRepo();
         }
         return this.navigate(path);
     }
@@ -1496,6 +1574,8 @@ class VirtualFileSystemManager {
         const parts = this.parsePath(path);
         if (this.isGithubMountPath(parts)) {
             void this.hydrateGithubMountPath(parts);
+        } else if (this.isRootApplicationsPath(parts)) {
+            void this.syncRootApplicationsFromRepo();
         }
         const item = this.navigate(path);
         return item?.type === 'folder' ? item : null;
@@ -1533,6 +1613,8 @@ class VirtualFileSystemManager {
 
         if (this.isGithubMountPath(parts)) {
             void this.hydrateGithubMountPath(parts);
+        } else if (this.isRootApplicationsPath(parts)) {
+            void this.syncRootApplicationsFromRepo();
         }
 
         // Empty path = list root folder's children

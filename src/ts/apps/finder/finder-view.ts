@@ -1738,6 +1738,7 @@ export class FinderView extends BaseTab {
                 'txt',
                 'js',
                 'ts',
+                'tsx',
                 'json',
                 'html',
                 'htm',
@@ -1770,6 +1771,7 @@ export class FinderView extends BaseTab {
                 'tiff',
             ]);
             const pdfExts = new Set(['pdf']);
+            const codeEditorExts = new Set(['ts', 'tsx']);
 
             // Helper to open text content in the modern TextEditorWindow path.
             const openInTextEditor = (fileName: string, content: string) => {
@@ -1787,6 +1789,77 @@ export class FinderView extends BaseTab {
                 return false;
             };
 
+            const openInCodeEditor = (fileName: string, content: string) => {
+                try {
+                    if (
+                        window.CodeEditorApp &&
+                        typeof window.CodeEditorApp.openFile === 'function'
+                    ) {
+                        window.CodeEditorApp.openFile(fileName, content);
+                        return true;
+                    }
+                } catch (e) {
+                    logger.warn('FINDER', '[FinderView] Failed to open in code editor:', e);
+                }
+                return false;
+            };
+
+            const openInPreferredEditor = (fileName: string, content: string) => {
+                if (codeEditorExts.has(ext) && openInCodeEditor(fileName, content)) {
+                    return true;
+                }
+                return openInTextEditor(fileName, content);
+            };
+
+            const openMappedApplicationsTextFile = async (pathParts: string[]) => {
+                // `/Applications` is a VFS mirror of `Website/src/ts/apps` in GitHub.
+                if (pathParts[0] !== 'Applications') return false;
+
+                const API = this.getAPI();
+                if (!API || typeof API.fetchRepoContents !== 'function') return false;
+
+                const username = this.getGithubUsername();
+                const repo = 'Website';
+                const subPath = ['src', 'ts', 'apps', ...pathParts.slice(1)].join('/');
+
+                try {
+                    const response = await API.fetchRepoContents(username, repo, subPath);
+                    const fileObj = Array.isArray(response) ? response[0] : response;
+                    if (!fileObj || typeof fileObj !== 'object') return false;
+
+                    let rawText = '';
+                    if (
+                        'content' in fileObj &&
+                        typeof fileObj.content === 'string' &&
+                        fileObj.content.length > 0 &&
+                        'encoding' in fileObj &&
+                        fileObj.encoding === 'base64'
+                    ) {
+                        rawText = atob(fileObj.content.replace(/\n/g, ''));
+                    } else if ('content' in fileObj && typeof fileObj.content === 'string') {
+                        rawText = fileObj.content;
+                    } else if (
+                        'download_url' in fileObj &&
+                        typeof fileObj.download_url === 'string'
+                    ) {
+                        const resp = await fetch(fileObj.download_url);
+                        if (!resp.ok) return false;
+                        rawText = await resp.text();
+                    }
+
+                    if (!rawText) return false;
+                    openInPreferredEditor(name, rawText);
+                    return true;
+                } catch (e) {
+                    logger.warn(
+                        'FINDER',
+                        '[FinderView] Failed to fetch mapped Applications file:',
+                        e
+                    );
+                    return false;
+                }
+            };
+
             // Handle local VirtualFS files
             if (this.source === 'computer') {
                 try {
@@ -1794,8 +1867,18 @@ export class FinderView extends BaseTab {
                     const pathParts =
                         this.currentPath.length > 0 ? [...this.currentPath, name] : [name];
                     const content = VirtualFS.readFile(pathParts);
+                    if (textExts.has(ext)) {
+                        if (
+                            (content === null || content.length === 0) &&
+                            pathParts[0] === 'Applications'
+                        ) {
+                            const openedRemoteMapped =
+                                await openMappedApplicationsTextFile(pathParts);
+                            if (openedRemoteMapped) return;
+                        }
+                    }
                     if (content !== null && textExts.has(ext)) {
-                        openInTextEditor(name, content);
+                        openInPreferredEditor(name, content);
                         return;
                     }
                     // Images: prefer srcUrl (static asset reference) then data-URI content
@@ -1901,7 +1984,7 @@ export class FinderView extends BaseTab {
                                 ? atob(embeddedContent.replace(/\n/g, ''))
                                 : embeddedContent;
                         if (textExts.has(ext)) {
-                            openInTextEditor(name, raw);
+                            openInPreferredEditor(name, raw);
                             return;
                         }
                         // Try to handle images/pdf embedded in the listing object
@@ -2027,7 +2110,7 @@ export class FinderView extends BaseTab {
                             const rawBase64 = (fileObj.content || '').replace(/\n/g, '');
                             const rawText = atob(rawBase64);
                             if (textExts.has(ext)) {
-                                openInTextEditor(name, rawText);
+                                openInPreferredEditor(name, rawText);
                                 return;
                             }
                             try {
@@ -2083,7 +2166,7 @@ export class FinderView extends BaseTab {
                                     ? String(fileObj.content)
                                     : '';
                             if (textExts.has(ext)) {
-                                openInTextEditor(name, raw);
+                                openInPreferredEditor(name, raw);
                                 return;
                             }
                         }

@@ -4,6 +4,16 @@ import {
     showAndRegisterWindow,
 } from '../../framework/controls/window-lifecycle.js';
 import logger from '../../core/logger.js';
+import {
+    detectClientCoordinateScale,
+    getLogicalViewportHeight,
+    getLogicalViewportWidth,
+    resolveElementLogicalPx,
+    toLogicalClientPx,
+    toRenderedClientPx,
+    toLogicalPx,
+} from '../../utils/viewport.js';
+import { getDockReservedBottom } from '../../ui/dock.js';
 
 /**
  * PURPOSE: Settings as BaseWindow subclass
@@ -124,8 +134,70 @@ export class SettingsWindow extends BaseWindow {
         let offsetY = 0;
         let activePointerId: number | null = null;
         let captureHeader: HTMLElement | null = null;
+        let pointerScale = 1;
+        let lastPointerXRendered: number | null = null;
+        let lastPointerYLogical: number | null = null;
         let stopSelection: ((event: Event) => void) | null = null;
         let lastHandledHeaderDoubleClickAt = 0;
+
+        const getSnapCandidate = (
+            target: HTMLElement | null,
+            pointerXRendered: number | null
+        ): 'left' | 'right' | null => {
+            if (!target) return null;
+
+            const viewportWidth = Math.max(window.innerWidth || 0, 0);
+            if (viewportWidth <= 0) return null;
+
+            const threshold = Math.max(3, Math.min(14, viewportWidth * 0.0035));
+            const rect = target.getBoundingClientRect();
+
+            const pointerDistLeft =
+                typeof pointerXRendered === 'number'
+                    ? Math.abs(pointerXRendered)
+                    : Math.abs(rect.left);
+            if (Math.abs(rect.left) <= threshold || pointerDistLeft <= threshold) return 'left';
+
+            const distRight = viewportWidth - rect.right;
+            const pointerDistRight =
+                typeof pointerXRendered === 'number'
+                    ? Math.abs(viewportWidth - pointerXRendered)
+                    : Math.abs(distRight);
+            if (Math.abs(distRight) <= threshold || pointerDistRight <= threshold) return 'right';
+
+            return null;
+        };
+
+        const snapToSide = (side: 'left' | 'right') => {
+            const metrics = window.computeSnapMetrics?.(side);
+            if (!metrics) return;
+
+            if (!windowEl.dataset.snapped) {
+                const rect = windowEl.getBoundingClientRect();
+                windowEl.dataset.prevSnapLeft = `${Math.round(resolveElementLogicalPx(windowEl, 'left', rect.left))}`;
+                windowEl.dataset.prevSnapTop = `${Math.round(resolveElementLogicalPx(windowEl, 'top', rect.top))}`;
+                windowEl.dataset.prevSnapWidth = `${Math.round(resolveElementLogicalPx(windowEl, 'width', rect.width))}`;
+                windowEl.dataset.prevSnapHeight = `${Math.round(resolveElementLogicalPx(windowEl, 'height', rect.height))}`;
+            }
+
+            this.isMaximized = false;
+            windowEl.style.minWidth = '0px';
+            windowEl.style.minHeight = '0px';
+            windowEl.style.maxWidth = 'none';
+            windowEl.style.maxHeight = 'none';
+            windowEl.style.position = 'fixed';
+            windowEl.style.left = `${metrics.left}px`;
+            windowEl.style.top = `${metrics.top}px`;
+            windowEl.style.width = `${metrics.width}px`;
+            windowEl.style.height = `${metrics.height}px`;
+            windowEl.dataset.snapped = side;
+
+            this.position.x = metrics.left;
+            this.position.y = metrics.top;
+            this.position.width = metrics.width;
+            this.position.height = metrics.height;
+            this.bringToFront();
+        };
 
         const executeHeaderDoubleClickAction = () => {
             this.bringToFront();
@@ -186,10 +258,48 @@ export class SettingsWindow extends BaseWindow {
                 this.toggleMaximize();
             }
 
+            if (windowEl.dataset.snapped === 'left' || windowEl.dataset.snapped === 'right') {
+                const restoreLeft = Number.parseFloat(windowEl.dataset.prevSnapLeft || '');
+                const restoreTop = Number.parseFloat(windowEl.dataset.prevSnapTop || '');
+                const restoreWidth = Number.parseFloat(windowEl.dataset.prevSnapWidth || '');
+                const restoreHeight = Number.parseFloat(windowEl.dataset.prevSnapHeight || '');
+
+                if (
+                    Number.isFinite(restoreLeft) &&
+                    Number.isFinite(restoreTop) &&
+                    Number.isFinite(restoreWidth) &&
+                    Number.isFinite(restoreHeight)
+                ) {
+                    windowEl.style.minWidth = '';
+                    windowEl.style.minHeight = '';
+                    windowEl.style.maxWidth = '';
+                    windowEl.style.maxHeight = '';
+                    windowEl.style.position = 'fixed';
+                    windowEl.style.left = `${Math.round(restoreLeft)}px`;
+                    windowEl.style.top = `${Math.round(restoreTop)}px`;
+                    windowEl.style.width = `${Math.round(restoreWidth)}px`;
+                    windowEl.style.height = `${Math.round(restoreHeight)}px`;
+                    this.position.x = Math.round(restoreLeft);
+                    this.position.y = Math.round(restoreTop);
+                    this.position.width = Math.round(restoreWidth);
+                    this.position.height = Math.round(restoreHeight);
+                }
+
+                delete windowEl.dataset.snapped;
+                delete windowEl.dataset.prevSnapLeft;
+                delete windowEl.dataset.prevSnapTop;
+                delete windowEl.dataset.prevSnapWidth;
+                delete windowEl.dataset.prevSnapHeight;
+            }
+
             const rect = windowEl.getBoundingClientRect();
-            offsetX = event.clientX - rect.left;
-            offsetY = event.clientY - rect.top;
+            pointerScale = detectClientCoordinateScale(event.clientX, event.clientY, rect);
+            const pointerX = toLogicalClientPx(event.clientX, pointerScale);
+            const pointerY = toLogicalClientPx(event.clientY, pointerScale);
+            offsetX = pointerX - resolveElementLogicalPx(windowEl, 'left', rect.left);
+            offsetY = pointerY - resolveElementLogicalPx(windowEl, 'top', rect.top);
             isDragging = true;
+            windowEl.style.position = 'fixed';
 
             if ('pointerId' in event) {
                 activePointerId = event.pointerId;
@@ -213,17 +323,39 @@ export class SettingsWindow extends BaseWindow {
         const updateDrag = (clientX: number, clientY: number) => {
             if (!isDragging) return;
 
-            const minTop = Math.max(0, Math.round(window.getMenuBarBottom?.() || 0));
+            const pointerX = toLogicalClientPx(clientX, pointerScale);
+            const pointerY = toLogicalClientPx(clientY, pointerScale);
+            const minTop = Math.max(0, Math.round(toLogicalPx(window.getMenuBarBottom?.() || 0)));
             const rect = windowEl.getBoundingClientRect();
-            const maxLeft = Math.max(0, window.innerWidth - rect.width);
-            const nextLeft = Math.max(0, Math.min(maxLeft, clientX - offsetX));
-            const nextTop = Math.max(minTop, clientY - offsetY);
+            const logicalWidth = resolveElementLogicalPx(windowEl, 'width', rect.width);
+            const logicalHeight = resolveElementLogicalPx(windowEl, 'height', rect.height);
+            const maxLeft = Math.max(0, getLogicalViewportWidth() - logicalWidth);
+            const maxBottom = Math.max(0, Math.round(getDockReservedBottom()));
+            const viewportLogicalHeight = getLogicalViewportHeight();
+            const nextLeft = Math.max(0, Math.min(maxLeft, pointerX - offsetX));
+            const unclampedTop = pointerY - offsetY;
+            // If the window is taller than the available viewport slot, do not hard-clamp to maxTop.
+            // Otherwise vertical dragging can get stuck right below the menu bar.
+            const canFullyFitVertically =
+                logicalHeight + minTop + maxBottom <= viewportLogicalHeight;
+            const nextTop = canFullyFitVertically
+                ? Math.max(
+                      minTop,
+                      Math.min(viewportLogicalHeight - logicalHeight - maxBottom, unclampedTop)
+                  )
+                : Math.max(minTop, unclampedTop);
+            lastPointerXRendered = toRenderedClientPx(clientX, pointerScale);
+            lastPointerYLogical = pointerY;
 
             windowEl.style.position = 'fixed';
             windowEl.style.left = `${Math.round(nextLeft)}px`;
             windowEl.style.top = `${Math.round(nextTop)}px`;
             this.position.x = Math.round(nextLeft);
             this.position.y = Math.round(nextTop);
+
+            const candidate = getSnapCandidate(windowEl, lastPointerXRendered);
+            if (candidate) window.showSnapPreview?.(candidate);
+            else window.hideSnapPreview?.();
         };
 
         const endDrag = () => {
@@ -245,6 +377,29 @@ export class SettingsWindow extends BaseWindow {
             }
             activePointerId = null;
             captureHeader = null;
+            pointerScale = 1;
+
+            const menuTop = Math.max(0, Math.round(toLogicalPx(window.getMenuBarBottom?.() || 0)));
+            const topFillThreshold = 18;
+            const droppedAtTop =
+                typeof lastPointerYLogical === 'number' &&
+                lastPointerYLogical <= menuTop + topFillThreshold;
+
+            if (droppedAtTop && !this.disableMaximize && !this.isMaximized) {
+                window.hideSnapPreview?.();
+                this.toggleMaximize();
+                lastPointerXRendered = null;
+                lastPointerYLogical = null;
+                return;
+            }
+
+            const candidate = getSnapCandidate(windowEl, lastPointerXRendered);
+            if (candidate) {
+                snapToSide(candidate);
+            }
+            window.hideSnapPreview?.();
+            lastPointerXRendered = null;
+            lastPointerYLogical = null;
 
             const saveState = (this as unknown as { _saveState?: () => void })._saveState;
             if (typeof saveState === 'function') {

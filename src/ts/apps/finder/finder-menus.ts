@@ -557,7 +557,7 @@ function getFinderMultiInstanceMenuItems() {
             (a: unknown, b: unknown) => ((a as any)?.zIndex || 0) - ((b as any)?.zIndex || 0)
         );
 
-        if (sorted.length > 1) {
+        if (sorted.length > 0) {
             items.push({ type: 'separator' });
             sorted.forEach((win: unknown, idx: number) => {
                 const w = win as any;
