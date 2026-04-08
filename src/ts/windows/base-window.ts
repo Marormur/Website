@@ -265,10 +265,25 @@ export class BaseWindow {
         if (this._isMobileUIMode()) return;
 
         const minTop = Math.round(window.getMenuBarBottom?.() || 0);
+        const logicalViewportWidth = Math.max(0, getLogicalViewportWidth());
+        const computed = this.element ? window.getComputedStyle(this.element) : null;
+        const widthFromStyle = this.element
+            ? parseFloat(this.element.style.width || computed?.width || '')
+            : Number.NaN;
+        const fallbackWidth = this.element
+            ? Math.round(
+                  this.element.getBoundingClientRect().width || this.element.offsetWidth || 0
+              )
+            : 0;
+        const currentWidth = Math.max(1, Math.round(widthFromStyle || fallbackWidth || 1));
+        const maxLeft = Math.max(0, logicalViewportWidth - currentWidth);
+        const safeLeft = Math.max(0, Math.min(maxLeft, Math.round(this.position.x)));
         const safeTop = Math.max(minTop, Math.round(this.position.y));
 
+        this.position.x = safeLeft;
         this.position.y = safeTop;
         if (this.element) {
+            this.element.style.left = `${safeLeft}px`;
             this.element.style.top = `${safeTop}px`;
         }
     }
@@ -1027,9 +1042,7 @@ export class BaseWindow {
     private _updatePosition(): void {
         if (!this.element) return;
 
-        // Update position on the window element itself
-        this.element.style.left = `${this.position.x}px`;
-        this.element.style.top = `${this.position.y}px`;
+        this._enforceDesktopTitlebarBoundary();
     }
 
     /**
@@ -1571,6 +1584,7 @@ export class BaseWindow {
             finder: { programKey: 'programs.finder', icon: WINDOW_ICONS.finder },
             preview: { programKey: 'programs.preview', icon: WINDOW_ICONS.preview },
             'text-editor': { programKey: 'programs.text', icon: WINDOW_ICONS.textEditor },
+            'code-editor': { programKey: 'programs.codeEditor', icon: WINDOW_ICONS.codeEditor },
             terminal: { programKey: 'programs.terminal', icon: WINDOW_ICONS.terminal },
             photos: { programKey: 'programs.photos', icon: WINDOW_ICONS.photos },
             settings: { programKey: 'programs.settings', icon: WINDOW_ICONS.settings },

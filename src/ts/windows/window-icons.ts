@@ -9,6 +9,7 @@ export type ProgramIconKey =
     | 'finder'
     | 'preview'
     | 'textEditor'
+    | 'codeEditor'
     | 'terminal'
     | 'photos'
     | 'launchpad'
@@ -26,6 +27,7 @@ const PROGRAM_ICON_SETS: Record<ProgramIconTheme, Record<ProgramIconKey, string>
         finder: '🗂️',
         preview: '🔎',
         textEditor: '📝',
+        codeEditor: '⌨️',
         terminal: '💻',
         photos: '🖼️',
         launchpad: '🚀',
@@ -37,6 +39,7 @@ const PROGRAM_ICON_SETS: Record<ProgramIconTheme, Record<ProgramIconKey, string>
         finder: './img/sucher.png',
         preview: './img/imageviewer.png',
         textEditor: './img/notepad.png',
+        codeEditor: './img/notepad.png',
         terminal: './img/terminal.png',
         photos: './img/photos-app-icon.svg',
         launchpad: './img/launchpad.png',
@@ -59,6 +62,9 @@ const WINDOW_ICONS = {
     },
     get textEditor(): string {
         return getProgramIcon('textEditor');
+    },
+    get codeEditor(): string {
+        return getProgramIcon('codeEditor');
     },
     get preview(): string {
         return getProgramIcon('preview');

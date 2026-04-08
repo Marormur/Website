@@ -191,6 +191,15 @@ export const en = {
             title: 'Launchpad',
             searchPlaceholder: 'Search apps',
         },
+        codeEditor: {
+            newFile: 'New File',
+            newWindow: 'New Window',
+            save: 'Save',
+            undo: 'Undo',
+            redo: 'Redo',
+            find: 'Find…',
+            help: 'Show Code Editor help',
+        },
         terminal: {
             title: 'Terminal',
         },

@@ -29,6 +29,7 @@ const MENU_REGISTRY_MODAL_TYPE_MAP: Record<string, string> = {
     'about-modal': 'about',
     'program-info-modal': 'program-info',
     terminal: 'terminal',
+    'code-editor': 'code-editor',
 };
 
 export function registerMenuAction(handler: MenuHandler) {

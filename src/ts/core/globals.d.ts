@@ -336,6 +336,8 @@ declare global {
             open?: () => unknown;
             newFile?: (filename?: string) => unknown;
             openFile?: (filename: string, content: string) => unknown;
+            save?: () => unknown;
+            triggerEditorAction?: (actionId: string) => unknown;
         };
         MonacoEnvironment?: {
             getWorker?: (workerId: string, label: string) => Worker;

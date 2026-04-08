@@ -50,6 +50,7 @@ const DOCK_WINDOW_ICONS: Record<string, string> = {
     terminal: 'terminal',
     'image-modal': 'photos',
     'settings-modal': 'settings',
+    'code-editor': 'codeEditor',
 };
 
 const DOCK_ORDER_STORAGE_KEY = 'dock:order:v1';
@@ -75,6 +76,7 @@ const WINDOW_TYPE_TO_DOCK_ID: Record<string, string> = {
     settings: 'settings-modal',
     launchpad: 'launchpad-modal',
     photos: 'image-modal',
+    'code-editor': 'code-editor',
 };
 
 const WINDOW_TYPE_TO_PROGRAM_ICON: Record<string, string> = {
@@ -85,6 +87,7 @@ const WINDOW_TYPE_TO_PROGRAM_ICON: Record<string, string> = {
     launchpad: 'launchpad',
     preview: 'preview',
     photos: 'photos',
+    'code-editor': 'codeEditor',
 };
 
 const WINDOW_TYPE_TO_DOCK_TRANSLATION_KEY: Record<string, string> = {
@@ -95,6 +98,7 @@ const WINDOW_TYPE_TO_DOCK_TRANSLATION_KEY: Record<string, string> = {
     launchpad: 'dock.launchpad',
     preview: 'dock.image',
     photos: 'dock.photos',
+    'code-editor': 'dock.codeEditor',
 };
 
 let dockPointer: { x: number; y: number } | null = null;
@@ -266,6 +270,55 @@ function createPhotosDockItem(): HTMLElement {
     item.appendChild(icon);
     item.appendChild(indicator);
     return item;
+}
+
+function createCodeEditorDockItem(): HTMLElement {
+    const item = document.createElement('div');
+    item.className = 'dock-item group relative flex flex-col items-center cursor-pointer';
+    item.setAttribute('data-action', 'openWindow');
+    item.setAttribute('data-window-id', 'code-editor');
+
+    const tooltip = document.createElement('span');
+    tooltip.className =
+        'dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50';
+    tooltip.setAttribute('data-i18n', 'dock.codeEditor');
+    tooltip.textContent =
+        window.appI18n?.translate?.('dock.codeEditor', 'Code Editor') || 'Code Editor';
+
+    const icon = document.createElement('span');
+    icon.className = 'dock-icon';
+    renderProgramIcon(icon, 'codeEditor');
+
+    const indicator = document.createElement('span');
+    indicator.id = 'code-editor-indicator';
+    indicator.className = 'hidden dock-indicator';
+
+    item.appendChild(tooltip);
+    item.appendChild(icon);
+    item.appendChild(indicator);
+    return item;
+}
+
+function syncCodeEditorDockItemVisibility(): void {
+    const apps = getDockAppsContainer();
+    if (!apps) return;
+
+    const existing = apps.querySelector<HTMLElement>('.dock-item[data-window-id="code-editor"]');
+    const codeEditorWindows = window.WindowRegistry?.getWindowsByType?.('code-editor');
+    const shouldShow = Array.isArray(codeEditorWindows) && codeEditorWindows.length > 0;
+
+    if (shouldShow && !existing) {
+        const item = createCodeEditorDockItem();
+        apps.appendChild(item);
+        renderDockProgramIcons();
+        scheduleDockReposition(getDockPreferences());
+        return;
+    }
+
+    if (!shouldShow && existing) {
+        existing.remove();
+        scheduleDockReposition(getDockPreferences());
+    }
 }
 
 function syncPhotosDockItemVisibility(): void {
@@ -1180,9 +1233,11 @@ function resolveDockTargetItem(windowId: string): HTMLElement | null {
               ? 'settings-modal'
               : lowerWindowId.includes('launchpad')
                 ? 'launchpad-modal'
-                : lowerWindowId.includes('finder')
-                  ? 'finder'
-                  : null;
+                : lowerWindowId.includes('code')
+                  ? 'code-editor'
+                  : lowerWindowId.includes('finder')
+                    ? 'finder'
+                    : null;
 
     if (mappedWindowId === 'finder') {
         return dock.querySelector<HTMLElement>('.dock-item:not([data-window-id])');
@@ -1345,6 +1400,7 @@ export function updateDockIndicators(): void {
     const preferences = getDockPreferences();
 
     syncPhotosDockItemVisibility();
+    syncCodeEditorDockItemVisibility();
 
     const indicatorMappings = [
         { indicatorId: 'finder-indicator', windowType: 'finder' },
@@ -1353,6 +1409,7 @@ export function updateDockIndicators(): void {
         { modalId: 'text-modal', indicatorId: 'text-indicator', windowType: 'text-editor' },
         { indicatorId: 'terminal-indicator', windowType: 'terminal' },
         { indicatorId: 'photos-indicator', windowType: 'photos' },
+        { indicatorId: 'code-editor-indicator', windowType: 'code-editor' },
     ];
 
     const showIndicators = !isMobileMode && shouldShowOpenIndicators();

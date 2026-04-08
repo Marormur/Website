@@ -49,6 +49,7 @@ logger.debug('UI', 'Launchpad (TS) loaded');
         'programs.terminal': 'terminal',
         'programs.preview': 'preview-modal',
         'programs.text': 'text-modal',
+        'programs.codeEditor': 'code-editor-modal',
         'programs.photos': 'image-modal',
         // Settings and About have known static modal IDs, so dynamic instances
         // (window-settings-*, window-about-*) are deduplicated against them.

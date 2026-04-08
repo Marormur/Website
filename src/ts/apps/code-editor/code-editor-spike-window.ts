@@ -941,6 +941,25 @@ export class CodeEditorWorkbenchTab extends BaseTab {
         this.setStatus(this.t('codeEditor.status.openedPath', 'Opened {path}', { path }));
     }
 
+    /** Saves the currently active document to VirtualFS. Used by the menu bar. */
+    saveDocument(): void {
+        this.saveActiveDocumentToVfs();
+    }
+
+    /**
+     * Triggers a Monaco editor action by ID on the active editor (e.g. 'undo', 'redo',
+     * 'actions.find'). Used by the menu bar.
+     */
+    triggerAction(actionId: string): void {
+        if (!this.editor) return;
+        const action = this.editor.getAction?.(actionId);
+        if (action) {
+            void action.run();
+        } else {
+            this.editor.trigger?.('keyboard', actionId, undefined);
+        }
+    }
+
     private saveActiveDocumentToVfs(): void {
         const activeDoc = this.getActiveDoc();
         if (!activeDoc) return;
@@ -1433,6 +1452,14 @@ export class CodeEditorWindow extends BaseWindow {
         return workbench.createDocument({ filename });
     }
 
+    saveDocument(): void {
+        this.createWorkbenchIfMissing().saveDocument();
+    }
+
+    triggerAction(actionId: string): void {
+        this.createWorkbenchIfMissing().triggerAction(actionId);
+    }
+
     static create(config?: Partial<WindowConfig>): CodeEditorWindow {
         const instance = new CodeEditorWindow(config);
         instance.createWorkbenchIfMissing();
@@ -1459,4 +1486,18 @@ window.CodeEditorApp = {
     newFile: (filename?: string) => CodeEditorWindow.focusOrCreate().createDocument(filename),
     openFile: (filename: string, content: string) =>
         CodeEditorWindow.focusOrCreate().openDocument(filename, content),
+    save: () => {
+        const registry = window['WindowRegistry'];
+        const active = registry?.getActiveWindow?.() as CodeEditorWindow | undefined;
+        if (active instanceof CodeEditorWindow) {
+            active.saveDocument();
+        }
+    },
+    triggerEditorAction: (actionId: string) => {
+        const registry = window['WindowRegistry'];
+        const active = registry?.getActiveWindow?.() as CodeEditorWindow | undefined;
+        if (active instanceof CodeEditorWindow) {
+            active.triggerAction(actionId);
+        }
+    },
 };

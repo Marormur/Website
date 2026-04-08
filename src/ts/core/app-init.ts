@@ -21,6 +21,7 @@ import { registerPhotosMenus } from '../apps/photos/photos-menus.js';
 import { registerPreviewMenus } from '../apps/preview/preview-menus.js';
 import { registerTerminalMenus } from '../apps/terminal/terminal-menus.js';
 import { registerTextEditorMenus } from '../apps/text-editor/text-editor-menus.js';
+import { registerCodeEditorMenus } from '../apps/code-editor/code-editor-menus.js';
 import { registerLegacyDialogMenus } from '../ui/legacy-dialog-menus.js';
 
 /**
@@ -264,6 +265,7 @@ function initApp(): void {
     registerPhotosMenus();
     registerTerminalMenus();
     registerTextEditorMenus();
+    registerCodeEditorMenus();
     registerLegacyDialogMenus();
 
     // Initialize desktop icons
