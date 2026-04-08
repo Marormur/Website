@@ -431,6 +431,138 @@ html.dark .traffic-light-control--disabled:hover {
     background: #1e293b;
 }
 
+.code-editor-header-action {
+    border: 0;
+    border-left: 1px solid #2f3947;
+    padding: 0 12px;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.code-editor-header-action:hover {
+    background: #1e293b;
+}
+
+.code-editor-workspace {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+    min-height: 0;
+    min-width: 0;
+}
+
+.code-editor-explorer {
+    border-right: 1px solid #2f3947;
+    background: #0b1220;
+    color: #cbd5e1;
+    min-width: 0;
+    overflow: auto;
+}
+
+.code-editor-explorer-section {
+    padding: 10px 8px;
+}
+
+.code-editor-explorer-title {
+    margin: 0 0 6px;
+    padding: 0 6px;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.code-editor-open-editors {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 4px;
+}
+
+.code-editor-open-item {
+    display: grid;
+    gap: 1px;
+}
+
+.code-editor-open-item-button,
+.code-editor-tree-folder,
+.code-editor-tree-file {
+    border: 0;
+    width: 100%;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    padding: 5px 8px;
+    font-size: 12px;
+    border-radius: 6px;
+}
+
+.code-editor-open-item-button:focus-visible,
+.code-editor-tree-folder:focus-visible,
+.code-editor-tree-file:focus-visible,
+.code-editor-header-action:focus-visible,
+.code-editor-new-file:focus-visible {
+    outline: 2px solid #60a5fa;
+    outline-offset: -2px;
+}
+
+.code-editor-open-item-button:hover,
+.code-editor-tree-folder:hover,
+.code-editor-tree-file:hover {
+    background: rgba(100, 116, 139, 0.24);
+}
+
+.code-editor-open-item.is-active .code-editor-open-item-button,
+.code-editor-tree-file.is-active {
+    background: rgba(37, 99, 235, 0.34);
+    color: #f8fafc;
+}
+
+.code-editor-open-item-meta {
+    font-size: 11px;
+    color: #64748b;
+    padding: 0 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.code-editor-folder-tree {
+    min-width: 0;
+}
+
+.code-editor-tree-root {
+    display: grid;
+    gap: 3px;
+}
+
+.code-editor-tree-children {
+    display: grid;
+    gap: 2px;
+}
+
+.code-editor-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+@media (max-width: 700px) {
+    .code-editor-workspace {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(120px, 38%) minmax(0, 1fr);
+    }
+
+    .code-editor-explorer {
+        border-right: 0;
+        border-bottom: 1px solid #2f3947;
+    }
+}
+
 .code-editor-surface {
     min-width: 0;
     min-height: 0;
@@ -461,10 +593,20 @@ html.dark .code-editor-file-tab.is-active {
 @media (forced-colors: active) {
     .code-editor-file-tab-label,
     .code-editor-file-tab-close,
-    .code-editor-new-file {
+    .code-editor-new-file,
+    .code-editor-header-action,
+    .code-editor-open-item-button,
+    .code-editor-tree-folder,
+    .code-editor-tree-file {
         background: ButtonFace;
         color: ButtonText;
         border-color: ButtonBorder;
+    }
+
+    .code-editor-explorer,
+    .code-editor-open-item-meta {
+        background: Canvas;
+        color: CanvasText;
     }
 
     .code-editor-status {

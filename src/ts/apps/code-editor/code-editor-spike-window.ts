@@ -10,6 +10,7 @@ import {
     showAndRegisterWindow,
 } from '../../framework/controls/window-lifecycle.js';
 import logger from '../../core/logger.js';
+import { VirtualFS } from '../../services/virtual-fs.js';
 
 import 'monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.js';
 import 'monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution.js';
@@ -23,6 +24,7 @@ type MonacoViewState = unknown;
 
 type MonacoTextModel = {
     getAlternativeVersionId?: () => number;
+    getValue?: () => string;
     setValue: (value: string) => void;
     dispose: () => void;
 };
@@ -53,6 +55,8 @@ type MonacoModule = {
                 fontFamily: string;
                 fontSize: number;
                 minimap: { enabled: boolean };
+                occurrencesHighlight?: 'off' | 'singleFile' | 'multiFile';
+                selectionHighlight?: boolean;
                 smoothScrolling: boolean;
                 scrollBeyondLastLine: boolean;
             }
@@ -65,10 +69,16 @@ type EditorDoc = {
     id: string;
     filename: string;
     language: string;
+    vfsPath: string | null;
     model: MonacoTextModel;
     viewState: MonacoViewState | null;
     isDirty: boolean;
     savedVersionId: number;
+};
+
+type VfsEvent = {
+    type: string;
+    path: string;
 };
 
 const CODE_FONT_STACK = "Menlo, Monaco, 'SF Mono', Consolas, 'Liberation Mono', monospace";
@@ -135,13 +145,21 @@ class CodeEditorWorkbenchTab extends BaseTab {
     private monaco: MonacoModule | null = null;
     private editorHost: HTMLDivElement | null = null;
     private tabsHost: HTMLDivElement | null = null;
+    private openEditorsHost: HTMLUListElement | null = null;
+    private folderTreeHost: HTMLDivElement | null = null;
     private statusNode: HTMLDivElement | null = null;
     private newFileButton: HTMLButtonElement | null = null;
+    private saveFileButton: HTMLButtonElement | null = null;
+    private importFileButton: HTMLButtonElement | null = null;
+    private fileInput: HTMLInputElement | null = null;
     private themeObserver: MutationObserver | null = null;
     private editorInitPromise: Promise<void> | null = null;
     private docs = new Map<string, EditorDoc>();
     private activeDocId: string | null = null;
     private untitledCounter = 1;
+    private vfsListener: ((event: VfsEvent) => void) | null = null;
+    private expandedFolders = new Set<string>();
+    private readonly explorerRootPath = '/home/marvin';
 
     private runWhenReady(action: () => void): void {
         void this.ensureEditorReady()
@@ -184,29 +202,101 @@ class CodeEditorWorkbenchTab extends BaseTab {
         newFileButton.textContent = 'New File';
         newFileButton.setAttribute('aria-label', 'Create a new file tab');
 
-        header.append(tabsHost, newFileButton);
+        const saveFileButton = document.createElement('button');
+        saveFileButton.type = 'button';
+        saveFileButton.className = 'code-editor-header-action';
+        saveFileButton.textContent = 'Save';
+        saveFileButton.setAttribute('aria-label', 'Save active file to workspace');
+
+        const importFileButton = document.createElement('button');
+        importFileButton.type = 'button';
+        importFileButton.className = 'code-editor-header-action';
+        importFileButton.textContent = 'Import';
+        importFileButton.setAttribute('aria-label', 'Import local file');
+
+        header.append(tabsHost, newFileButton, saveFileButton, importFileButton);
+
+        const workspace = document.createElement('div');
+        workspace.className = 'code-editor-workspace';
+
+        const explorer = document.createElement('aside');
+        explorer.className = 'code-editor-explorer';
+        explorer.setAttribute('aria-label', 'Explorer');
+
+        const openEditorsSection = document.createElement('section');
+        openEditorsSection.className = 'code-editor-explorer-section';
+
+        const openEditorsTitle = document.createElement('h3');
+        openEditorsTitle.className = 'code-editor-explorer-title';
+        openEditorsTitle.textContent = 'Open Editors';
+
+        const openEditorsHost = document.createElement('ul');
+        openEditorsHost.className = 'code-editor-open-editors';
+
+        openEditorsSection.append(openEditorsTitle, openEditorsHost);
+
+        const folderSection = document.createElement('section');
+        folderSection.className = 'code-editor-explorer-section';
+
+        const folderTitle = document.createElement('h3');
+        folderTitle.className = 'code-editor-explorer-title';
+        folderTitle.textContent = 'Folder';
+
+        const folderTreeHost = document.createElement('div');
+        folderTreeHost.className = 'code-editor-folder-tree';
+        folderTreeHost.setAttribute('role', 'tree');
+        folderTreeHost.setAttribute('aria-label', 'Workspace files');
+
+        folderSection.append(folderTitle, folderTreeHost);
+        explorer.append(openEditorsSection, folderSection);
 
         const editorHost = document.createElement('div');
         editorHost.className = 'code-editor-surface';
         editorHost.setAttribute('role', 'region');
         editorHost.setAttribute('aria-label', 'Code editor');
 
+        workspace.append(explorer, editorHost);
+
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.className = 'code-editor-file-input';
+        fileInput.setAttribute('aria-hidden', 'true');
+        fileInput.tabIndex = -1;
+
         const status = document.createElement('div');
         status.className = 'code-editor-status';
         status.textContent = 'Loading Monaco...';
 
-        root.append(header, editorHost, status);
+        root.append(header, workspace, status, fileInput);
         container.append(root);
 
         this.editorHost = editorHost;
         this.tabsHost = tabsHost;
+        this.openEditorsHost = openEditorsHost;
+        this.folderTreeHost = folderTreeHost;
         this.statusNode = status;
         this.newFileButton = newFileButton;
+        this.saveFileButton = saveFileButton;
+        this.importFileButton = importFileButton;
+        this.fileInput = fileInput;
         this.element = container;
+        this.expandedFolders.add(this.getEffectiveExplorerRootPath());
 
         this.newFileButton.addEventListener('click', () => {
             this.createDocument();
         });
+        this.saveFileButton.addEventListener('click', () => {
+            this.saveActiveDocumentToVfs();
+        });
+        this.importFileButton.addEventListener('click', () => {
+            this.fileInput?.click();
+        });
+        this.fileInput.addEventListener('change', event => {
+            this.handleLocalFileImport(event);
+        });
+
+        this.renderExplorer();
+        this.bindVirtualFsSync();
 
         return container;
     }
@@ -224,6 +314,251 @@ class CodeEditorWorkbenchTab extends BaseTab {
         if (this.statusNode) {
             this.statusNode.textContent = text;
         }
+    }
+
+    private getEffectiveExplorerRootPath(): string {
+        if (VirtualFS.getFolder(this.explorerRootPath)) return this.explorerRootPath;
+        return '/';
+    }
+
+    private getBasename(path: string): string {
+        const cleaned = path.replace(/\/$/, '');
+        const parts = cleaned.split('/').filter(Boolean);
+        return parts[parts.length - 1] || '/';
+    }
+
+    private getDirname(path: string): string {
+        const parts = path.split('/').filter(Boolean);
+        if (parts.length <= 1) return '/';
+        return `/${parts.slice(0, -1).join('/')}`;
+    }
+
+    private joinPath(parent: string, name: string): string {
+        if (parent === '/') return `/${name}`;
+        return `${parent}/${name}`;
+    }
+
+    private ensureFolderPath(path: string): void {
+        if (path === '/' || VirtualFS.getFolder(path)) return;
+        const parts = path.split('/').filter(Boolean);
+        let current = '';
+        for (const part of parts) {
+            current += `/${part}`;
+            if (!VirtualFS.getFolder(current)) {
+                VirtualFS.createFolder(current);
+            }
+        }
+    }
+
+    private getActiveDoc(): EditorDoc | null {
+        if (!this.activeDocId) return null;
+        return this.docs.get(this.activeDocId) || null;
+    }
+
+    private renderExplorer(): void {
+        this.renderOpenEditors();
+        this.renderFolderTree();
+    }
+
+    private renderOpenEditors(): void {
+        if (!this.openEditorsHost) return;
+        this.openEditorsHost.innerHTML = '';
+
+        this.docs.forEach(doc => {
+            const item = document.createElement('li');
+            item.className = `code-editor-open-item ${doc.id === this.activeDocId ? 'is-active' : ''}`;
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'code-editor-open-item-button';
+            button.textContent = doc.isDirty ? `${doc.filename} *` : doc.filename;
+            button.setAttribute('aria-current', doc.id === this.activeDocId ? 'true' : 'false');
+            button.addEventListener('click', () => {
+                this.activateDocument(doc.id);
+            });
+
+            const meta = document.createElement('span');
+            meta.className = 'code-editor-open-item-meta';
+            meta.textContent = doc.vfsPath || 'not saved';
+
+            item.append(button, meta);
+            this.openEditorsHost?.appendChild(item);
+        });
+    }
+
+    private renderFolderTree(): void {
+        if (!this.folderTreeHost) return;
+
+        const rootPath = this.getEffectiveExplorerRootPath();
+        const rootName = this.getBasename(rootPath);
+        const rootChildren = VirtualFS.list(rootPath);
+        this.folderTreeHost.innerHTML = '';
+
+        const rootNode = document.createElement('div');
+        rootNode.className = 'code-editor-tree-root';
+
+        const rootButton = document.createElement('button');
+        rootButton.type = 'button';
+        rootButton.className = 'code-editor-tree-folder';
+        rootButton.textContent = `▾ ${rootName}`;
+        rootButton.setAttribute('aria-expanded', 'true');
+
+        const childrenHost = document.createElement('div');
+        childrenHost.className = 'code-editor-tree-children';
+
+        rootNode.append(rootButton, childrenHost);
+        this.folderTreeHost.appendChild(rootNode);
+
+        this.renderFolderChildren(childrenHost, rootPath, rootChildren, 0);
+    }
+
+    private renderFolderChildren(
+        host: HTMLElement,
+        basePath: string,
+        children: Record<string, { type: string }>,
+        depth: number
+    ): void {
+        const entries = Object.entries(children).sort((a, b) => {
+            const aType = a[1]?.type;
+            const bType = b[1]?.type;
+            if (aType !== bType) return aType === 'folder' ? -1 : 1;
+            return a[0].localeCompare(b[0]);
+        });
+
+        for (const [name, item] of entries) {
+            const fullPath = this.joinPath(basePath, name);
+            if (item.type === 'folder') {
+                const folderNode = document.createElement('div');
+                folderNode.className = 'code-editor-tree-node';
+
+                const folderButton = document.createElement('button');
+                folderButton.type = 'button';
+                folderButton.className = 'code-editor-tree-folder';
+                folderButton.style.paddingLeft = `${12 + depth * 16}px`;
+                const isExpanded = this.expandedFolders.has(fullPath);
+                folderButton.textContent = `${isExpanded ? '▾' : '▸'} ${name}`;
+                folderButton.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+                folderButton.addEventListener('click', () => {
+                    if (this.expandedFolders.has(fullPath)) this.expandedFolders.delete(fullPath);
+                    else this.expandedFolders.add(fullPath);
+                    this.renderFolderTree();
+                });
+
+                folderNode.appendChild(folderButton);
+
+                if (isExpanded) {
+                    const nested = document.createElement('div');
+                    nested.className = 'code-editor-tree-children';
+                    this.renderFolderChildren(
+                        nested,
+                        fullPath,
+                        VirtualFS.list(fullPath),
+                        depth + 1
+                    );
+                    folderNode.appendChild(nested);
+                }
+
+                host.appendChild(folderNode);
+                continue;
+            }
+
+            const fileButton = document.createElement('button');
+            fileButton.type = 'button';
+            fileButton.className = `code-editor-tree-file ${this.getActiveDoc()?.vfsPath === fullPath ? 'is-active' : ''}`;
+            fileButton.style.paddingLeft = `${28 + depth * 16}px`;
+            fileButton.textContent = name;
+            fileButton.setAttribute('role', 'treeitem');
+            fileButton.addEventListener('click', () => {
+                this.openFileFromVirtualFs(fullPath);
+            });
+            host.appendChild(fileButton);
+        }
+    }
+
+    private openFileFromVirtualFs(path: string): void {
+        const content = VirtualFS.readFile(path);
+        if (content === null) {
+            this.setStatus(`Could not open ${path}`);
+            return;
+        }
+
+        this.openDocument(this.getBasename(path), content, { vfsPath: path });
+        this.setStatus(`Opened ${path}`);
+    }
+
+    private saveActiveDocumentToVfs(): void {
+        const activeDoc = this.getActiveDoc();
+        if (!activeDoc) return;
+
+        const content = activeDoc.model.getValue?.() ?? '';
+        const rootPath = this.getEffectiveExplorerRootPath();
+        const targetPath = activeDoc.vfsPath || this.joinPath(rootPath, activeDoc.filename);
+
+        this.ensureFolderPath(this.getDirname(targetPath));
+
+        if (VirtualFS.getFile(targetPath)) {
+            VirtualFS.writeFile(targetPath, content);
+        } else {
+            const created = VirtualFS.createFile(targetPath, content);
+            if (!created) {
+                this.setStatus(`Could not save ${targetPath}`);
+                return;
+            }
+        }
+
+        activeDoc.vfsPath = targetPath;
+        activeDoc.filename = this.getBasename(targetPath);
+        activeDoc.savedVersionId = Number(activeDoc.model.getAlternativeVersionId?.() || 0);
+        activeDoc.isDirty = false;
+
+        this.renderFileTabs();
+        this.renderExplorer();
+        this.setStatus(`Saved ${targetPath}`);
+    }
+
+    private handleLocalFileImport(event: Event): void {
+        const target = event.target as HTMLInputElement;
+        const file = target?.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = loadEvent => {
+            const content = (loadEvent.target as FileReader)?.result;
+            if (typeof content !== 'string') return;
+            this.openDocument(file.name, content, { vfsPath: null });
+            this.setStatus(`Imported ${file.name}`);
+        };
+        reader.onerror = () => {
+            this.setStatus(`Import failed for ${file.name}`);
+        };
+        reader.readAsText(file);
+        target.value = '';
+    }
+
+    private bindVirtualFsSync(): void {
+        if (this.vfsListener) return;
+
+        this.vfsListener = event => {
+            const doc = this.getActiveDoc();
+            if (
+                doc?.vfsPath &&
+                event.path === doc.vfsPath &&
+                event.type === 'update' &&
+                !doc.isDirty
+            ) {
+                const fresh = VirtualFS.readFile(doc.vfsPath);
+                if (typeof fresh === 'string') {
+                    doc.model.setValue(fresh);
+                    doc.savedVersionId = Number(doc.model.getAlternativeVersionId?.() || 0);
+                    doc.isDirty = false;
+                }
+            }
+
+            this.renderFolderTree();
+            this.renderOpenEditors();
+        };
+
+        VirtualFS.addEventListener(this.vfsListener);
     }
 
     private bindThemeSync(monaco: MonacoModule): void {
@@ -278,6 +613,7 @@ class CodeEditorWorkbenchTab extends BaseTab {
                     this.createDocument({
                         filename: 'main.ts',
                         content: DEFAULT_SOURCE,
+                        vfsPath: null,
                     });
                 }
 
@@ -345,9 +681,15 @@ class CodeEditorWorkbenchTab extends BaseTab {
             tab.append(activateButton, closeButton);
             this.tabsHost?.appendChild(tab);
         });
+
+        this.renderOpenEditors();
     }
 
-    createDocument(options?: { filename?: string; content?: string }): string | null {
+    createDocument(options?: {
+        filename?: string;
+        content?: string;
+        vfsPath?: string | null;
+    }): string | null {
         if (!this.monaco) {
             this.runWhenReady(() => {
                 this.createDocument(options);
@@ -367,6 +709,7 @@ class CodeEditorWorkbenchTab extends BaseTab {
             id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
             filename,
             language,
+            vfsPath: options?.vfsPath || null,
             model,
             viewState: null,
             isDirty: false,
@@ -378,7 +721,11 @@ class CodeEditorWorkbenchTab extends BaseTab {
         return doc.id;
     }
 
-    openDocument(filename: string, content: string): string | null {
+    openDocument(
+        filename: string,
+        content: string,
+        options?: { vfsPath?: string | null }
+    ): string | null {
         if (!this.monaco) {
             this.runWhenReady(() => {
                 this.openDocument(filename, content);
@@ -386,16 +733,20 @@ class CodeEditorWorkbenchTab extends BaseTab {
             return null;
         }
 
-        const existing = Array.from(this.docs.values()).find(doc => doc.filename === filename);
+        const existing = Array.from(this.docs.values()).find(doc => {
+            if (options?.vfsPath && doc.vfsPath) return doc.vfsPath === options.vfsPath;
+            return doc.filename === filename;
+        });
         if (existing) {
             existing.model.setValue(content);
             existing.savedVersionId = Number(existing.model.getAlternativeVersionId?.() || 0);
             existing.isDirty = false;
+            existing.vfsPath = options?.vfsPath || existing.vfsPath;
             this.activateDocument(existing.id);
             return existing.id;
         }
 
-        return this.createDocument({ filename, content });
+        return this.createDocument({ filename, content, vfsPath: options?.vfsPath || null });
     }
 
     activateDocument(docId: string): void {
@@ -418,6 +769,7 @@ class CodeEditorWorkbenchTab extends BaseTab {
 
         this.renderFileTabs();
         this.setStatus(`${doc.filename} · ${doc.language}`);
+        this.renderFolderTree();
     }
 
     closeDocument(docId: string): void {
@@ -445,6 +797,8 @@ class CodeEditorWorkbenchTab extends BaseTab {
             doc.model.dispose();
             this.renderFileTabs();
         }
+
+        this.renderExplorer();
     }
 
     override destroy(): void {
@@ -457,6 +811,11 @@ class CodeEditorWorkbenchTab extends BaseTab {
         if (this.editor) {
             this.editor.dispose();
             this.editor = null;
+        }
+
+        if (this.vfsListener) {
+            VirtualFS.removeEventListener(this.vfsListener);
+            this.vfsListener = null;
         }
 
         this.editorInitPromise = null;
