@@ -29,6 +29,15 @@ interface WindowDragZoneBehaviorOptions {
 export function attachWindowDragZoneBehavior(options: WindowDragZoneBehaviorOptions): void {
     const DRAG_START_THRESHOLD_PX = 3;
 
+    const setDragSelectionLock = (enabled: boolean): void => {
+        document.body.classList.toggle('window-dragging', enabled);
+        if (enabled) {
+            window.hideMenuDropdowns?.();
+            const selection = window.getSelection?.();
+            selection?.removeAllRanges();
+        }
+    };
+
     const state = {
         isDragging: false,
         pendingDrag: false,
@@ -59,6 +68,7 @@ export function attachWindowDragZoneBehavior(options: WindowDragZoneBehaviorOpti
         state.offsetX = pointerX - resolveElementLogicalPx(options.windowEl, 'left', liveRect.left);
         state.offsetY = pointerY - resolveElementLogicalPx(options.windowEl, 'top', liveRect.top);
         state.lastPointerX = null;
+        setDragSelectionLock(true);
 
         e.preventDefault();
     });
@@ -113,6 +123,7 @@ export function attachWindowDragZoneBehavior(options: WindowDragZoneBehaviorOpti
             state.pendingDrag = false;
             state.pointerScale = 1;
             state.lastPointerX = null;
+            setDragSelectionLock(false);
             return;
         }
 
@@ -125,6 +136,18 @@ export function attachWindowDragZoneBehavior(options: WindowDragZoneBehaviorOpti
 
         state.pointerScale = 1;
         state.lastPointerX = null;
+        setDragSelectionLock(false);
         options.persistState();
+    });
+
+    window.addEventListener('blur', () => {
+        if (state.pendingDrag || state.isDragging) {
+            state.pendingDrag = false;
+            state.isDragging = false;
+            state.pointerScale = 1;
+            state.lastPointerX = null;
+        }
+        setDragSelectionLock(false);
+        window.hideSnapPreview?.();
     });
 }

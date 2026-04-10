@@ -172,6 +172,24 @@ export function getWindowActions(): ActionMap {
                 return;
             }
 
+            // SPECIAL: Multi-Window Calendar
+            if (windowId === 'calendar-modal') {
+                const calendar = getGlobal<{ focusOrCreate?: () => void }>('CalendarWindow');
+                if (calendar?.focusOrCreate) {
+                    safeExecute('[ActionBus] openWindow calendar', () => {
+                        calendar.focusOrCreate!();
+                    });
+                    const g = getGlobal<{ updateProgramLabelByTopModal?: () => void }>('');
+                    g?.updateProgramLabelByTopModal?.();
+                    return;
+                }
+                logger.warn(
+                    'UI',
+                    '[ActionBus] CalendarWindow not available; skipping legacy calendar fallback'
+                );
+                return;
+            }
+
             // SPECIAL: Multi-Window Settings/About
             if (windowId === 'settings-modal' || windowId === 'about-modal') {
                 openByTypeWithLegacyFallback(

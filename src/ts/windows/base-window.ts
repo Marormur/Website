@@ -437,6 +437,15 @@ export class BaseWindow {
     private _attachDragHandlers(): void {
         if (!this.titlebarElement) return;
 
+        const setDragSelectionLock = (enabled: boolean): void => {
+            document.body.classList.toggle('window-dragging', enabled);
+            if (enabled) {
+                window.hideMenuDropdowns?.();
+                const selection = window.getSelection?.();
+                selection?.removeAllRanges();
+            }
+        };
+
         this.titlebarElement.addEventListener('mousedown', (e: MouseEvent) => {
             if (this._isMobileUIMode()) return;
             if ((e.target as HTMLElement).tagName === 'BUTTON') return; // Ignore control buttons
@@ -504,6 +513,7 @@ export class BaseWindow {
             }
 
             this.dragState.isDragging = true;
+            setDragSelectionLock(true);
             this.dragState.startX = pointerX;
             this.dragState.startY = pointerY;
             this.dragState.lastPointerX = renderedPointerX;
@@ -576,8 +586,19 @@ export class BaseWindow {
                 }
                 this.dragState.pointerScale = 1;
                 this.dragState.lastPointerX = null;
+                setDragSelectionLock(false);
                 this._saveState();
             }
+        });
+
+        window.addEventListener('blur', () => {
+            if (this.dragState.isDragging) {
+                this.dragState.isDragging = false;
+                this.dragState.pointerScale = 1;
+                this.dragState.lastPointerX = null;
+            }
+            setDragSelectionLock(false);
+            window.hideSnapPreview?.();
         });
     }
 
@@ -1587,6 +1608,7 @@ export class BaseWindow {
             'code-editor': { programKey: 'programs.codeEditor', icon: WINDOW_ICONS.codeEditor },
             terminal: { programKey: 'programs.terminal', icon: WINDOW_ICONS.terminal },
             photos: { programKey: 'programs.photos', icon: WINDOW_ICONS.photos },
+            calendar: { programKey: 'programs.calendar', icon: WINDOW_ICONS.calendar },
             settings: { programKey: 'programs.settings', icon: WINDOW_ICONS.settings },
             about: { programKey: 'programs.about', icon: WINDOW_ICONS.profile },
         };

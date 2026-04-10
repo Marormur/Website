@@ -66,6 +66,7 @@ import { FinderView as __FinderView__ } from '../apps/finder/finder-view'; // Fi
 import { FinderWindow as __FinderWindow__ } from '../apps/finder/finder-window'; // Finder window
 import { PreviewWindow as __PreviewWindow__ } from '../apps/preview/preview-window'; // Preview window
 import { PhotosWindow as __PhotosWindow__ } from '../apps/photos/photos-window'; // Photos window (BaseWindow subclass)
+import { CalendarWindow as __CalendarWindow__ } from '../apps/calendar/calendar-window'; // Calendar window (BaseWindow subclass)
 import { AboutWindow as __AboutWindow__ } from '../apps/about/about-window'; // About window (BaseWindow subclass)
 import '../apps/settings/settings-window'; // Settings window (BaseWindow subclass) - sets window.SettingsWindow
 import { SettingsWindow as __SettingsWindow__ } from '../apps/settings/settings-window'; // Settings window (BaseWindow subclass)
@@ -128,6 +129,7 @@ try {
     if (!w.PreviewWindow) w.PreviewWindow = __PreviewWindow__;
     if (!w.TerminalWindow) w.TerminalWindow = __TerminalWindow__;
     if (!w.PhotosWindow) w.PhotosWindow = __PhotosWindow__;
+    if (!w.CalendarWindow) w.CalendarWindow = __CalendarWindow__;
     if (!w.AboutWindow) w.AboutWindow = __AboutWindow__;
     if (!w.SettingsWindow) w.SettingsWindow = __SettingsWindow__;
 } catch {
@@ -141,6 +143,7 @@ try {
         PreviewWindow: !!w.PreviewWindow,
         TerminalWindow: !!w.TerminalWindow,
         PhotosWindow: !!w.PhotosWindow,
+        CalendarWindow: !!w.CalendarWindow,
         AboutWindow: !!w.AboutWindow,
         SettingsWindow: !!w.SettingsWindow,
         WindowRegistry: !!w.WindowRegistry,

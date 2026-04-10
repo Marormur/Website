@@ -370,6 +370,11 @@ declare global {
             create?: (config?: { title?: string }) => unknown;
             focusOrCreate?: (config?: { title?: string }) => unknown;
         };
+        /** CalendarWindow class/factory for creating calendar windows. */
+        CalendarWindow?: {
+            create?: (config?: { title?: string }) => unknown;
+            focusOrCreate?: (config?: { title?: string }) => unknown;
+        };
         /** API facade for the application. */
         API?: {
             window?: {

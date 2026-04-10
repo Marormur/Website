@@ -73,6 +73,7 @@ export const de = {
         settings: 'Systemeinstellungen',
         about: 'Über Marvin',
         launchpad: 'Launchpad',
+        calendar: 'Kalender',
         terminal: 'Terminal',
     },
     dock: {
@@ -84,6 +85,7 @@ export const de = {
         photos: 'Fotos',
         settings: 'Systemeinstellungen',
         launchpad: 'Apps',
+        calendar: 'Kalender',
         terminal: 'Terminal',
     },
     menubar: {
@@ -388,6 +390,16 @@ export const de = {
             about: {
                 name: 'Fotos',
                 tagline: 'Deine Bilder auf einen Klick.',
+                version: 'Version 1.0',
+                copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
+            },
+        },
+        calendar: {
+            label: 'Kalender',
+            infoLabel: 'Über Kalender',
+            about: {
+                name: 'Kalender',
+                tagline: 'Plane Termine und Wochen im macOS-Stil.',
                 version: 'Version 1.0',
                 copyright: '© Marvin Temmen. Alle Rechte vorbehalten.',
             },
@@ -833,6 +845,55 @@ export const de = {
         repoUnnamed: 'Unbenanntes Repository',
         noDescription: 'Keine Beschreibung verfügbar.',
         error: 'Repos konnten nicht geladen werden. Bitte versuche es später erneut.',
+    },
+    calendar: {
+        a11y: {
+            skipToMain: 'Zum Kalenderinhalt springen',
+        },
+        sidebar: {
+            ariaLabel: 'Kalender Seitenleiste',
+            calendars: 'Kalender',
+            miniMonth: 'Monat',
+        },
+        toolbar: {
+            navigation: 'Kalender Navigation',
+            today: 'Heute',
+            viewSwitcher: 'Ansicht wechseln',
+        },
+        views: {
+            day: 'Tag',
+            week: 'Woche',
+            month: 'Monat',
+        },
+        actions: {
+            newEvent: 'Neuer Termin',
+            cancel: 'Abbrechen',
+            delete: 'Löschen',
+            save: 'Speichern',
+        },
+        editor: {
+            title: 'Termin bearbeiten',
+            fields: {
+                title: 'Titel',
+                start: 'Beginn',
+                end: 'Ende',
+                calendar: 'Kalender',
+                notes: 'Notizen',
+            },
+        },
+        weekdays: {
+            mon: 'Mo',
+            tue: 'Di',
+            wed: 'Mi',
+            thu: 'Do',
+            fri: 'Fr',
+            sat: 'Sa',
+            sun: 'So',
+        },
+        labels: {
+            more: 'mehr',
+            noEvents: 'Keine Termine',
+        },
     },
     preview: {
         noImage: 'Kein Bild ausgewählt',

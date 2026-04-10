@@ -48,6 +48,7 @@ logger.debug('UI', 'Launchpad (TS) loaded');
         'programs.finder': 'finder-modal',
         'programs.terminal': 'terminal',
         'programs.preview': 'preview-modal',
+        'programs.calendar': 'calendar-modal',
         'programs.text': 'text-modal',
         'programs.codeEditor': 'code-editor-modal',
         'programs.photos': 'image-modal',
@@ -393,6 +394,21 @@ logger.debug('UI', 'Launchpad (TS) loaded');
                 return;
             }
             logger.warn('UI', 'LaunchpadSystem: TerminalWindow unavailable for terminal');
+            return;
+        }
+
+        if (windowId === 'calendar-modal') {
+            const calendar = (
+                window as unknown as { CalendarWindow?: { focusOrCreate?: () => void } }
+            ).CalendarWindow;
+            if (calendar?.focusOrCreate) {
+                calendar.focusOrCreate();
+                return;
+            }
+            logger.warn(
+                'UI',
+                'LaunchpadSystem: CalendarWindow unavailable, skipping legacy calendar fallback'
+            );
             return;
         }
 

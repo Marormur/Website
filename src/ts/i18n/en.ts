@@ -73,6 +73,7 @@ export const en = {
         settings: 'System settings',
         about: 'About Marvin',
         launchpad: 'Launchpad',
+        calendar: 'Calendar',
         terminal: 'Terminal',
     },
     dock: {
@@ -84,6 +85,7 @@ export const en = {
         photos: 'Photos',
         settings: 'System settings',
         launchpad: 'Apps',
+        calendar: 'Calendar',
         terminal: 'Terminal',
     },
     menubar: {
@@ -362,6 +364,16 @@ export const en = {
             about: {
                 name: 'Photos',
                 tagline: 'Your images at a click.',
+                version: 'Version 1.0',
+                copyright: '© Marvin Temmen. All rights reserved.',
+            },
+        },
+        calendar: {
+            label: 'Calendar',
+            infoLabel: 'About Calendar',
+            about: {
+                name: 'Calendar',
+                tagline: 'Plan appointments and weeks with a macOS-inspired layout.',
                 version: 'Version 1.0',
                 copyright: '© Marvin Temmen. All rights reserved.',
             },
@@ -829,6 +841,55 @@ export const en = {
         repoUnnamed: 'Untitled repository',
         noDescription: 'No description available.',
         error: 'Repositories could not be loaded. Please try again later.',
+    },
+    calendar: {
+        a11y: {
+            skipToMain: 'Skip to calendar content',
+        },
+        sidebar: {
+            ariaLabel: 'Calendar sidebar',
+            calendars: 'Calendars',
+            miniMonth: 'Month',
+        },
+        toolbar: {
+            navigation: 'Calendar navigation',
+            today: 'Today',
+            viewSwitcher: 'Switch view',
+        },
+        views: {
+            day: 'Day',
+            week: 'Week',
+            month: 'Month',
+        },
+        actions: {
+            newEvent: 'New event',
+            cancel: 'Cancel',
+            delete: 'Delete',
+            save: 'Save',
+        },
+        editor: {
+            title: 'Edit event',
+            fields: {
+                title: 'Title',
+                start: 'Start',
+                end: 'End',
+                calendar: 'Calendar',
+                notes: 'Notes',
+            },
+        },
+        weekdays: {
+            mon: 'Mon',
+            tue: 'Tue',
+            wed: 'Wed',
+            thu: 'Thu',
+            fri: 'Fri',
+            sat: 'Sat',
+            sun: 'Sun',
+        },
+        labels: {
+            more: 'more',
+            noEvents: 'No events',
+        },
     },
     preview: {
         noImage: 'No image selected',

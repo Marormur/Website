@@ -111,6 +111,7 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
     function resolveModernWindowType(windowId: string): string | null {
         if (windowId === 'projects-modal' || windowId === 'finder-modal') return 'finder';
         if (windowId === 'terminal-modal' || windowId === 'terminal') return 'terminal';
+        if (windowId === 'calendar-modal') return 'calendar';
         if (windowId === 'text-modal') return 'text-editor';
         if (windowId === 'code-editor-modal') return 'code-editor';
         if (windowId === 'settings-modal') return 'settings';
@@ -151,6 +152,9 @@ import { resolveProgramIcon, WINDOW_ICONS } from './window-icons.js';
         } else if (resolvedType === 'terminal') {
             openedWindow =
                 window.TerminalWindow?.focusOrCreate?.() || window.TerminalWindow?.create?.();
+        } else if (resolvedType === 'calendar') {
+            openedWindow =
+                window.CalendarWindow?.focusOrCreate?.() || window.CalendarWindow?.create?.();
         } else if (resolvedType === 'text-editor') {
             openedWindow =
                 window.TextEditorWindow?.focusOrCreate?.() || window.TextEditorWindow?.create?.();

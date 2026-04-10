@@ -107,6 +107,10 @@ function rebuildWindowMenu(): void {
                 appType: 'photos',
                 label: t('apps.photos.label', 'Fotos'),
             },
+            {
+                appType: 'calendar',
+                label: t('programs.calendar.label', 'Kalender'),
+            },
         ];
 
         // Build menu items for each app type

@@ -39,6 +39,10 @@
         return document.documentElement.getAttribute('data-ui-mode') === 'mobile';
     }
 
+    function isWindowDragInProgress(): boolean {
+        return document.body.classList.contains('window-dragging');
+    }
+
     function toggleMenuDropdown(trigger: HTMLElement, options: TriggerOptions = {}): void {
         if (!trigger) return;
         const menuId = trigger.getAttribute('aria-controls');
@@ -97,6 +101,7 @@
         let clickJustOccurred = false;
 
         el.addEventListener('click', event => {
+            if (isWindowDragInProgress()) return;
             event.stopPropagation();
             clickJustOccurred = true;
             const now = Date.now();
@@ -119,8 +124,10 @@
             }, 200);
         });
 
-        el.addEventListener('mouseenter', () => {
+        el.addEventListener('mouseenter', (event: MouseEvent) => {
             if (isMobileUIMode()) return;
+            if (isWindowDragInProgress()) return;
+            if (event.buttons !== 0) return;
             if (clickJustOccurred) return;
             (window as unknown as { __lastMenuInteractionAt?: number }).__lastMenuInteractionAt =
                 Date.now();
@@ -129,6 +136,7 @@
         });
 
         el.addEventListener('focus', () => {
+            if (isWindowDragInProgress()) return;
             const now = Date.now();
             (window as unknown as { __lastMenuInteractionAt?: number }).__lastMenuInteractionAt =
                 now;

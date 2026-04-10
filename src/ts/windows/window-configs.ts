@@ -122,6 +122,18 @@ export const windowConfigurations: WindowConfiguration[] = [
         },
     },
     {
+        id: 'calendar-modal',
+        type: 'persistent',
+        programKey: 'programs.calendar',
+        icon: WINDOW_ICONS.calendar,
+        closeButtonId: null,
+        metadata: {
+            initHandler: function () {
+                window.CalendarWindow?.focusOrCreate?.();
+            },
+        },
+    },
+    {
         id: 'image-modal',
         // Legacy key for Photos app; handled by PhotosWindow (no static modal in index.html).
         type: 'transient',

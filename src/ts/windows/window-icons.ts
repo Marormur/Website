@@ -12,6 +12,7 @@ export type ProgramIconKey =
     | 'codeEditor'
     | 'terminal'
     | 'photos'
+    | 'calendar'
     | 'launchpad'
     | 'profile'
     | 'settings'
@@ -30,6 +31,7 @@ const PROGRAM_ICON_SETS: Record<ProgramIconTheme, Record<ProgramIconKey, string>
         codeEditor: '⌨️',
         terminal: '💻',
         photos: '🖼️',
+        calendar: '📅',
         launchpad: '🚀',
         profile: '👤',
         settings: '⚙️',
@@ -42,6 +44,7 @@ const PROGRAM_ICON_SETS: Record<ProgramIconTheme, Record<ProgramIconKey, string>
         codeEditor: './img/notepad.png',
         terminal: './img/terminal.png',
         photos: './img/photos-app-icon.svg',
+        calendar: './img/calendar-app-icon.svg',
         launchpad: './img/launchpad.png',
         profile: './img/profil.jpg',
         settings: './img/settings.png',
@@ -74,6 +77,9 @@ const WINDOW_ICONS = {
     },
     get photos(): string {
         return getProgramIcon('photos');
+    },
+    get calendar(): string {
+        return getProgramIcon('calendar');
     },
     get launchpad(): string {
         return getProgramIcon('launchpad');

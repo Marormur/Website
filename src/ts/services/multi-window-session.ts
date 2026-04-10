@@ -14,6 +14,7 @@ import { PreviewWindow } from '../apps/preview/preview-window.js';
 import { PhotosWindow } from '../apps/photos/photos-window.js';
 import { AboutWindow } from '../apps/about/about-window.js';
 import { SettingsWindow } from '../apps/settings/settings-window.js';
+import { CalendarWindow } from '../apps/calendar/calendar-window.js';
 import {
     CodeEditorWindow,
     CodeEditorWorkbenchTab,
@@ -689,6 +690,9 @@ class MultiWindowSessionManager {
 
             case 'settings':
                 return new SettingsWindow(config);
+
+            case 'calendar':
+                return new CalendarWindow(config);
 
             case 'code-editor':
                 return new CodeEditorWindow(config);

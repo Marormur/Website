@@ -74,6 +74,25 @@ import { renderProgramIcon, resolveProgramIcon, WINDOW_ICONS } from '../windows/
                             copyright: '© 2024-2026',
                         },
                     },
+                    calendar: {
+                        modalId: null,
+                        programLabel: t('programs.calendar.label', 'Kalender'),
+                        infoLabel: t('programs.calendar.infoLabel', 'Über Kalender'),
+                        fallbackInfoModalId: 'program-info-modal',
+                        icon: resolveProgramIcon(WINDOW_ICONS.calendar),
+                        about: {
+                            name: t('programs.calendar.about.name', 'Kalender'),
+                            tagline: t(
+                                'programs.calendar.about.tagline',
+                                'Plane Termine und Wochen im macOS-Stil.'
+                            ),
+                            version: t('programs.calendar.about.version', 'Version 1.0'),
+                            copyright: t(
+                                'programs.calendar.about.copyright',
+                                '© Marvin Temmen. Alle Rechte vorbehalten.'
+                            ),
+                        },
+                    },
                     'text-editor': {
                         modalId: null,
                         programLabel: t('programs.text.label', 'TextEdit'),

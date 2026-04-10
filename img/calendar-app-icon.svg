@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" fill="none" role="img" aria-label="Calendar app icon">
+  <defs>
+    <linearGradient id="calendar-shell" x1="120" y1="120" x2="904" y2="904" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f7f8fb" />
+      <stop offset="1" stop-color="#eceff4" />
+    </linearGradient>
+    <linearGradient id="calendar-head" x1="196" y1="196" x2="196" y2="356" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff6d79" />
+      <stop offset="1" stop-color="#e63f4f" />
+    </linearGradient>
+    <linearGradient id="calendar-page" x1="200" y1="332" x2="816" y2="860" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" />
+      <stop offset="1" stop-color="#f3f4f8" />
+    </linearGradient>
+  </defs>
+
+  <rect x="120" y="120" width="784" height="784" rx="120" fill="#111" />
+  <rect x="148" y="148" width="728" height="728" rx="92" fill="url(#calendar-shell)" />
+
+  <rect x="196" y="196" width="632" height="160" rx="56" fill="url(#calendar-head)" />
+  <rect x="196" y="314" width="632" height="514" rx="52" fill="url(#calendar-page)" stroke="#111" stroke-width="20" />
+
+  <rect x="292" y="116" width="44" height="118" rx="22" fill="#2f3b4d" />
+  <rect x="688" y="116" width="44" height="118" rx="22" fill="#2f3b4d" />
+
+  <g fill="#bcc4d2">
+    <rect x="250" y="400" width="116" height="82" rx="24" />
+    <rect x="390" y="400" width="116" height="82" rx="24" />
+    <rect x="530" y="400" width="116" height="82" rx="24" />
+    <rect x="670" y="400" width="116" height="82" rx="24" />
+
+    <rect x="250" y="506" width="116" height="82" rx="24" />
+    <rect x="530" y="506" width="116" height="82" rx="24" />
+    <rect x="670" y="506" width="116" height="82" rx="24" />
+
+    <rect x="250" y="612" width="116" height="82" rx="24" />
+    <rect x="390" y="612" width="116" height="82" rx="24" />
+    <rect x="530" y="612" width="116" height="82" rx="24" />
+    <rect x="670" y="612" width="116" height="82" rx="24" />
+  </g>
+
+  <rect x="390" y="506" width="116" height="82" rx="24" fill="#3c82ff" />
+
+  <rect x="148" y="760" width="728" height="116" rx="56" fill="#efefef" />
+  <circle cx="406" cy="818" r="28" fill="#111" />
+  <circle cx="512" cy="818" r="28" fill="#111" />
+  <circle cx="618" cy="818" r="28" fill="#111" />
+</svg>
