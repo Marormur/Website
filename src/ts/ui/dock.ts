@@ -25,6 +25,7 @@ interface DockManagedWindow {
 interface DockStructure {
     tray: HTMLElement;
     apps: HTMLElement;
+    runningSeparator: HTMLElement;
     separator: HTMLElement;
     minimizedSection: HTMLElement;
     minimizedItems: HTMLElement;
@@ -212,6 +213,15 @@ function ensureDockStructure(): DockStructure | null {
         tray.appendChild(apps);
     }
 
+    let runningSeparator = apps.querySelector<HTMLElement>('.dock-running-separator');
+    if (!runningSeparator) {
+        runningSeparator = document.createElement('div');
+        runningSeparator.className = 'dock-running-separator hidden';
+        runningSeparator.setAttribute('role', 'separator');
+        runningSeparator.setAttribute('aria-hidden', 'true');
+        apps.appendChild(runningSeparator);
+    }
+
     let separator = tray.querySelector<HTMLElement>('.dock-item-separator');
     if (!separator) {
         separator = document.createElement('div');
@@ -239,10 +249,36 @@ function ensureDockStructure(): DockStructure | null {
     return {
         tray,
         apps,
+        runningSeparator,
         separator,
         minimizedSection,
         minimizedItems,
     };
+}
+
+function syncRunningDockSeparator(): void {
+    const structure = ensureDockStructure();
+    if (!structure) return;
+
+    const dynamicItems = Array.from(
+        structure.apps.querySelectorAll<HTMLElement>('.dock-item[data-dock-dynamic="true"]')
+    );
+    const pinnedItems = Array.from(
+        structure.apps.querySelectorAll<HTMLElement>('.dock-item:not([data-dock-dynamic="true"])')
+    );
+
+    const shouldShow = !isMobileUIMode() && dynamicItems.length > 0 && pinnedItems.length > 0;
+    structure.runningSeparator.classList.toggle('hidden', !shouldShow);
+
+    if (!shouldShow) return;
+
+    const firstDynamicItem = dynamicItems[0];
+    if (
+        firstDynamicItem &&
+        structure.runningSeparator !== firstDynamicItem.previousElementSibling
+    ) {
+        structure.apps.insertBefore(structure.runningSeparator, firstDynamicItem);
+    }
 }
 
 function getDockAppsContainer(): HTMLElement | null {
@@ -313,7 +349,9 @@ function syncCodeEditorDockItemVisibility(): void {
 
     if (shouldShow && !existing) {
         const item = createCodeEditorDockItem();
+        item.dataset.dockDynamic = 'true';
         apps.appendChild(item);
+        syncRunningDockSeparator();
         renderDockProgramIcons();
         scheduleDockReposition(getDockPreferences());
         return;
@@ -321,6 +359,7 @@ function syncCodeEditorDockItemVisibility(): void {
 
     if (!shouldShow && existing) {
         existing.remove();
+        syncRunningDockSeparator();
         scheduleDockReposition(getDockPreferences());
     }
 }
@@ -335,9 +374,11 @@ function syncPhotosDockItemVisibility(): void {
 
     if (shouldShow && !existing) {
         const item = createPhotosDockItem();
+        item.dataset.dockDynamic = 'true';
         // Temporary app items belong after all fixed dock icons, but still
         // before minimized previews because those live in .dock-minimized-section.
         apps.appendChild(item);
+        syncRunningDockSeparator();
         renderDockProgramIcons();
         scheduleDockReposition(getDockPreferences());
         return;
@@ -345,6 +386,7 @@ function syncPhotosDockItemVisibility(): void {
 
     if (!shouldShow && existing) {
         existing.remove();
+        syncRunningDockSeparator();
         scheduleDockReposition(getDockPreferences());
     }
 }
@@ -1033,6 +1075,7 @@ export function applyDockOrder(order: string[] | null | undefined): void {
     });
     for (const [, el] of map) fragment.appendChild(el);
     apps.appendChild(fragment);
+    syncRunningDockSeparator();
     scheduleDockReposition(getDockPreferences());
 }
 
@@ -1183,10 +1226,12 @@ export function initDockDragDrop(): void {
             }
             if (!inserted) tray.appendChild(draggedItem);
             saveDockOrder(getCurrentDockOrder());
+            syncRunningDockSeparator();
             cleanup();
             return;
         }
         finalizeDrop();
+        syncRunningDockSeparator();
     };
 
     const cleanup = () => {
