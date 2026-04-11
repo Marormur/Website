@@ -124,7 +124,8 @@
     "vitest": "^4.0.18"
   },
   "overrides": {
-    "tmp": "^0.2.4"
+    "tmp": "^0.2.4",
+    "dompurify": "^3.3.2"
   },
   "dependencies": {
     "monaco-editor": "^0.55.1"
