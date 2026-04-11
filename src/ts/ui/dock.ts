@@ -372,6 +372,8 @@ function syncPhotosDockItemVisibility(): void {
     const photosWindows = window.WindowRegistry?.getWindowsByType?.('photos');
     const shouldShow = Array.isArray(photosWindows) && photosWindows.length > 0;
 
+    // Only dynamically show if a photos window is open. The static dock item
+    // (from index.html) is pinned by default and not removed.
     if (shouldShow && !existing) {
         const item = createPhotosDockItem();
         item.dataset.dockDynamic = 'true';
@@ -384,11 +386,7 @@ function syncPhotosDockItemVisibility(): void {
         return;
     }
 
-    if (!shouldShow && existing) {
-        existing.remove();
-        syncRunningDockSeparator();
-        scheduleDockReposition(getDockPreferences());
-    }
+    // Do NOT remove the static dock item from index.html - it's pinned by default
 }
 
 function removeElementIds(root: HTMLElement): void {

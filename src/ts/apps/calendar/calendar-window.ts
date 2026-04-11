@@ -297,7 +297,8 @@ export class CalendarWindow extends BaseWindow {
         const windowWidth = Math.max(0, this.element.getBoundingClientRect().width);
         let layout: 'full' | 'compact' | 'stacked' = 'full';
 
-        if (windowWidth < 820) {
+        // Keep the desktop sidebar layout active longer before stacking.
+        if (windowWidth < 700) {
             layout = 'stacked';
         } else if (windowWidth < 1040) {
             layout = 'compact';
