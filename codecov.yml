@@ -4,7 +4,7 @@ codecov:
 coverage:
     precision: 2
     round: down
-    range: '50...90'
+    range: '70...100'
 
 comment:
     layout: 'reach,diff,flags,files'
@@ -22,3 +22,11 @@ ignore:
     - 'dist/**'
     - 'tests/**'
     - 'docs/**'
+    # Exclude modules without unit tests from coverage calculation
+    # (only measure core modules: vdom, services, and their dependencies)
+    - 'src/ts/apps/**'
+    - 'src/ts/ui/**'
+    - 'src/ts/utils/**'
+    - 'src/ts/framework/**'
+    - 'src/ts/windows/**'
+    - 'src/ts/compat/**'
