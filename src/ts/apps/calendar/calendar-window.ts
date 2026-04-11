@@ -154,6 +154,8 @@ export class CalendarWindow extends BaseWindow {
     private layoutResizeObserver: ResizeObserver | null = null;
     private monthScrollContainer: HTMLElement | null = null;
     private monthScrollRafId: number | null = null;
+    private suppressMonthScrollSyncUntil = 0;
+    private initialMonthPositionRafId: number | null = null;
 
     constructor(config?: Partial<WindowConfig>) {
         super({
@@ -329,6 +331,10 @@ export class CalendarWindow extends BaseWindow {
         this.layoutResizeObserver?.disconnect();
         this.layoutResizeObserver = null;
         this.detachMonthScrollSync();
+        if (this.initialMonthPositionRafId !== null) {
+            window.cancelAnimationFrame(this.initialMonthPositionRafId);
+            this.initialMonthPositionRafId = null;
+        }
         super.destroy();
     }
 
@@ -344,10 +350,32 @@ export class CalendarWindow extends BaseWindow {
         );
     }
 
+    private scrollGridContainerToSection(
+        section: HTMLElement,
+        behavior: ScrollBehavior = 'auto'
+    ): void {
+        if (!this.gridContainer) return;
+
+        let targetTop = 0;
+        if (this.monthScrollContainer && this.monthScrollContainer.contains(section)) {
+            targetTop = Math.max(0, section.offsetTop - this.monthScrollContainer.offsetTop);
+        } else {
+            const containerRect = this.gridContainer.getBoundingClientRect();
+            const sectionRect = section.getBoundingClientRect();
+            targetTop = Math.max(
+                0,
+                sectionRect.top - containerRect.top + this.gridContainer.scrollTop
+            );
+        }
+
+        this.gridContainer.scrollTo({ top: targetTop, behavior });
+    }
+
     private scrollMonthIntoView(targetMonth: Date, behavior: ScrollBehavior = 'smooth'): void {
         const section = this.findMonthSection(targetMonth);
         if (section) {
-            section.scrollIntoView({ block: 'start', behavior });
+            this.suppressMonthScrollSync(behavior === 'smooth' ? 500 : 120);
+            this.scrollGridContainerToSection(section, behavior);
             return;
         }
 
@@ -357,7 +385,18 @@ export class CalendarWindow extends BaseWindow {
         this.renderMiniMonth();
 
         const rerendered = this.findMonthSection(this.currentDate);
-        rerendered?.scrollIntoView({ block: 'start', behavior: 'auto' });
+        this.suppressMonthScrollSync(120);
+        if (rerendered) {
+            this.scrollGridContainerToSection(rerendered, 'auto');
+        }
+    }
+
+    private suppressMonthScrollSync(durationMs: number): void {
+        const now = performance.now();
+        this.suppressMonthScrollSyncUntil = Math.max(
+            this.suppressMonthScrollSyncUntil,
+            now + Math.max(0, durationMs)
+        );
     }
 
     private syncCurrentMonthFromScroll(): void {
@@ -401,6 +440,7 @@ export class CalendarWindow extends BaseWindow {
     }
 
     private onMonthGridScroll = (): void => {
+        if (performance.now() < this.suppressMonthScrollSyncUntil) return;
         if (this.monthScrollRafId !== null) return;
         this.monthScrollRafId = window.requestAnimationFrame(() => {
             this.monthScrollRafId = null;
@@ -422,6 +462,28 @@ export class CalendarWindow extends BaseWindow {
         if (!this.gridContainer) return;
         this.detachMonthScrollSync();
         this.gridContainer.addEventListener('scroll', this.onMonthGridScroll, { passive: true });
+    }
+
+    private scheduleInitialMonthPositioning(attempt = 0): void {
+        if (!this.gridContainer || this.viewMode !== 'month') return;
+
+        const currentSection = this.findMonthSection(this.currentDate);
+        if (!currentSection) return;
+
+        const isLayoutReady =
+            this.gridContainer.isConnected &&
+            this.gridContainer.scrollHeight > this.gridContainer.clientHeight;
+
+        if (!isLayoutReady && attempt < 10) {
+            this.initialMonthPositionRafId = window.requestAnimationFrame(() => {
+                this.initialMonthPositionRafId = null;
+                this.scheduleInitialMonthPositioning(attempt + 1);
+            });
+            return;
+        }
+
+        this.suppressMonthScrollSync(120);
+        this.scrollGridContainerToSection(currentSection, 'auto');
     }
 
     private createEditorOverlay(): HTMLElement {
@@ -968,8 +1030,12 @@ export class CalendarWindow extends BaseWindow {
             this.gridContainer.querySelector<HTMLElement>('.calendar-month-scroll');
         this.attachMonthScrollSync();
 
-        const currentSection = this.findMonthSection(this.currentDate);
-        currentSection?.scrollIntoView({ block: 'start', behavior: 'auto' });
+        if (this.initialMonthPositionRafId !== null) {
+            window.cancelAnimationFrame(this.initialMonthPositionRafId);
+            this.initialMonthPositionRafId = null;
+        }
+
+        this.scheduleInitialMonthPositioning();
     }
 
     private renderWeekList(): void {
