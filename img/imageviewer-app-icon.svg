@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 1024 1024"
+   width="1024"
+   height="1024"
+   fill="none"
+   role="img"
+   aria-label="Image Viewer app icon"
+   version="1.1"
+   id="svg14"
+   sodipodi:docname="imageviewer-app-icon.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview14"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="0.71529485"
+     inkscape:cx="254.44053"
+     inkscape:cy="482.31859"
+     inkscape:window-width="2030"
+     inkscape:window-height="965"
+     inkscape:window-x="0"
+     inkscape:window-y="31"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg14" />
+  <defs
+     id="defs5">
+    <!-- Blue gradient for the upper/background area -->
+    <linearGradient
+       id="iv-bg"
+       x1="88"
+       y1="88"
+       x2="936"
+       y2="750"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         stop-color="#78bedf"
+         id="stop1" />
+      <stop
+         offset="1"
+         stop-color="#c5e5f2"
+         id="stop2" />
+    </linearGradient>
+    <!-- Mountain fill gradient -->
+    <linearGradient
+       id="iv-mountain"
+       x1="330"
+       y1="310"
+       x2="760"
+       y2="750"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         stop-color="#74bddc"
+         id="stop3" />
+      <stop
+         offset="1"
+         stop-color="#a9d8ec"
+         id="stop4" />
+    </linearGradient>
+    <!-- Clip mask for the outer icon shape -->
+    <clipPath
+       id="iv-outer-clip">
+      <rect
+         x="88"
+         y="88"
+         width="848"
+         height="848"
+         rx="126"
+         id="rect4" />
+    </clipPath>
+    <!-- Clip mask for the inner image display frame -->
+    <clipPath
+       id="iv-inner-clip">
+      <rect
+         x="155"
+         y="152"
+         width="714"
+         height="544"
+         rx="46"
+         id="rect5" />
+    </clipPath>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#iv-mountain"
+       id="linearGradient14"
+       gradientUnits="userSpaceOnUse"
+       x1="512"
+       y1="310"
+       x2="538.45093"
+       y2="706.23413" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#iv-mountain"
+       id="linearGradient15"
+       gradientUnits="userSpaceOnUse"
+       x1="512"
+       y1="310"
+       x2="512"
+       y2="750" />
+  </defs>
+  <!-- Icon shell: blue upper section + white bottom bar, clipped to outer rounded rect -->
+  <g
+     clip-path="url(#iv-outer-clip)"
+     id="g7">
+    <rect
+       x="88"
+       y="88"
+       width="848"
+       height="662"
+       fill="url(#iv-bg)"
+       id="rect6" />
+    <rect
+       x="88"
+       y="750"
+       width="848"
+       height="186"
+       fill="#f3f3f3"
+       id="rect7" />
+  </g>
+  <!-- Outer border -->
+  <rect
+     x="88"
+     y="88"
+     width="848"
+     height="848"
+     rx="126"
+     stroke="#111111"
+     stroke-width="30"
+     fill="none"
+     id="rect8" />
+  <!-- Horizontal divider between image area and bottom bar -->
+  <line
+     x1="88"
+     y1="750"
+     x2="936"
+     y2="750"
+     stroke="#111111"
+     stroke-width="30"
+     id="line8" />
+  <!-- Inner image display frame (white background, rounded border) -->
+  <rect
+     x="154.50655"
+     y="151.50655"
+     width="714.98688"
+     height="544.79858"
+     rx="46.063583"
+     fill="#efefef"
+     stroke="#111111"
+     stroke-width="30"
+     id="rect9"
+     style="display:inline" />
+  <!-- Mountain fills, clipped to inner frame -->
+  <g
+     clip-path="url(#iv-inner-clip)"
+     id="g10"
+     transform="matrix(1,0,0,1.1440611,0,-114.12655)">
+    <path
+       id="polygon9"
+       style="display:inline;fill:url(#linearGradient14)"
+       d="M 579.49839,706.40546 163.84692,695.27481 364.6014,346.99479 Z"
+       sodipodi:nodetypes="cccc" />
+    <path
+       id="polygon10"
+       style="display:inline;fill:url(#linearGradient15)"
+       d="M 770.08319,708.9561 310.22928,704.96352 580,458 Z"
+       sodipodi:nodetypes="cccc" />
+  </g>
+  <!-- Mountain outlines, clipped to inner frame -->
+  <g
+     clip-path="url(#iv-inner-clip)"
+     fill="none"
+     stroke="#111111"
+     stroke-width="30"
+     stroke-linejoin="round"
+     stroke-linecap="round"
+     id="g11"
+     transform="translate(0,-9.4110942)">
+    <path
+       id="polyline10"
+       style="display:inline"
+       d="M 156.37368,684.26092 362.31008,283.25825 514.26437,573.85087"
+       sodipodi:nodetypes="ccc" />
+    <path
+       id="polyline11"
+       d="M 485.64187,517.78502 580,403.27299 769.76444,702.80187"
+       sodipodi:nodetypes="ccc" />
+  </g>
+  <!-- Sun (solid dark circle, upper-right quadrant of inner frame) -->
+  <circle
+     cx="707.11859"
+     cy="302.5929"
+     r="68"
+     fill="#111111"
+     id="circle11" />
+  <!-- Navigation dots in bottom bar -->
+  <circle
+     cx="387"
+     cy="843"
+     r="28"
+     fill="#111111"
+     id="circle12" />
+  <circle
+     cx="512"
+     cy="843"
+     r="28"
+     fill="#111111"
+     id="circle13" />
+  <circle
+     cx="637"
+     cy="843"
+     r="28"
+     fill="#111111"
+     id="circle14" />
+</svg>

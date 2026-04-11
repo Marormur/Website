@@ -39,7 +39,7 @@ const PROGRAM_ICON_SETS: Record<ProgramIconTheme, Record<ProgramIconKey, string>
     },
     custom: {
         finder: './img/sucher.png',
-        preview: './img/imageviewer.png',
+        preview: './img/imageviewer-app-icon.svg',
         textEditor: './img/notepad.png',
         codeEditor: './img/code-editor-app-icon.svg',
         terminal: './img/terminal.png',

@@ -568,11 +568,11 @@ class VirtualFileSystemManager {
                                                 created: now,
                                                 modified: now,
                                                 children: {
-                                                    'imageviewer.png': {
+                                                    'imageviewer-app-icon.svg': {
                                                         type: 'file',
                                                         icon: '🖼️',
                                                         content: '',
-                                                        srcUrl: './img/imageviewer.png',
+                                                        srcUrl: './img/imageviewer-app-icon.svg',
                                                         size: 0,
                                                         created: now,
                                                         modified: now,
@@ -898,11 +898,11 @@ class VirtualFileSystemManager {
                 children: Record<string, FSItem>;
             };
             const defaultIcons: Record<string, FileItem> = {
-                'imageviewer.png': {
+                'imageviewer-app-icon.svg': {
                     type: 'file',
                     icon: '🖼️',
                     content: '',
-                    srcUrl: './img/imageviewer.png',
+                    srcUrl: './img/imageviewer-app-icon.svg',
                     size: 0,
                     created: now,
                     modified: now,

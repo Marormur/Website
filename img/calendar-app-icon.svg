@@ -1,48 +1,225 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" fill="none" role="img" aria-label="Calendar app icon">
-  <defs>
-    <linearGradient id="calendar-shell" x1="120" y1="120" x2="904" y2="904" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#f7f8fb" />
-      <stop offset="1" stop-color="#eceff4" />
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 1024 1024"
+   width="1024"
+   height="1024"
+   fill="none"
+   role="img"
+   aria-label="Calendar app icon"
+   version="1.1"
+   id="svg26"
+   sodipodi:docname="calendar-app-icon.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview26"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.796875"
+     inkscape:cx="512"
+     inkscape:cy="512"
+     inkscape:window-width="1920"
+     inkscape:window-height="965"
+     inkscape:window-x="-1"
+     inkscape:window-y="32"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg26" />
+  <defs
+     id="defs6">
+    <linearGradient
+       id="calendar-shell"
+       x1="120"
+       y1="120"
+       x2="904"
+       y2="904"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         stop-color="#f7f8fb"
+         id="stop1" />
+      <stop
+         offset="1"
+         stop-color="#eceff4"
+         id="stop2" />
     </linearGradient>
-    <linearGradient id="calendar-head" x1="196" y1="196" x2="196" y2="356" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ff6d79" />
-      <stop offset="1" stop-color="#e63f4f" />
+    <linearGradient
+       id="calendar-head"
+       x1="196"
+       y1="196"
+       x2="196"
+       y2="356"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         stop-color="#ff6d79"
+         id="stop3" />
+      <stop
+         offset="1"
+         stop-color="#e63f4f"
+         id="stop4" />
     </linearGradient>
-    <linearGradient id="calendar-page" x1="200" y1="332" x2="816" y2="860" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffffff" />
-      <stop offset="1" stop-color="#f3f4f8" />
+    <linearGradient
+       id="calendar-page"
+       x1="200"
+       y1="332"
+       x2="816"
+       y2="860"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         stop-color="#ffffff"
+         id="stop5" />
+      <stop
+         offset="1"
+         stop-color="#f3f4f8"
+         id="stop6" />
     </linearGradient>
   </defs>
-
-  <rect x="120" y="120" width="784" height="784" rx="120" fill="#111" />
-  <rect x="148" y="148" width="728" height="728" rx="92" fill="url(#calendar-shell)" />
-
-  <rect x="196" y="196" width="632" height="160" rx="56" fill="url(#calendar-head)" />
-  <rect x="196" y="314" width="632" height="514" rx="52" fill="url(#calendar-page)" stroke="#111" stroke-width="20" />
-
-  <rect x="292" y="116" width="44" height="118" rx="22" fill="#2f3b4d" />
-  <rect x="688" y="116" width="44" height="118" rx="22" fill="#2f3b4d" />
-
-  <g fill="#bcc4d2">
-    <rect x="250" y="400" width="116" height="82" rx="24" />
-    <rect x="390" y="400" width="116" height="82" rx="24" />
-    <rect x="530" y="400" width="116" height="82" rx="24" />
-    <rect x="670" y="400" width="116" height="82" rx="24" />
-
-    <rect x="250" y="506" width="116" height="82" rx="24" />
-    <rect x="530" y="506" width="116" height="82" rx="24" />
-    <rect x="670" y="506" width="116" height="82" rx="24" />
-
-    <rect x="250" y="612" width="116" height="82" rx="24" />
-    <rect x="390" y="612" width="116" height="82" rx="24" />
-    <rect x="530" y="612" width="116" height="82" rx="24" />
-    <rect x="670" y="612" width="116" height="82" rx="24" />
+  <rect
+     x="120"
+     y="120"
+     width="784"
+     height="784"
+     rx="120"
+     fill="#111"
+     id="rect6" />
+  <rect
+     x="148"
+     y="148"
+     width="728"
+     height="728"
+     rx="92"
+     fill="url(#calendar-shell)"
+     id="rect7" />
+  <rect
+     x="196"
+     y="196"
+     width="632"
+     height="160"
+     rx="56"
+     fill="url(#calendar-head)"
+     id="rect8" />
+  <rect
+     x="196"
+     y="314"
+     width="632"
+     height="514"
+     rx="52"
+     fill="url(#calendar-page)"
+     stroke="#111"
+     stroke-width="20"
+     id="rect9" />
+  <rect
+     x="292"
+     y="116"
+     width="44"
+     height="118"
+     rx="22"
+     fill="#2f3b4d"
+     id="rect10" />
+  <rect
+     x="688"
+     y="116"
+     width="44"
+     height="118"
+     rx="22"
+     fill="#2f3b4d"
+     id="rect11" />
+  <g
+     fill="#bcc4d2"
+     id="g22">
+    <rect
+       x="250"
+       y="400"
+       width="116"
+       height="82"
+       rx="24"
+       id="rect12" />
+    <rect
+       x="390"
+       y="400"
+       width="116"
+       height="82"
+       rx="24"
+       id="rect13" />
+    <rect
+       x="530"
+       y="400"
+       width="116"
+       height="82"
+       rx="24"
+       id="rect14" />
+    <rect
+       x="670"
+       y="400"
+       width="116"
+       height="82"
+       rx="24"
+       id="rect15" />
+    <rect
+       x="250"
+       y="506"
+       width="116"
+       height="82"
+       rx="24"
+       id="rect16" />
+    <rect
+       x="530"
+       y="506"
+       width="116"
+       height="82"
+       rx="24"
+       id="rect17" />
+    <rect
+       x="670"
+       y="506"
+       width="116"
+       height="82"
+       rx="24"
+       id="rect18" />
+    <rect
+       x="250"
+       y="612"
+       width="116"
+       height="82"
+       rx="24"
+       id="rect19" />
+    <rect
+       x="390"
+       y="612"
+       width="116"
+       height="82"
+       rx="24"
+       id="rect20" />
+    <rect
+       x="530"
+       y="612"
+       width="116"
+       height="82"
+       rx="24"
+       id="rect21" />
+    <rect
+       x="670"
+       y="612"
+       width="116"
+       height="82"
+       rx="24"
+       id="rect22" />
   </g>
-
-  <rect x="390" y="506" width="116" height="82" rx="24" fill="#3c82ff" />
-
-  <rect x="148" y="760" width="728" height="116" rx="56" fill="#efefef" />
-  <circle cx="406" cy="818" r="28" fill="#111" />
-  <circle cx="512" cy="818" r="28" fill="#111" />
-  <circle cx="618" cy="818" r="28" fill="#111" />
+  <rect
+     x="390"
+     y="506"
+     width="116"
+     height="82"
+     rx="24"
+     fill="#3c82ff"
+     id="rect23" />
 </svg>
