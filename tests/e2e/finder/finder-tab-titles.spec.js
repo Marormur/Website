@@ -64,7 +64,11 @@ test.describe('Finder tab titles show folder names', () => {
             .first();
         if (await documentsBtn.isVisible().catch(() => false)) {
             await documentsBtn.dblclick();
-            await page.waitForTimeout(300);
+            await expect
+                .poll(async () => (await getTabTitles(page, finderWindow))[0] || '', {
+                    timeout: 5000,
+                })
+                .toBe('Documents');
 
             // Tab title should now show "Documents"
             titles = await getTabTitles(page, finderWindow);
@@ -75,7 +79,9 @@ test.describe('Finder tab titles show folder names', () => {
         const addBtn = await getFinderAddTabButton(page, finderWindow);
         await expect(addBtn).toBeVisible();
         await addBtn.click();
-        await page.waitForTimeout(300);
+        await expect
+            .poll(async () => (await getTabTitles(page, finderWindow)).length, { timeout: 5000 })
+            .toBeGreaterThanOrEqual(2);
 
         // Second tab should also have a folder name, not "Finder 2"
         titles = await getTabTitles(page, finderWindow);
@@ -99,11 +105,30 @@ test.describe('Finder tab titles show folder names', () => {
             .first();
         if (await githubSidebarBtn.isVisible().catch(() => false)) {
             await githubSidebarBtn.click();
-            await page.waitForTimeout(300);
 
             // Validate title via active Finder tab state (more robust than transient DOM timing).
+            await expect
+                .poll(
+                    async () =>
+                        await page.evaluate(() => {
+                            const reg = /** @type {any} */ (window.WindowRegistry);
+                            if (!reg || typeof reg.getAllWindows !== 'function') return '';
+                            const activeWindow =
+                                reg.getActiveWindow && reg.getActiveWindow()?.type === 'finder'
+                                    ? reg.getActiveWindow()
+                                    : (reg.getAllWindows('finder') || [])[0] || null;
+                            if (!activeWindow) return '';
+                            const activeTab = activeWindow.activeTabId
+                                ? activeWindow.tabs?.get?.(activeWindow.activeTabId)
+                                : null;
+                            const title = /** @type {any} */ (activeTab)?.title;
+                            return typeof title === 'string' ? title.trim() : '';
+                        }),
+                    { timeout: 5000 }
+                )
+                .not.toBe('');
             const activeTitle = await page.evaluate(() => {
-                const reg = window.WindowRegistry;
+                const reg = /** @type {any} */ (window.WindowRegistry);
                 if (!reg || typeof reg.getAllWindows !== 'function') return '';
                 const activeWindow =
                     reg.getActiveWindow && reg.getActiveWindow()?.type === 'finder'
@@ -113,7 +138,8 @@ test.describe('Finder tab titles show folder names', () => {
                 const activeTab = activeWindow.activeTabId
                     ? activeWindow.tabs?.get?.(activeWindow.activeTabId)
                     : null;
-                return /** @type {any} */ ((activeTab)?.title || '').trim();
+                const title = /** @type {any} */ (activeTab)?.title;
+                return typeof title === 'string' ? title.trim() : '';
             });
             expect(activeTitle.length).toBeGreaterThan(0);
             expect(activeTitle).not.toMatch(/^Finder \d+$/);
@@ -137,7 +163,11 @@ test.describe('Finder tab titles show folder names', () => {
         let navigatedToDocuments = false;
         if (await documentsBtn.isVisible().catch(() => false)) {
             await documentsBtn.dblclick();
-            await page.waitForTimeout(300);
+            await expect
+                .poll(async () => (await getTabTitles(page, finderWindow3))[0] || '', {
+                    timeout: 5000,
+                })
+                .toBe('Documents');
             navigatedToDocuments = true;
         }
 
@@ -153,9 +183,11 @@ test.describe('Finder tab titles show folder names', () => {
             return false;
         });
         if (!isActive) {
-            await openFinderWindow(page);
+            const finderAfterReload = await openFinderWindow(page);
             await waitForFinderReady(page);
-            await page.waitForTimeout(300);
+            await expect(finderAfterReload.locator('.wt-tab-title').first()).toBeVisible({
+                timeout: 5000,
+            });
         }
 
         // Tab title should be restored (not "Finder 1")
