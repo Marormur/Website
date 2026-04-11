@@ -41,7 +41,7 @@ const PROGRAM_ICON_SETS: Record<ProgramIconTheme, Record<ProgramIconKey, string>
         finder: './img/sucher.png',
         preview: './img/imageviewer.png',
         textEditor: './img/notepad.png',
-        codeEditor: './img/notepad.png',
+        codeEditor: './img/code-editor-app-icon.svg',
         terminal: './img/terminal.png',
         photos: './img/photos-app-icon.svg',
         calendar: './img/calendar-app-icon.svg',

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" fill="none" role="img" aria-label="Code Editor app icon">
+  <defs>
+    <linearGradient id="code-shell-left" x1="148" y1="148" x2="512" y2="876" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#86d0ff" />
+      <stop offset="1" stop-color="#d5f0ff" />
+    </linearGradient>
+    <linearGradient id="code-shell-right" x1="512" y1="148" x2="876" y2="876" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f7f8fb" />
+      <stop offset="1" stop-color="#e7edf7" />
+    </linearGradient>
+    <linearGradient id="code-screen" x1="196" y1="208" x2="828" y2="718" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fbfdff" />
+      <stop offset="1" stop-color="#eef4fb" />
+    </linearGradient>
+    <linearGradient id="code-tab-active" x1="432" y1="246" x2="432" y2="326" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#70b7ff" />
+      <stop offset="1" stop-color="#3d86ff" />
+    </linearGradient>
+  </defs>
+
+  <rect x="120" y="120" width="784" height="784" rx="120" fill="#111" />
+  <path d="M148 240C148 189.19 189.19 148 240 148H512V876H240C189.19 876 148 834.81 148 784V240Z" fill="url(#code-shell-left)" />
+  <path d="M512 148H784C834.81 148 876 189.19 876 240V784C876 834.81 834.81 876 784 876H512V148Z" fill="url(#code-shell-right)" />
+
+  <rect x="196" y="208" width="632" height="520" rx="82" fill="url(#code-screen)" stroke="#111" stroke-width="28" />
+  <rect x="196" y="208" width="632" height="120" rx="82" fill="#d6e2f1" />
+  <path d="M196 290C196 268.91 213.09 252 234.18 252H789.82C810.91 252 828 268.91 828 290V328H196V290Z" fill="#c5d5e8" />
+
+  <rect x="224" y="238" width="132" height="462" rx="46" fill="#24384d" />
+  <rect x="388" y="246" width="172" height="64" rx="26" fill="url(#code-tab-active)" />
+  <rect x="574" y="246" width="112" height="64" rx="26" fill="#dbe4f1" />
+  <rect x="698" y="246" width="84" height="64" rx="26" fill="#dbe4f1" />
+
+  <circle cx="272" cy="282" r="16" fill="#ff6f7b" />
+  <circle cx="312" cy="282" r="16" fill="#ffbe55" />
+
+  <g fill="#8fa6bf">
+    <rect x="250" y="366" width="80" height="18" rx="9" />
+    <rect x="250" y="410" width="62" height="18" rx="9" />
+    <rect x="250" y="454" width="88" height="18" rx="9" />
+    <rect x="250" y="498" width="70" height="18" rx="9" />
+    <rect x="250" y="542" width="94" height="18" rx="9" />
+  </g>
+
+  <g stroke="#111" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M470 438L408 486L470 534" fill="none" />
+    <path d="M558 410L522 558" />
+    <path d="M600 438L662 486L600 534" fill="none" />
+  </g>
+
+  <g fill="#46c1ff">
+    <rect x="418" y="594" width="172" height="26" rx="13" />
+    <rect x="418" y="642" width="132" height="26" rx="13" />
+  </g>
+  <g fill="#78d36f">
+    <rect x="606" y="594" width="86" height="26" rx="13" />
+    <rect x="566" y="642" width="126" height="26" rx="13" />
+  </g>
+  <rect x="706" y="408" width="44" height="172" rx="22" fill="#ff8366" />
+
+  <rect x="148" y="760" width="728" height="116" rx="56" fill="#efefef" />
+  <circle cx="406" cy="818" r="28" fill="#111" />
+  <circle cx="512" cy="818" r="28" fill="#111" />
+  <circle cx="618" cy="818" r="28" fill="#111" />
+</svg>

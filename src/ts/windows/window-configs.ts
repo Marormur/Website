@@ -101,7 +101,7 @@ export const windowConfigurations: WindowConfiguration[] = [
         id: 'code-editor-modal',
         type: 'persistent',
         programKey: 'programs.codeEditor',
-        icon: WINDOW_ICONS.textEditor,
+        icon: WINDOW_ICONS.codeEditor,
         closeButtonId: null,
         metadata: {
             initHandler: function () {
