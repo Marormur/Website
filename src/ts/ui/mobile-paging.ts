@@ -5,6 +5,8 @@
  */
 
 import logger from '../core/logger.js';
+import { translate } from '../services/i18n';
+import { renderProgramIcon, type ProgramIconKey } from '../windows/window-icons.js';
 
 logger.debug('UI', 'Mobile Paging (TS) loaded');
 
@@ -789,36 +791,43 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         const mobileApps = [
             {
                 id: 'finder',
-                emoji: '📁',
-                label: 'Finder',
+                iconKey: 'finder' as ProgramIconKey,
+                label: translate('programs.finder.label', 'Finder'),
                 action: 'openWindow',
                 windowId: 'finder-modal',
             },
             {
                 id: 'terminal',
-                emoji: '⌨️',
-                label: 'Terminal',
+                iconKey: 'terminal' as ProgramIconKey,
+                label: translate('programs.terminal.label', 'Terminal'),
                 action: 'openWindow',
                 windowId: 'terminal',
             },
             {
                 id: 'text-editor',
-                emoji: '📝',
-                label: 'Texteditor',
+                iconKey: 'textEditor' as ProgramIconKey,
+                label: translate('programs.text.label', 'Texteditor'),
                 action: 'openWindow',
                 windowId: 'text-modal',
             },
             {
+                id: 'calendar',
+                iconKey: 'calendar' as ProgramIconKey,
+                label: translate('programs.calendar.label', 'Kalender'),
+                action: 'openWindow',
+                windowId: 'calendar-modal',
+            },
+            {
                 id: 'photos',
-                emoji: '🖼️',
-                label: 'Fotos',
+                iconKey: 'photos' as ProgramIconKey,
+                label: translate('programs.photos.label', 'Fotos'),
                 action: 'openWindow',
                 windowId: 'image-modal',
             },
             {
                 id: 'settings',
-                emoji: '⚙️',
-                label: 'Einstellungen',
+                iconKey: 'settings' as ProgramIconKey,
+                label: translate('programs.settings.label', 'Einstellungen'),
                 action: 'openWindow',
                 windowId: 'settings-modal',
             },
@@ -838,7 +847,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
 
             const iconDiv = document.createElement('div');
             iconDiv.className = 'mobile-home-app-icon-graphic';
-            iconDiv.textContent = app.emoji;
+            renderProgramIcon(iconDiv, app.iconKey);
 
             const labelDiv = document.createElement('span');
             labelDiv.className = 'mobile-home-app-icon-label';
@@ -976,6 +985,10 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
 
         // Listen for UI mode changes
         window.addEventListener('uiModeEffectiveChange', onUIModChange);
+        window.addEventListener('iconThemeChange', () => {
+            if (!isMobileMode()) return;
+            populateHomeScreen();
+        });
 
         // Initial call in case already in mobile mode
         onUIModChange();

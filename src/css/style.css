@@ -5374,6 +5374,11 @@ html.dark :is(#about-modal, .about-window-shell) .about-copyright {
     gap: 0;
 }
 
+/* Keep mobile dock capped at four primary actions; calendar lives on home screen. */
+:root[data-ui-mode='mobile'] #dock .dock-item[data-window-id='calendar-modal'] {
+    display: none;
+}
+
 /* Keep mobile dock icon row centered by disabling minimized previews in this layout. */
 :root[data-ui-mode='mobile'] #dock .dock-item-separator,
 :root[data-ui-mode='mobile'] #dock .dock-minimized-section {
