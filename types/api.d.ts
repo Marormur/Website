@@ -29,7 +29,7 @@ interface APIObject {
         toggle(): void;
         mark(name: string): void;
         measure(name: string, startMark?: string, endMark?: string): void;
-        report(): void;
+        report(opts?: { topN?: number; clear?: boolean }): PerformanceMeasure[];
     };
     theme: {
         setThemePreference(mode: 'system' | 'light' | 'dark'): void;

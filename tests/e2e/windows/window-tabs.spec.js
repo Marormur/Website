@@ -33,6 +33,7 @@ test.describe('Window Tabs Wiring', () => {
         });
 
         expect(result).not.toBeNull();
+        if (!result) return;
         expect(result.hasWindowTabsApi).toBe(true);
         expect(result.count).toBe(2);
         expect(result.term1Id).toBeTruthy();
@@ -51,6 +52,7 @@ test.describe('Window Tabs Wiring', () => {
         });
 
         expect(sessionInfo).not.toBeNull();
+        if (!sessionInfo) return;
         expect(sessionInfo.hasManager).toBe(true);
         expect(sessionInfo.storageInfo).toBeDefined();
     });

@@ -51,7 +51,9 @@ test.describe('VirtualFS delta saves', () => {
                     if (entries && entries.length > 0) return true;
                     const Perf = window.API && window.API.performance;
                     const measures =
-                        Perf && Perf.report ? Perf.report({ topN: 100, clear: false }) : [];
+                        Perf && Perf.report
+                            ? Perf.report({ topN: 100, clear: false })
+                            : /** @type {PerformanceMeasure[]} */ ([]);
                     if (Array.isArray(measures)) {
                         return measures.some(m => m && m.name === name);
                     }
@@ -65,7 +67,10 @@ test.describe('VirtualFS delta saves', () => {
 
         const { adapter, measures } = await page.evaluate(() => {
             const Perf = window.API?.performance;
-            const out = { adapter: null, measures: [] };
+            const out = {
+                adapter: /** @type {string | null} */ (null),
+                measures: /** @type {PerformanceMeasure[]} */ ([]),
+            };
             try {
                 out.adapter = window.indexedDB ? 'IndexedDB' : 'localStorage';
                 const m = Perf?.report?.({ topN: 100, clear: false }) || [];

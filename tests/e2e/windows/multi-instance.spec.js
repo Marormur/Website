@@ -17,7 +17,7 @@ test.describe('Terminal Multi-Instance', () => {
 
     test('can create multiple terminal instances', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const manager = window.TerminalInstanceManager;
+            const manager = /** @type {any} */ (window.TerminalInstanceManager);
 
             // Create two terminal instances
             const terminal1 = manager.createInstance({ title: 'Terminal 1' });
@@ -41,7 +41,7 @@ test.describe('Terminal Multi-Instance', () => {
 
     test('terminal instances have isolated state', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const manager = window.TerminalInstanceManager;
+            const manager = /** @type {any} */ (window.TerminalInstanceManager);
 
             const terminal1 = manager.createInstance({ title: 'Terminal 1' });
             const terminal2 = manager.createInstance({ title: 'Terminal 2' });
@@ -67,7 +67,7 @@ test.describe('Terminal Multi-Instance', () => {
 
     test('can destroy terminal instance', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const manager = window.TerminalInstanceManager;
+            const manager = /** @type {any} */ (window.TerminalInstanceManager);
 
             const terminal1 = manager.createInstance({ title: 'Terminal 1' });
             const terminal2 = manager.createInstance({ title: 'Terminal 2' });
@@ -95,7 +95,7 @@ test.describe('Terminal Multi-Instance', () => {
 
     test('terminal instance can serialize and deserialize', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const manager = window.TerminalInstanceManager;
+            const manager = /** @type {any} */ (window.TerminalInstanceManager);
 
             const terminal = manager.createInstance({ title: 'Terminal Test' });
             terminal.currentPath = '/home/user';
@@ -139,7 +139,7 @@ test.describe('TextEditor Multi-Instance', () => {
 
     test('can create multiple text editor instances', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const manager = window.TextEditorInstanceManager;
+            const manager = /** @type {any} */ (window.TextEditorInstanceManager);
 
             const editor1 = manager.createInstance({ title: 'Document 1' });
             const editor2 = manager.createInstance({ title: 'Document 2' });
@@ -160,7 +160,7 @@ test.describe('TextEditor Multi-Instance', () => {
 
     test('text editor instances have isolated content', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const manager = window.TextEditorInstanceManager;
+            const manager = /** @type {any} */ (window.TextEditorInstanceManager);
 
             const editor1 = manager.createInstance({
                 title: 'Document 1',
@@ -186,7 +186,7 @@ test.describe('TextEditor Multi-Instance', () => {
 
     test('text editor can track dirty state independently', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const manager = window.TextEditorInstanceManager;
+            const manager = /** @type {any} */ (window.TextEditorInstanceManager);
 
             const editor1 = manager.createInstance({ title: 'Doc 1' });
             const editor2 = manager.createInstance({ title: 'Doc 2' });
@@ -208,7 +208,7 @@ test.describe('TextEditor Multi-Instance', () => {
 
     test('text editor instance can serialize content', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const manager = window.TextEditorInstanceManager;
+            const manager = /** @type {any} */ (window.TextEditorInstanceManager);
 
             const editor = manager.createInstance({
                 title: 'Test Document',
@@ -367,7 +367,7 @@ test.describe('Instance Manager Features', () => {
 
     test('tracks active instance', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const manager = window.TerminalInstanceManager;
+            const manager = /** @type {any} */ (window.TerminalInstanceManager);
 
             const terminal1 = manager.createInstance({ title: 'Terminal 1' });
             const terminal2 = manager.createInstance({ title: 'Terminal 2' });
@@ -393,7 +393,7 @@ test.describe('Instance Manager Features', () => {
 
     test('can serialize and deserialize all instances', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const manager = window.TerminalInstanceManager;
+            const manager = /** @type {any} */ (window.TerminalInstanceManager);
 
             // Clear any existing instances
             manager.destroyAllInstances();

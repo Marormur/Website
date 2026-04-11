@@ -153,12 +153,18 @@ test.describe('Storage Modal Restore @basic', () => {
         await expect(appleMenu).toBeVisible();
 
         const aboutTrigger = page.locator('[data-action="openAbout"]').first();
-        await aboutTrigger.click();
+        await aboutTrigger.click({ timeout: 3000 }).catch(async () => {
+            await page.evaluate(() => {
+                const trigger = document.querySelector('[data-action="openAbout"]');
+                trigger?.dispatchEvent(
+                    new MouseEvent('click', { bubbles: true, cancelable: true })
+                );
+            });
+        });
 
         // About is now a BaseWindow instance; assert modern window shell is visible.
         const aboutWindow = page.locator('.modal.multi-window[id^="window-about-"]');
-        await expect(aboutWindow).toHaveCount(1);
-        await expect(aboutWindow).toBeVisible({ timeout: 5000 });
+        await expect(aboutWindow.first()).toBeVisible({ timeout: 5000 });
 
         // Now reload and verify app remains healthy.
         await page.reload();

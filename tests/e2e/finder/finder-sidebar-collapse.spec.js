@@ -161,8 +161,10 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
         // Check if toggle is visible when focused
         const focusOpacity = await toggleButton.evaluate(el => {
             const parent = el.closest('.finder-sidebar-group-header');
-            return window.getComputedStyle(parent.querySelector('.finder-sidebar-group-toggle'))
-                .opacity;
+            if (!parent) return '0';
+            return window.getComputedStyle(
+                parent.querySelector('.finder-sidebar-group-toggle') || parent
+            ).opacity;
         });
 
         // Should be visible on focus

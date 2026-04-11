@@ -28,11 +28,17 @@ test.describe('Session Export/Import', () => {
         );
     }
 
+    /**
+     * @param {import('@playwright/test').Page} page
+     * @param {number} count
+     * @param {{ cwd?: string; commands?: string[] }} [opts]
+     */
     async function createTerminalTabs(page, count, { cwd, commands } = {}) {
         await page.evaluate(
             ({ count, cwd, commands }) => {
                 if (!window.TerminalWindow?.create) return;
                 const terminalWindow = window.TerminalWindow.create();
+                if (!terminalWindow) return;
                 for (let i = 1; i < count; i++) {
                     terminalWindow.createSession?.(`Terminal ${i + 1}`);
                 }
@@ -189,6 +195,7 @@ test.describe('Session Export/Import', () => {
         });
 
         expect(restoredState).toBeTruthy();
+        if (!restoredState) return;
         expect(restoredState.currentPath).toBe('/home/test');
         expect(restoredState.commandHistory).toEqual(['ls', 'cd /home/test', 'pwd']);
     });
@@ -226,7 +233,7 @@ test.describe('Session Export/Import', () => {
 
         // Should still export valid JSON even if empty
         if (exportedJson) {
-            const sessionData = JSON.parse(exportedJson);
+            const sessionData = JSON.parse(/** @type {string} */ (exportedJson));
             expect(sessionData.version).toBe('1.0.0');
             expect(Array.isArray(sessionData.windows)).toBe(true);
         }

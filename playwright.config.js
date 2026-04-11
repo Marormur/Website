@@ -27,12 +27,14 @@ export default defineConfig({
     // Keep Playwright discovery scoped to E2E specs; unit tests are executed by Vitest.
     testDir: './tests/e2e',
     // Keep deep technical suites opt-in; default E2E should emphasize user-facing journeys.
-    testIgnore: [
-        !RUN_FRAMEWORK_E2E && '**/framework/**',
-        !RUN_INTEGRATION_E2E && '**/integration/**',
-        !RUN_PERFORMANCE_E2E && '**/performance/**',
-        ...(!RUN_QUARANTINED_E2E ? QUARANTINED_SPECS : []),
-    ].filter(Boolean),
+    testIgnore: /** @type {string[]} */ (
+        [
+            !RUN_FRAMEWORK_E2E && '**/framework/**',
+            !RUN_INTEGRATION_E2E && '**/integration/**',
+            !RUN_PERFORMANCE_E2E && '**/performance/**',
+            ...(!RUN_QUARANTINED_E2E ? QUARANTINED_SPECS : []),
+        ].filter(Boolean)
+    ),
     // Reduced timeout for faster feedback - individual tests can override if needed
     timeout: 30 * 1000,
     expect: { timeout: 8000 },

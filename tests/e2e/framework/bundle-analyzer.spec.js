@@ -8,7 +8,7 @@ test.describe('Bundle Analyzer', () => {
 
     test('should provide bundle size information', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const { bundleAnalyzer } = window.MacUI;
+            const { bundleAnalyzer } = /** @type {any} */ (window.MacUI);
             const report = bundleAnalyzer.getReport();
             return {
                 totalSizeKB: report.totalSizeKB,
@@ -24,7 +24,7 @@ test.describe('Bundle Analyzer', () => {
 
     test('should identify largest components', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const { bundleAnalyzer } = window.MacUI;
+            const { bundleAnalyzer } = /** @type {any} */ (window.MacUI);
             const largest = bundleAnalyzer.getLargestComponents(3);
             return {
                 count: largest.length,
@@ -38,7 +38,7 @@ test.describe('Bundle Analyzer', () => {
 
     test('should check target size', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const { bundleAnalyzer } = window.MacUI;
+            const { bundleAnalyzer } = /** @type {any} */ (window.MacUI);
             return {
                 exceedsSmall: bundleAnalyzer.exceedsTarget(10), // 10KB
                 exceedsLarge: bundleAnalyzer.exceedsTarget(1000), // 1000KB

@@ -319,7 +319,7 @@ test.describe('Finder Tabs - Ghost Tab Fix', () => {
         await page.evaluate(tabId => {
             const registry = window.WindowRegistry;
             const win = registry?.getAllWindows('finder')?.[0];
-            if (win && tabId) win.removeTab(tabId);
+            if (win && tabId) win.removeTab?.(tabId);
         }, tabToCloseId);
 
         await waitForFinderTabCount(page, finderWindow, 1, 10000);

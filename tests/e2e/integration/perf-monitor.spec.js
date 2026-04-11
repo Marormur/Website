@@ -9,14 +9,13 @@ test.describe('Performance Monitor Integration @basic', () => {
 
     test('should support measure() functionality', async ({ page }) => {
         const result = await page.evaluate(() => {
-            window.PerfMonitor.mark('start-mark');
-            window.PerfMonitor.mark('end-mark');
-            const measurement = window.PerfMonitor.measure(
-                'test-measure',
-                'start-mark',
-                'end-mark'
-            );
-            return measurement !== null && measurement.name === 'test-measure';
+            const perf = /** @type {any} */ (window.PerfMonitor);
+            if (!perf) return false;
+            perf.mark?.('start-mark');
+            perf.mark?.('end-mark');
+            perf.measure?.('test-measure', 'start-mark', 'end-mark');
+            const entries = performance.getEntriesByName('test-measure', 'measure');
+            return entries.length > 0;
         });
         expect(result).toBe(true);
     });
@@ -26,14 +25,14 @@ test.describe('Performance Monitor Integration @basic', () => {
         // We don't use networkidle as it may timeout in dev environments with hot-reload
         await page.waitForFunction(
             () => {
-                const vitals = window.PerfMonitor.getVitals();
+                const vitals = /** @type {any} */ (window.PerfMonitor)?.getVitals?.() || {};
                 return Object.keys(vitals).length > 0;
             },
             { timeout: 10000 }
         );
 
         const vitals = await page.evaluate(() => {
-            return window.PerfMonitor.getVitals();
+            return /** @type {any} */ (window.PerfMonitor)?.getVitals?.() || {};
         });
 
         expect(vitals).toBeDefined();
@@ -70,7 +69,7 @@ test.describe('Performance Monitor Integration @basic', () => {
         // We don't use networkidle as it may timeout in dev environments with hot-reload
         await page.waitForFunction(
             () => {
-                const vitals = window.PerfMonitor.getVitals();
+                const vitals = /** @type {any} */ (window.PerfMonitor)?.getVitals?.() || {};
                 return Object.keys(vitals).length > 0;
             },
             { timeout: 10000 }
@@ -78,7 +77,7 @@ test.describe('Performance Monitor Integration @basic', () => {
 
         // Generate report (synchronous - logs will be immediately captured by the listener)
         await page.evaluate(() => {
-            window.PerfMonitor.report();
+            /** @type {any} */ (window.PerfMonitor)?.report?.();
         });
 
         // Check if Core Web Vitals are mentioned in report (logs should be captured by now)

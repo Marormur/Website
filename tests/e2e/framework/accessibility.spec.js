@@ -8,7 +8,7 @@ test.describe('Accessibility Utils', () => {
 
     test('should apply ARIA attributes', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const { applyAriaAttributes } = window.MacUI;
+            const { applyAriaAttributes } = /** @type {any} */ (window.MacUI);
             const element = document.createElement('div');
 
             applyAriaAttributes(element, {
@@ -31,7 +31,7 @@ test.describe('Accessibility Utils', () => {
 
     test('should make element focusable', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const { makeFocusable, makeUnfocusable } = window.MacUI;
+            const { makeFocusable, makeUnfocusable } = /** @type {any} */ (window.MacUI);
             const element = document.createElement('div');
 
             makeFocusable(element);
@@ -49,7 +49,7 @@ test.describe('Accessibility Utils', () => {
 
     test('should create FocusTrap', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const { FocusTrap } = window.MacUI;
+            const { FocusTrap } = /** @type {any} */ (window.MacUI);
             const container = document.createElement('div');
             const button1 = document.createElement('button');
             const button2 = document.createElement('button');
@@ -74,7 +74,7 @@ test.describe('Accessibility Utils', () => {
 
     test('should handle keyboard navigation', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const { KeyboardNavigation } = window.MacUI;
+            const { KeyboardNavigation } = /** @type {any} */ (window.MacUI);
             const elements = [
                 document.createElement('button'),
                 document.createElement('button'),

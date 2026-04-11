@@ -19,7 +19,8 @@ test.describe('Finder Multi-Window Focus', () => {
                 finders.forEach(f => {
                     console.log(`[beforeEach] Closing ${f.id}`);
                     try {
-                        f.close();
+                        const closeFn = f.close;
+                        if (typeof closeFn === 'function') closeFn();
                     } catch (e) {
                         console.error(`[beforeEach] Failed to close ${f.id}:`, e);
                     }
@@ -53,7 +54,8 @@ test.describe('Finder Multi-Window Focus', () => {
                 console.log(`Closing ${finders.length} finder windows...`);
                 finders.forEach(f => {
                     try {
-                        f.close();
+                        const closeFn = f.close;
+                        if (typeof closeFn === 'function') closeFn();
                     } catch (e) {
                         console.error(`Failed to close ${f.id}:`, e);
                     }
@@ -99,9 +101,10 @@ test.describe('Finder Multi-Window Focus', () => {
 
         console.log('Z-index manager stack:', stackInfo);
 
-        if (stackInfo.exists) {
+        if (stackInfo.exists && Array.isArray(stackInfo.stack)) {
             // Both Finder windows should be in the stack
-            expect(stackInfo.stack.length).toBeGreaterThanOrEqual(2);
+            const stack = stackInfo.stack;
+            expect(stack.length).toBeGreaterThanOrEqual(2);
         } else {
             console.warn('__zIndexManager not found - this indicates the problem');
         }
@@ -111,8 +114,9 @@ test.describe('Finder Multi-Window Focus', () => {
         // Open two Finder windows
         const windowIds = await page.evaluate(() => {
             if (window.FinderWindow && typeof window.FinderWindow.create === 'function') {
-                const win1 = window.FinderWindow.create();
-                const win2 = window.FinderWindow.create();
+                const win1 = /** @type {any} */ (window.FinderWindow.create());
+                const win2 = /** @type {any} */ (window.FinderWindow.create());
+                if (!win1?.id || !win2?.id) return [];
                 return [win1.id, win2.id];
             }
             return [];
@@ -128,6 +132,7 @@ test.describe('Finder Multi-Window Focus', () => {
         // Switch focus between windows many times (20 times)
         for (let i = 0; i < 20; i++) {
             const targetId = windowIds[i % 2];
+            if (!targetId) continue;
 
             // Bring window to front explicitly to ensure consistent behavior
             await page.evaluate(id => {
@@ -141,6 +146,7 @@ test.describe('Finder Multi-Window Focus', () => {
             // Verify the window is on top (only check every 5 switches to speed up test)
             if (i % 5 === 0) {
                 const debugInfo = await page.evaluate(id => {
+                    if (!id) return { found: false, id: null };
                     const element = document.getElementById(id);
                     if (!element) return { found: false, id };
 

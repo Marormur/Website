@@ -136,12 +136,14 @@ test.describe('Finder GitHub integration', () => {
                     registry.getActiveWindow && registry.getActiveWindow()?.type === 'finder'
                         ? registry.getActiveWindow()
                         : (registry.getAllWindows('finder') || [])[0] || null;
-                const activeTab = activeWindow?.activeTabId
-                    ? activeWindow.tabs?.get?.(activeWindow.activeTabId)
-                    : null;
-                if (!activeTab) return;
-                activeTab.openGithubProjects?.();
-                activeTab.navigateToPath?.(['Website', 'img']);
+                const activeTabApi = /** @type {any} */ (
+                    activeWindow?.activeTabId
+                        ? activeWindow.tabs?.get?.(activeWindow.activeTabId)
+                        : null
+                );
+                if (!activeTabApi) return;
+                activeTabApi.openGithubProjects?.();
+                activeTabApi.navigateToPath?.(['Website', 'img']);
             });
         }
         // Click on wallpaper.png to open in viewer
@@ -157,11 +159,13 @@ test.describe('Finder GitHub integration', () => {
                     registry.getActiveWindow && registry.getActiveWindow()?.type === 'finder'
                         ? registry.getActiveWindow()
                         : (registry.getAllWindows('finder') || [])[0] || null;
-                const activeTab = activeWindow?.activeTabId
-                    ? activeWindow.tabs?.get?.(activeWindow.activeTabId)
-                    : null;
-                if (!activeTab || typeof activeTab.openItem !== 'function') return;
-                await activeTab.openItem('wallpaper.png', 'file');
+                const activeTabApi = /** @type {any} */ (
+                    activeWindow?.activeTabId
+                        ? activeWindow.tabs?.get?.(activeWindow.activeTabId)
+                        : null
+                );
+                if (!activeTabApi || typeof activeTabApi.openItem !== 'function') return;
+                await activeTabApi.openItem('wallpaper.png', 'file');
             });
         }
         // Image files from Finder should open in the dedicated Preview window.
@@ -181,11 +185,13 @@ test.describe('Finder GitHub integration', () => {
                     registry.getActiveWindow && registry.getActiveWindow()?.type === 'finder'
                         ? registry.getActiveWindow()
                         : (registry.getAllWindows('finder') || [])[0] || null;
-                const activeTab = activeWindow?.activeTabId
-                    ? activeWindow.tabs?.get?.(activeWindow.activeTabId)
-                    : null;
-                if (!activeTab || typeof activeTab.openItem !== 'function') return;
-                await activeTab.openItem('wallpaper.png', 'file');
+                const activeTabApi = /** @type {any} */ (
+                    activeWindow?.activeTabId
+                        ? activeWindow.tabs?.get?.(activeWindow.activeTabId)
+                        : null
+                );
+                if (!activeTabApi || typeof activeTabApi.openItem !== 'function') return;
+                await activeTabApi.openItem('wallpaper.png', 'file');
             });
             await page.waitForFunction(
                 () => (window.WindowRegistry?.getAllWindows?.('preview') || []).length > 0,

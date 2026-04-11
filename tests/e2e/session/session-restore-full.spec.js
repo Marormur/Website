@@ -216,7 +216,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
             const wins = window.WindowRegistry.getWindowsByType('text-editor') || [];
             if (wins.length > 0) {
                 const firstWin = wins[0];
-                const tabs = Array.from(firstWin.tabs.values());
+                const tabs = Array.from(firstWin.tabs?.values() ?? []);
                 if (tabs.length > 0 && typeof tabs[0].updateContentState === 'function') {
                     tabs[0].updateContentState({ content: 'Hello from document 1' });
                 }
@@ -267,7 +267,7 @@ test.describe('Session Restore - Full Integration @basic', () => {
             const wins = window.WindowRegistry.getWindowsByType('text-editor') || [];
             if (wins.length === 0) return '';
             const firstWin = wins[0];
-            const tabs = Array.from(firstWin.tabs.values());
+            const tabs = Array.from(firstWin.tabs?.values() ?? []);
             if (tabs.length === 0) return '';
             return tabs[0].contentState?.content || '';
         });

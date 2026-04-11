@@ -6,10 +6,10 @@ async function openTextEditorWindow(page) {
     const windowId = await page.evaluate(() => {
         const textEditorWindow = window.TextEditorWindow;
         if (textEditorWindow?.focusOrCreate) {
-            return textEditorWindow.focusOrCreate().id;
+            return textEditorWindow.focusOrCreate()?.id;
         }
         if (textEditorWindow?.create) {
-            return textEditorWindow.create().id;
+            return textEditorWindow.create()?.id;
         }
 
         if (window.WindowManager?.open) {
@@ -150,7 +150,7 @@ test.describe('Text Editor Multi-Instance Tabs', () => {
                 const win = registry
                     ?.getWindowsByType?.('text-editor')
                     ?.find(item => item.id === windowId);
-                if (win && tabId) win.setActiveTab(tabId);
+                if (win && tabId) win.setActiveTab?.(tabId);
             },
             { windowId: editorWindowId, tabId: firstTabId }
         );

@@ -10,15 +10,15 @@ test.describe('Error Handler Integration @basic', () => {
     test('should capture unhandled errors', async ({ page }) => {
         // Clear existing logs first
         await page.evaluate(() => {
-            window.ErrorHandler.clearLogs();
+            const handler = /** @type {any} */ (window.ErrorHandler);
+            handler?.clearLogs?.();
         });
 
         // Trigger an error by accessing non-existent property
         await page.evaluate(() => {
             setTimeout(() => {
-                // This will trigger a ReferenceError
-                // eslint-disable-next-line no-undef
-                nonExistentFunction();
+                // Trigger an unhandled runtime error intentionally.
+                /** @type {any} */ (globalThis).nonExistentFunction();
             }, 100);
         });
 
@@ -27,7 +27,8 @@ test.describe('Error Handler Integration @basic', () => {
 
         // Check if error was logged
         const errorLogs = await page.evaluate(() => {
-            return window.ErrorHandler.getLogs();
+            const handler = /** @type {any} */ (window.ErrorHandler);
+            return handler?.getLogs?.() || [];
         });
 
         expect(errorLogs.length).toBeGreaterThan(0);
@@ -37,7 +38,8 @@ test.describe('Error Handler Integration @basic', () => {
     test('should capture unhandled promise rejections', async ({ page }) => {
         // Clear existing logs first
         await page.evaluate(() => {
-            window.ErrorHandler.clearLogs();
+            const handler = /** @type {any} */ (window.ErrorHandler);
+            handler?.clearLogs?.();
         });
 
         // Trigger an unhandled promise rejection
@@ -50,7 +52,8 @@ test.describe('Error Handler Integration @basic', () => {
 
         // Check if rejection was logged
         const errorLogs = await page.evaluate(() => {
-            return window.ErrorHandler.getLogs();
+            const handler = /** @type {any} */ (window.ErrorHandler);
+            return handler?.getLogs?.() || [];
         });
 
         expect(errorLogs.length).toBeGreaterThan(0);

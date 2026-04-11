@@ -21,7 +21,9 @@ test.describe('VDOM Core @basic', () => {
 
     test('h() creates valid VNodes', async ({ page }) => {
         const vnode = await page.evaluate(() => {
-            const node = window.VDOM.h('div', { className: 'test' }, 'Hello');
+            const vdom = /** @type {any} */ (window.VDOM);
+            if (!vdom?.h) return null;
+            const node = vdom.h('div', { className: 'test' }, 'Hello');
             return {
                 type: node.type,
                 hasProps: typeof node.props === 'object',
@@ -31,6 +33,8 @@ test.describe('VDOM Core @basic', () => {
             };
         });
 
+        expect(vnode).not.toBeNull();
+        if (!vnode) return;
         expect(vnode.type).toBe('div');
         expect(vnode.hasProps).toBe(true);
         expect(vnode.className).toBe('test');
@@ -39,9 +43,11 @@ test.describe('VDOM Core @basic', () => {
 
     test('diff detects node replacement (REPLACE)', async ({ page }) => {
         const patches = await page.evaluate(() => {
-            const oldVTree = window.VDOM.h('div', {}, 'Content');
-            const newVTree = window.VDOM.h('span', {}, 'Content');
-            return window.VDOM.diff(oldVTree, newVTree);
+            const vdom = /** @type {any} */ (window.VDOM);
+            if (!vdom?.h || !vdom?.diff) return [];
+            const oldVTree = vdom.h('div', {}, 'Content');
+            const newVTree = vdom.h('span', {}, 'Content');
+            return vdom.diff(oldVTree, newVTree);
         });
 
         expect(patches.length).toBeGreaterThan(0);
@@ -51,9 +57,11 @@ test.describe('VDOM Core @basic', () => {
 
     test('diff detects property updates (UPDATE)', async ({ page }) => {
         const patches = await page.evaluate(() => {
-            const oldVTree = window.VDOM.h('div', { className: 'old' }, 'Content');
-            const newVTree = window.VDOM.h('div', { className: 'new' }, 'Content');
-            return window.VDOM.diff(oldVTree, newVTree);
+            const vdom = /** @type {any} */ (window.VDOM);
+            if (!vdom?.h || !vdom?.diff) return [];
+            const oldVTree = vdom.h('div', { className: 'old' }, 'Content');
+            const newVTree = vdom.h('div', { className: 'new' }, 'Content');
+            return vdom.diff(oldVTree, newVTree);
         });
 
         expect(patches.length).toBeGreaterThan(0);
@@ -64,20 +72,24 @@ test.describe('VDOM Core @basic', () => {
 
     test('patch updates existing DOM elements', async ({ page }) => {
         const result = await page.evaluate(() => {
+            const vdom = /** @type {any} */ (window.VDOM);
+            if (!vdom?.h || !vdom?.diff || !vdom?.patch) {
+                return { hasOldClass: null, hasNewClass: null, textContent: null };
+            }
             // Create container with initial content
             const container = document.createElement('div');
             container.id = 'vdom-test-container';
             document.body.appendChild(container);
 
             // Initial render
-            const oldVNode = window.VDOM.h('div', { className: 'old-class' }, 'Old text');
-            let patches = window.VDOM.diff(null, oldVNode);
-            window.VDOM.patch(container, patches);
+            const oldVNode = vdom.h('div', { className: 'old-class' }, 'Old text');
+            let patches = vdom.diff(null, oldVNode);
+            vdom.patch(container, patches);
 
             // Update
-            const newVNode = window.VDOM.h('div', { className: 'new-class' }, 'New text');
-            patches = window.VDOM.diff(oldVNode, newVNode);
-            window.VDOM.patch(container.firstChild, patches);
+            const newVNode = vdom.h('div', { className: 'new-class' }, 'New text');
+            patches = vdom.diff(oldVNode, newVNode);
+            vdom.patch(container.firstChild, patches);
 
             // Check result
             const element = container.querySelector('div');
@@ -99,11 +111,13 @@ test.describe('VDOM Core @basic', () => {
 
     test('EventDelegator can register and trigger events', async ({ page }) => {
         const result = await page.evaluate(() => {
+            const vdom = /** @type {any} */ (window.VDOM);
+            if (!vdom?.EventDelegator) return 0;
             const container = document.createElement('div');
             document.body.appendChild(container);
 
             let clickCount = 0;
-            const delegator = new window.VDOM.EventDelegator(container);
+            const delegator = new vdom.EventDelegator(container);
 
             delegator.on('click', () => {
                 clickCount++;

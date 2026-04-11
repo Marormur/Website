@@ -8,7 +8,7 @@ test.describe('MacUI Framework - Toast System', () => {
 
     test('Toast.success shows success message', async ({ page }) => {
         await page.evaluate(() => {
-            window.toast.success('Test success message', 5000);
+            /** @type {any} */ (window.toast)?.success?.('Test success message', 5000);
         });
 
         await page.waitForSelector('.macui-toast[data-type="success"]', { timeout: 2000 });
@@ -18,7 +18,7 @@ test.describe('MacUI Framework - Toast System', () => {
 
     test('Toast.error shows error message', async ({ page }) => {
         await page.evaluate(() => {
-            window.toast.error('Test error message', 5000);
+            /** @type {any} */ (window.toast)?.error?.('Test error message', 5000);
         });
 
         await page.waitForSelector('.macui-toast[data-type="error"]', { timeout: 2000 });

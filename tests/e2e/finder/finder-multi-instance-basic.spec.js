@@ -19,7 +19,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
             try {
                 const FW = window.FinderWindow;
                 const WR = window.WindowRegistry;
-                if (typeof FW !== 'function' || !WR) {
+                if (!FW || typeof FW.create !== 'function' || !WR) {
                     return { error: 'FinderWindow or WindowRegistry not available' };
                 }
                 const win = FW.create({});
@@ -31,7 +31,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
                     type: win?.type,
                 };
             } catch (error) {
-                return { error: error.message };
+                return { error: error instanceof Error ? error.message : String(error) };
             }
         });
 
@@ -49,11 +49,14 @@ test.describe('Finder Multi-Instance System - Basic', () => {
             try {
                 const FW = window.FinderWindow;
                 const WR = window.WindowRegistry;
-                if (typeof FW !== 'function' || !WR) {
+                if (!FW || typeof FW.create !== 'function' || !WR) {
                     return { error: 'FinderWindow or WindowRegistry not available' };
                 }
                 const w1 = FW.create({});
                 const w2 = FW.create({});
+                if (!w1?.id || !w2?.id) {
+                    return { error: 'Failed to create two finder windows' };
+                }
                 const count = WR.getWindowsByType('finder').length;
                 // Validate isolation by different IDs (distinct windows)
                 const isolated = w1.id !== w2.id;
@@ -65,7 +68,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
                     isolated,
                 };
             } catch (error) {
-                return { error: error.message };
+                return { error: error instanceof Error ? error.message : String(error) };
             }
         });
 
@@ -83,14 +86,17 @@ test.describe('Finder Multi-Instance System - Basic', () => {
             try {
                 const FW = window.FinderWindow;
                 const WR = window.WindowRegistry;
-                if (typeof FW !== 'function' || !WR) {
+                if (!FW || typeof FW.create !== 'function' || !WR) {
                     return { error: 'FinderWindow or WindowRegistry not available' };
                 }
                 const w1 = FW.create({});
                 const w2 = FW.create({});
+                if (!w1 || !w2) {
+                    return { error: 'Failed to create finder windows' };
+                }
                 const initialActive = WR.getActiveWindow();
                 // Bring first window to front
-                w1.bringToFront();
+                w1.bringToFront?.();
                 const newActive = WR.getActiveWindow();
                 return {
                     success: true,
@@ -99,7 +105,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
                     switched: (initialActive?.id || null) !== (newActive?.id || null),
                 };
             } catch (error) {
-                return { error: error.message };
+                return { error: error instanceof Error ? error.message : String(error) };
             }
         });
 
@@ -117,14 +123,17 @@ test.describe('Finder Multi-Instance System - Basic', () => {
         const result = await page.evaluate(() => {
             try {
                 const FW = window.FinderWindow;
-                if (typeof FW !== 'function') {
+                if (!FW || typeof FW.create !== 'function') {
                     return { error: 'FinderWindow not available' };
                 }
                 const w1 = FW.create({});
                 const w2 = FW.create({});
+                if (!w1 || !w2) {
+                    return { error: 'Failed to create finder windows' };
+                }
                 // Create different initial tabs/views in each window
-                const v1 = w1.createView('Computer');
-                const v2 = w2.createGithubView('GitHub');
+                const v1 = w1.createView?.('Computer');
+                const v2 = w2.createGithubView?.('GitHub');
                 const view1Title = v1?.title || 'Computer';
                 const view2Title = v2?.title || 'GitHub';
                 return {
@@ -134,7 +143,7 @@ test.describe('Finder Multi-Instance System - Basic', () => {
                     viewsIsolated: view1Title !== view2Title,
                 };
             } catch (error) {
-                return { error: error.message };
+                return { error: error instanceof Error ? error.message : String(error) };
             }
         });
 

@@ -9,11 +9,14 @@
     "lib": ["ES2022", "DOM"],
     "types": ["node", "@playwright/test"],
     "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "maxNodeModuleJsDepth": 0
   },
   "include": ["./**/*.js", "./**/*.d.ts", "../types/**/*.d.ts", "../playwright.config.js"],
   "exclude": [
     "../node_modules",
+    "node_modules",
+    "**/node_modules/**",
     "../dist",
     "../js",
     "../coverage",

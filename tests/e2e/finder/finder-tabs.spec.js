@@ -80,7 +80,7 @@ test.describe('Finder Multi-Instance Tabs', () => {
             const tabs = Array.from(document.querySelectorAll('.wt-tab'));
             return tabs.map(t => ({
                 text: t.textContent?.trim(),
-                visible: t.offsetParent !== null,
+                visible: /** @type {HTMLElement} */ (t).offsetParent !== null,
                 id: t.id,
                 parentId: t.parentElement?.id,
                 parentClass: t.parentElement?.className,
@@ -180,7 +180,7 @@ test.describe('Finder Multi-Instance Tabs', () => {
         await page.evaluate(id => {
             const registry = window.WindowRegistry;
             const win = registry?.getAllWindows('finder')?.[0];
-            if (win && id) win.removeTab(id);
+            if (win && id) win.removeTab?.(id);
         }, tabId);
 
         // Verify WindowRegistry reports zero finder windows
@@ -240,6 +240,7 @@ test.describe('Finder Multi-Instance Tabs', () => {
         );
 
         expect(instanceIds).not.toBeNull();
+        if (!instanceIds) return;
         const uniqueIds = Array.from(new Set(instanceIds.filter(Boolean)));
         expect(uniqueIds.length).toBeGreaterThanOrEqual(2);
         expect(uniqueIds[0]).not.toBe(uniqueIds[1]);
@@ -262,7 +263,7 @@ test.describe('Finder Multi-Instance Tabs', () => {
         await page.evaluate(tabId => {
             const registry = window.WindowRegistry;
             const win = registry?.getAllWindows('finder')?.[0];
-            if (win && tabId) win.removeTab(tabId);
+            if (win && tabId) win.removeTab?.(tabId);
         }, activeTabId);
 
         await page.waitForFunction(
@@ -324,7 +325,7 @@ test.describe('Finder Multi-Instance Tabs', () => {
         await page.evaluate(tabId => {
             const registry = window.WindowRegistry;
             const win = registry?.getAllWindows('finder')?.[0];
-            if (win && tabId) win.setActiveTab(tabId);
+            if (win && tabId) win.setActiveTab?.(tabId);
         }, secondTabId);
         await page.waitForTimeout(200);
 

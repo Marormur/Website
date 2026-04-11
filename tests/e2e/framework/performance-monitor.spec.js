@@ -8,7 +8,7 @@ test.describe('Performance Monitor', () => {
 
     test('should track component render times', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const { performanceMonitor } = window.MacUI;
+            const { performanceMonitor } = /** @type {any} */ (window.MacUI);
             performanceMonitor.enable();
 
             // Simulate component renders
@@ -35,7 +35,7 @@ test.describe('Performance Monitor', () => {
 
     test('should generate performance report', async ({ page }) => {
         const result = await page.evaluate(() => {
-            const { performanceMonitor } = window.MacUI;
+            const { performanceMonitor } = /** @type {any} */ (window.MacUI);
             performanceMonitor.enable();
 
             // Simulate multiple renders

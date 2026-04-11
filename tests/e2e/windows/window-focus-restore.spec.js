@@ -202,7 +202,11 @@ test.describe('Window Focus Restoration', () => {
         let topWindow = await page.evaluate(() => {
             const windowManager = window.WindowManager;
             const topEl = windowManager.getTopWindow();
-            return topEl ? topEl.id : null;
+            if (!topEl) return null;
+            if (typeof topEl === 'string') return topEl;
+
+            const topObj = /** @type {{ id?: string } | null} */ (topEl);
+            return topObj?.id || null;
         });
         expect(topWindow).toBe(settingsWindowId);
 
@@ -222,7 +226,7 @@ test.describe('Window Focus Restoration', () => {
 
         // Trigger save and reload
         await page.evaluate(() => {
-            window.SessionManager.saveAll({ immediate: true });
+            window.SessionManager?.saveAll({ immediate: true });
         });
         await page.reload();
         await waitForAppReady(page);
@@ -293,11 +297,11 @@ test.describe('Window Focus Restoration', () => {
         const zIndexes = await page.evaluate(() => {
             const aboutWindows = window.WindowRegistry?.getWindowsByType?.('about') || [];
             const aboutModal = aboutWindows.length
-                ? document.getElementById(aboutWindows[aboutWindows.length - 1].id)
+                ? document.getElementById(aboutWindows[aboutWindows.length - 1].id ?? '')
                 : null;
             const settingsWindows = window.WindowRegistry?.getWindowsByType?.('settings') || [];
             const settingsModal = settingsWindows.length
-                ? document.getElementById(settingsWindows[settingsWindows.length - 1].id)
+                ? document.getElementById(settingsWindows[settingsWindows.length - 1].id ?? '')
                 : null;
             return {
                 about: aboutModal ? parseInt(window.getComputedStyle(aboutModal).zIndex, 10) : 0,
@@ -366,7 +370,7 @@ test.describe('Window Focus Restoration', () => {
 
         // Reload and verify stack is still correct
         await page.evaluate(() => {
-            window.SessionManager.saveAll({ immediate: true });
+            window.SessionManager?.saveAll({ immediate: true });
         });
         await page.reload();
         await waitForAppReady(page);
@@ -397,7 +401,7 @@ test.describe('Window Focus Restoration', () => {
     test('should handle empty window stack gracefully', async ({ page }) => {
         // Clear any saved session
         await page.evaluate(() => {
-            window.SessionManager.clear();
+            window.SessionManager?.clear();
         });
 
         // Reload with empty session
@@ -461,9 +465,12 @@ test.describe('Window Focus Restoration', () => {
             ).map(el => el.textContent?.trim() || '');
             const activeWindow = window.WindowRegistry?.getActiveWindow?.();
             const terminalCount = window.WindowRegistry?.getAllWindows?.('terminal')?.length || 0;
+            const topObj = /** @type {{ id?: string } | null} */ (top);
+            const normalizedTopId =
+                typeof top === 'string' ? top : topObj?.id || activeWindow?.id || null;
 
             return {
-                topId: top?.id || null,
+                topId: normalizedTopId,
                 programLabel,
                 menuLabels,
                 activeWindowType: activeWindow?.type || null,

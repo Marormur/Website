@@ -28,7 +28,10 @@ async function getTabTitles(page, finderWindow) {
             console.log('[getTabTitles] Found', tabs.length, 'tabs with titles:', titles);
             return titles;
         } catch (err) {
-            console.error('[getTabTitles] Error:', err.message);
+            console.error(
+                '[getTabTitles] Error:',
+                err instanceof Error ? err.message : String(err)
+            );
             return [];
         }
     }, windowId);
@@ -110,7 +113,7 @@ test.describe('Finder tab titles show folder names', () => {
                 const activeTab = activeWindow.activeTabId
                     ? activeWindow.tabs?.get?.(activeWindow.activeTabId)
                     : null;
-                return (activeTab?.title || '').trim();
+                return /** @type {any} */ ((activeTab)?.title || '').trim();
             });
             expect(activeTitle.length).toBeGreaterThan(0);
             expect(activeTitle).not.toMatch(/^Finder \d+$/);

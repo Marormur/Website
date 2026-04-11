@@ -48,8 +48,8 @@ test.describe('VirtualFS performance metrics', () => {
         const { measures, adapter } = await page.evaluate(() => {
             const Perf = window.API?.performance;
             const out = {
-                measures: Array.isArray(Perf?.report) ? [] : [],
-                adapter: null,
+                measures: /** @type {PerformanceMeasure[]} */ ([]),
+                adapter: /** @type {string | null} */ (null),
             };
             try {
                 const m = window.API?.performance?.report?.({ topN: 50, clear: false }) || [];
@@ -59,7 +59,7 @@ test.describe('VirtualFS performance metrics', () => {
                 // Inspect adapter name if possible
                 out.adapter =
                     window.VirtualFS && window.VirtualFS.storage
-                        ? window.VirtualFS.storage.name
+                        ? (window.VirtualFS.storage.name ?? null)
                         : window.indexedDB
                           ? 'IndexedDB'
                           : 'localStorage';

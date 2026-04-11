@@ -39,6 +39,7 @@ test.describe('TextEditor Instance Manager', () => {
         });
 
         expect(instResult).not.toBeNull();
+        if (!instResult) return;
         expect(instResult.created).toBe(true);
         expect(instResult.instanceId).toBeTruthy();
     });
@@ -62,7 +63,7 @@ test.describe('TextEditor Instance Manager', () => {
             if (!active1) return { error: 'no active instance after creation' };
 
             // Set first as active
-            manager.setActiveInstance(inst1.instanceId);
+            manager.setActiveInstance(inst1.instanceId ?? '');
             const active2 = manager.getActiveInstance();
 
             return {

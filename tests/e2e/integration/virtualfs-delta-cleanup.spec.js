@@ -26,6 +26,7 @@ test.describe('VirtualFS delta cleanup @basic', () => {
         // Create a file and flush it (full save)
         await page.evaluate(async () => {
             const vfs = window.VirtualFS;
+            if (!vfs) return;
             vfs.createFile('/home/marvin/test.txt', 'initial content');
             await vfs.forceSaveAsync();
         });
@@ -34,6 +35,7 @@ test.describe('VirtualFS delta cleanup @basic', () => {
         for (let i = 1; i <= 5; i++) {
             await page.evaluate(async i => {
                 const vfs = window.VirtualFS;
+                if (!vfs) return;
                 vfs.writeFile('/home/marvin/test.txt', `delta update ${i}`);
                 await vfs.forceSaveAsync();
             }, i);
@@ -50,6 +52,7 @@ test.describe('VirtualFS delta cleanup @basic', () => {
         // Now trigger a structural change (force full save)
         await page.evaluate(async () => {
             const vfs = window.VirtualFS;
+            if (!vfs) return;
             vfs.createFolder('/home/marvin/new-folder'); // Structural change
             await vfs.forceSaveAsync();
         });
@@ -77,6 +80,7 @@ test.describe('VirtualFS delta cleanup @basic', () => {
         // Create and save files
         await page.evaluate(async () => {
             const vfs = window.VirtualFS;
+            if (!vfs) return;
             vfs.createFile('/home/marvin/file1.txt', 'content 1');
             await vfs.forceSaveAsync();
             vfs.writeFile('/home/marvin/file1.txt', 'updated 1');
@@ -86,6 +90,7 @@ test.describe('VirtualFS delta cleanup @basic', () => {
         // Reset filesystem
         await page.evaluate(async () => {
             const vfs = window.VirtualFS;
+            if (!vfs) return;
             vfs.reset();
             await vfs.forceSaveAsync();
         });
@@ -113,6 +118,7 @@ test.describe('VirtualFS delta cleanup @basic', () => {
         // Create and save a file with delta updates
         await page.evaluate(async () => {
             const vfs = window.VirtualFS;
+            if (!vfs) return;
             vfs.createFile('/home/marvin/to-delete.txt', 'content');
             await vfs.forceSaveAsync();
             vfs.writeFile('/home/marvin/to-delete.txt', 'updated');
@@ -122,6 +128,7 @@ test.describe('VirtualFS delta cleanup @basic', () => {
         // Delete the file
         await page.evaluate(async () => {
             const vfs = window.VirtualFS;
+            if (!vfs) return;
             vfs.delete('/home/marvin/to-delete.txt');
             await vfs.forceSaveAsync();
         });
@@ -149,6 +156,7 @@ test.describe('VirtualFS delta cleanup @basic', () => {
         // Create file with delta
         await page.evaluate(async () => {
             const vfs = window.VirtualFS;
+            if (!vfs) return;
             vfs.createFile('/home/marvin/old-name.txt', 'content');
             await vfs.forceSaveAsync();
             vfs.writeFile('/home/marvin/old-name.txt', 'delta update');
@@ -158,6 +166,7 @@ test.describe('VirtualFS delta cleanup @basic', () => {
         // Rename the file
         await page.evaluate(async () => {
             const vfs = window.VirtualFS;
+            if (!vfs) return;
             vfs.rename('/home/marvin/old-name.txt', 'new-name.txt');
             await vfs.forceSaveAsync();
         });
