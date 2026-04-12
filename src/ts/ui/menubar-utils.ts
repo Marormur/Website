@@ -110,7 +110,10 @@
             const menuId = el.getAttribute('aria-controls');
             const menu = menuId ? document.getElementById(menuId) : null;
             const isOpen = menu ? !menu.classList.contains('hidden') : false;
-            if (isOpen) {
+            const sinceFocus =
+                now -
+                ((window as unknown as { __lastMenuFocusAt?: number }).__lastMenuFocusAt || 0);
+            if (isOpen && sinceFocus > 200) {
                 hideMenuDropdowns();
                 el.setAttribute('aria-expanded', 'false');
             } else {
