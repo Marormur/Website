@@ -219,6 +219,7 @@ export const en = {
         sidebar: {
             library: 'Library',
             filters: 'Filters',
+            albums: 'Albums',
             refresh: 'Reload',
             sourceNote: 'Source: Lorem Picsum — curated random photo collections.',
             items: {
@@ -227,12 +228,30 @@ export const en = {
                 landscape: 'Landscape',
                 portrait: 'Portrait',
                 square: 'Square',
+                albumAll: 'All Albums',
+                albumImports: 'Imports',
+                albumScans: 'Scans',
+                albumWallpaper: 'Wallpaper',
             },
         },
         segments: {
             moments: 'Moments',
             collections: 'Collections',
             years: 'Years',
+            months: 'Months',
+            allPhotos: 'All Photos',
+        },
+        toolbar: {
+            viewMode: 'View mode',
+            info: 'Info',
+            share: 'Share',
+            favorite: 'Favorite',
+            more: 'More',
+            zoomOut: 'Zoom out',
+            zoomIn: 'Zoom in',
+        },
+        a11y: {
+            skipToContent: 'Skip to main content',
         },
         search: {
             placeholder: 'Search by author',

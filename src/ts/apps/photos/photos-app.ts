@@ -1,5 +1,7 @@
 import logger from '../../core/logger.js';
 import { WINDOW_ICONS } from '../../windows/window-icons.js';
+import { renderInsetSidebarShellHTML } from '../../framework/controls/inset-sidebar-shell.js';
+import { renderTrafficLightControlsHTML } from '../../framework/controls/traffic-lights.js';
 
 /*
  * Fotos-App v2 – iOS-inspiriertes Design mit Bottom-Navigation (Mobile) / Top-Tab-Bar (Desktop).
@@ -60,6 +62,9 @@ interface PhotosElements {
     photoCount: HTMLElement | null;
     searchInput: HTMLInputElement | null;
     searchClear: HTMLButtonElement | null;
+    zoomOutButton: HTMLButtonElement | null;
+    zoomInButton: HTMLButtonElement | null;
+    sidebarFilterButtons: HTMLButtonElement[];
     tabButtons: Record<PhotoTab, HTMLButtonElement | null>;
     segmentButtons: HTMLButtonElement[];
     overlay: HTMLElement | null;
@@ -105,6 +110,7 @@ interface PhotosState {
     orientationCounts: Record<Orientation, number>;
     activeTab: PhotoTab;
     groupBy: GroupByOption;
+    galleryZoomLevel: number;
 }
 
 interface PhotosAppApi {
@@ -176,6 +182,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         orientationCounts: { landscape: 0, portrait: 0, square: 0 },
         activeTab: 'photos',
         groupBy: 'year',
+        galleryZoomLevel: 1,
     };
 
     const elements: PhotosElements = {
@@ -189,6 +196,9 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         photoCount: null,
         searchInput: null,
         searchClear: null,
+        zoomOutButton: null,
+        zoomInButton: null,
+        sidebarFilterButtons: [],
         tabButtons: {
             photos: null,
             albums: null,
@@ -242,26 +252,6 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             onClose: () => {
                 globalWindow.API?.window?.close?.('photos-window');
             },
-            toolbar: [
-                {
-                    label: '',
-                    icon: `<div id="photos-toolbar-search" class="relative flex items-center gap-1 min-w-0">
-                        <button id="photos-search-toggle" type="button"
-                            class="shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                            aria-label="${t('photos.search.placeholder', 'Nach Autor suchen')}"
-                            title="${t('photos.search.placeholder', 'Nach Autor suchen')}"
-                            aria-expanded="true">
-                            <svg class="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="9" r="6.5"/><line x1="14" y1="14" x2="18.5" y2="18.5"/></svg>
-                        </button>
-                        <div id="photos-search-input-wrap" class="relative flex items-center">
-                            <input id="photos-search" type="search" placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}"
-                                class="w-36 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 px-4 py-1.5 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                            <button id="photos-search-clear" type="button" class="absolute inset-y-0 right-2 flex items-center text-xl text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 invisible pointer-events-none"
-                                title="${t('photos.search.clear', 'Suche löschen')}">×</button>
-                        </div>
-                    </div>`,
-                },
-            ],
             showStatusBar: true,
             statusBarLeft: t('photos.status.countPlaceholder', '– Fotos'),
             statusBarRight: '',
@@ -285,140 +275,150 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
      */
     function createPhotosContent(): { container: HTMLElement; detailOverlay: HTMLElement } {
         const container = document.createElement('div');
-        container.className = 'flex flex-col h-full w-full overflow-hidden relative';
+        container.className = 'photos-app-shell relative flex h-full w-full overflow-hidden';
 
-        // ── Top Bar (desktop only): search and secondary controls ─────────────────
-        const topTabBar = document.createElement('div');
-        topTabBar.id = 'photos-top-tabs';
-        topTabBar.className =
-            'hidden md:flex absolute top-3 right-4 z-20 items-center justify-end pointer-events-none';
-        topTabBar.innerHTML = `
-            <div class="finder-no-drag pointer-events-auto relative flex items-center gap-1 rounded-full border border-gray-200/80 dark:border-gray-700/80 bg-white/90 dark:bg-gray-900/90 p-1.5 shadow-lg backdrop-blur-md">
-                <button data-photos-top-search-toggle type="button"
-                    class="shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                    aria-label="${t('photos.search.placeholder', 'Nach Autor suchen')}"
-                    title="${t('photos.search.placeholder', 'Nach Autor suchen')}">
-                    <svg class="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="9" r="6.5"/><line x1="14" y1="14" x2="18.5" y2="18.5"/></svg>
-                </button>
-                <div data-photos-top-search-input class="relative min-w-0">
-                    <input id="photos-search" type="text"
-                        placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}"
-                        class="h-8 w-36 lg:w-44 min-w-0 rounded-full border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 pl-3 pr-3 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        const skipLink = document.createElement('a');
+        skipLink.href = '#maincontent';
+        skipLink.className = 'photos-skip-link';
+        skipLink.textContent = t('photos.a11y.skipToContent', 'Zum Inhalt springen');
+
+        const sidebar = document.createElement('aside');
+        sidebar.className = 'photos-sidebar-shell hidden md:block h-full';
+        sidebar.innerHTML = renderInsetSidebarShellHTML({
+            shellTag: 'div',
+            shellClassName: 'finder-sidebar-panel-shell h-full hidden md:block',
+            panelClassName: 'finder-sidebar-panel h-full flex flex-col',
+            topClassName: 'finder-window-drag-zone cursor-move flex items-center gap-2 px-3 py-2.5',
+            topAttributes: {
+                style: 'height:44px',
+            },
+            topHtml: renderTrafficLightControlsHTML({
+                containerClassName: 'traffic-light-controls',
+                defaults: {
+                    tag: 'button',
+                    noDrag: true,
+                },
+                close: {
+                    title: t('common.close', 'Schließen'),
+                    dataAction: 'window-close',
+                },
+                minimize: {
+                    title: t('photos.window.minimize', 'Minimieren'),
+                    dataAction: 'window-minimize',
+                },
+                maximize: {
+                    title: t('photos.window.maximize', 'Füllen'),
+                    dataAction: 'window-maximize',
+                },
+            }),
+            bodyClassName: 'flex-1 overflow-y-auto',
+            bodyHtml: `
+                <div class="px-2 pb-3">
+                    <p class="photos-sidebar-section-label">${t('photos.sidebar.library', 'Bibliothek')}</p>
+                    <button type="button" class="photos-sidebar-button" data-photos-filter="all" data-active="true">
+                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">🖼️</span>${t('photos.sidebar.items.all', 'Alle Fotos')}</span>
+                        <span class="photos-sidebar-count" data-photos-filter-count="all">0</span>
+                    </button>
+                    <button type="button" class="photos-sidebar-button" data-photos-filter="favorites">
+                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">❤</span>${t('photos.sidebar.items.favorites', 'Favoriten')}</span>
+                        <span class="photos-sidebar-count" data-photos-filter-count="favorites">0</span>
+                    </button>
+                    <button type="button" class="photos-sidebar-button" data-photos-filter="landscape">
+                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">▭</span>${t('photos.sidebar.items.landscape', 'Querformat')}</span>
+                        <span class="photos-sidebar-count" data-photos-filter-count="landscape">0</span>
+                    </button>
+                    <button type="button" class="photos-sidebar-button" data-photos-filter="portrait">
+                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">▯</span>${t('photos.sidebar.items.portrait', 'Hochformat')}</span>
+                        <span class="photos-sidebar-count" data-photos-filter-count="portrait">0</span>
+                    </button>
+                    <button type="button" class="photos-sidebar-button" data-photos-filter="square">
+                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">◻</span>${t('photos.sidebar.items.square', 'Quadratisch')}</span>
+                        <span class="photos-sidebar-count" data-photos-filter-count="square">0</span>
+                    </button>
+
+                    <p class="photos-sidebar-section-label">${t('photos.sidebar.albums', 'Alben')}</p>
+                    <button type="button" class="photos-sidebar-button" disabled>
+                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">📚</span>${t('photos.sidebar.items.albumAll', 'Alle Alben')}</span>
+                    </button>
+                    <button type="button" class="photos-sidebar-button" disabled>
+                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">⬇</span>${t('photos.sidebar.items.albumImports', 'Importe')}</span>
+                    </button>
+                    <button type="button" class="photos-sidebar-button" disabled>
+                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">🧾</span>${t('photos.sidebar.items.albumScans', 'Scans')}</span>
+                    </button>
+                    <button type="button" class="photos-sidebar-button" disabled>
+                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">🗂</span>${t('photos.sidebar.items.albumWallpaper', 'Wallpaper')}</span>
+                    </button>
+                </div>
+            `,
+        });
+
+        const mainArea = document.createElement('main');
+        mainArea.className = 'photos-main-area flex-1 min-w-0 flex flex-col';
+        mainArea.id = 'maincontent';
+        mainArea.setAttribute('tabindex', '-1');
+
+        const topbar = document.createElement('header');
+        topbar.className =
+            'photos-content-topbar finder-window-drag-zone flex-wrap md:flex-nowrap px-2 md:px-4 py-2 md:py-0';
+        topbar.innerHTML = `
+            <div class="finder-no-drag flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 text-gray-600 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-300">
+                <button type="button" class="photos-toolbar-icon-button" title="${t('common.back', 'Zurück')}" aria-label="${t('common.back', 'Zurück')}">←</button>
+                <button type="button" class="photos-toolbar-icon-button" title="${t('common.forward', 'Vorwärts')}" aria-label="${t('common.forward', 'Vorwärts')}">→</button>
+            </div>
+
+            <div class="finder-no-drag flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 text-gray-600 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-300">
+                <button id="photos-zoom-out" type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.zoomOut', 'Ansicht verkleinern')}" aria-label="${t('photos.toolbar.zoomOut', 'Ansicht verkleinern')}">−</button>
+                <button id="photos-zoom-in" type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.zoomIn', 'Ansicht vergrößern')}" aria-label="${t('photos.toolbar.zoomIn', 'Ansicht vergrößern')}">＋</button>
+            </div>
+
+            <div class="finder-no-drag mx-auto flex items-center rounded-full border border-gray-200/85 bg-white/90 p-1 text-sm shadow-sm backdrop-blur-md dark:border-gray-700/85 dark:bg-gray-900/85" role="group" aria-label="${t('photos.toolbar.viewMode', 'Ansichtsmodus')}">
+                <button type="button" data-photos-segment="years" data-active="true" class="photos-segment-button">${t('photos.segments.years', 'Jahre')}</button>
+                <button type="button" data-photos-segment="moments" class="photos-segment-button">${t('photos.segments.months', 'Monate')}</button>
+                <button type="button" data-photos-segment="albums" class="photos-segment-button">${t('photos.segments.allPhotos', 'Alle Fotos')}</button>
+            </div>
+
+            <div class="finder-no-drag ml-auto flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/85">
+                <button type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.info', 'Informationen')}" aria-label="${t('photos.toolbar.info', 'Informationen')}">ⓘ</button>
+                <button type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.share', 'Teilen')}" aria-label="${t('photos.toolbar.share', 'Teilen')}">⇪</button>
+                <button type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.favorite', 'Favorit')}" aria-label="${t('photos.toolbar.favorite', 'Favorit')}">♡</button>
+                <button type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.more', 'Mehr')}" aria-label="${t('photos.toolbar.more', 'Mehr')}">⋯</button>
+                <button id="photos-search-toggle" type="button" class="photos-toolbar-icon-button" aria-expanded="true" title="${t('photos.search.placeholder', 'Nach Autor suchen')}" aria-label="${t('photos.search.placeholder', 'Nach Autor suchen')}">⌕</button>
+                <div id="photos-search-input-wrap" class="relative flex items-center">
+                    <input id="photos-search" type="search" placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}" class="h-8 w-36 md:w-44 rounded-full border border-gray-300 bg-white/90 pl-3 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-600 dark:bg-gray-900/80 dark:text-gray-200" />
+                    <button id="photos-search-clear" type="button" class="absolute right-2 hidden text-lg leading-none text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300" title="${t('photos.search.clear', 'Suche löschen')}">×</button>
                 </div>
             </div>
         `;
 
-        // ── Main content area (tab content + gallery) - takes up remaining space ────
-        const mainContent = document.createElement('div');
-        mainContent.className = 'flex-1 flex flex-col min-h-0 overflow-hidden';
-
-        // Photos Tab specific: segment switcher (Years/Albums/Favorites) + gallery
-        const photosTabContent = document.createElement('div');
-        photosTabContent.id = 'photos-tab-content';
-        photosTabContent.className = 'relative flex flex-col h-full min-h-0 overflow-hidden';
-        photosTabContent.innerHTML = `
-            <!-- Segment Switcher (Inside Photos Tab) -->
-            <div class="hidden md:flex absolute top-3 left-1/2 -translate-x-1/2 z-20 items-center justify-center finder-no-drag pointer-events-none">
-                <div class="pointer-events-auto flex rounded-full border border-gray-200/80 dark:border-gray-700/80 bg-white/90 dark:bg-gray-900/90 p-1 text-sm font-medium text-gray-600 dark:text-gray-300 shadow-lg backdrop-blur-md" role="group">
-                    <button type="button" data-photos-segment="years" class="photos-segment-button px-4 py-1.5 rounded-full transition">${t('photos.segments.years', 'Jahre')}</button>
-                    <button type="button" data-photos-segment="albums" class="photos-segment-button px-4 py-1.5 rounded-full transition">${t('photos.segments.albums', 'Alben')}</button>
-                    <button type="button" data-photos-segment="favorites" class="photos-segment-button px-4 py-1.5 rounded-full transition">${t('photos.segments.favorites', 'Favoriten')}</button>
+        const galleryWrapper = document.createElement('div');
+        galleryWrapper.id = 'photos-gallery-wrapper';
+        galleryWrapper.className = 'relative flex-1 min-h-0 overflow-hidden rounded-t-3xl';
+        galleryWrapper.innerHTML = `
+            <div id="photos-loading" class="absolute inset-0 z-20 flex items-center justify-center bg-white/80 opacity-0 pointer-events-none dark:bg-gray-900/80">
+                <div class="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300">
+                    <span class="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500 dark:border-gray-700 dark:border-t-blue-400"></span>
+                    <span class="text-sm font-medium">${t('photos.status.loading', 'Lade Fotos…')}</span>
                 </div>
             </div>
-
-            <!-- Gallery Wrapper with Inverse Scroll -->
-            <div id="photos-gallery-wrapper" class="flex-1 relative min-h-0 overflow-hidden rounded-t-3xl">
-                <div id="photos-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-20 opacity-0 pointer-events-none">
-                    <div class="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300">
-                        <span class="h-10 w-10 border-4 border-gray-300 dark:border-gray-700 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin"></span>
-                        <span class="text-sm font-medium">${t('photos.status.loading', 'Lade Fotos…')}</span>
-                    </div>
-                </div>
-                <div id="photos-error" class="absolute inset-x-0 top-6 mx-auto max-w-lg bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-200 rounded-2xl shadow px-5 py-4 hidden">
-                    <p class="font-semibold mb-1">${t('photos.errors.heading', 'Fehler beim Laden')}</p>
-                    <p class="text-sm">${t('photos.errors.description', 'Bitte überprüfe deine Verbindung und versuche es erneut.')}</p>
-                    <button id="photos-error-retry" type="button" class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-100 underline decoration-dotted">${t('photos.buttons.retry', 'Erneut versuchen')}</button>
-                </div>
-                <!-- Main gallery with inverse scroll (transform: scaleY(-1) or JS scroll) -->
-                <div id="photos-gallery" class="absolute inset-0 overflow-y-auto rounded-t-3xl px-3 sm:px-6 pt-6 md:pt-24 pb-20 md:pb-24 space-y-8"></div>
-                <div id="photos-scroll-year-markers" aria-hidden="true" class="absolute right-1 top-6 bottom-20 w-12 pointer-events-none"></div>
-                <div id="photos-empty" class="absolute inset-0 flex items-center justify-center text-center text-gray-500 dark:text-gray-400 opacity-0 pointer-events-none px-6">
-                    <div>
-                        <p class="text-lg font-semibold">${t('photos.empty.title', 'Keine Fotos gefunden')}</p>
-                        <p class="text-sm mt-1">${t('photos.empty.description', 'Passe Suche oder Filter an.')}</p>
-                    </div>
-                </div>
-                <div id="image-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-6 opacity-0 pointer-events-none">${t('photos.placeholder', 'Wähle ein Foto aus.')}</div>
+            <div id="photos-error" class="absolute inset-x-0 top-6 mx-auto hidden max-w-lg rounded-2xl bg-red-50 px-5 py-4 text-red-700 shadow dark:bg-red-900/40 dark:text-red-200">
+                <p class="mb-1 font-semibold">${t('photos.errors.heading', 'Fehler beim Laden')}</p>
+                <p class="text-sm">${t('photos.errors.description', 'Bitte überprüfe deine Verbindung und versuche es erneut.')}</p>
+                <button id="photos-error-retry" type="button" class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-700 underline decoration-dotted dark:text-red-100">${t('photos.buttons.retry', 'Erneut versuchen')}</button>
             </div>
+            <div id="photos-gallery" class="absolute inset-0 overflow-y-auto rounded-t-3xl px-3 sm:px-6 pt-4 md:pt-4 pb-10 space-y-8"></div>
+            <div id="photos-scroll-year-markers" aria-hidden="true" class="absolute right-1 top-6 bottom-6 w-12 pointer-events-none"></div>
+            <div id="photos-empty" class="absolute inset-0 flex items-center justify-center px-6 text-center text-gray-500 opacity-0 pointer-events-none dark:text-gray-400">
+                <div>
+                    <p class="text-lg font-semibold">${t('photos.empty.title', 'Keine Fotos gefunden')}</p>
+                    <p class="mt-1 text-sm">${t('photos.empty.description', 'Passe Suche oder Filter an.')}</p>
+                </div>
+            </div>
+            <div id="image-placeholder" class="absolute inset-0 flex items-center justify-center px-6 text-center text-gray-500 opacity-0 pointer-events-none dark:text-gray-400">${t('photos.placeholder', 'Wähle ein Foto aus.')}</div>
         `;
 
-        // Placeholder Tab Contents (Albums, For You, Shared)
-        const albumsTabContent = document.createElement('div');
-        albumsTabContent.id = 'albums-tab-content';
-        albumsTabContent.className = 'hidden flex-1 flex items-center justify-center';
-        albumsTabContent.innerHTML = `<p class="text-gray-500 dark:text-gray-400">${t('photos.placeholder.comingSoon', 'Alben folgen in Kürze')}</p>`;
-
-        const forYouTabContent = document.createElement('div');
-        forYouTabContent.id = 'for-you-tab-content';
-        forYouTabContent.className = 'hidden flex-1 flex items-center justify-center';
-        forYouTabContent.innerHTML = `<p class="text-gray-500 dark:text-gray-400">${t('photos.placeholder.comingSoon', 'Kommt bald')}</p>`;
-
-        const sharedTabContent = document.createElement('div');
-        sharedTabContent.id = 'shared-tab-content';
-        sharedTabContent.className = 'hidden flex-1 flex items-center justify-center';
-        sharedTabContent.innerHTML = `<p class="text-gray-500 dark:text-gray-400">${t('photos.placeholder.comingSoon', 'Kommt bald')}</p>`;
-
-        mainContent.append(photosTabContent, albumsTabContent, forYouTabContent, sharedTabContent);
-
-        // ── Desktop Floating Tab Panel (pill, above gallery) ──────────────────────
-        const desktopFloatingTabs = document.createElement('div');
-        desktopFloatingTabs.id = 'photos-desktop-tabs';
-        desktopFloatingTabs.className =
-            'hidden md:flex absolute bottom-4 left-1/2 -translate-x-1/2 z-20 items-center gap-1 rounded-full border border-gray-200/80 dark:border-gray-700/80 bg-white/90 dark:bg-gray-900/90 p-1 shadow-lg backdrop-blur-md finder-no-drag';
-        desktopFloatingTabs.innerHTML = `
-            <button data-photo-tab="photos" class="photos-tab-button active inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 transition" aria-label="Photos">
-                <span aria-hidden="true">📷</span>
-                <span>${t('photos.tabs.photos', 'Fotos')}</span>
-            </button>
-            <button data-photo-tab="albums" class="photos-tab-button inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 transition" aria-label="Albums">
-                <span aria-hidden="true">🗂️</span>
-                <span>${t('photos.tabs.albums', 'Alben')}</span>
-            </button>
-            <button data-photo-tab="for-you" class="photos-tab-button inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 transition" aria-label="For You">
-                <span aria-hidden="true">✨</span>
-                <span class="whitespace-nowrap">${t('photos.tabs.for-you', 'Für dich')}</span>
-            </button>
-            <button data-photo-tab="shared" class="photos-tab-button inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 transition" aria-label="Shared">
-                <span aria-hidden="true">👥</span>
-                <span>${t('photos.tabs.shared', 'Geteilt')}</span>
-            </button>
-        `;
-
-        // ── Bottom Tab Navigation (visible on mobile, hidden on desktop) ────────────
-        const bottomTabBar = document.createElement('div');
-        bottomTabBar.id = 'photos-bottom-tabs';
-        bottomTabBar.className =
-            'md:hidden absolute bottom-0 left-0 right-0 flex items-center justify-around px-2 py-2 border-t border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm';
-        bottomTabBar.innerHTML = `
-            <button data-photo-tab="photos" class="photos-tab-button active flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-blue-600 dark:text-blue-400 transition" aria-label="Photos">
-                <span class="text-xl">📷</span>
-                <span class="text-xs font-medium">${t('photos.tabs.photos', 'Fotos')}</span>
-            </button>
-            <button data-photo-tab="albums" class="photos-tab-button flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition" aria-label="Albums">
-                <span class="text-xl">🗂️</span>
-                <span class="text-xs font-medium">${t('photos.tabs.albums', 'Alben')}</span>
-            </button>
-            <button data-photo-tab="for-you" class="photos-tab-button flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition" aria-label="For You">
-                <span class="text-xl">✨</span>
-                <span class="text-xs font-medium">${t('photos.tabs.for-you', 'Für dich')}</span>
-            </button>
-            <button data-photo-tab="shared" class="photos-tab-button flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition" aria-label="Shared">
-                <span class="text-xl">👥</span>
-                <span class="text-xs font-medium">${t('photos.tabs.shared', 'Geteilt')}</span>
-            </button>
-        `;
-
-        container.append(topTabBar, mainContent, desktopFloatingTabs, bottomTabBar);
+        mainArea.append(topbar, galleryWrapper);
+        container.append(skipLink, sidebar, mainArea);
 
         // ── Detail Overlay (absolute, z-30) ────────────────────────────────────────
         const detailOverlay = document.createElement('div');
@@ -490,6 +490,15 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         elements.searchClear = elements.container.querySelector(
             '#photos-search-clear'
         ) as HTMLButtonElement | null;
+        elements.zoomOutButton = elements.container.querySelector(
+            '#photos-zoom-out'
+        ) as HTMLButtonElement | null;
+        elements.zoomInButton = elements.container.querySelector(
+            '#photos-zoom-in'
+        ) as HTMLButtonElement | null;
+        elements.sidebarFilterButtons = Array.from(
+            elements.container.querySelectorAll('[data-photos-filter]')
+        ) as HTMLButtonElement[];
 
         // Cache tab buttons (both top and bottom)
         const tabButtonsTD = elements.container.querySelectorAll('[data-photo-tab]');
@@ -601,11 +610,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
                 elements.segmentButtons.forEach(b => {
                     const isSegActive = b.getAttribute('data-photos-segment') === segment;
-                    b.classList.toggle('bg-blue-600', isSegActive);
-                    b.classList.toggle('text-white', isSegActive);
-                    b.classList.toggle('bg-transparent', !isSegActive);
-                    b.classList.toggle('text-gray-600', !isSegActive);
-                    b.classList.toggle('dark:text-gray-300', !isSegActive);
+                    b.setAttribute('data-active', String(isSegActive));
                 });
 
                 renderGallery();
@@ -614,8 +619,92 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
         // Initialize first segment button as active
         if (elements.segmentButtons.length > 0) {
-            elements.segmentButtons[0]?.classList.add('bg-blue-600', 'text-white');
+            elements.segmentButtons.forEach(button => button.setAttribute('data-active', 'false'));
+            elements.segmentButtons[0]?.setAttribute('data-active', 'true');
         }
+    }
+
+    function updateSidebarFilterButtons(): void {
+        elements.sidebarFilterButtons.forEach(button => {
+            const filter = button.getAttribute('data-photos-filter') as SidebarFilter | null;
+            button.setAttribute('data-active', String(filter === state.activeFilter));
+        });
+    }
+
+    function updateSidebarCounts(): void {
+        const counts: Record<SidebarFilter, number> = {
+            all: state.photos.length,
+            favorites: state.favorites.size,
+            landscape: state.orientationCounts.landscape,
+            portrait: state.orientationCounts.portrait,
+            square: state.orientationCounts.square,
+        };
+
+        const countNodes = elements.container?.querySelectorAll<HTMLElement>(
+            '[data-photos-filter-count]'
+        );
+        countNodes?.forEach(node => {
+            const key = node.getAttribute('data-photos-filter-count') as SidebarFilter | null;
+            if (!key) return;
+            node.textContent = String(counts[key] ?? 0);
+        });
+    }
+
+    function wireSidebarFilters(): void {
+        elements.sidebarFilterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const filter = button.getAttribute('data-photos-filter') as SidebarFilter | null;
+                if (!filter) return;
+                state.activeFilter = filter;
+                updateSidebarFilterButtons();
+                applyFilters();
+            });
+        });
+
+        updateSidebarFilterButtons();
+        updateSidebarCounts();
+    }
+
+    function getZoomGridClass(): string {
+        if (state.galleryZoomLevel <= 0) {
+            return 'grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-2';
+        }
+        if (state.galleryZoomLevel >= 2) {
+            return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4';
+        }
+        return 'grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3';
+    }
+
+    function updateZoomButtons(): void {
+        const canZoomOut = state.galleryZoomLevel > 0;
+        const canZoomIn = state.galleryZoomLevel < 2;
+
+        if (elements.zoomOutButton) {
+            elements.zoomOutButton.disabled = !canZoomOut;
+            elements.zoomOutButton.setAttribute('aria-disabled', String(!canZoomOut));
+        }
+        if (elements.zoomInButton) {
+            elements.zoomInButton.disabled = !canZoomIn;
+            elements.zoomInButton.setAttribute('aria-disabled', String(!canZoomIn));
+        }
+    }
+
+    function wireGalleryZoom(): void {
+        elements.zoomOutButton?.addEventListener('click', () => {
+            if (state.galleryZoomLevel <= 0) return;
+            state.galleryZoomLevel -= 1;
+            renderGallery();
+            updateZoomButtons();
+        });
+
+        elements.zoomInButton?.addEventListener('click', () => {
+            if (state.galleryZoomLevel >= 2) return;
+            state.galleryZoomLevel += 1;
+            renderGallery();
+            updateZoomButtons();
+        });
+
+        updateZoomButtons();
     }
 
     /**
@@ -834,6 +923,21 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             const card = (event.target as HTMLElement).closest('[data-photo-id]');
             if (!card) return;
             const photoId = card.getAttribute('data-photo-id');
+            if (!photoId) return;
+
+            const index = state.filteredIndexMap.get(photoId);
+            if (typeof index !== 'number') return;
+
+            // Single click should only select and visibly mark the card.
+            state.selectedIndex = index;
+            state.activePhotoId = photoId;
+            setActiveCard(photoId);
+        });
+
+        elements.gallery.addEventListener('dblclick', event => {
+            const card = (event.target as HTMLElement).closest('[data-photo-id]');
+            if (!card) return;
+            const photoId = card.getAttribute('data-photo-id');
             if (photoId) {
                 const index = state.filteredIndexMap.get(photoId);
                 if (typeof index === 'number') {
@@ -850,6 +954,14 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                 updateActiveYearMarker();
             });
         });
+    }
+
+    function extractMarkerKey(label: string | null): string | null {
+        if (!label) return null;
+        if (state.activeSegment !== 'moments') return label;
+
+        const match = label.match(/(\d{4})$/);
+        return match?.[1] ?? label;
     }
 
     function getVisibleGalleryYear(): string | null {
@@ -870,7 +982,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             }
         });
 
-        return activeSection?.dataset.photoYear ?? null;
+        return extractMarkerKey(activeSection?.dataset.photoYear ?? null);
     }
 
     function renderScrollYearMarkers(): void {
@@ -891,19 +1003,32 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         );
         const markerFragment = document.createDocumentFragment();
 
-        sections.forEach(section => {
-            const year = section.dataset.photoYear;
-            if (!year) return;
+        const markerSections =
+            state.activeSegment === 'moments'
+                ? (() => {
+                      const firstByYear = new Map<string, HTMLElement>();
+                      sections.forEach(section => {
+                          const key = extractMarkerKey(section.dataset.photoYear ?? null);
+                          if (!key || firstByYear.has(key)) return;
+                          firstByYear.set(key, section);
+                      });
+                      return Array.from(firstByYear.values());
+                  })()
+                : sections;
+
+        markerSections.forEach(section => {
+            const markerKey = extractMarkerKey(section.dataset.photoYear ?? null);
+            if (!markerKey) return;
 
             const marker = document.createElement('div');
             marker.className = 'absolute right-0 -translate-y-1/2 flex items-center gap-2';
             marker.style.top = `${Math.min(100, Math.max(0, (section.offsetTop / maxScrollTop) * 100))}%`;
-            marker.dataset.yearMarker = year;
+            marker.dataset.yearMarker = markerKey;
 
             const label = document.createElement('span');
             label.className =
                 'text-[10px] font-semibold text-gray-500 dark:text-gray-400 opacity-70 transition-opacity';
-            label.textContent = year;
+            label.textContent = markerKey;
 
             const dot = document.createElement('span');
             dot.className =
@@ -1034,6 +1159,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             state.externalPhoto = null;
             state.orientationCounts = calculateOrientationCounts(mapped);
             applyFilters();
+            updateSidebarCounts();
         } catch (error) {
             logger.warn('UI', 'Photos app: failed to load', error);
             setError(true);
@@ -1096,6 +1222,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         renderGallery();
         updateEmptyState();
         updatePhotoCount();
+        updateSidebarFilterButtons();
+        updateSidebarCounts();
         if (previousActiveId) {
             const newIndex = state.filteredIndexMap.get(previousActiveId);
             if (typeof newIndex === 'number') {
@@ -1124,7 +1252,20 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             return;
         }
 
-        const groups = buildYearGroups(state.filteredPhotos);
+        const orderedPhotos = sortPhotosChronologically(state.filteredPhotos);
+
+        const groups =
+            state.activeSegment === 'moments'
+                ? buildMonthGroups(orderedPhotos)
+                : state.activeSegment === 'albums'
+                  ? [
+                        {
+                            title: t('photos.segments.allPhotos', 'Alle Fotos'),
+                            photos: orderedPhotos,
+                        },
+                    ]
+                  : buildYearGroups(orderedPhotos);
+
         groups.forEach(group => {
             const section = document.createElement('section');
             section.className = 'space-y-3';
@@ -1143,16 +1284,24 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             section.append(heading);
 
             const grid = document.createElement('div');
-            grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3';
+            grid.className = getZoomGridClass();
 
             group.photos.forEach(photo => {
                 const card = document.createElement('div');
-                card.className =
-                    'group relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 transition';
+                const aspectClass =
+                    photo.orientation === 'portrait'
+                        ? 'aspect-[3/4]'
+                        : photo.orientation === 'landscape'
+                          ? 'aspect-[4/3]'
+                          : 'aspect-square';
+                const isPseudoVideo = Number.parseInt(photo.id, 10) % 11 === 0;
+
+                card.className = `photos-card group relative ${aspectClass} overflow-hidden rounded-xl cursor-pointer`;
                 card.setAttribute('data-photo-id', photo.id);
                 card.innerHTML = `
-                    <img src="${photo.thumbUrl}" alt="" class="w-full h-full object-cover" loading="lazy" />
-                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition"></div>
+                    <img src="${photo.thumbUrl}" alt="${t('photos.gallery.alt', 'Foto von {author}', { author: photo.author })}" class="h-full w-full object-cover" loading="lazy" />
+                    <div class="absolute inset-0 bg-black/0 transition group-hover:bg-black/15"></div>
+                    ${isPseudoVideo ? '<span class="absolute bottom-1.5 right-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">0:28</span>' : ''}
                 `;
                 grid.appendChild(card);
             });
@@ -1161,13 +1310,15 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             elements.gallery!.appendChild(section);
         });
 
-        // Inverted feed: start at the bottom so newest photos are visible first.
-        setTimeout(() => {
+        renderScrollYearMarkers();
+
+        // Photos mimic Apple Photos chronology: newest items are at the bottom.
+        // After each render, start at the bottom and let users scroll up to older media.
+        window.requestAnimationFrame(() => {
             if (!elements.gallery) return;
             elements.gallery.scrollTop = elements.gallery.scrollHeight;
-            renderScrollYearMarkers();
             updateActiveYearMarker();
-        }, 100);
+        });
     }
 
     /**
@@ -1187,6 +1338,55 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             title: year.toString(),
             photos: grouped.get(year)!,
         }));
+    }
+
+    function buildMonthGroups(photos: PhotoLibraryItem[]): PhotoGroup[] {
+        const grouped = new Map<string, PhotoLibraryItem[]>();
+        photos.forEach(photo => {
+            const month = ((Number.parseInt(photo.id, 10) || 0) % 12) + 1;
+            const key = `${photo.year}-${String(month).padStart(2, '0')}`;
+            if (!grouped.has(key)) {
+                grouped.set(key, []);
+            }
+            grouped.get(key)!.push(photo);
+        });
+
+        const formatter = new Intl.DateTimeFormat(document.documentElement.lang || 'de', {
+            month: 'long',
+            year: 'numeric',
+        });
+
+        return Array.from(grouped.entries())
+            .sort(([a], [b]) => (a > b ? 1 : -1))
+            .map(([key, groupedPhotos]) => {
+                const [yearText, monthText] = key.split('-');
+                const year = Number.parseInt(yearText ?? '', 10);
+                const month = Number.parseInt(monthText ?? '', 10);
+                const date = new Date(year, Math.max(0, month - 1), 1);
+                return {
+                    title: formatter.format(date),
+                    photos: groupedPhotos,
+                };
+            });
+    }
+
+    function derivePseudoMonth(photo: PhotoLibraryItem): number {
+        return ((Number.parseInt(photo.id, 10) || 0) % 12) + 1;
+    }
+
+    function sortPhotosChronologically(photos: PhotoLibraryItem[]): PhotoLibraryItem[] {
+        return [...photos].sort((a, b) => {
+            if (a.year !== b.year) return a.year - b.year;
+
+            const monthDelta = derivePseudoMonth(a) - derivePseudoMonth(b);
+            if (monthDelta !== 0) return monthDelta;
+
+            const aId = Number.parseInt(a.id, 10);
+            const bId = Number.parseInt(b.id, 10);
+            if (Number.isFinite(aId) && Number.isFinite(bId)) return aId - bId;
+
+            return a.id.localeCompare(b.id);
+        });
     }
 
     function updateEmptyState(): void {
@@ -1307,8 +1507,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
     function setActiveCard(photoId: string): void {
         elements.gallery?.querySelectorAll('[data-photo-id]').forEach(card => {
             const isActive = card.getAttribute('data-photo-id') === photoId;
-            card.classList.toggle('ring-2', isActive);
-            card.classList.toggle('ring-blue-500', isActive);
+            card.setAttribute('data-selected', String(isActive));
         });
     }
 
@@ -1328,6 +1527,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             state.favorites.add(state.activePhotoId);
         }
         updateFavoriteButton();
+        updateSidebarCounts();
     }
 
     function updateFavoriteButton(): void {
@@ -1391,6 +1591,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         cacheElements();
         wireTabNavigation();
         wireSegments();
+        wireSidebarFilters();
+        wireGalleryZoom();
         wireSearch();
         wireSearchToggle();
         wireSearchResize();
@@ -1449,6 +1651,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
         wireTabNavigation();
         wireSegments();
+        wireSidebarFilters();
+        wireGalleryZoom();
         wireSearch();
         wireSearchToggle();
         wireSearchResize();

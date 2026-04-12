@@ -7966,6 +7966,27 @@ html:not(.dark) .launchpad-modal-inner {
 }
 
 /* Fotos-App spezifische Styles */
+.photos-skip-link {
+    position: absolute;
+    left: 10px;
+    top: 8px;
+    transform: translateY(-200%);
+    z-index: 40;
+    padding: 6px 10px;
+    border-radius: 9999px;
+    background: #1d4ed8;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.photos-skip-link:focus {
+    transform: translateY(0);
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
 .photos-sidebar-button {
     width: 100%;
     display: flex;
@@ -7982,6 +8003,49 @@ html:not(.dark) .launchpad-modal-inner {
     cursor: pointer;
     text-align: left;
     transition: all 0.2s ease;
+}
+
+.photos-sidebar-button:focus-visible,
+.photos-toolbar-icon-button:focus-visible,
+.photos-segment-button:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.photos-sidebar-button:disabled {
+    opacity: 0.62;
+    cursor: default;
+}
+
+.photos-toolbar-icon-button {
+    min-width: 1.8rem;
+    height: 1.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: none;
+    background: transparent;
+    color: #475569;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.photos-toolbar-icon-button:hover {
+    background: rgba(15, 23, 42, 0.08);
+}
+
+.photos-toolbar-icon-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+html.dark .photos-toolbar-icon-button {
+    color: #cbd5e1;
+}
+
+html.dark .photos-toolbar-icon-button:hover {
+    background: rgba(148, 163, 184, 0.2);
 }
 
 html.dark .photos-sidebar-button {
@@ -8573,6 +8637,27 @@ html.dark .preview-statusbar {
     display: none;
 }
 
+.photos-window-shell .window-titlebar .traffic-light-controls {
+    display: none !important;
+}
+
+.photos-window-shell .finder-sidebar-panel-shell {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 100%;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: var(--photos-sidebar-inset, 0.5rem);
+    overflow: hidden;
+}
+
+.photos-sidebar-shell {
+    width: var(--photos-sidebar-width, 224px);
+    flex: 0 0 var(--photos-sidebar-width, 224px);
+}
+
 :root[data-ui-mode='mobile'] .photos-window-shell {
     /* Keep Photos within the app viewport and above the mobile home-button reserve. */
     position: fixed !important;
@@ -8612,47 +8697,12 @@ html.dark .photos-window-shell .window-titlebar h2 {
     display: none;
 }
 
-/* Sidebar-Outer-Shell: absolut positioniert, beinhaltet das Panel mit Inset */
-.photos-sidebar-shell {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: var(--photos-sidebar-width, 224px);
-    z-index: 2;
-    padding: var(--photos-sidebar-inset, 0.5rem) 0 var(--photos-sidebar-inset, 0.5rem)
-        var(--photos-sidebar-inset, 0.5rem);
-    overflow: hidden;
+html.dark .photos-window-shell .window-titlebar .traffic-light-controls {
+    display: none !important;
 }
 
-/* Sidebar-Panel: frosted-glass innerhalb des Insets, same as finder-sidebar-panel */
-.photos-sidebar-panel {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    border-radius: calc(
-        var(--photos-window-radius, 1.125rem) - var(--photos-sidebar-inset, 0.5rem)
-    );
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    background: linear-gradient(rgba(248, 250, 252, 0.94), rgba(248, 250, 252, 0.99));
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.78) inset,
-        -1px 0 0 rgba(148, 163, 184, 0.16) inset,
-        0 10px 22px rgba(15, 23, 42, 0.08);
-    backdrop-filter: saturate(130%) blur(80px);
-    -webkit-backdrop-filter: saturate(130%) blur(80px);
+html.dark .photos-window-shell .finder-sidebar-panel-shell {
     overflow: hidden;
-}
-
-html.dark .photos-sidebar-panel {
-    border-color: rgba(255, 255, 255, 0.16);
-    background: linear-gradient(rgba(24, 28, 35, 0.99), rgba(24, 28, 35, 0.99));
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.06) inset,
-        -1px 0 0 rgba(255, 255, 255, 0.09) inset,
-        0 12px 24px rgba(2, 6, 23, 0.44);
-    backdrop-filter: saturate(130%) blur(80px);
-    -webkit-backdrop-filter: saturate(130%) blur(80px);
 }
 
 /* Sidebar-Abschnittstitel (Bibliothek / Filter) */
@@ -8681,6 +8731,22 @@ html.dark .photos-sidebar-section-label {
     padding: 0 14px;
     background: transparent;
     cursor: move;
+}
+
+.photos-main-area {
+    margin-left: 0;
+}
+
+@media (max-width: 767px) {
+    .photos-main-area {
+        margin-left: 0;
+    }
+
+    .photos-content-topbar {
+        height: auto;
+        align-items: stretch;
+        gap: 6px;
+    }
 }
 
 /* Statusbar im Photos-Fenster (gleicher Look wie window-statusbar, aber transparenter) */

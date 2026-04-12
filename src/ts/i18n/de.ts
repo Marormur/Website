@@ -210,6 +210,7 @@ export const de = {
         sidebar: {
             library: 'Bibliothek',
             filters: 'Filter',
+            albums: 'Alben',
             refresh: 'Neu laden',
             sourceNote: 'Quelle: Lorem Picsum – zufällige kuratierte Fotokollektionen.',
             items: {
@@ -218,12 +219,30 @@ export const de = {
                 landscape: 'Querformat',
                 portrait: 'Hochformat',
                 square: 'Quadratisch',
+                albumAll: 'Alle Alben',
+                albumImports: 'Importe',
+                albumScans: 'Scans',
+                albumWallpaper: 'Wallpaper',
             },
         },
         segments: {
             moments: 'Momente',
             collections: 'Sammlungen',
             years: 'Jahre',
+            months: 'Monate',
+            allPhotos: 'Alle Fotos',
+        },
+        toolbar: {
+            viewMode: 'Ansichtsmodus',
+            info: 'Informationen',
+            share: 'Teilen',
+            favorite: 'Favorit',
+            more: 'Mehr',
+            zoomOut: 'Ansicht verkleinern',
+            zoomIn: 'Ansicht vergrößern',
+        },
+        a11y: {
+            skipToContent: 'Zum Inhalt springen',
         },
         search: {
             placeholder: 'Nach Autor suchen',
