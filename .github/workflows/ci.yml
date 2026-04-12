@@ -171,6 +171,11 @@ jobs:
             - name: Install dependencies
               run: npm ci --prefer-offline --no-audit --no-fund
 
+            - name: Build frontend assets for E2E
+              run: |
+                  npm run build:css
+                  npm run build:bundle
+
             - name: Cache Playwright browsers
               uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
               with:
@@ -216,6 +221,11 @@ jobs:
 
             - name: Install dependencies
               run: npm ci --prefer-offline --no-audit --no-fund
+
+            - name: Build frontend assets for E2E
+              run: |
+                  npm run build:css
+                  npm run build:bundle
 
             - name: Cache Playwright browsers
               uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
@@ -265,6 +275,11 @@ jobs:
 
             - name: Install dependencies
               run: npm ci --prefer-offline --no-audit --no-fund
+
+            - name: Build frontend assets for E2E
+              run: |
+                  npm run build:css
+                  npm run build:bundle
 
             - name: Cache Playwright browsers
               uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
