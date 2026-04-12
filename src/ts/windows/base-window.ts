@@ -450,6 +450,10 @@ export class BaseWindow {
             if (this._isMobileUIMode()) return;
             if ((e.target as HTMLElement).tagName === 'BUTTON') return; // Ignore control buttons
 
+            if (this.isMaximized) {
+                this._restoreFromMaximizedDrag();
+            }
+
             const currentRect = this.element?.getBoundingClientRect();
             this.dragState.pointerScale = currentRect
                 ? detectClientCoordinateScale(e.clientX, e.clientY, currentRect)
@@ -767,6 +771,25 @@ export class BaseWindow {
         delete target.dataset.prevSnapTop;
         delete target.dataset.prevSnapWidth;
         delete target.dataset.prevSnapHeight;
+    }
+
+    private _restoreFromMaximizedDrag(): void {
+        if (!this.element || !this.isMaximized) return;
+
+        const restore = this.restoreBeforeMaximize || this.position;
+        this.isMaximized = false;
+
+        this.element.style.minWidth = '';
+        this.element.style.minHeight = '';
+        this.element.style.maxWidth = '';
+        this.element.style.maxHeight = '';
+        this.element.style.left = `${restore.x}px`;
+        this.element.style.top = `${restore.y}px`;
+        this.element.style.width = `${restore.width}px`;
+        this.element.style.height = `${restore.height}px`;
+
+        this.position = { ...restore };
+        this.restoreBeforeMaximize = null;
     }
 
     /**

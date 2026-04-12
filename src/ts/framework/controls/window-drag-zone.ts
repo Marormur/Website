@@ -18,6 +18,7 @@ interface WindowDragZoneBehaviorOptions {
     dragZoneSelector?: string;
     isInteractiveTarget: (target: HTMLElement | null) => boolean;
     bringToFront: () => void;
+    isMaximized?: () => boolean;
     toggleMaximize: () => void;
     updatePosition: (x: number, y: number, windowEl: HTMLElement) => void;
     getSnapCandidate: (target: HTMLElement | null, pointerX: number | null) => SnapSide | null;
@@ -54,6 +55,10 @@ export function attachWindowDragZoneBehavior(options: WindowDragZoneBehaviorOpti
     options.windowEl.addEventListener('mousedown', (e: MouseEvent) => {
         const target = e.target as HTMLElement | null;
         if (!target?.closest(dragZoneSelector) || options.isInteractiveTarget(target)) return;
+
+        if (options.isMaximized?.()) {
+            options.toggleMaximize();
+        }
 
         const rect = options.windowEl.getBoundingClientRect();
         state.pointerScale = detectClientCoordinateScale(e.clientX, e.clientY, rect);

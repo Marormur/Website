@@ -659,6 +659,7 @@ export class CalendarWindow extends BaseWindow {
             windowEl,
             isInteractiveTarget,
             bringToFront: () => this.bringToFront(),
+            isMaximized: () => this.isMaximized,
             toggleMaximize: () => this.toggleMaximize(),
             updatePosition: (x: number, y: number, targetEl: HTMLElement) => {
                 this.position.x = x;

@@ -376,6 +376,84 @@ async function dragWithLogicalClientCoords(page, selector, moveDelta) {
     );
 }
 
+async function dragWindowHandleWithMouse(page, selector, moveDelta, startOffsets = {}) {
+    return await page.evaluate(
+        async ({ selector, moveDelta, startOffsets }) => {
+            const handle = document.querySelector(selector);
+            const win = handle?.closest('.multi-window');
+            if (!handle || !win) {
+                return { ok: false, reason: 'window-handle-not-found' };
+            }
+
+            const handleRect = handle.getBoundingClientRect();
+            const beforeRect = win.getBoundingClientRect();
+            const startOffsetX = Number.isFinite(startOffsets.x)
+                ? Math.max(0, Math.min(handleRect.width, startOffsets.x))
+                : Math.max(32, Math.min(160, handleRect.width * 0.35));
+            const startOffsetY = Number.isFinite(startOffsets.y)
+                ? Math.max(0, Math.min(handleRect.height, startOffsets.y))
+                : Math.max(12, Math.min(24, handleRect.height * 0.5));
+            const startX = handleRect.left + startOffsetX;
+            const startY = handleRect.top + startOffsetY;
+            const endX = startX + moveDelta.x;
+            const endY = startY + moveDelta.y;
+
+            handle.dispatchEvent(
+                new MouseEvent('mousedown', {
+                    bubbles: true,
+                    cancelable: true,
+                    button: 0,
+                    clientX: startX,
+                    clientY: startY,
+                })
+            );
+
+            document.dispatchEvent(
+                new MouseEvent('mousemove', {
+                    bubbles: true,
+                    cancelable: true,
+                    button: 0,
+                    clientX: endX,
+                    clientY: endY,
+                })
+            );
+
+            await new Promise(resolve =>
+                requestAnimationFrame(() => requestAnimationFrame(resolve))
+            );
+
+            const afterRect = win.getBoundingClientRect();
+
+            document.dispatchEvent(
+                new MouseEvent('mouseup', {
+                    bubbles: true,
+                    cancelable: true,
+                    button: 0,
+                    clientX: endX,
+                    clientY: endY,
+                })
+            );
+
+            return {
+                ok: true,
+                before: {
+                    left: Math.round(beforeRect.left),
+                    top: Math.round(beforeRect.top),
+                    width: Math.round(beforeRect.width),
+                    height: Math.round(beforeRect.height),
+                },
+                after: {
+                    left: Math.round(afterRect.left),
+                    top: Math.round(afterRect.top),
+                    width: Math.round(afterRect.width),
+                    height: Math.round(afterRect.height),
+                },
+            };
+        },
+        { selector, moveDelta, startOffsets }
+    );
+}
+
 async function dragDialogWithPointerEvents(page, modalId, selector, moveDelta) {
     return await page.evaluate(
         async ({ modalId, selector, moveDelta }) => {
@@ -583,6 +661,44 @@ test.describe('Window Snapping', () => {
         expect(dragged.top - dragged.initialTop).toBeCloseTo(90, 0);
         expect(dragged.renderedOffsetX).toBeCloseTo(dragged.startOffsetX, 1);
         expect(dragged.renderedOffsetY).toBeCloseTo(dragged.startOffsetY, 1);
+    });
+
+    test('photos titlebar drag restores maximized windows before moving', async ({ page }) => {
+        await createWindow(
+            page,
+            'photos',
+            { x: 300, y: 180, width: 800, height: 500 },
+            'Maximized Photos Drag'
+        );
+
+        const before = await getWindowState(page, 'photos');
+        expect(before).not.toBeNull();
+
+        const didMaximize = await ensureWindowMaximizeState(page, before.id, true);
+        expect(didMaximize).toBe(true);
+
+        const dragged = await dragWindowHandleWithMouse(
+            page,
+            `${windowSelector('photos')} .window-titlebar`,
+            { x: 80, y: 72 },
+            { x: 420, y: 12 }
+        );
+
+        expect(dragged.ok).toBe(true);
+
+        await expect
+            .poll(async () => await getRegistryWindowMaximized(page, 'photos'), {
+                timeout: 3000,
+            })
+            .toBe(false);
+
+        const restored = await getWindowState(page, 'photos');
+        expect(restored).not.toBeNull();
+        expect(restored.snapped).toBeNull();
+        expect(restored.width).toBe(before.width);
+        expect(restored.height).toBe(before.height);
+        expect(restored.left).toBeGreaterThan(100);
+        expect(restored.top).toBeGreaterThan(before.top);
     });
 
     test('double click on window headers toggles zoom for redesigned windows and settings', async ({
