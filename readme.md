@@ -1,7 +1,6 @@
 # 🎨 Marvin's Vibe Coding Paradise
 
 [![Deploy](https://github.com/Marormur/Website/actions/workflows/deploy.yml/badge.svg)](https://github.com/Marormur/Website/actions/workflows/deploy.yml)
-[![Test Coverage](https://codecov.io/gh/Marormur/Website/graph/badge.svg?branch=main)](https://codecov.io/gh/Marormur/Website)
 
 Mein persönliches digitales Playground: Ein macOS-inspiriertes Desktop-Universum im Browser mit Fenstern, Modals, Menüleiste, Dark Mode, Deutsch/Englisch-Umschaltung und integriertem GitHub-Explorer. Texteditor, Terminal, Fotogalerie und Launchpad – alles in einer Web-App, weil warum nicht?
 
