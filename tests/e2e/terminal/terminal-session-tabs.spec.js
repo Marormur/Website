@@ -8,7 +8,10 @@ const { waitForAppReady } = require('../utils');
 
 async function waitForTerminalSessions(page, minCount) {
     await page.waitForFunction(count => {
-        const win = window.WindowRegistry?.getAllWindows?.('terminal')?.[0];
+        const active = window.WindowRegistry?.getActiveWindow?.();
+        const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+        const win =
+            active?.type === 'terminal' ? active : terminalWins[terminalWins.length - 1] || null;
         return (win?.sessions?.length || 0) >= count;
     }, minCount);
 }
@@ -37,8 +40,13 @@ test.describe('Terminal Session Tabs', () => {
 
         await page.waitForFunction(
             () => {
-                const wins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
-                return wins.length >= 1 && !!wins[0]?.activeSession;
+                const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+                const active = window.WindowRegistry?.getActiveWindow?.();
+                const win =
+                    active?.type === 'terminal'
+                        ? active
+                        : terminalWins[terminalWins.length - 1] || null;
+                return terminalWins.length >= 1 && !!win?.activeSession;
             },
             { timeout: 5000 }
         );
@@ -47,8 +55,13 @@ test.describe('Terminal Session Tabs', () => {
 
     test('Terminal window opens with initial session tab', async ({ page }) => {
         const sessionCount = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-            return wins[0]?.sessions?.length || 0;
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
+            return win?.sessions?.length || 0;
         });
         expect(sessionCount).toBe(1);
     });
@@ -58,8 +71,13 @@ test.describe('Terminal Session Tabs', () => {
     test('can create new session tab via TerminalInstanceManager API', async ({ page }) => {
         // Create new session via app API instead of Ctrl+T
         const sessionCountBefore = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-            return wins[0]?.sessions?.length || 0;
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
+            return win?.sessions?.length || 0;
         });
 
         await page.evaluate(() => {
@@ -69,8 +87,13 @@ test.describe('Terminal Session Tabs', () => {
         });
 
         const sessionCountAfter = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-            return wins[0]?.sessions?.length || 0;
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
+            return win?.sessions?.length || 0;
         });
 
         expect(sessionCountAfter).toBe(sessionCountBefore + 1);
@@ -90,13 +113,23 @@ test.describe('Terminal Session Tabs', () => {
 
         // Get initial active session
         const firstActive = await page.evaluate(() => {
-            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
             return win?.activeSession?.id || null;
         });
 
         // Switch tabs via app API (use BaseWindow's setActiveTab method)
         const switched = await page.evaluate(firstId => {
-            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
             if (!win || !win.sessions) return false;
             const nextSession = win.sessions.find(s => s.id !== firstId);
             if (nextSession && typeof win.setActiveTab === 'function') {
@@ -108,7 +141,12 @@ test.describe('Terminal Session Tabs', () => {
         expect(switched === true || switched === false).toBe(true);
 
         const secondActive = await page.evaluate(() => {
-            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
             return win?.activeSession?.id || null;
         });
 
@@ -120,7 +158,12 @@ test.describe('Terminal Session Tabs', () => {
     test('can close tab via TerminalWindow API', async ({ page }) => {
         // Create second session
         const sessionIds = await page.evaluate(() => {
-            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
             if (win && typeof win.createSession === 'function') {
                 win.createSession();
             }
@@ -132,15 +175,25 @@ test.describe('Terminal Session Tabs', () => {
 
         // Close the second session via BaseWindow's removeTab API
         await page.evaluate(sessionId => {
-            const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
             if (!win || typeof win.removeTab !== 'function') return false;
             win.removeTab(sessionId ?? '');
             return true;
         }, sessionIds[1]);
 
         const sessionCount = await page.evaluate(() => {
-            const wins = window.WindowRegistry?.getAllWindows('terminal') || [];
-            return wins[0]?.sessions?.length || 0;
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
+            return win?.sessions?.length || 0;
         });
         expect(sessionCount).toBe(1);
     });

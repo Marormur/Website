@@ -28,7 +28,7 @@ async function openTextEditorWindow(page) {
 
     expect(windowId).toBeTruthy();
 
-    const editorWindow = page.locator(`#${windowId}`).first();
+    const editorWindow = page.locator(`#${windowId}:visible`).first();
     await expect(editorWindow).toBeVisible({ timeout: 10000 });
     return editorWindow;
 }

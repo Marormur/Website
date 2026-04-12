@@ -48,7 +48,7 @@ test.describe('Dev Minimum Smoke @smoke', () => {
 
         expect(windowId).toBeTruthy();
 
-        const editorWindow = page.locator(`#${windowId}`).first();
+        const editorWindow = page.locator(`#${windowId}:visible`).first();
         await expect(editorWindow).toBeVisible({ timeout: 10000 });
         await expect(editorWindow.locator('textarea').first()).toBeVisible();
     });

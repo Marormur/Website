@@ -21,7 +21,10 @@ test.describe('TextEditor Instance Manager', () => {
             return windows[windows.length - 1]?.id || null;
         });
         expect(editorWindowId).toBeTruthy();
-        await expect(page.locator(`#${editorWindowId}`)).toBeVisible();
+        // In restore-heavy runs there can be duplicate DOM matches during transitions.
+        // Assert that at least one matching window element is visible instead of relying
+        // on Playwright strict single-match behavior.
+        await expect(page.locator(`#${editorWindowId}:visible`).first()).toBeVisible();
 
         // Create an instance and retrieve it
         const instResult = await page.evaluate(() => {

@@ -43,7 +43,12 @@ test.describe('Terminal Tab Autocomplete', () => {
 
         await page.waitForFunction(
             () => {
-                const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+                const active = window.WindowRegistry?.getActiveWindow?.();
+                const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+                const win =
+                    active?.type === 'terminal'
+                        ? active
+                        : terminalWins[terminalWins.length - 1] || null;
                 return win && win.activeSession;
             },
             { timeout: 5000 }
@@ -51,7 +56,12 @@ test.describe('Terminal Tab Autocomplete', () => {
 
         // Seed predictable fixtures for path/file completion regardless of current VFS defaults.
         await page.evaluate(() => {
-            const win = window.WindowRegistry?.getAllWindows?.('terminal')?.[0];
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
             const cwd = win?.activeSession?.vfsCwd || '/home/marvin';
             const join = (base, name) => `${base.replace(/\/$/, '')}/${name}`;
 
@@ -72,7 +82,12 @@ test.describe('Terminal Tab Autocomplete', () => {
      */
     async function getInputValue(page) {
         return await page.evaluate(() => {
-            const win = window.WindowRegistry?.getAllWindows?.('terminal')?.[0];
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
             const input = /** @type {any} */ (win?.activeSession?.inputElement);
             return typeof input?.value === 'string' ? input.value : '';
         });
@@ -83,7 +98,12 @@ test.describe('Terminal Tab Autocomplete', () => {
      */
     async function typeAndTab(page, text) {
         await page.evaluate(value => {
-            const win = window.WindowRegistry?.getAllWindows?.('terminal')?.[0];
+            const active = window.WindowRegistry?.getActiveWindow?.();
+            const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+            const win =
+                active?.type === 'terminal'
+                    ? active
+                    : terminalWins[terminalWins.length - 1] || null;
             const input = /** @type {any} */ (win?.activeSession?.inputElement);
             if (!input || typeof input.focus !== 'function') return;
             if (typeof input.dispatchEvent !== 'function') return;
@@ -185,7 +205,12 @@ test.describe('Terminal Tab Autocomplete', () => {
         const movedToDocuments = await page
             .waitForFunction(
                 () => {
-                    const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+                    const active = window.WindowRegistry?.getActiveWindow?.();
+                    const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+                    const win =
+                        active?.type === 'terminal'
+                            ? active
+                            : terminalWins[terminalWins.length - 1] || null;
                     return win?.activeSession?.vfsCwd?.includes('Documents');
                 },
                 { timeout: 2500 }
@@ -212,7 +237,12 @@ test.describe('Terminal Tab Autocomplete', () => {
         const movedToDocuments = await page
             .waitForFunction(
                 () => {
-                    const win = window.WindowRegistry?.getAllWindows('terminal')?.[0];
+                    const active = window.WindowRegistry?.getActiveWindow?.();
+                    const terminalWins = window.WindowRegistry?.getAllWindows?.('terminal') || [];
+                    const win =
+                        active?.type === 'terminal'
+                            ? active
+                            : terminalWins[terminalWins.length - 1] || null;
                     return win?.activeSession?.vfsCwd?.includes('Documents');
                 },
                 { timeout: 2500 }
