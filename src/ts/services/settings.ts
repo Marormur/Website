@@ -545,7 +545,7 @@ logger.debug('APP', 'Settings Module loaded');
 
                         <section id="settings-general" class="settings-section">
                             <div class="settings-overview-panel" role="region" aria-labelledby="settings-general-overview-title">
-                                <img src="./img/settings.png" alt="Settings App Icon" class="settings-overview-icon" />
+                                <img src="./img/settings-app-icon.svg" alt="Settings App Icon" class="settings-overview-icon" />
                                 <h2 id="settings-general-overview-title" class="settings-overview-title" data-i18n="settingsPage.general.title">Allgemein</h2>
                                 <p class="settings-overview-description" data-i18n="settingsPage.general.description">
                                     Verwalte die allgemeinen Konfigurationen und Einstellungen.

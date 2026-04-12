@@ -595,11 +595,11 @@ class VirtualFileSystemManager {
                                                         created: now,
                                                         modified: now,
                                                     },
-                                                    'settings.png': {
+                                                    'settings-app-icon.svg': {
                                                         type: 'file',
                                                         icon: '🖼️',
                                                         content: '',
-                                                        srcUrl: './img/settings.png',
+                                                        srcUrl: './img/settings-app-icon.svg',
                                                         size: 0,
                                                         created: now,
                                                         modified: now,
@@ -925,11 +925,11 @@ class VirtualFileSystemManager {
                     created: now,
                     modified: now,
                 },
-                'settings.png': {
+                'settings-app-icon.svg': {
                     type: 'file',
                     icon: '🖼️',
                     content: '',
-                    srcUrl: './img/settings.png',
+                    srcUrl: './img/settings-app-icon.svg',
                     size: 0,
                     created: now,
                     modified: now,

@@ -47,7 +47,7 @@ const PROGRAM_ICON_SETS: Record<ProgramIconTheme, Record<ProgramIconKey, string>
         calendar: './img/calendar-app-icon.svg',
         launchpad: './img/launchpad.png',
         profile: './img/profil.jpg',
-        settings: './img/settings.png',
+        settings: './img/settings-app-icon.svg',
         default: './img/sucher.png',
     },
 };

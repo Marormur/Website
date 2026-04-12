@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 1024 1024"
+   width="1024"
+   height="1024"
+   fill="none"
+   role="img"
+   aria-label="System settings app icon"
+   version="1.1"
+   id="settings-app-icon-root"
+   sodipodi:docname="settings-app-icon.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="settings-app-icon-canvas"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.55591402"
+     inkscape:cx="485.68662"
+     inkscape:cy="629.59376"
+     inkscape:window-width="1920"
+     inkscape:window-height="965"
+     inkscape:window-x="0"
+     inkscape:window-y="31"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="settings-gear-group" />
+  <defs
+     id="settings-app-icon-defs">
+    <linearGradient
+       id="settings-background-blue-gradient"
+       x1="148"
+       y1="148"
+       x2="436"
+       y2="876"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         stop-color="#7ec5e9"
+         id="settings-background-blue-gradient-start" />
+      <stop
+         offset="1"
+         stop-color="#77bae0"
+         id="settings-background-blue-gradient-end" />
+    </linearGradient>
+    <linearGradient
+       id="settings-background-white-gradient"
+       x1="512"
+       y1="148"
+       x2="876"
+       y2="876"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         stop-color="#fafafa"
+         id="settings-background-white-gradient-start" />
+      <stop
+         offset="1"
+         stop-color="#f2f2f2"
+         id="settings-background-white-gradient-end" />
+    </linearGradient>
+    <linearGradient
+       id="settings-center-blue-gradient"
+       x1="384"
+       y1="384"
+       x2="512"
+       y2="640"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         stop-color="#7ec5e9"
+         id="settings-center-blue-gradient-start" />
+      <stop
+         offset="1"
+         stop-color="#77bae0"
+         id="settings-center-blue-gradient-end" />
+    </linearGradient>
+  </defs>
+  <g
+     id="settings-background-group">
+    <rect
+       id="settings-background-outer-frame"
+       x="120"
+       y="120"
+       width="784"
+       height="784"
+       rx="86"
+       fill="#111111" />
+    <clipPath
+       id="settings-background-clip">
+      <rect
+         x="148"
+         y="148"
+         width="728"
+         height="728"
+         rx="62"
+         id="settings-background-clip-shape" />
+    </clipPath>
+    <g
+       id="settings-background-inner-group"
+       clip-path="url(#settings-background-clip)">
+      <rect
+         id="settings-background-left-half"
+         x="148"
+         y="148"
+         width="364"
+         height="728"
+         fill="url(#settings-background-blue-gradient)" />
+      <rect
+         id="settings-background-right-half"
+         x="512"
+         y="148"
+         width="364"
+         height="728"
+         fill="url(#settings-background-white-gradient)" />
+    </g>
+  </g>
+  <g
+     id="settings-gear-group"
+     transform="translate(512 512)">
+    <g
+       id="settings-gear-teeth-group"
+       fill="#f7f7f7"
+       stroke="#111111"
+       stroke-width="24"
+       stroke-linejoin="round">
+      <rect
+         id="settings-gear-tooth-0"
+         x="-62"
+         y="-356"
+         width="124"
+         height="160"
+         rx="26" />
+      <rect
+         id="settings-gear-tooth-45"
+         x="-62"
+         y="-356"
+         width="124"
+         height="160"
+         rx="26"
+         transform="rotate(45)" />
+      <rect
+         id="settings-gear-tooth-90"
+         x="-62"
+         y="-356"
+         width="124"
+         height="160"
+         rx="26"
+         transform="rotate(90)" />
+      <rect
+         id="settings-gear-tooth-135"
+         x="-62"
+         y="-356"
+         width="124"
+         height="160"
+         rx="26"
+         transform="rotate(135)" />
+      <rect
+         id="settings-gear-tooth-180"
+         x="-62"
+         y="-356"
+         width="124"
+         height="160"
+         rx="26"
+         transform="rotate(180)" />
+      <rect
+         id="settings-gear-tooth-225"
+         x="-62"
+         y="-356"
+         width="124"
+         height="160"
+         rx="26"
+         transform="rotate(225)" />
+      <rect
+         id="settings-gear-tooth-270"
+         x="-62"
+         y="-356"
+         width="124"
+         height="160"
+         rx="26"
+         transform="rotate(270)" />
+      <rect
+         id="settings-gear-tooth-315"
+         x="-62"
+         y="-356"
+         width="124"
+         height="160"
+         rx="26"
+         transform="rotate(315)" />
+    </g>
+    <circle
+       id="settings-gear-outer-ring"
+       cx="0"
+       cy="0"
+       r="260"
+       fill="#f7f7f7"
+       stroke="#111111"
+       stroke-width="24" />
+    <circle
+       id="settings-gear-inner-ring"
+       cx="0"
+       cy="0"
+       fill="#f7f7f7"
+       stroke="#111111"
+       stroke-width="24"
+       style="display:inline"
+       r="128" />
+    <path
+       style="fill:#7cc2e7;fill-opacity:1;stroke-width:1.30434"
+       d="M -24.487922,114.2131 C -44.492972,109.04408 -56.074873,103.41132 -72.17862,91.019143 -85.302134,80.92034 -96.672556,66.82207 -104.59436,50.826656 c -9.60774,-19.399618 -11.35143,-27.214711 -11.35143,-50.87686971 0,-23.66215729 1.74369,-31.47725229 11.35143,-50.87687829 12.802525,-25.85037 33.289418,-45.207232 60.483863,-57.147658 7.943391,-3.48775 27.470926,-8.74885 32.545963,-8.76853 2.1922029,-0.008 2.3195862,6.40528 2.3195862,116.79306629 V 116.75185 l -2.9823232,-0.0706 c -1.640276,-0.0389 -7.157571,-1.1495 -12.260651,-2.46807 z"
+       id="path1" />
+    <path
+       id="settings-center-left-semicircle"
+       d="M0 -128A128 128 0 0 0 0 128L0 128A128 128 0 0 1 0 -128Z"
+       fill="url(#settings-center-blue-gradient)" />
+    <line
+       id="settings-center-divider"
+       x1="0"
+       y1="-128"
+       x2="0"
+       y2="128"
+       stroke="#111111"
+       stroke-width="24"
+       stroke-linecap="round" />
+  </g>
+</svg>
