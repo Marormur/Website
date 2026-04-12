@@ -1,4 +1,11 @@
 import logger from '../core/logger.js';
+import {
+    detectClientCoordinateScale,
+    getLogicalViewportHeight,
+    getLogicalViewportWidth,
+    toLogicalClientPx,
+    toLogicalPx,
+} from '../utils/viewport.js';
 /*
  * src/ts/context-menu.ts
  * Typed port of js/context-menu.js
@@ -76,6 +83,87 @@ if (guardedWindow[guardKey]) {
                 actionBus.execute(actionName, params);
             }
         };
+        const openDockWindow = (windowId: string) => {
+            if (window.ActionBus && typeof window.ActionBus.execute === 'function') {
+                window.ActionBus.execute('openWindow', { windowId });
+                return;
+            }
+            openModal(windowId);
+        };
+        const createDockWindow = (windowId: string) => {
+            if (windowId === 'finder-modal') {
+                window.FinderWindow?.create?.();
+                return;
+            }
+            if (windowId === 'terminal-modal' || windowId === 'terminal') {
+                window.TerminalWindow?.create?.();
+                return;
+            }
+            if (windowId === 'text-modal') {
+                window.TextEditorWindow?.create?.();
+                return;
+            }
+            if (windowId === 'settings-modal') {
+                window.SettingsWindow?.create?.();
+                return;
+            }
+            if (windowId === 'calendar-modal') {
+                window.CalendarWindow?.create?.();
+                return;
+            }
+            if (windowId === 'image-modal') {
+                window.PhotosWindow?.create?.();
+                return;
+            }
+            if (windowId === 'code-editor') {
+                window.CodeEditorWindow?.create?.();
+                return;
+            }
+            openDockWindow(windowId);
+        };
+        const getWindowTypeForDockItem = (windowId: string): string | null => {
+            if (windowId === 'finder-modal') return 'finder';
+            if (windowId === 'terminal-modal' || windowId === 'terminal') return 'terminal';
+            if (windowId === 'text-modal') return 'text-editor';
+            if (windowId === 'settings-modal') return 'settings';
+            if (windowId === 'calendar-modal') return 'calendar';
+            if (windowId === 'image-modal') return 'photos';
+            if (windowId === 'code-editor') return 'code-editor';
+            return null;
+        };
+        const getOpenWindowsByType = (windowType: string | null) => {
+            if (!windowType)
+                return [] as Array<{
+                    close?: () => void;
+                    bringToFront?: () => void;
+                    zIndex?: number;
+                }>;
+            const wins = window.WindowRegistry?.getWindowsByType?.(windowType);
+            return Array.isArray(wins)
+                ? (wins as Array<{
+                      close?: () => void;
+                      bringToFront?: () => void;
+                      zIndex?: number;
+                  }>)
+                : [];
+        };
+        const quitDockApp = (windowType: string | null, windowId: string) => {
+            if (!windowType) {
+                window.WindowManager?.close?.(windowId);
+                return;
+            }
+
+            getOpenWindowsByType(windowType).forEach(win => win.close?.());
+        };
+        const bringAllDockWindowsToFront = (windowType: string | null) => {
+            if (!windowType) return;
+            const wins = getOpenWindowsByType(windowType);
+            wins.slice()
+                .sort((left: { zIndex?: number }, right: { zIndex?: number }) => {
+                    return (left.zIndex || 0) - (right.zIndex || 0);
+                })
+                .forEach(win => win.bringToFront?.());
+        };
         const getFinderStateSnapshot = () => {
             const registry = window.WindowRegistry as
                 | {
@@ -145,12 +233,85 @@ if (guardedWindow[guardKey]) {
             const dockItem = (target as Element).closest('#dock .dock-item') as Element | null;
             const winId = dockItem && dockItem.getAttribute('data-window-id');
             if (winId) {
+                const windowType = getWindowTypeForDockItem(winId);
+                const openWindows = getOpenWindowsByType(windowType);
+                const dockItemEl = dockItem as HTMLElement;
+                const allowPinToggle = winId !== 'launchpad-modal' && winId !== 'finder-modal';
+                const isPinned =
+                    window.DockSystem?.isDockItemPinned?.(winId) ?? !dockItemEl.dataset.dockDynamic;
+                const supportsCreateWindow =
+                    winId === 'finder-modal' ||
+                    winId === 'terminal-modal' ||
+                    winId === 'terminal' ||
+                    winId === 'text-modal' ||
+                    winId === 'settings-modal' ||
+                    winId === 'calendar-modal' ||
+                    winId === 'image-modal' ||
+                    winId === 'code-editor';
+
                 items.push({
                     id: 'open-dock-window',
                     label: i18n.translate('context.open') || 'Öffnen',
-                    action: () => openModal(winId),
+                    action: () => openDockWindow(winId),
                 });
-                items.push({ type: 'separator' });
+
+                if (supportsCreateWindow) {
+                    items.push({
+                        id: 'dock-new-window',
+                        label: i18n.translate('context.dock.newWindow') || 'Neues Fenster',
+                        action: () => createDockWindow(winId),
+                    });
+                }
+
+                if (openWindows.length > 1) {
+                    items.push({
+                        id: 'dock-show-all-windows',
+                        label:
+                            i18n.translate('context.dock.showAllWindows') ||
+                            'Alle Fenster einblenden',
+                        action: () => bringAllDockWindowsToFront(windowType),
+                    });
+                }
+
+                if (openWindows.length > 0) {
+                    items.push({ type: 'separator' });
+                    items.push({
+                        id: 'dock-quit-app',
+                        label: i18n.translate('context.dock.quit') || 'Beenden',
+                        action: () => quitDockApp(windowType, winId),
+                    });
+                }
+
+                if (allowPinToggle) {
+                    items.push({ type: 'separator' });
+                    items.push({
+                        id: isPinned ? 'dock-remove-from-dock' : 'dock-keep-in-dock',
+                        label: isPinned
+                            ? i18n.translate('context.dock.removeFromDock') ||
+                              'Aus dem Dock entfernen'
+                            : i18n.translate('context.dock.keepInDock') || 'Im Dock behalten',
+                        action: () => {
+                            const nextPinned = !isPinned;
+                            const appliedByDockSystem =
+                                window.DockSystem?.setDockItemPinned?.(winId, nextPinned) ?? false;
+
+                            if (appliedByDockSystem) return;
+
+                            // Fallback path for environments where DockSystem pin API is not available.
+                            if (nextPinned) {
+                                delete dockItemEl.dataset.dockDynamic;
+                            } else if (openWindows.length > 0) {
+                                dockItemEl.dataset.dockDynamic = 'true';
+                            } else {
+                                dockItemEl.remove();
+                            }
+
+                            window.DockSystem?.updateDockIndicators?.();
+                        },
+                    });
+                }
+
+                return items;
             }
         }
 
@@ -429,11 +590,13 @@ if (guardedWindow[guardKey]) {
 
     function clampPosition(x: number, y: number) {
         const rect = menu.getBoundingClientRect();
-        const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-        const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+        const vw = Math.max(1, getLogicalViewportWidth());
+        const vh = Math.max(1, getLogicalViewportHeight());
+        const menuWidth = Math.max(1, toLogicalPx(rect.width));
+        const menuHeight = Math.max(1, toLogicalPx(rect.height));
         const margin = 6;
-        const nx = Math.min(Math.max(margin, x), Math.max(margin, vw - rect.width - margin));
-        const ny = Math.min(Math.max(margin, y), Math.max(margin, vh - rect.height - margin));
+        const nx = Math.min(Math.max(margin, x), Math.max(margin, vw - menuWidth - margin));
+        const ny = Math.min(Math.max(margin, y), Math.max(margin, vh - menuHeight - margin));
         return { x: nx, y: ny };
     }
 
@@ -444,7 +607,14 @@ if (guardedWindow[guardKey]) {
         ev.preventDefault();
         ev.stopPropagation();
         hideAllDropdowns();
-        buildAndOpenAt(ev.clientX, ev.clientY, target);
+
+        // Normalize pointer coordinates into logical CSS px so fixed-positioned
+        // menu placement remains correct when html zoom is active.
+        const targetRect = target.getBoundingClientRect();
+        const clientScale = detectClientCoordinateScale(ev.clientX, ev.clientY, targetRect);
+        const logicalX = toLogicalClientPx(ev.clientX, clientScale);
+        const logicalY = toLogicalClientPx(ev.clientY, clientScale);
+        buildAndOpenAt(logicalX, logicalY, target);
     }
 
     function buildAndOpenAt(x: number, y: number, target: Element | null) {

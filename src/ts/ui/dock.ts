@@ -45,6 +45,7 @@ export interface DockPreferences {
 }
 
 const DOCK_WINDOW_ICONS: Record<string, string> = {
+    'finder-modal': 'finder',
     'launchpad-modal': 'launchpad',
     'text-modal': 'textEditor',
     'terminal-modal': 'terminal',
@@ -57,6 +58,80 @@ const DOCK_WINDOW_ICONS: Record<string, string> = {
 
 const DOCK_ORDER_STORAGE_KEY = 'dock:order:v1';
 const DOCK_PREFERENCES_STORAGE_KEY = 'dock:preferences:v1';
+const DOCK_PINNED_IDS_STORAGE_KEY = 'dock:pinned-items:v1';
+
+const PINNABLE_DOCK_WINDOW_IDS = [
+    'text-modal',
+    'terminal-modal',
+    'calendar-modal',
+    'image-modal',
+    'settings-modal',
+    'code-editor',
+] as const;
+
+const DEFAULT_PINNED_DOCK_IDS = [
+    'text-modal',
+    'terminal-modal',
+    'calendar-modal',
+    'image-modal',
+    'settings-modal',
+] as const;
+
+type PinnableDockWindowId = (typeof PINNABLE_DOCK_WINDOW_IDS)[number];
+
+const PINNABLE_DOCK_ITEM_META: Record<
+    PinnableDockWindowId,
+    {
+        windowType: string;
+        translationKey: string;
+        fallbackLabel: string;
+        indicatorId: string;
+        iconKey: string;
+    }
+> = {
+    'text-modal': {
+        windowType: 'text-editor',
+        translationKey: 'dock.text',
+        fallbackLabel: 'Texteditor',
+        indicatorId: 'text-indicator',
+        iconKey: 'textEditor',
+    },
+    'terminal-modal': {
+        windowType: 'terminal',
+        translationKey: 'dock.terminal',
+        fallbackLabel: 'Terminal',
+        indicatorId: 'terminal-indicator',
+        iconKey: 'terminal',
+    },
+    'calendar-modal': {
+        windowType: 'calendar',
+        translationKey: 'dock.calendar',
+        fallbackLabel: 'Kalender',
+        indicatorId: 'calendar-indicator',
+        iconKey: 'calendar',
+    },
+    'image-modal': {
+        windowType: 'photos',
+        translationKey: 'dock.photos',
+        fallbackLabel: 'Fotos',
+        indicatorId: 'photos-indicator',
+        iconKey: 'photos',
+    },
+    'settings-modal': {
+        windowType: 'settings',
+        translationKey: 'dock.settings',
+        fallbackLabel: 'Systemeinstellungen',
+        indicatorId: 'settings-indicator',
+        iconKey: 'settings',
+    },
+    'code-editor': {
+        windowType: 'code-editor',
+        translationKey: 'dock.codeEditor',
+        fallbackLabel: 'Code Editor',
+        indicatorId: 'code-editor-indicator',
+        iconKey: 'codeEditor',
+    },
+};
 
 const DEFAULT_DOCK_PREFERENCES: DockPreferences = {
     size: 56,
@@ -105,6 +180,29 @@ const WINDOW_TYPE_TO_DOCK_TRANSLATION_KEY: Record<string, string> = {
     photos: 'dock.photos',
     'code-editor': 'dock.codeEditor',
 };
+
+function normalizeDockOrderId(id: string | null | undefined): string | null {
+    if (!id) return null;
+    if (id === 'finder-modal') return 'finder';
+    if (id === 'terminal-modal') return 'terminal';
+    return id;
+}
+
+function normalizeDockOrder(order: string[] | null | undefined): string[] | null {
+    if (!Array.isArray(order)) return null;
+
+    const normalized = order
+        .map(id => normalizeDockOrderId(typeof id === 'string' ? id : null))
+        .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+    if (!normalized.length) return null;
+
+    if (!normalized.includes('finder')) {
+        normalized.unshift('finder');
+    }
+
+    return Array.from(new Set(normalized));
+}
 
 let dockPointer: { x: number; y: number } | null = null;
 let dockMagnificationRafId: number | null = null;
@@ -283,6 +381,165 @@ function syncRunningDockSeparator(): void {
 
 function getDockAppsContainer(): HTMLElement | null {
     return ensureDockStructure()?.apps || null;
+}
+
+function isPinnableDockWindowId(windowId: string): windowId is PinnableDockWindowId {
+    return (PINNABLE_DOCK_WINDOW_IDS as readonly string[]).includes(windowId);
+}
+
+function getPinnedDockIds(): Set<PinnableDockWindowId> {
+    const fallback = new Set<PinnableDockWindowId>(DEFAULT_PINNED_DOCK_IDS);
+    try {
+        const raw = getJSON<string[] | null>(DOCK_PINNED_IDS_STORAGE_KEY, null);
+        if (!Array.isArray(raw)) return fallback;
+
+        const normalized = raw.filter(isPinnableDockWindowId);
+        if (!normalized.length) return fallback;
+        return new Set<PinnableDockWindowId>(normalized);
+    } catch {
+        return fallback;
+    }
+}
+
+function savePinnedDockIds(ids: Iterable<PinnableDockWindowId>): void {
+    try {
+        setJSON(DOCK_PINNED_IDS_STORAGE_KEY, Array.from(new Set(ids)));
+    } catch {
+        // ignore
+    }
+}
+
+function hasOpenWindowForType(windowType: string): boolean {
+    const windows = window.WindowRegistry?.getWindowsByType?.(windowType);
+    return Array.isArray(windows) && windows.length > 0;
+}
+
+function createPinnableDockItem(windowId: PinnableDockWindowId): HTMLElement {
+    if (windowId === 'image-modal') return createPhotosDockItem();
+    if (windowId === 'code-editor') return createCodeEditorDockItem();
+
+    const meta = PINNABLE_DOCK_ITEM_META[windowId];
+
+    const item = document.createElement('div');
+    item.className = 'dock-item group relative flex flex-col items-center cursor-pointer';
+    item.setAttribute('data-action', 'openWindow');
+    item.setAttribute('data-window-id', windowId);
+
+    const tooltip = document.createElement('span');
+    tooltip.className =
+        'dock-tooltip hidden group-hover:flex absolute bottom-full mb-2 text-xs text-white px-2 py-1 rounded z-50';
+    tooltip.setAttribute('data-i18n', meta.translationKey);
+    tooltip.textContent =
+        window.appI18n?.translate?.(meta.translationKey, meta.fallbackLabel) || meta.fallbackLabel;
+
+    const icon = document.createElement('span');
+    icon.className = 'dock-icon';
+    renderProgramIcon(icon, meta.iconKey);
+
+    const indicator = document.createElement('span');
+    indicator.id = meta.indicatorId;
+    indicator.className = 'hidden dock-indicator';
+
+    item.appendChild(tooltip);
+    item.appendChild(icon);
+    item.appendChild(indicator);
+    return item;
+}
+
+function syncPinnableDockItems(): void {
+    const apps = getDockAppsContainer();
+    if (!apps) return;
+
+    const pinnedIds = getPinnedDockIds();
+    let changed = false;
+
+    PINNABLE_DOCK_WINDOW_IDS.forEach(windowId => {
+        const meta = PINNABLE_DOCK_ITEM_META[windowId];
+        const isPinned = pinnedIds.has(windowId);
+        const shouldShow = isPinned || hasOpenWindowForType(meta.windowType);
+        const existing = apps.querySelector<HTMLElement>(
+            `.dock-item[data-window-id="${windowId}"]`
+        );
+
+        if (!shouldShow) {
+            if (existing) {
+                existing.remove();
+                changed = true;
+            }
+            return;
+        }
+
+        if (!existing) {
+            const item = createPinnableDockItem(windowId);
+            if (!isPinned) item.dataset.dockDynamic = 'true';
+            apps.appendChild(item);
+            changed = true;
+            return;
+        }
+
+        if (isPinned) {
+            if (existing.dataset.dockDynamic) {
+                delete existing.dataset.dockDynamic;
+            }
+        } else {
+            existing.dataset.dockDynamic = 'true';
+        }
+    });
+
+    if (!changed) return;
+    syncRunningDockSeparator();
+    renderDockProgramIcons();
+    scheduleDockReposition(getDockPreferences());
+}
+
+function moveDockItemToPinnedSection(windowId: PinnableDockWindowId): void {
+    const structure = ensureDockStructure();
+    if (!structure) return;
+
+    const item = structure.apps.querySelector<HTMLElement>(
+        `.dock-item[data-window-id="${windowId}"]`
+    );
+    if (!item) return;
+
+    if (structure.runningSeparator.parentElement === structure.apps) {
+        structure.apps.insertBefore(item, structure.runningSeparator);
+        return;
+    }
+
+    const firstDynamic = Array.from(
+        structure.apps.querySelectorAll<HTMLElement>('.dock-item[data-dock-dynamic="true"]')
+    ).find(candidate => candidate !== item);
+
+    if (firstDynamic) {
+        // Keep pinned items as a contiguous block before the first dynamic item.
+        structure.apps.insertBefore(item, firstDynamic);
+        return;
+    }
+
+    // No dynamic items visible: keep newly pinned items in the pinned area at the end.
+    structure.apps.appendChild(item);
+}
+
+export function isDockItemPinned(windowId: string): boolean {
+    if (!isPinnableDockWindowId(windowId)) return false;
+    return getPinnedDockIds().has(windowId);
+}
+
+export function setDockItemPinned(windowId: string, pinned: boolean): boolean {
+    if (!isPinnableDockWindowId(windowId)) return false;
+
+    const pinnedIds = getPinnedDockIds();
+    if (pinned) pinnedIds.add(windowId);
+    else pinnedIds.delete(windowId);
+
+    savePinnedDockIds(pinnedIds);
+    syncPinnableDockItems();
+    if (pinned) moveDockItemToPinnedSection(windowId);
+    syncRunningDockSeparator();
+    saveDockOrder(getCurrentDockOrder());
+    scheduleDockReposition(getDockPreferences());
+    updateDockIndicators();
+    return true;
 }
 
 function createPhotosDockItem(): HTMLElement {
@@ -1028,7 +1285,7 @@ export function initDockMagnification(): void {
 export function loadDockOrder(): string[] | null {
     try {
         const parsed = getJSON<string[] | null>(DOCK_ORDER_STORAGE_KEY, null);
-        return Array.isArray(parsed) ? parsed : null;
+        return normalizeDockOrder(parsed);
     } catch {
         return null;
     }
@@ -1036,7 +1293,7 @@ export function loadDockOrder(): string[] | null {
 
 export function saveDockOrder(order: string[] | null | undefined): void {
     try {
-        setJSON(DOCK_ORDER_STORAGE_KEY, order || []);
+        setJSON(DOCK_ORDER_STORAGE_KEY, normalizeDockOrder(order) || []);
     } catch {
         // ignore
     }
@@ -1045,8 +1302,7 @@ export function saveDockOrder(order: string[] | null | undefined): void {
 export function getDockItemId(item: Element | null): string | null {
     if (!item) return null;
     const id = (item.getAttribute('data-window-id') as string) || null;
-    if (id === 'terminal-modal') return 'terminal';
-    return id;
+    return normalizeDockOrderId(id);
 }
 
 export function getCurrentDockOrder(): string[] {
@@ -1287,7 +1543,7 @@ function resolveDockTargetItem(windowId: string): HTMLElement | null {
                     : null;
 
     if (mappedWindowId === 'finder') {
-        return dock.querySelector<HTMLElement>('.dock-item:not([data-window-id])');
+        return dock.querySelector<HTMLElement>('.dock-item[data-window-id="finder-modal"]');
     }
 
     if (!mappedWindowId) return null;
@@ -1446,8 +1702,7 @@ export function updateDockIndicators(): void {
     const isMobileMode = document.documentElement.getAttribute('data-ui-mode') === 'mobile';
     const preferences = getDockPreferences();
 
-    syncPhotosDockItemVisibility();
-    syncCodeEditorDockItemVisibility();
+    syncPinnableDockItems();
 
     const indicatorMappings = [
         { indicatorId: 'finder-indicator', windowType: 'finder' },
@@ -1512,6 +1767,8 @@ if (typeof window !== 'undefined') {
         initDockMagnification,
         initDockDragDrop,
         updateDockIndicators,
+        isDockItemPinned,
+        setDockItemPinned,
         getCurrentDockOrder,
         loadDockOrder,
         saveDockOrder,

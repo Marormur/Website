@@ -152,6 +152,8 @@ declare global {
             init?: () => void;
             update?: () => void;
             updateDockIndicators?: () => void;
+            isDockItemPinned?: (windowId: string) => boolean;
+            setDockItemPinned?: (windowId: string, pinned: boolean) => boolean;
             initDockMagnification?: () => void;
             initDockDragDrop?: () => void;
             getDockReservedBottom?: () => number;

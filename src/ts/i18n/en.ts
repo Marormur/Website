@@ -14,6 +14,13 @@ export const en = {
         openSettings: 'System settings…',
         toggleDarkMode: 'Toggle dark mode',
         about: 'About Marvin',
+        dock: {
+            newWindow: 'New Window',
+            showAllWindows: 'Show All Windows',
+            quit: 'Quit',
+            keepInDock: 'Keep in Dock',
+            removeFromDock: 'Remove from Dock',
+        },
         image: {
             openInTab: 'Open image in new tab',
             save: 'Save image…',
