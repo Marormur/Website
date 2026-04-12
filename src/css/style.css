@@ -4131,6 +4131,8 @@ body > header {
     transition:
         background-color 0.15s ease,
         box-shadow 0.15s ease;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 html.dark .desktop-icon-button {
@@ -4275,6 +4277,8 @@ html.dark .desktop-icon-graphic {
         background-color 0.15s ease,
         color 0.15s ease;
     text-shadow: inherit;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .desktop-icon-button[data-selected='true'] .desktop-icon-label {
@@ -4391,6 +4395,8 @@ html.dark .menubar {
     transition:
         background-color 0.15s ease,
         color 0.15s ease;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .menubar-logo {
@@ -4440,6 +4446,13 @@ html.dark .menubar-logo:focus-visible {
     display: inline-flex;
     align-items: center;
     gap: 10px;
+}
+
+.menubar-status,
+.menubar-battery-label,
+.menubar-clock {
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 :root[data-ui-mode='mobile'] .menubar-status-cluster {
