@@ -954,6 +954,8 @@ function clearDockMagnificationState(): void {
     const dock = getDockElement();
     if (!dock) return;
 
+    dock.classList.remove('dock-magnify-active');
+
     dock.querySelectorAll<HTMLElement>('.dock-icon').forEach(icon => {
         icon.style.transform = '';
         icon.style.zIndex = '';
@@ -1201,6 +1203,7 @@ function applyDockMagnificationFrame(): void {
         const itemRect = item.getBoundingClientRect();
         const centerX = itemRect.left + itemRect.width / 2;
         const centerY = itemRect.top + itemRect.height / 2;
+
         const distance = Math.hypot(pointer.x - centerX, pointer.y - centerY);
         const influence = Math.exp(-(distance * distance) / (2 * sigma * sigma));
         const scale = 1 + (maxScale - 1) * influence;
@@ -1265,6 +1268,7 @@ export function initDockMagnification(): void {
     dock.dataset.dockMagnificationBound = '1';
 
     const onMove = (event: MouseEvent) => {
+        dock.classList.add('dock-magnify-active');
         dockPointer = resolveDockPointer(event);
         if (dockMagnificationRafId === null) {
             dockMagnificationRafId = requestAnimationFrame(applyDockMagnificationFrame);
@@ -1272,6 +1276,7 @@ export function initDockMagnification(): void {
     };
 
     const onLeave = () => {
+        dock.classList.remove('dock-magnify-active');
         dockPointer = null;
         if (dockMagnificationRafId === null) {
             dockMagnificationRafId = requestAnimationFrame(applyDockMagnificationFrame);

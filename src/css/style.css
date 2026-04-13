@@ -5542,6 +5542,12 @@ html.dark[data-ui-mode='mobile'] #dock .dock-item.dock-item--active {
     will-change: transform;
 }
 
+#dock.dock-magnify-active .dock-icon {
+    transition:
+        transform 0.04s linear,
+        filter 0.12s ease;
+}
+
 #dock .dock-icon > .program-icon-image {
     width: 100%;
     height: 100%;
