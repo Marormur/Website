@@ -4,7 +4,7 @@
  */
 
 const { test, expect } = require('@playwright/test');
-const { waitForAppReady } = require('../utils');
+const { waitForAppReady, dismissWelcomeDialogIfPresent } = require('../utils');
 
 async function expectInputToRemainFocused(inputLocator) {
     await expect
@@ -55,6 +55,7 @@ test.describe('Terminal VDOM Focus Preservation', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + '/index.html');
         await waitForAppReady(page);
+        await dismissWelcomeDialogIfPresent(page);
 
         // Open terminal window
         const terminalDockItem = page.locator('.dock-item[data-window-id="terminal-modal"]');
