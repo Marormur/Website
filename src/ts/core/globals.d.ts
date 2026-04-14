@@ -570,5 +570,12 @@ declare global {
 
         // ── Misc window configurations ────────────────────────────────────
         windowConfigurations?: unknown[];
+
+        // ── Optional host bridge hooks ───────────────────────────────────
+        /**
+         * Optional runtime bridge for opening URLs in host-managed browser pages.
+         * If unavailable, features fall back to native `window.open`.
+         */
+        open_browser_page?: (input: string | { url: string }) => unknown;
     }
 }

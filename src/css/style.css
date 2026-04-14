@@ -6879,9 +6879,19 @@ html.dark .finder-mobile-search-clear {
 /* Grid View */
 .finder-grid-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 180px));
+    justify-content: flex-start;
+    align-content: flex-start;
+    grid-auto-rows: max-content;
     gap: 1rem;
     padding: 0.5rem;
+}
+
+.finder-grid-container--network {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 180px));
+    justify-content: flex-start;
+    align-content: flex-start;
+    grid-auto-rows: max-content;
 }
 
 .finder-grid-item {
@@ -6892,6 +6902,11 @@ html.dark .finder-mobile-search-clear {
     padding: 1rem;
     border-radius: 0.5rem;
     cursor: pointer;
+}
+
+.finder-grid-item--network {
+    align-self: start;
+    min-height: 0;
 }
 
 /* Only transition hover state, not selection for instant feedback */

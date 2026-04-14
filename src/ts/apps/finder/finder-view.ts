@@ -76,6 +76,7 @@ interface FileItem {
     size?: number;
     modified?: string;
     path?: string; // Full path for recent files navigation
+    externalUrl?: string;
 }
 
 interface RecentFile {
@@ -174,6 +175,24 @@ type FinderSource = 'computer' | 'github' | 'recent' | 'starred' | 'devices' | '
 
 const DESKTOP_COMPUTER_NAME = "Marvin's MacBook Pro";
 const MOBILE_DEVICE_NAME = "Marvin's iPhone";
+type OpenBrowserPageInput = string | { url: string };
+type OpenBrowserPageRuntime = (input: OpenBrowserPageInput) => unknown;
+const NETWORK_PROFILE_LOCATIONS: ReadonlyArray<
+    Pick<FileItem, 'name' | 'type' | 'icon' | 'externalUrl'>
+> = [
+    {
+        name: 'GitHub',
+        type: 'folder',
+        icon: '🖥️',
+        externalUrl: 'https://github.com/Marormur',
+    },
+    {
+        name: 'LinkedIn',
+        type: 'folder',
+        icon: '🖥️',
+        externalUrl: 'https://www.linkedin.com/in/marvin-temmen-788537216',
+    },
+];
 
 function getPrimaryFinderDevice(): { label: string; icon: string } {
     const isMobileMode = document.documentElement.getAttribute('data-ui-mode') === 'mobile';
@@ -1004,29 +1023,48 @@ export class FinderView extends BaseTab {
 
     getNetworkItems(): FileItem[] {
         /**
-         * PURPOSE: Show network locations and shared resources.
-         * WHY: macOS Finder shows a network browser allowing users to access
-         *      other computers and network shares.
-         * CURRENTLY: Placeholder implementation - shows example network locations.
-         * FUTURE: Will integrate with actual network discovery services.
+         * PURPOSE: Show curated network targets with a Finder-like "other computers" look.
+         * WHY: The network section should feel intentional and open real destinations
+         *      instead of generic placeholders.
          */
-        const networkItems: FileItem[] = [
-            {
-                name: 'Local Network',
-                type: 'folder',
-                icon: '🌐',
-                size: 0,
-                modified: new Date().toISOString(),
-            },
-            {
-                name: 'Connected Servers',
-                type: 'folder',
-                icon: '🖥️',
-                size: 0,
-                modified: new Date().toISOString(),
-            },
-        ];
+        const nowIso = new Date().toISOString();
+        const networkItems: FileItem[] = NETWORK_PROFILE_LOCATIONS.map(location => ({
+            ...location,
+            size: 0,
+            modified: nowIso,
+        }));
         return networkItems;
+    }
+
+    private openNetworkExternalLink(url: string): void {
+        try {
+            const parsed = new URL(url);
+            if (parsed.protocol !== 'https:') {
+                logger.warn('FINDER', '[FinderView] Blocked non-HTTPS network link:', url);
+                return;
+            }
+
+            const browserPageOpener = (
+                window as Window & { open_browser_page?: OpenBrowserPageRuntime }
+            ).open_browser_page;
+            if (typeof browserPageOpener === 'function') {
+                try {
+                    browserPageOpener({ url: parsed.toString() });
+                    return;
+                } catch {
+                    // Backward-compatible shape: some hosts can expose a string-only signature.
+                    browserPageOpener(parsed.toString());
+                    return;
+                }
+            }
+
+            const externalWindow = window.open(parsed.toString(), '_blank', 'noopener,noreferrer');
+            if (externalWindow) {
+                externalWindow.opener = null;
+            }
+        } catch (error) {
+            logger.warn('FINDER', '[FinderView] Failed to open network link:', error);
+        }
     }
 
     sortItems(items: FileItem[]): FileItem[] {
@@ -1280,18 +1318,22 @@ export class FinderView extends BaseTab {
     }
 
     renderGridView(items: FileItem[]): VNode {
+        const isNetworkRootGrid = this.source === 'network' && this.currentPath.length === 0;
+        const containerClass = isNetworkRootGrid
+            ? 'finder-content finder-grid-container finder-grid-container--network'
+            : 'finder-content finder-grid-container';
+
         return h(
             'div',
             {
-                className:
-                    'finder-content finder-grid-container grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 p-3',
+                className: containerClass,
                 'data-finder-content': 'grid',
             },
             ...items.map((item, i) => {
                 const isSelected = this.selectedItems.has(item.name);
                 const itemClass = isSelected
-                    ? 'finder-grid-item ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 bg-blue-100/60 dark:bg-blue-900/40 min-w-0 p-3 rounded'
-                    : 'finder-grid-item min-w-0 p-3 rounded';
+                    ? `finder-grid-item${isNetworkRootGrid ? ' finder-grid-item--network' : ''} ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 bg-blue-100/60 dark:bg-blue-900/40`
+                    : `finder-grid-item${isNetworkRootGrid ? ' finder-grid-item--network' : ''}`;
 
                 const attrs: Record<string, unknown> = {
                     key: item.name,
@@ -1765,6 +1807,15 @@ export class FinderView extends BaseTab {
                     return;
                 }
             }
+
+            if (this.source === 'network') {
+                const networkItem = this.getNetworkItems().find(item => item.name === name);
+                if (networkItem?.externalUrl) {
+                    this.openNetworkExternalLink(networkItem.externalUrl);
+                    return;
+                }
+            }
+
             this.navigateToFolder(name);
         } else {
             // Special handling for recent files: navigate to original location
@@ -2396,8 +2447,11 @@ export class FinderView extends BaseTab {
     }
 
     private static getDefaultPreferences(source: FinderSource): FinderPreferences {
+        const viewMode: ViewMode =
+            source === 'github' ? 'gallery' : source === 'network' ? 'grid' : 'list';
+
         return {
-            viewMode: source === 'github' ? 'gallery' : 'list',
+            viewMode,
             sortBy: 'name',
             sortOrder: 'asc',
         };
