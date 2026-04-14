@@ -620,7 +620,7 @@ class VirtualFileSystemManager {
                                     },
                                     Applications: {
                                         type: 'folder',
-                                        icon: '🚀',
+                                        icon: '📦',
                                         created: now,
                                         modified: now,
                                         children: {},
@@ -817,7 +817,7 @@ class VirtualFileSystemManager {
                 Documents: { icon: '📄' },
                 Downloads: { icon: '⬇️' },
                 Pictures: { icon: '🖼️' },
-                Applications: { icon: '🚀' },
+                Applications: { icon: '📦' },
                 Library: { icon: '📚' },
                 '.Trash': { icon: '🗑️' },
             };
@@ -831,6 +831,16 @@ class VirtualFileSystemManager {
                         modified: now,
                         children: {},
                     };
+                    continue;
+                }
+
+                if (
+                    dirName === 'Applications' &&
+                    marvin.children[dirName]?.type === 'folder' &&
+                    marvin.children[dirName].icon === '🚀'
+                ) {
+                    marvin.children[dirName].icon = icon;
+                    marvin.children[dirName].modified = now;
                 }
             }
 
