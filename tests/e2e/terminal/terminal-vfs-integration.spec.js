@@ -4,12 +4,13 @@
  */
 
 const { test, expect } = require('@playwright/test');
-const { waitForAppReady, openFinderWindow } = require('../utils');
+const { waitForAppReady, openFinderWindow, dismissWelcomeDialogIfPresent } = require('../utils');
 
 test.describe('Terminal VirtualFS Integration', () => {
     test.beforeEach(async ({ page, baseURL }) => {
         await page.goto(baseURL + '/index.html');
         await waitForAppReady(page);
+        await dismissWelcomeDialogIfPresent(page);
     });
 
     /**
