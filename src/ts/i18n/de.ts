@@ -326,6 +326,9 @@ export const de = {
         textEditor: 'Texteditor',
         loadingFiles: 'Dateien werden geladen …',
         filesLoadError: 'Dateien konnten nicht geladen werden. Bitte versuche es später erneut.',
+        applicationsUnavailable: 'Anwendungen nicht erreichbar',
+        applicationsLoadError:
+            'Die Applications konnten nicht geladen werden. Überprüfe deine Verbindung und versuche es später noch einmal.',
         emptyDirectory: 'Keine Dateien in diesem Verzeichnis.',
         noRepositories: 'Keine öffentlichen Repositories gefunden.',
         repositoriesError: 'Repos konnten nicht geladen werden. Bitte versuche es später erneut.',

@@ -467,6 +467,9 @@ export const en = {
         textEditor: 'Text editor',
         loadingFiles: 'Loading files…',
         filesLoadError: 'Files could not be loaded. Please try again later.',
+        applicationsUnavailable: 'Applications unavailable',
+        applicationsLoadError:
+            'Applications could not be loaded. Please check your connection and try again later.',
         emptyDirectory: 'No files found in this directory.',
         noRepositories: 'No public repositories found.',
         repositoriesError: 'Repositories could not be loaded. Please try again later.',

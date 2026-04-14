@@ -439,6 +439,7 @@ class VirtualFileSystemManager {
     private readonly GITHUB_MOUNT_REFRESH_MS = 60 * 1000;
     private readonly githubHydrationInFlight = new Set<string>();
     private readonly githubHydratedAt = new Map<string, number>();
+    private applicationsError: string | null = null;
 
     private getRootContainer(): Record<string, FSItem> {
         return this.root['/'].children;
@@ -983,6 +984,22 @@ class VirtualFileSystemManager {
         );
     }
 
+    private isInRootApplicationsTree(parts: string[]): boolean {
+        return parts.length > 0 && parts[0] === this.ROOT_APPLICATIONS_PATH_PARTS[0];
+    }
+
+    private mapApplicationsPathToRepoPath(parts: string[]): string[] | null {
+        if (!this.isInRootApplicationsTree(parts)) return null;
+        return [...this.ROOT_APPLICATIONS_REPO_SOURCE_PARTS, ...parts.slice(1)] as string[];
+    }
+
+    private isApplicationsRepoSourcePath(parts: string[]): boolean {
+        if (parts.length < this.ROOT_APPLICATIONS_REPO_SOURCE_PARTS.length) return false;
+        return this.ROOT_APPLICATIONS_REPO_SOURCE_PARTS.every(
+            (part, index) => parts[index] === part
+        );
+    }
+
     /**
      * PURPOSE: Keep `/Applications` at root in sync with the repo source folder
      * (`/Volumes/GitHub-Projekte/Website/src/ts/apps`) to simulate a hard-link-like alias.
@@ -991,6 +1008,7 @@ class VirtualFileSystemManager {
      *            re-point its children to the repo source children.
      */
     private async syncRootApplicationsFromRepo(force = false): Promise<void> {
+        const hadApplicationsError = this.applicationsError !== null;
         try {
             await this.hydrateGithubMountPath(
                 this.ROOT_APPLICATIONS_REPO_SOURCE_PARTS as unknown as string[],
@@ -1001,6 +1019,26 @@ class VirtualFileSystemManager {
                 this.ROOT_APPLICATIONS_REPO_SOURCE_PARTS as unknown as string[]
             );
             if (!sourceFolder) return;
+
+            // Treat an uncached empty mirror as unavailable instead of silently showing
+            // an empty /Applications directory in Finder.
+            const sourceChildrenCount = Object.keys(sourceFolder.children || {}).length;
+            if (sourceChildrenCount === 0) {
+                this.applicationsError = 'GitHub Apps-Ordner konnte nicht geladen werden';
+                const rootApplicationsItem = this.navigate(
+                    this.ROOT_APPLICATIONS_PATH_PARTS as unknown as string[]
+                );
+                if (rootApplicationsItem && rootApplicationsItem.type === 'folder') {
+                    this.emit({
+                        type: 'update',
+                        path: this.normalizePath(
+                            this.ROOT_APPLICATIONS_PATH_PARTS as unknown as string[]
+                        ),
+                        item: rootApplicationsItem,
+                    });
+                }
+                return;
+            }
 
             const now = new Date().toISOString();
             const rootChildren = this.getRootContainer();
@@ -1036,8 +1074,33 @@ class VirtualFileSystemManager {
                     item: rootApplications,
                 });
             }
+            // Clear error if sync succeeded
+            this.applicationsError = null;
+            if (hadApplicationsError) {
+                this.emit({
+                    type: 'update',
+                    path: this.normalizePath(
+                        this.ROOT_APPLICATIONS_PATH_PARTS as unknown as string[]
+                    ),
+                    item: rootApplications,
+                });
+            }
         } catch (error) {
+            const errorMsg = (error as Error)?.message || 'Bekannter Fehler bei Sync';
+            this.applicationsError = errorMsg;
             logger.warn('GITHUB', '[VirtualFS] syncRootApplicationsFromRepo failed:', error);
+            const rootApplicationsItem = this.navigate(
+                this.ROOT_APPLICATIONS_PATH_PARTS as unknown as string[]
+            );
+            if (rootApplicationsItem && rootApplicationsItem.type === 'folder') {
+                this.emit({
+                    type: 'update',
+                    path: this.normalizePath(
+                        this.ROOT_APPLICATIONS_PATH_PARTS as unknown as string[]
+                    ),
+                    item: rootApplicationsItem,
+                });
+            }
         }
     }
 
@@ -1159,8 +1222,13 @@ class VirtualFileSystemManager {
             if (!targetFolder) return;
 
             const cacheState = api.readCache?.<unknown>('contents', repo, subPath) ?? null;
+            const useCachedContents =
+                cacheState !== null &&
+                (!this.isApplicationsRepoSourcePath(parts) ||
+                    !Array.isArray(cacheState) ||
+                    cacheState.length > 0);
             const contentsRaw =
-                cacheState ??
+                (useCachedContents ? cacheState : null) ??
                 (typeof api.fetchRepoContents === 'function'
                     ? await api.fetchRepoContents(username, repo, subPath)
                     : []);
@@ -1228,9 +1296,36 @@ class VirtualFileSystemManager {
                 path: this.normalizePath(parts),
                 item: targetFolder,
             });
+            if (this.isApplicationsRepoSourcePath(parts)) {
+                const applicationsPath = [
+                    this.ROOT_APPLICATIONS_PATH_PARTS[0],
+                    ...parts.slice(this.ROOT_APPLICATIONS_REPO_SOURCE_PARTS.length),
+                ];
+                this.emit({
+                    type: 'update',
+                    path: this.normalizePath(applicationsPath),
+                    item: targetFolder,
+                });
+            }
             this.markGithubHydrated(key);
         } catch (error) {
             logger.warn('GITHUB', '[VirtualFS] hydrateGithubMountPath failed:', error);
+            if (this.isApplicationsRepoSourcePath(parts)) {
+                this.applicationsError =
+                    (error as Error)?.message || 'GitHub Apps-Ordner konnte nicht geladen werden';
+                const rootApplicationsItem = this.navigate(
+                    this.ROOT_APPLICATIONS_PATH_PARTS as unknown as string[]
+                );
+                if (rootApplicationsItem && rootApplicationsItem.type === 'folder') {
+                    this.emit({
+                        type: 'update',
+                        path: this.normalizePath(
+                            this.ROOT_APPLICATIONS_PATH_PARTS as unknown as string[]
+                        ),
+                        item: rootApplicationsItem,
+                    });
+                }
+            }
         } finally {
             this.githubHydrationInFlight.delete(key);
         }
@@ -1558,8 +1653,10 @@ class VirtualFileSystemManager {
         const parts = this.parsePath(path);
         if (this.isGithubMountPath(parts)) {
             void this.hydrateGithubMountPath(parts);
-        } else if (this.isRootApplicationsPath(parts)) {
+        } else if (this.isInRootApplicationsTree(parts)) {
             void this.syncRootApplicationsFromRepo();
+            const mapped = this.mapApplicationsPathToRepoPath(parts);
+            if (mapped) void this.hydrateGithubMountPath(mapped, true);
         }
         return this.navigate(path);
     }
@@ -1574,8 +1671,10 @@ class VirtualFileSystemManager {
         const parts = this.parsePath(path);
         if (this.isGithubMountPath(parts)) {
             void this.hydrateGithubMountPath(parts);
-        } else if (this.isRootApplicationsPath(parts)) {
+        } else if (this.isInRootApplicationsTree(parts)) {
             void this.syncRootApplicationsFromRepo();
+            const mapped = this.mapApplicationsPathToRepoPath(parts);
+            if (mapped) void this.hydrateGithubMountPath(mapped, true);
         }
         const item = this.navigate(path);
         return item?.type === 'folder' ? item : null;
@@ -1591,6 +1690,10 @@ class VirtualFileSystemManager {
         const parts = this.parsePath(path);
         if (this.isGithubMountPath(parts)) {
             void this.hydrateGithubMountPath(parts.slice(0, -1));
+        } else if (this.isInRootApplicationsTree(parts)) {
+            void this.syncRootApplicationsFromRepo();
+            const mapped = this.mapApplicationsPathToRepoPath(parts.slice(0, -1));
+            if (mapped) void this.hydrateGithubMountPath(mapped, true);
         }
         const item = this.navigate(path);
         return item?.type === 'file' ? item : null;
@@ -1613,8 +1716,10 @@ class VirtualFileSystemManager {
 
         if (this.isGithubMountPath(parts)) {
             void this.hydrateGithubMountPath(parts);
-        } else if (this.isRootApplicationsPath(parts)) {
+        } else if (this.isInRootApplicationsTree(parts)) {
             void this.syncRootApplicationsFromRepo();
+            const mapped = this.mapApplicationsPathToRepoPath(parts);
+            if (mapped) void this.hydrateGithubMountPath(mapped, true);
         }
 
         // Empty path = list root folder's children
@@ -1625,6 +1730,15 @@ class VirtualFileSystemManager {
 
         const folder = this.getFolder(path);
         return folder?.children || {};
+    }
+
+    /**
+     * Get the error message from the last failed `/Applications` synchronization, or `null` if sync succeeded.
+     *
+     * @returns Error message string or `null` if no error.
+     */
+    getApplicationsSyncError(): string | null {
+        return this.applicationsError;
     }
 
     /**

@@ -22,6 +22,7 @@
 import { BaseTab, type TabConfig, type TabState } from '../../windows/base-tab.js';
 import type { FinderWindow } from './finder-window.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
+import { translate } from '../../services/i18n.js';
 import PreviewInstanceManager from '../../windows/preview-instance-manager.js';
 import { h, type VNode } from '../../core/vdom.js';
 import { FinderUI } from './finder-ui.js';
@@ -557,7 +558,9 @@ export class FinderView extends BaseTab {
             if (event.oldPath) affectedPaths.push(event.oldPath);
 
             const currentDir = this.currentPath.join('/');
-            const isRelevant = affectedPaths.some(p => getVFSParentDir(p) === currentDir);
+            const isRelevant = affectedPaths.some(
+                p => getVFSParentDir(p) === currentDir || p === currentDir
+            );
             if (!isRelevant) return;
 
             logger.debug('FINDER', '[FinderView] VFS live-sync:', event.type, event.path);
@@ -864,6 +867,59 @@ export class FinderView extends BaseTab {
             items = this.getNetworkItems();
         } else {
             items = this.getComputerItems();
+
+            // Check for Applications sync error when browsing Computer source
+            if (this.currentPath.length === 0 || this.currentPath[0] === 'Applications') {
+                const error = VirtualFS.getApplicationsSyncError?.();
+                if (error) {
+                    const title = translate(
+                        'finder.applicationsUnavailable',
+                        'Applications unavailable'
+                    );
+                    const message = translate(
+                        'finder.applicationsLoadError',
+                        'Applications could not be loaded.'
+                    );
+                    return h(
+                        'div',
+                        { className: 'p-4' },
+                        h(
+                            'div',
+                            { className: 'rounded-lg bg-red-50 p-4 dark:bg-red-900/20' },
+                            h(
+                                'h3',
+                                { className: 'font-semibold text-red-900 dark:text-red-200 mb-1' },
+                                title
+                            ),
+                            h(
+                                'p',
+                                { className: 'text-sm text-red-700 dark:text-red-300' },
+                                message
+                            ),
+                            h(
+                                'details',
+                                { className: 'mt-2' },
+                                h(
+                                    'summary',
+                                    {
+                                        className:
+                                            'text-xs cursor-pointer text-red-600 dark:text-red-400',
+                                    },
+                                    'Details'
+                                ),
+                                h(
+                                    'p',
+                                    {
+                                        className:
+                                            'text-xs text-red-600 dark:text-red-400 mt-1 font-mono',
+                                    },
+                                    error
+                                )
+                            )
+                        )
+                    );
+                }
+            }
         }
 
         // Apply search filter
