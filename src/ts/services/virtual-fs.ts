@@ -339,7 +339,7 @@ interface FileItem {
     size: number;
     created: string;
     modified: string;
-    /** Optional: relative URL to a real static asset (e.g. './img/profil.jpg').
+    /** Optional: relative URL to a real static asset (e.g. './src/ts/apps/about/profil.jpg').
      *  If set, the Finder opens this URL directly instead of using content. */
     srcUrl?: string;
 }
@@ -548,7 +548,7 @@ class VirtualFileSystemManager {
                                                 type: 'file',
                                                 icon: '🖼️',
                                                 content: '',
-                                                srcUrl: './img/profil.jpg',
+                                                srcUrl: './src/ts/apps/about/profil.jpg',
                                                 size: 0,
                                                 created: now,
                                                 modified: now,
@@ -572,7 +572,7 @@ class VirtualFileSystemManager {
                                                         type: 'file',
                                                         icon: '🖼️',
                                                         content: '',
-                                                        srcUrl: './img/imageviewer-app-icon.svg',
+                                                        srcUrl: './src/ts/apps/preview/imageviewer-app-icon.svg',
                                                         size: 0,
                                                         created: now,
                                                         modified: now,
@@ -590,7 +590,7 @@ class VirtualFileSystemManager {
                                                         type: 'file',
                                                         icon: '🖼️',
                                                         content: '',
-                                                        srcUrl: './img/notepad.png',
+                                                        srcUrl: './src/ts/apps/text-editor/notepad.png',
                                                         size: 0,
                                                         created: now,
                                                         modified: now,
@@ -599,7 +599,7 @@ class VirtualFileSystemManager {
                                                         type: 'file',
                                                         icon: '🖼️',
                                                         content: '',
-                                                        srcUrl: './img/settings-app-icon.svg',
+                                                        srcUrl: './src/ts/apps/settings/settings-app-icon.svg',
                                                         size: 0,
                                                         created: now,
                                                         modified: now,
@@ -608,7 +608,7 @@ class VirtualFileSystemManager {
                                                         type: 'file',
                                                         icon: '🖼️',
                                                         content: '',
-                                                        srcUrl: './img/terminal.png',
+                                                        srcUrl: './src/ts/apps/terminal/terminal.png',
                                                         size: 0,
                                                         created: now,
                                                         modified: now,
@@ -865,7 +865,7 @@ class VirtualFileSystemManager {
                     type: 'file',
                     icon: '🖼️',
                     content: '',
-                    srcUrl: './img/profil.jpg',
+                    srcUrl: './src/ts/apps/about/profil.jpg',
                     size: 0,
                     created: now,
                     modified: now,
@@ -902,7 +902,7 @@ class VirtualFileSystemManager {
                     type: 'file',
                     icon: '🖼️',
                     content: '',
-                    srcUrl: './img/imageviewer-app-icon.svg',
+                    srcUrl: './src/ts/apps/preview/imageviewer-app-icon.svg',
                     size: 0,
                     created: now,
                     modified: now,
@@ -920,7 +920,7 @@ class VirtualFileSystemManager {
                     type: 'file',
                     icon: '🖼️',
                     content: '',
-                    srcUrl: './img/notepad.png',
+                    srcUrl: './src/ts/apps/text-editor/notepad.png',
                     size: 0,
                     created: now,
                     modified: now,
@@ -929,7 +929,7 @@ class VirtualFileSystemManager {
                     type: 'file',
                     icon: '🖼️',
                     content: '',
-                    srcUrl: './img/settings-app-icon.svg',
+                    srcUrl: './src/ts/apps/settings/settings-app-icon.svg',
                     size: 0,
                     created: now,
                     modified: now,
@@ -938,7 +938,7 @@ class VirtualFileSystemManager {
                     type: 'file',
                     icon: '🖼️',
                     content: '',
-                    srcUrl: './img/terminal.png',
+                    srcUrl: './src/ts/apps/terminal/terminal.png',
                     size: 0,
                     created: now,
                     modified: now,

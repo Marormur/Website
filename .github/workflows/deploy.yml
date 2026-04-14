@@ -72,6 +72,10 @@ jobs:
                   mkdir -p .pages-dist
                   cp -a index.html projekte.html .pages-dist/
                   cp -a img .pages-dist/
+                  find src/ts/apps -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.svg" -o -name "*.webp" -o -name "*.gif" \) | while IFS= read -r f; do
+                    mkdir -p ".pages-dist/$(dirname "$f")"
+                    cp "$f" ".pages-dist/$f"
+                  done
                   cp -a dist .pages-dist/
                   mkdir -p .pages-dist/src
                   cp -a src/css .pages-dist/src/

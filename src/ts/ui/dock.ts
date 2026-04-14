@@ -555,7 +555,7 @@ function createPhotosDockItem(): HTMLElement {
     tooltip.textContent = window.appI18n?.translate?.('dock.photos', 'Fotos') || 'Fotos';
 
     const icon = document.createElement('img');
-    icon.src = './img/photos-app-icon.svg';
+    icon.src = './src/ts/apps/photos/photos-app-icon.svg';
     icon.alt = 'Fotos Icon';
     icon.className = 'dock-icon';
 

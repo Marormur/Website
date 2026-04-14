@@ -469,7 +469,7 @@ function buildOverlay(): HTMLElement {
                     margin-bottom: 22px;
                 ">
                     <img
-                        src="./img/profil.jpg"
+                        src="./src/ts/apps/about/profil.jpg"
                         alt="Marvin Temmen"
                         style="width:100%;height:100%;object-fit:cover;"
                         draggable="false"

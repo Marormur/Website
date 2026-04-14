@@ -300,7 +300,7 @@ logger.debug('UI', 'Launchpad (TS) loaded');
                 allApps.push({
                     id: canonicalWindowId,
                     name: info.programLabel || translate('programs.default.label') || 'App',
-                    icon: resolveProgramIcon(info.icon) || './img/sucher.png',
+                    icon: resolveProgramIcon(info.icon) || './src/ts/apps/finder/sucher.png',
                     programKey: cfg ? cfg.programKey : null,
                     category: inferCategory({
                         id: canonicalWindowId,

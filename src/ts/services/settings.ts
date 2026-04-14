@@ -251,7 +251,7 @@ logger.debug('APP', 'Settings Module loaded');
                             <div class="settings-search-results" data-settings-search-results="true" hidden></div>
 
                             <button type="button" class="settings-account" data-action="settings:showSection" data-section="general" data-settings-page="general">
-                                <img src="./img/profil.jpg" alt="Profilbild" class="settings-account-avatar" />
+                                <img src="./src/ts/apps/about/profil.jpg" alt="Profilbild" class="settings-account-avatar" />
                                 <span class="settings-account-copy">
                                     <span class="settings-account-name" data-i18n="settingsPage.general.name">Marvin Temmen</span>
                                     <span class="settings-account-subline" data-i18n="settingsPage.account.subline">Apple Account</span>
@@ -545,7 +545,7 @@ logger.debug('APP', 'Settings Module loaded');
 
                         <section id="settings-general" class="settings-section">
                             <div class="settings-overview-panel" role="region" aria-labelledby="settings-general-overview-title">
-                                <img src="./img/settings-app-icon.svg" alt="Settings App Icon" class="settings-overview-icon" />
+                                <img src="./src/ts/apps/settings/settings-app-icon.svg" alt="Settings App Icon" class="settings-overview-icon" />
                                 <h2 id="settings-general-overview-title" class="settings-overview-title" data-i18n="settingsPage.general.title">Allgemein</h2>
                                 <p class="settings-overview-description" data-i18n="settingsPage.general.description">
                                     Verwalte die allgemeinen Konfigurationen und Einstellungen.
@@ -566,7 +566,7 @@ logger.debug('APP', 'Settings Module loaded');
 
                         <section id="settings-general-info" class="settings-section hidden">
                             <div class="settings-device-hero">
-                                <img src="./img/profil.jpg" alt="Profilbild" class="settings-account-avatar settings-device-avatar" />
+                                <img src="./src/ts/apps/about/profil.jpg" alt="Profilbild" class="settings-account-avatar settings-device-avatar" />
                                 <h3 class="settings-device-name" data-i18n="settingsPage.general.name">Marvin Temmen</h3>
                                 <p class="settings-device-subtitle">März 1999</p>
                             </div>
