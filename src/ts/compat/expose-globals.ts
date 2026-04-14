@@ -90,7 +90,6 @@ import '../apps/photos/photos-app';
 // Window configurations (now in TypeScript)
 import '../windows/window-configs'; // Must load before windows are registered
 // Remaining legacy JS modules (to be ported)
-import '../apps/finder/finder-instance';
 import '../ui/launchpad';
 import '../windows/multi-instance-integration';
 import '../ui/desktop'; // Now in TypeScript
