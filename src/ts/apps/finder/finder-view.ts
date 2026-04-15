@@ -258,6 +258,8 @@ export class FinderView extends BaseTab {
     private _keyboardCleanup: (() => void) | null = null;
     // VirtualFS change listener for live-sync; stored for proper teardown
     private _vfsListener: VFSListener | null = null;
+    // Throttle render storms from bursty VFS updates while keeping UI in sync.
+    private _vfsRenderScheduled = false;
 
     constructor(config?: Partial<TabConfig> & { source?: FinderSource }) {
         super({
@@ -582,8 +584,24 @@ export class FinderView extends BaseTab {
             );
             if (!isRelevant) return;
 
-            logger.debug('FINDER', '[FinderView] VFS live-sync:', event.type, event.path);
-            this._renderAll();
+            // Ignore noisy root-level Applications updates (e.g. hydration bursts),
+            // which can otherwise cause constant rerenders and unstable interactions.
+            if (
+                this.source === 'computer' &&
+                this.currentPath.length === 0 &&
+                event.type === 'update' &&
+                affectedPaths.every(path => path === 'Applications')
+            ) {
+                return;
+            }
+
+            if (this._vfsRenderScheduled) return;
+            this._vfsRenderScheduled = true;
+            requestAnimationFrame(() => {
+                this._vfsRenderScheduled = false;
+                logger.debug('FINDER', '[FinderView] VFS live-sync:', event.type, event.path);
+                this._renderAll();
+            });
         };
 
         VirtualFS.addEventListener(this._vfsListener);
@@ -887,8 +905,9 @@ export class FinderView extends BaseTab {
         } else {
             items = this.getComputerItems();
 
-            // Check for Applications sync error when browsing Computer source
-            if (this.currentPath.length === 0 || this.currentPath[0] === 'Applications') {
+            // Check for Applications sync error only when browsing Applications.
+            // Root should remain usable even if remote Applications hydration fails.
+            if (this.currentPath[0] === 'Applications') {
                 const error = VirtualFS.getApplicationsSyncError?.();
                 if (error) {
                     const title = translate(
@@ -901,7 +920,10 @@ export class FinderView extends BaseTab {
                     );
                     return h(
                         'div',
-                        { className: 'p-4' },
+                        {
+                            className: 'finder-content p-4',
+                            'data-finder-content': 'list',
+                        },
                         h(
                             'div',
                             { className: 'rounded-lg bg-red-50 p-4 dark:bg-red-900/20' },

@@ -12,6 +12,8 @@ import {
 } from '../utils.js';
 
 test.describe('FinderView New Features', () => {
+    const itemSelector = '.finder-list-item, .finder-grid-item, .finder-gallery-strip-item';
+
     test.beforeEach(async ({ page }) => {
         await mockGitHubIfNeeded(page);
         await page.goto('/');
@@ -46,7 +48,7 @@ test.describe('FinderView New Features', () => {
 
         // Wait for at least one item to be rendered (not a timeout!)
         await finderWindow
-            .locator('.finder-list-item, .finder-grid-item')
+            .locator(itemSelector)
             .first()
             .waitFor({ state: 'visible', timeout: 10000 });
 
@@ -55,9 +57,7 @@ test.describe('FinderView New Features', () => {
         await expect(searchInput).toBeVisible();
 
         // Count initial items
-        const initialItems = await finderWindow
-            .locator('.finder-list-item, .finder-grid-item')
-            .count();
+        const initialItems = await finderWindow.locator(itemSelector).count();
         expect(initialItems).toBeGreaterThan(0);
 
         // Type search term
@@ -67,6 +67,7 @@ test.describe('FinderView New Features', () => {
         await page.waitForFunction(
             initial => {
                 const items = document.querySelectorAll('.finder-list-item, .finder-grid-item');
+                // Include gallery strip items so this works regardless of persisted view mode.
                 return items.length <= initial;
             },
             initialItems,
@@ -74,9 +75,7 @@ test.describe('FinderView New Features', () => {
         );
 
         // Count filtered items (should be less or equal)
-        const filteredItems = await finderWindow
-            .locator('.finder-list-item, .finder-grid-item')
-            .count();
+        const filteredItems = await finderWindow.locator(itemSelector).count();
         expect(filteredItems).toBeLessThanOrEqual(initialItems);
 
         // Clear search
@@ -86,6 +85,7 @@ test.describe('FinderView New Features', () => {
         await page.waitForFunction(
             initial => {
                 const items = document.querySelectorAll('.finder-list-item, .finder-grid-item');
+                // Include gallery strip items so this works regardless of persisted view mode.
                 return items.length === initial;
             },
             initialItems,
@@ -93,9 +93,7 @@ test.describe('FinderView New Features', () => {
         );
 
         // Items should return to original count
-        const finalItems = await finderWindow
-            .locator('.finder-list-item, .finder-grid-item')
-            .count();
+        const finalItems = await finderWindow.locator(itemSelector).count();
         expect(finalItems).toBe(initialItems);
     });
 
@@ -182,7 +180,7 @@ test.describe('FinderView New Features', () => {
 
         // Wait for at least one item to be visible
         await finderWindow
-            .locator('.finder-list-item, .finder-grid-item')
+            .locator(itemSelector)
             .first()
             .waitFor({ state: 'visible', timeout: 10000 });
 
