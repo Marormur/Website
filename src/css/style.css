@@ -8804,8 +8804,8 @@ html.dark .photos-window-shell .window-statusbar {
 }
 
 html.dark .calendar-window-shell {
-    border-color: rgba(148, 163, 184, 0.25);
-    background: linear-gradient(160deg, #111827 0%, #1f2937 100%);
+    border-color: rgba(116, 125, 146, 0.32);
+    background: linear-gradient(160deg, #1f222a 0%, #171a21 100%);
 }
 
 .calendar-app-shell {
@@ -8837,8 +8837,8 @@ html.dark .calendar-window-shell {
 }
 
 html.dark .calendar-sidebar-panel {
-    background: rgba(15, 23, 42, 0.86);
-    border-color: rgba(148, 163, 184, 0.2);
+    background: rgba(24, 28, 35, 0.95);
+    border-color: rgba(255, 255, 255, 0.16);
 }
 
 .calendar-sidebar-top {
@@ -8991,8 +8991,8 @@ html.dark .calendar-mini-day.is-outside {
 }
 
 html.dark .calendar-toolbar {
-    background: rgba(15, 23, 42, 0.68);
-    border-color: rgba(148, 163, 184, 0.22);
+    background: rgba(24, 28, 35, 0.78);
+    border-color: rgba(255, 255, 255, 0.14);
 }
 
 .calendar-toolbar-nav,
@@ -9037,9 +9037,9 @@ html.dark .calendar-nav-button,
 html.dark .calendar-view-switch-button,
 html.dark .calendar-primary-button,
 html.dark .calendar-secondary-button {
-    background: #0f172a;
-    border-color: #334155;
-    color: #f8fafc;
+    background: #1a1d24;
+    border-color: #4b5568;
+    color: #f3f4f6;
 }
 
 .calendar-view-switch {
@@ -9050,7 +9050,7 @@ html.dark .calendar-secondary-button {
 }
 
 html.dark .calendar-view-switch {
-    border-color: #334155;
+    border-color: #4b5568;
 }
 
 .calendar-view-switch-button {
@@ -9064,7 +9064,7 @@ html.dark .calendar-view-switch {
 }
 
 html.dark .calendar-view-switch-button.is-active {
-    background: #334155;
+    background: #3e4757;
 }
 
 .calendar-primary-button {
@@ -9090,8 +9090,8 @@ html.dark .calendar-primary-button {
 }
 
 html.dark .calendar-grid-wrap {
-    background: rgba(15, 23, 42, 0.68);
-    border-color: rgba(148, 163, 184, 0.2);
+    background: rgba(24, 28, 35, 0.74);
+    border-color: rgba(255, 255, 255, 0.12);
 }
 
 .calendar-month-grid {
@@ -9113,8 +9113,8 @@ html.dark .calendar-grid-wrap {
 }
 
 html.dark .calendar-month-section {
-    border-color: rgba(148, 163, 184, 0.2);
-    background: rgba(15, 23, 42, 0.58);
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(30, 35, 44, 0.62);
 }
 
 .calendar-month-heading {
@@ -9128,7 +9128,7 @@ html.dark .calendar-month-section {
 
 html.dark .calendar-month-heading {
     color: #f8fafc;
-    border-bottom-color: rgba(148, 163, 184, 0.24);
+    border-bottom-color: rgba(255, 255, 255, 0.14);
 }
 
 .calendar-grid-weekday {
@@ -9408,8 +9408,8 @@ html.dark .calendar-day-list h2 {
 }
 
 html.dark .calendar-editor-dialog {
-    background: #0f172a;
-    border-color: #334155;
+    background: #1b1f27;
+    border-color: #4b5568;
     color: #f8fafc;
 }
 
@@ -9446,8 +9446,8 @@ html.dark .calendar-editor-dialog {
 html.dark .calendar-editor-field input,
 html.dark .calendar-editor-field textarea,
 html.dark .calendar-editor-field select {
-    border-color: #334155;
-    background: #111827;
+    border-color: #4b5568;
+    background: #232833;
     color: #f8fafc;
 }
 
