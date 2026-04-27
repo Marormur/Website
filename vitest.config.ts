@@ -62,6 +62,8 @@ export default defineConfig({
         },
         // Suppress console output during tests to keep output readable
         silent: true,
+        // Install deterministic localStorage shim before each test file loads.
+        setupFiles: ['tests/unit/setup-storage.ts'],
     },
     resolve: {
         alias: {
