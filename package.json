@@ -85,6 +85,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/Marormur/Website/issues"
@@ -98,7 +101,7 @@
     "@tailwindcss/postcss": "^4.2.4",
     "@types/node": "^25.6.0",
     "@typescript-eslint/eslint-plugin": "^8.59.1",
-    "@typescript-eslint/parser": "^8.49.0",
+    "@typescript-eslint/parser": "^8.59.1",
     "@vitest/coverage-v8": "^4.1.5",
     "@vitest/ui": "^4.0.18",
     "autoprefixer": "^10.5.0",
