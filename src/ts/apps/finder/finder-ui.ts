@@ -678,7 +678,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
 
             const itemButtons = group.items.map(item => {
                 const isActive = activeSidebarId === item.id;
-                const activeClass = isActive ? 'finder-sidebar-active' : '';
+                const activeClass = isActive ? 'app-sidebar-item--active' : '';
 
                 return h(
                     'button',
@@ -686,13 +686,13 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                         key: item.id,
                         'data-sidebar-id': item.id,
                         'data-sidebar-action': item.id,
-                        className: `finder-sidebar-item w-full text-left ${activeClass}`,
+                        className: `app-sidebar-item w-full text-left ${activeClass}`,
                         onclick: () => {
                             item.onClick?.(item.id);
                             this.showMobileDetail();
                         },
                     },
-                    item.icon ? h('span', { className: 'finder-sidebar-icon' }, item.icon) : '',
+                    item.icon ? h('span', { className: 'app-sidebar-item-icon' }, item.icon) : '',
                     h('span', { 'data-i18n': item.i18nKey }, item.label)
                 );
             });
@@ -704,14 +704,14 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                     'div',
                     {
                         className:
-                            'finder-sidebar-group-header px-3 py-1 mb-1 text-[11px] font-semibold text-gray-500/80 dark:text-gray-400/70 uppercase tracking-wider',
+                            'app-sidebar-group-header px-3 py-1 mb-1 text-[11px] font-semibold text-gray-500/80 dark:text-gray-400/70 uppercase tracking-wider',
                     },
                     h('span', { 'data-i18n': group.i18nKey }, group.label),
                     h(
                         'button',
                         {
                             type: 'button',
-                            className: 'finder-sidebar-group-toggle',
+                            className: 'app-sidebar-group-toggle',
                             title: isCollapsed ? 'Gruppe ausklappen' : 'Gruppe einklappen',
                             'aria-label': isCollapsed ? 'Gruppe ausklappen' : 'Gruppe einklappen',
                             'aria-expanded': String(!isCollapsed),
@@ -724,7 +724,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                         h(
                             'span',
                             {
-                                className: `finder-sidebar-group-toggle-icon ${isCollapsed ? 'is-collapsed' : ''}`,
+                                className: `app-sidebar-group-toggle-icon ${isCollapsed ? 'is-collapsed' : ''}`,
                                 'aria-hidden': 'true',
                             },
                             '▾'
@@ -734,7 +734,7 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
                 h(
                     'div',
                     {
-                        className: `finder-sidebar-group-items ${isCollapsed ? 'is-collapsed' : ''}`,
+                        className: `app-sidebar-group-items ${isCollapsed ? 'is-collapsed' : ''}`,
                     },
                     ...itemButtons
                 )
@@ -1005,10 +1005,10 @@ export class FinderUI extends BaseComponent<FinderUIProps, FinderUIState> {
             },
             createInsetSidebarShellVNode<VNode>(h, {
                 shellProps: {
-                    className: 'finder-sidebar-panel-shell h-full',
+                    className: 'app-sidebar-panel-shell h-full',
                 },
                 panelProps: {
-                    className: 'finder-sidebar-panel flex flex-col',
+                    className: 'app-sidebar-panel flex flex-col',
                     style: { height: '100%' },
                 },
                 topProps: {

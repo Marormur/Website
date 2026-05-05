@@ -188,11 +188,11 @@ export class CalendarWindow extends BaseWindow {
         const sidebarShell = document.createElement('div');
         sidebarShell.innerHTML = renderInsetSidebarShellHTML({
             shellTag: 'aside',
-            shellClassName: 'calendar-sidebar-shell',
+            shellClassName: 'calendar-sidebar-shell app-sidebar-panel-shell',
             shellAttributes: {
                 'aria-label': translate('calendar.sidebar.ariaLabel', 'Kalender Seitenleiste'),
             },
-            panelClassName: 'calendar-sidebar-panel',
+            panelClassName: 'calendar-sidebar-panel app-sidebar-panel',
             topClassName: 'finder-window-drag-zone calendar-sidebar-top',
             topAttributes: {
                 style: 'height:44px;cursor:move;',

@@ -2,6 +2,7 @@ import logger from '../../core/logger.js';
 import { WINDOW_ICONS } from '../../windows/window-icons.js';
 import { renderInsetSidebarShellHTML } from '../../framework/controls/inset-sidebar-shell.js';
 import { renderTrafficLightControlsHTML } from '../../framework/controls/traffic-lights.js';
+import { Sidebar, SidebarGroup } from '../../framework/navigation/sidebar.js';
 
 /*
  * Fotos-App v2 – iOS-inspiriertes Design mit Bottom-Navigation (Mobile) / Top-Tab-Bar (Desktop).
@@ -64,7 +65,6 @@ interface PhotosElements {
     searchClear: HTMLButtonElement | null;
     zoomOutButton: HTMLButtonElement | null;
     zoomInButton: HTMLButtonElement | null;
-    sidebarFilterButtons: HTMLButtonElement[];
     tabButtons: Record<PhotoTab, HTMLButtonElement | null>;
     segmentButtons: HTMLButtonElement[];
     overlay: HTMLElement | null;
@@ -198,7 +198,6 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         searchClear: null,
         zoomOutButton: null,
         zoomInButton: null,
-        sidebarFilterButtons: [],
         tabButtons: {
             photos: null,
             albums: null,
@@ -229,6 +228,11 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         segmentSwitcher: null,
         scrollYearMarkers: null,
     };
+
+    /** Sidebar component instance (mounted lazily on first call to updateSidebarComponent). */
+    let sidebarComponent: Sidebar | null = null;
+    /** Mount target for the sidebar component (body div inside the photos sidebar shell). */
+    let sidebarBodyEl: HTMLElement | null = null;
 
     let scrollDateFramePending = false;
 
@@ -286,8 +290,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         sidebar.className = 'photos-sidebar-shell hidden md:block h-full';
         sidebar.innerHTML = renderInsetSidebarShellHTML({
             shellTag: 'div',
-            shellClassName: 'finder-sidebar-panel-shell h-full hidden md:block',
-            panelClassName: 'finder-sidebar-panel h-full flex flex-col',
+            shellClassName: 'app-sidebar-panel-shell h-full hidden md:block',
+            panelClassName: 'app-sidebar-panel h-full flex flex-col',
             topClassName: 'finder-window-drag-zone cursor-move flex items-center gap-2 px-3 py-2.5',
             topAttributes: {
                 style: 'height:44px',
@@ -312,45 +316,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                 },
             }),
             bodyClassName: 'flex-1 overflow-y-auto',
-            bodyHtml: `
-                <div class="px-2 pb-3">
-                    <p class="photos-sidebar-section-label">${t('photos.sidebar.library', 'Bibliothek')}</p>
-                    <button type="button" class="photos-sidebar-button" data-photos-filter="all" data-active="true">
-                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">🖼️</span>${t('photos.sidebar.items.all', 'Alle Fotos')}</span>
-                        <span class="photos-sidebar-count" data-photos-filter-count="all">0</span>
-                    </button>
-                    <button type="button" class="photos-sidebar-button" data-photos-filter="favorites">
-                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">❤</span>${t('photos.sidebar.items.favorites', 'Favoriten')}</span>
-                        <span class="photos-sidebar-count" data-photos-filter-count="favorites">0</span>
-                    </button>
-                    <button type="button" class="photos-sidebar-button" data-photos-filter="landscape">
-                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">▭</span>${t('photos.sidebar.items.landscape', 'Querformat')}</span>
-                        <span class="photos-sidebar-count" data-photos-filter-count="landscape">0</span>
-                    </button>
-                    <button type="button" class="photos-sidebar-button" data-photos-filter="portrait">
-                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">▯</span>${t('photos.sidebar.items.portrait', 'Hochformat')}</span>
-                        <span class="photos-sidebar-count" data-photos-filter-count="portrait">0</span>
-                    </button>
-                    <button type="button" class="photos-sidebar-button" data-photos-filter="square">
-                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">◻</span>${t('photos.sidebar.items.square', 'Quadratisch')}</span>
-                        <span class="photos-sidebar-count" data-photos-filter-count="square">0</span>
-                    </button>
-
-                    <p class="photos-sidebar-section-label">${t('photos.sidebar.albums', 'Alben')}</p>
-                    <button type="button" class="photos-sidebar-button" disabled>
-                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">📚</span>${t('photos.sidebar.items.albumAll', 'Alle Alben')}</span>
-                    </button>
-                    <button type="button" class="photos-sidebar-button" disabled>
-                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">⬇</span>${t('photos.sidebar.items.albumImports', 'Importe')}</span>
-                    </button>
-                    <button type="button" class="photos-sidebar-button" disabled>
-                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">🧾</span>${t('photos.sidebar.items.albumScans', 'Scans')}</span>
-                    </button>
-                    <button type="button" class="photos-sidebar-button" disabled>
-                        <span class="inline-flex items-center gap-2"><span aria-hidden="true">🗂</span>${t('photos.sidebar.items.albumWallpaper', 'Wallpaper')}</span>
-                    </button>
-                </div>
-            `,
+            bodyAttributes: { 'data-photos-sidebar-body': '1' },
+            bodyHtml: '',
         });
 
         const mainArea = document.createElement('main');
@@ -496,9 +463,9 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         elements.zoomInButton = elements.container.querySelector(
             '#photos-zoom-in'
         ) as HTMLButtonElement | null;
-        elements.sidebarFilterButtons = Array.from(
-            elements.container.querySelectorAll('[data-photos-filter]')
-        ) as HTMLButtonElement[];
+        // Cache the sidebar body mount target for the Sidebar component
+        sidebarBodyEl =
+            elements.container.querySelector<HTMLElement>('[data-photos-sidebar-body]') ?? null;
 
         // Cache tab buttons (both top and bottom)
         const tabButtonsTD = elements.container.querySelectorAll('[data-photo-tab]');
@@ -624,45 +591,112 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         }
     }
 
-    function updateSidebarFilterButtons(): void {
-        elements.sidebarFilterButtons.forEach(button => {
-            const filter = button.getAttribute('data-photos-filter') as SidebarFilter | null;
-            button.setAttribute('data-active', String(filter === state.activeFilter));
-        });
+    /** Builds the Sidebar groups from current state (used for mount and update). */
+    function buildSidebarGroups(): SidebarGroup[] {
+        return [
+            {
+                id: 'library',
+                label: t('photos.sidebar.library', 'Bibliothek'),
+                collapsible: false,
+                items: [
+                    {
+                        id: 'all',
+                        icon: '🖼️',
+                        label: t('photos.sidebar.items.all', 'Alle Fotos'),
+                        badge: state.photos.length,
+                    },
+                    {
+                        id: 'favorites',
+                        icon: '❤',
+                        label: t('photos.sidebar.items.favorites', 'Favoriten'),
+                        badge: state.favorites.size,
+                    },
+                    {
+                        id: 'landscape',
+                        icon: '▭',
+                        label: t('photos.sidebar.items.landscape', 'Querformat'),
+                        badge: state.orientationCounts.landscape,
+                    },
+                    {
+                        id: 'portrait',
+                        icon: '▯',
+                        label: t('photos.sidebar.items.portrait', 'Hochformat'),
+                        badge: state.orientationCounts.portrait,
+                    },
+                    {
+                        id: 'square',
+                        icon: '◻',
+                        label: t('photos.sidebar.items.square', 'Quadratisch'),
+                        badge: state.orientationCounts.square,
+                    },
+                ],
+            },
+            {
+                id: 'albums',
+                label: t('photos.sidebar.albums', 'Alben'),
+                collapsible: false,
+                items: [
+                    {
+                        id: 'album-all',
+                        icon: '📚',
+                        label: t('photos.sidebar.items.albumAll', 'Alle Alben'),
+                        disabled: true,
+                    },
+                    {
+                        id: 'album-imports',
+                        icon: '⬇',
+                        label: t('photos.sidebar.items.albumImports', 'Importe'),
+                        disabled: true,
+                    },
+                    {
+                        id: 'album-scans',
+                        icon: '🧾',
+                        label: t('photos.sidebar.items.albumScans', 'Scans'),
+                        disabled: true,
+                    },
+                    {
+                        id: 'album-wallpaper',
+                        icon: '🗂',
+                        label: t('photos.sidebar.items.albumWallpaper', 'Wallpaper'),
+                        disabled: true,
+                    },
+                ],
+            },
+        ];
     }
 
-    function updateSidebarCounts(): void {
-        const counts: Record<SidebarFilter, number> = {
-            all: state.photos.length,
-            favorites: state.favorites.size,
-            landscape: state.orientationCounts.landscape,
-            portrait: state.orientationCounts.portrait,
-            square: state.orientationCounts.square,
-        };
-
-        const countNodes = elements.container?.querySelectorAll<HTMLElement>(
-            '[data-photos-filter-count]'
-        );
-        countNodes?.forEach(node => {
-            const key = node.getAttribute('data-photos-filter-count') as SidebarFilter | null;
-            if (!key) return;
-            node.textContent = String(counts[key] ?? 0);
-        });
-    }
-
-    function wireSidebarFilters(): void {
-        elements.sidebarFilterButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const filter = button.getAttribute('data-photos-filter') as SidebarFilter | null;
-                if (!filter) return;
-                state.activeFilter = filter;
-                updateSidebarFilterButtons();
-                applyFilters();
+    /**
+     * Mounts (first call) or updates the photos sidebar component.
+     * Replaces the old wireSidebarFilters / updateSidebarFilterButtons / updateSidebarCounts trio.
+     */
+    function updateSidebarComponent(): void {
+        if (!sidebarBodyEl) return;
+        if (!sidebarComponent) {
+            sidebarComponent = new Sidebar({
+                groups: buildSidebarGroups(),
+                activeId: state.activeFilter,
+                onItemClick: (id) => {
+                    const filterIds: SidebarFilter[] = [
+                        'all',
+                        'favorites',
+                        'landscape',
+                        'portrait',
+                        'square',
+                    ];
+                    if (filterIds.includes(id as SidebarFilter)) {
+                        state.activeFilter = id as SidebarFilter;
+                        updateSidebarComponent();
+                        applyFilters();
+                    }
+                },
             });
-        });
-
-        updateSidebarFilterButtons();
-        updateSidebarCounts();
+            sidebarComponent.mount(sidebarBodyEl);
+        } else {
+            sidebarComponent.update({
+                groups: buildSidebarGroups(),
+                activeId: state.activeFilter,
+            });
+        }
     }
 
     function getZoomGridClass(): string {
@@ -1159,7 +1193,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             state.externalPhoto = null;
             state.orientationCounts = calculateOrientationCounts(mapped);
             applyFilters();
-            updateSidebarCounts();
+            updateSidebarComponent();
         } catch (error) {
             logger.warn('UI', 'Photos app: failed to load', error);
             setError(true);
@@ -1222,8 +1256,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         renderGallery();
         updateEmptyState();
         updatePhotoCount();
-        updateSidebarFilterButtons();
-        updateSidebarCounts();
+        updateSidebarComponent();
         if (previousActiveId) {
             const newIndex = state.filteredIndexMap.get(previousActiveId);
             if (typeof newIndex === 'number') {
@@ -1527,7 +1560,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             state.favorites.add(state.activePhotoId);
         }
         updateFavoriteButton();
-        updateSidebarCounts();
+        updateSidebarComponent();
     }
 
     function updateFavoriteButton(): void {
@@ -1591,7 +1624,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         cacheElements();
         wireTabNavigation();
         wireSegments();
-        wireSidebarFilters();
+        updateSidebarComponent();
         wireGalleryZoom();
         wireSearch();
         wireSearchToggle();
@@ -1651,7 +1684,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
         wireTabNavigation();
         wireSegments();
-        wireSidebarFilters();
+        updateSidebarComponent();
         wireGalleryZoom();
         wireSearch();
         wireSearchToggle();
