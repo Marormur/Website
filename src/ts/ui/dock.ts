@@ -60,6 +60,13 @@ const DOCK_ORDER_STORAGE_KEY = 'dock:order:v1';
 const DOCK_PREFERENCES_STORAGE_KEY = 'dock:preferences:v1';
 const DOCK_PINNED_IDS_STORAGE_KEY = 'dock:pinned-items:v1';
 
+/**
+ * Maximum total dock icons in mobile UI mode, mirroring the iOS dock's 4-app limit.
+ * Static items (Finder, Launchpad) count toward this limit.
+ * This restriction does NOT apply in desktop mode.
+ */
+const MOBILE_DOCK_MAX_ITEMS = 4;
+
 const PINNABLE_DOCK_WINDOW_IDS = [
     'text-modal',
     'terminal-modal',
@@ -451,12 +458,35 @@ function syncPinnableDockItems(): void {
     if (!apps) return;
 
     const pinnedIds = getPinnedDockIds();
+    const mobileMode = isMobileUIMode();
     let changed = false;
+
+    // In mobile mode: count static (non-pinnable) dock items to derive how many
+    // slots remain for pinnable items before hitting MOBILE_DOCK_MAX_ITEMS.
+    // Dynamic items (running but not pinned) are suppressed entirely in mobile
+    // mode to match the iOS dock behaviour.
+    let mobilePinnableSlots = Infinity;
+    let mobileSlotsFilled = 0;
+    if (mobileMode) {
+        const staticCount = Array.from(apps.querySelectorAll<HTMLElement>('.dock-item')).filter(
+            item => !isPinnableDockWindowId(item.dataset.windowId ?? '')
+        ).length;
+        mobilePinnableSlots = Math.max(0, MOBILE_DOCK_MAX_ITEMS - staticCount);
+    }
 
     PINNABLE_DOCK_WINDOW_IDS.forEach(windowId => {
         const meta = PINNABLE_DOCK_ITEM_META[windowId];
         const isPinned = pinnedIds.has(windowId);
-        const shouldShow = isPinned || hasOpenWindowForType(meta.windowType);
+
+        let shouldShow: boolean;
+        if (mobileMode) {
+            // iOS-like: only show pinned items within the remaining slot budget.
+            shouldShow = isPinned && mobileSlotsFilled < mobilePinnableSlots;
+            if (shouldShow) mobileSlotsFilled++;
+        } else {
+            shouldShow = isPinned || hasOpenWindowForType(meta.windowType);
+        }
+
         const existing = apps.querySelector<HTMLElement>(
             `.dock-item[data-window-id="${windowId}"]`
         );
@@ -527,6 +557,22 @@ export function isDockItemPinned(windowId: string): boolean {
 
 export function setDockItemPinned(windowId: string, pinned: boolean): boolean {
     if (!isPinnableDockWindowId(windowId)) return false;
+
+    // In mobile mode, enforce MOBILE_DOCK_MAX_ITEMS: block pinning a new item when
+    // the dock is already at capacity. Items already visible are exempt (pinning a
+    // dynamic item doesn't add a new icon, it just changes its status).
+    if (pinned && isMobileUIMode()) {
+        const apps = getDockAppsContainer();
+        if (apps) {
+            const alreadyVisible = apps.querySelector(`.dock-item[data-window-id="${windowId}"]`);
+            if (
+                !alreadyVisible &&
+                apps.querySelectorAll('.dock-item').length >= MOBILE_DOCK_MAX_ITEMS
+            ) {
+                return false;
+            }
+        }
+    }
 
     const pinnedIds = getPinnedDockIds();
     if (pinned) pinnedIds.add(windowId);
