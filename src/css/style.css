@@ -5801,6 +5801,55 @@ html.dark .mobile-home-app-icon-graphic {
     width: 100%;
 }
 
+/* ============================================================================
+   iOS-style Wiggle / Edit Mode
+   ============================================================================ */
+
+@keyframes mobile-icon-wiggle {
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+    20% {
+        transform: rotate(-2.2deg);
+    }
+    40% {
+        transform: rotate(2.2deg);
+    }
+    60% {
+        transform: rotate(-2.2deg);
+    }
+    80% {
+        transform: rotate(2.2deg);
+    }
+}
+
+/* Applied by JS to each icon when wiggle mode is active. */
+.mobile-home-app-icon--wiggling {
+    animation: mobile-icon-wiggle 0.55s ease-in-out infinite;
+    /* Prevent normal press/hover feedback during edit mode. */
+    pointer-events: auto;
+}
+
+.mobile-home-app-icon--wiggling:active {
+    background-color: transparent;
+    transform: none;
+}
+
+/* Suppress press scale while in edit mode (added to the grid element by JS). */
+.mobile-home-app-grid--edit-mode .mobile-home-app-icon:active {
+    background-color: transparent;
+    transform: none;
+}
+
+/* Dock highlight when a wiggle-drag ghost is hovering over it. */
+.dock--wiggle-drag-over .dock-tray {
+    outline: 2px solid rgba(99, 179, 237, 0.8);
+    outline-offset: 2px;
+    border-radius: var(--dock-tray-radius, 20px);
+    transition: outline 0.15s ease;
+}
+
 /* Screen 2: Launchpad Fullscreen */
 .launchpad-screen {
     display: flex;

@@ -146,6 +146,25 @@ const DEFAULT_DOCK_PREFERENCES: DockPreferences = {
     showRecentApps: true,
 };
 
+/**
+ * iOS-inspired maximum total number of visible icons in the mobile dock.
+ * Matches iPhone's default 4-slot bottom row.
+ */
+const MOBILE_DOCK_MAX_ITEMS = 4;
+
+/**
+ * Number of always-visible static items in the mobile dock.
+ * Currently only Finder (1). Launchpad is suppressed by CSS in mobile mode.
+ */
+const MOBILE_DOCK_STATIC_COUNT = 1;
+
+/**
+ * Pinnable window IDs that are CSS-hidden in mobile mode and therefore
+ * do not count toward the visible slot budget.
+ * calendar-modal is hidden via :root[data-ui-mode='mobile'] CSS rule.
+ */
+const MOBILE_DOCK_HIDDEN_IDS: ReadonlySet<string> = new Set(['calendar-modal']);
+
 const WINDOW_TYPE_TO_DOCK_ID: Record<string, string> = {
     finder: 'finder',
     terminal: 'terminal-modal',
@@ -446,6 +465,28 @@ function createPinnableDockItem(windowId: PinnableDockWindowId): HTMLElement {
     return item;
 }
 
+/**
+ * Returns the number of visible pinnable items currently in the mobile dock.
+ * CSS-hidden IDs (calendar-modal) are excluded since they take no visual slot.
+ * PURPOSE: Budget guard for the iOS-style 4-icon mobile dock limit.
+ */
+function getMobileDockPinnedCount(): number {
+    let count = 0;
+    for (const id of getPinnedDockIds()) {
+        if (!MOBILE_DOCK_HIDDEN_IDS.has(id)) count++;
+    }
+    return count;
+}
+
+/**
+ * Returns true when there is room for at least one more pinned item in the mobile dock.
+ * WHY: Used by mobile-paging wiggle drag-to-pin to skip the pin attempt when full.
+ */
+export function mobileDockHasBudget(): boolean {
+    const budget = MOBILE_DOCK_MAX_ITEMS - MOBILE_DOCK_STATIC_COUNT;
+    return getMobileDockPinnedCount() < budget;
+}
+
 function syncPinnableDockItems(): void {
     const apps = getDockAppsContainer();
     if (!apps) return;
@@ -453,6 +494,44 @@ function syncPinnableDockItems(): void {
     const pinnedIds = getPinnedDockIds();
     let changed = false;
 
+    if (isMobileUIMode()) {
+        // Mobile: only show pinned items that are not CSS-hidden, up to the slot budget.
+        // Dynamic "running app" indicators are not shown in mobile (no taskbar concept).
+        const budget = MOBILE_DOCK_MAX_ITEMS - MOBILE_DOCK_STATIC_COUNT;
+        let slotsUsed = 0;
+
+        PINNABLE_DOCK_WINDOW_IDS.forEach(windowId => {
+            const isPinned = pinnedIds.has(windowId);
+            const cssHidden = MOBILE_DOCK_HIDDEN_IDS.has(windowId);
+            // Within budget: pinned, not CSS-hidden, and a slot is still available.
+            const shouldShow = isPinned && !cssHidden && slotsUsed < budget;
+            if (shouldShow) slotsUsed++;
+
+            const existing = apps.querySelector<HTMLElement>(
+                `.dock-item[data-window-id="${windowId}"]`
+            );
+            if (!shouldShow) {
+                if (existing) {
+                    existing.remove();
+                    changed = true;
+                }
+                return;
+            }
+            if (!existing) {
+                const item = createPinnableDockItem(windowId);
+                apps.appendChild(item);
+                changed = true;
+            }
+        });
+
+        if (!changed) return;
+        syncRunningDockSeparator();
+        renderDockProgramIcons();
+        scheduleDockReposition(getDockPreferences());
+        return;
+    }
+
+    // Desktop: show pinned items and dynamic indicators for open windows.
     PINNABLE_DOCK_WINDOW_IDS.forEach(windowId => {
         const meta = PINNABLE_DOCK_ITEM_META[windowId];
         const isPinned = pinnedIds.has(windowId);
@@ -527,6 +606,13 @@ export function isDockItemPinned(windowId: string): boolean {
 
 export function setDockItemPinned(windowId: string, pinned: boolean): boolean {
     if (!isPinnableDockWindowId(windowId)) return false;
+
+    // In mobile mode, block pinning a new item when the slot budget is exhausted.
+    // CSS-hidden IDs (calendar-modal) are exempt — they don't occupy visible slots.
+    if (pinned && isMobileUIMode() && !MOBILE_DOCK_HIDDEN_IDS.has(windowId)) {
+        const budget = MOBILE_DOCK_MAX_ITEMS - MOBILE_DOCK_STATIC_COUNT;
+        if (getMobileDockPinnedCount() >= budget) return false;
+    }
 
     const pinnedIds = getPinnedDockIds();
     if (pinned) pinnedIds.add(windowId);
@@ -1774,6 +1860,7 @@ if (typeof window !== 'undefined') {
         updateDockIndicators,
         isDockItemPinned,
         setDockItemPinned,
+        mobileDockHasBudget,
         getCurrentDockOrder,
         loadDockOrder,
         saveDockOrder,
