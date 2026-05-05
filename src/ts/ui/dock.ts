@@ -524,6 +524,10 @@ function syncPinnableDockItems(): void {
             }
         });
 
+        // Mark the dock as synced so the pre-sync CSS guard (which hides settings-modal
+        // before JS runs to prevent a 5→4 icon flash on first load) is released.
+        getDockElement()?.classList.add('dock-mobile-synced');
+
         if (!changed) return;
         syncRunningDockSeparator();
         renderDockProgramIcons();
@@ -1885,6 +1889,12 @@ if (typeof window !== 'undefined') {
     });
 
     window.addEventListener('uiModeEffectiveChange', () => {
+        // When leaving mobile, clear the sync marker so the pre-sync CSS guard
+        // is active again should the user return to mobile mode.
+        if (!isMobileUIMode()) {
+            getDockElement()?.classList.remove('dock-mobile-synced');
+        }
+
         const reapplyDockLayout = () => {
             applyDockPreferences(getDockPreferences());
             updateDockIndicators();

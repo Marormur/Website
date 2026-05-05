@@ -1108,12 +1108,6 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
             }
         });
 
-        // Desktop long-press fallback via contextmenu event.
-        appGrid.addEventListener('contextmenu', e => {
-            e.preventDefault();
-            enterWiggleMode();
-        });
-
         mobileHomeContent.appendChild(appGrid);
         logger.debug('Mobile Paging', 'Home screen populated with app icons');
     }

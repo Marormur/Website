@@ -5393,6 +5393,16 @@ html.dark :is(#about-modal, .about-window-shell) .about-copyright {
     display: none;
 }
 
+/*
+ * Pre-sync guard: hide the overflow dock item (settings-modal is the 5th visible
+ * in the default pin order) before JS has pruned the static HTML.
+ * Once JS calls syncPinnableDockItems() it adds .dock-mobile-synced, at which
+ * point JS fully controls which items exist in the DOM.
+ */
+:root[data-ui-mode='mobile'] #dock:not(.dock-mobile-synced) .dock-item[data-window-id='settings-modal'] {
+    display: none;
+}
+
 /* Keep mobile dock icon row centered by disabling minimized previews in this layout. */
 :root[data-ui-mode='mobile'] #dock .dock-item-separator,
 :root[data-ui-mode='mobile'] #dock .dock-running-separator,
