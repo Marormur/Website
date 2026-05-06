@@ -1075,33 +1075,63 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
             attachIconDragHandlers(btn, app.windowId);
         });
 
-        // Long-press on grid background → enter wiggle mode (iOS-style).
-        let lpTouchMoved = false;
-        appGrid.addEventListener('touchstart', () => {
-            lpTouchMoved = false;
+        // Long-press on grid → enter wiggle mode (iOS-style edit).
+        // Uses Pointer Events for unified desktop-mouse + mobile-touch support.
+        // WHY: touchstart/touchend fire in rapid succession for desktop clicks in Chrome
+        //      DevTools device-emulation mode, so the 500 ms timer never had a chance to
+        //      fire.  Pointer Events are the modern unified API for both input types.
+        let lpMoved = false;
+        let lpStartX = 0;
+        let lpStartY = 0;
+
+        appGrid.addEventListener('pointerdown', (e: PointerEvent) => {
+            if (isWiggleMode) return;   // already in edit mode — nothing to start
+            if (e.button !== 0) return; // primary button / finger only
+            lpMoved = false;
+            lpStartX = e.clientX;
+            lpStartY = e.clientY;
             if (wiggleLongPressTimer !== null) window.clearTimeout(wiggleLongPressTimer);
             wiggleLongPressTimer = window.setTimeout(() => {
                 wiggleLongPressTimer = null;
-                if (!lpTouchMoved) enterWiggleMode();
+                if (!lpMoved) enterWiggleMode();
             }, WIGGLE_LONG_PRESS_MS);
         }, { passive: true });
-        appGrid.addEventListener('touchmove', () => {
-            lpTouchMoved = true;
-            if (wiggleLongPressTimer !== null) {
-                window.clearTimeout(wiggleLongPressTimer);
-                wiggleLongPressTimer = null;
-            }
-        }, { passive: true });
-        appGrid.addEventListener('touchend', () => {
-            if (wiggleLongPressTimer !== null) {
-                window.clearTimeout(wiggleLongPressTimer);
-                wiggleLongPressTimer = null;
+
+        appGrid.addEventListener('pointermove', (e: PointerEvent) => {
+            if (lpMoved) return;
+            const dx = e.clientX - lpStartX;
+            const dy = e.clientY - lpStartY;
+            if (Math.hypot(dx, dy) > WIGGLE_DRAG_THRESHOLD) {
+                lpMoved = true;
+                if (wiggleLongPressTimer !== null) {
+                    window.clearTimeout(wiggleLongPressTimer);
+                    wiggleLongPressTimer = null;
+                }
             }
         }, { passive: true });
 
-        // Tap on grid background (not on an icon) while in wiggle mode → exit.
+        const cancelLpTimer = () => {
+            if (wiggleLongPressTimer !== null) {
+                window.clearTimeout(wiggleLongPressTimer);
+                wiggleLongPressTimer = null;
+            }
+        };
+        appGrid.addEventListener('pointerup', cancelLpTimer, { passive: true });
+        appGrid.addEventListener('pointercancel', cancelLpTimer, { passive: true });
+
+        // Prevent the browser context menu from appearing during / after a long-press.
+        appGrid.addEventListener('contextmenu', (e: Event) => {
+            if (wiggleLongPressTimer !== null || isWiggleMode) e.preventDefault();
+        });
+
+        // Tap while in wiggle mode:
+        //   • on background → exit wiggle;
+        //   • on icon       → keep wiggle (don't open app).
+        // WHY stopPropagation: ActionBus listens on document for [data-action] click
+        //   events and would open the app; we must swallow the event in wiggle mode.
         appGrid.addEventListener('click', e => {
             if (!isWiggleMode) return;
+            e.stopPropagation();
             const target = e.target as Element;
             if (!target.closest('.mobile-home-app-icon')) {
                 exitWiggleMode();
