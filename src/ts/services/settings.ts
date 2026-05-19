@@ -205,12 +205,12 @@ logger.debug('APP', 'Settings Module loaded');
                 <div class="settings-app" data-settings-layout="default" data-settings-mobile-view="menu">
                     ${renderInsetSidebarShellHTML({
                         shellTag: 'aside',
-                        shellClassName: 'settings-sidebar-shell',
+                        shellClassName: 'settings-sidebar-shell app-sidebar-panel-shell',
                         shellAttributes: {
                             'aria-label': 'Settings Navigation',
                             'data-i18n-aria-label': 'settingsPage.sidebar.ariaLabel',
                         },
-                        panelClassName: 'settings-sidebar-panel',
+                        panelClassName: 'settings-sidebar-panel app-sidebar-panel',
                         topClassName: 'settings-sidebar-top draggable-header',
                         topHtml: renderTrafficLightControlsHTML({
                             containerClassName: 'settings-window-controls traffic-light-controls',
