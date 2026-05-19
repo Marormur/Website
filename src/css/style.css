@@ -5395,6 +5395,16 @@ html.dark :is(#about-modal, .about-window-shell) .about-copyright {
     display: none;
 }
 
+/*
+ * Pre-sync guard: hide the overflow dock item (settings-modal is the 5th visible
+ * in the default pin order) before JS has pruned the static HTML.
+ * Once JS calls syncPinnableDockItems() it adds .dock-mobile-synced, at which
+ * point JS fully controls which items exist in the DOM.
+ */
+:root[data-ui-mode='mobile'] #dock:not(.dock-mobile-synced) .dock-item[data-window-id='settings-modal'] {
+    display: none;
+}
+
 /* Keep mobile dock icon row centered by disabling minimized previews in this layout. */
 :root[data-ui-mode='mobile'] #dock .dock-item-separator,
 :root[data-ui-mode='mobile'] #dock .dock-running-separator,
@@ -5801,6 +5811,55 @@ html.dark .mobile-home-app-icon-graphic {
     word-break: break-word;
     line-height: 1.2;
     width: 100%;
+}
+
+/* ============================================================================
+   iOS-style Wiggle / Edit Mode
+   ============================================================================ */
+
+@keyframes mobile-icon-wiggle {
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+    20% {
+        transform: rotate(-2.2deg);
+    }
+    40% {
+        transform: rotate(2.2deg);
+    }
+    60% {
+        transform: rotate(-2.2deg);
+    }
+    80% {
+        transform: rotate(2.2deg);
+    }
+}
+
+/* Applied by JS to each icon when wiggle mode is active. */
+.mobile-home-app-icon--wiggling {
+    animation: mobile-icon-wiggle 0.55s ease-in-out infinite;
+    /* Prevent normal press/hover feedback during edit mode. */
+    pointer-events: auto;
+}
+
+.mobile-home-app-icon--wiggling:active {
+    background-color: transparent;
+    transform: none;
+}
+
+/* Suppress press scale while in edit mode (added to the grid element by JS). */
+.mobile-home-app-grid--edit-mode .mobile-home-app-icon:active {
+    background-color: transparent;
+    transform: none;
+}
+
+/* Dock highlight when a wiggle-drag ghost is hovering over it. */
+.dock--wiggle-drag-over .dock-tray {
+    outline: 2px solid rgba(99, 179, 237, 0.8);
+    outline-offset: 2px;
+    border-radius: var(--dock-tray-radius, 20px);
+    transition: outline 0.15s ease;
 }
 
 /* Screen 2: Launchpad Fullscreen */

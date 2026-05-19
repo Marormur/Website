@@ -61,6 +61,25 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
     const appHistoryStack: string[] = [];
     let suppressNextHistoryPush = false;
 
+    // ============================================================================
+    // Wiggle / Edit Mode
+    // ============================================================================
+
+    /** Duration in ms before a stationary touch triggers wiggle mode. */
+    const WIGGLE_LONG_PRESS_MS = 500;
+    /** Touch movement threshold in px that cancels the long-press timer. */
+    const WIGGLE_DRAG_THRESHOLD = 8;
+
+    let isWiggleMode = false;
+    let wiggleLongPressTimer: number | null = null;
+
+    // Drag-to-dock state (only active in wiggle mode)
+    let wiggleDragGhost: HTMLElement | null = null;
+    let wiggleDragWindowId: string | null = null;
+    let wiggleDragStartX = 0;
+    let wiggleDragStartY = 0;
+    let wiggleDragStarted = false;
+
     function getMobileTopChromeHeight(): number {
         const raw = getComputedStyle(document.documentElement)
             .getPropertyValue('--ui-top-chrome-height')
@@ -577,6 +596,9 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
 
         currentPage = pageId;
 
+        // Exit wiggle mode whenever the user navigates away from the home screen.
+        if (pageId !== 0) exitWiggleMode();
+
         // INVARIANT: Screen transitions are smooth via CSS transitions
         // Each page is 50% of container width, so translate by 50% per page
         setScreensTranslatePercent(getPageTranslatePercent(pageId), true);
@@ -774,6 +796,196 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         }
     }
 
+    // ============================================================================
+    // Wiggle / Edit Mode helpers
+    // ============================================================================
+
+    /**
+     * Activates wiggle/edit mode: applies the iOS-style jiggle animation to all
+     * home screen icons and marks the grid so tap-handlers know we are editing.
+     * PURPOSE: Entry point called after a long-press is confirmed.
+     * INVARIANT: safe to call when already in wiggle mode (no-op).
+     */
+    function enterWiggleMode(): void {
+        if (isWiggleMode) return;
+        isWiggleMode = true;
+
+        const appGrid = homeScreen?.querySelector<HTMLElement>('.mobile-home-app-grid');
+        if (!appGrid) return;
+
+        appGrid.classList.add('mobile-home-app-grid--edit-mode');
+        appGrid.querySelectorAll<HTMLElement>('.mobile-home-app-icon').forEach((icon, i) => {
+            icon.classList.add('mobile-home-app-icon--wiggling');
+            // Stagger delay cycles every 4 icons to mimic iOS natural randomness.
+            icon.style.animationDelay = `${(i % 4) * 0.07}s`;
+        });
+
+        // Haptic feedback if available; navigator.vibrate is optional in the spec.
+        if (typeof navigator.vibrate === 'function') navigator.vibrate(10);
+        logger.debug('Mobile Paging', 'Wiggle mode entered');
+    }
+
+    /**
+     * Deactivates wiggle/edit mode and removes all animation state.
+     * Also cleans up any in-progress drag ghost.
+     * INVARIANT: safe to call when not in wiggle mode (no-op).
+     */
+    function exitWiggleMode(): void {
+        if (!isWiggleMode) return;
+        isWiggleMode = false;
+
+        cancelWiggleDrag();
+
+        const appGrid = homeScreen?.querySelector<HTMLElement>('.mobile-home-app-grid');
+        if (!appGrid) return;
+
+        appGrid.classList.remove('mobile-home-app-grid--edit-mode');
+        appGrid.querySelectorAll<HTMLElement>('.mobile-home-app-icon').forEach(icon => {
+            icon.classList.remove('mobile-home-app-icon--wiggling');
+            icon.style.animationDelay = '';
+        });
+
+        logger.debug('Mobile Paging', 'Wiggle mode exited');
+    }
+
+    // ============================================================================
+    // Wiggle drag-to-dock helpers
+    // ============================================================================
+
+    /** Removes the drag ghost element and resets drag state. */
+    function cancelWiggleDrag(): void {
+        if (wiggleDragGhost) {
+            wiggleDragGhost.remove();
+            wiggleDragGhost = null;
+        }
+        // Re-enable pointer events on the dock drop zone
+        const dock = document.getElementById(DOCK_ID);
+        if (dock) dock.classList.remove('dock--wiggle-drag-over');
+
+        wiggleDragWindowId = null;
+        wiggleDragStarted = false;
+    }
+
+    /**
+     * Returns true if the given screen coordinates are within the dock element.
+     * Used during touch-drag to detect drop-over-dock.
+     */
+    function isTouchOverDock(clientX: number, clientY: number): boolean {
+        const dock = document.getElementById(DOCK_ID);
+        if (!dock) return false;
+        const r = dock.getBoundingClientRect();
+        // Extend hitbox slightly above the dock to allow easier drops.
+        return (
+            clientX >= r.left &&
+            clientX <= r.right &&
+            clientY >= r.top - 24 &&
+            clientY <= r.bottom
+        );
+    }
+
+    /**
+     * Attaches touch handlers to a home screen icon for drag-to-dock in wiggle mode.
+     * WHY: Native drag-and-drop API is not available on touch devices; we simulate
+     *      it with touchmove + a ghost element following the finger.
+     * DEPENDENCY: Must be called after the icon element is in the DOM.
+     */
+    function attachIconDragHandlers(btn: HTMLElement, windowId: string): void {
+        let touchId: number | null = null;
+        // Ghost half-dimensions cached when the ghost is created to avoid repeated
+        // getBoundingClientRect() calls on every touchmove (layout thrash).
+        let ghostHalfW = 0;
+        let ghostHalfH = 0;
+
+        const onTouchStart = (e: TouchEvent) => {
+            if (!isWiggleMode) return;
+            // Only start drag if icon has a dock-pinnable window ID.
+            if (!windowId) return;
+            // Guard: another icon drag is already in progress — don't steal the slot.
+            if (wiggleDragWindowId !== null) return;
+            const touch = e.changedTouches[0];
+            if (!touch) return;
+            touchId = touch.identifier;
+            wiggleDragStartX = touch.clientX;
+            wiggleDragStartY = touch.clientY;
+            wiggleDragStarted = false;
+            wiggleDragWindowId = windowId;
+        };
+
+        const onTouchMove = (e: TouchEvent) => {
+            if (!isWiggleMode || wiggleDragWindowId !== windowId) return;
+            const touch = Array.from(e.changedTouches).find(t => t.identifier === touchId);
+            if (!touch) return;
+
+            const dx = touch.clientX - wiggleDragStartX;
+            const dy = touch.clientY - wiggleDragStartY;
+            const dist = Math.hypot(dx, dy);
+
+            if (!wiggleDragStarted) {
+                if (dist < WIGGLE_DRAG_THRESHOLD) return;
+                // Threshold crossed — create ghost and cache its dimensions.
+                wiggleDragStarted = true;
+                const iconGraphic = btn.querySelector<HTMLElement>('.mobile-home-app-icon-graphic');
+                wiggleDragGhost = (iconGraphic || btn).cloneNode(true) as HTMLElement;
+                wiggleDragGhost.style.cssText = `
+                    position: fixed;
+                    pointer-events: none;
+                    z-index: 99999;
+                    opacity: 0.9;
+                    transform: scale(1.2);
+                    transform-origin: center;
+                    border-radius: 18px;
+                    transition: none;
+                `.trim();
+                document.body.appendChild(wiggleDragGhost);
+                const ghostRect = wiggleDragGhost.getBoundingClientRect();
+                ghostHalfW = ghostRect.width / 2;
+                ghostHalfH = ghostRect.height / 2;
+            }
+
+            if (!wiggleDragGhost) return;
+            e.preventDefault(); // Prevent scroll during drag
+
+            wiggleDragGhost.style.left = `${touch.clientX - ghostHalfW}px`;
+            wiggleDragGhost.style.top = `${touch.clientY - ghostHalfH}px`;
+
+            // Highlight dock when hovering over it
+            const dock = document.getElementById(DOCK_ID);
+            if (dock) {
+                dock.classList.toggle('dock--wiggle-drag-over', isTouchOverDock(touch.clientX, touch.clientY));
+            }
+        };
+
+        const onTouchEnd = (e: TouchEvent) => {
+            if (!isWiggleMode || wiggleDragWindowId !== windowId) return;
+            const touch = Array.from(e.changedTouches).find(t => t.identifier === touchId);
+            if (!touch) return;
+
+            const wasDragged = wiggleDragStarted;
+            const overDock = isTouchOverDock(touch.clientX, touch.clientY);
+
+            cancelWiggleDrag();
+
+            if (wasDragged && overDock) {
+                // Attempt to pin app to dock; setDockItemPinned returns false if budget exhausted.
+                if (!window.DockSystem?.setDockItemPinned) {
+                    logger.warn('Mobile Paging', 'DockSystem.setDockItemPinned unavailable');
+                } else if (!window.DockSystem.setDockItemPinned(windowId, true)) {
+                    logger.debug('Mobile Paging', `Dock full — cannot pin ${windowId}`);
+                }
+            } else if (!wasDragged) {
+                // Tap without drag while in wiggle mode → exit edit mode.
+                exitWiggleMode();
+            }
+        };
+
+        btn.addEventListener('touchstart', onTouchStart, { passive: true });
+        btn.addEventListener('touchmove', onTouchMove, { passive: false });
+        btn.addEventListener('touchend', onTouchEnd, { passive: true });
+        btn.addEventListener('touchcancel', () => {
+            if (wiggleDragWindowId === windowId) cancelWiggleDrag();
+        }, { passive: true });
+    }
+
     /**
      * Populate home screen with app icons
      * PURPOSE: Render app shortcuts on the first mobile screen
@@ -835,6 +1047,8 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
 
         // Build HTML for app grid
         mobileHomeContent.innerHTML = '';
+        // Rebuilding DOM always exits wiggle mode (state no longer matches DOM).
+        exitWiggleMode();
         const appGrid = document.createElement('div');
         appGrid.className = 'mobile-home-app-grid';
 
@@ -856,6 +1070,72 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
             btn.appendChild(iconDiv);
             btn.appendChild(labelDiv);
             appGrid.appendChild(btn);
+
+            // Attach drag-to-dock handlers for each icon (active only in wiggle mode).
+            attachIconDragHandlers(btn, app.windowId);
+        });
+
+        // Long-press on grid → enter wiggle mode (iOS-style edit).
+        // Uses Pointer Events for unified desktop-mouse + mobile-touch support.
+        // WHY: touchstart/touchend fire in rapid succession for desktop clicks in Chrome
+        //      DevTools device-emulation mode, so the 500 ms timer never had a chance to
+        //      fire.  Pointer Events are the modern unified API for both input types.
+        let lpMoved = false;
+        let lpStartX = 0;
+        let lpStartY = 0;
+
+        appGrid.addEventListener('pointerdown', (e: PointerEvent) => {
+            if (isWiggleMode) return;   // already in edit mode — nothing to start
+            if (e.button !== 0) return; // primary button / finger only
+            lpMoved = false;
+            lpStartX = e.clientX;
+            lpStartY = e.clientY;
+            if (wiggleLongPressTimer !== null) window.clearTimeout(wiggleLongPressTimer);
+            wiggleLongPressTimer = window.setTimeout(() => {
+                wiggleLongPressTimer = null;
+                if (!lpMoved) enterWiggleMode();
+            }, WIGGLE_LONG_PRESS_MS);
+        }, { passive: true });
+
+        appGrid.addEventListener('pointermove', (e: PointerEvent) => {
+            if (lpMoved) return;
+            const dx = e.clientX - lpStartX;
+            const dy = e.clientY - lpStartY;
+            if (Math.hypot(dx, dy) > WIGGLE_DRAG_THRESHOLD) {
+                lpMoved = true;
+                if (wiggleLongPressTimer !== null) {
+                    window.clearTimeout(wiggleLongPressTimer);
+                    wiggleLongPressTimer = null;
+                }
+            }
+        }, { passive: true });
+
+        const cancelLpTimer = () => {
+            if (wiggleLongPressTimer !== null) {
+                window.clearTimeout(wiggleLongPressTimer);
+                wiggleLongPressTimer = null;
+            }
+        };
+        appGrid.addEventListener('pointerup', cancelLpTimer, { passive: true });
+        appGrid.addEventListener('pointercancel', cancelLpTimer, { passive: true });
+
+        // Prevent the browser context menu from appearing during / after a long-press.
+        appGrid.addEventListener('contextmenu', (e: Event) => {
+            if (wiggleLongPressTimer !== null || isWiggleMode) e.preventDefault();
+        });
+
+        // Tap while in wiggle mode:
+        //   • on background → exit wiggle;
+        //   • on icon       → keep wiggle (don't open app).
+        // WHY stopPropagation: ActionBus listens on document for [data-action] click
+        //   events and would open the app; we must swallow the event in wiggle mode.
+        appGrid.addEventListener('click', e => {
+            if (!isWiggleMode) return;
+            e.stopPropagation();
+            const target = e.target as Element;
+            if (!target.closest('.mobile-home-app-icon')) {
+                exitWiggleMode();
+            }
         });
 
         mobileHomeContent.appendChild(appGrid);
@@ -930,6 +1210,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
             mobileScreensWrapper?.classList.remove('mobile-screens-wrapper--app-open');
             hideGestureNav();
             clearAppSwitchHistory();
+            exitWiggleMode();
 
             if (windowChangeObserver) {
                 windowChangeObserver.disconnect();
@@ -1015,6 +1296,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         initMobilePaging,
         navigateToPage,
         getCurrentPage,
+        exitWiggleMode,
     } as Record<string, unknown>;
 
     // Auto-initialize when script loads if already in mobile mode
@@ -1049,6 +1331,7 @@ declare global {
             initMobilePaging: () => void;
             navigateToPage: (pageId: 0 | 1) => void;
             getCurrentPage: () => 0 | 1;
+            exitWiggleMode: () => void;
         };
     }
 }
