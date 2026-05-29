@@ -71,6 +71,12 @@ npm run check:full
 - **Window-/App-Verhalten:** `src/ts/windows/`, `src/ts/ui/`, `src/ts/services/`
 - **GitHub/Finder-Integration:** `src/ts/services/github-api.ts`
 
+## Pull Requests
+
+- Neue Pull Requests loesen `.github/workflows/request-copilot-review.yml` aus.
+- Der Workflow fordert automatisch einen Review von GitHub Copilot an.
+- Draft-PRs werden uebersprungen; beim Markieren als ready for review wird Copilot angefragt.
+
 ## Sicherheits-/Pflege-Regeln
 
 - Keine Tokens dauerhaft in `localStorage` speichern; wenn moeglich `sessionStorage` verwenden.
