@@ -71,6 +71,28 @@ Die Website deployed automatisch auf GitHub Pages beim Push nach `main`. Läuft 
 
 Die CSS wird in der CI gebaut – keine Sorge um Dateien committen.
 
+## Pflege & Checks 🧰
+
+Der kurze Wartungsleitfaden liegt in [`MAINTENANCE.md`](./MAINTENANCE.md).
+
+Vor jedem Commit mindestens:
+
+```bash
+npm run check
+```
+
+Bei UI-, Fenster-, Dock-, Finder- oder Mobile-Aenderungen zusätzlich:
+
+```bash
+npm run check:e2e
+```
+
+Vor groesseren Merges:
+
+```bash
+npm run check:full
+```
+
 ## Quick Reference
 
 ```bash

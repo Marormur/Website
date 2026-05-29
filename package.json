@@ -63,7 +63,10 @@
     "turbo:lint": "turbo run lint typecheck",
     "turbo:validate": "turbo run validate",
     "turbo:watch": "turbo run watch:css typecheck:watch dev:bundle --parallel",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check": "npm run typecheck && npm run lint && npm run build:css && npm run build:ts && npm run test:unit",
+    "check:e2e": "npm run test:e2e:core",
+    "check:full": "npm run check && npm run check:e2e"
   },
   "lint-staged": {
     "*.js": [
