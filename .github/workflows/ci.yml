@@ -320,6 +320,9 @@ jobs:
             - name: Verify npm version
               run: npm --version
 
-            - name: Audit dependencies
+            - name: Audit production dependencies (blocking)
+              run: npm audit --omit=dev --audit-level=moderate
+
+            - name: Audit all dependencies (report-only)
               run: npm audit --audit-level=moderate
               continue-on-error: true
