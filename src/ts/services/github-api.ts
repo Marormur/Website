@@ -97,12 +97,34 @@ import logger from '../core/logger.js';
         return getCacheState(kind, repo, subPath) === 'stale';
     }
 
+    function readGitHubToken(): string {
+        // Keep sensitive auth material session-scoped whenever possible.
+        const sessionToken = sessionStorage.getItem('githubToken');
+        if (sessionToken && sessionToken.trim()) {
+            return sessionToken.trim();
+        }
+
+        const legacyPersistentToken = getString('githubToken');
+        if (!legacyPersistentToken || !legacyPersistentToken.trim()) {
+            return '';
+        }
+
+        const migratedToken = legacyPersistentToken.trim();
+        try {
+            sessionStorage.setItem('githubToken', migratedToken);
+            localStorage.removeItem('githubToken');
+        } catch {
+            // Continue with in-memory use if migration storage operations fail.
+        }
+        return migratedToken;
+    }
+
     function getHeaders(): Record<string, string> {
         const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' };
         try {
-            const token = getString('githubToken');
-            if (token && token.trim()) {
-                headers['Authorization'] = `token ${token.trim()}`;
+            const token = readGitHubToken();
+            if (token) {
+                headers['Authorization'] = `token ${token}`;
             }
         } catch {
             /* ignore */

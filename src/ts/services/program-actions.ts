@@ -36,13 +36,13 @@ import logger from '../core/logger.js';
         }
         const iframe = getTextEditorIframe();
         if (iframe && iframe.contentWindow) {
-            let targetOrigin = '*';
-            if (
-                window.location &&
-                typeof window.location.origin === 'string' &&
-                window.location.origin !== 'null'
-            ) {
-                targetOrigin = window.location.origin;
+            const targetOrigin =
+                window.location && typeof window.location.origin === 'string'
+                    ? window.location.origin
+                    : '';
+            if (!targetOrigin || targetOrigin === 'null') {
+                logger.warn('APP', 'Texteditor Nachricht verworfen: ungültige targetOrigin.');
+                return;
             }
             iframe.contentWindow.postMessage(message, targetOrigin);
             return;

@@ -31,6 +31,34 @@ const MIME_TYPES = {
 
 const ROOT_DIR = path.resolve(__dirname);
 
+const CONTENT_SECURITY_POLICY = [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' https: data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://api.github.com https://picsum.photos https://raw.githubusercontent.com https://avatars.githubusercontent.com",
+    "worker-src 'self' blob:",
+    "frame-src 'self'",
+].join('; ');
+
+function writeSecureHeaders(res, statusCode, extraHeaders = {}) {
+    res.writeHead(statusCode, {
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()'
+            .replace(/\s+/g, ' ')
+            .trim(),
+        'Content-Security-Policy': CONTENT_SECURITY_POLICY,
+        ...extraHeaders,
+    });
+}
+
 // Keep a list of connected SSE clients for live reload
 const sseClients = new Set();
 
@@ -45,7 +73,7 @@ const server = http.createServer((req, res) => {
 
     // SSE endpoint for live reload
     if (requestPath === '/livereload') {
-        res.writeHead(200, {
+        writeSecureHeaders(res, 200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
             Connection: 'keep-alive',
@@ -67,7 +95,7 @@ const server = http.createServer((req, res) => {
     const filePath = path.resolve(ROOT_DIR, `.${normalizedPath}`);
     const rootWithSep = `${ROOT_DIR}${path.sep}`;
     if (filePath !== ROOT_DIR && !filePath.startsWith(rootWithSep)) {
-        res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+        writeSecureHeaders(res, 403, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end('<h1>403 Forbidden</h1>', 'utf-8');
         return;
     }
@@ -82,15 +110,15 @@ const server = http.createServer((req, res) => {
         if (error) {
             if (error.code === 'ENOENT') {
                 console.error(`[404] File not found: ${servedPath}`);
-                res.writeHead(404, { 'Content-Type': 'text/html' });
+                writeSecureHeaders(res, 404, { 'Content-Type': 'text/html' });
                 res.end('<h1>404 Not Found</h1>', 'utf-8');
             } else {
                 console.error(`[500] Server error: ${error.code} for ${servedPath}`);
-                res.writeHead(500);
+                writeSecureHeaders(res, 500);
                 res.end('Server Error: ' + error.code, 'utf-8');
             }
         } else {
-            res.writeHead(200, {
+            writeSecureHeaders(res, 200, {
                 'Content-Type': contentType,
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 Pragma: 'no-cache',
