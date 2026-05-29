@@ -625,6 +625,14 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
                 return;
             }
 
+            if (
+                isWiggleMode &&
+                event.target instanceof Element &&
+                event.target.closest('.mobile-home-app-icon')
+            ) {
+                return;
+            }
+
             const touch = event.touches.item(0);
             if (!touch) {
                 return;
@@ -639,6 +647,14 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
 
         const onTouchMove = (event: TouchEvent): void => {
             if (!isTrackingSwipe || !isMobileMode() || isAppOpen || event.touches.length !== 1) {
+                return;
+            }
+
+            if (
+                isWiggleMode &&
+                event.target instanceof Element &&
+                event.target.closest('.mobile-home-app-icon')
+            ) {
                 return;
             }
 
@@ -876,10 +892,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         const r = dock.getBoundingClientRect();
         // Extend hitbox slightly above the dock to allow easier drops.
         return (
-            clientX >= r.left &&
-            clientX <= r.right &&
-            clientY >= r.top - 24 &&
-            clientY <= r.bottom
+            clientX >= r.left && clientX <= r.right && clientY >= r.top - 24 && clientY <= r.bottom
         );
     }
 
@@ -898,6 +911,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
 
         const onTouchStart = (e: TouchEvent) => {
             if (!isWiggleMode) return;
+            e.stopPropagation();
             // Only start drag if icon has a dock-pinnable window ID.
             if (!windowId) return;
             // Guard: another icon drag is already in progress — don't steal the slot.
@@ -913,6 +927,7 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
 
         const onTouchMove = (e: TouchEvent) => {
             if (!isWiggleMode || wiggleDragWindowId !== windowId) return;
+            e.stopPropagation();
             const touch = Array.from(e.changedTouches).find(t => t.identifier === touchId);
             if (!touch) return;
 
@@ -951,12 +966,16 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
             // Highlight dock when hovering over it
             const dock = document.getElementById(DOCK_ID);
             if (dock) {
-                dock.classList.toggle('dock--wiggle-drag-over', isTouchOverDock(touch.clientX, touch.clientY));
+                dock.classList.toggle(
+                    'dock--wiggle-drag-over',
+                    isTouchOverDock(touch.clientX, touch.clientY)
+                );
             }
         };
 
         const onTouchEnd = (e: TouchEvent) => {
             if (!isWiggleMode || wiggleDragWindowId !== windowId) return;
+            e.stopPropagation();
             const touch = Array.from(e.changedTouches).find(t => t.identifier === touchId);
             if (!touch) return;
 
@@ -972,18 +991,24 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
                 } else if (!window.DockSystem.setDockItemPinned(windowId, true)) {
                     logger.debug('Mobile Paging', `Dock full — cannot pin ${windowId}`);
                 }
-            } else if (!wasDragged) {
-                // Tap without drag while in wiggle mode → exit edit mode.
-                exitWiggleMode();
             }
         };
 
         btn.addEventListener('touchstart', onTouchStart, { passive: true });
         btn.addEventListener('touchmove', onTouchMove, { passive: false });
         btn.addEventListener('touchend', onTouchEnd, { passive: true });
-        btn.addEventListener('touchcancel', () => {
-            if (wiggleDragWindowId === windowId) cancelWiggleDrag();
-        }, { passive: true });
+        btn.addEventListener(
+            'touchcancel',
+            () => {
+                if (wiggleDragWindowId === windowId) cancelWiggleDrag();
+            },
+            { passive: true }
+        );
+        btn.addEventListener('click', e => {
+            if (!isWiggleMode) return;
+            e.preventDefault();
+            e.stopPropagation();
+        });
     }
 
     /**
@@ -1084,31 +1109,39 @@ logger.debug('UI', 'Mobile Paging (TS) loaded');
         let lpStartX = 0;
         let lpStartY = 0;
 
-        appGrid.addEventListener('pointerdown', (e: PointerEvent) => {
-            if (isWiggleMode) return;   // already in edit mode — nothing to start
-            if (e.button !== 0) return; // primary button / finger only
-            lpMoved = false;
-            lpStartX = e.clientX;
-            lpStartY = e.clientY;
-            if (wiggleLongPressTimer !== null) window.clearTimeout(wiggleLongPressTimer);
-            wiggleLongPressTimer = window.setTimeout(() => {
-                wiggleLongPressTimer = null;
-                if (!lpMoved) enterWiggleMode();
-            }, WIGGLE_LONG_PRESS_MS);
-        }, { passive: true });
-
-        appGrid.addEventListener('pointermove', (e: PointerEvent) => {
-            if (lpMoved) return;
-            const dx = e.clientX - lpStartX;
-            const dy = e.clientY - lpStartY;
-            if (Math.hypot(dx, dy) > WIGGLE_DRAG_THRESHOLD) {
-                lpMoved = true;
-                if (wiggleLongPressTimer !== null) {
-                    window.clearTimeout(wiggleLongPressTimer);
+        appGrid.addEventListener(
+            'pointerdown',
+            (e: PointerEvent) => {
+                if (isWiggleMode) return; // already in edit mode — nothing to start
+                if (e.button !== 0) return; // primary button / finger only
+                lpMoved = false;
+                lpStartX = e.clientX;
+                lpStartY = e.clientY;
+                if (wiggleLongPressTimer !== null) window.clearTimeout(wiggleLongPressTimer);
+                wiggleLongPressTimer = window.setTimeout(() => {
                     wiggleLongPressTimer = null;
+                    if (!lpMoved) enterWiggleMode();
+                }, WIGGLE_LONG_PRESS_MS);
+            },
+            { passive: true }
+        );
+
+        appGrid.addEventListener(
+            'pointermove',
+            (e: PointerEvent) => {
+                if (lpMoved) return;
+                const dx = e.clientX - lpStartX;
+                const dy = e.clientY - lpStartY;
+                if (Math.hypot(dx, dy) > WIGGLE_DRAG_THRESHOLD) {
+                    lpMoved = true;
+                    if (wiggleLongPressTimer !== null) {
+                        window.clearTimeout(wiggleLongPressTimer);
+                        wiggleLongPressTimer = null;
+                    }
                 }
-            }
-        }, { passive: true });
+            },
+            { passive: true }
+        );
 
         const cancelLpTimer = () => {
             if (wiggleLongPressTimer !== null) {
