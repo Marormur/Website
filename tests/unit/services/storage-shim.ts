@@ -43,8 +43,12 @@ class StorageShim implements Storage {
     }
 }
 
-function readStorageSnapshot(storage: Storage): Record<string, string> {
+function readStorageSnapshot(storage: Storage | undefined): Record<string, string> {
     const snapshot: Record<string, string> = {};
+
+    if (!storage) {
+        return snapshot;
+    }
 
     for (let index = 0; index < storage.length; index += 1) {
         const key = storage.key(index);
