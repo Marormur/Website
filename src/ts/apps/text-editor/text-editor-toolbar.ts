@@ -17,18 +17,29 @@ interface ToolbarButtonConfig {
     i18nTitleKey?: string;
 }
 
+function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/`/g, '&#96;');
+}
+
 function renderToolbarButton(config: ToolbarButtonConfig): string {
     const className = ['text-editor-btn', 'macui-button', config.className]
         .filter(Boolean)
         .join(' ');
-    const idAttr = config.id ? ` id="${config.id}"` : '';
-    const dataActionAttr = config.action ? ` data-action="${config.action}"` : '';
-    const dataI18nAttr = config.i18nKey ? ` data-i18n="${config.i18nKey}"` : '';
+    const idAttr = config.id ? ` id="${escapeHtml(config.id)}"` : '';
+    const dataActionAttr = config.action ? ` data-action="${escapeHtml(config.action)}"` : '';
+    const dataI18nAttr = config.i18nKey ? ` data-i18n="${escapeHtml(config.i18nKey)}"` : '';
     const dataI18nTitleAttr = config.i18nTitleKey
-        ? ` data-i18n-title="${config.i18nTitleKey}"`
+        ? ` data-i18n-title="${escapeHtml(config.i18nTitleKey)}"`
         : '';
+    const label = escapeHtml(config.label);
 
-    return `<button type="button"${idAttr} class="${className}"${dataActionAttr} data-text-editor-action="${config.hookAction}" title="${config.title}"${dataI18nAttr}${dataI18nTitleAttr}>${config.label}</button>`;
+    return `<button type="button"${idAttr} class="${escapeHtml(className)}"${dataActionAttr} data-text-editor-action="${escapeHtml(config.hookAction)}" title="${escapeHtml(config.title)}"${dataI18nAttr}${dataI18nTitleAttr}>${label}</button>`;
 }
 
 export function buildTextEditorToolbarHTML(context: ToolbarContext): string {
@@ -42,9 +53,9 @@ export function buildTextEditorToolbarHTML(context: ToolbarContext): string {
                 </div>
                 <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
                 <div class="text-editor-toolbar-group ${FRAMEWORK_TOOLBAR_SECTION_CLASS}">
-                    ${renderToolbarButton({ className: 'btn-bold', action: 'textEditorDocument:bold', hookAction: 'bold', title: 'Fett', label: '<strong>B</strong>' })}
-                    ${renderToolbarButton({ className: 'btn-italic', action: 'textEditorDocument:italic', hookAction: 'italic', title: 'Kursiv', label: '<em>I</em>' })}
-                    ${renderToolbarButton({ className: 'btn-underline', action: 'textEditorDocument:underline', hookAction: 'underline', title: 'Unterstrichen', label: '<span class="text-editor-btn-underline">U</span>' })}
+                    ${renderToolbarButton({ className: 'btn-bold', action: 'textEditorDocument:bold', hookAction: 'bold', title: 'Fett', label: 'B' })}
+                    ${renderToolbarButton({ className: 'btn-italic', action: 'textEditorDocument:italic', hookAction: 'italic', title: 'Kursiv', label: 'I' })}
+                    ${renderToolbarButton({ className: 'btn-underline text-editor-btn-underline', action: 'textEditorDocument:underline', hookAction: 'underline', title: 'Unterstrichen', label: 'U' })}
                 </div>
                 <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
                 <div class="text-editor-toolbar-group text-editor-toolbar-group-right ${FRAMEWORK_TOOLBAR_SECTION_CLASS} ${FRAMEWORK_TOOLBAR_END_SECTION_CLASS}">
@@ -65,10 +76,10 @@ export function buildTextEditorToolbarHTML(context: ToolbarContext): string {
             </div>
             <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
             <div class="text-editor-toolbar-group ${FRAMEWORK_TOOLBAR_SECTION_CLASS}">
-                ${renderToolbarButton({ action: 'textEditor:bold', hookAction: 'bold', title: 'Fett', label: '<strong>B</strong>', i18nTitleKey: 'textEditor.toolbar.bold' })}
-                ${renderToolbarButton({ action: 'textEditor:italic', hookAction: 'italic', title: 'Kursiv', label: '<em>I</em>', i18nTitleKey: 'textEditor.toolbar.italic' })}
-                ${renderToolbarButton({ action: 'textEditor:underline', hookAction: 'underline', title: 'Unterstrichen', label: '<span class="text-editor-btn-underline">U</span>', i18nTitleKey: 'textEditor.toolbar.underline' })}
-                ${renderToolbarButton({ action: 'textEditor:strikethrough', hookAction: 'strikethrough', title: 'Durchgestrichen', label: '<span style="text-decoration: line-through;">S</span>', i18nTitleKey: 'textEditor.toolbar.strikeThrough' })}
+                ${renderToolbarButton({ action: 'textEditor:bold', hookAction: 'bold', title: 'Fett', label: 'B', i18nTitleKey: 'textEditor.toolbar.bold' })}
+                ${renderToolbarButton({ action: 'textEditor:italic', hookAction: 'italic', title: 'Kursiv', label: 'I', i18nTitleKey: 'textEditor.toolbar.italic' })}
+                ${renderToolbarButton({ className: 'text-editor-btn-underline', action: 'textEditor:underline', hookAction: 'underline', title: 'Unterstrichen', label: 'U', i18nTitleKey: 'textEditor.toolbar.underline' })}
+                ${renderToolbarButton({ action: 'textEditor:strikethrough', hookAction: 'strikethrough', title: 'Durchgestrichen', label: 'S', i18nTitleKey: 'textEditor.toolbar.strikeThrough' })}
             </div>
             <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
             <div class="text-editor-toolbar-group ${FRAMEWORK_TOOLBAR_SECTION_CLASS}">

@@ -15,6 +15,11 @@ import {
 } from '../../utils/viewport.js';
 import { getDockReservedBottom } from '../../ui/dock.js';
 
+interface SettingsWindowGlobal {
+    SettingsSystem?: { init: (el: HTMLElement) => void };
+    appI18n?: { applyTranslations: (container?: HTMLElement) => void };
+}
+
 /**
  * PURPOSE: Settings as BaseWindow subclass
  * Migrates legacy settings-modal dialog to modern multi-window architecture
@@ -80,13 +85,12 @@ export class SettingsWindow extends BaseWindow {
             this.contentElement.className = 'flex-1 overflow-hidden';
             const settingsContainer = document.createElement('div');
             settingsContainer.id = 'settings-container';
-            settingsContainer.dataset.settingsMount = 'settings-window';
             this.contentElement.innerHTML = '';
             this.contentElement.appendChild(settingsContainer);
+            const globalWindow = window as unknown as SettingsWindowGlobal;
 
             // Initialize SettingsSystem in the dedicated container
-            const SettingsSystem = (window as unknown as Record<string, unknown>)
-                ?.SettingsSystem as { init?: (el: HTMLElement) => void } | undefined;
+            const SettingsSystem = globalWindow.SettingsSystem;
             if (SettingsSystem && typeof SettingsSystem.init === 'function') {
                 try {
                     SettingsSystem.init(settingsContainer);
@@ -95,10 +99,8 @@ export class SettingsWindow extends BaseWindow {
                     logger.warn('APP', 'SettingsWindow: Error initializing SettingsSystem', err);
                 }
             }
-
             // Apply i18n translations to mounted content
-            const w = window as unknown as Record<string, any>;
-            w.appI18n?.applyTranslations?.(settingsContainer);
+            globalWindow.appI18n?.applyTranslations(settingsContainer);
         }
 
         this.attachInlineHeaderDrag(modal);

@@ -128,27 +128,27 @@ export class TextEditorDocument extends BaseTab {
         this.editor?.addEventListener('click', () => this._updateCursorPosition());
         this.editor?.addEventListener('keyup', () => this._updateCursorPosition());
 
+        const actions: Record<string, () => void> = {
+            clear: () => this.clearContent(),
+            open: () => this.openFile(),
+            save: () => this.saveFile(),
+            bold: () => this._wrapSelection('**', '**'),
+            italic: () => this._wrapSelection('*', '*'),
+            underline: () => this._wrapSelection('<u>', '</u>'),
+            find: () => this.toggleFindReplace(),
+            toggleWrap: () => this.toggleWrapMode(),
+            findNext: () => this.findNext(),
+            replaceOne: () => this.replaceOne(),
+            replaceAll: () => this.replaceAll(),
+            closeFindReplace: () => this.closeFindReplace(),
+        };
+
         this.element.addEventListener('click', event => {
             const target = event.target as HTMLElement | null;
             const actionHost = target?.closest<HTMLElement>('[data-text-editor-action]');
             const action = actionHost?.dataset.textEditorAction;
             if (!action) return;
-
-            const actions: Record<string, () => void> = {
-                clear: () => this.clearContent(),
-                open: () => this.openFile(),
-                save: () => this.saveFile(),
-                bold: () => this._wrapSelection('**', '**'),
-                italic: () => this._wrapSelection('*', '*'),
-                underline: () => this._wrapSelection('<u>', '</u>'),
-                find: () => this.toggleFindReplace(),
-                toggleWrap: () => this.toggleWrapMode(),
-                findNext: () => this.findNext(),
-                replaceOne: () => this.replaceOne(),
-                replaceAll: () => this.replaceAll(),
-                closeFindReplace: () => this.closeFindReplace(),
-            };
-
+            if (!(action in actions)) return;
             actions[action]?.();
         });
 
