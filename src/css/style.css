@@ -3280,6 +3280,13 @@ html.dark .window-tab:hover {
     outline-offset: 2px;
 }
 
+@media (forced-colors: active) {
+    .app-toolbar-button:focus-visible,
+    .app-toolbar-segment-button:focus-visible {
+        outline-color: Highlight;
+    }
+}
+
 .app-toolbar-button:active:not(:disabled),
 .app-toolbar-segment-button:active:not(:disabled) {
     transform: translateY(1px);
