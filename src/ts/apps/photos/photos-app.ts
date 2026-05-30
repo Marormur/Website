@@ -327,33 +327,33 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
         const topbar = document.createElement('header');
         topbar.className =
-            'photos-content-topbar finder-window-drag-zone flex-wrap md:flex-nowrap px-2 md:px-4 py-2 md:py-0';
+            'photos-content-topbar app-toolbar finder-window-drag-zone flex-wrap md:flex-nowrap px-2 md:px-4 py-2 md:py-0';
         topbar.innerHTML = `
-            <div class="finder-no-drag flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 text-gray-600 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-300">
-                <button type="button" class="photos-toolbar-icon-button" title="${t('common.back', 'Zurück')}" aria-label="${t('common.back', 'Zurück')}">←</button>
-                <button type="button" class="photos-toolbar-icon-button" title="${t('common.forward', 'Vorwärts')}" aria-label="${t('common.forward', 'Vorwärts')}">→</button>
+            <div class="photos-toolbar-cluster app-toolbar-section finder-no-drag flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 text-gray-600 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-300" role="group" aria-label="${t('photos.toolbar.navigation', 'Navigation')}">
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('common.back', 'Zurück')}" aria-label="${t('common.back', 'Zurück')}">←</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('common.forward', 'Vorwärts')}" aria-label="${t('common.forward', 'Vorwärts')}">→</button>
             </div>
 
-            <div class="finder-no-drag flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 text-gray-600 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-300">
-                <button id="photos-zoom-out" type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.zoomOut', 'Ansicht verkleinern')}" aria-label="${t('photos.toolbar.zoomOut', 'Ansicht verkleinern')}">−</button>
-                <button id="photos-zoom-in" type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.zoomIn', 'Ansicht vergrößern')}" aria-label="${t('photos.toolbar.zoomIn', 'Ansicht vergrößern')}">＋</button>
+            <div class="photos-toolbar-cluster app-toolbar-section finder-no-drag flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 text-gray-600 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-300" role="group" aria-label="${t('photos.toolbar.zoom', 'Zoom')}">
+                <button id="photos-zoom-out" type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('photos.toolbar.zoomOut', 'Ansicht verkleinern')}" aria-label="${t('photos.toolbar.zoomOut', 'Ansicht verkleinern')}">−</button>
+                <button id="photos-zoom-in" type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('photos.toolbar.zoomIn', 'Ansicht vergrößern')}" aria-label="${t('photos.toolbar.zoomIn', 'Ansicht vergrößern')}">＋</button>
             </div>
 
-            <div class="finder-no-drag mx-auto flex items-center rounded-full border border-gray-200/85 bg-white/90 p-1 text-sm shadow-sm backdrop-blur-md dark:border-gray-700/85 dark:bg-gray-900/85" role="group" aria-label="${t('photos.toolbar.viewMode', 'Ansichtsmodus')}">
-                <button type="button" data-photos-segment="years" data-active="true" class="photos-segment-button">${t('photos.segments.years', 'Jahre')}</button>
-                <button type="button" data-photos-segment="moments" class="photos-segment-button">${t('photos.segments.months', 'Monate')}</button>
-                <button type="button" data-photos-segment="albums" class="photos-segment-button">${t('photos.segments.allPhotos', 'Alle Fotos')}</button>
+            <div class="photos-toolbar-cluster app-toolbar-section finder-no-drag mx-auto flex items-center rounded-full border border-gray-200/85 bg-white/90 p-1 text-sm shadow-sm backdrop-blur-md dark:border-gray-700/85 dark:bg-gray-900/85" role="group" aria-label="${t('photos.toolbar.viewMode', 'Ansichtsmodus')}">
+                <button type="button" data-action="photos:viewYears" data-photos-segment="years" data-active="true" aria-pressed="true" class="photos-segment-button app-toolbar-segment-button macui-button">${t('photos.segments.years', 'Jahre')}</button>
+                <button type="button" data-action="photos:viewMoments" data-photos-segment="moments" data-active="false" aria-pressed="false" class="photos-segment-button app-toolbar-segment-button macui-button">${t('photos.segments.months', 'Monate')}</button>
+                <button type="button" data-action="photos:viewAlbums" data-photos-segment="albums" data-active="false" aria-pressed="false" class="photos-segment-button app-toolbar-segment-button macui-button">${t('photos.segments.allPhotos', 'Alle Fotos')}</button>
             </div>
 
-            <div class="finder-no-drag ml-auto flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/85">
-                <button type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.info', 'Informationen')}" aria-label="${t('photos.toolbar.info', 'Informationen')}">ⓘ</button>
-                <button type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.share', 'Teilen')}" aria-label="${t('photos.toolbar.share', 'Teilen')}">⇪</button>
-                <button type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.favorite', 'Favorit')}" aria-label="${t('photos.toolbar.favorite', 'Favorit')}">♡</button>
-                <button type="button" class="photos-toolbar-icon-button" title="${t('photos.toolbar.more', 'Mehr')}" aria-label="${t('photos.toolbar.more', 'Mehr')}">⋯</button>
-                <button id="photos-search-toggle" type="button" class="photos-toolbar-icon-button" aria-expanded="true" title="${t('photos.search.placeholder', 'Nach Autor suchen')}" aria-label="${t('photos.search.placeholder', 'Nach Autor suchen')}">⌕</button>
+            <div class="photos-toolbar-cluster app-toolbar-section app-toolbar-section--end finder-no-drag ml-auto flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/85" role="group" aria-label="${t('photos.toolbar.actions', 'Aktionen')}">
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('photos.toolbar.info', 'Informationen')}" aria-label="${t('photos.toolbar.info', 'Informationen')}">ⓘ</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('photos.toolbar.share', 'Teilen')}" aria-label="${t('photos.toolbar.share', 'Teilen')}">⇪</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('photos.toolbar.favorite', 'Favorit')}" aria-label="${t('photos.toolbar.favorite', 'Favorit')}">♡</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('photos.toolbar.more', 'Mehr')}" aria-label="${t('photos.toolbar.more', 'Mehr')}">⋯</button>
+                <button id="photos-search-toggle" type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" aria-controls="photos-search-input-wrap" aria-expanded="true" title="${t('photos.search.placeholder', 'Nach Autor suchen')}" aria-label="${t('photos.search.placeholder', 'Nach Autor suchen')}">⌕</button>
                 <div id="photos-search-input-wrap" class="relative flex items-center">
                     <input id="photos-search" type="search" placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}" class="h-8 w-36 md:w-44 rounded-full border border-gray-300 bg-white/90 pl-3 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-600 dark:bg-gray-900/80 dark:text-gray-200" />
-                    <button id="photos-search-clear" type="button" class="absolute right-2 hidden text-lg leading-none text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300" title="${t('photos.search.clear', 'Suche löschen')}">×</button>
+                    <button id="photos-search-clear" type="button" class="absolute right-2 hidden text-lg leading-none text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300" title="${t('photos.search.clear', 'Suche löschen')}" aria-label="${t('photos.search.clear', 'Suche löschen')}">×</button>
                 </div>
             </div>
         `;
@@ -578,6 +578,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
                 elements.segmentButtons.forEach(b => {
                     const isSegActive = b.getAttribute('data-photos-segment') === segment;
                     b.setAttribute('data-active', String(isSegActive));
+                    b.setAttribute('aria-pressed', String(isSegActive));
                 });
 
                 renderGallery();
@@ -586,8 +587,12 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
 
         // Initialize first segment button as active
         if (elements.segmentButtons.length > 0) {
-            elements.segmentButtons.forEach(button => button.setAttribute('data-active', 'false'));
+            elements.segmentButtons.forEach(button => {
+                button.setAttribute('data-active', 'false');
+                button.setAttribute('aria-pressed', 'false');
+            });
             elements.segmentButtons[0]?.setAttribute('data-active', 'true');
+            elements.segmentButtons[0]?.setAttribute('aria-pressed', 'true');
         }
     }
 
@@ -675,7 +680,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             sidebarComponent = new Sidebar({
                 groups: buildSidebarGroups(),
                 activeId: state.activeFilter,
-                onItemClick: (id) => {
+                onItemClick: id => {
                     const filterIds: SidebarFilter[] = [
                         'all',
                         'favorites',
