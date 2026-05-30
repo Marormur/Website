@@ -65,6 +65,12 @@ interface PhotosElements {
     searchClear: HTMLButtonElement | null;
     zoomOutButton: HTMLButtonElement | null;
     zoomInButton: HTMLButtonElement | null;
+    toolbarBackButton: HTMLButtonElement | null;
+    toolbarForwardButton: HTMLButtonElement | null;
+    toolbarInfoButton: HTMLButtonElement | null;
+    toolbarShareButton: HTMLButtonElement | null;
+    toolbarFavoriteButton: HTMLButtonElement | null;
+    toolbarMoreButton: HTMLButtonElement | null;
     tabButtons: Record<PhotoTab, HTMLButtonElement | null>;
     segmentButtons: HTMLButtonElement[];
     overlay: HTMLElement | null;
@@ -198,6 +204,12 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         searchClear: null,
         zoomOutButton: null,
         zoomInButton: null,
+        toolbarBackButton: null,
+        toolbarForwardButton: null,
+        toolbarInfoButton: null,
+        toolbarShareButton: null,
+        toolbarFavoriteButton: null,
+        toolbarMoreButton: null,
         tabButtons: {
             photos: null,
             albums: null,
@@ -329,9 +341,31 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         topbar.className =
             'photos-content-topbar app-toolbar finder-window-drag-zone flex-wrap md:flex-nowrap px-2 md:px-4 py-2 md:py-0';
         topbar.innerHTML = `
+            <div class="photos-toolbar-cluster app-toolbar-section finder-no-drag md:hidden" aria-label="${t('photos.window.controls', 'Fenstersteuerung')}">
+                ${renderTrafficLightControlsHTML({
+                    containerClassName: 'traffic-light-controls',
+                    defaults: {
+                        tag: 'button',
+                        noDrag: true,
+                    },
+                    close: {
+                        title: t('common.close', 'Schließen'),
+                        dataAction: 'window-close',
+                    },
+                    minimize: {
+                        title: t('photos.window.minimize', 'Minimieren'),
+                        dataAction: 'window-minimize',
+                    },
+                    maximize: {
+                        title: t('photos.window.maximize', 'Füllen'),
+                        dataAction: 'window-maximize',
+                    },
+                })}
+            </div>
+
             <div class="photos-toolbar-cluster app-toolbar-section finder-no-drag flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 text-gray-600 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-300" role="group" aria-label="${t('photos.toolbar.navigation', 'Navigation')}">
-                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('common.back', 'Back')}" aria-label="${t('common.back', 'Back')}">←</button>
-                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('common.forward', 'Forward')}" aria-label="${t('common.forward', 'Forward')}">→</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" data-photos-toolbar-action="back" title="${t('common.back', 'Back')}" aria-label="${t('common.back', 'Back')}">←</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" data-photos-toolbar-action="forward" title="${t('common.forward', 'Forward')}" aria-label="${t('common.forward', 'Forward')}">→</button>
             </div>
 
             <div class="photos-toolbar-cluster app-toolbar-section finder-no-drag flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 text-gray-600 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-300" role="group" aria-label="${t('photos.toolbar.zoom', 'Zoom')}">
@@ -346,10 +380,10 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             </div>
 
             <div class="photos-toolbar-cluster app-toolbar-section app-toolbar-section--end finder-no-drag ml-auto flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/85" role="group" aria-label="${t('photos.toolbar.actions', 'Aktionen')}">
-                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('photos.toolbar.info', 'Informationen')}" aria-label="${t('photos.toolbar.info', 'Informationen')}">ⓘ</button>
-                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('photos.toolbar.share', 'Teilen')}" aria-label="${t('photos.toolbar.share', 'Teilen')}">⇪</button>
-                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('photos.toolbar.favorite', 'Favorit')}" aria-label="${t('photos.toolbar.favorite', 'Favorit')}">♡</button>
-                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('photos.toolbar.more', 'Mehr')}" aria-label="${t('photos.toolbar.more', 'Mehr')}">⋯</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" data-photos-toolbar-action="info" title="${t('photos.toolbar.info', 'Informationen')}" aria-label="${t('photos.toolbar.info', 'Informationen')}">ⓘ</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" data-photos-toolbar-action="share" title="${t('photos.toolbar.share', 'Teilen')}" aria-label="${t('photos.toolbar.share', 'Teilen')}">⇪</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" data-photos-toolbar-action="favorite" title="${t('photos.toolbar.favorite', 'Favorit')}" aria-label="${t('photos.toolbar.favorite', 'Favorit')}">♡</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" data-photos-toolbar-action="more" title="${t('photos.toolbar.more', 'Mehr')}" aria-label="${t('photos.toolbar.more', 'Mehr')}">⋯</button>
                 <button id="photos-search-toggle" type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" aria-controls="photos-search-input-wrap" aria-expanded="true" title="${t('photos.search.placeholder', 'Nach Autor suchen')}" aria-label="${t('photos.search.placeholder', 'Nach Autor suchen')}">⌕</button>
                 <div id="photos-search-input-wrap" class="relative flex items-center">
                     <input id="photos-search" type="search" placeholder="${t('photos.search.placeholder', 'Nach Autor suchen')}" class="h-8 w-36 md:w-44 rounded-full border border-gray-300 bg-white/90 pl-3 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-600 dark:bg-gray-900/80 dark:text-gray-200" />
@@ -462,6 +496,24 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         ) as HTMLButtonElement | null;
         elements.zoomInButton = elements.container.querySelector(
             '#photos-zoom-in'
+        ) as HTMLButtonElement | null;
+        elements.toolbarBackButton = elements.container.querySelector(
+            '[data-photos-toolbar-action="back"]'
+        ) as HTMLButtonElement | null;
+        elements.toolbarForwardButton = elements.container.querySelector(
+            '[data-photos-toolbar-action="forward"]'
+        ) as HTMLButtonElement | null;
+        elements.toolbarInfoButton = elements.container.querySelector(
+            '[data-photos-toolbar-action="info"]'
+        ) as HTMLButtonElement | null;
+        elements.toolbarShareButton = elements.container.querySelector(
+            '[data-photos-toolbar-action="share"]'
+        ) as HTMLButtonElement | null;
+        elements.toolbarFavoriteButton = elements.container.querySelector(
+            '[data-photos-toolbar-action="favorite"]'
+        ) as HTMLButtonElement | null;
+        elements.toolbarMoreButton = elements.container.querySelector(
+            '[data-photos-toolbar-action="more"]'
         ) as HTMLButtonElement | null;
         // Cache the sidebar body mount target for the Sidebar component
         sidebarBodyEl =
@@ -746,6 +798,88 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         updateZoomButtons();
     }
 
+    function getCurrentToolbarPhoto(): AnyPhotoItem | null {
+        if (state.overlayVisible) {
+            return getCurrentDetailPhoto();
+        }
+        if (state.selectedIndex >= 0 && state.selectedIndex < state.filteredPhotos.length) {
+            return state.filteredPhotos[state.selectedIndex] || null;
+        }
+        return state.filteredPhotos[0] || null;
+    }
+
+    function updateToolbarActionButtons(): void {
+        const hasSelection = !!getCurrentToolbarPhoto();
+        const canStepBackward = state.overlayVisible && state.selectedIndex > 0;
+        const canStepForward =
+            state.overlayVisible && state.selectedIndex < state.filteredPhotos.length - 1;
+
+        if (elements.toolbarBackButton) {
+            elements.toolbarBackButton.disabled = !canStepBackward;
+            elements.toolbarBackButton.setAttribute('aria-disabled', String(!canStepBackward));
+        }
+        if (elements.toolbarForwardButton) {
+            elements.toolbarForwardButton.disabled = !canStepForward;
+            elements.toolbarForwardButton.setAttribute('aria-disabled', String(!canStepForward));
+        }
+        if (elements.toolbarShareButton) {
+            elements.toolbarShareButton.disabled = !hasSelection;
+            elements.toolbarShareButton.setAttribute('aria-disabled', String(!hasSelection));
+        }
+        if (elements.toolbarFavoriteButton) {
+            elements.toolbarFavoriteButton.disabled = !hasSelection;
+            elements.toolbarFavoriteButton.setAttribute('aria-disabled', String(!hasSelection));
+        }
+    }
+
+    function wireToolbarActions(): void {
+        elements.toolbarBackButton?.addEventListener('click', () => {
+            if (!state.overlayVisible) return;
+            moveSelection(-1);
+        });
+
+        elements.toolbarForwardButton?.addEventListener('click', () => {
+            if (!state.overlayVisible) return;
+            moveSelection(1);
+        });
+
+        elements.toolbarInfoButton?.addEventListener('click', () => {
+            const active = getCurrentToolbarPhoto();
+            if (!active) return;
+            const nextIndex = state.filteredIndexMap.get(active.id);
+            if (typeof nextIndex === 'number') {
+                openDetail(nextIndex);
+            }
+        });
+
+        elements.toolbarShareButton?.addEventListener('click', () => {
+            const active = getCurrentToolbarPhoto();
+            if (!active) return;
+            const url = active.url || active.downloadUrl;
+            if (url) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+        });
+
+        elements.toolbarFavoriteButton?.addEventListener('click', () => {
+            const active = getCurrentToolbarPhoto();
+            if (!active) return;
+            if (!state.overlayVisible) {
+                const nextIndex = state.filteredIndexMap.get(active.id);
+                if (typeof nextIndex === 'number') {
+                    openDetail(nextIndex);
+                }
+            }
+            toggleFavorite();
+        });
+
+        elements.toolbarMoreButton?.addEventListener('click', () => {
+            void fetchPhotos({ refresh: true });
+        });
+
+        updateToolbarActionButtons();
+    }
+
     /**
      * Fallback-Schwellen fuer kompakte Suche. Zusaetzlich wird echte Ueberlappung gemessen.
      * Damit kollabiert die Suche auch dann, wenn UI-Elemente sich optisch in die Quere kommen.
@@ -971,6 +1105,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             state.selectedIndex = index;
             state.activePhotoId = photoId;
             setActiveCard(photoId);
+            updateToolbarActionButtons();
         });
 
         elements.gallery.addEventListener('dblclick', event => {
@@ -1261,6 +1396,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         renderGallery();
         updateEmptyState();
         updatePhotoCount();
+        updateToolbarActionButtons();
         updateSidebarComponent();
         if (previousActiveId) {
             const newIndex = state.filteredIndexMap.get(previousActiveId);
@@ -1460,6 +1596,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         elements.container?.querySelectorAll<HTMLElement>('.resizer').forEach(r => {
             r.style.pointerEvents = 'none';
         });
+        updateToolbarActionButtons();
     }
 
     function closeDetail(): void {
@@ -1471,6 +1608,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         elements.container?.querySelectorAll<HTMLElement>('.resizer').forEach(r => {
             r.style.pointerEvents = '';
         });
+        updateToolbarActionButtons();
     }
 
     function updateDetail(): void {
@@ -1481,6 +1619,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         updateNavigationButtons();
         updateCounter();
         setActiveCard(current.id);
+        updateToolbarActionButtons();
     }
 
     function getCurrentDetailPhoto(): AnyPhotoItem | null {
@@ -1635,6 +1774,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         wireSearchToggle();
         wireSearchResize();
         wireGallery();
+        wireToolbarActions();
         wireDetail();
         globalWindow.appI18n?.applyTranslations?.(elements.container ?? undefined);
         void fetchPhotos();
@@ -1695,6 +1835,7 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         wireSearchToggle();
         wireSearchResize();
         wireGallery();
+        wireToolbarActions();
         wireDetail();
         globalWindow.appI18n?.applyTranslations?.(elements.container ?? undefined);
         void fetchPhotos();

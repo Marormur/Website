@@ -2,17 +2,22 @@ const { test, expect } = require('@playwright/test');
 const { waitForAppReady } = require('../utils');
 
 function getPreviewWindow(page) {
-    return page.locator('.modal.multi-window.preview-window-shell[id^="window-preview-"]').first();
+    return page.locator('.modal.multi-window.preview-window-shell[id^="window-preview-"]').last();
 }
 
 function getCalendarWindow(page) {
-    return page
-        .locator('.modal.multi-window.calendar-window-shell[id^="window-calendar-"]')
-        .first();
+    return page.locator('.modal.multi-window.calendar-window-shell[id^="window-calendar-"]').last();
 }
 
 function getPhotosWindow(page) {
-    return page.locator('.modal.multi-window.photos-window-shell[id^="window-photos-"]').first();
+    return page.locator('.modal.multi-window.photos-window-shell[id^="window-photos-"]').last();
+}
+
+async function activateWindow(windowLocator) {
+    const overlay = windowLocator.locator('.window-focus-overlay');
+    if (await overlay.isVisible()) {
+        await overlay.click();
+    }
 }
 
 test.describe('Productive app toolbars', () => {
@@ -36,6 +41,10 @@ test.describe('Productive app toolbars', () => {
 
         await expect(previewWindow).toBeVisible();
         await expect(calendarWindow).toBeVisible();
+        await expect(calendarWindow.locator('[data-calendar-view="month"]')).toHaveAttribute(
+            'aria-pressed',
+            'true'
+        );
         await expect(photosWindow).toBeVisible();
 
         await expect(previewWindow.locator('.preview-content-topbar.app-toolbar')).toBeVisible();
@@ -84,16 +93,16 @@ test.describe('Productive app toolbars', () => {
     test('Calendar and Photos segmented controls keep pressed state in sync', async ({ page }) => {
         await page.evaluate(() => {
             window.CalendarWindow?.focusOrCreate?.();
-            window.PhotosWindow?.focusOrCreate?.();
         });
 
         const calendarWindow = getCalendarWindow(page);
-        const photosWindow = getPhotosWindow(page);
 
         await expect(calendarWindow).toBeVisible();
-        await expect(photosWindow).toBeVisible();
 
-        await calendarWindow.locator('[data-calendar-view="week"]').click();
+        await activateWindow(calendarWindow);
+        await calendarWindow.locator('[data-calendar-view="week"]').evaluate(element => {
+            element.click();
+        });
         await expect(calendarWindow.locator('[data-calendar-view="week"]')).toHaveAttribute(
             'aria-pressed',
             'true'
@@ -103,7 +112,20 @@ test.describe('Productive app toolbars', () => {
             'false'
         );
 
-        await photosWindow.locator('[data-photos-segment="albums"]').click();
+        await page.evaluate(() => {
+            window.PhotosWindow?.focusOrCreate?.();
+        });
+        const photosWindow = getPhotosWindow(page);
+        await expect(photosWindow).toBeVisible();
+        await expect(photosWindow.locator('[data-photos-segment="years"]')).toHaveAttribute(
+            'aria-pressed',
+            'true'
+        );
+
+        await activateWindow(photosWindow);
+        await photosWindow.locator('[data-photos-segment="albums"]').evaluate(element => {
+            element.click();
+        });
         await expect(photosWindow.locator('[data-photos-segment="albums"]')).toHaveAttribute(
             'aria-pressed',
             'true'

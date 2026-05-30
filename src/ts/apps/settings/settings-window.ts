@@ -43,6 +43,8 @@ interface SettingsWindowGlobal {
  *            focusOrCreate pattern). Settings state syncs to persisted preferences.
  */
 export class SettingsWindow extends BaseWindow {
+    private inlineHeaderDragAbortController: AbortController | null = null;
+
     constructor(config?: Partial<WindowConfig>) {
         super({
             type: 'settings',
@@ -122,6 +124,9 @@ export class SettingsWindow extends BaseWindow {
     }
 
     override destroy(): void {
+        this.inlineHeaderDragAbortController?.abort();
+        this.inlineHeaderDragAbortController = null;
+
         const globalWindow = window as unknown as SettingsWindowGlobal;
         const ownedSettingsContainer =
             this.contentElement?.querySelector<HTMLElement>('#settings-container');
@@ -143,6 +148,11 @@ export class SettingsWindow extends BaseWindow {
      * a custom drag hookup after removing BaseWindow's default titlebar.
      */
     private attachInlineHeaderDrag(windowEl: HTMLElement): void {
+        // Ensure we never accumulate global drag listeners across reopen/reinit cycles.
+        this.inlineHeaderDragAbortController?.abort();
+        this.inlineHeaderDragAbortController = new AbortController();
+        const listenerOptions = { signal: this.inlineHeaderDragAbortController.signal };
+
         let isDragging = false;
         let offsetX = 0;
         let offsetY = 0;
@@ -421,50 +431,70 @@ export class SettingsWindow extends BaseWindow {
             }
         };
 
-        windowEl.addEventListener('pointerdown', beginDrag);
-        windowEl.addEventListener('mousedown', beginDrag);
+        windowEl.addEventListener('pointerdown', beginDrag, listenerOptions);
+        windowEl.addEventListener('mousedown', beginDrag, listenerOptions);
 
-        window.addEventListener('pointermove', event => {
-            if (!isDragging) return;
-            if (activePointerId !== null && event.pointerId !== activePointerId) return;
-            updateDrag(event.clientX, event.clientY);
-        });
+        window.addEventListener(
+            'pointermove',
+            event => {
+                if (!isDragging) return;
+                if (activePointerId !== null && event.pointerId !== activePointerId) return;
+                updateDrag(event.clientX, event.clientY);
+            },
+            listenerOptions
+        );
 
-        window.addEventListener('mousemove', event => {
-            if (!isDragging || activePointerId !== null) return;
-            updateDrag(event.clientX, event.clientY);
-        });
+        window.addEventListener(
+            'mousemove',
+            event => {
+                if (!isDragging || activePointerId !== null) return;
+                updateDrag(event.clientX, event.clientY);
+            },
+            listenerOptions
+        );
 
-        window.addEventListener('pointerup', event => {
-            if (activePointerId !== null && event.pointerId !== activePointerId) return;
-            endDrag();
-        });
-        window.addEventListener('pointercancel', endDrag);
-        window.addEventListener('mouseup', () => {
-            if (activePointerId === null) endDrag();
-        });
-        window.addEventListener('blur', endDrag);
+        window.addEventListener(
+            'pointerup',
+            event => {
+                if (activePointerId !== null && event.pointerId !== activePointerId) return;
+                endDrag();
+            },
+            listenerOptions
+        );
+        window.addEventListener('pointercancel', endDrag, listenerOptions);
+        window.addEventListener(
+            'mouseup',
+            () => {
+                if (activePointerId === null) endDrag();
+            },
+            listenerOptions
+        );
+        window.addEventListener('blur', endDrag, listenerOptions);
 
-        windowEl.addEventListener('dblclick', event => {
-            if (Date.now() - lastHandledHeaderDoubleClickAt < 400) {
-                return;
-            }
+        windowEl.addEventListener(
+            'dblclick',
+            event => {
+                if (Date.now() - lastHandledHeaderDoubleClickAt < 400) {
+                    return;
+                }
 
-            const targetElement = getTargetElement(event);
-            const header = targetElement?.closest('.draggable-header') as HTMLElement | null;
-            if (!header || !windowEl.contains(header)) return;
+                const targetElement = getTargetElement(event);
+                const header = targetElement?.closest('.draggable-header') as HTMLElement | null;
+                if (!header || !windowEl.contains(header)) return;
 
-            if (
-                targetElement?.closest(
-                    'button, a, input, select, textarea, [role="button"], [data-action], [data-dialog-action]'
-                )
-            ) {
-                return;
-            }
+                if (
+                    targetElement?.closest(
+                        'button, a, input, select, textarea, [role="button"], [data-action], [data-dialog-action]'
+                    )
+                ) {
+                    return;
+                }
 
-            executeHeaderDoubleClickAction();
-            event.preventDefault();
-        });
+                executeHeaderDoubleClickAction();
+                event.preventDefault();
+            },
+            listenerOptions
+        );
     }
 
     /**
