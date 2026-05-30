@@ -16,7 +16,11 @@ import {
 import { getDockReservedBottom } from '../../ui/dock.js';
 
 interface SettingsWindowGlobal {
-    SettingsSystem?: { init: (el: HTMLElement) => void; destroy?: () => void };
+    SettingsSystem?: {
+        init: (el: HTMLElement) => void;
+        destroy?: () => void;
+        container?: HTMLElement | null;
+    };
     appI18n?: { applyTranslations: (container?: HTMLElement) => void };
 }
 
@@ -94,7 +98,12 @@ export class SettingsWindow extends BaseWindow {
             const SettingsSystem = globalWindow.SettingsSystem;
             if (SettingsSystem && typeof SettingsSystem.init === 'function') {
                 try {
-                    SettingsSystem.destroy?.();
+                    if (
+                        SettingsSystem.container &&
+                        SettingsSystem.container !== settingsContainer
+                    ) {
+                        SettingsSystem.destroy?.();
+                    }
                     SettingsSystem.init(settingsContainer);
                     logger.debug('APP', 'SettingsWindow: SettingsSystem initialized');
                 } catch (err) {

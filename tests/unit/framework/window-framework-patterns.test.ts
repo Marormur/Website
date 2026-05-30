@@ -31,12 +31,12 @@ describe('window framework patterns', () => {
     it('forwards custom attrs through framework buttons', () => {
         const button = createElement(
             new Button({
-                label: h('span', { 'data-i18n': 'modals.about.moreButton' }, 'Mehr Infos …'),
+                label: h('span', { 'data-i18n': 'modals.about.moreButton' }, 'More details…'),
                 variant: 'ghost',
                 className: 'about-more-button',
                 'data-action': 'openWindow',
                 'data-window-id': 'settings-modal',
-                'aria-label': 'Mehr Infos',
+                'aria-label': 'More details',
             }).render()
         ) as HTMLButtonElement;
 
@@ -44,9 +44,9 @@ describe('window framework patterns', () => {
         expect(button.className).toContain('about-more-button');
         expect(button.getAttribute('data-action')).toBe('openWindow');
         expect(button.getAttribute('data-window-id')).toBe('settings-modal');
-        expect(button.getAttribute('aria-label')).toBe('Mehr Infos');
+        expect(button.getAttribute('aria-label')).toBe('More details');
         expect(button.querySelector('[data-i18n="modals.about.moreButton"]')?.textContent).toBe(
-            'Mehr Infos …'
+            'More details…'
         );
     });
 
