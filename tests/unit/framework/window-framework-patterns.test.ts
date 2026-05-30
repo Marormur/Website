@@ -73,13 +73,13 @@ describe('window framework patterns', () => {
     });
 
     it('only destroys the active settings mount owned by the window', () => {
-        const ownedContainer = document.createElement('div');
-        ownedContainer.id = 'settings-container';
+        const windowContainer = document.createElement('div');
+        windowContainer.id = 'settings-container';
         const contentElement = document.createElement('div');
-        contentElement.appendChild(ownedContainer);
+        contentElement.appendChild(windowContainer);
 
-        const otherContainer = document.createElement('div');
-        otherContainer.id = 'settings-container';
+        const singletonContainer = document.createElement('div');
+        singletonContainer.id = 'settings-container';
         const destroy = vi.fn();
         const baseDestroy = vi.spyOn(BaseWindow.prototype, 'destroy').mockImplementation(() => {});
 
@@ -88,7 +88,7 @@ describe('window framework patterns', () => {
                 SettingsSystem?: { container?: HTMLElement | null; destroy?: () => void };
             }
         ).SettingsSystem = {
-            container: otherContainer,
+            container: singletonContainer,
             destroy,
         };
 
