@@ -1,9 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement, h } from '../../../src/ts/core/vdom.ts';
 import { buildAboutWindowContentVNode } from '../../../src/ts/apps/about/about-window.ts';
+import { SettingsWindow } from '../../../src/ts/apps/settings/settings-window.ts';
 import { Button } from '../../../src/ts/framework/controls/button.ts';
 import { AppShell } from '../../../src/ts/framework/layout/app-shell.ts';
 import { Toolbar } from '../../../src/ts/framework/navigation/toolbar.ts';
+import { BaseWindow } from '../../../src/ts/windows/base-window.ts';
+
+afterEach(() => {
+    vi.restoreAllMocks();
+    delete (window as Window & { SettingsSystem?: unknown }).SettingsSystem;
+});
 
 describe('window framework patterns', () => {
     it('keeps generic toolbars free of finder-specific classes by default', () => {
@@ -63,5 +70,55 @@ describe('window framework patterns', () => {
                 'data-window-id'
             )
         ).toBe('settings-modal');
+    });
+
+    it('only destroys the active settings mount owned by the window', () => {
+        const ownedContainer = document.createElement('div');
+        ownedContainer.id = 'settings-container';
+        const contentElement = document.createElement('div');
+        contentElement.appendChild(ownedContainer);
+
+        const otherContainer = document.createElement('div');
+        otherContainer.id = 'settings-container';
+        const destroy = vi.fn();
+        const baseDestroy = vi.spyOn(BaseWindow.prototype, 'destroy').mockImplementation(() => {});
+
+        (
+            window as Window & {
+                SettingsSystem?: { container?: HTMLElement | null; destroy?: () => void };
+            }
+        ).SettingsSystem = {
+            container: otherContainer,
+            destroy,
+        };
+
+        SettingsWindow.prototype.destroy.call({ contentElement } as SettingsWindow);
+
+        expect(destroy).not.toHaveBeenCalled();
+        expect(baseDestroy).toHaveBeenCalledOnce();
+    });
+
+    it('destroys the settings system when the window owns the active mount', () => {
+        const ownedContainer = document.createElement('div');
+        ownedContainer.id = 'settings-container';
+        const contentElement = document.createElement('div');
+        contentElement.appendChild(ownedContainer);
+
+        const destroy = vi.fn();
+
+        (
+            window as Window & {
+                SettingsSystem?: { container?: HTMLElement | null; destroy?: () => void };
+            }
+        ).SettingsSystem = {
+            container: ownedContainer,
+            destroy,
+        };
+
+        vi.spyOn(BaseWindow.prototype, 'destroy').mockImplementation(() => {});
+
+        SettingsWindow.prototype.destroy.call({ contentElement } as SettingsWindow);
+
+        expect(destroy).toHaveBeenCalledOnce();
     });
 });

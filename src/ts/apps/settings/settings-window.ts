@@ -123,8 +123,15 @@ export class SettingsWindow extends BaseWindow {
 
     override destroy(): void {
         const globalWindow = window as unknown as SettingsWindowGlobal;
+        const ownedSettingsContainer =
+            this.contentElement?.querySelector<HTMLElement>('#settings-container');
         try {
-            globalWindow.SettingsSystem?.destroy?.();
+            if (
+                ownedSettingsContainer &&
+                globalWindow.SettingsSystem?.container === ownedSettingsContainer
+            ) {
+                globalWindow.SettingsSystem.destroy?.();
+            }
         } catch (err) {
             logger.warn('APP', 'SettingsWindow: Error destroying SettingsSystem', err);
         }
