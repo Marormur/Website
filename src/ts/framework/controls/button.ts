@@ -3,9 +3,10 @@ import { BaseComponent } from '../core/component.js';
 import { ComponentConfig } from '../core/types.js';
 
 export interface ButtonProps extends ComponentConfig {
-    label: string;
+    label: VNode | string;
     variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
     size?: 'small' | 'medium' | 'large';
+    type?: 'button' | 'submit' | 'reset';
     icon?: string;
     iconPosition?: 'left' | 'right';
     disabled?: boolean;
@@ -35,12 +36,15 @@ export class Button extends BaseComponent<ButtonProps> {
             label,
             variant = 'primary',
             size = 'medium',
+            type = 'button',
             icon,
             iconPosition = 'left',
             disabled = false,
             loading = false,
             fullWidth = false,
             onClick,
+            className: customClassName = '',
+            ...passthroughProps
         } = this.props;
 
         const baseClasses =
@@ -66,12 +70,14 @@ export class Button extends BaseComponent<ButtonProps> {
         const widthClasses = fullWidth ? 'w-full' : '';
 
         const className =
-            `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} ${widthClasses}`.trim();
+            `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} ${widthClasses} ${customClassName}`.trim();
 
         return h(
             'button',
             {
+                ...passthroughProps,
                 className,
+                type,
                 disabled: disabled || loading,
                 onclick: !disabled && !loading ? onClick : undefined,
                 'data-variant': variant,
@@ -79,7 +85,7 @@ export class Button extends BaseComponent<ButtonProps> {
             },
             loading ? h('span', { className: 'animate-spin' }, '⟳') : '',
             icon && iconPosition === 'left' ? h('span', { className: 'button-icon' }, icon) : '',
-            h('span', {}, label),
+            typeof label === 'string' ? h('span', {}, label) : label,
             icon && iconPosition === 'right' ? h('span', { className: 'button-icon' }, icon) : ''
         );
     }

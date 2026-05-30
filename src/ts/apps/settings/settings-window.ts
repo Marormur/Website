@@ -16,7 +16,7 @@ import {
 import { getDockReservedBottom } from '../../ui/dock.js';
 
 interface SettingsWindowGlobal {
-    SettingsSystem?: { init: (el: HTMLElement) => void };
+    SettingsSystem?: { init: (el: HTMLElement) => void; destroy?: () => void };
     appI18n?: { applyTranslations: (container?: HTMLElement) => void };
 }
 
@@ -84,7 +84,7 @@ export class SettingsWindow extends BaseWindow {
         if (this.contentElement) {
             this.contentElement.className = 'flex-1 overflow-hidden';
             const settingsContainer = document.createElement('div');
-            settingsContainer.id = 'settings-container';
+            settingsContainer.id = `${this.id}-settings-container`;
             settingsContainer.className = 'flex-1 overflow-hidden';
             this.contentElement.innerHTML = '';
             this.contentElement.appendChild(settingsContainer);
@@ -94,6 +94,7 @@ export class SettingsWindow extends BaseWindow {
             const SettingsSystem = globalWindow.SettingsSystem;
             if (SettingsSystem && typeof SettingsSystem.init === 'function') {
                 try {
+                    SettingsSystem.destroy?.();
                     SettingsSystem.init(settingsContainer);
                     logger.debug('APP', 'SettingsWindow: SettingsSystem initialized');
                 } catch (err) {
@@ -107,6 +108,16 @@ export class SettingsWindow extends BaseWindow {
         this.attachInlineHeaderDrag(modal);
 
         return modal;
+    }
+
+    override destroy(): void {
+        const globalWindow = window as unknown as SettingsWindowGlobal;
+        try {
+            globalWindow.SettingsSystem?.destroy?.();
+        } catch (err) {
+            logger.warn('APP', 'SettingsWindow: Error destroying SettingsSystem', err);
+        }
+        super.destroy();
     }
 
     /**

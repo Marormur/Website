@@ -93,6 +93,12 @@ Vor groesseren Merges:
 npm run check:full
 ```
 
+## UI-Framework-Migration 🧩
+
+- Neue oder migrierte Fenster sollten ihren Inhalt direkt aus `src/ts/` rendern statt Legacy-Markup aus `index.html` zu klonen.
+- Bevorzuge die Framework-Bausteine fuer gemeinsame Patterns: `AppShell` fuer Layouts, `Toolbar` fuer generische Toolbars, `Button` fuer Aktionsbuttons sowie die Traffic-Light-/Inset-Sidebar-Helper fuer Window-Chrome.
+- Offene Restschuld fuer Folgearbeiten: `src/ts/services/settings.ts` rendert noch groessere Bereiche als HTML-Strings. Weitere Migrationen sollten diese Render-Pfade schrittweise in direkte Komponentenstruktur ueberfuehren.
+
 ## Quick Reference
 
 ```bash
