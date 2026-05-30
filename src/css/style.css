@@ -3241,6 +3241,28 @@ html.dark .window-tab:hover {
     z-index: 1;
 }
 
+.app-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.app-toolbar-section {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.app-toolbar-section--grow {
+    flex: 1 1 auto;
+}
+
+.app-toolbar-section--end {
+    margin-left: auto;
+    justify-content: flex-end;
+}
+
 .text-editor-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -5401,7 +5423,9 @@ html.dark :is(#about-modal, .about-window-shell) .about-copyright {
  * Once JS calls syncPinnableDockItems() it adds .dock-mobile-synced, at which
  * point JS fully controls which items exist in the DOM.
  */
-:root[data-ui-mode='mobile'] #dock:not(.dock-mobile-synced) .dock-item[data-window-id='settings-modal'] {
+:root[data-ui-mode='mobile']
+    #dock:not(.dock-mobile-synced)
+    .dock-item[data-window-id='settings-modal'] {
     display: none;
 }
 
