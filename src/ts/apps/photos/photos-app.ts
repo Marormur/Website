@@ -330,8 +330,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             'photos-content-topbar app-toolbar finder-window-drag-zone flex-wrap md:flex-nowrap px-2 md:px-4 py-2 md:py-0';
         topbar.innerHTML = `
             <div class="photos-toolbar-cluster app-toolbar-section finder-no-drag flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 text-gray-600 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-300" role="group" aria-label="${t('photos.toolbar.navigation', 'Navigation')}">
-                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('common.back', 'Zurück')}" aria-label="${t('common.back', 'Zurück')}">←</button>
-                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('common.forward', 'Vorwärts')}" aria-label="${t('common.forward', 'Vorwärts')}">→</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('common.back', 'Back')}" aria-label="${t('common.back', 'Back')}">←</button>
+                <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" title="${t('common.forward', 'Forward')}" aria-label="${t('common.forward', 'Forward')}">→</button>
             </div>
 
             <div class="photos-toolbar-cluster app-toolbar-section finder-no-drag flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 text-gray-600 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-300" role="group" aria-label="${t('photos.toolbar.zoom', 'Zoom')}">
@@ -340,9 +340,9 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
             </div>
 
             <div class="photos-toolbar-cluster app-toolbar-section finder-no-drag mx-auto flex items-center rounded-full border border-gray-200/85 bg-white/90 p-1 text-sm shadow-sm backdrop-blur-md dark:border-gray-700/85 dark:bg-gray-900/85" role="group" aria-label="${t('photos.toolbar.viewMode', 'Ansichtsmodus')}">
-                <button type="button" data-action="photos:viewYears" data-photos-segment="years" data-active="true" aria-pressed="true" class="photos-segment-button app-toolbar-segment-button macui-button">${t('photos.segments.years', 'Jahre')}</button>
-                <button type="button" data-action="photos:viewMoments" data-photos-segment="moments" data-active="false" aria-pressed="false" class="photos-segment-button app-toolbar-segment-button macui-button">${t('photos.segments.months', 'Monate')}</button>
-                <button type="button" data-action="photos:viewAlbums" data-photos-segment="albums" data-active="false" aria-pressed="false" class="photos-segment-button app-toolbar-segment-button macui-button">${t('photos.segments.allPhotos', 'Alle Fotos')}</button>
+                <button type="button" data-action="photos:viewYears" data-photos-segment="years" data-active="true" aria-pressed="true" class="photos-segment-button app-toolbar-segment-button macui-button">${t('photos.segments.years', 'Years')}</button>
+                <button type="button" data-action="photos:viewMoments" data-photos-segment="moments" data-active="false" aria-pressed="false" class="photos-segment-button app-toolbar-segment-button macui-button">${t('photos.segments.months', 'Months')}</button>
+                <button type="button" data-action="photos:viewAlbums" data-photos-segment="albums" data-active="false" aria-pressed="false" class="photos-segment-button app-toolbar-segment-button macui-button">${t('photos.segments.allPhotos', 'All photos')}</button>
             </div>
 
             <div class="photos-toolbar-cluster app-toolbar-section app-toolbar-section--end finder-no-drag ml-auto flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/85" role="group" aria-label="${t('photos.toolbar.actions', 'Aktionen')}">

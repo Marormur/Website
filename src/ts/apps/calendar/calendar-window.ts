@@ -242,9 +242,9 @@ export class CalendarWindow extends BaseWindow {
             <header class="calendar-toolbar app-toolbar finder-window-drag-zone">
                 <a href="#${this.id}-calendar-main" class="sr-only calendar-skip-link">${translate('calendar.a11y.skipToMain', 'Zum Kalenderinhalt springen')}</a>
                 <div class="calendar-toolbar-nav app-toolbar-section finder-no-drag" role="group" aria-label="${translate('calendar.toolbar.navigation', 'Navigation')}" >
-                    <button type="button" class="calendar-nav-button app-toolbar-button macui-button" data-action="calendar:navigatePrevious" data-calendar-action="previous" aria-label="${translate('calendar.toolbar.previous', 'Vorheriger Zeitraum')}" title="${translate('calendar.toolbar.previous', 'Vorheriger Zeitraum')}">◀</button>
+                    <button type="button" class="calendar-nav-button app-toolbar-button macui-button" data-action="calendar:navigatePrevious" data-calendar-action="previous" aria-label="${translate('calendar.toolbar.previous', 'Previous period')}" title="${translate('calendar.toolbar.previous', 'Previous period')}">◀</button>
                     <button type="button" class="calendar-nav-button app-toolbar-button macui-button" data-action="calendar:today" data-calendar-action="today">${translate('calendar.toolbar.today', 'Heute')}</button>
-                    <button type="button" class="calendar-nav-button app-toolbar-button macui-button" data-action="calendar:navigateNext" data-calendar-action="next" aria-label="${translate('calendar.toolbar.next', 'Nächster Zeitraum')}" title="${translate('calendar.toolbar.next', 'Nächster Zeitraum')}">▶</button>
+                    <button type="button" class="calendar-nav-button app-toolbar-button macui-button" data-action="calendar:navigateNext" data-calendar-action="next" aria-label="${translate('calendar.toolbar.next', 'Next period')}" title="${translate('calendar.toolbar.next', 'Next period')}">▶</button>
                 </div>
                 <h1 class="calendar-toolbar-title app-toolbar-section app-toolbar-section--grow" data-calendar-current-label>${translate('programs.calendar.label', 'Kalender')}</h1>
                 <div class="calendar-toolbar-actions app-toolbar-section app-toolbar-section--end finder-no-drag">
