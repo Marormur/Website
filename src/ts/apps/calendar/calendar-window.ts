@@ -242,18 +242,18 @@ export class CalendarWindow extends BaseWindow {
             <header class="calendar-toolbar app-toolbar finder-window-drag-zone">
                 <a href="#${this.id}-calendar-main" class="sr-only calendar-skip-link">${translate('calendar.a11y.skipToMain', 'Zum Kalenderinhalt springen')}</a>
                 <div class="calendar-toolbar-nav app-toolbar-section finder-no-drag" role="group" aria-label="${translate('calendar.toolbar.navigation', 'Navigation')}" >
-                    <button type="button" class="calendar-nav-button app-toolbar-button macui-button" data-action="calendar:navigatePrevious" data-calendar-action="previous" aria-label="${translate('calendar.toolbar.previous', 'Previous period')}" title="${translate('calendar.toolbar.previous', 'Previous period')}">◀</button>
-                    <button type="button" class="calendar-nav-button app-toolbar-button macui-button" data-action="calendar:today" data-calendar-action="today">${translate('calendar.toolbar.today', 'Heute')}</button>
-                    <button type="button" class="calendar-nav-button app-toolbar-button macui-button" data-action="calendar:navigateNext" data-calendar-action="next" aria-label="${translate('calendar.toolbar.next', 'Next period')}" title="${translate('calendar.toolbar.next', 'Next period')}">▶</button>
+                    <button type="button" class="calendar-nav-button app-toolbar-button macui-button" data-calendar-action="previous" aria-label="${translate('calendar.toolbar.previous', 'Previous period')}" title="${translate('calendar.toolbar.previous', 'Previous period')}">◀</button>
+                    <button type="button" class="calendar-nav-button app-toolbar-button macui-button" data-calendar-action="today">${translate('calendar.toolbar.today', 'Heute')}</button>
+                    <button type="button" class="calendar-nav-button app-toolbar-button macui-button" data-calendar-action="next" aria-label="${translate('calendar.toolbar.next', 'Next period')}" title="${translate('calendar.toolbar.next', 'Next period')}">▶</button>
                 </div>
                 <h1 class="calendar-toolbar-title app-toolbar-section app-toolbar-section--grow" data-calendar-current-label>${translate('programs.calendar.label', 'Kalender')}</h1>
                 <div class="calendar-toolbar-actions app-toolbar-section app-toolbar-section--end finder-no-drag">
                     <div class="calendar-view-switch" role="group" aria-label="${translate('calendar.toolbar.viewSwitcher', 'Ansicht wechseln')}">
-                        <button type="button" class="calendar-view-switch-button app-toolbar-segment-button macui-button" data-action="calendar:viewDay" data-calendar-view="day" data-active="false" aria-controls="${this.id}-calendar-grid" aria-pressed="false">${translate('calendar.views.day', 'Tag')}</button>
-                        <button type="button" class="calendar-view-switch-button app-toolbar-segment-button macui-button" data-action="calendar:viewWeek" data-calendar-view="week" data-active="false" aria-controls="${this.id}-calendar-grid" aria-pressed="false">${translate('calendar.views.week', 'Woche')}</button>
-                        <button type="button" class="calendar-view-switch-button app-toolbar-segment-button macui-button is-active" data-action="calendar:viewMonth" data-calendar-view="month" data-active="true" aria-controls="${this.id}-calendar-grid" aria-pressed="true">${translate('calendar.views.month', 'Monat')}</button>
+                        <button type="button" class="calendar-view-switch-button app-toolbar-segment-button macui-button" data-calendar-view="day" data-active="false" aria-controls="${this.id}-calendar-grid" aria-pressed="false">${translate('calendar.views.day', 'Tag')}</button>
+                        <button type="button" class="calendar-view-switch-button app-toolbar-segment-button macui-button" data-calendar-view="week" data-active="false" aria-controls="${this.id}-calendar-grid" aria-pressed="false">${translate('calendar.views.week', 'Woche')}</button>
+                        <button type="button" class="calendar-view-switch-button app-toolbar-segment-button macui-button is-active" data-calendar-view="month" data-active="true" aria-controls="${this.id}-calendar-grid" aria-pressed="true">${translate('calendar.views.month', 'Monat')}</button>
                     </div>
-                    <button type="button" class="calendar-primary-button app-toolbar-button macui-button" data-action="calendar:createEvent" data-calendar-action="create-event">${translate('calendar.actions.newEvent', 'Neuer Termin')}</button>
+                    <button type="button" class="calendar-primary-button app-toolbar-button macui-button" data-calendar-action="create-event">${translate('calendar.actions.newEvent', 'Neuer Termin')}</button>
                 </div>
             </header>
             <section class="calendar-grid-wrap" id="${this.id}-calendar-grid" data-calendar-grid-wrap aria-live="polite"></section>
