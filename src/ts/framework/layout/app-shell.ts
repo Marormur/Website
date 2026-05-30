@@ -13,7 +13,10 @@ export class AppShell extends BaseComponent<AppShellProps> {
     render(): VNode {
         return h(
             'div',
-            { className: 'flex flex-col h-full w-full overflow-hidden bg-white dark:bg-gray-800' },
+            {
+                className:
+                    `flex flex-col h-full w-full overflow-hidden bg-white dark:bg-gray-800 ${this.props.className || ''}`.trim(),
+            },
             // Toolbar
             this.props.toolbar ? h('div', { className: 'shrink-0' }, this.props.toolbar) : '',
 

@@ -16,7 +16,11 @@ import {
 import { getDockReservedBottom } from '../../ui/dock.js';
 
 interface SettingsWindowGlobal {
-    SettingsSystem?: { init: (el: HTMLElement) => void };
+    SettingsSystem?: {
+        init: (el: HTMLElement) => void;
+        destroy?: () => void;
+        container?: HTMLElement | null;
+    };
     appI18n?: { applyTranslations: (container?: HTMLElement) => void };
 }
 
@@ -94,6 +98,14 @@ export class SettingsWindow extends BaseWindow {
             const SettingsSystem = globalWindow.SettingsSystem;
             if (SettingsSystem && typeof SettingsSystem.init === 'function') {
                 try {
+                    // SettingsSystem cleanup is synchronous today; reset a stale singleton mount
+                    // before attaching the fresh window-owned container.
+                    if (
+                        SettingsSystem.container &&
+                        SettingsSystem.container !== settingsContainer
+                    ) {
+                        SettingsSystem.destroy?.();
+                    }
                     SettingsSystem.init(settingsContainer);
                     logger.debug('APP', 'SettingsWindow: SettingsSystem initialized');
                 } catch (err) {
@@ -107,6 +119,23 @@ export class SettingsWindow extends BaseWindow {
         this.attachInlineHeaderDrag(modal);
 
         return modal;
+    }
+
+    override destroy(): void {
+        const globalWindow = window as unknown as SettingsWindowGlobal;
+        const ownedSettingsContainer =
+            this.contentElement?.querySelector<HTMLElement>('#settings-container');
+        try {
+            if (
+                ownedSettingsContainer &&
+                globalWindow.SettingsSystem?.container === ownedSettingsContainer
+            ) {
+                globalWindow.SettingsSystem.destroy?.();
+            }
+        } catch (err) {
+            logger.warn('APP', 'SettingsWindow: Error destroying SettingsSystem', err);
+        }
+        super.destroy();
     }
 
     /**

@@ -1,8 +1,64 @@
 import { BaseWindow, type WindowConfig } from '../../windows/base-window.js';
+import { createElement, h, type VNode } from '../../core/vdom.js';
+import { Button } from '../../framework/controls/button.js';
 import {
     focusOrCreateWindowByType,
     showAndRegisterWindow,
 } from '../../framework/controls/window-lifecycle.js';
+
+interface AboutWindowGlobal {
+    appI18n?: { applyTranslations: (container?: HTMLElement) => void };
+}
+
+export function buildAboutWindowContentVNode(): VNode {
+    return h(
+        'div',
+        { className: 'about-window-content' },
+        h(
+            'div',
+            { className: 'about-hero-image-wrap', 'aria-hidden': 'true' },
+            h('img', {
+                src: './src/ts/apps/about/profil.jpg',
+                alt: 'Bild',
+                className: 'about-hero-image',
+            })
+        ),
+        h('h3', { className: 'about-person-name' }, 'Marvin Temmen'),
+        h('p', { className: 'about-person-meta', 'data-i18n': 'modals.about.birth' }, 'März 1999'),
+        h(
+            'div',
+            { className: 'about-facts', role: 'list' },
+            h(
+                'p',
+                { className: 'about-fact-row', role: 'listitem' },
+                h('strong', { 'data-i18n': 'modals.about.locationLabel' }, 'Wohnort'),
+                h('span', { 'data-i18n': 'modals.about.locationValue' }, 'Deutschland')
+            ),
+            h(
+                'p',
+                { className: 'about-fact-row', role: 'listitem' },
+                h('strong', { 'data-i18n': 'modals.about.jobLabel' }, 'Beruf'),
+                h('span', { 'data-i18n': 'modals.about.jobValue' }, 'Softwareentwickler')
+            )
+        ),
+        new Button({
+            label: h('span', { 'data-i18n': 'modals.about.moreButton' }, 'Mehr Infos …'),
+            variant: 'ghost',
+            className: 'about-more-button',
+            'data-action': 'openWindow',
+            'data-window-id': 'settings-modal',
+        }).render(),
+        h(
+            'p',
+            { className: 'about-copyright' },
+            h(
+                'span',
+                { 'data-i18n': 'modals.about.copyright' },
+                '© 2025 Marvin T. — Alle Rechte vorbehalten.'
+            )
+        )
+    );
+}
 
 export class AboutWindow extends BaseWindow {
     constructor(config?: Partial<WindowConfig>) {
@@ -37,16 +93,13 @@ export class AboutWindow extends BaseWindow {
         }
 
         if (this.contentElement) {
-            this.contentElement.className = 'flex-1 overflow-auto bg-white dark:bg-gray-800';
-
-            const template = document.querySelector<HTMLElement>(
-                '#about-modal .about-window-content'
-            );
-            if (template) {
-                const clone = template.cloneNode(true) as HTMLElement;
-                this.contentElement.replaceChildren(clone);
-                window.appI18n?.applyTranslations?.(clone);
-            }
+            // The modal shell already owns the glass background, so the inner content stays
+            // transparent to avoid stacking an extra white/dark surface inside the window.
+            this.contentElement.className = 'flex-1 overflow-auto bg-transparent';
+            const content = createElement(buildAboutWindowContentVNode());
+            this.contentElement.replaceChildren(content);
+            const globalWindow = window as unknown as AboutWindowGlobal;
+            globalWindow.appI18n?.applyTranslations?.(this.contentElement);
         }
 
         return modal;

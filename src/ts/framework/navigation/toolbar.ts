@@ -18,7 +18,7 @@ export class Toolbar extends BaseComponent<ToolbarProps> {
         return h(
             'div',
             {
-                className: `${FRAMEWORK_TOOLBAR_BASE_CLASS} finder-toolbar px-4 flex items-center gap-2 ${this.props.className || ''}`,
+                className: `${FRAMEWORK_TOOLBAR_BASE_CLASS} px-4 flex items-center gap-2 ${this.props.className || ''}`,
                 style: { height: '44px', backgroundColor: 'transparent' },
             },
             // Left section
