@@ -1,5 +1,6 @@
 import { getString, setString, remove } from '../../services/storage-utils.js';
 import logger from '../../core/logger.js';
+import { buildTextEditorToolbarHTML } from './text-editor-toolbar.js';
 
 /**
  * Text Editor Module
@@ -150,42 +151,7 @@ const TextEditorSystem: TextEditorSystemInternal = {
         this.container.innerHTML = `
                 <div class="text-editor-wrapper dialog-content flex flex-col h-full">
                     <!-- File Operations Toolbar -->
-                    <div id="text-toolbar" class="text-editor-toolbar flex-none">
-                        <div class="text-editor-toolbar-group">
-                            <button type="button" data-action="textEditor:clear" class="text-editor-btn" data-i18n="textEditor.toolbar.clear" data-i18n-title="textEditor.toolbar.clear">Neu</button>
-                            <button type="button" data-action="textEditor:open" class="text-editor-btn" data-i18n="textEditor.toolbar.open" data-i18n-title="textEditor.toolbar.open">Öffnen</button>
-                            <button type="button" data-action="textEditor:save" class="text-editor-btn text-editor-btn-accent" id="text-save-button" data-i18n="textEditor.toolbar.save" data-i18n-title="textEditor.toolbar.save">Speichern</button>
-                        </div>
-                        <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
-                        <div class="text-editor-toolbar-group">
-                            <button type="button" data-action="textEditor:bold" class="text-editor-btn" data-i18n-title="textEditor.toolbar.bold"><strong>B</strong></button>
-                            <button type="button" data-action="textEditor:italic" class="text-editor-btn" data-i18n-title="textEditor.toolbar.italic"><em>I</em></button>
-                            <button type="button" data-action="textEditor:underline" class="text-editor-btn" data-i18n-title="textEditor.toolbar.underline"><span class="text-editor-btn-underline">U</span></button>
-                            <button type="button" data-action="textEditor:strikethrough" class="text-editor-btn" data-i18n-title="textEditor.toolbar.strikeThrough"><span style="text-decoration: line-through;">S</span></button>
-                        </div>
-                        <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
-                        <div class="text-editor-toolbar-group">
-                            <button type="button" data-action="textEditor:heading1" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading1">H1</button>
-                            <button type="button" data-action="textEditor:heading2" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading2">H2</button>
-                            <button type="button" data-action="textEditor:heading3" class="text-editor-btn" data-i18n-title="textEditor.toolbar.heading3">H3</button>
-                        </div>
-                        <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
-                        <div class="text-editor-toolbar-group">
-                            <button type="button" data-action="textEditor:unorderedList" class="text-editor-btn" data-i18n-title="textEditor.toolbar.unorderedList">Liste</button>
-                            <button type="button" data-action="textEditor:orderedList" class="text-editor-btn" data-i18n-title="textEditor.toolbar.orderedList">1. Liste</button>
-                            <button type="button" data-action="textEditor:alignLeft" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignLeft">Links</button>
-                            <button type="button" data-action="textEditor:alignCenter" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignCenter">Mitte</button>
-                            <button type="button" data-action="textEditor:alignRight" class="text-editor-btn" data-i18n-title="textEditor.toolbar.alignRight">Rechts</button>
-                        </div>
-                        <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
-                        <div class="text-editor-toolbar-group text-editor-toolbar-group-right">
-                            <button type="button" data-action="textEditor:insertLink" class="text-editor-btn" data-i18n-title="textEditor.toolbar.insertLink">Link</button>
-                            <button type="button" data-action="textEditor:findReplace" class="text-editor-btn" data-i18n-title="textEditor.toolbar.findReplace">Suchen</button>
-                        </div>
-                        <input type="file" id="text-file-input"
-                            accept=".txt,.md,.markdown,.html,.htm,.css,.scss,.js,.jsx,.ts,.tsx,.json,.yml,.yaml,.xml,.csv,.tsv,.ini,.cfg,.conf,.env,.gitignore,.log,.c,.h,.cpp,.hpp,.java,.kt,.swift,.cs,.py,.rb,.php,.rs,.go,.sh,.bash,.zsh,.fish,.ps1,.bat"
-                            style="display:none">
-                    </div>
+                    ${buildTextEditorToolbarHTML('system')}
                     <!-- Find and Replace Panel (Hidden by default) -->
                     <div id="find-replace-panel" class="find-replace-panel flex-none" hidden>
                         <input type="text" id="find-input" class="text-editor-input" data-i18n-placeholder="textEditor.findReplace.find" placeholder="Find...">

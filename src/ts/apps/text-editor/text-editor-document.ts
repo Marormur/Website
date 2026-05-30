@@ -6,6 +6,7 @@
 import { BaseTab, type TabConfig, type TabState } from '../../windows/base-tab.js';
 import { getString, setString } from '../../services/storage-utils.js';
 import logger from '../../core/logger.js';
+import { buildTextEditorToolbarHTML } from './text-editor-toolbar.js';
 
 type WrapMode = 'off' | 'soft';
 
@@ -64,34 +65,16 @@ export class TextEditorDocument extends BaseTab {
         container.innerHTML = `
             <div class="text-editor-wrapper flex flex-col h-full">
                 <!-- Toolbar -->
-                <div class="text-editor-toolbar flex-none">
-                    <div class="text-editor-toolbar-group">
-                        <button type="button" class="text-editor-btn btn-new" title="Neu">Neu</button>
-                        <button type="button" class="text-editor-btn btn-open" title="Öffnen">Öffnen</button>
-                        <button type="button" class="text-editor-btn text-editor-btn-accent btn-save" title="Speichern">Speichern</button>
-                    </div>
-                    <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
-                    <div class="text-editor-toolbar-group">
-                        <button type="button" class="text-editor-btn btn-bold" title="Fett"><strong>B</strong></button>
-                        <button type="button" class="text-editor-btn btn-italic" title="Kursiv"><em>I</em></button>
-                        <button type="button" class="text-editor-btn btn-underline" title="Unterstrichen"><span class="text-editor-btn-underline">U</span></button>
-                    </div>
-                    <div class="text-editor-toolbar-divider" aria-hidden="true"></div>
-                    <div class="text-editor-toolbar-group text-editor-toolbar-group-right">
-                        <button type="button" class="text-editor-btn btn-find" title="Suchen">Suchen</button>
-                        <button type="button" class="text-editor-btn btn-wrap" title="Zeilenumbruch">Wrap</button>
-                    </div>
-                    <input type="file" class="file-input" accept=".txt,.md,.markdown" style="display:none">
-                </div>
+                ${buildTextEditorToolbarHTML('document')}
 
                 <!-- Find/Replace Panel -->
                 <div class="find-replace-panel" hidden>
                     <input type="text" class="find-input text-editor-input" placeholder="Suchen...">
                     <input type="text" class="replace-input text-editor-input" placeholder="Ersetzen...">
-                    <button type="button" class="text-editor-btn btn-find-next">Weiter</button>
-                    <button type="button" class="text-editor-btn btn-replace-one">Ersetzen</button>
-                    <button type="button" class="text-editor-btn btn-replace-all">Alle</button>
-                    <button type="button" class="text-editor-btn btn-close-find" aria-label="Suchen schließen">✕</button>
+                    <button type="button" class="text-editor-btn macui-button btn-find-next" data-text-editor-action="findNext">Weiter</button>
+                    <button type="button" class="text-editor-btn macui-button btn-replace-one" data-text-editor-action="replaceOne">Ersetzen</button>
+                    <button type="button" class="text-editor-btn macui-button btn-replace-all" data-text-editor-action="replaceAll">Alle</button>
+                    <button type="button" class="text-editor-btn macui-button btn-close-find" data-text-editor-action="closeFindReplace" aria-label="Suchen schließen">✕</button>
                 </div>
 
                 <!-- Status -->
@@ -145,41 +128,29 @@ export class TextEditorDocument extends BaseTab {
         this.editor?.addEventListener('click', () => this._updateCursorPosition());
         this.editor?.addEventListener('keyup', () => this._updateCursorPosition());
 
-        // Toolbar buttons
-        this.element
-            .querySelector('.btn-new')
-            ?.addEventListener('click', () => this.clearContent());
-        this.element.querySelector('.btn-open')?.addEventListener('click', () => this.openFile());
-        this.element.querySelector('.btn-save')?.addEventListener('click', () => this.saveFile());
-        this.element
-            .querySelector('.btn-bold')
-            ?.addEventListener('click', () => this._wrapSelection('**', '**'));
-        this.element
-            .querySelector('.btn-italic')
-            ?.addEventListener('click', () => this._wrapSelection('*', '*'));
-        this.element
-            .querySelector('.btn-underline')
-            ?.addEventListener('click', () => this._wrapSelection('<u>', '</u>'));
-        this.element
-            .querySelector('.btn-find')
-            ?.addEventListener('click', () => this.toggleFindReplace());
-        this.element
-            .querySelector('.btn-wrap')
-            ?.addEventListener('click', () => this.toggleWrapMode());
+        const actions: Record<string, () => void> = {
+            clear: () => this.clearContent(),
+            open: () => this.openFile(),
+            save: () => this.saveFile(),
+            bold: () => this._wrapSelection('**', '**'),
+            italic: () => this._wrapSelection('*', '*'),
+            underline: () => this._wrapSelection('<u>', '</u>'),
+            find: () => this.toggleFindReplace(),
+            toggleWrap: () => this.toggleWrapMode(),
+            findNext: () => this.findNext(),
+            replaceOne: () => this.replaceOne(),
+            replaceAll: () => this.replaceAll(),
+            closeFindReplace: () => this.closeFindReplace(),
+        };
 
-        // Find/Replace buttons
-        this.element
-            .querySelector('.btn-find-next')
-            ?.addEventListener('click', () => this.findNext());
-        this.element
-            .querySelector('.btn-replace-one')
-            ?.addEventListener('click', () => this.replaceOne());
-        this.element
-            .querySelector('.btn-replace-all')
-            ?.addEventListener('click', () => this.replaceAll());
-        this.element
-            .querySelector('.btn-close-find')
-            ?.addEventListener('click', () => this.closeFindReplace());
+        this.element.addEventListener('click', event => {
+            const target = event.target as HTMLElement | null;
+            const actionHost = target?.closest<HTMLElement>('[data-text-editor-action]');
+            const action = actionHost?.dataset.textEditorAction;
+            if (!action) return;
+            if (!Object.prototype.hasOwnProperty.call(actions, action)) return;
+            actions[action]?.();
+        });
 
         // File input
         this.fileInput?.addEventListener('change', e => this._handleFileOpen(e));
