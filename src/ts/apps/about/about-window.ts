@@ -93,6 +93,8 @@ export class AboutWindow extends BaseWindow {
         }
 
         if (this.contentElement) {
+            // The modal shell already owns the glass background, so the inner content stays
+            // transparent to avoid stacking an extra white/dark surface inside the window.
             this.contentElement.className = 'flex-1 overflow-auto bg-transparent';
             const content = createElement(buildAboutWindowContentVNode());
             this.contentElement.replaceChildren(content);

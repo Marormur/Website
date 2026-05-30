@@ -3,7 +3,7 @@ import { BaseComponent } from '../core/component.js';
 import { ComponentConfig } from '../core/types.js';
 
 export interface ButtonProps extends ComponentConfig {
-    /** Use a VNode when the label needs embedded i18n/span markup; plain strings stay the default. */
+    /** Use a VNode when the label needs extra structure or attributes such as data-i18n spans. */
     label: VNode | string;
     variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
     size?: 'small' | 'medium' | 'large';

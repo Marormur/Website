@@ -88,7 +88,7 @@ export class SettingsWindow extends BaseWindow {
         if (this.contentElement) {
             this.contentElement.className = 'flex-1 overflow-hidden';
             const settingsContainer = document.createElement('div');
-            settingsContainer.id = `${this.id}-settings-container`;
+            settingsContainer.id = 'settings-container';
             settingsContainer.className = 'flex-1 overflow-hidden';
             this.contentElement.innerHTML = '';
             this.contentElement.appendChild(settingsContainer);
@@ -98,6 +98,8 @@ export class SettingsWindow extends BaseWindow {
             const SettingsSystem = globalWindow.SettingsSystem;
             if (SettingsSystem && typeof SettingsSystem.init === 'function') {
                 try {
+                    // SettingsSystem cleanup is synchronous today; reset a stale singleton mount
+                    // before attaching the fresh window-owned container.
                     if (
                         SettingsSystem.container &&
                         SettingsSystem.container !== settingsContainer
