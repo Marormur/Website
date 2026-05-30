@@ -3263,6 +3263,40 @@ html.dark .window-tab:hover {
     justify-content: flex-end;
 }
 
+.app-toolbar-button,
+.app-toolbar-segment-button {
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.app-toolbar-button:focus-visible,
+.app-toolbar-segment-button:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+    .app-toolbar-button:focus-visible,
+    .app-toolbar-segment-button:focus-visible {
+        outline-color: Highlight;
+    }
+}
+
+.app-toolbar-button:active:not(:disabled),
+.app-toolbar-segment-button:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.app-toolbar-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
 .text-editor-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -8295,12 +8329,6 @@ html:not(.dark) .launchpad-modal-inner {
     outline-offset: 2px;
 }
 
-.photos-toolbar-icon-button:focus-visible,
-.photos-segment-button:focus-visible {
-    outline: 2px solid #2563eb;
-    outline-offset: 2px;
-}
-
 .photos-toolbar-icon-button {
     min-width: 1.8rem;
     height: 1.8rem;
@@ -8364,23 +8392,25 @@ html.dark .photos-sidebar-credit {
     transition: all 0.15s ease;
 }
 
-.photos-segment-button:hover {
+.photos-segment-button:hover:not([aria-pressed='true']) {
     background: rgba(255, 255, 255, 0.7);
     color: #1f2937;
 }
 
-html.dark .photos-segment-button:hover {
+html.dark .photos-segment-button:hover:not([aria-pressed='true']) {
     background: rgba(148, 163, 184, 0.18);
 }
 
-.photos-segment-button[data-active='true'] {
+.photos-segment-button[data-active='true'],
+.photos-segment-button[aria-pressed='true'] {
     background: #ffffff;
     color: #1d4ed8;
     font-weight: 600;
     box-shadow: 0 10px 20px rgba(59, 130, 246, 0.18);
 }
 
-html.dark .photos-segment-button[data-active='true'] {
+html.dark .photos-segment-button[data-active='true'],
+html.dark .photos-segment-button[aria-pressed='true'] {
     background: rgba(37, 99, 235, 0.28);
     color: #bfdbfe;
     box-shadow: 0 10px 20px rgba(30, 64, 175, 0.35);
@@ -8663,11 +8693,18 @@ html.dark .preview-toolbar-button:hover:not(:disabled) {
 
 .preview-toolbar-button:disabled {
     color: rgba(148, 163, 184, 0.9);
-    cursor: not-allowed;
 }
 
 html.dark .preview-toolbar-button:disabled {
     color: rgba(148, 163, 184, 0.68);
+}
+
+.preview-toolbar-button:active:not(:disabled) {
+    background: rgba(15, 23, 42, 0.12);
+}
+
+html.dark .preview-toolbar-button:active:not(:disabled) {
+    background: rgba(255, 255, 255, 0.14);
 }
 
 .preview-toolbar-button--wide {
@@ -9260,7 +9297,14 @@ html.dark .calendar-view-switch {
     background: #e2e8f0;
 }
 
-html.dark .calendar-view-switch-button.is-active {
+.calendar-view-switch-button[data-active='true'],
+.calendar-view-switch-button[aria-pressed='true'] {
+    background: #e2e8f0;
+}
+
+html.dark .calendar-view-switch-button.is-active,
+html.dark .calendar-view-switch-button[data-active='true'],
+html.dark .calendar-view-switch-button[aria-pressed='true'] {
     background: #3e4757;
 }
 
@@ -9274,6 +9318,30 @@ html.dark .calendar-primary-button {
     background: #3b82f6;
     border-color: #3b82f6;
     color: #ffffff;
+}
+
+.calendar-nav-button:hover:not(:disabled),
+.calendar-view-switch-button:hover:not([aria-pressed='true']):not(:disabled),
+.calendar-secondary-button:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+html.dark .calendar-nav-button:hover:not(:disabled),
+html.dark .calendar-view-switch-button:hover:not([aria-pressed='true']):not(:disabled),
+html.dark .calendar-secondary-button:hover:not(:disabled) {
+    background: #273142;
+    border-color: #64748b;
+}
+
+.calendar-primary-button:hover:not(:disabled) {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+html.dark .calendar-primary-button:hover:not(:disabled) {
+    background: #2563eb;
+    border-color: #2563eb;
 }
 
 .calendar-grid-wrap {

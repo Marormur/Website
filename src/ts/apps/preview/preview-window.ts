@@ -139,21 +139,21 @@ export class PreviewWindow extends BaseWindow {
         const mainArea = document.createElement('div');
         mainArea.className = 'preview-main-area';
         mainArea.innerHTML = `
-            <div class="preview-content-topbar finder-window-drag-zone">
-                <div class="preview-toolbar finder-no-drag" role="toolbar" data-preview-toolbar="navigation" aria-label="${translate('preview.aria.toolbarNavigation', 'Preview toolbar')}">
-                    <button type="button" class="preview-toolbar-button" data-preview-action="prev">←</button>
-                    <button type="button" class="preview-toolbar-button" data-preview-action="next">→</button>
+            <div class="preview-content-topbar app-toolbar finder-window-drag-zone">
+                <div class="preview-toolbar app-toolbar-section finder-no-drag" role="group" data-preview-toolbar="navigation" aria-label="${translate('preview.aria.toolbarNavigation', 'Preview toolbar')}">
+                    <button type="button" class="preview-toolbar-button app-toolbar-button macui-button" data-preview-action="prev" aria-label="${translate('preview.prev', 'Previous image')}" title="${translate('preview.prev', 'Previous image')}">←</button>
+                    <button type="button" class="preview-toolbar-button app-toolbar-button macui-button" data-preview-action="next" aria-label="${translate('preview.next', 'Next image')}" title="${translate('preview.next', 'Next image')}">→</button>
                     <span class="preview-toolbar-separator" aria-hidden="true"></span>
-                    <button type="button" class="preview-toolbar-button" data-preview-action="zoom-out">−</button>
-                    <button type="button" class="preview-toolbar-button" data-preview-action="zoom-in">+</button>
+                    <button type="button" class="preview-toolbar-button app-toolbar-button macui-button" data-preview-action="zoom-out" aria-label="${translate('preview.zoomOut', 'Zoom out')}" title="${translate('preview.zoomOut', 'Zoom out')}">−</button>
+                    <button type="button" class="preview-toolbar-button app-toolbar-button macui-button" data-preview-action="zoom-in" aria-label="${translate('preview.zoomIn', 'Zoom in')}" title="${translate('preview.zoomIn', 'Zoom in')}">+</button>
                 </div>
-                <div class="preview-title-cluster">
+                <div class="preview-title-cluster app-toolbar-section app-toolbar-section--grow">
                     <strong data-preview-title-inline>${translate('preview.noImage', 'Kein Bild ausgewählt')}</strong>
                     <span data-preview-hint>${translate('preview.imageViewer', 'Bildbetrachter')}</span>
                 </div>
-                <div class="preview-toolbar finder-no-drag" role="toolbar" data-preview-toolbar="fileActions" aria-label="${translate('preview.aria.toolbarFileActions', 'Preview file actions')}">
-                    <button type="button" class="preview-toolbar-button preview-toolbar-button--wide" data-preview-action="open-tab">↗</button>
-                    <button type="button" class="preview-toolbar-button preview-toolbar-button--wide" data-preview-action="download">↓</button>
+                <div class="preview-toolbar preview-toolbar--end app-toolbar-section app-toolbar-section--end finder-no-drag" role="group" data-preview-toolbar="fileActions" aria-label="${translate('preview.aria.toolbarFileActions', 'Preview file actions')}">
+                    <button type="button" class="preview-toolbar-button preview-toolbar-button--wide app-toolbar-button macui-button" data-preview-action="open-tab" aria-label="${translate('preview.actions.openInNewTab', 'Open in new tab')}" title="${translate('preview.actions.openInNewTab', 'Open in new tab')}">↗</button>
+                    <button type="button" class="preview-toolbar-button preview-toolbar-button--wide app-toolbar-button macui-button" data-preview-action="download" aria-label="${translate('preview.actions.download', 'Download')}" title="${translate('preview.actions.download', 'Download')}">↓</button>
                 </div>
             </div>
             <div class="preview-stage-wrap">
@@ -589,6 +589,31 @@ export class PreviewWindow extends BaseWindow {
                 translate('preview.aria.toolbarFileActions', 'Preview file actions')
             );
         }
+
+        this.prevButton?.setAttribute('aria-label', translate('preview.prev', 'Previous image'));
+        this.prevButton?.setAttribute('title', translate('preview.prev', 'Previous image'));
+        this.nextButton?.setAttribute('aria-label', translate('preview.next', 'Next image'));
+        this.nextButton?.setAttribute('title', translate('preview.next', 'Next image'));
+        this.zoomOutButton?.setAttribute('aria-label', translate('preview.zoomOut', 'Zoom out'));
+        this.zoomOutButton?.setAttribute('title', translate('preview.zoomOut', 'Zoom out'));
+        this.zoomInButton?.setAttribute('aria-label', translate('preview.zoomIn', 'Zoom in'));
+        this.zoomInButton?.setAttribute('title', translate('preview.zoomIn', 'Zoom in'));
+        this.openButton?.setAttribute(
+            'aria-label',
+            translate('preview.actions.openInNewTab', 'Open in new tab')
+        );
+        this.openButton?.setAttribute(
+            'title',
+            translate('preview.actions.openInNewTab', 'Open in new tab')
+        );
+        this.downloadButton?.setAttribute(
+            'aria-label',
+            translate('preview.actions.download', 'Download')
+        );
+        this.downloadButton?.setAttribute(
+            'title',
+            translate('preview.actions.download', 'Download')
+        );
     }
 
     static focusOrCreate(config?: Partial<WindowConfig>): PreviewWindow {

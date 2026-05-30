@@ -39,6 +39,8 @@ export const de = {
     },
     common: {
         close: 'Schließen',
+        back: 'Zurück',
+        forward: 'Vorwärts',
         system: 'System',
         german: 'Deutsch',
         english: 'Englisch',
@@ -233,6 +235,9 @@ export const de = {
             allPhotos: 'Alle Fotos',
         },
         toolbar: {
+            navigation: 'Navigation',
+            actions: 'Aktionen',
+            zoom: 'Zoom',
             viewMode: 'Ansichtsmodus',
             info: 'Informationen',
             share: 'Teilen',
@@ -886,6 +891,8 @@ export const de = {
         },
         toolbar: {
             navigation: 'Kalender Navigation',
+            previous: 'Vorheriger Zeitraum',
+            next: 'Nächster Zeitraum',
             today: 'Heute',
             viewSwitcher: 'Ansicht wechseln',
         },
@@ -942,6 +949,10 @@ export const de = {
         aria: {
             toolbarNavigation: 'Vorschau-Werkzeugleiste',
             toolbarFileActions: 'Vorschau-Dateiaktionen',
+        },
+        actions: {
+            openInNewTab: 'In neuem Tab öffnen',
+            download: 'Herunterladen',
         },
         download: {
             defaultFileName: 'bild',
