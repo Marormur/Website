@@ -85,6 +85,7 @@ export class SettingsWindow extends BaseWindow {
             this.contentElement.className = 'flex-1 overflow-hidden';
             const settingsContainer = document.createElement('div');
             settingsContainer.id = 'settings-container';
+            settingsContainer.className = 'flex-1 overflow-hidden';
             this.contentElement.innerHTML = '';
             this.contentElement.appendChild(settingsContainer);
             const globalWindow = window as unknown as SettingsWindowGlobal;
@@ -100,7 +101,7 @@ export class SettingsWindow extends BaseWindow {
                 }
             }
             // Apply i18n translations to mounted content
-            globalWindow.appI18n?.applyTranslations(settingsContainer);
+            globalWindow.appI18n?.applyTranslations?.(settingsContainer);
         }
 
         this.attachInlineHeaderDrag(modal);

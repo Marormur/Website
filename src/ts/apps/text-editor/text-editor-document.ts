@@ -148,7 +148,7 @@ export class TextEditorDocument extends BaseTab {
             const actionHost = target?.closest<HTMLElement>('[data-text-editor-action]');
             const action = actionHost?.dataset.textEditorAction;
             if (!action) return;
-            if (!(action in actions)) return;
+            if (!Object.prototype.hasOwnProperty.call(actions, action)) return;
             actions[action]?.();
         });
 
