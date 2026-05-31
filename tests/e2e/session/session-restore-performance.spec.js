@@ -147,9 +147,9 @@ test.describe('Session Restore Performance', () => {
         await createEditorTabs(page, textEditorCount);
 
         await waitForCountsAtLeast(page, {
-            terminals: beforeCounts.terminals + 1,
-            editors: beforeCounts.editors + 1,
-            total: beforeCounts.total + 2,
+            terminals: beforeCounts.terminals + terminalCount,
+            editors: beforeCounts.editors + textEditorCount,
+            total: beforeCounts.total + instanceCount,
         });
 
         // Verify instances were created

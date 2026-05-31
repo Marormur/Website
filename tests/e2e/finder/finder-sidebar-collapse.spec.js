@@ -9,10 +9,9 @@ const {
 
 test.describe('Finder Sidebar - Collapsible Groups', () => {
     const groupAt = (page, index) => page.locator('.mb-5').nth(index);
-    const groupHeaderAt = (page, index) => page.locator('.finder-sidebar-group-header').nth(index);
+    const groupHeaderAt = (page, index) => page.locator('.app-sidebar-group-header').nth(index);
     const groupToggleAt = (page, index) => groupHeaderAt(page, index).locator('button');
-    const groupItemsAt = (page, index) =>
-        groupAt(page, index).locator('.finder-sidebar-group-items');
+    const groupItemsAt = (page, index) => groupAt(page, index).locator('.app-sidebar-group-items');
     const clickGroupToggle = async (page, index) => {
         const header = groupHeaderAt(page, index);
         const toggle = groupToggleAt(page, index);
@@ -77,14 +76,14 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
         expect(ariaExpanded).toBe('false');
 
         // Toggle icon should have .is-collapsed class
-        const toggleIcon = toggleButton.locator('.finder-sidebar-group-toggle-icon');
+        const toggleIcon = toggleButton.locator('.app-sidebar-group-toggle-icon');
         await expect(toggleIcon).toHaveClass(/is-collapsed/);
     });
 
     test('should expand group when clicking toggle button again', async ({ page }) => {
         const toggleButton = groupToggleAt(page, 0);
         const firstGroupItems = groupItemsAt(page, 0);
-        const initialItemCount = await firstGroupItems.locator('.finder-sidebar-item').count();
+        const initialItemCount = await firstGroupItems.locator('.app-sidebar-item').count();
 
         // First collapse
         await clickGroupToggle(page, 0);
@@ -93,22 +92,20 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
         await clickGroupToggle(page, 0);
 
         await expect(firstGroupItems).not.toHaveClass(/is-collapsed/);
-        await expect(firstGroupItems.locator('.finder-sidebar-item')).toHaveCount(initialItemCount);
+        await expect(firstGroupItems.locator('.app-sidebar-item')).toHaveCount(initialItemCount);
 
         // aria-expanded should be true
         const ariaExpanded = await toggleButton.getAttribute('aria-expanded');
         expect(ariaExpanded).toBe('true');
 
         // Toggle icon should NOT have .is-collapsed class
-        const toggleIcon = toggleButton.locator('.finder-sidebar-group-toggle-icon');
+        const toggleIcon = toggleButton.locator('.app-sidebar-group-toggle-icon');
         await expect(toggleIcon).not.toHaveClass(/is-collapsed/);
     });
 
     test('should handle multiple groups independently', async ({ page }) => {
         const firstGroupItems = groupItemsAt(page, 0);
-        const initialFirstGroupCount = await firstGroupItems
-            .locator('.finder-sidebar-item')
-            .count();
+        const initialFirstGroupCount = await firstGroupItems.locator('.app-sidebar-item').count();
 
         // Collapse first group (FAVORITEN)
         const firstToggle = groupToggleAt(page, 0);
@@ -128,7 +125,7 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
         // First should be expanded, second still collapsed
         await expect(groupItemsAt(page, 0)).not.toHaveClass(/is-collapsed/);
         await expect(groupItemsAt(page, 1)).toHaveClass(/is-collapsed/);
-        await expect(groupItemsAt(page, 0).locator('.finder-sidebar-item')).toHaveCount(
+        await expect(groupItemsAt(page, 0).locator('.app-sidebar-item')).toHaveCount(
             initialFirstGroupCount
         );
     });
@@ -152,7 +149,7 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
     });
 
     test('should show and hide toggle on focus within group header', async ({ page }) => {
-        const firstHeader = page.locator('.finder-sidebar-group-header').first();
+        const firstHeader = page.locator('.app-sidebar-group-header').first();
         const toggleButton = firstHeader.locator('button');
 
         // Tab to focus the toggle button
@@ -160,10 +157,10 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
 
         // Check if toggle is visible when focused
         const focusOpacity = await toggleButton.evaluate(el => {
-            const parent = el.closest('.finder-sidebar-group-header');
+            const parent = el.closest('.app-sidebar-group-header');
             if (!parent) return '0';
             return window.getComputedStyle(
-                parent.querySelector('.finder-sidebar-group-toggle') || parent
+                parent.querySelector('.app-sidebar-group-toggle') || parent
             ).opacity;
         });
 
@@ -175,7 +172,7 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
     });
 
     test('should have correct accessibility attributes', async ({ page }) => {
-        const firstHeader = page.locator('.finder-sidebar-group-header').first();
+        const firstHeader = page.locator('.app-sidebar-group-header').first();
         const toggleButton = firstHeader.locator('button');
 
         await firstHeader.hover();
@@ -194,7 +191,7 @@ test.describe('Finder Sidebar - Collapsible Groups', () => {
         expect(title).toMatch(/Gruppe (ein|aus)klappen/);
 
         // Toggle icon should have aria-hidden
-        const toggleIcon = toggleButton.locator('.finder-sidebar-group-toggle-icon');
+        const toggleIcon = toggleButton.locator('.app-sidebar-group-toggle-icon');
         const ariaHidden = await toggleIcon.getAttribute('aria-hidden');
         expect(ariaHidden).toBe('true');
     });
