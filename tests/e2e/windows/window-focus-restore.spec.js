@@ -488,8 +488,16 @@ test.describe('Window Focus Restoration', () => {
     test('should not run legacy restore when multi-window session is active', async ({ page }) => {
         await page.evaluate(() => {
             localStorage.clear();
-
             window.TerminalWindow?.focusOrCreate?.();
+        });
+
+        // Wait for the terminal window to be registered before saving session
+        await page.waitForFunction(
+            () => (window.WindowRegistry?.getAllWindows?.('terminal')?.length || 0) >= 1,
+            { timeout: 5000 }
+        );
+
+        await page.evaluate(() => {
             window.MultiWindowSessionManager?.saveSession?.({ immediate: true });
             window.SessionManager?.saveAll?.({ immediate: true });
         });

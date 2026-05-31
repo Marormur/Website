@@ -4611,6 +4611,8 @@ html.dark .menubar-logo:focus-visible {
     list-style: none;
     margin: 0;
     min-width: 190px;
+    max-height: calc(100vh - var(--ui-top-chrome-height, 28px) - 16px);
+    overflow-y: auto;
     padding: 6px 0;
     background: rgba(245, 246, 248, 0.96);
     border-radius: 10px;

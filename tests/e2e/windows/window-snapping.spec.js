@@ -679,7 +679,7 @@ test.describe('Window Snapping', () => {
 
         const dragged = await dragWindowHandleWithMouse(
             page,
-            `${windowSelector('photos')} .window-titlebar`,
+            `${windowSelector('photos')} .finder-window-drag-zone`,
             { x: 80, y: 72 },
             { x: 420, y: 12 }
         );

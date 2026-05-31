@@ -35,7 +35,7 @@ test.describe('FinderView New Features', () => {
 
         // Check text content (should be in German by default or current locale)
         const sidebarTexts = await finderWindow
-            .locator('.finder-sidebar-item span:not(.finder-sidebar-icon)')
+            .locator('.app-sidebar-item span:not(.app-sidebar-item-icon)')
             .allTextContents();
         console.log('Sidebar texts:', sidebarTexts);
 
@@ -152,7 +152,7 @@ test.describe('FinderView New Features', () => {
         await recentBtn.click();
 
         // Should highlight the Recent button
-        await expect(recentBtn).toHaveClass(/finder-sidebar-active/);
+        await expect(recentBtn).toHaveClass(/app-sidebar-item--active/);
 
         // Content should update (may be empty if no recent files yet)
         const content = finderWindow.locator('.finder-content');
@@ -168,7 +168,7 @@ test.describe('FinderView New Features', () => {
         await starredBtn.click();
 
         // Should highlight the Starred button
-        await expect(starredBtn).toHaveClass(/finder-sidebar-active/);
+        await expect(starredBtn).toHaveClass(/app-sidebar-item--active/);
 
         // Content should update (may be empty if no favorites yet)
         const content = finderWindow.locator('.finder-content');
