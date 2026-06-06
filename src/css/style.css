@@ -639,6 +639,8 @@ html.dark .traffic-light-control--disabled:hover {
 }
 
 .code-editor-surface {
+    position: relative;
+    overflow: hidden;
     min-width: 0;
     min-height: 0;
     background: #ffffff;
