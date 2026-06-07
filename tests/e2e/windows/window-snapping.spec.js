@@ -822,7 +822,7 @@ test.describe('Window Snapping', () => {
         expect(didMaximize).toBe(true);
         const maximizedSettings = await getWindowState(page, 'settings');
         expect(maximizedSettings).not.toBeNull();
-        const currentSettingsId = maximizedSettings?.id || settingsWindowId;
+        const currentSettingsId = maximizedSettings.id;
 
         // Drag from the maximized header should restore and move the window
         let dragged = await dragDialogWithPointerEvents(
