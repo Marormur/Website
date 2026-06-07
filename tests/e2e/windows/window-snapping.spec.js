@@ -702,12 +702,12 @@ test.describe('Window Snapping', () => {
         } else {
             // Firefox can restore from maximized drag directly into a snapped position.
             expect(['left', 'right']).toContain(restored.snapped);
-            if (restored.snapped === 'left') {
-                expect(restored.left).toBeLessThanOrEqual(1);
-            }
-            if (restored.snapped === 'right') {
-                expect(restored.left).toBeGreaterThan(100);
-            }
+            const expectedSnap = await getSnapMetrics(page, restored.snapped);
+            expect(expectedSnap).not.toBeNull();
+            expect(restored.left).toBe(expectedSnap.left);
+            expect(restored.top).toBe(expectedSnap.top);
+            expect(restored.width).toBe(expectedSnap.width);
+            expect(restored.height).toBe(expectedSnap.height);
         }
     });
 
@@ -821,6 +821,7 @@ test.describe('Window Snapping', () => {
         const didMaximize = await ensureSettingsMaximizeState(page, settingsWindowId, true);
         expect(didMaximize).toBe(true);
         const maximizedSettings = await getWindowState(page, 'settings');
+        expect(maximizedSettings).not.toBeNull();
         const currentSettingsId = maximizedSettings?.id || settingsWindowId;
 
         // Drag from the maximized header should restore and move the window
@@ -897,6 +898,10 @@ test.describe('Window Snapping', () => {
 
         const settingsRestored = await getWindowState(page, 'settings');
         expect(settingsRestored).not.toBeNull();
+        expect(
+            Math.abs(settingsRestored.left - maximizedSettings.left) > 5 ||
+                Math.abs(settingsRestored.top - maximizedSettings.top) > 5
+        ).toBe(true);
         expect(await page.locator(`#${settingsWindowId}`).count()).toBeGreaterThanOrEqual(1);
     });
 });
