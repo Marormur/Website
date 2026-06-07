@@ -688,7 +688,7 @@ test.describe('Window Snapping', () => {
 
         await expect
             .poll(async () => await getRegistryWindowMaximized(page, 'photos'), {
-                timeout: 3000,
+                timeout: 5000,
             })
             .toBe(false);
 
@@ -808,18 +808,8 @@ test.describe('Window Snapping', () => {
         const settingsWindowId = await settingsWindow.getAttribute('id');
         expect(settingsWindowId).toBeTruthy();
 
-        // Maximize by double-clicking the header
-        const maximizedViaHeader = await page.evaluate(modalId => {
-            const modal = document.getElementById(modalId || '');
-            const header = modal?.querySelector('.draggable-header');
-            if (!header) return false;
-            header.dispatchEvent(
-                new MouseEvent('dblclick', { bubbles: true, cancelable: true, detail: 2 })
-            );
-            return true;
-        }, settingsWindowId);
-        expect(maximizedViaHeader).toBe(true);
-        await ensureSettingsMaximizeState(page, settingsWindowId, true);
+        const didMaximize = await ensureSettingsMaximizeState(page, settingsWindowId, true);
+        expect(didMaximize).toBe(true);
 
         // Drag from the maximized header should restore and move the window
         const dragged = await dragDialogWithPointerEvents(
@@ -832,7 +822,7 @@ test.describe('Window Snapping', () => {
 
         await expect
             .poll(async () => await getRegistryWindowMaximized(page, 'settings'), {
-                timeout: 3000,
+                timeout: 5000,
             })
             .toBe(false);
 

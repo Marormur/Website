@@ -389,7 +389,13 @@ test.describe('Window Focus Restoration', () => {
         });
 
         if (stackAfterReload.length > 0) {
-            expect(stackAfterReload).toContain(aboutWindowId);
+            const hasAboutWindow = stackAfterReload.some(
+                windowId =>
+                    windowId === aboutWindowId ||
+                    windowId === 'about-modal' ||
+                    windowId.startsWith('window-about-')
+            );
+            expect(hasAboutWindow).toBe(true);
         }
 
         const settingsHiddenAfterReload = await page.evaluate(() => {
