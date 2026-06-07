@@ -700,6 +700,7 @@ test.describe('Window Snapping', () => {
             expect(restored.left).toBeGreaterThan(100);
             expect(restored.top).toBeGreaterThan(before.top);
         } else {
+            // Firefox can restore from maximized drag directly into a snapped position.
             expect(['left', 'right']).toContain(restored.snapped);
             if (restored.snapped === 'left') {
                 expect(restored.left).toBeLessThanOrEqual(1);
@@ -820,14 +821,20 @@ test.describe('Window Snapping', () => {
         const didMaximize = await ensureSettingsMaximizeState(page, settingsWindowId, true);
         expect(didMaximize).toBe(true);
         const maximizedSettings = await getWindowState(page, 'settings');
-        const dragTargetId = maximizedSettings?.id || settingsWindowId;
+        const currentSettingsId = maximizedSettings?.id || settingsWindowId;
 
         // Drag from the maximized header should restore and move the window
-        let dragged = await dragDialogWithPointerEvents(page, dragTargetId, '.draggable-header', {
-            x: 180,
-            y: 72,
-        });
+        let dragged = await dragDialogWithPointerEvents(
+            page,
+            currentSettingsId,
+            '.draggable-header',
+            {
+                x: 180,
+                y: 72,
+            }
+        );
         if (!dragged.ok) {
+            // Firefox occasionally misses synthetic pointer drag; fallback to mouse events.
             dragged = await page.evaluate(
                 ({ modalId, moveDelta }) => {
                     const modal = document.getElementById(modalId || '');
@@ -877,7 +884,7 @@ test.describe('Window Snapping', () => {
                     );
                     return { ok: true };
                 },
-                { modalId: dragTargetId, moveDelta: { x: 180, y: 72 } }
+                { modalId: currentSettingsId, moveDelta: { x: 180, y: 72 } }
             );
         }
         expect(dragged.ok).toBe(true);
