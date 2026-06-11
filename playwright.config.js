@@ -43,8 +43,8 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     // Mild retry locally to smooth out rare flakes; CI keeps 2
     retries: process.env.CI ? 2 : 1,
-    // Single worker to avoid server port conflicts
-    // workers: 1,
+    // Single worker in CI to reduce cross-browser flakes and shared-resource contention
+    workers: process.env.CI ? 1 : undefined,
     reporter: process.env.CI ? 'list' : 'line', // Less verbose output locally
     use: {
         baseURL: BASE_URL,
