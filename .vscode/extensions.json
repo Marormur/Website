@@ -28,9 +28,6 @@
     // EditorConfig Support
     "editorconfig.editorconfig",
 
-    // TODO Highlighting
-    "gruntfuggly.todo-tree",
-
     // Import Cost (shows size of imports)
     "wix.vscode-import-cost"
   ],
