@@ -1,4 +1,5 @@
 // @ts-check
+/// <reference types="node" />
 /**
  * Playwright config for the Website project
  * - Serves the static site via http-server on 127.0.0.1:5173
@@ -10,10 +11,17 @@ import { defineConfig, devices } from '@playwright/test';
 // Always use the Node server on port 5173 for tests
 // The webServer config below will start it automatically if not running
 const BASE_URL = 'http://127.0.0.1:5173';
-const RUN_FRAMEWORK_E2E = process.env.RUN_FRAMEWORK_E2E === '1';
-const RUN_INTEGRATION_E2E = process.env.RUN_INTEGRATION_E2E === '1';
-const RUN_PERFORMANCE_E2E = process.env.RUN_PERFORMANCE_E2E === '1';
-const RUN_QUARANTINED_E2E = process.env.RUN_QUARANTINED_E2E === '1';
+const env =
+    typeof globalThis === 'object' && 'process' in globalThis
+        ? /** @type {Record<string, string | undefined>} */ (
+              /** @type {{ process?: { env?: Record<string, string | undefined> } }} */ (globalThis)
+                  .process?.env ?? {}
+          )
+        : /** @type {Record<string, string | undefined>} */ ({});
+const RUN_FRAMEWORK_E2E = env.RUN_FRAMEWORK_E2E === '1';
+const RUN_INTEGRATION_E2E = env.RUN_INTEGRATION_E2E === '1';
+const RUN_PERFORMANCE_E2E = env.RUN_PERFORMANCE_E2E === '1';
+const RUN_QUARANTINED_E2E = env.RUN_QUARANTINED_E2E === '1';
 
 // Quarantined specs are excluded from day-to-day and CI default runs
 // to protect feature velocity. They can still be run explicitly.
@@ -40,12 +48,12 @@ export default defineConfig({
     expect: { timeout: 8000 },
     // Disable fullyParallel to ensure clean sequential execution with single worker
     fullyParallel: false,
-    forbidOnly: !!process.env.CI,
+    forbidOnly: !!env.CI,
     // Mild retry locally to smooth out rare flakes; CI keeps 2
-    retries: process.env.CI ? 2 : 1,
+    retries: env.CI ? 2 : 1,
     // Single worker in CI to reduce cross-browser flakes and shared-resource contention
-    workers: process.env.CI ? 1 : undefined,
-    reporter: process.env.CI ? 'list' : 'line', // Less verbose output locally
+    workers: env.CI ? 1 : undefined,
+    reporter: env.CI ? 'list' : 'line', // Less verbose output locally
     use: {
         baseURL: BASE_URL,
         // Balanced timeouts for bundle mode without excessive waiting
@@ -55,7 +63,7 @@ export default defineConfig({
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
     },
-    projects: process.env.CI
+    projects: env.CI
         ? [
               // CI: Run all browsers to catch cross-browser regressions
               {
@@ -83,7 +91,7 @@ export default defineConfig({
     webServer: {
         command: 'node server.js',
         url: 'http://127.0.0.1:5173',
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: !env.CI,
         timeout: 60 * 1000,
         // Pipe output for debugging but don't wait indefinitely
         stdout: 'pipe',
