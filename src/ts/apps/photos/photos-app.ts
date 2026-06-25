@@ -341,28 +341,6 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
         topbar.className =
             'photos-content-topbar app-toolbar finder-window-drag-zone flex-wrap md:flex-nowrap px-2 md:px-4 py-2 md:py-0';
         topbar.innerHTML = `
-            <div class="photos-toolbar-cluster app-toolbar-section finder-no-drag md:hidden" aria-label="${t('photos.window.controls', 'Fenstersteuerung')}">
-                ${renderTrafficLightControlsHTML({
-                    containerClassName: 'traffic-light-controls',
-                    defaults: {
-                        tag: 'button',
-                        noDrag: true,
-                    },
-                    close: {
-                        title: t('common.close', 'Schließen'),
-                        dataAction: 'window-close',
-                    },
-                    minimize: {
-                        title: t('photos.window.minimize', 'Minimieren'),
-                        dataAction: 'window-minimize',
-                    },
-                    maximize: {
-                        title: t('photos.window.maximize', 'Füllen'),
-                        dataAction: 'window-maximize',
-                    },
-                })}
-            </div>
-
             <div class="photos-toolbar-cluster app-toolbar-section finder-no-drag flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/90 p-1 text-gray-600 shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-300" role="group" aria-label="${t('photos.toolbar.navigation', 'Navigation')}">
                 <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" data-photos-toolbar-action="back" title="${t('common.back', 'Back')}" aria-label="${t('common.back', 'Back')}">←</button>
                 <button type="button" class="photos-toolbar-icon-button app-toolbar-button macui-button" data-photos-toolbar-action="forward" title="${t('common.forward', 'Forward')}" aria-label="${t('common.forward', 'Forward')}">→</button>
