@@ -245,6 +245,8 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
     let sidebarComponent: Sidebar | null = null;
     /** Mount target for the sidebar component (body div inside the photos sidebar shell). */
     let sidebarBodyEl: HTMLElement | null = null;
+    /** Guard to avoid attaching duplicate fallback click handlers. */
+    let sidebarFallbackWired = false;
 
     let scrollDateFramePending = false;
 
@@ -701,36 +703,101 @@ function t(key: string, fallback: string, params?: Record<string, unknown>): str
     }
 
     /**
+     * Minimal DOM fallback for environments where Sidebar component mounting fails silently.
+     * Keeps photos sidebar usable (filters + counts) instead of leaving an empty panel.
+     */
+    function renderSidebarFallback(groups: SidebarGroup[]): void {
+        if (!sidebarBodyEl) return;
+
+        const activeId = state.activeFilter;
+        const groupHtml = groups
+            .map(group => {
+                const itemsHtml = group.items
+                    .map(item => {
+                        const isActive = activeId === item.id;
+                        const badge =
+                            item.badge !== undefined
+                                ? `<span class="app-sidebar-item-badge">${String(item.badge)}</span>`
+                                : '';
+                        const disabledAttr = item.disabled ? 'disabled aria-disabled="true"' : '';
+                        const activeClass = isActive ? ' app-sidebar-item--active' : '';
+                        return `<button type="button" class="app-sidebar-item w-full text-left${activeClass}" data-sidebar-id="${item.id}" ${disabledAttr}><span class="app-sidebar-item-icon">${item.icon || ''}</span><span>${item.label}</span>${badge}</button>`;
+                    })
+                    .join('');
+
+                return `<div class="mb-5"><div class="app-sidebar-group-header px-3 py-1 mb-1 text-[11px] font-semibold text-gray-500/80 dark:text-gray-400/70 uppercase tracking-wider">${group.label}</div>${itemsHtml}</div>`;
+            })
+            .join('');
+
+        sidebarBodyEl.innerHTML = `<aside class="flex flex-col h-full bg-gray-50/80 dark:bg-gray-900/95 border-r border-gray-200/60 dark:border-gray-700/50 overflow-y-auto" style="width:100%"><div class="py-3 px-2">${groupHtml}</div></aside>`;
+
+        if (sidebarFallbackWired) return;
+        sidebarFallbackWired = true;
+
+        sidebarBodyEl.addEventListener('click', event => {
+            const btn = (event.target as HTMLElement).closest<HTMLButtonElement>(
+                '[data-sidebar-id]'
+            );
+            if (!btn || btn.disabled) return;
+            const id = btn.getAttribute('data-sidebar-id') || '';
+            const filterIds: SidebarFilter[] = [
+                'all',
+                'favorites',
+                'landscape',
+                'portrait',
+                'square',
+            ];
+            if (!filterIds.includes(id as SidebarFilter)) return;
+            state.activeFilter = id as SidebarFilter;
+            updateSidebarComponent();
+            applyFilters();
+        });
+    }
+
+    /**
      * Mounts (first call) or updates the photos sidebar component.
      * Replaces the old wireSidebarFilters / updateSidebarFilterButtons / updateSidebarCounts trio.
      */
     function updateSidebarComponent(): void {
         if (!sidebarBodyEl) return;
-        if (!sidebarComponent) {
-            sidebarComponent = new Sidebar({
-                groups: buildSidebarGroups(),
-                activeId: state.activeFilter,
-                onItemClick: id => {
-                    const filterIds: SidebarFilter[] = [
-                        'all',
-                        'favorites',
-                        'landscape',
-                        'portrait',
-                        'square',
-                    ];
-                    if (filterIds.includes(id as SidebarFilter)) {
-                        state.activeFilter = id as SidebarFilter;
-                        updateSidebarComponent();
-                        applyFilters();
-                    }
-                },
+        const groups = buildSidebarGroups();
+
+        try {
+            if (!sidebarComponent) {
+                sidebarComponent = new Sidebar({
+                    groups,
+                    activeId: state.activeFilter,
+                    onItemClick: id => {
+                        const filterIds: SidebarFilter[] = [
+                            'all',
+                            'favorites',
+                            'landscape',
+                            'portrait',
+                            'square',
+                        ];
+                        if (filterIds.includes(id as SidebarFilter)) {
+                            state.activeFilter = id as SidebarFilter;
+                            updateSidebarComponent();
+                            applyFilters();
+                        }
+                    },
+                });
+                sidebarComponent.mount(sidebarBodyEl);
+            } else {
+                sidebarComponent.update({
+                    groups,
+                    activeId: state.activeFilter,
+                });
+            }
+        } catch (error) {
+            logger.warn('UI', 'Photos sidebar component failed; falling back to static sidebar', {
+                error,
             });
-            sidebarComponent.mount(sidebarBodyEl);
-        } else {
-            sidebarComponent.update({
-                groups: buildSidebarGroups(),
-                activeId: state.activeFilter,
-            });
+            sidebarComponent = null;
+        }
+
+        if (sidebarBodyEl.childElementCount === 0) {
+            renderSidebarFallback(groups);
         }
     }
 
