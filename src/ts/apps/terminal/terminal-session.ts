@@ -28,6 +28,9 @@ import logger from '../../core/logger.js';
  * - VDOM-based rendering for focus preservation and performance
  */
 export class TerminalSession extends BaseTab {
+    private static readonly HOME_DIR = '/Users/marvin';
+    private static readonly LEGACY_HOME_DIR = '/home/marvin';
+
     outputElement: HTMLElement | null;
     inputElement: HTMLInputElement | null;
     commandHistory: string[];
@@ -90,6 +93,32 @@ export class TerminalSession extends BaseTab {
         });
     }
 
+    private normalizeLegacyPath(path: string): string {
+        if (path === '/home') return '/Users';
+        if (path === '/home/') return '/Users';
+
+        if (path === TerminalSession.LEGACY_HOME_DIR) {
+            return TerminalSession.HOME_DIR;
+        }
+
+        if (path.startsWith(TerminalSession.LEGACY_HOME_DIR + '/')) {
+            return TerminalSession.HOME_DIR + path.slice(TerminalSession.LEGACY_HOME_DIR.length);
+        }
+
+        return path;
+    }
+
+    private resolveExistingDirectory(path: string): string {
+        const normalized = this.normalizeLegacyPath(path);
+        if (VirtualFS.getFolder(normalized)) return normalized;
+
+        if (VirtualFS.getFolder(TerminalSession.HOME_DIR)) {
+            return TerminalSession.HOME_DIR;
+        }
+
+        return '/';
+    }
+
     constructor(config?: Partial<TabConfig>) {
         super({
             type: 'terminal-session',
@@ -101,13 +130,13 @@ export class TerminalSession extends BaseTab {
         this.inputElement = null;
         this.commandHistory = [];
         this.historyIndex = -1;
-        this.vfsCwd = '/home/marvin';
-        this.previousVfsCwd = '/home/marvin';
+        this.vfsCwd = TerminalSession.HOME_DIR;
+        this.previousVfsCwd = TerminalSession.HOME_DIR;
         this.lastExecutedCommand = 'zsh';
 
         // Ensure VirtualFS has default structure for tests/dev if storage is empty or corrupted
         try {
-            const home = VirtualFS.getFolder('/home/marvin');
+            const home = VirtualFS.getFolder(TerminalSession.HOME_DIR);
             if (!home || !home.children) {
                 logger.warn('TERMINAL', '[TerminalSession] VirtualFS missing defaults, resetting');
                 VirtualFS.reset();
@@ -1052,7 +1081,9 @@ export class TerminalSession extends BaseTab {
         const current = this.vfsCwd;
 
         if (requested === '-') {
-            const target = this.previousVfsCwd || '/home/marvin';
+            const target = this.resolveExistingDirectory(
+                this.previousVfsCwd || TerminalSession.HOME_DIR
+            );
             const folder = VirtualFS.getFolder(target);
             if (!folder) {
                 this.addOutput(`cd: Verzeichnis nicht gefunden: ${target}`, 'error');
@@ -1067,7 +1098,7 @@ export class TerminalSession extends BaseTab {
             return;
         }
 
-        const target = this.vfsResolve(path || '/home/marvin');
+        const target = this.vfsResolve(path || TerminalSession.HOME_DIR);
         const folder = VirtualFS.getFolder(target);
         if (!folder) {
             this.addOutput(`Verzeichnis nicht gefunden: ${path || target}`, 'error');
@@ -1229,12 +1260,16 @@ export class TerminalSession extends BaseTab {
     // ---------------------------
     private vfsResolve(path?: string): string {
         // Default to current folder
-        if (!path || path.trim() === '' || path === '.') return this.vfsCwd;
+        if (!path || path.trim() === '' || path === '.') {
+            return this.normalizeLegacyPath(this.vfsCwd);
+        }
 
         // Handle tilde expansion for home directory
         let raw = path.trim();
-        if (raw === '~') return '/home/marvin';
-        if (raw.startsWith('~/')) raw = '/home/marvin/' + raw.slice(2);
+        if (raw === '~') return TerminalSession.HOME_DIR;
+        if (raw.startsWith('~/')) raw = TerminalSession.HOME_DIR + '/' + raw.slice(2);
+
+        raw = this.normalizeLegacyPath(raw);
 
         // Absolute path starts with /
         if (raw.startsWith('/')) {
@@ -1253,7 +1288,7 @@ export class TerminalSession extends BaseTab {
         }
 
         // Relative path: append to current directory
-        const base = this.vfsCwd.split('/').filter(Boolean);
+        const base = this.normalizeLegacyPath(this.vfsCwd).split('/').filter(Boolean);
         const parts = raw.split('/').filter(Boolean);
         const combined = [...base, ...parts];
 
@@ -1609,7 +1644,7 @@ export class TerminalSession extends BaseTab {
 
                 if (!removeParents) break;
                 const parent = this.parentPath(target);
-                if (parent === '/' || parent === '/home') break;
+                if (parent === '/' || parent === '/home' || parent === '/Users') break;
                 target = parent;
             }
         }
@@ -1643,15 +1678,19 @@ export class TerminalSession extends BaseTab {
             title: state['title'] as string | undefined,
         });
 
-        // Use vfsCwd if available, otherwise fall back to currentPath
-        if (state['vfsCwd']) {
-            session.vfsCwd = state['vfsCwd'] as string;
-        } else if (state['currentPath']) {
-            session.vfsCwd = state['currentPath'] as string;
-        }
+        // Use vfsCwd if available, otherwise fall back to currentPath.
+        const restoredVfsCwd =
+            typeof state['vfsCwd'] === 'string'
+                ? (state['vfsCwd'] as string)
+                : typeof state['currentPath'] === 'string'
+                  ? (state['currentPath'] as string)
+                  : TerminalSession.HOME_DIR;
+        session.vfsCwd = session.resolveExistingDirectory(restoredVfsCwd);
 
         if (typeof state['previousVfsCwd'] === 'string') {
-            session.previousVfsCwd = state['previousVfsCwd'] as string;
+            session.previousVfsCwd = session.resolveExistingDirectory(state['previousVfsCwd']);
+        } else {
+            session.previousVfsCwd = session.vfsCwd;
         }
 
         if (state['commandHistory']) {
