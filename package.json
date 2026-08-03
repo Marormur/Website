@@ -97,7 +97,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.6",
     "@eslint/js": "^10.0.0",
-    "@playwright/test": "^1.62.0",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.1.2",
     "@typescript-eslint/eslint-plugin": "^8.65.0",
@@ -115,7 +115,7 @@
     "jsdom": "^29.1.1",
     "knip": "^6.29.0",
     "lint-staged": "^17.2.0",
-    "postcss": "^8.5.23",
+    "postcss": "^8.5.25",
     "postcss-cli": "^11.0.1",
     "prettier": "^3.9.6",
     "rimraf": "^6.1.2",
