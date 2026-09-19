@@ -124,7 +124,7 @@
     "type-coverage": "^2.30.1",
     "typedoc": "^0.28.20",
     "typescript": "^7.0.2",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "tmp": "^0.2.4",
