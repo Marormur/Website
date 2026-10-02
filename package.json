@@ -128,7 +128,7 @@
   },
   "overrides": {
     "tmp": "^0.2.4",
-    "dompurify": "^3.3.4"
+    "dompurify": "^3.4.13"
   },
   "dependencies": {
     "monaco-editor": "0.56.0"

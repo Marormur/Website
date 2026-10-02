@@ -308,9 +308,7 @@ form {
 // Enhanced interactivity
 form.addEventListener('submit', async e => {
     e.preventDefault();
-    await fetch('/api/submit', {
-        /* ... */
-    });
+    await fetch('/api/submit', {/* ... */});
 });
 ```
 
