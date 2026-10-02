@@ -13,6 +13,11 @@ updates:
       commit-message:
           prefix: 'chore'
           include: 'scope'
+      # TS 7 (nativ) wird von typescript-eslint (<6.1.0) und typedoc (<=6.0.x) noch nicht unterstuetzt.
+      ignore:
+          - dependency-name: 'typescript'
+            update-types:
+                - 'version-update:semver-major'
       groups:
           npm-patch-and-minor:
               applies-to: version-updates
