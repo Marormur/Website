@@ -12,13 +12,13 @@ import {
 import logger from '../../core/logger.js';
 import { VirtualFS } from '../../services/virtual-fs.js';
 
-import 'monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.js';
-import 'monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution.js';
-import 'monaco-editor/esm/vs/language/json/monaco.contribution.js';
-import 'monaco-editor/esm/vs/basic-languages/markdown/markdown.contribution.js';
-import 'monaco-editor/esm/vs/basic-languages/css/css.contribution.js';
-import 'monaco-editor/esm/vs/basic-languages/html/html.contribution.js';
-import 'monaco-editor/esm/vs/basic-languages/yaml/yaml.contribution.js';
+import 'monaco-editor/languages/definitions/javascript/register.js';
+import 'monaco-editor/languages/definitions/typescript/register.js';
+import 'monaco-editor/language/json/monaco.contribution.js';
+import 'monaco-editor/languages/definitions/markdown/register.js';
+import 'monaco-editor/languages/definitions/css/register.js';
+import 'monaco-editor/languages/definitions/html/register.js';
+import 'monaco-editor/languages/definitions/yaml/register.js';
 
 type MonacoViewState = unknown;
 
@@ -181,7 +181,7 @@ async function loadMonacoModule(): Promise<MonacoModule> {
         monacoModulePromise = (async () => {
             ensureMonacoWorkersConfigured();
             const startedAt = performance.now();
-            const mod = await import('monaco-editor/esm/vs/editor/editor.api.js');
+            const mod = await import('monaco-editor/editor/editor.api.js');
             const loadDurationMs = Math.round(performance.now() - startedAt);
             logger.info('CODE_EDITOR', `[Phase1A] Monaco loaded in ${loadDurationMs}ms`);
             return mod;
@@ -225,8 +225,7 @@ export class CodeEditorWorkbenchTab extends BaseTab {
     };
     private readonly languagePreferenceListener = () => {
         const monacoEnvironment = window.MonacoEnvironment as
-            | (Window['MonacoEnvironment'] & { locale?: string })
-            | undefined;
+            (Window['MonacoEnvironment'] & { locale?: string }) | undefined;
         if (monacoEnvironment) {
             monacoEnvironment.locale = resolveMonacoLocale();
         }

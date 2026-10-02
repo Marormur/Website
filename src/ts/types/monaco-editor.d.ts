@@ -3,7 +3,7 @@ declare module 'monaco-editor' {
     export = monaco;
 }
 
-declare module 'monaco-editor/esm/vs/editor/editor.api.js' {
+declare module 'monaco-editor/editor/editor.api.js' {
     const monaco: any;
     export = monaco;
 }
