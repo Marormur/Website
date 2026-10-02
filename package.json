@@ -123,12 +123,12 @@
     "turbo": "^2.10.7",
     "type-coverage": "^2.30.1",
     "typedoc": "^0.28.20",
-    "typescript": "^7.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.0.18"
   },
   "overrides": {
     "tmp": "^0.2.4",
-    "dompurify": "^3.3.4"
+    "dompurify": "^3.4.13"
   },
   "dependencies": {
     "monaco-editor": "0.56.0"
